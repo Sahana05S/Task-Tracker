@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 
 import { WorkspaceHeader } from '@/components/layout/workspace-header';
-import { MilestoneChecklist } from '@/components/milestones/milestone-checklist';
+import { MilestoneBoard } from '@/components/milestones/milestone-board';
 import { OrganizationShowcase } from '@/components/milestones/organization-showcase';
 import { currentPeriod } from '@/lib/analytics/engine';
 import { requireProfile } from '@/lib/auth/profile';
-import { MONTHLY_MILESTONES } from '@/lib/milestones/content';
+import { summariseMilestones } from '@/lib/milestones/goals';
+import { getMilestonesPageData } from '@/lib/milestones/queries';
+import { canManageMilestones } from '@/lib/tracker/enums';
 
 export const metadata: Metadata = {
   title: 'Milestones · TaskPulse',
@@ -14,28 +16,39 @@ export const metadata: Metadata = {
 /**
  * Organisational vision, mission, values and monthly milestones.
  *
- * Content is static and typed, in `lib/milestones/content.ts`. The profile is
- * still required so the route stays behind the same gate as the rest of the
- * workspace.
+ * All of it is live data from `company_statements` and `company_milestones`, added
+ * by `04_milestones_and_vision.sql`. Every authenticated member reads the page;
+ * `managing_director` and `project_engineer` additionally get the inline editors,
+ * matching the `Leadership can manage …` policies exactly — so what the UI offers
+ * and what the database permits cannot drift.
+ *
+ * `canManage` only decides whether controls render. The Server Actions re-check
+ * the role and RLS re-checks it again, because a hidden button is not access
+ * control.
  */
 export default async function MilestonesPage() {
-  await requireProfile();
-  const period = currentPeriod();
+  const profile = await requireProfile();
+  const { statements, milestones, members } = await getMilestonesPageData();
 
-  const achieved = MONTHLY_MILESTONES.filter(
-    (milestone) => milestone.status === 'Achieved',
-  ).length;
+  const period = currentPeriod();
+  const summary = summariseMilestones(milestones);
+  const canManage = canManageMilestones(profile.role);
 
   return (
     <>
       <WorkspaceHeader
         title="Vision & milestones"
-        description={`${period.label} · ${achieved} of ${MONTHLY_MILESTONES.length} milestones achieved`}
+        description={`${period.label} · ${summary.achieved} of ${summary.total} milestones achieved`}
       />
 
       <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
-        <OrganizationShowcase />
-        <MilestoneChecklist periodLabel={period.label} />
+        <OrganizationShowcase statements={statements} canManage={canManage} />
+        <MilestoneBoard
+          milestones={milestones}
+          members={members}
+          periodLabel={period.label}
+          canManage={canManage}
+        />
       </div>
     </>
   );

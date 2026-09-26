@@ -1,4 +1,5 @@
 import type {
+  MilestoneStatus,
   TaskCategory,
   TaskFreshness,
   TaskPriority,
@@ -46,6 +47,25 @@ export const TASK_MANAGER_ROLES = [
   'managing_director',
   'project_engineer',
 ] as const satisfies readonly UserRole[];
+
+/**
+ * Roles permitted to edit the organisational statements and milestones.
+ *
+ * The same two roles as `TASK_MANAGER_ROLES` today, declared separately rather
+ * than aliased: "may reassign a task" and "may rewrite the company vision" are
+ * different rights that happen to be held by the same people, and collapsing them
+ * would make widening one silently widen the other. Mirrors the
+ * `Leadership can manage …` policies in `04_milestones_and_vision.sql`.
+ */
+export const MILESTONE_MANAGER_ROLES = [
+  'managing_director',
+  'project_engineer',
+] as const satisfies readonly UserRole[];
+
+/** Whether a role may edit statements and milestones. */
+export function canManageMilestones(role: UserRole): boolean {
+  return (MILESTONE_MANAGER_ROLES as readonly UserRole[]).includes(role);
+}
 
 export function isUserRole(value: string): value is UserRole {
   return (USER_ROLES as readonly string[]).includes(value);
@@ -171,4 +191,27 @@ export const FRESHNESS_THRESHOLD_DAYS = {
 
 export function isTaskFreshness(value: string): value is TaskFreshness {
   return (TASK_FRESHNESS_STATES as readonly string[]).includes(value);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Milestone statuses                                                        */
+/* -------------------------------------------------------------------------- */
+
+/** Declaration order matches the `milestone_status` enum, which is also the
+ *  delivery order the checklist sorts by. */
+export const MILESTONE_STATUSES = [
+  'Planned',
+  'In Progress',
+  'Achieved',
+] as const satisfies readonly MilestoneStatus[];
+
+/** Pipeline order for sorting, so in-flight work sits above what is finished. */
+export const MILESTONE_STATUS_ORDER = {
+  'In Progress': 0,
+  Planned: 1,
+  Achieved: 2,
+} satisfies Record<MilestoneStatus, number>;
+
+export function isMilestoneStatus(value: string): value is MilestoneStatus {
+  return (MILESTONE_STATUSES as readonly string[]).includes(value);
 }

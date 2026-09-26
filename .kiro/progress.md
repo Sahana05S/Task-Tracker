@@ -7,7 +7,13 @@ and why, and what is deliberately unfinished.
 a wiped `.next` · 8 route entries registered, including `/settings` · `proxy.ts`
 picked up as `Proxy (Middleware)` · against a running production server, all five
 protected prefixes return `307` to `/login?redirectTo=…` while `/` and `/login`
-return `200`.
+return `200` · migrations 01-04 apply in order against real PostgreSQL with 37
+assertions passing, including per-role RLS behaviour · 21 assertions on the pure
+milestone helpers · 36 assertions on the rendered milestones markup.
+
+**Steering lives in `steering/`, not `.kiro/steering/`.** Requests keep naming the
+latter; it does not exist, so nothing is auto-loaded and the files have to be read
+explicitly.
 
 ---
 
@@ -148,16 +154,68 @@ counted in the productivity denominator while the progress was correctly exclude
 checks for a *profile*, not just a session, so an unprovisioned account is not
 bounced into a guarded route.
 
-The product preview in the hero is built from the **real** design-system classes
-(`sheet-grid`, `badge-soft`, `task-progress`), so it cannot drift from the
-product's actual appearance.
+Six components, all on the same tokens as the workspace — the public page was the
+last thing still wearing the original sheet palette, and a landing page that looks
+unlike the product it sells is a liability:
 
-**Decommercialised on request.** All pricing, tiers, trial copy and sales
-references were removed. The pricing slot is now
-`components/marketing/capabilities-grid.tsx`: three governance capabilities, a
-role permission matrix generated from `USER_ROLES` and `ROLE_LABELS`, and the six
-performance formulas written out. Twenty commercial strings were verified absent
-from the rendered HTML.
+| File | Contents |
+| --- | --- |
+| `hero-section.tsx` | Headline, two-sentence subtext, **Launch Workspace** + **System Overview**, three figures |
+| `tracker-mockup.tsx` | The interactive preview, in a floating browser frame |
+| `feature-bento.tsx` | Three cards — Multi-Metric Math, Team Medians, Decay Tracking — plus the three-step workflow |
+| `system-capabilities.tsx` | Three cards — Row-Level Security, Role Governance, Auditability — plus the role matrix and the formulas |
+| `site-header.tsx` · `site-footer.tsx` | Chrome, using the same `TP` monogram as the workspace rail |
+
+Both grids are **three cards, equal size**. A mixed-size bento would have implied
+one of the three measurements mattered more, and the four-up supporting strip that
+used to sit under the features was deleted: it restated the security and role
+material that the capabilities section covers properly.
+
+The product preview is built from the **real** design-system classes
+(`sheet-grid`, `badge-soft`, `task-progress`, `freshness-*`), so it cannot drift
+from the product's actual appearance. Its frame is the one place on the site that
+uses elevation — it stands in for a screen in front of the page, not a panel
+sitting in it — and the backdrop is a blurred flat forest tint, not a gradient,
+since the project has no gradients.
+
+**Decommercialised, and kept that way.** All pricing, tiers, trial copy and sales
+references were removed. The slot a pricing matrix would occupy holds the
+governance material instead. Twenty-three commercial strings are verified absent
+from the rendered HTML on every audit; the only remaining occurrences of words like
+"pricing" anywhere in the source are comments explaining the absence.
+
+`PLATFORM_FACTS` publishes counts — six tables, seventeen RLS policies, four roles,
+one generated column. **Re-count these from the migrations before editing them.**
+They were 4/12 before `04` and are easy to leave stale, and a wrong number on a page
+that argues for verifiability is worse than no number.
+
+### Typography
+
+Inter, self-hosted through `next/font/google`, exposed as `--font-inter` rather
+than as a class so `--font-sans` can put `ui-sans-serif, system-ui, …` behind it —
+a failed font fetch degrades to the platform UI font instead of to a serif. The
+variable class and `font-sans` both sit on `<html>`, so overlays Radix portals into
+`<body>` from outside the React tree inherit the family too.
+
+`globals.css` pins the family in four places rather than relying on inheritance
+alone: `html`, `body`, `h1`–`h6` (which also take a tighter track, since Inter's
+default spacing reads loose at heading sizes), and `button, input, optgroup,
+select, textarea`, which get their own font from the UA stylesheet. Tailwind's
+preflight already resets the last group; declaring it means a trimmed preflight
+cannot quietly drop a button back to Arial.
+
+Figures go through `.tabular`, `.stat-figure` or `.sheet-numeric`, all three of
+which set a monospaced face **and** `tabular-nums`. No bare
+`[font-variant-numeric:tabular-nums]` remains in the codebase — proportional digits
+with tabular spacing still misalign, because the spacing only equalises advance
+widths within one family.
+
+**A real bug was fixed here.** `app/layout.tsx` carried
+`className="bg-slate-50 text-slate-900"` on `<body>`. Utilities land in a later
+cascade layer than `@layer base`, so those two classes beat the token rule and the
+entire application — every workspace route, not just the landing page — rendered on
+`#f8fafc` instead of the `#f4f5f7` field the theme defines. The body now uses
+`bg-background text-foreground`.
 
 ### Toasts and skeletons
 
@@ -287,15 +345,38 @@ regardless, because a hidden button is not access control.
 
 ### Account menu (`components/layout/user-menu.tsx`)
 
-The trigger is **initials only** — a monospaced two-character tile at the foot of
-the rail. Name, email and role appear nowhere in the shell; the expanded profile
-block the sidebar used to carry was deleted. They live in the dropdown, which is
-where someone looks when they actually want them.
+Two presentations, one component, selected by `variant`:
 
-The dropdown holds name, email, role badge, employee ID, a link to **Settings**,
-and **Sign out** (a form submitting the `logout` Server Action). This is the single
-access point for both. No duplicate sign-out control exists in the rail, the drawer
-or any header.
+- `rail` — a monospaced two-character initials tile at the foot of the icon rail.
+  Name, email and role appear nowhere in the shell; the expanded profile block the
+  sidebar used to carry was deleted. They live in the dropdown, which is where
+  someone looks when they actually want them.
+- `row` — a wider trigger showing initials beside name over email, used in the
+  drawer footer below 768px.
+
+Exactly one of the two is reachable at any viewport, so there is still a single
+route to Settings and Sign Out and no duplicate sign-out control in any header.
+
+### Account menu — two bugs found and fixed
+
+**Sign Out did nothing.** The menu item was a `<button type="submit">` inside a
+`<form action={logout}>`, wrapped by `DropdownMenuItem asChild`. Radix closes the
+menu when an item is selected; that state update flushes synchronously during the
+click, the portal unmounts, and by the time the browser processes the click's
+default action there is no form in the document to submit. Now the item calls
+`event.preventDefault()` in `onSelect` and submits through a ref, so
+`requestSubmit()` fires before the menu begins to close. Navigation items keep
+`asChild` + `Link` — those work, and real anchors keep middle-click, copy-link and
+the correct screen-reader announcement.
+
+**No account menu existed below 768px.** `NavRail` is `hidden md:flex`, and the
+consolidated header carries no profile trigger, so a phone had no route to Settings
+or Sign Out at all. The drawer footer now renders `UserMenu variant="row"` behind
+`md:hidden`, which keeps exactly one access point per viewport rather than two on
+the desktop.
+
+The dropdown holds name, email, role badge, employee ID, **Dashboard**,
+**Profile & settings** and **Sign out**.
 
 ### Settings (`/settings`)
 
@@ -312,6 +393,90 @@ Settings is deliberately **not** in `NAV_ITEMS`. It is account business, reached
 from the account menu; putting it in the rail would imply it is a workspace
 section. `NAV_SECTIONS` and the old `MENU` / `GENERAL` groupings were removed
 entirely.
+
+---
+
+## Vision & milestones — now database-backed
+
+`04_milestones_and_vision.sql` retires `lib/milestones/content.ts`, which held the
+vision, mission, values and five milestones as typed constants. Changing a vision
+statement used to mean a code change and a deploy.
+
+### Two tables
+
+| Table | Shape |
+| --- | --- |
+| `company_statements` | `id`, `key_name` UNIQUE, `title`, `statement`, `subtext`, `updated_at`, `updated_by` |
+| `company_milestones` | `id`, `title`, `description`, `status`, `owner_id`, `delivered_count`, `target_count`, `due_date`, `created_at` |
+
+`key_name` is the stable handle the showcase selects by — `vision`, `mission`,
+`core_values` — so renaming a title never breaks a query. It is deliberately not
+editable through the UI: changing it would make a card vanish rather than change it.
+
+**Core values are one row, not four.** Its `statement` carries one value per line in
+`Name: description` form, parsed by `parseCoreValues`. That keeps the table to the
+specified columns and the card to one Edit control; the trade is that ordering and
+per-value metadata are not addressable. Splitting into a `company_values` table
+would only change the parser.
+
+**`owner_id` is a real foreign key**, so it can name a member but not a group. The
+static content used labels like "Project Engineering" and "Whole team"; those are
+now a null owner, rendered as "Whole team". An unresolvable id renders as "Former
+member" rather than blank, which happens when `ON DELETE SET NULL` has not yet been
+observed by a cached page.
+
+Over-delivery is permitted — `delivered_count` may exceed `target_count`, because
+hitting five of four is a real outcome. The progress bar clamps at 100%, since a bar
+overflowing its track reads as a rendering fault rather than as good news.
+
+### Security
+
+`SELECT` for every authenticated member, `INSERT`/`UPDATE`/`DELETE` for
+`managing_director` and `project_engineer` only, through the existing
+`public.get_user_role()` helper. `MILESTONE_MANAGER_ROLES` in
+`lib/tracker/enums.ts` mirrors the policy and is declared separately from
+`TASK_MANAGER_ROLES` — the same two roles today, but "may reassign a task" and "may
+rewrite the company vision" are different rights, and aliasing them would make
+widening one silently widen the other.
+
+Verified against a real PostgreSQL (PGlite) with 01-04 applied and `auth.uid()`
+stubbed: 37 assertions covering structure, constraints, the `updated_at` trigger,
+seed idempotency and per-role read/write behaviour for all three roles.
+
+### UI
+
+| File | Role |
+| --- | --- |
+| `app/(workspace)/milestones/page.tsx` | Server Component. Fetches, summarises, computes `canManage` |
+| `lib/milestones/queries.ts` | Three parallel reads: statements, milestones, member directory |
+| `components/milestones/organization-showcase.tsx` | Server Component. Vision, mission, values cards |
+| `components/milestones/statement-editor.tsx` | Client island per card: Edit button plus its Sheet |
+| `components/milestones/milestone-board.tsx` | Client. Owns dialog state and the delete confirmation |
+| `components/milestones/milestone-checklist.tsx` | Presentational list |
+| `components/milestones/milestone-dialog.tsx` | Create/edit Sheet |
+| `app/milestones/actions.ts` | `updateStatement`, `createMilestone`, `updateMilestone`, `deleteMilestone` |
+
+The reading path stays a Server Component, which is what every member hits; only
+the editors ship JavaScript. The board holds dialog state centrally rather than per
+row, so a list of goals mounts one editor and one confirmation instead of two
+overlays each.
+
+`canManage` decides only whether controls render. The actions re-check the role and
+RLS checks it a third time, because a hidden button is not access control.
+
+Statement icons and core-value icons were dropped. They were decorative on cards
+that already have headings, and the utilitarian pass removed that class of glyph
+everywhere else. Values are numbered instead, which says "one of several" without
+inventing a symbol for an idea like "Shared Ownership".
+
+### Shared form primitives
+
+`Field`, `LabeledSelect` and `FormError` moved to `components/ui/form-field.tsx`.
+The task, milestone and statement editors all need the same label-hint-control
+stack, and three private copies would have drifted the first time one changed.
+`components/tasks/task-dialog.tsx` now imports them instead of declaring its own.
+`components/ui/textarea.tsx` was also brought onto the token palette — it was still
+carrying `border-slate-200` and a sky focus ring from the first design pass.
 
 ---
 
@@ -396,8 +561,17 @@ Ordered by how much they matter.
    change a display name — the RLS policy blocks the rest, as described above. The
    notification bell in the header is rendered and labelled but has no
    notifications table and no producer behind it.
-7. **Milestone content is static** in `lib/milestones/content.ts`; making the
-   checklist editable needs a table and policies.
+7. **Milestone ownership and history are thin.** `owner_id` cannot name a group,
+   core values are one text field rather than rows, and `company_milestones` has no
+   `updated_at`, so milestone edits are not attributable. All three are noted where
+   they are decided, in the migration and in *Vision & milestones* above.
+8. **The editing drawers are not covered by the render audit.** Radix renders
+   dialog content through `ReactDOM.createPortal` into `document.body`, and with no
+   document on the server an open Sheet contributes nothing to the server HTML. The
+   milestone and statement forms were verified by type checking and by build, and
+   their controlled-select arrangement is the one already proven in the task
+   dialog, but no test exercises their rendered markup. A browser-based test is the
+   only way to close this.
 8. **Legal pages are not hosted** — the footer uses a mailto address rather than
    linking routes that do not exist.
 9. **Duplicate `employee_id` on signup** surfaces as a generic Supabase error. The

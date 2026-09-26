@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { SparklesIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -129,53 +128,69 @@ export function TrackerMockup() {
   const [view, setView] = React.useState<MockupView>('grid');
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      {/* Window chrome */}
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-100 px-3 py-2">
-        <span className="flex gap-1.5" aria-hidden="true">
-          <span className="size-2.5 rounded-full bg-slate-300" />
-          <span className="size-2.5 rounded-full bg-slate-300" />
-          <span className="size-2.5 rounded-full bg-slate-300" />
-        </span>
+    /*
+      The shell floats: a soft tinted halo behind it, then the framed window on
+      top. This is the one place on the site where elevation is right — the frame
+      is standing in for a screen in front of the page, not for a panel sitting in
+      it, and the halo is what stops a white window on a white section from
+      disappearing.
+    */
+    <div className="relative">
+      {/* A flat tint, blurred — not a gradient. The project has no gradients, and
+          one soft forest wash is enough to lift the frame off the section. */}
+      <div
+        aria-hidden="true"
+        className="bg-primary/10 absolute -inset-2 rounded-[1.5rem] blur-2xl"
+      />
 
-        <span className="ml-1 hidden rounded border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-500 sm:inline">
-          app.taskpulse.example/{view === 'grid' ? 'tasks' : 'dashboard'}
-        </span>
+      <div className="border-border relative overflow-hidden rounded-2xl border bg-white shadow-soft-lg">
+        {/* Window chrome */}
+        <div className="border-border bg-muted flex items-center gap-2 border-b px-3 py-2">
+          <span className="flex gap-1.5" aria-hidden="true">
+            <span className="size-2.5 rounded-full bg-slate-300" />
+            <span className="size-2.5 rounded-full bg-slate-300" />
+            <span className="size-2.5 rounded-full bg-slate-300" />
+          </span>
 
-        {/* View switch. The interactive part of the preview. */}
-        <div
-          role="tablist"
-          aria-label="Preview"
-          className="ml-auto flex gap-1 rounded-md border border-slate-200 bg-white p-0.5"
-        >
-          {(
-            [
-              { id: 'grid', label: 'Task grid' },
-              { id: 'analytics', label: 'Analytics' },
-            ] satisfies readonly { id: MockupView; label: string }[]
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={view === tab.id}
-              onClick={() => setView(tab.id)}
-              className={cn(
-                'rounded-sm px-2 py-1 text-[11px] font-medium transition-colors',
-                'focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none',
-                view === tab.id
-                  ? 'bg-slate-900 text-slate-50'
-                  : 'text-slate-500 hover:text-slate-900',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <span className="border-border text-muted-foreground ml-1 hidden rounded border bg-white px-2 py-0.5 font-mono text-[10px] sm:inline">
+            app.taskpulse.example/{view === 'grid' ? 'tasks' : 'dashboard'}
+          </span>
+
+          {/* View switch. The interactive part of the preview. */}
+          <div
+            role="tablist"
+            aria-label="Preview"
+            className="border-border ml-auto flex gap-1 rounded-md border bg-white p-0.5"
+          >
+            {(
+              [
+                { id: 'grid', label: 'Task grid' },
+                { id: 'analytics', label: 'Analytics' },
+              ] satisfies readonly { id: MockupView; label: string }[]
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={view === tab.id}
+                onClick={() => setView(tab.id)}
+                className={cn(
+                  'rounded px-2 py-1 text-[11px] font-medium transition-colors',
+                  'focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none',
+                  view === tab.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="bg-slate-50 p-2 sm:p-3">
-        {view === 'grid' ? <GridPreview /> : <AnalyticsPreview />}
+        <div className="bg-background p-2 sm:p-3">
+          {view === 'grid' ? <GridPreview /> : <AnalyticsPreview />}
+        </div>
       </div>
     </div>
   );
@@ -187,7 +202,7 @@ export function TrackerMockup() {
 
 function GridPreview() {
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <div className="border-border overflow-x-auto rounded-lg border bg-white">
       <table className="sheet-grid text-[11px]">
         <caption className="sr-only">
           Sample task grid showing tag, category, assignee, priority, status,
@@ -234,7 +249,7 @@ function GridPreview() {
                 <span className="badge-soft badge-category">{row.category}</span>
               </td>
               <td>
-                <span className="flex size-6 items-center justify-center rounded-full bg-slate-200 text-[9px] font-semibold text-slate-700">
+                <span className="bg-muted text-foreground flex size-6 items-center justify-center rounded font-mono text-[9px] font-semibold">
                   {row.assignee}
                 </span>
               </td>
@@ -293,27 +308,24 @@ function GridPreview() {
 function AnalyticsPreview() {
   return (
     <div className="flex flex-col gap-2">
-      {/* Star performer strip */}
-      <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold text-slate-50">
+      {/* Star performer strip. Forest fill, matching the real hero metric card. */}
+      <div className="bg-primary text-primary-foreground border-primary flex items-center gap-3 rounded-lg border px-3 py-2.5">
+        <span className="text-primary flex size-9 shrink-0 items-center justify-center rounded bg-white font-mono text-[11px] font-semibold">
           CM
         </span>
         <span className="flex min-w-0 flex-col">
-          <span className="flex items-center gap-1 text-[10px] font-semibold tracking-wide text-amber-700 uppercase">
-            <SparklesIcon className="size-3" aria-hidden="true" />
+          <span className="text-[10px] font-semibold tracking-[0.12em] text-white/70 uppercase">
             Star performer
           </span>
-          <span className="truncate text-sm font-semibold text-slate-900">
+          <span className="truncate text-sm font-semibold">
             Cleo Marchetti
           </span>
         </span>
         <span className="ml-auto flex flex-col items-end">
-          <span className="text-[10px] tracking-wide text-slate-500 uppercase">
+          <span className="text-[10px] tracking-[0.12em] text-white/70 uppercase">
             Score
           </span>
-          <span className="text-lg font-semibold text-slate-900 [font-variant-numeric:tabular-nums]">
-            3.74
-          </span>
+          <span className="tabular text-lg font-semibold">3.74</span>
         </span>
       </div>
 
@@ -326,12 +338,12 @@ function AnalyticsPreview() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2"
+            className="border-border rounded-lg border bg-white px-2.5 py-2"
           >
-            <dt className="text-[10px] tracking-wide text-slate-500 uppercase">
+            <dt className="text-muted-foreground text-[10px] tracking-[0.12em] uppercase">
               {stat.label}
             </dt>
-            <dd className="text-base font-semibold text-slate-900 [font-variant-numeric:tabular-nums]">
+            <dd className="text-foreground tabular text-base font-semibold">
               {stat.value}
             </dd>
           </div>
@@ -339,12 +351,13 @@ function AnalyticsPreview() {
       </dl>
 
       {/* Productivity against the median */}
-      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-        <p className="text-[11px] font-semibold text-slate-900">
+      <div className="border-border rounded-lg border bg-white px-3 py-2.5">
+        <p className="text-foreground text-[11px] font-semibold">
           Productivity differentials
         </p>
-        <p className="text-[10px] text-slate-500">
-          Median {MEDIAN_RATE.toFixed(2)} scaled progress per hour
+        <p className="text-muted-foreground text-[10px]">
+          Median <span className="tabular">{MEDIAN_RATE.toFixed(2)}</span> scaled
+          progress per hour
         </p>
 
         <table className="mt-2 w-full text-[10px]">
@@ -356,35 +369,35 @@ function AnalyticsPreview() {
               <tr key={entry.initials}>
                 <th
                   scope="row"
-                  className="w-16 py-1 text-left font-normal text-slate-600"
+                  className="text-muted-foreground w-16 py-1 text-left font-normal"
                 >
                   {entry.name}
                 </th>
                 <td className="py-1">
                   {/* Width comes from a fixed step class, not an inline style. */}
-                  <span className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <span className="bg-muted flex h-2 w-full overflow-hidden rounded-full">
                     <span
                       className={cn(
                         'h-full rounded-full',
-                        entry.diff >= 0 ? 'bg-emerald-600' : 'bg-rose-500',
+                        entry.diff >= 0 ? 'bg-primary' : 'bg-rose-500',
                         barWidthClass(entry.rate / MAX_RATE),
                       )}
                     />
                   </span>
                 </td>
-                <td className="w-10 py-1 text-right font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+                <td className="text-foreground tabular w-10 py-1 text-right font-medium">
                   {entry.rate.toFixed(2)}
                 </td>
                 <td
                   className={cn(
-                    'w-12 py-1 text-right font-medium [font-variant-numeric:tabular-nums]',
+                    'tabular w-12 py-1 text-right font-medium',
                     entry.diff >= 0 ? 'text-emerald-700' : 'text-rose-700',
                   )}
                 >
                   {entry.diff >= 0 ? '+' : ''}
                   {entry.diff.toFixed(2)}
                 </td>
-                <td className="w-10 py-1 text-right text-slate-500 [font-variant-numeric:tabular-nums]">
+                <td className="text-muted-foreground tabular w-10 py-1 text-right">
                   {entry.allocation}%
                 </td>
               </tr>

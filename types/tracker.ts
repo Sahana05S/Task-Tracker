@@ -69,6 +69,15 @@ export type TaskStatus = 'Not Started' | 'In Progress' | 'Discarded' | 'Done';
  */
 export type TaskFreshness = 'Fresh' | 'Stale' | 'Rotten';
 
+/**
+ * PostgreSQL ENUM `milestone_status`, from `04_milestones_and_vision.sql`.
+ *
+ * Deliberately separate from `TaskStatus`. A milestone is an organisational
+ * outcome, not a unit of assigned work: it has no `Discarded` state, because a
+ * goal that is dropped is deleted rather than archived against a member's record.
+ */
+export type MilestoneStatus = 'Planned' | 'In Progress' | 'Achieved';
+
 /* -------------------------------------------------------------------------- */
 /* Table row models                                                           */
 /* -------------------------------------------------------------------------- */
@@ -206,6 +215,63 @@ export interface MonthlyPerformanceSnapshot {
   /** `is_star_performer` — winner of the composite monthly score. */
   isStarPerformer: boolean | null;
 
+  /** `created_at` — ISO 8601 timestamp. */
+  createdAt: string;
+}
+
+/**
+ * Row of `public.company_statements` — one editable block on the milestones
+ * showcase.
+ */
+export interface CompanyStatement {
+  /** UUID primary key. */
+  id: string;
+  /**
+   * `key_name` — stable lookup handle, unique. `'vision'`, `'mission'` and
+   * `'core_values'` are the three the showcase renders; see
+   * `lib/milestones/statements.ts`.
+   */
+  keyName: string;
+  /** `title` — the heading shown on the card. */
+  title: string;
+  /**
+   * `statement` — the headline text.
+   *
+   * For `core_values` this carries one value per line in `Name: description`
+   * form, parsed by `parseCoreValues`.
+   */
+  statement: string;
+  /** `subtext` — supporting elaboration, nullable. */
+  subtext: string | null;
+  /** `updated_at` — ISO 8601 timestamp, maintained by a trigger. */
+  updatedAt: string;
+  /** `updated_by` — FK to `users.id`, ON DELETE SET NULL. */
+  updatedBy: string | null;
+}
+
+/** Row of `public.company_milestones` — one monthly organisational goal. */
+export interface CompanyMilestone {
+  /** UUID primary key. */
+  id: string;
+  /** `title` */
+  title: string;
+  /** `description` — nullable. */
+  description: string | null;
+  /** `status` — defaults to `'Planned'`. */
+  status: MilestoneStatus;
+  /**
+   * `owner_id` — FK to `users.id`, ON DELETE SET NULL.
+   *
+   * Null means the milestone is carried by the team rather than one member. The
+   * column cannot name a group, only a member.
+   */
+  ownerId: string | null;
+  /** `delivered_count` — units delivered so far, >= 0. May exceed the target. */
+  deliveredCount: number;
+  /** `target_count` — units targeted, or null when the goal is not countable. */
+  targetCount: number | null;
+  /** `due_date` — ISO date (`YYYY-MM-DD`), nullable. */
+  dueDate: string | null;
   /** `created_at` — ISO 8601 timestamp. */
   createdAt: string;
 }

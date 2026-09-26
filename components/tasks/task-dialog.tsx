@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { AlertCircleIcon, LoaderCircleIcon } from 'lucide-react';
+import { LoaderCircleIcon } from 'lucide-react';
 
 import {
   createTask,
@@ -9,13 +9,8 @@ import {
   type TaskActionState,
 } from '@/app/tasks/actions';
 import { Button } from '@/components/ui/button';
+import { Field, FormError, LabeledSelect } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@/components/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -29,7 +24,6 @@ import {
   TASK_CATEGORIES,
   TASK_PRIORITIES,
 } from '@/lib/tracker/enums';
-import { cn } from '@/lib/utils';
 import type { Task, User } from '@/types/tracker';
 
 /** `null` opens the form in create mode; a task opens it in edit mode. */
@@ -283,19 +277,7 @@ function TaskForm({
           hint="Optional second pair of eyes."
         />
 
-        {error ? (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 sm:col-span-2"
-          >
-            <AlertCircleIcon
-              className="mt-0.5 size-4 shrink-0"
-              aria-hidden="true"
-            />
-            <span>{error}</span>
-          </div>
-        ) : null}
+        <FormError message={error} className="sm:col-span-2" />
       </div>
 
       <SheetFooter className="border-border flex-row justify-end border-t">
@@ -321,106 +303,5 @@ function TaskForm({
         </Button>
       </SheetFooter>
     </form>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Fields                                                                     */
-/* -------------------------------------------------------------------------- */
-
-interface FieldProps {
-  id: string;
-  label: string;
-  hint?: string;
-  required?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}
-
-function Field({
-  id,
-  label,
-  hint,
-  required = false,
-  className,
-  children,
-}: FieldProps) {
-  return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-sm font-medium text-slate-700">
-        {label}
-        {required ? (
-          <span className="ml-0.5 text-rose-600" aria-hidden="true">
-            *
-          </span>
-        ) : null}
-        {required ? <span className="sr-only">(required)</span> : null}
-      </label>
-      {children}
-      {hint ? (
-        <p id={`${id}-hint`} className="text-xs text-slate-500">
-          {hint}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-interface LabeledSelectProps {
-  id: string;
-  label: string;
-  name: string;
-  value: string;
-  onValueChange: (value: string) => void;
-  options: readonly { value: string; label: string }[];
-  hint?: string;
-  required?: boolean;
-  className?: string;
-}
-
-/**
- * Select wrapped in a label. `name` is kept so Radix emits the hidden native
- * control that carries the value into the form submission.
- */
-function LabeledSelect({
-  id,
-  label,
-  name,
-  value,
-  onValueChange,
-  options,
-  hint,
-  required = false,
-  className,
-}: LabeledSelectProps) {
-  const selectedLabel =
-    options.find((option) => option.value === value)?.label ?? '';
-
-  return (
-    <Field
-      id={id}
-      label={label}
-      hint={hint}
-      required={required}
-      className={className}
-    >
-      <Select
-        name={name}
-        value={value}
-        onValueChange={onValueChange}
-        required={required}
-      >
-        <SelectTrigger id={id} aria-describedby={hint ? `${id}-hint` : undefined}>
-          {selectedLabel}
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </Field>
   );
 }

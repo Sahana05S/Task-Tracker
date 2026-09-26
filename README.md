@@ -33,6 +33,7 @@ work surfaces itself.
 | Framework | Next.js 16.3.6, App Router, React 19.3 |
 | Language | TypeScript 5.9 (`strict`, no `any`) |
 | Styling | Tailwind CSS v4 (CSS-first `@theme`) |
+| Typeface | Inter via `next/font/google`, self-hosted, exposed as `--font-inter` behind `--font-sans` |
 | Components | Shadcn UI primitives over Radix |
 | Icons | `lucide-react` |
 | Charts | Recharts 3 |
@@ -42,6 +43,12 @@ work surfaces itself.
 
 Data loading uses React Server Components; every mutation goes through a Next.js
 Server Action. Client components never write to the database directly.
+
+Every figure in the product — hours, scaled progress, productivity rates,
+percentage differentials, composite scores — renders through `.tabular`,
+`.stat-figure` or `.sheet-numeric`, each of which sets a monospaced face *and*
+`tabular-nums`. Tabular spacing alone is not enough: it equalises digit widths
+within one family, so proportional digits still fail to line up down a column.
 
 ---
 
@@ -75,7 +82,7 @@ hold even if the application is bypassed entirely.
 | `/dashboard` | authenticated | Team analytics, star performer, snapshots |
 | `/tasks` | authenticated | Task grid (desktop) and cards (mobile/tablet) |
 | `/logs` | authenticated | Personal effort history |
-| `/milestones` | authenticated | Vision, mission, values, monthly milestones |
+| `/milestones` | authenticated | Vision, mission, values, monthly milestones. Leadership edits in place |
 | `/settings` | authenticated | Account details; display name is the one editable field |
 
 Route protection lives in **`proxy.ts`** at the project root. Next.js 16 renamed
@@ -138,9 +145,16 @@ Apply the migrations **in order**. Each depends on the one before it.
 | 1 | `supabase/migrations/01_init_schema.sql` | Five enums, four tables, the `scaled_progress` generated column, indexes, the `get_user_role()` helper, RLS enablement and 11 policies |
 | 2 | `supabase/migrations/02_auth_provisioning.sql` | `handle_new_user` trigger that provisions a `public.users` row on signup, plus a self-service profile update policy |
 | 3 | `supabase/migrations/03_log_deletion_policy.sql` | DELETE policy so a member can remove their own effort logs |
+| 4 | `supabase/migrations/04_milestones_and_vision.sql` | `milestone_status` enum, `company_statements` and `company_milestones` tables, their RLS policies, and seed content for the milestones tab |
 
 Apply them with `supabase db push`, or paste each file into the Supabase SQL
 Editor and run it once.
+
+`04` depends on three objects the earlier files create — `public.users`,
+`get_user_role()` and `set_updated_at()` — so the order is not optional. It seeds
+the vision, mission, values and five milestones, and both seed statements are safe
+to re-run: statements use `ON CONFLICT DO NOTHING` so an edited one is never
+reverted, and milestones only seed into an empty table.
 
 ### Why migrations 02 and 03 are separate
 
@@ -179,6 +193,13 @@ WHERE email = 'you@example.com';
 | `tasks` | Work items with scale weight, progress, priority, status, freshness |
 | `daily_task_logs` | One effort entry: hours, progress delta, notes, asset links |
 | `monthly_performance_snapshots` | Frozen monthly statistics, one row per member per month |
+| `company_statements` | One editable block per showcase card: vision, mission, core values |
+| `company_milestones` | Monthly organisational goals with an owner, a delivered/target count and a deadline |
+
+A milestone is deliberately not a task. A task is a unit of assigned work measured
+in scale and logged hours; a milestone is an outcome the team aims at, counted in
+deliverables. Folding them together would put rows into the team median that are
+nobody's assigned work.
 
 ### Taxonomies
 
@@ -195,6 +216,9 @@ Task, `PJT` Project, `RSC` Research, `QAC` Quality & Testing, `MKT` Marketing,
 **Statuses** — `Not Started`, `In Progress`, `Done`, `Discarded`
 
 **Freshness** — `Fresh`, `Stale`, `Rotten`
+
+**Milestone statuses** — `Planned`, `In Progress`, `Achieved`. No `Discarded`: a
+goal that is dropped is deleted rather than archived against anyone's record.
 
 ### Type layers
 
@@ -357,6 +381,7 @@ app/
   tasks/actions.ts         task CRUD + inline status/progress
   logs/actions.ts          effort logs + metric recalculation
   dashboard/actions.ts     monthly snapshot freeze
+  milestones/actions.ts    statement + milestone CRUD (leadership only)
   settings/actions.ts      display-name update
   login/                   auth views
   page.tsx                 marketing page / member redirect
@@ -369,8 +394,8 @@ components/
   tasks/                   grid, cards, filters, dialog, inline editors
   logs/                    quick-log drawer, history timeline
   dashboard/               star performer, metric cards, Recharts widgets
-  milestones/              vision, mission, values, milestone checklist
-  marketing/               landing page sections
+  milestones/              showcase, checklist, board, editor drawers
+  marketing/               hero, mockup, feature grid, capabilities, chrome
   tracker/                 shared soft-pill badges
 
 lib/
@@ -380,10 +405,11 @@ lib/
   tasks/                   mappers, queries, pure filter and sort
   logs/                    mappers, queries, pure metric formulas
   analytics/               team performance engine
+  milestones/              mappers, queries, statement parsing, goal sorting
   tracker/                 enums, labels, formatters
-  marketing/  milestones/  static typed content
+  marketing/               static typed landing-page content
 
-supabase/migrations/       01, 02, 03 — apply in order
+supabase/migrations/       01, 02, 03, 04 — apply in order
 types/                     database.ts (wire), tracker.ts (domain)
 proxy.ts                   edge session refresh and route guard
 ```
@@ -435,10 +461,21 @@ generic "Database error saving new user". The signup action cannot pre-check,
 because the SELECT policy on `public.users` is granted to `authenticated` only and
 a registering user is still anonymous.
 
-**Milestone content is static.** `lib/milestones/content.ts` holds the vision,
-mission, values and milestones in typed source. Nothing in the schema stores them,
-so the checklist is read-only; making it editable needs a `milestones` table and
-its own policies.
+**Milestone owners must be individuals.** `company_milestones.owner_id` is a
+foreign key to `public.users`, so it can name a member but not a group. The static
+content it replaced used labels like "Project Engineering" and "Whole team"; those
+are now stored as a null owner and rendered as "Whole team". An `owner_label`
+column would be the fix if naming a team matters.
+
+**Core values are one text field, not rows.** `company_statements` holds them in a
+single `statement` with one value per line in `Name: description` form, which keeps
+the card to one Edit control. The trade is that ordering and per-value metadata are
+not addressable. Splitting them into a `company_values` table would only require
+changing `parseCoreValues` in `lib/milestones/statements.ts`.
+
+**Milestone edits are not timestamped.** `company_milestones` carries `created_at`
+only, so there is no record of who last changed a goal or when.
+`company_statements` records both `updated_at` and `updated_by`.
 
 **Legal pages are not hosted.** The footer points privacy and terms enquiries at a
 mailto address rather than linking routes that do not exist.

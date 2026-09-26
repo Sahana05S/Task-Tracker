@@ -1,16 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  ClockIcon,
-  DatabaseIcon,
   FileCheckIcon,
-  GaugeIcon,
   KeyRoundIcon,
   LayersIcon,
   ShieldCheckIcon,
   SigmaIcon,
-  SmartphoneIcon,
   TimerResetIcon,
-  UsersIcon,
 } from 'lucide-react';
 
 import type { UserRole } from '@/types/tracker';
@@ -50,9 +45,31 @@ export const CTA = {
   getStarted: { label: 'Get Started', href: '/login?tab=signup' },
   /** Returning members. */
   signIn: { label: 'Sign In', href: '/login?tab=signin' },
-  /** Jumps to the governance section rather than opening a sales conversation. */
-  capabilities: { label: 'View Capabilities', href: '#capabilities' },
+  /**
+   * Secondary action in the hero. Jumps to the architecture section rather than
+   * opening a sales conversation — the honest counterpart to a "talk to sales"
+   * button on a system that has nothing to sell.
+   */
+  systemOverview: { label: 'System Overview', href: '#capabilities' },
 } as const satisfies Record<string, CallToAction>;
+
+/* -------------------------------------------------------------------------- */
+/* Hero copy                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export interface HeroCopy {
+  eyebrow: string;
+  headline: string;
+  /** Exactly two sentences. Any more and the hero stops being a hero. */
+  subtext: string;
+}
+
+export const HERO: HeroCopy = {
+  eyebrow: 'Multi-metric performance tracking',
+  headline: 'Control your engineering capacity & task velocity',
+  subtext:
+    'TaskPulse weights every task, records the hours against it, and measures each member against the team median. Progress becomes a figure you can defend in a review, not an impression.',
+};
 
 /* -------------------------------------------------------------------------- */
 /* Navigation                                                                 */
@@ -86,8 +103,8 @@ export interface FeatureCard {
 
 export const PRIMARY_FEATURES: readonly FeatureCard[] = [
   {
-    id: 'effort-tracking',
-    title: 'Multi-Metric Effort Tracking',
+    id: 'multi-metric-math',
+    title: 'Multi-Metric Math',
     summary: 'Weight, progress and hours on every task.',
     detail:
       'Each task carries a scale weight and a progress percentage. Scaled progress is a generated database column, so the number you report is the number the database computed.',
@@ -100,7 +117,7 @@ export const PRIMARY_FEATURES: readonly FeatureCard[] = [
   },
   {
     id: 'team-medians',
-    title: 'Team Median Calculations',
+    title: 'Team Medians',
     summary: 'Compare against the team, not a guess.',
     detail:
       'Productivity, workload allocation and criticality are each measured against the team median for the month, so an individual figure always arrives with the context needed to read it.',
@@ -112,8 +129,8 @@ export const PRIMARY_FEATURES: readonly FeatureCard[] = [
     ],
   },
   {
-    id: 'freshness-decay',
-    title: 'Freshness Decay Tracking',
+    id: 'decay-tracking',
+    title: 'Decay Tracking',
     summary: 'Stalled work surfaces itself.',
     detail:
       'Tasks move from Fresh to Stale to Rotten as they go without an update. Nobody has to remember to chase; the grid shows which work has gone quiet.',
@@ -126,44 +143,12 @@ export const PRIMARY_FEATURES: readonly FeatureCard[] = [
   },
 ];
 
-export interface CapabilityCard {
-  id: string;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-}
-
-/** Secondary strip, giving the feature grid its mixed-size bento rhythm. */
-export const SUPPORTING_CAPABILITIES: readonly CapabilityCard[] = [
-  {
-    id: 'roles',
-    title: 'Four workspace roles',
-    description:
-      'Managing directors, project engineers, data managers and contributors, each with their own rights.',
-    icon: UsersIcon,
-  },
-  {
-    id: 'security',
-    title: 'Row-level security',
-    description:
-      'Access is enforced in the database, not just the interface, so the API cannot be talked around.',
-    icon: ShieldCheckIcon,
-  },
-  {
-    id: 'logging',
-    title: 'Daily effort logger',
-    description:
-      'Hours, progress deltas, notes and links to drawings, captured in seconds.',
-    icon: ClockIcon,
-  },
-  {
-    id: 'responsive',
-    title: 'Built for the site, not just the desk',
-    description:
-      'A dense grid on desktop, a card stack and one-tap logging on a phone.',
-    icon: SmartphoneIcon,
-  },
-];
+/*
+ * There is deliberately no second, smaller strip of feature cards. Three cards
+ * carry the three measurements this product adds; a supporting row of four more
+ * repeated the security and roles material that the capabilities section states
+ * properly, and saying it twice in different words made both weaker.
+ */
 
 /* -------------------------------------------------------------------------- */
 /* How it works                                                               */
@@ -215,8 +200,8 @@ export interface GovernanceCapability {
 
 export const GOVERNANCE_CAPABILITIES: readonly GovernanceCapability[] = [
   {
-    id: 'rls-isolation',
-    title: 'Row-Level Security & Multi-Tenant Isolation',
+    id: 'row-level-security',
+    title: 'Row-Level Security',
     summary: 'The database decides what you can read.',
     detail:
       'Every table has row-level security enabled, and with RLS on and no matching policy the default is refusal. Isolation is a property of the data layer, so it holds for the REST API and for anything else holding a valid token, not only for the interface.',
@@ -229,8 +214,8 @@ export const GOVERNANCE_CAPABILITIES: readonly GovernanceCapability[] = [
     ],
   },
   {
-    id: 'rbac',
-    title: 'Role-Based Access Control',
+    id: 'role-governance',
+    title: 'Role Governance',
     summary: 'Managing Director and Project Engineer are different rights.',
     detail:
       'Four roles with distinct capabilities. Creating, editing and deleting tasks belongs to directors and engineers; contributors update status and progress on work assigned to them. Elevation is never self-service — a member cannot promote their own role.',
@@ -243,8 +228,8 @@ export const GOVERNANCE_CAPABILITIES: readonly GovernanceCapability[] = [
     ],
   },
   {
-    id: 'audit-integrity',
-    title: 'Verifiable Effort Logging & Audit Integrity',
+    id: 'auditability',
+    title: 'Auditability',
     summary: 'Reported figures are derived, not asserted.',
     detail:
       'Scaled progress is a generated stored column, so no client can write it. Hours are attributed to the session that filed them, never to a user id taken from a form. Monthly statistics can be frozen into an immutable snapshot so a completed review remains readable after the underlying tasks move on.',
@@ -389,15 +374,21 @@ export const PERFORMANCE_FORMULAS: readonly FormulaSpec[] = [
 export interface PlatformFact {
   value: string;
   label: string;
-  icon: LucideIcon;
 }
 
-/** Concrete counts drawn from the schema, shown under the capabilities grid. */
+/**
+ * Concrete counts drawn from the schema, shown under the capabilities grid.
+ *
+ * Counted from the migrations, not estimated: 11 policies in `01`, one each in
+ * `02` and `03`, and four in `04_milestones_and_vision.sql`, across six tables
+ * with RLS enabled. Re-count before changing these — a wrong number on a page
+ * that argues for verifiability is worse than no number.
+ */
 export const PLATFORM_FACTS: readonly PlatformFact[] = [
-  { value: '4', label: 'Tables under row-level security', icon: DatabaseIcon },
-  { value: '12', label: 'Row-level security policies', icon: ShieldCheckIcon },
-  { value: '4', label: 'Governed workspace roles', icon: KeyRoundIcon },
-  { value: '1', label: 'Generated column no client can write', icon: FileCheckIcon },
+  { value: '6', label: 'Tables under row-level security' },
+  { value: '17', label: 'Row-level security policies' },
+  { value: '4', label: 'Governed workspace roles' },
+  { value: '1', label: 'Generated column no client can write' },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -454,16 +445,21 @@ export const FOOTER_COLUMNS: readonly FooterColumn[] = [
 /* Hero                                                                       */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Figures under the hero.
+ *
+ * No icons: these are three numbers, and a glyph beside a number competes with it
+ * for the eye without adding meaning. The label does the naming.
+ */
 export interface HeroStat {
   value: string;
   label: string;
-  icon: LucideIcon;
 }
 
 export const HERO_STATS: readonly HeroStat[] = [
-  { value: '13', label: 'Task categories tracked', icon: LayersIcon },
-  { value: '5', label: 'Priority levels weighted', icon: GaugeIcon },
-  { value: '3', label: 'Freshness states monitored', icon: TimerResetIcon },
+  { value: '13', label: 'Task categories tracked' },
+  { value: '5', label: 'Priority levels weighted' },
+  { value: '3', label: 'Freshness states monitored' },
 ];
 
 /**

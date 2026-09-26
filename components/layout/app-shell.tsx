@@ -23,7 +23,8 @@ export interface AppShellProps {
  *   - a permanent 56px icon rail, always collapsed, with the account menu at its
  *     foot
  *   - an expanded drawer that slides over the content when the header's menu
- *     button is pressed
+ *     button is pressed, carrying the account menu itself below 768px where the
+ *     rail is hidden
  *   - a sticky bottom bar below 768px, where a fixed rail would cost too much of
  *     a phone screen
  *
@@ -39,7 +40,7 @@ export function AppShell({ profile, counts, children }: AppShellProps) {
     <NavDrawerProvider>
       <div className="bg-background min-h-dvh">
         <NavRail profile={profile} />
-        <NavDrawer counts={counts} />
+        <NavDrawer counts={counts} profile={profile} />
 
         <div className="flex min-h-dvh flex-col md:pl-14">
           <main className="flex-1 pb-24 md:pb-0">{children}</main>

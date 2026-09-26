@@ -1,4 +1,5 @@
 import type {
+  MilestoneStatus,
   TaskCategory,
   TaskFreshness,
   TaskPriority,
@@ -8,7 +9,7 @@ import type {
 
 /**
  * Database shape for the Supabase client, mirroring
- * `supabase/migrations/01_init_schema.sql`.
+ * `supabase/migrations/01_init_schema.sql` and `04_milestones_and_vision.sql`.
  *
  * This is the snake_case wire format. `@/types/tracker` holds the camelCase
  * domain models the app works with, and `@/lib/supabase/mappers` converts
@@ -260,6 +261,88 @@ export interface Database {
           },
         ];
       };
+      company_statements: {
+        Row: {
+          id: string;
+          key_name: string;
+          title: string;
+          statement: string;
+          subtext: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          key_name: string;
+          title: string;
+          statement: string;
+          subtext?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          key_name?: string;
+          title?: string;
+          statement?: string;
+          subtext?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'company_statements_updated_by_fkey';
+            columns: ['updated_by'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+            isOneToOne: false;
+          },
+        ];
+      };
+      company_milestones: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          status: MilestoneStatus;
+          owner_id: string | null;
+          delivered_count: number;
+          target_count: number | null;
+          due_date: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          status?: MilestoneStatus;
+          owner_id?: string | null;
+          delivered_count?: number;
+          target_count?: number | null;
+          due_date?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          status?: MilestoneStatus;
+          owner_id?: string | null;
+          delivered_count?: number;
+          target_count?: number | null;
+          due_date?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'company_milestones_owner_id_fkey';
+            columns: ['owner_id'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+            isOneToOne: false;
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: {
@@ -274,6 +357,7 @@ export interface Database {
       task_priority: TaskPriority;
       task_status: TaskStatus;
       task_freshness: TaskFreshness;
+      milestone_status: MilestoneStatus;
     };
     CompositeTypes: Record<never, never>;
   };
@@ -286,3 +370,7 @@ export type DailyTaskLogRow =
   Database['public']['Tables']['daily_task_logs']['Row'];
 export type MonthlyPerformanceSnapshotRow =
   Database['public']['Tables']['monthly_performance_snapshots']['Row'];
+export type CompanyStatementRow =
+  Database['public']['Tables']['company_statements']['Row'];
+export type CompanyMilestoneRow =
+  Database['public']['Tables']['company_milestones']['Row'];

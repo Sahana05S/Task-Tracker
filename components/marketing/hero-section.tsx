@@ -1,42 +1,44 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { ArrowRightIcon, CheckIcon } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 
 import { TrackerMockup } from '@/components/marketing/tracker-mockup';
 import { Button } from '@/components/ui/button';
-import { CTA, HERO_ASSURANCES, HERO_STATS } from '@/lib/marketing/content';
+import { CTA, HERO, HERO_ASSURANCES, HERO_STATS } from '@/lib/marketing/content';
 
 /**
  * Hero.
  *
- * Two columns from `lg` up, stacked below. Kept on the flat sheet palette — white
- * surfaces, slate text, a single sky accent — rather than a gradient wash, so the
- * page looks like the product it is describing.
+ * Two columns from `lg` up, stacked below. Generous vertical rhythm and a white
+ * surface on the off-white field, so the section reads as the top of a document
+ * rather than a banner — the product is a data tool, and the page should look
+ * like one.
  *
- * Both buttons lead into `/login`: one to the sign-up pane, one to sign-in. The
- * quieter third link jumps to the capabilities section rather than opening a
- * sales conversation.
+ * Two actions only. The primary opens the sign-up pane; the secondary jumps to
+ * the architecture section, which is the honest counterpart to the "talk to
+ * sales" button a commercial page would put here. Returning members use Sign In
+ * in the header.
  */
 export function HeroSection() {
   return (
-    <section className="border-b border-slate-200 bg-white">
-      <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12">
+    <section className="border-border border-b bg-white">
+      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
           {/* Copy */}
-          <div className="flex flex-col gap-6">
-            <span className="badge-soft badge-neutral w-fit">
-              Multi-metric performance tracking
-            </span>
+          <div className="flex flex-col gap-7">
+            <span className="badge-soft badge-accent w-fit">{HERO.eyebrow}</span>
 
-            <div className="flex flex-col gap-4">
-              <h1 className="text-3xl leading-tight font-semibold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-                Know what your team actually delivered, not just what they were
-                busy with.
+            <div className="flex flex-col gap-5">
+              {/*
+                Sized to break onto three lines at the desktop width. The ampersand
+                is the hinge of the sentence — capacity and velocity are the two
+                things the product measures — so the line is allowed to be long.
+              */}
+              <h1 className="text-foreground text-4xl leading-[1.08] font-semibold sm:text-5xl lg:text-[3.25rem]">
+                {HERO.headline}
               </h1>
-              <p className="max-w-xl text-base text-slate-600">
-                TaskPulse weights every task, records the hours against it, and
-                measures each member against the team median. Progress becomes a
-                figure you can defend in a review, not an impression.
+              <p className="text-muted-foreground max-w-xl text-base leading-relaxed sm:text-lg">
+                {HERO.subtext}
               </p>
             </div>
 
@@ -48,22 +50,20 @@ export function HeroSection() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href={CTA.signIn.href}>{CTA.signIn.label}</Link>
+                <a href={CTA.systemOverview.href}>{CTA.systemOverview.label}</a>
               </Button>
-              <a
-                href={CTA.capabilities.href}
-                className="rounded-md px-1 text-sm font-medium text-sky-700 underline-offset-4 transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none"
-              >
-                {CTA.capabilities.label}
-              </a>
             </div>
 
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
+            <ul className="text-muted-foreground border-border flex flex-col gap-2 border-t pt-6 text-sm sm:flex-row sm:flex-wrap sm:gap-x-6">
               {HERO_ASSURANCES.map((point) => (
-                <li key={point} className="flex items-center gap-1.5">
-                  <CheckIcon
-                    className="size-4 shrink-0 text-emerald-600"
+                <li key={point} className="flex items-center gap-2">
+                  {/*
+                    A dot, not a tick. A checklist implies features being ticked
+                    off a comparison table, which is the shape of a pricing page.
+                  */}
+                  <span
                     aria-hidden="true"
+                    className="bg-primary size-1.5 shrink-0 rounded-full"
                   />
                   {point}
                 </li>
@@ -72,25 +72,16 @@ export function HeroSection() {
           </div>
 
           {/* Product preview */}
-          <div className="lg:pl-4">
-            <TrackerMockup />
-          </div>
+          <TrackerMockup />
         </div>
 
         {/* Metric strip */}
-        <dl className="mt-12 grid grid-cols-1 gap-4 border-t border-slate-200 pt-8 sm:grid-cols-3">
-          {HERO_STATS.map(({ value, label, icon: Icon }) => (
-            <div key={label} className="flex items-center gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
-                <Icon className="size-4" aria-hidden="true" />
-              </span>
-              <div className="flex flex-col">
-                <dt className="sr-only">{label}</dt>
-                <dd className="text-xl font-semibold text-slate-900 [font-variant-numeric:tabular-nums]">
-                  {value}
-                </dd>
-                <dd className="text-sm text-slate-500">{label}</dd>
-              </div>
+        <dl className="border-border mt-16 grid grid-cols-1 gap-8 border-t pt-10 sm:grid-cols-3">
+          {HERO_STATS.map(({ value, label }) => (
+            <div key={label} className="flex flex-col gap-1">
+              <dt className="sr-only">{label}</dt>
+              <dd className="stat-figure text-foreground text-3xl">{value}</dd>
+              <dd className="text-muted-foreground text-sm">{label}</dd>
             </div>
           ))}
         </dl>

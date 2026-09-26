@@ -14,71 +14,69 @@ import type { UserRole } from '@/types/tracker';
 /**
  * System architecture and governance.
  *
- * Occupies the slot a pricing matrix would normally take, and answers the
- * question that matters for this kind of system instead: who can do what, where
- * that is enforced, and how the numbers are derived.
+ * Occupies the slot a pricing matrix would normally take, and answers the question
+ * that matters for this kind of system instead: who can do what, where that is
+ * enforced, and how the numbers are derived.
  *
- * Three parts, in descending abstraction: the capability cards, the permission
- * matrix as actually enforced, and the arithmetic written out in full. The matrix
- * and the formula table are deliberately dense — they are reference material, and
- * the sheet aesthetic in `responsive-ui-design.md` is built for exactly that.
+ * Three cards — Row-Level Security, Role Governance, Auditability — then the
+ * permission matrix as actually enforced, then the arithmetic written out in full.
+ * The two tables are deliberately dense: they are reference material, and they
+ * reuse the same `sheet-grid` classes as the real workspace so the page cannot
+ * advertise a look the product does not have.
  *
  * A Server Component: nothing here is interactive.
  */
-export function CapabilitiesGrid() {
+export function SystemCapabilities() {
   return (
     <section
       id="capabilities"
       aria-labelledby="capabilities-heading"
-      className="border-b border-slate-200 bg-slate-50"
+      className="border-border bg-background border-b"
     >
-      <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-        <div className="flex max-w-2xl flex-col gap-3">
-          <span className="text-xs font-semibold tracking-wide text-sky-700 uppercase">
-            System capabilities
-          </span>
+      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
+        <div className="flex max-w-2xl flex-col gap-4">
+          <span className="eyebrow text-primary">System capabilities</span>
           <h2
             id="capabilities-heading"
-            className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
+            className="text-foreground text-3xl font-semibold sm:text-4xl"
           >
             Governance enforced in the database, not in the interface
           </h2>
-          <p className="text-base text-slate-600">
-            Access control that only exists in the client is a suggestion. These
-            are the guarantees TaskPulse makes at the data layer, the roles that
-            sit on top of them, and the arithmetic they protect.
+          <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
+            Access control that only exists in the client is a suggestion. These are
+            the guarantees TaskPulse makes at the data layer, the roles that sit on
+            top of them, and the arithmetic they protect.
           </p>
         </div>
 
         {/* Capability cards */}
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
+        <div className="mt-10 grid gap-4 lg:grid-cols-3">
           {GOVERNANCE_CAPABILITIES.map(
             ({ id, title, summary, detail, specifics, icon: Icon }) => (
-              <article
-                key={id}
-                className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-slate-900 text-slate-50">
+              <article key={id} className="soft-card flex flex-col gap-5 p-6">
+                <span className="bg-primary-subtle text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
 
-                <div className="flex flex-col gap-1.5">
-                  <h3 className="text-base font-semibold text-slate-900">
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-foreground text-lg font-semibold tracking-tight">
                     {title}
                   </h3>
-                  <p className="text-sm font-medium text-slate-700">{summary}</p>
-                  <p className="text-sm text-slate-600">{detail}</p>
+                  <p className="text-foreground text-sm font-medium">{summary}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {detail}
+                  </p>
                 </div>
 
-                <ul className="mt-auto flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <ul className="border-border mt-auto flex flex-col gap-2 border-t pt-4">
                   {specifics.map((item) => (
                     <li
                       key={item}
-                      className="flex items-start gap-2 text-xs text-slate-600"
+                      className="text-muted-foreground flex items-start gap-2 text-xs"
                     >
-                      <CheckIcon
-                        className="mt-0.5 size-3.5 shrink-0 text-emerald-600"
+                      <span
                         aria-hidden="true"
+                        className="bg-primary mt-1.5 size-1 shrink-0 rounded-full"
                       />
                       {item}
                     </li>
@@ -89,20 +87,13 @@ export function CapabilitiesGrid() {
           )}
         </div>
 
-        {/* Platform facts */}
-        <dl className="mt-4 grid grid-cols-2 gap-4 rounded-lg border border-slate-200 bg-white px-5 py-4 lg:grid-cols-4">
-          {PLATFORM_FACTS.map(({ value, label, icon: Icon }) => (
-            <div key={label} className="flex items-center gap-3">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
-                <Icon className="size-4" aria-hidden="true" />
-              </span>
-              <div className="flex min-w-0 flex-col">
-                <dt className="sr-only">{label}</dt>
-                <dd className="text-lg font-semibold text-slate-900 [font-variant-numeric:tabular-nums]">
-                  {value}
-                </dd>
-                <dd className="text-xs text-slate-500">{label}</dd>
-              </div>
+        {/* Platform facts. Bare figures; the label does the naming. */}
+        <dl className="soft-card mt-4 grid grid-cols-2 gap-6 px-6 py-5 lg:grid-cols-4">
+          {PLATFORM_FACTS.map(({ value, label }) => (
+            <div key={label} className="flex min-w-0 flex-col gap-0.5">
+              <dt className="sr-only">{label}</dt>
+              <dd className="stat-figure text-foreground">{value}</dd>
+              <dd className="text-muted-foreground text-xs">{label}</dd>
             </div>
           ))}
         </dl>
@@ -124,27 +115,27 @@ export function CapabilitiesGrid() {
 /**
  * Permission matrix.
  *
- * Column order comes from `USER_ROLES` and the headings from `ROLE_LABELS`, so
- * the table is generated from the same source the application authorises against
+ * Column order comes from `USER_ROLES` and the headings from `ROLE_LABELS`, so the
+ * table is generated from the same source the application authorises against
  * rather than transcribed alongside it.
  *
  * A granted cell carries a tick plus visually hidden text; a withheld cell a dash
- * plus its own. Colour and glyph alone would leave the table unreadable to a
- * screen reader.
+ * plus its own. Colour and glyph alone would leave the table unreadable to a screen
+ * reader.
  */
 function RoleGovernanceMatrix() {
   return (
     <div
       id="role-governance"
-      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4"
+      className="soft-card-clip flex flex-col gap-3 p-4"
     >
       <header className="flex flex-col gap-0.5">
-        <h3 className="text-sm font-semibold text-slate-900">
+        <h3 className="text-foreground text-sm font-semibold">
           Role governance matrix
         </h3>
-        <p className="text-xs text-slate-500">
-          Enforced in the Server Action and again by the row-level security
-          policy. Anything not granted is refused.
+        <p className="text-muted-foreground text-xs">
+          Enforced in the Server Action and again by the row-level security policy.
+          Anything not granted is refused.
         </p>
       </header>
 
@@ -175,7 +166,7 @@ function RoleGovernanceMatrix() {
               <tr key={permission.id}>
                 <th
                   scope="row"
-                  className="sheet-grid-frozen text-left font-normal text-slate-700"
+                  className="sheet-grid-frozen text-muted-foreground text-left font-normal"
                 >
                   {permission.capability}
                 </th>
@@ -209,10 +200,10 @@ function PermissionCell({
     <td className="text-center">
       <span
         className={cn(
-          'inline-flex size-5 items-center justify-center rounded-full border',
+          'inline-flex size-5 items-center justify-center rounded border',
           granted
             ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            : 'border-slate-200 bg-slate-50 text-slate-300',
+            : 'border-border bg-muted text-slate-300',
         )}
       >
         {granted ? (
@@ -241,29 +232,25 @@ function PermissionCell({
  */
 function PerformanceMath() {
   return (
-    <div
-      id="performance-math"
-      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4"
-    >
+    <div id="performance-math" className="soft-card flex flex-col gap-3 p-4">
       <header className="flex flex-col gap-0.5">
-        <h3 className="text-sm font-semibold text-slate-900">
-          Performance math
-        </h3>
-        <p className="text-xs text-slate-500">
+        <h3 className="text-foreground text-sm font-semibold">Performance math</h3>
+        <p className="text-muted-foreground text-xs">
           Every figure on the dashboard reduces to one of these.
         </p>
       </header>
 
-      <dl className="flex flex-col divide-y divide-slate-100">
+      <dl className="divide-border flex flex-col divide-y">
         {PERFORMANCE_FORMULAS.map(({ id, name, expression, note }) => (
-          <div key={id} className="flex flex-col gap-1 py-2.5 first:pt-0">
-            <dt className="text-xs font-medium text-slate-900">{name}</dt>
+          <div key={id} className="flex flex-col gap-1.5 py-3 first:pt-0">
+            <dt className="text-foreground text-xs font-medium">{name}</dt>
             <dd>
-              <code className="block rounded border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-800">
+              {/* Monospaced, like every other figure in the product. */}
+              <code className="border-border text-foreground block rounded border bg-[#fbfcfd] px-2 py-1 font-mono text-[11px]">
                 {expression}
               </code>
             </dd>
-            <dd className="text-xs text-slate-500">{note}</dd>
+            <dd className="text-muted-foreground text-xs">{note}</dd>
           </div>
         ))}
       </dl>

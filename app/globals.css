@@ -165,8 +165,48 @@
 }
 
 @layer base {
+  /*
+    One family for the whole document. Declared on both html and body: html so
+    that content Radix portals outside the React tree still inherits it, body so
+    that a stray utility on <html> cannot strand the page on a UA default.
+  */
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
+  }
+
+  /*
+    Headings take the same family and a tighter track. Inter's default spacing is
+    tuned for body copy; at heading sizes it reads loose, and a dense product page
+    wants headings that feel set rather than typed.
+  */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-sans tracking-tight;
+  }
+
+  /*
+    Form controls and buttons do not inherit typography from the document — the
+    UA stylesheet gives them their own font. Tailwind's preflight resets that, but
+    declaring it here means a button, a badge inside one, or a native select
+    cannot quietly fall back to Arial if preflight is ever trimmed.
+  */
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
   }
 
   /* Hours, percentages and progress must align down a column. */

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { CapabilitiesGrid } from '@/components/marketing/capabilities-grid';
 import { FeatureBento } from '@/components/marketing/feature-bento';
 import { HeroSection } from '@/components/marketing/hero-section';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { SiteHeader } from '@/components/marketing/site-header';
+import { SystemCapabilities } from '@/components/marketing/system-capabilities';
 import { getAuthState } from '@/lib/auth/profile';
 
 export const metadata: Metadata = {
@@ -34,13 +34,13 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-slate-50">
+    <div className="bg-background flex min-h-dvh flex-col">
       <SiteHeader />
 
       {/* Skip link, since the header carries several links before the content. */}
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-slate-900 focus:px-3 focus:py-2 focus:text-sm focus:text-slate-50"
+        className="focus:bg-primary focus:text-primary-foreground sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:px-3 focus:py-2 focus:text-sm"
       >
         Skip to content
       </a>
@@ -50,7 +50,7 @@ export default async function HomePage() {
         <FeatureBento />
         {/* Occupies the slot a pricing matrix would take: security model, role
             governance and the performance arithmetic. */}
-        <CapabilitiesGrid />
+        <SystemCapabilities />
       </main>
 
       <SiteFooter />

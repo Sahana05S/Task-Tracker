@@ -5,18 +5,23 @@ import { usePathname } from 'next/navigation';
 
 import { useNavDrawer } from '@/components/layout/nav-drawer-context';
 import { isNavItemActive, NAV_ITEMS } from '@/components/layout/nav-items';
+import { UserMenu } from '@/components/layout/user-menu';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
 import type { NavCounts } from '@/lib/layout/nav-counts';
 import { cn } from '@/lib/utils';
+import type { User } from '@/types/tracker';
 
 export interface NavDrawerProps {
   counts: NavCounts;
+  /** Needed for the account row shown where the rail is hidden. */
+  profile: User;
 }
 
 /**
@@ -28,8 +33,13 @@ export interface NavDrawerProps {
  *
  * Counts come from the guarded layout as `head: true` exact counts, so the badges
  * cost a tally rather than a payload.
+ *
+ * The account row in the footer is `md:hidden` on purpose. The rail carries the
+ * account menu from 768px up; below that the rail is hidden, and without this row
+ * a phone would have no route to Settings or Sign Out at all. Gating it keeps
+ * exactly one access point per viewport rather than two on the desktop.
  */
-export function NavDrawer({ counts }: NavDrawerProps) {
+export function NavDrawer({ counts, profile }: NavDrawerProps) {
   const pathname = usePathname();
   const { open, setOpen } = useNavDrawer();
 
@@ -111,6 +121,10 @@ export function NavDrawer({ counts }: NavDrawerProps) {
             );
           })}
         </nav>
+
+        <SheetFooter className="border-border border-t px-2 py-2 md:hidden">
+          <UserMenu profile={profile} variant="row" />
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );
