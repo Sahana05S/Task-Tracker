@@ -19,10 +19,18 @@ const INITIAL_STATE: AuthActionState | null = null;
 export interface AuthFormProps {
   /** Destination after a successful sign-in. Validated again server-side. */
   redirectTo: string;
+  /**
+   * Which pane opens first, resolved from the `?tab=` parameter so a landing
+   * page call to action lands on the right form.
+   */
+  initialMode?: AuthMode;
 }
 
-export function AuthForm({ redirectTo }: AuthFormProps) {
-  const [mode, setMode] = React.useState<AuthMode>('login');
+export function AuthForm({ redirectTo, initialMode = 'login' }: AuthFormProps) {
+  // Initial state only. Switching panes afterwards is a local concern and does
+  // not rewrite the URL, so a refresh returns to whichever pane the link asked
+  // for rather than to wherever the visitor last clicked.
+  const [mode, setMode] = React.useState<AuthMode>(initialMode);
 
   const [loginState, loginAction, loginPending] = React.useActionState(
     login,

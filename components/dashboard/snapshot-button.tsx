@@ -7,6 +7,7 @@ import {
   LoaderCircleIcon,
   LockIcon,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { freezeMonthlySnapshot } from '@/app/dashboard/actions';
 import { Button } from '@/components/ui/button';
@@ -48,15 +49,20 @@ export function SnapshotButton({
 
       if (result.success && result.data) {
         const { memberCount, starPerformer } = result.data;
-        setMessage(
-          `Stored ${memberCount} member ${memberCount === 1 ? 'row' : 'rows'} for ${result.data.periodLabel}${
-            starPerformer ? `. Star performer: ${starPerformer}.` : '.'
-          }`,
-        );
+        const summary = `Stored ${memberCount} member ${
+          memberCount === 1 ? 'row' : 'rows'
+        } for ${result.data.periodLabel}${
+          starPerformer ? `. Star performer: ${starPerformer}.` : '.'
+        }`;
+
+        setMessage(summary);
         setIsError(false);
+        toast.success('Snapshot frozen', { description: summary });
       } else {
-        setMessage(result.error ?? 'Could not store the snapshot.');
+        const reason = result.error ?? 'Could not store the snapshot.';
+        setMessage(reason);
         setIsError(true);
+        toast.error('Snapshot not stored', { description: reason });
       }
     });
   };

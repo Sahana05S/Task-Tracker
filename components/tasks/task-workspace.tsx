@@ -7,6 +7,7 @@ import {
   PlusIcon,
   SearchXIcon,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { deleteTask } from '@/app/tasks/actions';
 import { TaskCardList } from '@/components/tasks/task-card-list';
@@ -254,12 +255,20 @@ function DeleteConfirmation({
 
   const confirm = () => {
     if (!task) return;
+    const { taskTag } = task;
 
     startTransition(async () => {
       const result = await deleteTask(task.id);
       if (result.success) {
         onClose();
+        // Reported by toast because the drawer that asked the question is gone by
+        // the time the answer arrives.
+        toast.success(`${taskTag} deleted`, {
+          description: 'The task and its effort logs have been removed.',
+        });
       } else {
+        // Kept inline: the drawer is still open and the message belongs next to
+        // the action that was refused.
         setError(result.error ?? 'Could not delete the task.');
       }
     });

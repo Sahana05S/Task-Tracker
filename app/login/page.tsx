@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { AlertTriangleIcon, GaugeIcon } from 'lucide-react';
+import { AlertTriangleIcon, ArrowLeftIcon, GaugeIcon } from 'lucide-react';
 
 import { AuthForm } from '@/app/login/auth-form';
 import { logout } from '@/app/auth/actions';
@@ -13,12 +14,24 @@ export const metadata: Metadata = {
 };
 
 interface LoginPageProps {
-  searchParams: Promise<{ redirectTo?: string }>;
+  searchParams: Promise<{ redirectTo?: string; tab?: string }>;
+}
+
+/**
+ * Resolves the `?tab=` parameter to a pane.
+ *
+ * `signup` and `signin` are the values the landing page links use. Anything else,
+ * including an absent parameter, falls back to sign-in — the right default for a
+ * returning member and for a visitor arriving from the route guard.
+ */
+function resolveInitialMode(tab: string | undefined): 'login' | 'signup' {
+  return tab === 'signup' ? 'signup' : 'login';
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { redirectTo } = await searchParams;
+  const { redirectTo, tab } = await searchParams;
   const destination = safeRedirectPath(redirectTo);
+  const initialMode = resolveInitialMode(tab);
   const { authUserId, profile } = await getAuthState();
 
   // Already signed in with a usable profile: nothing to do here.
@@ -49,9 +62,20 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           {isOrphaned ? (
             <OrphanedAccountNotice />
           ) : (
-            <AuthForm redirectTo={destination} />
+            <AuthForm redirectTo={destination} initialMode={initialMode} />
           )}
         </div>
+
+        {/* Route back out, since this page is now reachable from the public site. */}
+        <p className="mt-4 text-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 rounded-md text-xs text-slate-500 transition-colors hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none"
+          >
+            <ArrowLeftIcon className="size-3" aria-hidden="true" />
+            Back to taskpulse.com
+          </Link>
+        </p>
       </div>
     </main>
   );

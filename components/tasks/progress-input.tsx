@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { AlertCircleIcon, LoaderCircleIcon } from 'lucide-react';
+import { LoaderCircleIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { updateTaskProgress } from '@/app/tasks/actions';
 import { toProgressValue } from '@/lib/tracker/format';
@@ -29,6 +30,10 @@ function toFieldValue(progress: number | null): string {
  *
  * Only `progress_percentage` is sent. `scaled_progress` is a generated column,
  * so the recomputed value arrives with the next revalidation.
+ *
+ * Rejections are reported by toast, since a grid cell cannot hold a sentence. The
+ * field keeps `aria-invalid` so the invalid state persists visually and for
+ * assistive technology after the toast has gone.
  */
 export function ProgressInput({
   taskId,
@@ -43,8 +48,13 @@ export function ProgressInput({
   const [draft, setDraft] = React.useState<string>(
     toFieldValue(progressPercentage),
   );
-  const [error, setError] = React.useState<string | null>(null);
+  const [invalid, setInvalid] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
+
+  const reject = (message: string) => {
+    setInvalid(true);
+    toast.error(`${taskTag} progress not saved`, { description: message });
+  };
 
   React.useEffect(() => {
     setCommitted(progressPercentage);
@@ -83,7 +93,7 @@ export function ProgressInput({
     const parsed = Number(trimmed);
     if (!Number.isFinite(parsed)) {
       setDraft(toFieldValue(committed));
-      setError('Progress must be a number.');
+      reject('Progress must be a number.');
       return;
     }
 
@@ -91,7 +101,7 @@ export function ProgressInput({
 
     if (rounded < 0 || rounded > 100) {
       setDraft(toFieldValue(committed));
-      setError('Progress must be between 0 and 100.');
+      reject('Progress must be between 0 and 100.');
       return;
     }
     if (rounded === committed) {
@@ -102,14 +112,14 @@ export function ProgressInput({
     const previous = committed;
     setCommitted(rounded);
     setDraft(String(rounded));
-    setError(null);
+    setInvalid(false);
 
     startTransition(async () => {
       const result = await updateTaskProgress(taskId, rounded);
       if (!result.success) {
         setCommitted(previous);
         setDraft(toFieldValue(previous));
-        setError(result.error ?? 'Could not update progress.');
+        reject(result.error ?? 'Could not update progress.');
       }
     });
   };
@@ -123,7 +133,7 @@ export function ProgressInput({
     if (event.key === 'Escape') {
       event.preventDefault();
       setDraft(toFieldValue(committed));
-      setError(null);
+      setInvalid(false);
     }
   };
 
@@ -142,7 +152,7 @@ export function ProgressInput({
           onBlur={commit}
           onKeyDown={handleKeyDown}
           aria-label={`Progress percentage for ${taskTag}`}
-          aria-invalid={error !== null}
+          aria-invalid={invalid}
           className={cn(
             'w-14 rounded-sm border border-transparent bg-transparent px-1 py-0.5 text-right text-xs text-slate-900 [font-variant-numeric:tabular-nums]',
             'hover:border-slate-200 hover:bg-white',
@@ -150,7 +160,7 @@ export function ProgressInput({
             'disabled:text-slate-400',
             // Spin buttons steal width the dense grid cannot spare.
             '[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
-            error !== null && 'border-rose-300',
+            invalid && 'border-rose-300',
           )}
         />
         <span className="text-xs text-slate-400" aria-hidden="true">
@@ -162,15 +172,6 @@ export function ProgressInput({
             className="size-3.5 shrink-0 animate-spin text-slate-400"
             aria-label="Saving"
           />
-        ) : null}
-
-        {error && !pending ? (
-          <span title={error} role="alert">
-            <AlertCircleIcon
-              className="size-3.5 shrink-0 text-rose-600"
-              aria-label={error}
-            />
-          </span>
         ) : null}
       </div>
 

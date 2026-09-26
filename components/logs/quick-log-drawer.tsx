@@ -8,6 +8,7 @@ import {
   PlusIcon,
   XIcon,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import {
   createTaskLog,
@@ -122,8 +123,15 @@ export function QuickLogDrawer({
 
   const succeeded = state?.success === true;
   React.useEffect(() => {
-    if (succeeded && open) onOpenChange(false);
-  }, [succeeded, open, onOpenChange]);
+    if (succeeded && open) {
+      onOpenChange(false);
+      // The drawer closes on success, so the confirmation has to live outside it.
+      toast.success(isEdit ? 'Log entry updated' : 'Hours logged', {
+        description:
+          'Task progress and productivity have been recalculated.',
+      });
+    }
+  }, [succeeded, open, onOpenChange, isEdit]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

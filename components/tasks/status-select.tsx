@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { AlertCircleIcon, LoaderCircleIcon } from 'lucide-react';
+import { LoaderCircleIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { updateTaskStatus } from '@/app/tasks/actions';
 import { StatusBadge } from '@/components/tracker/tracker-badges';
@@ -31,6 +32,10 @@ export interface StatusSelectProps {
  * changes on click, and rolls back to the previous value if the write is
  * refused. That covers the "instant feedback" requirement in tech-stack.md
  * without pretending a rejected change succeeded.
+ *
+ * Failures are reported by toast rather than inline. A grid cell has no room for
+ * a sentence, and the visible rollback of the badge is already the persistent
+ * signal that nothing was saved — the toast supplies the reason.
  */
 export function StatusSelect({
   taskId,
@@ -40,7 +45,6 @@ export function StatusSelect({
   className,
 }: StatusSelectProps) {
   const [value, setValue] = React.useState<TaskStatus>(status);
-  const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   // Re-sync when the server sends a new value, so a revalidation or an edit made
@@ -59,13 +63,14 @@ export function StatusSelect({
 
     const previous = value;
     setValue(candidate);
-    setError(null);
 
     startTransition(async () => {
       const result = await updateTaskStatus(taskId, candidate);
       if (!result.success) {
         setValue(previous);
-        setError(result.error ?? 'Could not update status.');
+        toast.error(`${taskTag} status not saved`, {
+          description: result.error ?? 'Could not update status.',
+        });
       }
     });
   };
@@ -94,15 +99,6 @@ export function StatusSelect({
           className="size-3.5 shrink-0 animate-spin text-slate-400"
           aria-label="Saving"
         />
-      ) : null}
-
-      {error && !pending ? (
-        <span title={error} role="alert">
-          <AlertCircleIcon
-            className="size-3.5 shrink-0 text-rose-600"
-            aria-label={error}
-          />
-        </span>
       ) : null}
     </div>
   );

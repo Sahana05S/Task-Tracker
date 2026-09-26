@@ -10,6 +10,7 @@ import {
   Trash2Icon,
   TrendingUpIcon,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { deleteTaskLog } from '@/app/logs/actions';
 import { QuickLogDrawer } from '@/components/logs/quick-log-drawer';
@@ -290,11 +291,16 @@ function DeleteLogConfirmation({
 
   const confirm = () => {
     if (!log) return;
+    const hours = formatNumeric(log.hoursWorked);
+    const tag = task?.taskTag ?? 'the task';
 
     startTransition(async () => {
       const result = await deleteTaskLog(log.id);
       if (result.success) {
         onClose();
+        toast.success('Log entry deleted', {
+          description: `${hours} hours removed from ${tag}, and its progress withdrawn.`,
+        });
       } else {
         setError(result.error ?? 'Could not delete the log.');
       }

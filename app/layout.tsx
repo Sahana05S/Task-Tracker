@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+
+import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
 const inter = Inter({
@@ -22,6 +24,9 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">
         {children}
+        {/* Mounted once at the root so Server Action outcomes can be reported
+            from anywhere, including the public pages. */}
+        <Toaster />
       </body>
     </html>
   );
