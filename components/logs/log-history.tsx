@@ -3,18 +3,13 @@
 import * as React from 'react';
 import {
   AlertCircleIcon,
-  ClockIcon,
   ExternalLinkIcon,
   LoaderCircleIcon,
-  PencilIcon,
-  Trash2Icon,
-  TrendingUpIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { deleteTaskLog } from '@/app/logs/actions';
 import { QuickLogDrawer } from '@/components/logs/quick-log-drawer';
-import { QuickLogTrigger } from '@/components/logs/quick-log-trigger';
 import { CategoryBadge } from '@/components/tracker/tracker-badges';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,7 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { groupLogsByDate, sumHours } from '@/lib/logs/metrics';
+import { groupLogsByDate } from '@/lib/logs/metrics';
 import { formatDate, formatNumeric } from '@/lib/tracker/format';
 import { cn } from '@/lib/utils';
 import type { DailyTaskLog, Task } from '@/types/tracker';
@@ -56,7 +51,6 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
   }, [tasks]);
 
   const groups = React.useMemo(() => groupLogsByDate(logs), [logs]);
-  const totalHours = React.useMemo(() => sumHours(logs), [logs]);
 
   // Re-read from props so an open editor reflects a concurrent revalidation
   // rather than the snapshot captured on click.
@@ -66,55 +60,40 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        <div className="flex flex-col gap-0.5">
-          <h2 className="text-foreground text-2xl font-bold tracking-tight">
-            My effort log
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            {logs.length === 0
-              ? 'No entries yet.'
-              : `${logs.length} ${logs.length === 1 ? 'entry' : 'entries'} · ${formatNumeric(totalHours)} hours across ${groups.length} ${groups.length === 1 ? 'day' : 'days'}`}
-          </p>
-        </div>
-
-        <QuickLogTrigger variant="button" label="Log hours" />
-      </div>
-
+      {/* Title, totals and the Log Hours action live in the page header. */}
       {groups.length === 0 ? (
-        <div className="soft-card flex flex-col items-center gap-2 px-6 py-14 text-center">
-          <ClockIcon
-            className="text-muted-foreground size-5"
-            aria-hidden="true"
-          />
+        <div className="soft-card px-4 py-6">
           <p className="text-foreground text-sm font-semibold">
             No effort logged yet
           </p>
-          <p className="max-w-sm text-sm text-slate-500">
-            Record hours against a task and the progress and productivity
-            figures will follow automatically.
+          <p className="text-muted-foreground mt-1 max-w-xl text-xs">
+            Record hours against a task and the progress and productivity figures
+            will follow automatically.
           </p>
         </div>
       ) : (
         <ol className="flex flex-col gap-4">
           {groups.map((group) => (
             <li key={group.logDate} className="flex flex-col gap-2">
-              {/* Date heading, sticky so the day stays visible while scrolling
-                  a long bucket. Offset by the workspace header height. */}
-              <div className="bg-background sticky top-(--spacing-header) z-10 flex items-center gap-3 py-1.5">
+              {/* Date heading, sticky so the day stays visible while scrolling a
+                  long bucket, offset by the header's height. Only from `sm` up:
+                  below that the header wraps to two rows and no fixed offset is
+                  correct, and a heading parked behind the header is worse than one
+                  that simply scrolls away. */}
+              <div className="bg-background z-10 flex items-center gap-3 py-1.5 sm:sticky sm:top-(--spacing-header)">
                 <h3 className="text-foreground text-sm font-bold">
                   {formatDate(group.logDate)}
                 </h3>
-                <span className="badge-soft badge-neutral [font-variant-numeric:tabular-nums]">
+                <span className="text-muted-foreground font-mono text-[11px] font-semibold tabular">
                   {formatNumeric(group.totalHours)} h
                 </span>
                 {group.totalProgressDelta !== 0 ? (
                   <span
                     className={cn(
-                      'badge-soft [font-variant-numeric:tabular-nums]',
+                      'font-mono text-[11px] font-semibold tabular',
                       group.totalProgressDelta > 0
-                        ? 'badge-status-done'
-                        : 'badge-status-discarded',
+                        ? 'text-emerald-700'
+                        : 'text-rose-700',
                     )}
                   >
                     {group.totalProgressDelta > 0 ? '+' : ''}
@@ -180,19 +159,19 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
         <span className="task-tag">{task?.taskTag ?? 'Unknown task'}</span>
         {task ? <CategoryBadge category={task.category} /> : null}
 
-        <span className="ml-auto flex items-center gap-1.5">
-          <span className="badge-soft badge-neutral [font-variant-numeric:tabular-nums]">
-            <ClockIcon className="size-3" aria-hidden="true" />
+        {/* Figures, not chips with glyphs: the unit suffix already says what the
+            number is, so an icon beside it is redundant. */}
+        <span className="ml-auto flex items-center gap-2.5 font-mono text-[11px] tabular">
+          <span className="text-foreground font-semibold">
             {formatNumeric(log.hoursWorked)} h
           </span>
           {delta !== 0 ? (
             <span
               className={cn(
-                'badge-soft [font-variant-numeric:tabular-nums]',
-                delta > 0 ? 'badge-status-done' : 'badge-status-discarded',
+                'font-semibold',
+                delta > 0 ? 'text-emerald-700' : 'text-rose-700',
               )}
             >
-              <TrendingUpIcon className="size-3" aria-hidden="true" />
               {delta > 0 ? '+' : ''}
               {delta}%
             </span>
@@ -200,7 +179,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
         </span>
       </div>
 
-      <p className="text-sm font-medium text-slate-900">
+      <p className="text-foreground text-[13px] font-medium">
         {task?.title ?? 'This task has been removed.'}
       </p>
 
@@ -231,15 +210,16 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
         </ul>
       ) : null}
 
-      <div className="border-border flex items-center gap-1 border-t pt-2.5">
+      {/* Text-only controls. "Edit" and "Delete" name themselves; a pencil and a
+          bin beside them are decoration. */}
+      <div className="border-border flex items-center gap-1 border-t pt-2">
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={onEdit}
-          className="h-7"
+          className="h-7 px-2"
         >
-          <PencilIcon aria-hidden="true" />
           Edit
         </Button>
         <Button
@@ -247,9 +227,8 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
           variant="ghost"
           size="sm"
           onClick={onRequestDelete}
-          className="h-7 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+          className="h-7 px-2 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
         >
-          <Trash2Icon aria-hidden="true" />
           Delete
         </Button>
       </div>

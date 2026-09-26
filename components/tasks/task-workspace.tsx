@@ -1,12 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import {
-  AlertCircleIcon,
-  LoaderCircleIcon,
-  PlusIcon,
-  SearchXIcon,
-} from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertCircleIcon, LoaderCircleIcon, SearchXIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { deleteTask } from '@/app/tasks/actions';
@@ -63,12 +59,30 @@ export function TaskWorkspace({
   effortEntries,
   currentUser,
 }: TaskWorkspaceProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [filters, setFilters] = React.useState<TaskFilterState>(EMPTY_FILTERS);
   const [sort, setSort] = React.useState<TaskSortState>(DEFAULT_SORT);
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | null>(null);
   const [pendingDelete, setPendingDelete] = React.useState<Task | null>(null);
+
+  /**
+   * `?new=1` opens the create form.
+   *
+   * The Add Task control lives in the page header, which is a sibling of this
+   * component, so the request arrives through the URL rather than through shared
+   * state. The parameter is cleared on open so a refresh does not reopen the form.
+   */
+  const wantsNew = searchParams.get('new') === '1';
+  React.useEffect(() => {
+    if (!wantsNew) return;
+    setEditingTask(null);
+    setDialogOpen(true);
+    router.replace('/tasks', { scroll: false });
+  }, [wantsNew, router]);
 
   const canManage = (TASK_MANAGER_ROLES as readonly UserRole[]).includes(
     currentUser.role,
@@ -91,11 +105,6 @@ export function TaskWorkspace({
     [tasks, filters, sort, memberNames, effortByTask],
   );
 
-  const openCreate = () => {
-    setEditingTask(null);
-    setDialogOpen(true);
-  };
-
   const openEdit = (task: Task) => {
     setEditingTask(task);
     setDialogOpen(true);
@@ -103,26 +112,8 @@ export function TaskWorkspace({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3 pt-2">
-        <div className="flex flex-col gap-0.5">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            Task Tracker
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            {canManage
-              ? 'Full edit rights on every task.'
-              : 'You can update status and progress on tasks assigned to you.'}
-          </p>
-        </div>
-
-        {canManage ? (
-          <Button type="button" onClick={openCreate}>
-            <PlusIcon aria-hidden="true" />
-            New task
-          </Button>
-        ) : null}
-      </div>
-
+      {/* Title and the Add Task control live in the page header, so this
+          component starts straight into the filter bar. */}
       <TaskFilters
         filters={filters}
         onChange={setFilters}

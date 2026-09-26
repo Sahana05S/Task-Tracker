@@ -211,7 +211,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
       <dt>{label}</dt>
-      <dd className="text-foreground font-semibold [font-variant-numeric:tabular-nums]">
+      <dd className="text-foreground font-semibold tabular">
         {value}
       </dd>
     </div>

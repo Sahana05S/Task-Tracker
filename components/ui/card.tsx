@@ -7,8 +7,9 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card"
       className={cn(
-        // Soft-card surface: white, generously rounded, lifted, unbordered.
-        'text-card-foreground flex flex-col gap-4 rounded-2xl bg-card py-5 shadow-soft',
+        // Matches `.soft-card`: bordered rather than shadowed. Elevation is
+        // reserved for surfaces that genuinely float above the page.
+        'text-card-foreground border-border flex flex-col gap-3 rounded-lg border bg-card py-4',
         className,
       )}
       {...props}

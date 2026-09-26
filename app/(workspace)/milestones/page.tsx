@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 
+import { WorkspaceHeader } from '@/components/layout/workspace-header';
 import { MilestoneChecklist } from '@/components/milestones/milestone-checklist';
 import { OrganizationShowcase } from '@/components/milestones/organization-showcase';
 import { currentPeriod } from '@/lib/analytics/engine';
 import { requireProfile } from '@/lib/auth/profile';
+import { MONTHLY_MILESTONES } from '@/lib/milestones/content';
 
 export const metadata: Metadata = {
   title: 'Milestones · TaskPulse',
@@ -20,20 +22,21 @@ export default async function MilestonesPage() {
   await requireProfile();
   const period = currentPeriod();
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-0.5 pt-2">
-        <h2 className="text-foreground text-2xl font-bold tracking-tight">
-          Vision, mission &amp; milestones
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          What the organisation is working toward, and where this month stands
-          against it.
-        </p>
-      </div>
+  const achieved = MONTHLY_MILESTONES.filter(
+    (milestone) => milestone.status === 'Achieved',
+  ).length;
 
-      <OrganizationShowcase />
-      <MilestoneChecklist periodLabel={period.label} />
-    </div>
+  return (
+    <>
+      <WorkspaceHeader
+        title="Vision & milestones"
+        description={`${period.label} · ${achieved} of ${MONTHLY_MILESTONES.length} milestones achieved`}
+      />
+
+      <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
+        <OrganizationShowcase />
+        <MilestoneChecklist periodLabel={period.label} />
+      </div>
+    </>
   );
 }

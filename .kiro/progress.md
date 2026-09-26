@@ -3,27 +3,31 @@
 Briefing note for a fresh context session. Records what exists, what was decided
 and why, and what is deliberately unfinished.
 
-**Verified state:** `npx tsc --noEmit` exits 0 · `npx next build` compiles clean ·
-8 routes registered · `proxy.ts` picked up as `Proxy (Middleware)`.
+**Verified state:** `npx tsc --noEmit` exits 0 · `npx next build` compiles clean from
+a wiped `.next` · 8 route entries registered, including `/settings` · `proxy.ts`
+picked up as `Proxy (Middleware)` · against a running production server, all five
+protected prefixes return `307` to `/login?redirectTo=…` while `/` and `/login`
+return `200`.
 
 ---
 
-## Corrections to the brief that produced this file
+## The UI has been redesigned twice; read this before touching it
 
-Three descriptions in the request for this document do not match the code. They
-are corrected here rather than recorded as fact, since the point of this file is
-to brief accurately.
+The shell has been through three looks, and two written records of it are stale.
+This matters because following the wrong one silently reverts work.
 
-| Claimed | Actual |
-| --- | --- |
-| "Gemini-inspired layout architecture" | The aesthetic is **neumorphic / soft-card**, built from a supplied Donezo dashboard reference: warm off-white field `#F4F5F7`, borderless white cards with `0 4px 20px rgb(0 0 0 / 0.03)`, forest-green accent `#10533B`. Nothing Gemini-derived. |
-| "Collapsible rail navigation" | The rail is **breakpoint-driven, not collapsible**. `md:w-20` icon rail, `lg:w-17rem` full sidebar. There is no toggle control, no state, no persisted preference. |
-| "Bottom-left user menu with Settings/Sign Out" | Bottom-left placement and Sign Out are correct. The menu contains **Log history**, not Settings — there is no `/settings` route anywhere in the app. |
+| Pass | Look | Status |
+| --- | --- | --- |
+| 1. Sheet-faithful | `border-slate-200` panels, sky-tinted In Progress badges, `17rem` sidebar | **Superseded.** Still what `steering/tech-stack.md` rule 2 and `steering/responsive-ui-design.md` describe. |
+| 2. Neumorphic / soft-card | Borderless white cards on `#F4F5F7`, `0 4px 20px rgb(0 0 0 / 0.03)`, `1rem` radius, breakpoint-driven rail → sidebar | **Superseded.** |
+| 3. Utilitarian (current) | Border-led panels, `0.625rem` radius, permanent `w-14` icon rail plus a Sheet drawer, consolidated header, `font-mono` on every figure | **Current.** Described under *Current visual architecture* below. |
 
-"Header CTA consolidation" is accurate and is described below.
+Each pass was an explicit instruction that overrode the steering files, which were
+never updated to match. **Steering is not authoritative on visuals; this file is.**
 
-If a user-collapsible rail and a Settings page are wanted, both are small
-additions — say so and they can be built. They are not present today.
+An earlier revision of this document also recorded that a Gemini-inspired layout,
+a togglable rail and a Settings page did not exist. All three now do — pass 3 added
+them. That correction table has been removed rather than left to mislead.
 
 ---
 
@@ -173,8 +177,10 @@ placeholders are `aria-hidden`, with one `role="status"` announcement per route.
 
 ## Current visual architecture
 
-Neumorphic soft-card. Surfaces are separated by **elevation and radius rather than
-stroke**.
+Utilitarian. Surfaces are separated by **stroke, not elevation**: a hairline border
+is more precise than a drop shadow, costs no vertical space, and does not imply a
+panel is floating when it is not. Shadow is spent only on layers that genuinely
+float — dropdown, select, the nav sheet, the mobile bar, chart tooltips.
 
 ### Tokens (`app/globals.css`)
 
@@ -185,20 +191,39 @@ stroke**.
 | `--primary` | `#10533B` forest |
 | `--primary-hover` | `#0C4230` (darker, so pressing reads as depth) |
 | `--primary-subtle` | `#E7F0EC` |
-| `--border` | `#EEF0F3` hairline, internal dividers only |
-| `--radius` | `1rem`, stepping to `1.5rem` for cards |
-| `--shadow-soft` | `0 4px 20px rgb(0 0 0 / 0.03)` |
-| `--shadow-forest` | `0 10px 30px rgb(16 83 59 / 0.18)` |
+| `--border` | `#E4E7EC` hairline — the structural element |
+| `--input` | `#D8DDE5` (a step darker, so fields read as editable) |
+| `--radius` | `0.625rem` |
+| `--shadow-soft-lg` | `0 14px 40px rgb(0 0 0 / 0.07)` — the **only** shadow |
+| `--spacing-header` | `3.5rem`, the header's single-row height |
+| `--spacing-bottom-nav` | `4.5rem` |
+
+The soft-card pass's `--shadow-soft`, `--shadow-soft-md` and `--shadow-forest` were
+removed, along with the unused `--sidebar-*` colour set. Nothing references them.
 
 Forest is the **only** accent. It marks primary buttons, the hero metric, the
-active nav row, progress fill, focus rings and `--chart-1`, and appears nowhere
+active nav target, progress fill, focus rings and `--chart-1`, and appears nowhere
 else, so its presence always means "this is the important one".
 
 Reusable classes carry most of the styling, which keeps component diffs small:
 `soft-card`, `soft-card-clip`, `soft-card-interactive`, `soft-inset`,
-`metric-card`, `metric-card-primary`, `metric-arrow`, `stat-figure`, `stat-label`,
-`eyebrow`, `kbd`, `nav-section-label`, `nav-item`, `nav-item-active`,
-`icon-button`.
+`soft-divider`, `metric-card`, `metric-card-primary`, `metric-trend`, `tabular`,
+`stat-figure`, `eyebrow`, `panel-title`, `nav-item`, `nav-item-active`,
+`rail-item`, `rail-item-active`, `nav-count`, `icon-button`.
+
+### Figures are monospaced, without exception
+
+`.tabular` = `font-mono` + `font-variant-numeric: tabular-nums`, and every hour
+count, percentage, rate and differential in the workspace routes through it or
+through `.stat-figure` / `.sheet-numeric`. A proportional font gives each digit its
+own width, so a column of hours will not align no matter how it is padded. The
+marketing page is excluded — that copy is display text, not data.
+
+Decorative icons were removed where the text already carries the meaning: the `↗`
+metric arrow, metric-card label glyphs, the sparkle beside the star performer, the
+clock and trend icons on log badges, and the pencil and bin on Edit/Delete. Icons
+that do something stayed: rail navigation, `+` on Add Task, and the external-link
+glyph, which is the only signal that a link opens a new tab.
 
 ### Badge taxonomy — deliberately non-colliding
 
@@ -213,36 +238,80 @@ things would damage a dense row, so Priority moved off amber.
 | **Freshness** | Dot plus label — a different *form*, so it stays distinguishable where hues repeat |
 | **Category / Role** | Neutral `slate-100/600`; thirteen categories carry no hue meaning |
 
-### Layout
+### Layout — rail plus drawer (`components/layout/app-shell.tsx`)
 
-| Viewport | Behaviour |
-| --- | --- |
-| `< 768px` | Header with branding, floating rounded bottom bar, raised Log Hours action |
-| `768–1024px` | `w-20` icon rail with native tooltips, no bottom bar |
-| `> 1024px` | Full `17rem` sidebar with MENU/GENERAL sections and profile block |
+Three surfaces and nothing else:
 
-The **active nav row is marked three ways at once** — forest text, bold weight,
-and a rounded `:before` indicator bar — so the state survives a colourblind
-reading and stays legible in the icon rail where the label is hidden.
+| Surface | File | Behaviour |
+| --- | --- | --- |
+| Icon rail | `nav-rail.tsx` | Permanent `w-14`, `md:` and up. Brand mark `TP` at the top, four icon targets, the initials tile at the foot. **Always collapsed** — it never expands in place. |
+| Expanded drawer | `nav-drawer.tsx` | Shadcn `Sheet`, `side="left"`, `w-72`. Same four destinations with labels, captions and count badges. Slides **over** the content. |
+| Mobile bar | `mobile-bottom-nav.tsx` | Below `768px`, where a fixed rail would cost too much of a phone screen. |
 
-### Header CTA consolidation
+The rail staying collapsed is the point: the content column keeps one width at
+every viewport, so opening navigation never reflows the data grid. Open state is
+held in React context (`nav-drawer-context.tsx`) because the header and the drawer
+are siblings, not ancestor and descendant.
 
-One row holds: search field with a working `⌘F` / `Ctrl+F` binding, a notification
-bell, primary **Add Task** (rendered only for `managing_director` and
-`project_engineer`; the Server Action re-checks regardless), secondary **Log
-Hours**, and the profile trigger on mobile.
+Counts come from `lib/layout/nav-counts.ts`, fetched by the guarded layout with
+`{ count: 'exact', head: true }` — open tasks across the team, the member's own log
+entries this month, milestones still in progress. A tally, not a payload.
 
-The reference design's "Add Project" and "Import Data" were adapted: this product
-has no projects to add, so the actions are the domain equivalents.
+Every rail target carries a `title` for the native tooltip **and** a visually
+hidden label, since an icon names nothing to a screen reader. The **active target is
+marked three ways at once** — forest text, bold weight, and a `:before` indicator
+bar — so the state survives a colourblind reading and stays legible in the rail
+where the label is hidden.
 
-### Bottom-left account menu
+### One header per page (`components/layout/workspace-header.tsx`)
 
-`UserMenu` sits in the sidebar footer, showing avatar, name over email, and a
-chevron. The dropdown carries name, email, employee ID, role badge, **Log
-history**, and **Sign out** (a form submitting the `logout` Server Action). Sign
-out also appears as a GENERAL section row in the sidebar.
+There is no shell-level header. Each page renders `WorkspaceHeader` with its own
+`title`, `description` and `actions`. A layout cannot see its child's title or
+actions, and threading them upward through context would be a lot of machinery to
+avoid one prop — so a single row holds everything instead of stacking two bars.
 
-**There is no Settings item, and no `/settings` route.**
+Left to right: the `≡` drawer toggle, the page title and description, then the
+global actions (**Log Hours**, notification bell) followed by whatever the page
+contributes — **Recompute snapshot** on the dashboard, **Add Task** on tasks.
+
+The old top-right cluster is gone, and with it the duplicate sign-out button that
+lived in it. The global search field and its `⌘F` binding were also removed: the
+task filter bar already searches the only searchable data, and a second field that
+merely redirected to `/tasks?q=` was clutter.
+
+**Add Task** is a `Link` to `/tasks?new=1` (`components/tasks/new-task-button.tsx`).
+`TaskWorkspace` reads the parameter, opens the dialog and then `router.replace`s it
+away. Simpler than shared state, and `/tasks?new=1` is deep-linkable. It renders
+only for `managing_director` and `project_engineer`; the Server Action re-checks
+regardless, because a hidden button is not access control.
+
+### Account menu (`components/layout/user-menu.tsx`)
+
+The trigger is **initials only** — a monospaced two-character tile at the foot of
+the rail. Name, email and role appear nowhere in the shell; the expanded profile
+block the sidebar used to carry was deleted. They live in the dropdown, which is
+where someone looks when they actually want them.
+
+The dropdown holds name, email, role badge, employee ID, a link to **Settings**,
+and **Sign out** (a form submitting the `logout` Server Action). This is the single
+access point for both. No duplicate sign-out control exists in the rail, the drawer
+or any header.
+
+### Settings (`/settings`)
+
+A real page, not a dead link — but a narrow one. Display name is the only editable
+field, because migration `02`'s "Users can update their own profile" policy pins
+`role` and `is_active` in its `WITH CHECK`; a form offering either would be
+rejected at the database rather than in the UI. Email belongs to Supabase Auth and
+is not wired up. `updateDisplayName` lives in `app/settings/actions.ts`.
+
+`/settings` is also listed in `proxy.ts`'s `PROTECTED_PREFIXES`. Without that it
+would have been guarded by the layout alone, one gate instead of two.
+
+Settings is deliberately **not** in `NAV_ITEMS`. It is account business, reached
+from the account menu; putting it in the rail would imply it is a workspace
+section. `NAV_SECTIONS` and the old `MENU` / `GENERAL` groupings were removed
+entirely.
 
 ---
 
@@ -311,17 +380,22 @@ Ordered by how much they matter.
    against the team maximum is a one-line change that *changes who wins*.
 3. **Metric recalculation is not atomic.** Read-then-write; concurrent logs on one
    task could lose a delta. Needs an RPC.
-4. **Steering files are in the wrong place and partly stale.** They sit in
+4. **Steering files are in the wrong place and two redesigns stale.** They sit in
    `steering/`, not `.kiro/steering/`, so Kiro does not auto-load them. Worse,
-   `responsive-ui-design.md` still mandates the superseded sheet-faithful
-   aesthetic with `border-slate-200` micro-borders and sky-tinted in-progress
-   badges, and `tech-stack.md` rule 2 says to implement them strictly. **A future
-   phase reading those would revert the current UI.** Moving and rewriting them is
-   recommended before the next visual change.
+   `responsive-ui-design.md` still mandates the original sheet-faithful aesthetic —
+   `border-slate-200` micro-borders, sky-tinted in-progress badges, a `17rem`
+   sidebar — and `tech-stack.md` rule 2 says to implement it strictly. Both the
+   soft-card pass and the current utilitarian pass overrode it on explicit
+   instruction and neither updated the files. **A future phase reading those would
+   revert the current UI.** Moving and rewriting them is recommended before the
+   next visual change.
 5. **Aggregates and filtering run in application code.** PostgREST has no
    `GROUP BY`; the grid fetches once and filters client-side. Both need to move to
    SQL with pagination as data grows.
-6. **No settings route, no user-collapsible rail.** Noted in the corrections above.
+6. **Settings holds one field, and the bell does nothing.** `/settings` can only
+   change a display name — the RLS policy blocks the rest, as described above. The
+   notification bell in the header is rendered and labelled but has no
+   notifications table and no producer behind it.
 7. **Milestone content is static** in `lib/milestones/content.ts`; making the
    checklist editable needs a table and policies.
 8. **Legal pages are not hosted** — the footer uses a mailto address rather than

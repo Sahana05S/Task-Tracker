@@ -1,103 +1,74 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronsUpDownIcon, ClockIcon, LogOutIcon } from 'lucide-react';
+import { LogOutIcon, SettingsIcon } from 'lucide-react';
 
 import { logout } from '@/app/auth/actions';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn, getInitials } from '@/lib/utils';
+import { getInitials } from '@/lib/utils';
 import type { User } from '@/types/tracker';
 
 export interface UserMenuProps {
   profile: User;
-  /**
-   * `expanded` shows the name and email beside the avatar and is used in the
-   * sidebar. `compact` is avatar-only, for the mobile header.
-   */
-  variant: 'expanded' | 'compact';
 }
 
 /**
- * Profile trigger and account menu.
+ * Account menu.
  *
- * The expanded form shows name over email, which is what the reference layout
- * puts next to the avatar, with the role badge inside the menu where there is room
- * for it to be read.
+ * The trigger is initials only — a monospaced two-character tile that fits the
+ * 56px rail without truncating anything. Name, email and role are not shown in
+ * the shell at all; they live in the dropdown, which is where someone looks when
+ * they actually want them.
+ *
+ * This is the single access point for Settings and Sign Out. No duplicate
+ * sign-out control exists in the rail, the drawer or any header.
  */
-export function UserMenu({ profile, variant }: UserMenuProps) {
+export function UserMenu({ profile }: UserMenuProps) {
   const initials = getInitials(profile.fullName);
-  const isExpanded = variant === 'expanded';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={cn(
-          'flex items-center transition-colors',
-          'focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none',
-          isExpanded
-            ? 'soft-inset w-full gap-2.5 rounded-xl p-2.5 hover:bg-slate-100 md:justify-center lg:justify-start'
-            : 'gap-2 rounded-full p-0.5',
-        )}
         aria-label={`Account menu for ${profile.fullName}`}
+        title={profile.fullName}
+        className="bg-muted text-foreground hover:bg-primary-subtle hover:text-primary focus-visible:ring-primary/30 flex size-9 shrink-0 items-center justify-center rounded-md font-mono text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
-        <Avatar className="size-9">
-          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-
-        {isExpanded ? (
-          <>
-            {/* Name over email, matching the reference profile block. Only
-                visible in the expanded sidebar. */}
-            <span className="hidden min-w-0 flex-1 flex-col items-start text-left lg:flex">
-              <span className="text-foreground w-full truncate text-sm font-semibold">
-                {profile.fullName}
-              </span>
-              <span className="text-muted-foreground w-full truncate text-xs">
-                {profile.email}
-              </span>
-            </span>
-            <ChevronsUpDownIcon
-              className="text-muted-foreground hidden size-4 shrink-0 lg:block"
-              aria-hidden="true"
-            />
-          </>
-        ) : null}
+        {initials}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel className="flex flex-col gap-2 py-2.5">
-          <span className="flex flex-col">
-            <span className="text-foreground truncate text-sm font-semibold">
-              {profile.fullName}
-            </span>
-            <span className="text-muted-foreground truncate text-xs font-normal">
-              {profile.email}
-            </span>
-            <span className="text-muted-foreground truncate text-xs font-normal">
+      <DropdownMenuContent side="right" align="end" className="w-60">
+        {/*
+          Identity block. Plain markup rather than DropdownMenuLabel: this is
+          three lines of information, not a heading for the items below it.
+        */}
+        <div className="flex flex-col gap-1.5 px-2.5 py-2">
+          <span className="text-foreground truncate text-sm font-semibold">
+            {profile.fullName}
+          </span>
+          <span className="text-muted-foreground truncate text-xs">
+            {profile.email}
+          </span>
+          <span className="flex items-center gap-2">
+            <RoleBadge role={profile.role} />
+            <span className="text-muted-foreground font-mono text-[10px]">
               {profile.employeeId}
             </span>
           </span>
-          <RoleBadge role={profile.role} className="self-start" />
-        </DropdownMenuLabel>
+        </div>
 
         <DropdownMenuSeparator />
 
-        {/* On mobile the bottom bar has no Logs slot, so this is the route in. */}
         <DropdownMenuItem asChild>
-          <Link href="/logs">
-            <ClockIcon aria-hidden="true" />
-            Log history
+          <Link href="/settings">
+            <SettingsIcon aria-hidden="true" />
+            Settings
           </Link>
         </DropdownMenuItem>
 

@@ -76,6 +76,7 @@ hold even if the application is bypassed entirely.
 | `/tasks` | authenticated | Task grid (desktop) and cards (mobile/tablet) |
 | `/logs` | authenticated | Personal effort history |
 | `/milestones` | authenticated | Vision, mission, values, monthly milestones |
+| `/settings` | authenticated | Account details; display name is the one editable field |
 
 Route protection lives in **`proxy.ts`** at the project root. Next.js 16 renamed
 the `middleware` file convention to `proxy` and the exported function from
@@ -351,17 +352,20 @@ Additional guarantees:
 app/
   (workspace)/             guarded routes, wrapped in the app shell
     dashboard/  tasks/  logs/  milestones/    each with a loading.tsx skeleton
+    settings/              account details
   auth/actions.ts          login, signup, logout
   tasks/actions.ts         task CRUD + inline status/progress
   logs/actions.ts          effort logs + metric recalculation
   dashboard/actions.ts     monthly snapshot freeze
+  settings/actions.ts      display-name update
   login/                   auth views
   page.tsx                 marketing page / member redirect
   globals.css              Tailwind v4 theme and component classes
 
 components/
   ui/                      Shadcn primitives
-  layout/                  app shell, sidebar, header, bottom nav, user menu
+  layout/                  app shell, icon rail, sheet drawer, header, bottom
+                           nav, account menu, settings form
   tasks/                   grid, cards, filters, dialog, inline editors
   logs/                    quick-log drawer, history timeline
   dashboard/               star performer, metric cards, Recharts widgets
@@ -372,6 +376,7 @@ components/
 lib/
   supabase/                browser, server and session-refresh clients
   auth/                    profile resolution, role guards, redirect validation
+  layout/                  navigation badge counts
   tasks/                   mappers, queries, pure filter and sort
   logs/                    mappers, queries, pure metric formulas
   analytics/               team performance engine
@@ -393,7 +398,9 @@ proxy.ts                   edge session refresh and route guard
 | `npm run build` | Production build (runs TypeScript) |
 | `npm run start` | Serve the production build |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | Next.js lint |
+
+There is no `lint` script. `next lint` was removed from the CLI in Next.js 16, and ESLint is
+not installed, so nothing would run. `npm run typecheck` is the static check for this project.
 
 ---
 
@@ -436,10 +443,21 @@ its own policies.
 **Legal pages are not hosted.** The footer points privacy and terms enquiries at a
 mailto address rather than linking routes that do not exist.
 
-**No settings route.** There is no `/settings` page, and the account menu
-therefore offers Log history and Sign out only.
+**Settings holds one field.** `/settings` exists and is reachable from the account
+menu, but display name is all it can change. Migration `02`'s "Users can update
+their own profile" policy pins `role` and `is_active` in its `WITH CHECK`, so a
+member editing either would be rejected at the database rather than in the form.
+Email changes belong to Supabase Auth and are not wired up. Anything more needs a
+policy change, not a UI change.
+
+**Notifications is a shell.** The bell in the workspace header is rendered and
+labelled but has nothing behind it. There is no notifications table and no
+producer.
 
 **Steering files are not in `.kiro/steering/`.** They live in `steering/`, so Kiro
-does not auto-load them, and their UI section now describes the superseded
-"sheet-faithful" aesthetic rather than the current soft-card one. See
+does not auto-load them. Their UI sections are now **two redesigns behind**:
+`tech-stack.md` rule 2 and `responsive-ui-design.md` still describe the original
+"sheet-faithful" look (`border-slate-200` panels, sky-tinted in-progress badges,
+`17rem` sidebar), which the soft-card pass and then the current utilitarian pass
+both replaced. A later phase that follows them literally would revert the UI. See
 `.kiro/progress.md`.

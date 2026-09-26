@@ -2,11 +2,13 @@
 @import 'tw-animate-css';
 
 /* ==========================================================================
-   TaskPulse — Neumorphic / Soft-Card Theme
+   TaskPulse — Utilitarian Workspace Theme
 
-   Surfaces are separated by elevation and radius rather than by stroke: white
-   cards on a warm off-white field, generous corners, and a shadow soft enough to
-   read as a lift rather than a drop.
+   Surfaces are separated by stroke, not by elevation: white panels on a warm
+   off-white field, a modest 10px radius, and a hairline border doing the work a
+   drop shadow used to. A border is precise, costs no vertical space, and does not
+   imply that a panel is floating when it is not. Shadow is spent only on things
+   that genuinely float — dropdowns, selects, the nav sheet, the mobile bar.
 
    Forest green is the single accent. It marks primary actions, the hero metric
    and the active chart series, and appears nowhere else, so its presence always
@@ -17,8 +19,11 @@
    ========================================================================== */
 
 :root {
-  /* Corners. 1rem is the card default; larger surfaces step up from here. */
-  --radius: 1rem;
+  /*
+    Corners. Tightened for a utilitarian read: a 10px radius still softens a
+    container without making it look like a consumer widget.
+  */
+  --radius: 0.625rem;
 
   /* ---- Field and surfaces ---------------------------------------------- */
   --background: #f4f5f7; /* warm off-white page field   */
@@ -29,12 +34,13 @@
   --popover-foreground: #0f172a;
 
   /*
-    Borders are kept but demoted to a hairline barely above the card fill. Cards
-    themselves carry no stroke; this is for internal dividers where a shadow
-    cannot separate two regions of the same surface.
+    Borders carry the structure. A hairline stroke separates surfaces more
+    precisely than a shadow and costs no vertical space, which is what a dense
+    data view needs. Shadows are reserved for things that genuinely float —
+    dropdowns, sheets, toasts.
   */
-  --border: #eef0f3;
-  --input: #e6e9ee;
+  --border: #e4e7ec;
+  --input: #d8dde5;
 
   /* ---- Text hierarchy -------------------------------------------------- */
   --muted: #f7f8fa;
@@ -57,14 +63,6 @@
 
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
-
-  /* ---- Sidebar --------------------------------------------------------- */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-accent: #f1f3f6;
-  --sidebar-accent-foreground: #10533b;
-  --sidebar-border: #eef0f3;
-  --sidebar-ring: #10533b;
 
   /* ---- Chart series ----------------------------------------------------
      Forest leads, so the primary series matches the accent. The rest are muted
@@ -113,13 +111,6 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -138,6 +129,14 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', Roboto, sans-serif;
 
+  /*
+    Monospace for every figure. A proportional font gives each digit its own
+    width, so a column of hours or percentages will not align no matter how it is
+    padded. This is the whole reason the data views are readable.
+  */
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono',
+    Menlo, Consolas, monospace;
+
   --radius-sm: calc(var(--radius) - 0.5rem);
   --radius-md: calc(var(--radius) - 0.25rem);
   --radius-lg: var(--radius);
@@ -145,18 +144,23 @@
   --radius-2xl: calc(var(--radius) + 0.5rem);
 
   /*
-    Soft elevation. Wide, low-opacity and almost vertical, which reads as a card
-    lifted off the field rather than an object casting a hard shadow.
+    The only elevation in the system, and it belongs to overlays alone — the
+    dropdown, the select, the nav sheet, the mobile bar, the chart tooltips. Wide
+    and low-opacity, so a floating layer separates from the page without the
+    hard-edged drop shadow that would make it look pasted on. Panels that sit in
+    the layout use a border instead; see `.soft-card`.
   */
-  --shadow-soft: 0 4px 20px rgb(0 0 0 / 0.03);
-  --shadow-soft-md: 0 6px 24px rgb(0 0 0 / 0.045);
   --shadow-soft-lg: 0 14px 40px rgb(0 0 0 / 0.07);
-  /* Forest surfaces get a tinted shadow so they do not look pasted on. */
-  --shadow-forest: 0 10px 30px rgb(16 83 59 / 0.18);
 
-  /* Fixed chrome sizes, shared by the shell padding and the nav bars. */
-  --spacing-sidebar: 17rem;
-  --spacing-header: 4.5rem;
+  /*
+    Height of the workspace header's first row. The header pins itself to this,
+    and sticky content further down the page offsets by it so it parks underneath
+    rather than behind. It is only accurate while the header is a single row,
+    which is why the offset is applied from `sm` upwards only.
+  */
+  --spacing-header: 3.5rem;
+
+  /* Height of the mobile bar, shared by the bar itself and the shell padding. */
   --spacing-bottom-nav: 4.5rem;
 }
 
@@ -181,31 +185,35 @@
    ========================================================================== */
 
 @layer components {
-  /* The workhorse container: white, generously rounded, lifted, unbordered. */
+  /*
+    The workhorse container. Bordered rather than shadowed: a hairline reads as
+    precise, a drop shadow reads as decorative, and only one of those belongs in a
+    data tool.
+  */
   .soft-card {
-    @apply bg-card rounded-2xl shadow-soft;
+    @apply bg-card border-border rounded-lg border;
   }
 
   /* Same surface where children must be clipped to the corner radius. */
   .soft-card-clip {
-    @apply bg-card overflow-hidden rounded-2xl shadow-soft;
+    @apply bg-card border-border overflow-hidden rounded-lg border;
   }
 
-  /* Interactive cards lift slightly further on hover. */
+  /* Interactive cards mark hover with the border, not with elevation. */
   .soft-card-interactive {
-    @apply bg-card rounded-2xl shadow-soft transition-shadow;
+    @apply bg-card border-border rounded-lg border transition-colors;
   }
 
   .soft-card-interactive:hover {
-    @apply shadow-soft-md;
+    @apply border-primary/30;
   }
 
   /* Inset region on a card: a recess rather than another raised plane. */
   .soft-inset {
-    @apply bg-muted rounded-xl;
+    @apply bg-muted rounded-md;
   }
 
-  /* Hairline divider for splitting one surface, where shadow cannot. */
+  /* Hairline divider for splitting one surface. */
   .soft-divider {
     @apply border-border border-t;
   }
@@ -215,48 +223,42 @@
      ---------------------------------------------------------------------- */
 
   .metric-card {
-    @apply bg-card relative flex flex-col gap-3 rounded-2xl p-5 shadow-soft;
+    @apply bg-card border-border flex flex-col gap-1.5 rounded-lg border px-4
+      py-3.5;
   }
 
   /* Hero metric: full forest container, high-contrast text. */
   .metric-card-primary {
-    @apply bg-primary text-primary-foreground relative flex flex-col gap-3
-      rounded-2xl p-5 shadow-forest;
+    @apply bg-primary text-primary-foreground border-primary flex flex-col gap-1.5
+      rounded-lg border px-4 py-3.5;
   }
 
-  /* The ↗ affordance in the top-right corner of a metric card. */
-  .metric-arrow {
-    @apply border-border text-muted-foreground absolute top-4 right-4 flex size-7
-      items-center justify-center rounded-full border bg-white transition-colors;
-  }
-
-  .metric-card-primary .metric-arrow {
-    @apply border-white/25 bg-white/10 text-white;
-  }
-
-  /* Trend chip beneath a metric figure. */
+  /* Supporting line beneath a metric figure. */
   .metric-trend {
-    @apply text-muted-foreground inline-flex items-center gap-1.5 text-xs
-      font-medium;
+    @apply text-muted-foreground text-xs;
   }
 
   .metric-card-primary .metric-trend {
-    @apply text-white/80;
+    @apply text-white/75;
   }
 
   /* ------------------------------------------------------------------------
      Typography scale
      ---------------------------------------------------------------------- */
 
-  /* Large bold figure, as used by metric cards. */
-  .stat-figure {
-    @apply text-3xl leading-none font-bold tracking-tight
-      [font-variant-numeric:tabular-nums];
+  /*
+    Every figure in the product routes through this. Monospace plus tabular
+    figures means a column of numbers aligns on the decimal without manual
+    padding, which is the point of the grid.
+  */
+  .tabular {
+    @apply font-mono [font-variant-numeric:tabular-nums];
   }
 
-  /* Muted small label above or below a figure. */
-  .stat-label {
-    @apply text-muted-foreground text-xs font-medium;
+  /* Large figure, as used by metric cards. */
+  .stat-figure {
+    @apply font-mono text-2xl leading-none font-semibold tracking-tight
+      [font-variant-numeric:tabular-nums];
   }
 
   /* Section eyebrow: small, uppercase, widely tracked, muted. */
@@ -268,12 +270,6 @@
   /* Page or panel title. */
   .panel-title {
     @apply text-foreground text-lg font-semibold tracking-tight;
-  }
-
-  /* Keyboard hint, e.g. the ⌘F badge in the search field. */
-  .kbd {
-    @apply border-border text-muted-foreground inline-flex items-center gap-0.5
-      rounded-md border bg-white px-1.5 py-0.5 font-sans text-[11px] font-medium;
   }
 }
 
@@ -290,7 +286,7 @@
 
 @layer components {
   .badge-soft {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs
+    @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px]
       font-medium whitespace-nowrap;
   }
 
@@ -345,9 +341,11 @@
     @apply bg-primary-subtle text-primary-subtle-foreground font-semibold;
   }
 
-  /* --- Category: neutral. Thirteen categories carry no hue meaning. ----- */
+  /* --- Category: neutral and monospaced. Thirteen short codes read as data,
+         not as labels, so they take the figure font. ------------------------ */
   .badge-category {
-    @apply bg-slate-100 font-semibold tracking-wide text-slate-600;
+    @apply bg-slate-100 font-mono text-[10px] font-semibold tracking-wide
+      text-slate-600;
   }
 
   /* --- Freshness: dot plus label, a different form from the filled pills,
@@ -386,20 +384,19 @@
 }
 
 /* ==========================================================================
-   Sidebar navigation
+   Navigation
+
+   Two presentations of one list. The permanent rail shows icons only; the sheet
+   drawer shows the same items with labels and counts. `.nav-item` dresses the
+   drawer rows, `.rail-item` the rail tiles, and both mark the active target the
+   same way so switching between them does not feel like a different app.
    ========================================================================== */
 
 @layer components {
-  /* "MENU" / "GENERAL" group heading. */
-  .nav-section-label {
-    @apply text-muted-foreground px-3 pt-4 pb-1.5 text-[11px] font-semibold
-      tracking-[0.12em] uppercase;
-  }
-
-  /* Resting nav row: muted, no fill. */
+  /* Resting drawer row: muted, no fill. */
   .nav-item {
-    @apply text-muted-foreground relative flex items-center gap-3 rounded-xl px-3
-      py-2.5 text-sm font-medium transition-colors;
+    @apply text-muted-foreground relative flex items-center gap-3 rounded-md px-3
+      py-2 text-sm font-medium transition-colors;
   }
 
   .nav-item:hover {
@@ -407,36 +404,73 @@
   }
 
   /*
-    Active row: forest text, bold weight, and a rounded indicator bar pinned to
-    the left edge. Weight and bar carry the state together, so it survives both
-    a colourblind reading and the icon-only rail.
+    Active row: forest text, bold weight, and an indicator bar pinned to the left
+    edge. Weight and bar carry the state together, so it survives both a
+    colourblind reading and the icon-only rail.
   */
   .nav-item-active {
     @apply text-primary bg-primary-subtle font-semibold;
   }
 
   .nav-item-active::before {
-    @apply bg-primary absolute top-1/2 left-0 h-6 w-1 -translate-x-2
-      -translate-y-1/2 rounded-full content-[''];
+    @apply bg-primary absolute top-1/2 left-0 h-5 w-0.5 -translate-y-1/2
+      rounded-r content-[''];
   }
 
-  /* Circular icon button, used by the header bell and overflow controls. */
+  /* ------------------------------------------------------------------------
+     Navigation rail
+
+     Icon-only, permanent, and narrow enough that it costs almost nothing. Each
+     target is a square tile rather than a pill, which keeps the rail column
+     visually straight.
+     ---------------------------------------------------------------------- */
+
+  .rail-item {
+    @apply text-muted-foreground relative flex size-10 items-center
+      justify-center rounded-md transition-colors;
+  }
+
+  .rail-item:hover {
+    @apply bg-muted text-foreground;
+  }
+
+  .rail-item-active {
+    @apply text-primary bg-primary-subtle;
+  }
+
+  .rail-item-active::before {
+    @apply bg-primary absolute top-1/2 -left-2 h-5 w-0.5 -translate-y-1/2
+      rounded-r content-[''];
+  }
+
+  /* Square icon button for header actions. Bordered, not floated. */
   .icon-button {
-    @apply text-muted-foreground flex size-10 shrink-0 items-center
-      justify-center rounded-full bg-white shadow-soft transition-colors;
+    @apply text-muted-foreground border-border flex size-9 shrink-0 items-center
+      justify-center rounded-md border bg-white transition-colors;
   }
 
   .icon-button:hover {
-    @apply text-foreground;
+    @apply text-foreground bg-muted;
+  }
+
+  /* Count badge in the expanded drawer. */
+  .nav-count {
+    @apply bg-muted text-muted-foreground ml-auto rounded px-1.5 py-0.5 font-mono
+      text-[10px] font-semibold [font-variant-numeric:tabular-nums];
+  }
+
+  .nav-item-active .nav-count {
+    @apply bg-primary/10 text-primary;
   }
 }
 
 /* ==========================================================================
    Data grid
 
-   Density is unchanged — same row height, same column count. What changes is the
-   framing: the container is rounded and lifted, the header sits on a recessed
-   tint instead of a grey band, and row separation drops to a hairline.
+   Tuned for density: rows are 6px of vertical padding, the header 8px, and both
+   drop a step in type size. The header sits on a barely-there tint rather than a
+   grey band, and row separation is a hairline, so the eye tracks along a row
+   without the ruling competing with the figures.
    ========================================================================== */
 
 @layer components {
@@ -446,14 +480,16 @@
     @apply w-full border-separate border-spacing-0 text-sm;
   }
 
+  /* Denser than before: 6px vertical padding on rows, 8px on the header. */
   .sheet-grid th {
     @apply text-muted-foreground border-border sticky top-0 z-20 border-b
-      bg-[#fbfcfd] px-4 py-3 text-left text-[11px] font-semibold tracking-wider
+      bg-[#fbfcfd] px-3 py-2 text-left text-[10px] font-semibold tracking-wider
       whitespace-nowrap uppercase;
   }
 
   .sheet-grid td {
-    @apply border-border text-foreground border-b px-4 py-2.5 align-middle;
+    @apply border-border text-foreground border-b px-3 py-1.5 align-middle
+      text-[13px];
   }
 
   /* Frozen first column for horizontal scrolling. Opaque, so scrolled content
@@ -487,9 +523,9 @@
     @apply text-foreground font-mono text-xs font-semibold tracking-tight;
   }
 
-  /* Numeric cells: aligned figures. */
+  /* Numeric cells: right-aligned monospaced figures. */
   .sheet-numeric {
-    @apply text-right [font-variant-numeric:tabular-nums];
+    @apply font-mono text-right [font-variant-numeric:tabular-nums];
   }
 }
 
@@ -503,8 +539,8 @@
 
 @layer components {
   .task-progress {
-    @apply h-2 w-full appearance-none overflow-hidden rounded-full border-0
-      bg-slate-100;
+    @apply h-1.5 w-full appearance-none overflow-hidden rounded-full border-0
+      bg-slate-200;
   }
 
   .task-progress::-webkit-progress-bar {

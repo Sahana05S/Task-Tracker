@@ -151,12 +151,12 @@ export function AllocationChart({
                     </span>
                   </span>
                 </th>
-                <td className="text-foreground py-1.5 text-right font-semibold [font-variant-numeric:tabular-nums]">
+                <td className="text-foreground py-1.5 text-right font-semibold tabular">
                   {formatNumeric(datum.allocationPercent)}%
                 </td>
                 <td
                   className={cn(
-                    'py-1.5 text-right font-medium [font-variant-numeric:tabular-nums]',
+                    'py-1.5 text-right font-medium tabular',
                     datum.loadingDiff === null
                       ? 'text-slate-400'
                       : datum.loadingDiff >= 0
@@ -168,7 +168,7 @@ export function AllocationChart({
                     ? '\u2014'
                     : `${datum.loadingDiff >= 0 ? '+' : ''}${formatNumeric(datum.loadingDiff)}`}
                 </td>
-                <td className="text-foreground py-1.5 text-right [font-variant-numeric:tabular-nums]">
+                <td className="text-foreground py-1.5 text-right tabular">
                   {formatNumeric(datum.criticalityScore)}
                 </td>
               </tr>
@@ -179,13 +179,13 @@ export function AllocationChart({
               <th scope="row" className="py-1.5 text-left font-semibold">
                 Team median
               </th>
-              <td className="py-1.5 text-right [font-variant-numeric:tabular-nums]">
+              <td className="py-1.5 text-right tabular">
                 {medianAllocation === null
                   ? '\u2014'
                   : `${formatNumeric(medianAllocation)}%`}
               </td>
               <td className="py-1.5 text-right">—</td>
-              <td className="py-1.5 text-right [font-variant-numeric:tabular-nums]">
+              <td className="py-1.5 text-right tabular">
                 {formatNumeric(medianCriticality)}
               </td>
             </tr>
@@ -218,25 +218,25 @@ function AllocationTooltip({
       <dl className="text-muted-foreground mt-1.5 flex flex-col gap-0.5">
         <div className="flex items-baseline justify-between gap-4">
           <dt>Allocation</dt>
-          <dd className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+          <dd className="font-medium text-slate-900 tabular">
             {formatNumeric(datum.allocationPercent)}%
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-4">
           <dt>Task scale</dt>
-          <dd className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+          <dd className="font-medium text-slate-900 tabular">
             {formatNumeric(datum.taskScale)}
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-4">
           <dt>Tasks carried</dt>
-          <dd className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+          <dd className="font-medium text-slate-900 tabular">
             {datum.taskCount}
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-4">
           <dt>Criticality</dt>
-          <dd className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+          <dd className="font-medium text-slate-900 tabular">
             {formatNumeric(datum.criticalityScore)}
           </dd>
         </div>

@@ -1,46 +1,52 @@
 import * as React from 'react';
 
-import { DesktopSidebar } from '@/components/layout/desktop-sidebar';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
+import { NavDrawer } from '@/components/layout/nav-drawer';
+import { NavDrawerProvider } from '@/components/layout/nav-drawer-context';
+import { NavRail } from '@/components/layout/nav-rail';
+import type { NavCounts } from '@/lib/layout/nav-counts';
 import type { User } from '@/types/tracker';
 
 export interface AppShellProps {
   /** The signed-in user's profile, resolved by the guarded layout. */
   profile: User;
+  /** Badge tallies for the expanded drawer. */
+  counts: NavCounts;
   children: React.ReactNode;
 }
 
 /**
- * Global workspace chrome.
+ * Workspace chrome.
  *
- * A Server Component: it receives an already-resolved profile and renders the
- * three navigation surfaces, each of which is a Client Component because it
- * needs `usePathname` for active state.
+ * Three surfaces and nothing else:
  *
- * Responsive behaviour:
+ *   - a permanent 56px icon rail, always collapsed, with the account menu at its
+ *     foot
+ *   - an expanded drawer that slides over the content when the header's menu
+ *     button is pressed
+ *   - a sticky bottom bar below 768px, where a fixed rail would cost too much of
+ *     a phone screen
  *
- *   < 768px         header with branding, sticky bottom bar with the Log Hours FAB
- *   768px - 1024px  5rem icon rail with tooltips, no bottom bar
- *   > 1024px        full sidebar with grouped sections and the profile block
+ * There is no shell-level header. Each page renders `WorkspaceHeader` with its own
+ * title and actions, which is what lets page-specific controls sit beside the
+ * global ones in a single row instead of stacking two bars.
  *
- * The content column is offset by the rail width at each breakpoint, and gains
- * bottom padding on mobile so the last row clears the fixed bar. Both the sidebar
- * and the page sit directly on the warm field: separation comes from the cards'
- * elevation rather than from a divider.
+ * The rail never expands in place, so the content column keeps one width at every
+ * viewport and the data grid never reflows.
  */
-export function AppShell({ profile, children }: AppShellProps) {
+export function AppShell({ profile, counts, children }: AppShellProps) {
   return (
-    <div className="bg-background min-h-dvh">
-      <DesktopSidebar profile={profile} />
+    <NavDrawerProvider>
+      <div className="bg-background min-h-dvh">
+        <NavRail profile={profile} />
+        <NavDrawer counts={counts} />
 
-      <div className="flex min-h-dvh flex-col md:pl-20 lg:pl-(--spacing-sidebar)">
-        <WorkspaceHeader profile={profile} />
+        <div className="flex min-h-dvh flex-col md:pl-14">
+          <main className="flex-1 pb-24 md:pb-0">{children}</main>
+        </div>
 
-        <main className="flex-1 px-4 pb-28 md:pb-8 lg:px-6">{children}</main>
+        <MobileBottomNav />
       </div>
-
-      <MobileBottomNav />
-    </div>
+    </NavDrawerProvider>
   );
 }

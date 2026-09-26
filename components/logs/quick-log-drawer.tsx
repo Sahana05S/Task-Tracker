@@ -294,7 +294,7 @@ function LogForm({
               onChange={(event) => setHours(event.target.value)}
               placeholder="0.00"
               required
-              className="[font-variant-numeric:tabular-nums]"
+              className="tabular"
             />
           </Field>
         </div>
@@ -315,24 +315,24 @@ function LogForm({
             value={delta}
             onChange={(event) => setDelta(event.target.value)}
             placeholder="0"
-            className="[font-variant-numeric:tabular-nums]"
+            className="tabular"
           />
         </Field>
 
         {selected && nextProgress !== null ? (
           <p className="soft-inset text-muted-foreground px-3.5 py-2.5 text-xs">
             Progress moves from{' '}
-            <span className="text-foreground font-semibold [font-variant-numeric:tabular-nums]">
+            <span className="text-foreground font-semibold tabular">
               {currentProgress === null ? '0' : currentProgress}%
             </span>{' '}
             to{' '}
-            <span className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+            <span className="font-medium text-slate-900 tabular">
               {nextProgress}%
             </span>
             {nextScaled !== null ? (
               <>
                 {' · scaled progress '}
-                <span className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+                <span className="font-medium text-slate-900 tabular">
                   {formatNumeric(nextScaled)}
                 </span>
               </>

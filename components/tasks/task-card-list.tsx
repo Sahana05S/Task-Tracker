@@ -188,7 +188,7 @@ function TaskCard({
             data-complete={progress >= 100 ? 'true' : 'false'}
             aria-label={`Progress for ${task.taskTag}`}
           />
-          <span className="badge-soft badge-neutral shrink-0 [font-variant-numeric:tabular-nums]">
+          <span className="badge-soft badge-neutral shrink-0 tabular">
             {formatPercent(task.progressPercentage)}
           </span>
         </span>
@@ -196,17 +196,17 @@ function TaskCard({
         {/* Live effort figures. Hours come from the log aggregate; the rate is
             the stored task_productivity the log actions maintain. */}
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-          <span className="[font-variant-numeric:tabular-nums]">
+          <span className="tabular">
             <ClockIcon
               className="mr-1 inline size-3 align-[-1px]"
               aria-hidden="true"
             />
             {formatNumeric(effort.hoursLogged)} h logged
           </span>
-          <span className="[font-variant-numeric:tabular-nums]">
+          <span className="tabular">
             Scaled {formatNumeric(task.scaledProgress)}
           </span>
-          <span className="[font-variant-numeric:tabular-nums]">
+          <span className="tabular">
             {formatNumeric(task.taskProductivity)} /h
           </span>
         </span>
@@ -379,7 +379,7 @@ function Detail({
       <dd
         className={cn(
           'text-sm text-slate-900',
-          numeric && '[font-variant-numeric:tabular-nums]',
+          numeric && 'tabular',
         )}
       >
         {value}

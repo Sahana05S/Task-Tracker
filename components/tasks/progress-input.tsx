@@ -154,7 +154,7 @@ export function ProgressInput({
           aria-label={`Progress percentage for ${taskTag}`}
           aria-invalid={invalid}
           className={cn(
-            'text-foreground w-14 rounded-lg border border-transparent bg-transparent px-1.5 py-0.5 text-right text-xs [font-variant-numeric:tabular-nums]',
+            'text-foreground w-14 rounded-lg border border-transparent bg-transparent px-1.5 py-0.5 text-right text-xs tabular',
             'hover:border-input hover:bg-white',
             'focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:bg-white focus-visible:ring-2 focus-visible:outline-none',
             'disabled:text-slate-400',

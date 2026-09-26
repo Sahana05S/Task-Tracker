@@ -9,25 +9,23 @@ import {
 /**
  * Single source of truth for workspace navigation.
  *
- * The desktop sidebar renders every entry, grouped by section. The mobile bottom
- * bar renders only the entries flagged `inBottomNav`, because the centre slot
- * there is taken by the "Log Hours" action rather than a destination.
+ * Three surfaces consume this list: the permanent icon rail, the expanded drawer,
+ * and the mobile bottom bar. The rail and the drawer render every entry; the
+ * bottom bar renders only those flagged `inBottomNav`.
+ *
+ * Settings is deliberately absent. It is reached from the account menu, not from
+ * navigation, so it does not compete with the four working destinations.
  */
-
-/** Sidebar grouping. Rendered as an uppercase section heading. */
-export type NavSection = 'menu' | 'general';
-
 export interface NavItem {
   readonly label: string;
   readonly href: string;
   readonly icon: LucideIcon;
-  readonly section: NavSection;
   /**
    * Whether this destination appears in the mobile bottom bar.
    *
    * The mobile layout allows four slots — Dashboard, Tasks, Log Hours and
    * Milestones — so Logs is excluded here. It stays reachable on mobile through
-   * the quick-log sheet, which links to the full log history.
+   * the drawer and through the quick-log sheet.
    */
   readonly inBottomNav: boolean;
 }
@@ -37,36 +35,26 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboardIcon,
-    section: 'menu',
     inBottomNav: true,
   },
   {
     label: 'Tasks',
     href: '/tasks',
     icon: ListChecksIcon,
-    section: 'menu',
     inBottomNav: true,
   },
   {
     label: 'Logs',
     href: '/logs',
     icon: ClockIcon,
-    section: 'menu',
     inBottomNav: false,
   },
   {
     label: 'Milestones',
     href: '/milestones',
     icon: TargetIcon,
-    section: 'menu',
     inBottomNav: true,
   },
-];
-
-/** Section order and headings, as rendered in the sidebar. */
-export const NAV_SECTIONS: readonly { id: NavSection; label: string }[] = [
-  { id: 'menu', label: 'Menu' },
-  { id: 'general', label: 'General' },
 ];
 
 /**

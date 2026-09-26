@@ -60,7 +60,7 @@ export function MilestoneChecklist({
           </h3>
           <p className="text-xs text-slate-500">{periodLabel}</p>
         </div>
-        <p className="text-xs text-slate-500 [font-variant-numeric:tabular-nums]">
+        <p className="text-xs text-slate-500 tabular">
           {achieved} achieved · {inProgress} in progress · {milestones.length}{' '}
           total
         </p>
@@ -88,7 +88,7 @@ export function MilestoneChecklist({
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
                 <span>Owner: {milestone.owner}</span>
                 {milestone.target !== undefined ? (
-                  <span className="[font-variant-numeric:tabular-nums]">
+                  <span className="tabular">
                     {milestone.completed ?? 0} of {milestone.target} delivered
                   </span>
                 ) : null}
