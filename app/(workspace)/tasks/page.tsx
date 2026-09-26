@@ -1,19 +1,38 @@
 import type { Metadata } from 'next';
-import { ListChecksIcon } from 'lucide-react';
 
-import { SectionPlaceholder } from '@/components/layout/section-placeholder';
+import { TaskWorkspace } from '@/components/tasks/task-workspace';
+import { requireProfile } from '@/lib/auth/profile';
+import { getTaskEffortTotals } from '@/lib/logs/queries';
+import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 
 export const metadata: Metadata = {
   title: 'Tasks · TaskPulse',
 };
 
-export default function TasksPage() {
+/**
+ * Task tracker route.
+ *
+ * A Server Component: it authenticates, loads the tasks, the member directory
+ * and the per-task hour totals, then hands them to the client shell. Filtering,
+ * sorting and inline edits happen there; mutations go back through the Server
+ * Actions in `app/tasks/actions.ts` and `app/logs/actions.ts`.
+ */
+export default async function TasksPage() {
+  const profile = await requireProfile();
+
+  const [{ tasks, members }, effortTotals] = await Promise.all([
+    getTaskWorkspaceData(),
+    getTaskEffortTotals(),
+  ]);
+
   return (
-    <SectionPlaceholder
-      title="Task Tracker"
-      description="Dense operations grid with sortable headers, inline status and progress editing, and the assignee, category, priority, status and freshness filters."
-      icon={ListChecksIcon}
-      phase="Phase 3"
+    <TaskWorkspace
+      tasks={tasks}
+      members={members}
+      // Maps are not serialisable across the server-to-client boundary, so the
+      // aggregate crosses as entries and is rebuilt on the client.
+      effortEntries={[...effortTotals]}
+      currentUser={profile}
     />
   );
 }

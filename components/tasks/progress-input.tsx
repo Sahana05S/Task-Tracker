@@ -1,0 +1,186 @@
+'use client';
+
+import * as React from 'react';
+import { AlertCircleIcon, LoaderCircleIcon } from 'lucide-react';
+
+import { updateTaskProgress } from '@/app/tasks/actions';
+import { toProgressValue } from '@/lib/tracker/format';
+import { cn } from '@/lib/utils';
+
+export interface ProgressInputProps {
+  taskId: string;
+  taskTag: string;
+  progressPercentage: number | null;
+  /** False renders the value as static text. */
+  canEdit: boolean;
+  className?: string;
+}
+
+/** Empty string when unset, so the field shows blank rather than a fake zero. */
+function toFieldValue(progress: number | null): string {
+  return progress === null ? '' : String(progress);
+}
+
+/**
+ * Inline progress editor.
+ *
+ * Commits on blur or Enter rather than on every keystroke, so typing "100" does
+ * not fire writes for 1 and 10 on the way. Escape abandons the edit.
+ *
+ * Only `progress_percentage` is sent. `scaled_progress` is a generated column,
+ * so the recomputed value arrives with the next revalidation.
+ */
+export function ProgressInput({
+  taskId,
+  taskTag,
+  progressPercentage,
+  canEdit,
+  className,
+}: ProgressInputProps) {
+  const [committed, setCommitted] = React.useState<number | null>(
+    progressPercentage,
+  );
+  const [draft, setDraft] = React.useState<string>(
+    toFieldValue(progressPercentage),
+  );
+  const [error, setError] = React.useState<string | null>(null);
+  const [pending, startTransition] = React.useTransition();
+
+  React.useEffect(() => {
+    setCommitted(progressPercentage);
+    setDraft(toFieldValue(progressPercentage));
+  }, [progressPercentage]);
+
+  const barValue = toProgressValue(committed);
+
+  if (!canEdit) {
+    return (
+      <div className={cn('flex flex-col gap-1', className)}>
+        <span className="sheet-numeric text-xs text-slate-900">
+          {committed === null ? '\u2014' : `${committed}%`}
+        </span>
+        <progress
+          className="task-progress"
+          value={barValue}
+          max={100}
+          data-complete={barValue >= 100 ? 'true' : 'false'}
+          aria-label={`Progress for ${taskTag}`}
+        />
+      </div>
+    );
+  }
+
+  const commit = () => {
+    const trimmed = draft.trim();
+
+    // Blank means "leave it alone". Clearing to NULL is a different intent and
+    // belongs in the edit form, not in a grid cell.
+    if (trimmed === '') {
+      setDraft(toFieldValue(committed));
+      return;
+    }
+
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) {
+      setDraft(toFieldValue(committed));
+      setError('Progress must be a number.');
+      return;
+    }
+
+    const rounded = Math.round(parsed * 100) / 100;
+
+    if (rounded < 0 || rounded > 100) {
+      setDraft(toFieldValue(committed));
+      setError('Progress must be between 0 and 100.');
+      return;
+    }
+    if (rounded === committed) {
+      setDraft(toFieldValue(committed));
+      return;
+    }
+
+    const previous = committed;
+    setCommitted(rounded);
+    setDraft(String(rounded));
+    setError(null);
+
+    startTransition(async () => {
+      const result = await updateTaskProgress(taskId, rounded);
+      if (!result.success) {
+        setCommitted(previous);
+        setDraft(toFieldValue(previous));
+        setError(result.error ?? 'Could not update progress.');
+      }
+    });
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.currentTarget.blur();
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setDraft(toFieldValue(committed));
+      setError(null);
+    }
+  };
+
+  return (
+    <div className={cn('flex flex-col gap-1', className)}>
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          max={100}
+          step={1}
+          value={draft}
+          disabled={pending}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={handleKeyDown}
+          aria-label={`Progress percentage for ${taskTag}`}
+          aria-invalid={error !== null}
+          className={cn(
+            'w-14 rounded-sm border border-transparent bg-transparent px-1 py-0.5 text-right text-xs text-slate-900 [font-variant-numeric:tabular-nums]',
+            'hover:border-slate-200 hover:bg-white',
+            'focus-visible:border-sky-400 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-sky-500/30 focus-visible:outline-none',
+            'disabled:text-slate-400',
+            // Spin buttons steal width the dense grid cannot spare.
+            '[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+            error !== null && 'border-rose-300',
+          )}
+        />
+        <span className="text-xs text-slate-400" aria-hidden="true">
+          %
+        </span>
+
+        {pending ? (
+          <LoaderCircleIcon
+            className="size-3.5 shrink-0 animate-spin text-slate-400"
+            aria-label="Saving"
+          />
+        ) : null}
+
+        {error && !pending ? (
+          <span title={error} role="alert">
+            <AlertCircleIcon
+              className="size-3.5 shrink-0 text-rose-600"
+              aria-label={error}
+            />
+          </span>
+        ) : null}
+      </div>
+
+      <progress
+        className="task-progress"
+        value={barValue}
+        max={100}
+        data-complete={barValue >= 100 ? 'true' : 'false'}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}

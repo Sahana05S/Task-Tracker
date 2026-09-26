@@ -1,0 +1,106 @@
+import { createClient } from '@/lib/supabase/server';
+import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
+import {
+  aggregateEffortByTask,
+  type TaskEffort,
+} from '@/lib/logs/metrics';
+import { mapTasks, TASK_COLUMNS } from '@/lib/tasks/mappers';
+import type { DailyTaskLog, Task } from '@/types/tracker';
+
+/**
+ * Server-side reads for the daily log module.
+ */
+
+export interface LogHistoryData {
+  logs: DailyTaskLog[];
+  /** Tasks referenced by the returned logs, for tag and title lookup. */
+  tasks: Task[];
+}
+
+/**
+ * Loads one user's effort history, newest first, with the tasks it references.
+ *
+ * Scoped to a single user by explicit filter, not by RLS: the SELECT policy on
+ * `daily_task_logs` intentionally exposes the whole team for transparency, so
+ * "my history" has to be narrowed here.
+ */
+export async function getMyLogHistory(userId: string): Promise<LogHistoryData> {
+  const supabase = await createClient();
+
+  const { data: logRows, error: logError } = await supabase
+    .from('daily_task_logs')
+    .select(LOG_COLUMNS)
+    .eq('user_id', userId)
+    .order('log_date', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (logError) {
+    throw new Error(`Failed to load logs: ${logError.message}`);
+  }
+
+  const logs = mapDailyTaskLogs(logRows);
+
+  if (logs.length === 0) {
+    return { logs, tasks: [] };
+  }
+
+  const taskIds = [...new Set(logs.map((log) => log.taskId))];
+
+  const { data: taskRows, error: taskError } = await supabase
+    .from('tasks')
+    .select(TASK_COLUMNS)
+    .in('id', taskIds);
+
+  if (taskError) {
+    throw new Error(`Failed to load tasks for logs: ${taskError.message}`);
+  }
+
+  return { logs, tasks: mapTasks(taskRows) };
+}
+
+/**
+ * Per-task hour totals across the whole team.
+ *
+ * Only the two columns the aggregate needs are selected. Productivity is stored
+ * on the task by the log actions; this supplies the hours figure the grid shows
+ * alongside it, which has no column of its own.
+ */
+export async function getTaskEffortTotals(): Promise<Map<string, TaskEffort>> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('daily_task_logs')
+    .select('task_id, hours_worked');
+
+  if (error) {
+    throw new Error(`Failed to load effort totals: ${error.message}`);
+  }
+
+  return aggregateEffortByTask(
+    data.map((row) => ({ taskId: row.task_id, hoursWorked: row.hours_worked })),
+  );
+}
+
+/**
+ * Tasks a user may log effort against: their own assignments, excluding work
+ * that is finished or abandoned.
+ *
+ * Fetched on demand when the log drawer opens rather than with every workspace
+ * page, since the global FAB is present on all of them.
+ */
+export async function getLoggableTasksFor(userId: string): Promise<Task[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(TASK_COLUMNS)
+    .eq('assignee_id', userId)
+    .not('status', 'in', '("Done","Discarded")')
+    .order('task_tag', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load loggable tasks: ${error.message}`);
+  }
+
+  return mapTasks(data);
+}

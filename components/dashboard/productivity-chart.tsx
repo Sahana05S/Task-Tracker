@@ -1,0 +1,252 @@
+'use client';
+
+import * as React from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import {
+  CHART_AXIS,
+  CHART_GRID,
+  CHART_NEGATIVE,
+  CHART_POSITIVE,
+  CHART_REFERENCE,
+  shortName,
+} from '@/components/dashboard/chart-palette';
+import type { MemberPerformance } from '@/lib/analytics/engine';
+import { formatNumeric } from '@/lib/tracker/format';
+
+export interface ProductivityChartProps {
+  members: readonly MemberPerformance[];
+  medianProductivity: number | null;
+}
+
+interface Datum {
+  name: string;
+  fullName: string;
+  productivity: number;
+  differential: number | null;
+  hoursLogged: number;
+  scaledProgress: number;
+}
+
+/**
+ * Productivity differentials.
+ *
+ * One bar per contributing member against a reference line at the team median,
+ * so the differential is the visible gap rather than a number to be looked up.
+ * Bars above the median read emerald, below it rose.
+ *
+ * Members with no logged hours are omitted rather than drawn at zero: their rate
+ * is undefined, and a zero bar would read as measured underperformance.
+ */
+export function ProductivityChart({
+  members,
+  medianProductivity,
+}: ProductivityChartProps) {
+  const data: Datum[] = React.useMemo(
+    () =>
+      members
+        .filter(
+          (member): member is MemberPerformance & { productivity: number } =>
+            member.productivity !== null,
+        )
+        .sort((a, b) => b.productivity - a.productivity)
+        .map((member) => ({
+          name: shortName(member.fullName),
+          fullName: member.fullName,
+          productivity: member.productivity,
+          differential: member.productivityDiff,
+          hoursLogged: member.hoursLogged,
+          scaledProgress: member.scaledProgress,
+        })),
+    [members],
+  );
+
+  const omitted = members.length - data.length;
+
+  if (data.length === 0) {
+    return (
+      <ChartShell
+        title="Productivity differentials"
+        subtitle="Scaled progress per hour against the team median"
+      >
+        <EmptyNote>
+          No member logged hours in this period, so there is no rate to compare.
+        </EmptyNote>
+      </ChartShell>
+    );
+  }
+
+  return (
+    <ChartShell
+      title="Productivity differentials"
+      subtitle="Scaled progress per hour against the team median"
+      footer={
+        omitted > 0
+          ? `${omitted} ${omitted === 1 ? 'member' : 'members'} omitted: no hours logged, so no rate is defined.`
+          : undefined
+      }
+    >
+      {/* Recharts needs a pixel height; the container supplies the width. */}
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
+            barCategoryGap="25%"
+          >
+            <CartesianGrid stroke={CHART_GRID} vertical={false} />
+            <XAxis
+              dataKey="name"
+              stroke={CHART_AXIS}
+              tickLine={false}
+              axisLine={{ stroke: CHART_GRID }}
+              fontSize={11}
+              interval={0}
+            />
+            <YAxis
+              stroke={CHART_AXIS}
+              tickLine={false}
+              axisLine={false}
+              fontSize={11}
+              width={40}
+            />
+            <Tooltip
+              cursor={{ fill: 'var(--color-slate-100)' }}
+              content={<ProductivityTooltip />}
+            />
+            {medianProductivity !== null ? (
+              <ReferenceLine
+                y={medianProductivity}
+                stroke={CHART_REFERENCE}
+                strokeDasharray="4 4"
+                label={{
+                  value: `Median ${formatNumeric(medianProductivity)}`,
+                  position: 'insideTopRight',
+                  fill: CHART_REFERENCE,
+                  fontSize: 11,
+                }}
+              />
+            ) : null}
+            <Bar dataKey="productivity" radius={[3, 3, 0, 0]}>
+              {data.map((datum) => (
+                <Cell
+                  key={datum.fullName}
+                  fill={
+                    datum.differential !== null && datum.differential < 0
+                      ? CHART_NEGATIVE
+                      : CHART_POSITIVE
+                  }
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </ChartShell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tooltip                                                                    */
+/* -------------------------------------------------------------------------- */
+
+interface TooltipPayloadEntry {
+  payload?: Datum;
+}
+
+interface ProductivityTooltipProps {
+  active?: boolean;
+  payload?: readonly TooltipPayloadEntry[];
+}
+
+/**
+ * Custom tooltip.
+ *
+ * Typed against the narrow shape actually used rather than Recharts' own
+ * generic tooltip props, which resolve loosely and would otherwise force a cast.
+ */
+function ProductivityTooltip({ active, payload }: ProductivityTooltipProps) {
+  const datum = payload?.[0]?.payload;
+  if (!active || !datum) return null;
+
+  return (
+    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+      <p className="font-medium text-slate-900">{datum.fullName}</p>
+      <dl className="mt-1 flex flex-col gap-0.5 text-slate-600">
+        <Row
+          label="Productivity"
+          value={`${formatNumeric(datum.productivity)} /h`}
+        />
+        <Row
+          label="vs median"
+          value={
+            datum.differential === null
+              ? '\u2014'
+              : `${datum.differential >= 0 ? '+' : ''}${formatNumeric(datum.differential)}`
+          }
+        />
+        <Row
+          label="Scaled progress"
+          value={formatNumeric(datum.scaledProgress)}
+        />
+        <Row label="Hours" value={formatNumeric(datum.hoursLogged)} />
+      </dl>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <dt>{label}</dt>
+      <dd className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shell                                                                      */
+/* -------------------------------------------------------------------------- */
+
+export function ChartShell({
+  title,
+  subtitle,
+  footer,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  footer?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
+      <header className="flex flex-col gap-0.5">
+        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+        <p className="text-xs text-slate-500">{subtitle}</p>
+      </header>
+      {children}
+      {footer ? <p className="text-xs text-slate-500">{footer}</p> : null}
+    </section>
+  );
+}
+
+export function EmptyNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="flex h-64 items-center justify-center rounded-md border border-dashed border-slate-300 px-6 text-center text-sm text-slate-500">
+      {children}
+    </p>
+  );
+}

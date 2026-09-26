@@ -1,19 +1,23 @@
 import type { Metadata } from 'next';
-import { ClockIcon } from 'lucide-react';
 
-import { SectionPlaceholder } from '@/components/layout/section-placeholder';
+import { LogHistory } from '@/components/logs/log-history';
+import { requireProfile } from '@/lib/auth/profile';
+import { getMyLogHistory } from '@/lib/logs/queries';
 
 export const metadata: Metadata = {
   title: 'Logs · TaskPulse',
 };
 
-export default function LogsPage() {
-  return (
-    <SectionPlaceholder
-      title="Daily Effort & Progress Logs"
-      description="Hours worked, incremental progress deltas, update notes and links to raw assets, with automatic recalculation of task progress and productivity."
-      icon={ClockIcon}
-      phase="Phase 4"
-    />
-  );
+/**
+ * Personal daily effort history.
+ *
+ * Scoped to the signed-in user. The SELECT policy on `daily_task_logs` exposes
+ * the whole team for transparency, so the narrowing to "mine" happens in the
+ * query rather than being left to RLS.
+ */
+export default async function LogsPage() {
+  const profile = await requireProfile();
+  const { logs, tasks } = await getMyLogHistory(profile.id);
+
+  return <LogHistory logs={logs} tasks={tasks} />;
 }

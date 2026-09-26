@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { QuickLogSheet } from '@/components/layout/quick-log-sheet';
+import { QuickLogTrigger } from '@/components/logs/quick-log-trigger';
 import { isNavItemActive, NAV_ITEMS } from '@/components/layout/nav-items';
 import { cn } from '@/lib/utils';
 
@@ -39,7 +39,7 @@ export function MobileBottomNav() {
         ))}
 
         <li className="flex items-center justify-center">
-          <QuickLogSheet />
+          <QuickLogTrigger variant="fab" />
         </li>
 
         {trailing.map((item) => (

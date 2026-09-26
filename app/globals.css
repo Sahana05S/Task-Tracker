@@ -42,6 +42,31 @@
   --destructive: oklch(0.645 0.246 16.439); /* rose-500                 */
   --destructive-foreground: oklch(1 0 0); /* white                      */
 
+  /* ------------------------------------------------------------------------
+     Chart series palette
+
+     Categorical series need distinguishable hues, which the status, priority and
+     freshness tints cannot supply: those carry fixed meaning and reusing them in
+     a chart would imply a status that is not there. Declared as tokens rather
+     than passed as literals because Recharts colours SVG through props, and
+     Tailwind only emits ramp variables for colours it sees used in class names.
+     ---------------------------------------------------------------------- */
+  --chart-1: oklch(0.588 0.158 241.966); /* sky-600     */
+  --chart-2: oklch(0.596 0.145 163.225); /* emerald-600 */
+  --chart-3: oklch(0.769 0.188 70.08); /*  amber-500   */
+  --chart-4: oklch(0.645 0.246 16.439); /* rose-500    */
+  --chart-5: oklch(0.606 0.25 292.717); /* violet-500  */
+  --chart-6: oklch(0.6 0.118 184.704); /*  teal-600    */
+  --chart-7: oklch(0.705 0.213 47.604); /* orange-500  */
+  --chart-8: oklch(0.704 0.04 256.788); /*  slate-400   */
+
+  /* Divergence colours for above/below median comparisons. */
+  --chart-positive: oklch(0.596 0.145 163.225); /* emerald-600 */
+  --chart-negative: oklch(0.645 0.246 16.439); /*  rose-500    */
+  --chart-grid: oklch(0.929 0.013 255.508); /*     slate-200   */
+  --chart-axis: oklch(0.554 0.046 257.417); /*     slate-500   */
+  --chart-reference: oklch(0.208 0.042 265.755); /* slate-900  */
+
   /* Sidebar surface */
   --sidebar: oklch(1 0 0); /* white                       */
   --sidebar-foreground: oklch(0.208 0.042 265.755); /* slate-900            */
@@ -77,6 +102,20 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-positive: var(--chart-positive);
+  --color-chart-negative: var(--chart-negative);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
+  --color-chart-reference: var(--chart-reference);
 
   /* Crisp sans-serif, Inter with a system-ui fallback per the spec. */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
@@ -223,5 +262,90 @@
   /* Numeric cells: aligned figures for hours, percentages and progress. */
   .sheet-numeric {
     @apply text-right [font-variant-numeric:tabular-nums];
+  }
+
+  /* Task tag: fixed-width so tags like Sep26_T5 scan down the column. */
+  .task-tag {
+    @apply font-mono text-xs font-medium tracking-tight text-slate-700;
+  }
+
+  /* Category chip. The design spec assigns tints to status, priority and
+     freshness only, so categories stay neutral rather than inventing a
+     thirteen-colour scale. */
+  .badge-category {
+    @apply border-slate-200 bg-slate-50 font-medium tracking-wide text-slate-600;
+  }
+
+  /* ------------------------------------------------------------------------
+     Data grid
+     ---------------------------------------------------------------------- */
+
+  /* border-separate with zero spacing is what lets sticky cells keep their
+     borders. With the default border-collapse, borders belong to the table
+     rather than the cell and they scroll away from a sticky column. */
+  .sheet-grid {
+    @apply w-full border-separate border-spacing-0 text-sm;
+  }
+
+  /* Sticky header row. Sits above the sticky first column. */
+  .sheet-grid th {
+    @apply sticky top-0 z-20 border-b border-slate-200 bg-slate-100 px-3 py-2
+      text-left text-xs font-semibold whitespace-nowrap text-slate-700 uppercase;
+  }
+
+  .sheet-grid td {
+    @apply border-b border-slate-200 px-3 py-1.5 align-middle text-slate-900;
+  }
+
+  /* Frozen Task Tag column, for horizontal scrolling. Opaque background so
+     scrolled content passes behind it rather than through it. */
+  .sheet-grid .sheet-grid-frozen {
+    @apply sticky left-0 z-10 border-r border-slate-200 bg-white;
+  }
+
+  /* The corner cell belongs to both sticky contexts, so it outranks each. */
+  .sheet-grid th.sheet-grid-frozen {
+    @apply z-30 bg-slate-100;
+  }
+
+  /* Row hover has to be re-applied to the frozen cell: it carries its own
+     opaque background and would otherwise stay white while the row tints. */
+  .sheet-grid tbody tr:hover td {
+    @apply bg-slate-50;
+  }
+
+  /* ------------------------------------------------------------------------
+     Progress bar
+
+     Built on the native <progress> element rather than a div with a percentage
+     width. It announces its value to assistive technology for free, and the
+     fill is driven by the value attribute, so no inline style is needed to
+     size it.
+     ---------------------------------------------------------------------- */
+
+  .task-progress {
+    @apply h-1.5 w-full appearance-none overflow-hidden rounded-full border-0
+      bg-slate-200;
+  }
+
+  .task-progress::-webkit-progress-bar {
+    @apply rounded-full bg-slate-200;
+  }
+
+  .task-progress::-webkit-progress-value {
+    @apply rounded-full bg-sky-600;
+  }
+
+  .task-progress::-moz-progress-bar {
+    @apply rounded-full bg-sky-600;
+  }
+
+  /* Complete work reads emerald, matching the Done status tint. */
+  .task-progress[data-complete='true']::-webkit-progress-value {
+    @apply bg-emerald-500;
+  }
+
+  .task-progress[data-complete='true']::-moz-progress-bar {
+    @apply bg-emerald-500;
   }
 }

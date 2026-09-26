@@ -1,7 +1,9 @@
 import * as React from 'react';
 
+import { CATEGORY_LABELS, ROLE_LABELS } from '@/lib/tracker/enums';
 import { cn } from '@/lib/utils';
 import type {
+  TaskCategory,
   TaskFreshness,
   TaskPriority,
   TaskStatus,
@@ -19,17 +21,6 @@ import type {
  * union in `@/types/tracker` turns the missing badge into a compile error
  * rather than an unstyled badge at runtime.
  */
-
-/* -------------------------------------------------------------------------- */
-/* Labels                                                                     */
-/* -------------------------------------------------------------------------- */
-
-export const ROLE_LABELS = {
-  managing_director: 'Managing Director',
-  project_engineer: 'Project Engineer',
-  data_manager: 'Data Manager',
-  team_member: 'Team Member',
-} satisfies Record<UserRole, string>;
 
 /* -------------------------------------------------------------------------- */
 /* Class lookups                                                              */
@@ -114,6 +105,31 @@ export function FreshnessIndicator({
     >
       <span aria-hidden="true" className="freshness-dot" />
       {freshness}
+    </span>
+  );
+}
+
+export interface CategoryBadgeProps extends React.ComponentProps<'span'> {
+  category: TaskCategory;
+}
+
+/**
+ * Category chip. Shows the short code, which is what the sheet uses and what
+ * fits a dense grid, with the long name as the accessible label and tooltip.
+ */
+export function CategoryBadge({
+  category,
+  className,
+  ...props
+}: CategoryBadgeProps) {
+  return (
+    <span
+      className={cn('badge-soft badge-category', className)}
+      title={CATEGORY_LABELS[category]}
+      {...props}
+    >
+      <span aria-hidden="true">{category}</span>
+      <span className="sr-only">{CATEGORY_LABELS[category]}</span>
     </span>
   );
 }
