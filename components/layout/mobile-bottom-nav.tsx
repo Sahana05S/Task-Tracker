@@ -28,12 +28,12 @@ export function MobileBottomNav() {
     <nav
       aria-label="Primary"
       className={cn(
-        'fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white md:hidden',
+        'fixed inset-x-2 bottom-2 z-40 rounded-3xl bg-white shadow-soft-lg md:hidden',
         // Clears the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
       )}
     >
-      <ul className="flex h-16 items-stretch justify-around">
+      <ul className="flex h-(--spacing-bottom-nav) items-stretch justify-around">
         {leading.map((item) => (
           <BottomNavLink key={item.href} pathname={pathname} {...item} />
         ))}
@@ -71,9 +71,11 @@ function BottomNavLink({
         href={href}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
-          'focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none',
-          active ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700',
+          'flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] transition-colors',
+          'focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none',
+          active
+            ? 'text-primary font-semibold'
+            : 'text-muted-foreground hover:text-foreground font-medium',
         )}
       >
         <Icon className="size-5" />

@@ -8,42 +8,39 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export default function LogsLoading() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <span role="status" className="sr-only">
         Loading effort log
       </span>
 
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-3 w-64" />
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-7 w-44" />
+          <Skeleton className="h-4 w-72" />
         </div>
-        <Skeleton className="h-8 w-28" />
+        <Skeleton className="h-8 w-28 rounded-full" />
       </div>
 
       {/* Two date groups */}
       {Array.from({ length: 2 }).map((_, group) => (
-        <div key={group} className="flex flex-col gap-2">
-          <div className="flex items-center gap-3 py-1">
+        <div key={group} className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 py-1.5">
             <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-4 w-14" />
-            <Skeleton className="h-4 w-12" />
-            <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
+            <Skeleton className="h-5 w-14 rounded-full" />
+            <Skeleton className="h-5 w-12 rounded-full" />
+            <span className="bg-border h-px flex-1" aria-hidden="true" />
           </div>
 
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-3">
             {Array.from({ length: group === 0 ? 2 : 1 }).map((_, entry) => (
-              <li
-                key={entry}
-                className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
-              >
+              <li key={entry} className="soft-card flex flex-col gap-2 px-4 py-3.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Skeleton className="h-3.5 w-20" />
-                  <Skeleton className="h-4 w-10" />
+                  <Skeleton className="h-5 w-10 rounded-full" />
                   <span className="ml-auto flex items-center gap-1.5">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-12 rounded-full" />
                   </span>
                 </div>
 
@@ -52,13 +49,13 @@ export default function LogsLoading() {
                 <Skeleton className="h-3 w-4/5" />
 
                 <div className="flex gap-1.5">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-5 w-40 rounded-full" />
+                  <Skeleton className="h-5 w-32 rounded-full" />
                 </div>
 
-                <div className="flex items-center gap-1 border-t border-slate-100 pt-2">
-                  <Skeleton className="h-7 w-16" />
-                  <Skeleton className="h-7 w-20" />
+                <div className="border-border flex items-center gap-1 border-t pt-2.5">
+                  <Skeleton className="h-7 w-16 rounded-full" />
+                  <Skeleton className="h-7 w-20 rounded-full" />
                 </div>
               </li>
             ))}

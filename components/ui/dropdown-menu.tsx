@@ -42,7 +42,7 @@ function DropdownMenuContent({
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          'z-50 min-w-40 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-slate-900 shadow-md',
+          'border-border text-foreground z-50 min-w-44 overflow-hidden rounded-xl border bg-white p-1.5 shadow-soft-lg',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
           'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
@@ -86,9 +86,9 @@ function DropdownMenuItem({
       data-variant={variant}
       data-inset={inset}
       className={cn(
-        "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
-        'focus:bg-slate-100 focus:text-slate-900',
-        'data-[variant=destructive]:text-rose-600 data-[variant=destructive]:focus:bg-rose-50',
+        "relative flex cursor-default items-center gap-2 rounded-lg px-2.5 py-2 text-sm outline-none select-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
+        'focus:bg-primary-subtle focus:text-primary',
+        'data-[variant=destructive]:text-rose-600 data-[variant=destructive]:focus:bg-rose-50 data-[variant=destructive]:focus:text-rose-700',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         'data-[inset=true]:pl-8',
         className,

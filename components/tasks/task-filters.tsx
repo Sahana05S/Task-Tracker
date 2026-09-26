@@ -60,7 +60,7 @@ export function TaskFilters({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3">
+    <div className="soft-card flex flex-col gap-2.5 p-4">
       <div className="flex flex-wrap items-center gap-2">
         {/* Search */}
         <div className="relative min-w-52 flex-1">
@@ -234,8 +234,10 @@ function FacetSelect({
         aria-label={`Filter by ${label.toLowerCase()}`}
         className={cn(
           className,
-          // Narrowed facets are tinted so active filters are visible at a glance.
-          value !== ALL && 'border-sky-300 bg-sky-50 text-sky-800',
+          // Narrowed facets take the forest tint, so active filters read at a
+          // glance without introducing a competing accent hue.
+          value !== ALL &&
+            'border-primary/25 bg-primary-subtle text-primary font-semibold',
         )}
       >
         {selectedLabel}

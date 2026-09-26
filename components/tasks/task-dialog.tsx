@@ -298,7 +298,7 @@ function TaskForm({
         ) : null}
       </div>
 
-      <SheetFooter className="flex-row justify-end border-t border-slate-200">
+      <SheetFooter className="border-border flex-row justify-end border-t">
         <Button
           type="button"
           variant="outline"

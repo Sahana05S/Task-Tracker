@@ -149,9 +149,9 @@ function TaskCard({
     task.status !== 'Discarded';
 
   return (
-    <article className="flex flex-col rounded-lg border border-slate-200 bg-white">
+    <article className="soft-card-interactive flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
+      <div className="border-border flex items-center gap-2 border-b px-4 py-2.5">
         <span className="task-tag">{task.taskTag}</span>
         <CategoryBadge category={task.category} />
         <FreshnessIndicator freshness={task.freshness} className="ml-auto" />
@@ -162,9 +162,11 @@ function TaskCard({
         type="button"
         onClick={onOpenDetails}
         aria-label={`Open details for ${task.taskTag}`}
-        className="flex flex-col gap-2 px-3 py-2.5 text-left transition-colors hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none"
+        className="hover:bg-muted focus-visible:ring-primary/30 flex flex-col gap-2.5 px-4 py-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
-        <span className="text-sm font-medium text-slate-900">{task.title}</span>
+        <span className="text-foreground text-sm font-semibold">
+          {task.title}
+        </span>
 
         <span className="flex items-center gap-2">
           <Avatar className="size-5">
@@ -223,7 +225,7 @@ function TaskCard({
       </button>
 
       {/* Footer */}
-      <div className="flex items-center gap-2 border-t border-slate-200 px-3 py-2">
+      <div className="border-border flex items-center gap-2 border-t px-4 py-2.5">
         <StatusSelect
           taskId={task.id}
           taskTag={task.taskTag}

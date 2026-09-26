@@ -103,12 +103,12 @@ export function TaskWorkspace({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-col">
-          <h2 className="text-base font-semibold text-slate-900">
+      <div className="flex items-center justify-between gap-3 pt-2">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             Task Tracker
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-muted-foreground text-sm">
             {canManage
               ? 'Full edit rights on every task.'
               : 'You can update status and progress on tasks assigned to you.'}
@@ -116,7 +116,7 @@ export function TaskWorkspace({
         </div>
 
         {canManage ? (
-          <Button type="button" onClick={openCreate} size="sm">
+          <Button type="button" onClick={openCreate}>
             <PlusIcon aria-hidden="true" />
             New task
           </Button>
@@ -219,10 +219,13 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <SearchXIcon className="size-5 text-slate-400" aria-hidden="true" />
-      <p className="text-sm font-medium text-slate-900">{title}</p>
-      <p className="max-w-sm text-sm text-slate-500">{description}</p>
+    <div className="soft-card flex flex-col items-center gap-2 px-6 py-14 text-center">
+      <SearchXIcon
+        className="text-muted-foreground size-5"
+        aria-hidden="true"
+      />
+      <p className="text-foreground text-sm font-semibold">{title}</p>
+      <p className="text-muted-foreground max-w-sm text-sm">{description}</p>
       {action}
     </div>
   );

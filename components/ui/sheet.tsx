@@ -52,12 +52,12 @@ export interface SheetContentProps
 
 const sideClasses: Record<SheetSide, string> = {
   right:
-    'inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right',
-  left: 'inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left',
-  top: 'inset-x-0 top-0 h-auto border-b data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top',
+    'inset-y-0 right-0 h-full w-3/4 rounded-l-3xl sm:max-w-sm data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right',
+  left: 'inset-y-0 left-0 h-full w-3/4 rounded-r-3xl sm:max-w-sm data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left',
+  top: 'inset-x-0 top-0 h-auto rounded-b-3xl data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top',
   // Mobile forms slide up as a full-width bottom drawer, per the spec.
   bottom:
-    'inset-x-0 bottom-0 h-auto max-h-[90dvh] rounded-t-xl border-t data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom',
+    'inset-x-0 bottom-0 h-auto max-h-[90dvh] rounded-t-3xl data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom',
 };
 
 function SheetContent({
@@ -73,7 +73,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'fixed z-50 flex flex-col gap-4 border-slate-200 bg-white shadow-lg transition ease-in-out',
+          'fixed z-50 flex flex-col gap-4 bg-white shadow-soft-lg transition ease-in-out',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=open]:duration-300 data-[state=closed]:duration-200',
           sideClasses[side],
@@ -104,7 +104,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="sheet-header"
       className={cn(
-        'flex flex-col gap-1 border-b border-slate-200 px-4 py-4',
+        'border-border flex flex-col gap-1 border-b px-5 py-5',
         className,
       )}
       {...props}
@@ -116,7 +116,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="sheet-footer"
-      className={cn('mt-auto flex flex-col gap-2 px-4 py-4', className)}
+      className={cn('mt-auto flex flex-col gap-2 px-5 py-5', className)}
       {...props}
     />
   );

@@ -154,9 +154,9 @@ export function ProgressInput({
           aria-label={`Progress percentage for ${taskTag}`}
           aria-invalid={invalid}
           className={cn(
-            'w-14 rounded-sm border border-transparent bg-transparent px-1 py-0.5 text-right text-xs text-slate-900 [font-variant-numeric:tabular-nums]',
-            'hover:border-slate-200 hover:bg-white',
-            'focus-visible:border-sky-400 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-sky-500/30 focus-visible:outline-none',
+            'text-foreground w-14 rounded-lg border border-transparent bg-transparent px-1.5 py-0.5 text-right text-xs [font-variant-numeric:tabular-nums]',
+            'hover:border-input hover:bg-white',
+            'focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:bg-white focus-visible:ring-2 focus-visible:outline-none',
             'disabled:text-slate-400',
             // Spin buttons steal width the dense grid cannot spare.
             '[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',

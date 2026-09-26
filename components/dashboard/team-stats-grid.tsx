@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   ActivityIcon,
+  ArrowUpRightIcon,
   ClockIcon,
   GaugeIcon,
   ScaleIcon,
@@ -9,23 +10,42 @@ import {
 
 import type { TeamAnalytics } from '@/lib/analytics/engine';
 import { formatNumeric } from '@/lib/tracker/format';
+import { cn } from '@/lib/utils';
 
 export interface TeamStatsGridProps {
   analytics: TeamAnalytics;
 }
 
+interface StatCardProps {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  unit?: string;
+  detail: string;
+  /**
+   * Renders the card as the forest-green hero. Reserved for the single most
+   * important figure on the page; a second one would cancel the emphasis.
+   */
+  hero?: boolean;
+}
+
 /**
- * Dense key-metric row.
+ * Key metric row.
  *
- * Each card pairs the headline figure with the denominator it came from, so a
- * rate is never shown without the quantity behind it.
+ * The leading card is the hero: a full forest container with high-contrast text,
+ * which is what draws the eye first. The remaining three are white soft cards, so
+ * the hierarchy is carried by surface rather than by size.
+ *
+ * Every card pairs its headline figure with the denominator behind it — a rate is
+ * never shown without the quantity it came from.
  */
 export function TeamStatsGrid({ analytics }: TeamStatsGridProps) {
   const { totals, medians } = analytics;
 
   return (
-    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatCard
+        hero
         icon={GaugeIcon}
         label="Team average productivity"
         value={
@@ -81,30 +101,47 @@ export function TeamStatsGrid({ analytics }: TeamStatsGridProps) {
   );
 }
 
-interface StatCardProps {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  unit?: string;
-  detail: string;
-}
-
-function StatCard({ icon: Icon, label, value, unit, detail }: StatCardProps) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  detail,
+  hero = false,
+}: StatCardProps) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white px-4 py-3">
-      <dt className="flex items-center gap-2 text-xs font-medium tracking-wide text-slate-500 uppercase">
+    <div className={hero ? 'metric-card-primary' : 'metric-card'}>
+      {/* Diagonal arrow affordance, top right. Decorative: the card is not a
+          link, so it is hidden from assistive technology. */}
+      <span className="metric-arrow" aria-hidden="true">
+        <ArrowUpRightIcon className="size-3.5" />
+      </span>
+
+      <dt
+        className={cn(
+          'flex items-center gap-2 pr-10 text-xs font-medium',
+          hero ? 'text-white/85' : 'text-muted-foreground',
+        )}
+      >
         <Icon className="size-3.5 shrink-0" aria-hidden="true" />
         {label}
       </dt>
+
       <dd className="flex items-baseline gap-1.5">
-        <span className="text-2xl font-semibold text-slate-900 [font-variant-numeric:tabular-nums]">
-          {value}
-        </span>
+        <span className="stat-figure">{value}</span>
         {unit ? (
-          <span className="text-xs text-slate-500">{unit}</span>
+          <span
+            className={cn(
+              'text-xs',
+              hero ? 'text-white/70' : 'text-muted-foreground',
+            )}
+          >
+            {unit}
+          </span>
         ) : null}
       </dd>
-      <dd className="text-xs text-slate-500">{detail}</dd>
+
+      <dd className="metric-trend">{detail}</dd>
     </div>
   );
 }

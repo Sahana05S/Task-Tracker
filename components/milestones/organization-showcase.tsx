@@ -23,7 +23,7 @@ export function OrganizationShowcase() {
 
       <section
         aria-labelledby="core-values-heading"
-        className="rounded-lg border border-slate-200 bg-white p-4"
+        className="soft-card p-5"
       >
         <h3
           id="core-values-heading"
@@ -35,7 +35,7 @@ export function OrganizationShowcase() {
         <dl className="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
           {CORE_VALUES.map(({ name, description, icon: Icon }) => (
             <div key={name} className="flex items-start gap-3">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+              <span className="bg-primary-subtle text-primary flex size-9 shrink-0 items-center justify-center rounded-xl">
                 <Icon className="size-4" aria-hidden="true" />
               </span>
               <div className="flex min-w-0 flex-col gap-0.5">
@@ -57,7 +57,7 @@ function StatementCard({ block }: { block: StatementBlock }) {
   return (
     <section
       aria-labelledby={headingId}
-      className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4"
+      className="soft-card flex flex-col gap-2 p-5"
     >
       <h3
         id={headingId}

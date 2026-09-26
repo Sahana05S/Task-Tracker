@@ -20,12 +20,19 @@ import type { User } from '@/types/tracker';
 export interface UserMenuProps {
   profile: User;
   /**
-   * `expanded` shows name and role alongside the avatar and is used in the
+   * `expanded` shows the name and email beside the avatar and is used in the
    * sidebar. `compact` is avatar-only, for the mobile header.
    */
   variant: 'expanded' | 'compact';
 }
 
+/**
+ * Profile trigger and account menu.
+ *
+ * The expanded form shows name over email, which is what the reference layout
+ * puts next to the avatar, with the role badge inside the menu where there is room
+ * for it to be read.
+ */
 export function UserMenu({ profile, variant }: UserMenuProps) {
   const initials = getInitials(profile.fullName);
   const isExpanded = variant === 'expanded';
@@ -34,47 +41,50 @@ export function UserMenu({ profile, variant }: UserMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'flex items-center rounded-md transition-colors',
-          'focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none',
+          'flex items-center transition-colors',
+          'focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none',
           isExpanded
-            ? 'w-full gap-2 p-2 hover:bg-slate-50 md:justify-center lg:justify-start'
-            : 'gap-2 p-1 hover:bg-slate-100',
+            ? 'soft-inset w-full gap-2.5 rounded-xl p-2.5 hover:bg-slate-100 md:justify-center lg:justify-start'
+            : 'gap-2 rounded-full p-0.5',
         )}
         aria-label={`Account menu for ${profile.fullName}`}
       >
-        <Avatar>
-          <AvatarFallback>{initials}</AvatarFallback>
+        <Avatar className="size-9">
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+            {initials}
+          </AvatarFallback>
         </Avatar>
 
         {isExpanded ? (
           <>
-            {/* Name plus role indicator, the two things the sidebar spec calls
-                for. Only visible in the expanded sidebar; the icon rail and the
-                mobile header fall back to the avatar alone. */}
-            <span className="hidden min-w-0 flex-1 flex-col items-start gap-1 text-left lg:flex">
-              <span className="w-full truncate text-sm font-medium text-slate-900">
+            {/* Name over email, matching the reference profile block. Only
+                visible in the expanded sidebar. */}
+            <span className="hidden min-w-0 flex-1 flex-col items-start text-left lg:flex">
+              <span className="text-foreground w-full truncate text-sm font-semibold">
                 {profile.fullName}
               </span>
-              <RoleBadge role={profile.role} className="max-w-full truncate" />
+              <span className="text-muted-foreground w-full truncate text-xs">
+                {profile.email}
+              </span>
             </span>
             <ChevronsUpDownIcon
-              className="hidden size-4 shrink-0 text-slate-400 lg:block"
+              className="text-muted-foreground hidden size-4 shrink-0 lg:block"
               aria-hidden="true"
             />
           </>
         ) : null}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-60">
-        <DropdownMenuLabel className="flex flex-col gap-2 py-2">
+      <DropdownMenuContent align="start" className="w-64">
+        <DropdownMenuLabel className="flex flex-col gap-2 py-2.5">
           <span className="flex flex-col">
-            <span className="truncate text-sm font-medium text-slate-900">
+            <span className="text-foreground truncate text-sm font-semibold">
               {profile.fullName}
             </span>
-            <span className="truncate text-xs font-normal text-slate-500">
+            <span className="text-muted-foreground truncate text-xs font-normal">
               {profile.email}
             </span>
-            <span className="truncate text-xs font-normal text-slate-500">
+            <span className="text-muted-foreground truncate text-xs font-normal">
               {profile.employeeId}
             </span>
           </span>

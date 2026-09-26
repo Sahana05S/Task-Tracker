@@ -2,78 +2,89 @@
 @import 'tw-animate-css';
 
 /* ==========================================================================
-   TaskPulse — Google Sheet Theme
-   Palette and badge tints are transcribed from steering/responsive-ui-design.md.
-   Colour values are the stock Tailwind slate/emerald/sky/rose/amber ramps, so
-   the literal utilities from the spec (bg-slate-50, border-slate-200, ...) stay
-   usable alongside these semantic tokens.
+   TaskPulse — Neumorphic / Soft-Card Theme
 
-   Light theme only. The spec describes a single high-focus light workspace and
-   never defines dark equivalents, so no dark variant is declared here.
+   Surfaces are separated by elevation and radius rather than by stroke: white
+   cards on a warm off-white field, generous corners, and a shadow soft enough to
+   read as a lift rather than a drop.
+
+   Forest green is the single accent. It marks primary actions, the hero metric
+   and the active chart series, and appears nowhere else, so its presence always
+   means "this is the important one".
+
+   Light theme only. The product describes a single high-focus light workspace and
+   defines no dark equivalents, so no dark variant is declared.
    ========================================================================== */
 
 :root {
-  --radius: 0.5rem;
+  /* Corners. 1rem is the card default; larger surfaces step up from here. */
+  --radius: 1rem;
 
-  /* Base structure & grid */
-  --background: oklch(0.984 0.003 247.858); /* slate-50  page background   */
-  --foreground: oklch(0.208 0.042 265.755); /* slate-900 primary text      */
-  --card: oklch(1 0 0); /* white     card / cell       */
-  --card-foreground: oklch(0.208 0.042 265.755); /* slate-900               */
-  --popover: oklch(1 0 0); /* white                       */
-  --popover-foreground: oklch(0.208 0.042 265.755); /* slate-900            */
-  --border: oklch(0.929 0.013 255.508); /* slate-200 gridlines         */
-  --input: oklch(0.929 0.013 255.508); /* slate-200                   */
+  /* ---- Field and surfaces ---------------------------------------------- */
+  --background: #f4f5f7; /* warm off-white page field   */
+  --foreground: #0f172a; /* near-black body text        */
+  --card: #ffffff; /* pure white card             */
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
 
-  /* Text hierarchy */
-  --muted: oklch(0.968 0.007 247.896); /* slate-100                   */
-  --muted-foreground: oklch(0.554 0.046 257.417); /* slate-500 subtitles  */
+  /*
+    Borders are kept but demoted to a hairline barely above the card fill. Cards
+    themselves carry no stroke; this is for internal dividers where a shadow
+    cannot separate two regions of the same surface.
+  */
+  --border: #eef0f3;
+  --input: #e6e9ee;
 
-  /* Interactive */
-  --primary: oklch(0.208 0.042 265.755); /* slate-900                   */
-  --primary-foreground: oklch(0.984 0.003 247.858); /* slate-50             */
-  --secondary: oklch(0.968 0.007 247.896); /* slate-100                */
-  --secondary-foreground: oklch(0.279 0.041 260.031); /* slate-800          */
-  --accent: oklch(0.968 0.007 247.896); /* slate-100                   */
-  --accent-foreground: oklch(0.279 0.041 260.031); /* slate-800            */
-  --ring: oklch(0.685 0.169 237.323); /* sky-500   focus ring        */
+  /* ---- Text hierarchy -------------------------------------------------- */
+  --muted: #f7f8fa;
+  --muted-foreground: #64748b; /* slate-500, the secondary label tone */
 
-  /* Feedback */
-  --destructive: oklch(0.645 0.246 16.439); /* rose-500                 */
-  --destructive-foreground: oklch(1 0 0); /* white                      */
+  /* ---- Forest accent --------------------------------------------------- */
+  --primary: #10533b;
+  --primary-foreground: #ffffff;
+  /* Hover sits darker rather than lighter, so pressing feels like depth. */
+  --primary-hover: #0c4230;
+  /* Tint used for accent surfaces that must stay legible under dark text. */
+  --primary-subtle: #e7f0ec;
+  --primary-subtle-foreground: #10533b;
 
-  /* ------------------------------------------------------------------------
-     Chart series palette
+  --secondary: #f1f3f6;
+  --secondary-foreground: #33415c;
+  --accent: #f1f3f6;
+  --accent-foreground: #33415c;
+  --ring: #10533b;
 
-     Categorical series need distinguishable hues, which the status, priority and
-     freshness tints cannot supply: those carry fixed meaning and reusing them in
-     a chart would imply a status that is not there. Declared as tokens rather
-     than passed as literals because Recharts colours SVG through props, and
-     Tailwind only emits ramp variables for colours it sees used in class names.
-     ---------------------------------------------------------------------- */
-  --chart-1: oklch(0.588 0.158 241.966); /* sky-600     */
-  --chart-2: oklch(0.596 0.145 163.225); /* emerald-600 */
-  --chart-3: oklch(0.769 0.188 70.08); /*  amber-500   */
-  --chart-4: oklch(0.645 0.246 16.439); /* rose-500    */
-  --chart-5: oklch(0.606 0.25 292.717); /* violet-500  */
-  --chart-6: oklch(0.6 0.118 184.704); /*  teal-600    */
-  --chart-7: oklch(0.705 0.213 47.604); /* orange-500  */
-  --chart-8: oklch(0.704 0.04 256.788); /*  slate-400   */
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
 
-  /* Divergence colours for above/below median comparisons. */
-  --chart-positive: oklch(0.596 0.145 163.225); /* emerald-600 */
-  --chart-negative: oklch(0.645 0.246 16.439); /*  rose-500    */
-  --chart-grid: oklch(0.929 0.013 255.508); /*     slate-200   */
-  --chart-axis: oklch(0.554 0.046 257.417); /*     slate-500   */
-  --chart-reference: oklch(0.208 0.042 265.755); /* slate-900  */
+  /* ---- Sidebar --------------------------------------------------------- */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-accent: #f1f3f6;
+  --sidebar-accent-foreground: #10533b;
+  --sidebar-border: #eef0f3;
+  --sidebar-ring: #10533b;
 
-  /* Sidebar surface */
-  --sidebar: oklch(1 0 0); /* white                       */
-  --sidebar-foreground: oklch(0.208 0.042 265.755); /* slate-900            */
-  --sidebar-accent: oklch(0.968 0.007 247.896); /* slate-100            */
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755); /* slate-900     */
-  --sidebar-border: oklch(0.929 0.013 255.508); /* slate-200             */
-  --sidebar-ring: oklch(0.685 0.169 237.323); /* sky-500                 */
+  /* ---- Chart series ----------------------------------------------------
+     Forest leads, so the primary series matches the accent. The rest are muted
+     enough to sit behind it without competing.
+     ------------------------------------------------------------------- */
+  --chart-1: #10533b;
+  --chart-2: #2f8f68;
+  --chart-3: #7cc0a1;
+  --chart-4: #f59e0b;
+  --chart-5: #0ea5e9;
+  --chart-6: #f43f5e;
+  --chart-7: #8b5cf6;
+  --chart-8: #94a3b8;
+
+  --chart-positive: #10533b;
+  --chart-negative: #f43f5e;
+  /* Gridlines sit just above the card fill: present, never assertive. */
+  --chart-grid: #eef0f3;
+  --chart-axis: #94a3b8;
+  --chart-reference: #0f172a;
 }
 
 @theme inline {
@@ -87,8 +98,13 @@
   --color-input: var(--input);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-subtle-foreground: var(--primary-subtle-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent);
@@ -96,6 +112,7 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
@@ -117,97 +134,224 @@
   --color-chart-axis: var(--chart-axis);
   --color-chart-reference: var(--chart-reference);
 
-  /* Crisp sans-serif, Inter with a system-ui fallback per the spec. */
+  /* Clean neutral sans. Inter first, system stack behind it. */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', Roboto, sans-serif;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 0.5rem);
+  --radius-md: calc(var(--radius) - 0.25rem);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+  --radius-2xl: calc(var(--radius) + 0.5rem);
 
-  /* Fixed chrome heights, shared by the shell's padding and the nav bars. */
-  --spacing-sidebar: 16rem;
-  --spacing-header: 3.5rem;
-  --spacing-bottom-nav: 4rem;
+  /*
+    Soft elevation. Wide, low-opacity and almost vertical, which reads as a card
+    lifted off the field rather than an object casting a hard shadow.
+  */
+  --shadow-soft: 0 4px 20px rgb(0 0 0 / 0.03);
+  --shadow-soft-md: 0 6px 24px rgb(0 0 0 / 0.045);
+  --shadow-soft-lg: 0 14px 40px rgb(0 0 0 / 0.07);
+  /* Forest surfaces get a tinted shadow so they do not look pasted on. */
+  --shadow-forest: 0 10px 30px rgb(16 83 59 / 0.18);
+
+  /* Fixed chrome sizes, shared by the shell padding and the nav bars. */
+  --spacing-sidebar: 17rem;
+  --spacing-header: 4.5rem;
+  --spacing-bottom-nav: 4.5rem;
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-
   body {
     @apply bg-background text-foreground font-sans;
   }
 
-  /* Hours, percentages and scaled progress must align in the data grid. */
+  /* Hours, percentages and progress must align down a column. */
   th,
   td {
     font-variant-numeric: tabular-nums;
   }
 
   :focus-visible {
-    @apply outline-ring outline-2 outline-offset-2;
+    @apply outline-primary outline-2 outline-offset-2;
   }
 }
 
 /* ==========================================================================
-   Soft-tint badges — exact tints from responsive-ui-design.md
+   Surfaces
    ========================================================================== */
 
 @layer components {
-  /* Shared badge chrome: dense, bordered, uppercase-free soft tint. */
+  /* The workhorse container: white, generously rounded, lifted, unbordered. */
+  .soft-card {
+    @apply bg-card rounded-2xl shadow-soft;
+  }
+
+  /* Same surface where children must be clipped to the corner radius. */
+  .soft-card-clip {
+    @apply bg-card overflow-hidden rounded-2xl shadow-soft;
+  }
+
+  /* Interactive cards lift slightly further on hover. */
+  .soft-card-interactive {
+    @apply bg-card rounded-2xl shadow-soft transition-shadow;
+  }
+
+  .soft-card-interactive:hover {
+    @apply shadow-soft-md;
+  }
+
+  /* Inset region on a card: a recess rather than another raised plane. */
+  .soft-inset {
+    @apply bg-muted rounded-xl;
+  }
+
+  /* Hairline divider for splitting one surface, where shadow cannot. */
+  .soft-divider {
+    @apply border-border border-t;
+  }
+
+  /* ------------------------------------------------------------------------
+     Metric cards
+     ---------------------------------------------------------------------- */
+
+  .metric-card {
+    @apply bg-card relative flex flex-col gap-3 rounded-2xl p-5 shadow-soft;
+  }
+
+  /* Hero metric: full forest container, high-contrast text. */
+  .metric-card-primary {
+    @apply bg-primary text-primary-foreground relative flex flex-col gap-3
+      rounded-2xl p-5 shadow-forest;
+  }
+
+  /* The ↗ affordance in the top-right corner of a metric card. */
+  .metric-arrow {
+    @apply border-border text-muted-foreground absolute top-4 right-4 flex size-7
+      items-center justify-center rounded-full border bg-white transition-colors;
+  }
+
+  .metric-card-primary .metric-arrow {
+    @apply border-white/25 bg-white/10 text-white;
+  }
+
+  /* Trend chip beneath a metric figure. */
+  .metric-trend {
+    @apply text-muted-foreground inline-flex items-center gap-1.5 text-xs
+      font-medium;
+  }
+
+  .metric-card-primary .metric-trend {
+    @apply text-white/80;
+  }
+
+  /* ------------------------------------------------------------------------
+     Typography scale
+     ---------------------------------------------------------------------- */
+
+  /* Large bold figure, as used by metric cards. */
+  .stat-figure {
+    @apply text-3xl leading-none font-bold tracking-tight
+      [font-variant-numeric:tabular-nums];
+  }
+
+  /* Muted small label above or below a figure. */
+  .stat-label {
+    @apply text-muted-foreground text-xs font-medium;
+  }
+
+  /* Section eyebrow: small, uppercase, widely tracked, muted. */
+  .eyebrow {
+    @apply text-muted-foreground text-[11px] font-semibold tracking-[0.12em]
+      uppercase;
+  }
+
+  /* Page or panel title. */
+  .panel-title {
+    @apply text-foreground text-lg font-semibold tracking-tight;
+  }
+
+  /* Keyboard hint, e.g. the ⌘F badge in the search field. */
+  .kbd {
+    @apply border-border text-muted-foreground inline-flex items-center gap-0.5
+      rounded-md border bg-white px-1.5 py-0.5 font-sans text-[11px] font-medium;
+  }
+}
+
+/* ==========================================================================
+   Soft pill badges
+
+   One shared pill shape. Every taxonomy uses it, and hue carries the meaning.
+
+   Status and priority are deliberately given non-overlapping hues: in a dense
+   grid row they sit two columns apart, and reusing amber for both "In Progress"
+   and "Medium" would put two identical chips side by side meaning unrelated
+   things.
+   ========================================================================== */
+
+@layer components {
   .badge-soft {
-    @apply inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs
       font-medium whitespace-nowrap;
   }
 
   /* --- Task status ------------------------------------------------------ */
   .badge-status-done {
-    @apply bg-emerald-50 text-emerald-700 border-emerald-200;
+    @apply bg-emerald-100 text-emerald-800;
   }
 
   .badge-status-in-progress {
-    @apply bg-sky-50 text-sky-700 border-sky-200;
+    @apply bg-amber-100 text-amber-800;
   }
 
   .badge-status-not-started {
-    @apply bg-slate-100 text-slate-600 border-slate-200;
+    @apply bg-slate-100 text-slate-600;
   }
 
+  /* Discarded reads as withdrawn rather than failed, so it is dimmed and
+     struck through instead of taking an alarm colour. */
   .badge-status-discarded {
-    @apply bg-rose-50/50 text-rose-600 border-rose-200;
+    @apply bg-slate-200 text-slate-500 line-through decoration-slate-400;
   }
 
   /* --- Task priority --------------------------------------------------- */
   .badge-priority-focus {
-    @apply bg-rose-100 text-rose-800 border-rose-300 font-semibold;
+    @apply bg-rose-100 font-semibold text-rose-800;
   }
 
   .badge-priority-high {
-    @apply bg-rose-50 text-rose-700 border-rose-200;
+    @apply bg-orange-100 text-orange-800;
   }
 
   .badge-priority-medium {
-    @apply bg-amber-50 text-amber-700 border-amber-200;
+    @apply bg-sky-100 text-sky-800;
   }
 
   .badge-priority-low {
-    @apply bg-slate-100 text-slate-700 border-slate-200;
+    @apply bg-slate-100 text-slate-600;
   }
 
-  /* "No" priority is dimmed and borderless rather than tinted. */
+  /* Unprioritised: present but deliberately recessive. */
   .badge-priority-no {
-    @apply border-transparent bg-transparent text-slate-400;
+    @apply bg-transparent text-slate-400;
   }
 
-  /* --- Neutral badge, used for the sidebar role indicator --------------- */
+  /* --- Neutral, for roles and counts ----------------------------------- */
   .badge-neutral {
-    @apply bg-slate-100 text-slate-600 border-slate-200;
+    @apply bg-slate-100 text-slate-600;
   }
 
-  /* --- Freshness: small coloured dot plus matching label ---------------- */
+  /* --- Accent, for the single most important chip on a surface ---------- */
+  .badge-accent {
+    @apply bg-primary-subtle text-primary-subtle-foreground font-semibold;
+  }
+
+  /* --- Category: neutral. Thirteen categories carry no hue meaning. ----- */
+  .badge-category {
+    @apply bg-slate-100 font-semibold tracking-wide text-slate-600;
+  }
+
+  /* --- Freshness: dot plus label, a different form from the filled pills,
+         so it stays distinguishable even where hues repeat. --------------- */
   .freshness-indicator {
     @apply inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap;
   }
@@ -239,108 +383,143 @@
   .freshness-rotten .freshness-dot {
     @apply bg-rose-500;
   }
+}
 
-  /* ------------------------------------------------------------------------
-     Sheet-faithful structure
-     ---------------------------------------------------------------------- */
+/* ==========================================================================
+   Sidebar navigation
+   ========================================================================== */
 
-  /* White cell surface with the subtle micro-border from the spec. */
-  .sheet-surface {
-    @apply border-slate-200 bg-white border;
+@layer components {
+  /* "MENU" / "GENERAL" group heading. */
+  .nav-section-label {
+    @apply text-muted-foreground px-3 pt-4 pb-1.5 text-[11px] font-semibold
+      tracking-[0.12em] uppercase;
   }
 
-  /* Sticky dense grid header. */
-  .sheet-grid-header {
-    @apply bg-slate-100 text-slate-700 text-xs font-semibold uppercase;
+  /* Resting nav row: muted, no fill. */
+  .nav-item {
+    @apply text-muted-foreground relative flex items-center gap-3 rounded-xl px-3
+      py-2.5 text-sm font-medium transition-colors;
   }
 
-  /* Hover highlight for grid rows. */
-  .sheet-grid-row {
-    @apply hover:bg-slate-50 border-slate-200 border-b;
+  .nav-item:hover {
+    @apply bg-muted text-foreground;
   }
 
-  /* Numeric cells: aligned figures for hours, percentages and progress. */
-  .sheet-numeric {
-    @apply text-right [font-variant-numeric:tabular-nums];
+  /*
+    Active row: forest text, bold weight, and a rounded indicator bar pinned to
+    the left edge. Weight and bar carry the state together, so it survives both
+    a colourblind reading and the icon-only rail.
+  */
+  .nav-item-active {
+    @apply text-primary bg-primary-subtle font-semibold;
   }
 
-  /* Task tag: fixed-width so tags like Sep26_T5 scan down the column. */
-  .task-tag {
-    @apply font-mono text-xs font-medium tracking-tight text-slate-700;
+  .nav-item-active::before {
+    @apply bg-primary absolute top-1/2 left-0 h-6 w-1 -translate-x-2
+      -translate-y-1/2 rounded-full content-[''];
   }
 
-  /* Category chip. The design spec assigns tints to status, priority and
-     freshness only, so categories stay neutral rather than inventing a
-     thirteen-colour scale. */
-  .badge-category {
-    @apply border-slate-200 bg-slate-50 font-medium tracking-wide text-slate-600;
+  /* Circular icon button, used by the header bell and overflow controls. */
+  .icon-button {
+    @apply text-muted-foreground flex size-10 shrink-0 items-center
+      justify-center rounded-full bg-white shadow-soft transition-colors;
   }
 
-  /* ------------------------------------------------------------------------
-     Data grid
-     ---------------------------------------------------------------------- */
+  .icon-button:hover {
+    @apply text-foreground;
+  }
+}
 
+/* ==========================================================================
+   Data grid
+
+   Density is unchanged — same row height, same column count. What changes is the
+   framing: the container is rounded and lifted, the header sits on a recessed
+   tint instead of a grey band, and row separation drops to a hairline.
+   ========================================================================== */
+
+@layer components {
   /* border-separate with zero spacing is what lets sticky cells keep their
-     borders. With the default border-collapse, borders belong to the table
-     rather than the cell and they scroll away from a sticky column. */
+     backgrounds and dividers while the table scrolls under them. */
   .sheet-grid {
     @apply w-full border-separate border-spacing-0 text-sm;
   }
 
-  /* Sticky header row. Sits above the sticky first column. */
   .sheet-grid th {
-    @apply sticky top-0 z-20 border-b border-slate-200 bg-slate-100 px-3 py-2
-      text-left text-xs font-semibold whitespace-nowrap text-slate-700 uppercase;
+    @apply text-muted-foreground border-border sticky top-0 z-20 border-b
+      bg-[#fbfcfd] px-4 py-3 text-left text-[11px] font-semibold tracking-wider
+      whitespace-nowrap uppercase;
   }
 
   .sheet-grid td {
-    @apply border-b border-slate-200 px-3 py-1.5 align-middle text-slate-900;
+    @apply border-border text-foreground border-b px-4 py-2.5 align-middle;
   }
 
-  /* Frozen Task Tag column, for horizontal scrolling. Opaque background so
-     scrolled content passes behind it rather than through it. */
+  /* Frozen first column for horizontal scrolling. Opaque, so scrolled content
+     passes behind it rather than through it. */
   .sheet-grid .sheet-grid-frozen {
-    @apply sticky left-0 z-10 border-r border-slate-200 bg-white;
+    @apply sticky left-0 z-10 bg-white;
   }
 
   /* The corner cell belongs to both sticky contexts, so it outranks each. */
   .sheet-grid th.sheet-grid-frozen {
-    @apply z-30 bg-slate-100;
+    @apply z-30 bg-[#fbfcfd];
   }
 
-  /* Row hover has to be re-applied to the frozen cell: it carries its own
-     opaque background and would otherwise stay white while the row tints. */
+  /* Last row drops its rule: the card's rounded edge is the boundary. */
+  .sheet-grid tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
   .sheet-grid tbody tr:hover td {
-    @apply bg-slate-50;
+    @apply bg-muted;
   }
 
-  /* ------------------------------------------------------------------------
-     Progress bar
+  /* Hover has to be restated on the frozen cell, which carries its own opaque
+     fill and would otherwise stay white while the row tints. */
+  .sheet-grid tbody tr:hover .sheet-grid-frozen {
+    @apply bg-muted;
+  }
 
-     Built on the native <progress> element rather than a div with a percentage
-     width. It announces its value to assistive technology for free, and the
-     fill is driven by the value attribute, so no inline style is needed to
-     size it.
-     ---------------------------------------------------------------------- */
+  /* Task tag: fixed width so tags scan down the column. */
+  .task-tag {
+    @apply text-foreground font-mono text-xs font-semibold tracking-tight;
+  }
 
+  /* Numeric cells: aligned figures. */
+  .sheet-numeric {
+    @apply text-right [font-variant-numeric:tabular-nums];
+  }
+}
+
+/* ==========================================================================
+   Progress bar
+
+   Built on the native <progress> element rather than a div with a percentage
+   width: it announces its value to assistive technology for free, and the fill
+   is driven by the value attribute, so no inline style is needed to size it.
+   ========================================================================== */
+
+@layer components {
   .task-progress {
-    @apply h-1.5 w-full appearance-none overflow-hidden rounded-full border-0
-      bg-slate-200;
+    @apply h-2 w-full appearance-none overflow-hidden rounded-full border-0
+      bg-slate-100;
   }
 
   .task-progress::-webkit-progress-bar {
-    @apply rounded-full bg-slate-200;
+    @apply rounded-full bg-slate-100;
   }
 
   .task-progress::-webkit-progress-value {
-    @apply rounded-full bg-sky-600;
+    @apply bg-primary rounded-full;
   }
 
   .task-progress::-moz-progress-bar {
-    @apply rounded-full bg-sky-600;
+    @apply bg-primary rounded-full;
   }
 
-  /* Complete work reads emerald, matching the Done status tint. */
+  /* Complete work reads emerald, matching the Done status pill. */
   .task-progress[data-complete='true']::-webkit-progress-value {
     @apply bg-emerald-500;
   }

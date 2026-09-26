@@ -30,15 +30,15 @@ export function StarPerformerCard({
 }: StarPerformerCardProps) {
   if (!performer) {
     return (
-      <section className="rounded-lg border border-dashed border-slate-300 bg-white px-6 py-8 text-center">
+      <section className="soft-card px-6 py-10 text-center">
         <SparklesIcon
-          className="mx-auto size-5 text-slate-400"
+          className="text-muted-foreground mx-auto size-5"
           aria-hidden="true"
         />
-        <h2 className="mt-2 text-sm font-medium text-slate-900">
+        <h2 className="text-foreground mt-2 text-sm font-semibold">
           No star performer for {periodLabel}
         </h2>
-        <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+        <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm">
           The award needs at least one member with logged hours. Once effort is
           recorded, the composite score decides it.
         </p>
@@ -49,49 +49,44 @@ export function StarPerformerCard({
   const { starBreakdown: breakdown } = performer;
 
   return (
-    <section
-      aria-labelledby="star-performer-heading"
-      className="overflow-hidden rounded-lg border border-slate-200 bg-white"
-    >
+    <section aria-labelledby="star-performer-heading" className="soft-card-clip">
       {/* Banner */}
-      <div className="flex flex-wrap items-center gap-4 border-b border-slate-200 bg-slate-100 px-4 py-4 sm:px-6">
-        <Avatar className="size-12 shrink-0">
-          <AvatarFallback className="bg-slate-900 text-sm text-slate-50">
+      <div className="bg-primary-subtle flex flex-wrap items-center gap-4 px-5 py-5 sm:px-6">
+        <Avatar className="size-14 shrink-0">
+          <AvatarFallback className="bg-primary text-primary-foreground text-base font-semibold">
             {getInitials(performer.fullName)}
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-amber-700 uppercase">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-primary flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.12em] uppercase">
             <SparklesIcon className="size-3.5" aria-hidden="true" />
             Star performer · {periodLabel}
           </span>
           <h2
             id="star-performer-heading"
-            className="truncate text-lg font-semibold text-slate-900"
+            className="text-foreground truncate text-xl font-bold tracking-tight"
           >
             {performer.fullName}
           </h2>
           <span className="flex flex-wrap items-center gap-2">
             <RoleBadge role={performer.role} />
-            <span className="text-xs text-slate-500">
+            <span className="text-muted-foreground text-xs">
               {performer.employeeId}
             </span>
           </span>
         </div>
 
         <div className="ml-auto flex flex-col items-end">
-          <span className="text-xs font-medium tracking-wide text-slate-500 uppercase">
-            Composite score
-          </span>
-          <span className="text-2xl font-semibold text-slate-900 [font-variant-numeric:tabular-nums]">
+          <span className="stat-label">Composite score</span>
+          <span className="stat-figure text-primary">
             {formatNumeric(performer.starScore)}
           </span>
         </div>
       </div>
 
       {/* Headline figures */}
-      <dl className="grid grid-cols-2 divide-slate-200 border-b border-slate-200 sm:grid-cols-4 sm:divide-x">
+      <dl className="divide-border border-border grid grid-cols-2 border-b sm:grid-cols-4 sm:divide-x">
         <Figure
           label="Scaled progress"
           value={formatNumeric(performer.scaledProgress)}
@@ -119,11 +114,9 @@ export function StarPerformerCard({
       </dl>
 
       {/* Score composition */}
-      <div className="px-4 py-3 sm:px-6">
-        <h3 className="text-xs font-medium tracking-wide text-slate-500 uppercase">
-          How the score was reached
-        </h3>
-        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate-600">
+      <div className="px-5 py-4 sm:px-6">
+        <h3 className="eyebrow">How the score was reached</h3>
+        <ul className="text-muted-foreground mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
           <Term
             label={`Productivity differential × ${STAR_WEIGHTS.productivityDiff}`}
             value={breakdown.productivityDiff}
@@ -142,9 +135,9 @@ export function StarPerformerCard({
           />
         </ul>
         {medianProductivity !== null ? (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="text-muted-foreground mt-2.5 text-xs">
             Team median productivity is{' '}
-            <span className="font-medium text-slate-700 [font-variant-numeric:tabular-nums]">
+            <span className="text-foreground font-semibold [font-variant-numeric:tabular-nums]">
               {formatNumeric(medianProductivity)}
             </span>{' '}
             scaled progress per hour.
@@ -166,11 +159,9 @@ interface FigureProps {
 
 function Figure({ label, value, delta, deltaSuffix = '' }: FigureProps) {
   return (
-    <div className="flex flex-col gap-0.5 px-4 py-3 sm:px-6">
-      <dt className="text-xs font-medium tracking-wide text-slate-500 uppercase">
-        {label}
-      </dt>
-      <dd className="text-base font-semibold text-slate-900 [font-variant-numeric:tabular-nums]">
+    <div className="flex flex-col gap-1 px-5 py-4 sm:px-6">
+      <dt className="stat-label">{label}</dt>
+      <dd className="text-foreground text-lg font-bold tracking-tight [font-variant-numeric:tabular-nums]">
         {value}
       </dd>
       {delta !== undefined && delta !== null ? (
@@ -196,12 +187,12 @@ function Figure({ label, value, delta, deltaSuffix = '' }: FigureProps) {
 
 function Term({ label, value }: { label: string; value: number }) {
   return (
-    <li className="flex items-center gap-1.5">
+    <li className="soft-inset flex items-center gap-1.5 px-2.5 py-1">
       <span>{label}</span>
       <span
         className={cn(
-          'font-medium [font-variant-numeric:tabular-nums]',
-          value >= 0 ? 'text-slate-900' : 'text-rose-700',
+          'font-semibold [font-variant-numeric:tabular-nums]',
+          value >= 0 ? 'text-foreground' : 'text-rose-700',
         )}
       >
         {value >= 0 ? '+' : ''}

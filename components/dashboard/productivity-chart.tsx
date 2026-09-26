@@ -96,8 +96,9 @@ export function ProductivityChart({
           : undefined
       }
     >
-      {/* Recharts needs a pixel height; the container supplies the width. */}
-      <div className="h-64 w-full">
+      {/* Recharts needs a pixel height; the container supplies the width. The
+          recessed panel keeps the plot visually inside the card. */}
+      <div className="soft-inset h-64 w-full p-2">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
@@ -121,7 +122,7 @@ export function ProductivityChart({
               width={40}
             />
             <Tooltip
-              cursor={{ fill: 'var(--color-slate-100)' }}
+              cursor={{ fill: 'var(--color-muted)', radius: 8 }}
               content={<ProductivityTooltip />}
             />
             {medianProductivity !== null ? (
@@ -137,7 +138,8 @@ export function ProductivityChart({
                 }}
               />
             ) : null}
-            <Bar dataKey="productivity" radius={[3, 3, 0, 0]}>
+            {/* Generous cap radius, matching the rounded language of the cards. */}
+            <Bar dataKey="productivity" radius={[8, 8, 4, 4]}>
               {data.map((datum) => (
                 <Cell
                   key={datum.fullName}
@@ -180,9 +182,9 @@ function ProductivityTooltip({ active, payload }: ProductivityTooltipProps) {
   if (!active || !datum) return null;
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
-      <p className="font-medium text-slate-900">{datum.fullName}</p>
-      <dl className="mt-1 flex flex-col gap-0.5 text-slate-600">
+    <div className="border-border rounded-xl border bg-white px-3.5 py-2.5 text-xs shadow-soft-lg">
+      <p className="text-foreground font-semibold">{datum.fullName}</p>
+      <dl className="text-muted-foreground mt-1.5 flex flex-col gap-0.5">
         <Row
           label="Productivity"
           value={`${formatNumeric(datum.productivity)} /h`}
@@ -209,7 +211,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
       <dt>{label}</dt>
-      <dd className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+      <dd className="text-foreground font-semibold [font-variant-numeric:tabular-nums]">
         {value}
       </dd>
     </div>
@@ -232,20 +234,22 @@ export function ChartShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
+    <section className="soft-card flex flex-col gap-4 p-5">
       <header className="flex flex-col gap-0.5">
-        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-        <p className="text-xs text-slate-500">{subtitle}</p>
+        <h3 className="panel-title text-base">{title}</h3>
+        <p className="text-muted-foreground text-xs">{subtitle}</p>
       </header>
       {children}
-      {footer ? <p className="text-xs text-slate-500">{footer}</p> : null}
+      {footer ? (
+        <p className="text-muted-foreground text-xs">{footer}</p>
+      ) : null}
     </section>
   );
 }
 
 export function EmptyNote({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex h-64 items-center justify-center rounded-md border border-dashed border-slate-300 px-6 text-center text-sm text-slate-500">
+    <p className="soft-inset text-muted-foreground flex h-64 items-center justify-center px-6 text-center text-sm">
       {children}
     </p>
   );

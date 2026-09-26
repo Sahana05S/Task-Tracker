@@ -48,7 +48,7 @@ export function MilestoneChecklist({
   return (
     <section
       aria-labelledby="milestones-heading"
-      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4"
+      className="soft-card flex flex-col gap-4 p-5"
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="flex flex-col gap-0.5">
@@ -129,12 +129,14 @@ function StatusMarker({
   return (
     <span
       className={cn(
-        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border',
+        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full',
+        // Marker hues track the status pills: emerald done, amber in flight,
+        // neutral not started.
         status === 'Achieved'
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+          ? 'bg-emerald-100 text-emerald-700'
           : status === 'In Progress'
-            ? 'border-sky-200 bg-sky-50 text-sky-700'
-            : 'border-slate-200 bg-slate-50 text-slate-400',
+            ? 'bg-amber-100 text-amber-700'
+            : 'bg-muted text-slate-400',
       )}
     >
       <Icon className="size-3" />

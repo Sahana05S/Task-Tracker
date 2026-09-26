@@ -41,12 +41,12 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        'flex w-full items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-900 transition-colors',
-        'data-[size=default]:h-9 data-[size=sm]:h-8 data-[size=sm]:text-xs',
+        'border-input text-foreground flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 transition-colors',
+        'data-[size=default]:h-10 data-[size=sm]:h-9 data-[size=sm]:text-xs',
         'data-[placeholder]:text-slate-400',
-        'hover:bg-slate-50',
-        'focus-visible:border-sky-400 focus-visible:ring-2 focus-visible:ring-sky-500/30 focus-visible:outline-none',
-        'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400',
+        'hover:bg-muted',
+        'focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:ring-2 focus-visible:outline-none',
+        'disabled:bg-muted disabled:cursor-not-allowed disabled:text-slate-400',
         "[&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
         className,
       )}
@@ -72,7 +72,7 @@ function SelectContent({
         data-slot="select-content"
         position={position}
         className={cn(
-          'relative z-50 max-h-(--radix-select-content-available-height) min-w-32 overflow-y-auto overflow-x-hidden rounded-md border border-slate-200 bg-white text-slate-900 shadow-md',
+          'border-border text-foreground relative z-50 max-h-(--radix-select-content-available-height) min-w-32 overflow-x-hidden overflow-y-auto rounded-xl border bg-white shadow-soft-lg',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
           'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
@@ -123,8 +123,8 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        'relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none',
-        'focus:bg-slate-100 focus:text-slate-900',
+        'relative flex w-full cursor-default items-center gap-2 rounded-lg py-2 pr-8 pl-2.5 text-sm outline-none select-none',
+        'focus:bg-primary-subtle focus:text-primary',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className,
       )}

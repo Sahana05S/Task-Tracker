@@ -35,7 +35,7 @@ export function SectionPlaceholder({
       <Card>
         <CardHeader>
           <div className="flex items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+            <span className="bg-primary-subtle text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
               <Icon className="size-4" aria-hidden="true" />
             </span>
             <div className="flex min-w-0 flex-col gap-1">

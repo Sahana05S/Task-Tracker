@@ -22,11 +22,11 @@ export default async function MilestonesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col">
-        <h2 className="text-base font-semibold text-slate-900">
+      <div className="flex flex-col gap-0.5 pt-2">
+        <h2 className="text-foreground text-2xl font-bold tracking-tight">
           Vision, mission &amp; milestones
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-muted-foreground text-sm">
           What the organisation is working toward, and where this month stands
           against it.
         </p>

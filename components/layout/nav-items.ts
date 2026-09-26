@@ -9,21 +9,25 @@ import {
 /**
  * Single source of truth for workspace navigation.
  *
- * The desktop sidebar renders every entry. The mobile bottom bar renders only
- * the entries flagged `inBottomNav`, because the centre slot there is taken by
- * the "Log Hours" action button rather than a destination.
+ * The desktop sidebar renders every entry, grouped by section. The mobile bottom
+ * bar renders only the entries flagged `inBottomNav`, because the centre slot
+ * there is taken by the "Log Hours" action rather than a destination.
  */
+
+/** Sidebar grouping. Rendered as an uppercase section heading. */
+export type NavSection = 'menu' | 'general';
+
 export interface NavItem {
   readonly label: string;
   readonly href: string;
   readonly icon: LucideIcon;
+  readonly section: NavSection;
   /**
    * Whether this destination appears in the mobile bottom bar.
    *
-   * `responsive-ui-design.md` specifies four mobile slots as
-   * Dashboard | Tasks | Log Hours (+) | Milestones, so Logs is excluded here.
-   * It stays reachable on mobile through the quick-log sheet, which links to
-   * the full log history.
+   * The mobile layout allows four slots — Dashboard, Tasks, Log Hours and
+   * Milestones — so Logs is excluded here. It stays reachable on mobile through
+   * the quick-log sheet, which links to the full log history.
    */
   readonly inBottomNav: boolean;
 }
@@ -33,26 +37,36 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboardIcon,
+    section: 'menu',
     inBottomNav: true,
   },
   {
     label: 'Tasks',
     href: '/tasks',
     icon: ListChecksIcon,
+    section: 'menu',
     inBottomNav: true,
   },
   {
     label: 'Logs',
     href: '/logs',
     icon: ClockIcon,
+    section: 'menu',
     inBottomNav: false,
   },
   {
     label: 'Milestones',
     href: '/milestones',
     icon: TargetIcon,
+    section: 'menu',
     inBottomNav: true,
   },
+];
+
+/** Section order and headings, as rendered in the sidebar. */
+export const NAV_SECTIONS: readonly { id: NavSection; label: string }[] = [
+  { id: 'menu', label: 'Menu' },
+  { id: 'general', label: 'General' },
 ];
 
 /**

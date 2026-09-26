@@ -81,7 +81,7 @@ export function StatusSelect({
         <SelectTrigger
           size="sm"
           aria-label={`Status for ${taskTag}`}
-          className="w-auto min-w-28 border-transparent bg-transparent px-1 hover:bg-slate-100"
+          className="hover:bg-muted w-auto min-w-28 border-transparent bg-transparent px-1"
         >
           <StatusBadge status={value} />
         </SelectTrigger>

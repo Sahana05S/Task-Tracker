@@ -2,10 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GaugeIcon } from 'lucide-react';
+import { GaugeIcon, LogOutIcon } from 'lucide-react';
 
+import { logout } from '@/app/auth/actions';
 import { UserMenu } from '@/components/layout/user-menu';
-import { isNavItemActive, NAV_ITEMS } from '@/components/layout/nav-items';
+import {
+  isNavItemActive,
+  NAV_ITEMS,
+  NAV_SECTIONS,
+} from '@/components/layout/nav-items';
 import { cn } from '@/lib/utils';
 import type { User } from '@/types/tracker';
 
@@ -16,10 +21,13 @@ export interface DesktopSidebarProps {
 /**
  * Permanent left navigation.
  *
- * Hidden below 768px, where the bottom bar takes over. Between 768px and
- * 1024px it collapses to a 4rem icon rail with native tooltips; from 1024px it
- * expands to the full 16rem sidebar with labels, per the viewport rules in
- * `responsive-ui-design.md`.
+ * Hidden below 768px, where the bottom bar takes over. Between 768px and 1024px
+ * it collapses to an icon rail; from 1024px it expands to the full sidebar with
+ * labels and grouped sections.
+ *
+ * The active row is marked three ways at once — forest text, bold weight, and a
+ * rounded indicator bar at the left edge — so the state survives a colourblind
+ * reading and remains legible in the collapsed rail where the label is hidden.
  */
 export function DesktopSidebar({ profile }: DesktopSidebarProps) {
   const pathname = usePathname();
@@ -28,61 +36,97 @@ export function DesktopSidebar({ profile }: DesktopSidebarProps) {
     <aside
       aria-label="Workspace navigation"
       className={cn(
-        'fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-slate-200 bg-white',
-        'md:flex md:w-16 lg:w-64',
+        'fixed inset-y-0 left-0 z-30 hidden flex-col bg-sidebar',
+        'md:flex md:w-20 lg:w-(--spacing-sidebar)',
       )}
     >
       {/* Branding */}
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 px-3 lg:px-4">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-slate-900 text-slate-50">
-          <GaugeIcon className="size-4" aria-hidden="true" />
+      <div className="flex h-(--spacing-header) shrink-0 items-center gap-2.5 px-4 lg:px-6">
+        <span className="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-xl">
+          <GaugeIcon className="size-5" aria-hidden="true" />
         </span>
         <span className="hidden min-w-0 flex-col lg:flex">
-          <span className="truncate text-sm font-semibold text-slate-900">
+          <span className="text-foreground truncate text-base font-bold tracking-tight">
             TaskPulse
-          </span>
-          <span className="truncate text-xs text-slate-500">
-            Performance Tracker
           </span>
         </span>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-2">
-        <ul className="flex flex-col gap-1">
-          {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
-            const active = isNavItemActive(pathname, href);
+      {/* Navigation, grouped into sections */}
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 lg:px-4">
+        {NAV_SECTIONS.map((section) => {
+          const items = NAV_ITEMS.filter((item) => item.section === section.id);
 
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  // Native tooltip for the collapsed rail, where the label is
-                  // visually hidden.
-                  title={label}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    'md:justify-center lg:justify-start',
-                    'focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none',
-                    active
-                      ? 'bg-slate-100 text-slate-900'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" aria-hidden="true" />
-                  <span className="hidden lg:inline">{label}</span>
-                  {/* Keeps the label available to assistive tech in icon-only mode. */}
-                  <span className="sr-only lg:hidden">{label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+          return (
+            <div key={section.id}>
+              {/* Heading is hidden in the collapsed rail, where there is no room
+                  for it, but stays available to assistive technology. */}
+              <p
+                className={cn(
+                  'nav-section-label',
+                  'sr-only lg:not-sr-only lg:block',
+                )}
+              >
+                {section.label}
+              </p>
+
+              <ul className="flex flex-col gap-1">
+                {items.map(({ label, href, icon: Icon }) => {
+                  const active = isNavItemActive(pathname, href);
+
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        // Native tooltip for the collapsed rail, where the label
+                        // is visually hidden.
+                        title={label}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn(
+                          'nav-item',
+                          active && 'nav-item-active',
+                          'md:justify-center lg:justify-start',
+                        )}
+                      >
+                        <Icon className="size-5 shrink-0" aria-hidden="true" />
+                        <span className="hidden lg:inline">{label}</span>
+                        <span className="sr-only lg:hidden">{label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+
+                {/* Sign out closes the General section. Rendered as a form so the
+                    Server Action runs without any client handler. */}
+                {section.id === 'general' ? (
+                  <li>
+                    <form action={logout}>
+                      <button
+                        type="submit"
+                        title="Sign out"
+                        className={cn(
+                          'nav-item w-full',
+                          'md:justify-center lg:justify-start',
+                        )}
+                      >
+                        <LogOutIcon
+                          className="size-5 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span className="hidden lg:inline">Sign out</span>
+                        <span className="sr-only lg:hidden">Sign out</span>
+                      </button>
+                    </form>
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
 
       {/* Profile */}
-      <div className="shrink-0 border-t border-slate-200 p-2">
+      <div className="shrink-0 p-3 lg:p-4">
         <UserMenu profile={profile} variant="expanded" />
       </div>
     </aside>

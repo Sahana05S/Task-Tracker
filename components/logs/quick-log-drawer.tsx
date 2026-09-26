@@ -320,9 +320,9 @@ function LogForm({
         </Field>
 
         {selected && nextProgress !== null ? (
-          <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          <p className="soft-inset text-muted-foreground px-3.5 py-2.5 text-xs">
             Progress moves from{' '}
-            <span className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+            <span className="text-foreground font-semibold [font-variant-numeric:tabular-nums]">
               {currentProgress === null ? '0' : currentProgress}%
             </span>{' '}
             to{' '}
@@ -359,7 +359,7 @@ function LogForm({
         {error ? <Feedback message={error} /> : null}
       </div>
 
-      <SheetFooter className="flex-row justify-end border-t border-slate-200">
+      <SheetFooter className="border-border flex-row justify-end border-t">
         <Button
           type="button"
           variant="outline"

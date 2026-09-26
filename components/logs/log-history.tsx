@@ -66,12 +66,12 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col">
-          <h2 className="text-base font-semibold text-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-foreground text-2xl font-bold tracking-tight">
             My effort log
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-muted-foreground text-sm">
             {logs.length === 0
               ? 'No entries yet.'
               : `${logs.length} ${logs.length === 1 ? 'entry' : 'entries'} · ${formatNumeric(totalHours)} hours across ${groups.length} ${groups.length === 1 ? 'day' : 'days'}`}
@@ -82,9 +82,12 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
       </div>
 
       {groups.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-          <ClockIcon className="size-5 text-slate-400" aria-hidden="true" />
-          <p className="text-sm font-medium text-slate-900">
+        <div className="soft-card flex flex-col items-center gap-2 px-6 py-14 text-center">
+          <ClockIcon
+            className="text-muted-foreground size-5"
+            aria-hidden="true"
+          />
+          <p className="text-foreground text-sm font-semibold">
             No effort logged yet
           </p>
           <p className="max-w-sm text-sm text-slate-500">
@@ -98,8 +101,8 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
             <li key={group.logDate} className="flex flex-col gap-2">
               {/* Date heading, sticky so the day stays visible while scrolling
                   a long bucket. Offset by the workspace header height. */}
-              <div className="sticky top-14 z-10 flex items-center gap-3 bg-slate-50 py-1">
-                <h3 className="text-sm font-semibold text-slate-900">
+              <div className="bg-background sticky top-(--spacing-header) z-10 flex items-center gap-3 py-1.5">
+                <h3 className="text-foreground text-sm font-bold">
                   {formatDate(group.logDate)}
                 </h3>
                 <span className="badge-soft badge-neutral [font-variant-numeric:tabular-nums]">
@@ -118,7 +121,7 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
                     {group.totalProgressDelta}%
                   </span>
                 ) : null}
-                <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
+                <span className="bg-border h-px flex-1" aria-hidden="true" />
               </div>
 
               <ul className="flex flex-col gap-2">
@@ -172,7 +175,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
   const delta = log.progressDelta ?? 0;
 
   return (
-    <article className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+    <article className="soft-card flex flex-col gap-2 px-4 py-3.5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="task-tag">{task?.taskTag ?? 'Unknown task'}</span>
         {task ? <CategoryBadge category={task.category} /> : null}
@@ -217,7 +220,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
                 // noreferrer alongside noopener: the target page should not
                 // receive this workspace URL as its referrer.
                 rel="noopener noreferrer"
-                className="badge-soft badge-neutral max-w-64 hover:bg-slate-200"
+                className="badge-soft badge-neutral hover:bg-primary-subtle hover:text-primary max-w-64 transition-colors"
               >
                 <ExternalLinkIcon className="size-3 shrink-0" aria-hidden="true" />
                 <span className="truncate">{linkLabel(link)}</span>
@@ -228,7 +231,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
         </ul>
       ) : null}
 
-      <div className="flex items-center gap-1 border-t border-slate-100 pt-2">
+      <div className="border-border flex items-center gap-1 border-t pt-2.5">
         <Button
           type="button"
           variant="ghost"

@@ -88,7 +88,7 @@ export function AllocationChart({
       }
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-        <div className="h-56 w-full">
+        <div className="soft-inset h-56 w-full p-2">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Tooltip content={<AllocationTooltip />} />
@@ -117,24 +117,24 @@ export function AllocationChart({
             score per member
           </caption>
           <thead>
-            <tr className="text-slate-500">
-              <th scope="col" className="py-1 text-left font-medium">
+            <tr className="text-muted-foreground">
+              <th scope="col" className="py-1.5 text-left font-semibold">
                 Member
               </th>
-              <th scope="col" className="py-1 text-right font-medium">
+              <th scope="col" className="py-1.5 text-right font-semibold">
                 Share
               </th>
-              <th scope="col" className="py-1 text-right font-medium">
+              <th scope="col" className="py-1.5 text-right font-semibold">
                 vs median
               </th>
-              <th scope="col" className="py-1 text-right font-medium">
+              <th scope="col" className="py-1.5 text-right font-semibold">
                 Criticality
               </th>
             </tr>
           </thead>
           <tbody>
             {data.map((datum) => (
-              <tr key={datum.fullName} className="border-t border-slate-100">
+              <tr key={datum.fullName} className="border-border border-t">
                 <th scope="row" className="py-1.5 text-left font-normal">
                   <span className="flex items-center gap-2">
                     {/* Colour key. Recharts fills SVG by prop, so the swatch
@@ -146,12 +146,12 @@ export function AllocationChart({
                     >
                       <circle cx="5" cy="5" r="5" fill={datum.color} />
                     </svg>
-                    <span className="truncate text-slate-900">
+                    <span className="text-foreground truncate font-medium">
                       {datum.fullName}
                     </span>
                   </span>
                 </th>
-                <td className="py-1.5 text-right text-slate-900 [font-variant-numeric:tabular-nums]">
+                <td className="text-foreground py-1.5 text-right font-semibold [font-variant-numeric:tabular-nums]">
                   {formatNumeric(datum.allocationPercent)}%
                 </td>
                 <td
@@ -168,15 +168,15 @@ export function AllocationChart({
                     ? '\u2014'
                     : `${datum.loadingDiff >= 0 ? '+' : ''}${formatNumeric(datum.loadingDiff)}`}
                 </td>
-                <td className="py-1.5 text-right text-slate-900 [font-variant-numeric:tabular-nums]">
+                <td className="text-foreground py-1.5 text-right [font-variant-numeric:tabular-nums]">
                   {formatNumeric(datum.criticalityScore)}
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t border-slate-200 text-slate-500">
-              <th scope="row" className="py-1.5 text-left font-medium">
+            <tr className="border-border text-muted-foreground border-t">
+              <th scope="row" className="py-1.5 text-left font-semibold">
                 Team median
               </th>
               <td className="py-1.5 text-right [font-variant-numeric:tabular-nums]">
@@ -213,9 +213,9 @@ function AllocationTooltip({
   if (!active || !datum) return null;
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
-      <p className="font-medium text-slate-900">{datum.fullName}</p>
-      <dl className="mt-1 flex flex-col gap-0.5 text-slate-600">
+    <div className="border-border rounded-xl border bg-white px-3.5 py-2.5 text-xs shadow-soft-lg">
+      <p className="text-foreground font-semibold">{datum.fullName}</p>
+      <dl className="text-muted-foreground mt-1.5 flex flex-col gap-0.5">
         <div className="flex items-baseline justify-between gap-4">
           <dt>Allocation</dt>
           <dd className="font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
