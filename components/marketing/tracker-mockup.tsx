@@ -135,15 +135,15 @@ export function TrackerMockup() {
       it, and the halo is what stops a white window on a white section from
       disappearing.
     */
-    <div className="relative">
+    <div className="relative w-full min-w-0 max-w-full">
       {/* A flat tint, blurred — not a gradient. The project has no gradients, and
           one soft forest wash is enough to lift the frame off the section. */}
       <div
         aria-hidden="true"
-        className="bg-primary/10 absolute -inset-2 rounded-[1.5rem] blur-2xl"
+        className="bg-primary/10 absolute -inset-2 rounded-[1.5rem] blur-2xl pointer-events-none"
       />
 
-      <div className="border-border relative overflow-hidden rounded-2xl border bg-white shadow-soft-lg">
+      <div className="border-border relative w-full min-w-0 max-w-full overflow-hidden rounded-2xl border bg-white shadow-soft-lg">
         {/* Window chrome */}
         <div className="border-border bg-muted flex items-center gap-2 border-b px-3 py-2">
           <span className="flex gap-1.5" aria-hidden="true">
@@ -202,8 +202,8 @@ export function TrackerMockup() {
 
 function GridPreview() {
   return (
-    <div className="border-border overflow-x-auto rounded-lg border bg-white">
-      <table className="sheet-grid text-[11px]">
+    <div className="border-border w-full min-w-0 max-w-full overflow-x-auto rounded-lg border bg-white">
+      <table className="sheet-grid min-w-[540px] w-full text-[11px]">
         <caption className="sr-only">
           Sample task grid showing tag, category, assignee, priority, status,
           freshness, scale, progress, scaled progress, hours and productivity
@@ -307,7 +307,7 @@ function GridPreview() {
  */
 function AnalyticsPreview() {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex w-full min-w-0 max-w-full flex-col gap-2">
       {/* Star performer strip. Forest fill, matching the real hero metric card. */}
       <div className="bg-primary text-primary-foreground border-primary flex items-center gap-3 rounded-lg border px-3 py-2.5">
         <span className="text-primary flex size-9 shrink-0 items-center justify-center rounded bg-white font-mono text-[11px] font-semibold">
@@ -351,7 +351,7 @@ function AnalyticsPreview() {
       </dl>
 
       {/* Productivity against the median */}
-      <div className="border-border rounded-lg border bg-white px-3 py-2.5">
+      <div className="border-border w-full min-w-0 max-w-full overflow-x-auto rounded-lg border bg-white px-3 py-2.5">
         <p className="text-foreground text-[11px] font-semibold">
           Productivity differentials
         </p>
@@ -360,7 +360,7 @@ function AnalyticsPreview() {
           progress per hour
         </p>
 
-        <table className="mt-2 w-full text-[10px]">
+        <table className="mt-2 min-w-[280px] w-full text-[10px]">
           <caption className="sr-only">
             Productivity rate and allocation share per member
           </caption>

@@ -64,8 +64,13 @@ export async function login(
   });
 
   if (error) {
-    // Supabase returns a deliberately vague message for bad credentials so the
-    // response cannot be used to enumerate registered addresses. Pass it on.
+    if (error.message.toLowerCase().includes('email not confirmed')) {
+      return {
+        success: false,
+        error:
+          'Please verify your email address before signing in. Check your inbox for the confirmation link.',
+      };
+    }
     return { success: false, error: error.message };
   }
 
@@ -111,11 +116,18 @@ export async function signup(
     };
   }
 
+  const { headers } = await import('next/headers');
+  const headerList = await headers();
+  const host = headerList.get('x-forwarded-host') || headerList.get('host');
+  const protocol = headerList.get('x-forwarded-proto') || 'https';
+  const siteUrl = host ? `${protocol}://${host}` : '';
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo: siteUrl ? `${siteUrl}/auth/callback` : undefined,
       data: {
         full_name: fullName,
         employee_id: employeeId,
@@ -135,7 +147,7 @@ export async function signup(
       success: true,
       data: {
         message:
-          'Account created. Check your inbox for a confirmation link, then sign in.',
+          'Verification email sent! Check your inbox and click the confirmation link to activate your account.',
       },
     };
   }

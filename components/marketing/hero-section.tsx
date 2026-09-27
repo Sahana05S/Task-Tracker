@@ -21,11 +21,11 @@ import { CTA, HERO, HERO_ASSURANCES, HERO_STATS } from '@/lib/marketing/content'
  */
 export function HeroSection() {
   return (
-    <section className="border-border border-b bg-white">
-      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
+    <section className="border-border border-b bg-white overflow-x-clip">
+      <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-24">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
           {/* Copy */}
-          <div className="flex flex-col gap-7">
+          <div className="flex min-w-0 flex-col gap-7">
             <span className="badge-soft badge-accent w-fit">{HERO.eyebrow}</span>
 
             <div className="flex flex-col gap-5">
@@ -72,16 +72,20 @@ export function HeroSection() {
           </div>
 
           {/* Product preview */}
-          <TrackerMockup />
+          <div className="w-full min-w-0 max-w-full">
+            <TrackerMockup />
+          </div>
         </div>
 
         {/* Metric strip */}
-        <dl className="border-border mt-16 grid grid-cols-1 gap-8 border-t pt-10 sm:grid-cols-3">
+        <dl className="border-border mt-12 grid grid-cols-1 gap-6 border-t pt-8 sm:mt-16 sm:grid-cols-3 sm:gap-8 sm:pt-10">
           {HERO_STATS.map(({ value, label }) => (
-            <div key={label} className="flex flex-col gap-1">
+            <div key={label} className="flex min-w-0 flex-col gap-1">
               <dt className="sr-only">{label}</dt>
-              <dd className="stat-figure text-foreground text-3xl">{value}</dd>
-              <dd className="text-muted-foreground text-sm">{label}</dd>
+              <dd className="stat-figure text-foreground text-2xl font-bold tracking-tight sm:text-3xl break-words">
+                {value}
+              </dd>
+              <dd className="text-muted-foreground text-sm leading-normal">{label}</dd>
             </div>
           ))}
         </dl>

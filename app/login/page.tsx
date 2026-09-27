@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 interface LoginPageProps {
-  searchParams: Promise<{ redirectTo?: string; tab?: string }>;
+  searchParams: Promise<{ redirectTo?: string; tab?: string; error?: string }>;
 }
 
 /**
@@ -29,7 +29,7 @@ function resolveInitialMode(tab: string | undefined): 'login' | 'signup' {
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { redirectTo, tab } = await searchParams;
+  const { redirectTo, tab, error } = await searchParams;
   const destination = safeRedirectPath(redirectTo);
   const initialMode = resolveInitialMode(tab);
   const { authUserId, profile } = await getAuthState();
@@ -62,7 +62,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           {isOrphaned ? (
             <OrphanedAccountNotice />
           ) : (
-            <AuthForm redirectTo={destination} initialMode={initialMode} />
+            <AuthForm
+              redirectTo={destination}
+              initialMode={initialMode}
+              initialError={error}
+            />
           )}
         </div>
 

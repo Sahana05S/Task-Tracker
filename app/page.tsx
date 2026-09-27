@@ -30,7 +30,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="bg-background flex min-h-dvh flex-col">
+    <div className="bg-background flex min-h-dvh w-full max-w-full flex-col overflow-x-hidden">
       <SiteHeader />
 
       {/* Skip link for accessibility */}
