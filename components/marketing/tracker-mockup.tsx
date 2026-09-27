@@ -153,7 +153,7 @@ export function TrackerMockup() {
           </span>
 
           <span className="border-border text-muted-foreground ml-1 hidden rounded border bg-white px-2 py-0.5 font-mono text-[10px] sm:inline">
-            app.taskpulse.example/{view === 'grid' ? 'tasks' : 'dashboard'}
+            taskpulse.com/workspace
           </span>
 
           {/* View switch. The interactive part of the preview. */}

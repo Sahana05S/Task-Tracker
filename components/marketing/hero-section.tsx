@@ -50,7 +50,7 @@ export function HeroSection() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <a href={CTA.systemOverview.href}>{CTA.systemOverview.label}</a>
+                <a href={CTA.exploreFeatures.href}>{CTA.exploreFeatures.label}</a>
               </Button>
             </div>
 
