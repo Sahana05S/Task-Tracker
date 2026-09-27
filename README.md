@@ -150,6 +150,10 @@ Apply the migrations **in order**. Each depends on the one before it.
 Apply them with `supabase db push`, or paste each file into the Supabase SQL
 Editor and run it once.
 
+If `/milestones` shows a "Migration not applied" notice, `04` is the one that has
+not been run. The page detects the two tables being absent and says so rather than
+failing, so the rest of the workspace keeps working in the meantime.
+
 `04` depends on three objects the earlier files create — `public.users`,
 `get_user_role()` and `set_updated_at()` — so the order is not optional. It seeds
 the vision, mission, values and five milestones, and both seed statements are safe

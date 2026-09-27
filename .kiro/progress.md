@@ -449,6 +449,7 @@ seed idempotency and per-role read/write behaviour for all three roles.
 | --- | --- |
 | `app/(workspace)/milestones/page.tsx` | Server Component. Fetches, summarises, computes `canManage` |
 | `lib/milestones/queries.ts` | Three parallel reads: statements, milestones, member directory |
+| `components/milestones/schema-notice.tsx` | Shown when the tables are absent, i.e. `04` has not been applied |
 | `components/milestones/organization-showcase.tsx` | Server Component. Vision, mission, values cards |
 | `components/milestones/statement-editor.tsx` | Client island per card: Edit button plus its Sheet |
 | `components/milestones/milestone-board.tsx` | Client. Owns dialog state and the delete confirmation |
@@ -463,6 +464,20 @@ overlays each.
 
 `canManage` decides only whether controls render. The actions re-check the role and
 RLS checks it a third time, because a hidden button is not access control.
+
+**A missing table renders a notice, not a 500.** `getMilestonesPageData` returns a
+discriminated union — `status: 'ready'` or `status: 'schema-missing'` — and only the
+narrow "table does not exist" case takes the second branch. Two codes identify it,
+because the answer depends on which layer refuses first: PostgREST keeps its own
+schema cache and answers `PGRST205` before a query is issued, while `42P01` is
+PostgreSQL's `undefined_table`. Every other failure still throws, since degrading on
+all errors would turn a broken policy into a page that quietly claims leadership has
+written nothing.
+
+This replaced a thrown error, which was the wrong call. It took the whole route down
+with a 500 and stranded the visitor there with no header to navigate out of, to
+report a setup step with one obvious fix. It also left `queries.ts` inconsistent with
+`getNavCounts`, which has always degraded rather than failed.
 
 Statement icons and core-value icons were dropped. They were decorative on cards
 that already have headings, and the utilitarian pass removed that class of glyph

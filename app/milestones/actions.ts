@@ -154,6 +154,9 @@ function describeDatabaseError(error: PostgrestError): string {
       return 'A count is outside its permitted range.';
     case '42501':
       return 'You do not have permission to perform that change.';
+    // PGRST205 is PostgREST's schema-cache miss, 42P01 PostgreSQL's own
+    // undefined_table. Either means migration 04 has not been applied.
+    case 'PGRST205':
     case '42P01':
       return 'The milestones tables are missing. Apply supabase/migrations/04_milestones_and_vision.sql.';
     default:
