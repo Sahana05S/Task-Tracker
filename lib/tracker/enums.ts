@@ -1,4 +1,6 @@
 import type {
+  AttendanceStatus,
+  ChecklistNodeType,
   MilestoneStatus,
   TaskCategory,
   TaskFreshness,
@@ -229,6 +231,30 @@ export function isTaskFreshness(value: string): value is TaskFreshness {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Checklist node types                                                       */
+/* -------------------------------------------------------------------------- */
+
+export const CHECKLIST_NODE_TYPES = [
+  'Page',
+  'Group',
+  'Item',
+  'Task',
+] as const satisfies readonly ChecklistNodeType[];
+
+export const CHECKLIST_NODE_TYPE_LABELS = {
+  Page: 'Page',
+  Group: 'Group',
+  Item: 'Item',
+  Task: 'Linked task',
+} satisfies Record<ChecklistNodeType, string>;
+
+export function isChecklistNodeType(
+  value: string,
+): value is ChecklistNodeType {
+  return (CHECKLIST_NODE_TYPES as readonly string[]).includes(value);
+}
+
+/* -------------------------------------------------------------------------- */
 /* Milestone statuses                                                        */
 /* -------------------------------------------------------------------------- */
 
@@ -249,4 +275,23 @@ export const MILESTONE_STATUS_ORDER = {
 
 export function isMilestoneStatus(value: string): value is MilestoneStatus {
   return (MILESTONE_STATUSES as readonly string[]).includes(value);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Attendance statuses                                                        */
+/* -------------------------------------------------------------------------- */
+
+export const ATTENDANCE_STATUSES = [
+  'Present',
+  'Absent',
+  'Half Day',
+  'Holiday',
+  'Leave',
+  'Off Hours',
+] as const satisfies readonly AttendanceStatus[];
+
+export function isAttendanceStatus(
+  value: string,
+): value is AttendanceStatus {
+  return (ATTENDANCE_STATUSES as readonly string[]).includes(value);
 }

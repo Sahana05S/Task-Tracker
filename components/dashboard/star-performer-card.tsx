@@ -101,9 +101,8 @@ export function StarPerformerCard({
           value={formatNumeric(performer.hoursLogged)}
         />
         <Figure
-          label="Allocation"
-          value={`${formatNumeric(performer.allocationPercent)}%`}
-          delta={performer.loadingDiff}
+          label="Attendance"
+          value={`${formatNumeric(performer.attendance.attendanceHours)}h`}
         />
       </dl>
 

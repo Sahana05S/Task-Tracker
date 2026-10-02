@@ -35,6 +35,8 @@ export function mapTask(row: TaskRow): Task {
     comments: row.comments,
     assigneeId: row.assignee_id,
     reviewerId: row.reviewer_id,
+    assigneeIds: [row.assignee_id],
+    reviewerIds: row.reviewer_id ? [row.reviewer_id] : [],
     taskScale: row.task_scale,
     progressPercentage: row.progress_percentage,
     scaledProgress: row.scaled_progress,
@@ -54,4 +56,26 @@ export function mapTask(row: TaskRow): Task {
 
 export function mapTasks(rows: readonly TaskRow[]): Task[] {
   return rows.map(mapTask);
+}
+
+export function withTaskParticipants(
+  task: Task,
+  participants: {
+    readonly assigneeIds?: readonly string[];
+    readonly reviewerIds?: readonly string[];
+  },
+): Task {
+  const assigneeIds = [...new Set(participants.assigneeIds ?? [])];
+  const reviewerIds = [...new Set(participants.reviewerIds ?? [])];
+
+  return {
+    ...task,
+    assigneeIds: assigneeIds.length > 0 ? assigneeIds : [task.assigneeId],
+    reviewerIds:
+      reviewerIds.length > 0
+        ? reviewerIds
+        : task.reviewerId
+          ? [task.reviewerId]
+          : [],
+  };
 }

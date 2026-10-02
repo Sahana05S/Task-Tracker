@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
-import { mapTasks, TASK_COLUMNS } from '@/lib/tasks/mappers';
+import {
+  mapTasks,
+  TASK_COLUMNS,
+  withTaskParticipants,
+} from '@/lib/tasks/mappers';
 import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
 import type { Task, User } from '@/types/tracker';
 
@@ -28,7 +32,8 @@ export interface TaskWorkspaceData {
 export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
   const supabase = await createClient();
 
-  const [taskResult, memberResult] = await Promise.all([
+  const [taskResult, memberResult, assigneeResult, reviewerResult] =
+    await Promise.all([
     supabase
       .from('tasks')
       .select(TASK_COLUMNS)
@@ -40,6 +45,8 @@ export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
       .from('users')
       .select(USER_COLUMNS)
       .order('full_name', { ascending: true }),
+    supabase.from('task_assignees').select('task_id, user_id, is_primary'),
+    supabase.from('task_reviewers').select('task_id, user_id, is_primary'),
   ]);
 
   if (taskResult.error) {
@@ -49,8 +56,50 @@ export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
     throw new Error(`Failed to load members: ${memberResult.error.message}`);
   }
 
+  let tasks = mapTasks(taskResult.data);
+
+  if (!assigneeResult.error) {
+    const assigneesByTask = new Map<string, string[]>();
+    for (const row of assigneeResult.data) {
+      const existing = assigneesByTask.get(row.task_id) ?? [];
+      if (row.is_primary) {
+        existing.unshift(row.user_id);
+      } else {
+        existing.push(row.user_id);
+      }
+      assigneesByTask.set(row.task_id, existing);
+    }
+
+    tasks = tasks.map((task) =>
+      withTaskParticipants(task, {
+        assigneeIds: assigneesByTask.get(task.id),
+        reviewerIds: task.reviewerIds,
+      }),
+    );
+  }
+
+  if (!reviewerResult.error) {
+    const reviewersByTask = new Map<string, string[]>();
+    for (const row of reviewerResult.data) {
+      const existing = reviewersByTask.get(row.task_id) ?? [];
+      if (row.is_primary) {
+        existing.unshift(row.user_id);
+      } else {
+        existing.push(row.user_id);
+      }
+      reviewersByTask.set(row.task_id, existing);
+    }
+
+    tasks = tasks.map((task) =>
+      withTaskParticipants(task, {
+        assigneeIds: task.assigneeIds,
+        reviewerIds: reviewersByTask.get(task.id),
+      }),
+    );
+  }
+
   return {
-    tasks: mapTasks(taskResult.data),
+    tasks,
     members: memberResult.data.map(mapUser),
   };
 }

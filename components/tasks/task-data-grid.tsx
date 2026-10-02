@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -31,6 +32,7 @@ import {
   type TaskSortKey,
   type TaskSortState,
 } from '@/lib/tasks/filters';
+import { canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
 import { formatDate, formatNumeric, isOverdue } from '@/lib/tracker/format';
 import { cn, getInitials } from '@/lib/utils';
 import type { Task, User } from '@/types/tracker';
@@ -59,18 +61,24 @@ interface ColumnDef {
 
 const COLUMNS: readonly ColumnDef[] = [
   { key: 'taskTag', label: 'Tag', frozen: true },
+  { key: 'category', label: 'Type' },
   { key: 'title', label: 'Title' },
-  { key: 'category', label: 'Cat' },
-  { key: 'assignee', label: 'Assignee' },
-  { key: 'priority', label: 'Priority' },
-  { key: 'status', label: 'Status' },
-  { key: 'freshness', label: 'Freshness' },
+  { key: null, label: 'Comments' },
   { key: 'taskScale', label: 'Scale', numeric: true },
   { key: 'progressPercentage', label: 'Progress', numeric: true },
   { key: 'scaledProgress', label: 'Scaled', numeric: true },
+  { key: 'priority', label: 'Priority' },
+  { key: 'assignee', label: 'Assignee' },
+  { key: null, label: 'Reviewer(s)' },
   { key: 'hoursLogged', label: 'Hours', numeric: true },
   { key: 'taskProductivity', label: 'Prod/h', numeric: true },
+  { key: 'freshness', label: 'Freshness' },
+  { key: 'status', label: 'Status' },
+  { key: null, label: 'Assigned' },
   { key: 'dueDate', label: 'Due' },
+  { key: null, label: 'Done' },
+  { key: null, label: 'Deadline?' },
+  { key: null, label: 'Valid?' },
   { key: null, label: 'Actions' },
 ];
 
@@ -117,8 +125,7 @@ export function TaskDataGrid({
         </thead>
         <tbody>
           {tasks.map((task) => {
-            const canEditOwnFields =
-              canManage || task.assigneeId === currentUser.id;
+            const canEditOwnFields = canUpdateTaskOwnFields(currentUser, task);
             const effort = effortByTask.get(task.id) ?? EMPTY_EFFORT;
             const overdue =
               isOverdue(task.dueDate) &&
@@ -128,7 +135,16 @@ export function TaskDataGrid({
             return (
               <tr key={task.id}>
                 <td className="sheet-grid-frozen">
-                  <span className="task-tag">{task.taskTag}</span>
+                  <Link
+                    href={`/tasks/${encodeURIComponent(task.taskTag)}`}
+                    className="task-tag hover:underline"
+                  >
+                    {task.taskTag}
+                  </Link>
+                </td>
+
+                <td>
+                  <CategoryBadge category={task.category} />
                 </td>
 
                 <td className="max-w-80">
@@ -137,31 +153,13 @@ export function TaskDataGrid({
                   </span>
                 </td>
 
-                <td>
-                  <CategoryBadge category={task.category} />
-                </td>
-
-                <td>
-                  <AssigneeCell
-                    name={memberNames.get(task.assigneeId) ?? 'Unassigned'}
-                  />
-                </td>
-
-                <td>
-                  <PriorityBadge priority={task.priority} />
-                </td>
-
-                <td>
-                  <StatusSelect
-                    taskId={task.id}
-                    taskTag={task.taskTag}
-                    status={task.status}
-                    canEdit={canEditOwnFields}
-                  />
-                </td>
-
-                <td>
-                  <FreshnessIndicator freshness={task.freshness} />
+                <td className="max-w-56">
+                  <span
+                    className="block truncate text-xs text-slate-600"
+                    title={task.comments ?? ''}
+                  >
+                    {task.comments ?? '—'}
+                  </span>
                 </td>
 
                 <td className="sheet-numeric text-xs">
@@ -182,16 +180,30 @@ export function TaskDataGrid({
                   {formatNumeric(task.scaledProgress)}
                 </td>
 
+                <td>
+                  <PriorityBadge priority={task.priority} />
+                </td>
+
+                <td>
+                  <PeopleCell
+                    names={namesForIds(task.assigneeIds, memberNames)}
+                    fallback="Unassigned"
+                  />
+                </td>
+
+                <td>
+                  <PeopleCell
+                    names={namesForIds(task.reviewerIds, memberNames)}
+                    fallback="No reviewer"
+                    compact
+                  />
+                </td>
+
                 {/* Aggregated from daily_task_logs; no column on tasks. */}
                 <td className="sheet-numeric text-xs">
                   {formatNumeric(effort.hoursLogged)}
                 </td>
 
-                {/*
-                  Productivity = scaled progress / hours logged, written by the
-                  log actions. An em dash means no hours are logged yet, so the
-                  rate is undefined rather than zero.
-                */}
                 <td
                   className="sheet-numeric text-xs font-medium"
                   title={
@@ -203,6 +215,23 @@ export function TaskDataGrid({
                   {formatNumeric(task.taskProductivity)}
                 </td>
 
+                <td>
+                  <FreshnessIndicator freshness={task.freshness} />
+                </td>
+
+                <td>
+                  <StatusSelect
+                    taskId={task.id}
+                    taskTag={task.taskTag}
+                    status={task.status}
+                    canEdit={canEditOwnFields}
+                  />
+                </td>
+
+                <td className="text-xs whitespace-nowrap text-slate-600">
+                  {formatDate(task.assignedDate)}
+                </td>
+
                 <td
                   className={cn(
                     'text-xs whitespace-nowrap',
@@ -211,6 +240,22 @@ export function TaskDataGrid({
                 >
                   {formatDate(task.dueDate)}
                   {overdue ? <span className="sr-only"> (overdue)</span> : null}
+                </td>
+
+                <td className="text-xs whitespace-nowrap text-slate-600">
+                  {formatDate(task.completedDate)}
+                </td>
+
+                <td className="text-xs whitespace-nowrap text-slate-600">
+                  {task.metDeadline === null
+                    ? '—'
+                    : task.metDeadline
+                      ? 'Yes'
+                      : 'No'}
+                </td>
+
+                <td className="text-xs whitespace-nowrap text-slate-600">
+                  {task.validForMetrics ? 'Yes' : 'No'}
                 </td>
 
                 <td>
@@ -304,17 +349,43 @@ function SortableHeader({ column, sort, onSortChange }: SortableHeaderProps) {
 /* Cells                                                                      */
 /* -------------------------------------------------------------------------- */
 
-function AssigneeCell({ name }: { name: string }) {
+function namesForIds(
+  ids: readonly string[],
+  memberNames: ReadonlyMap<string, string>,
+): string[] {
+  return ids.map((id) => memberNames.get(id) ?? 'Unknown');
+}
+
+function PeopleCell({
+  names,
+  fallback,
+  compact = false,
+}: {
+  names: readonly string[];
+  fallback: string;
+  compact?: boolean;
+}) {
+  const displayNames = names.length > 0 ? names : [fallback];
+  const label = displayNames.join(', ');
+
   return (
     <div className="flex items-center gap-2">
       <Avatar className="size-6">
         <AvatarFallback className="text-[10px]">
-          {getInitials(name)}
+          {getInitials(displayNames[0])}
         </AvatarFallback>
       </Avatar>
-      <span className="max-w-32 truncate text-xs text-slate-700" title={name}>
-        {name}
+      <span
+        className="max-w-40 truncate text-xs text-slate-700"
+        title={label}
+      >
+        {label}
       </span>
+      {!compact && displayNames.length > 1 ? (
+        <span className="badge-soft badge-neutral px-1.5 py-0 text-[10px]">
+          +{displayNames.length - 1}
+        </span>
+      ) : null}
     </div>
   );
 }

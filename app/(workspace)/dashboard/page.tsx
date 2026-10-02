@@ -5,10 +5,13 @@ import { ProductivityChart } from '@/components/dashboard/productivity-chart';
 import { SnapshotButton } from '@/components/dashboard/snapshot-button';
 import { StarPerformerCard } from '@/components/dashboard/star-performer-card';
 import { TeamStatsGrid } from '@/components/dashboard/team-stats-grid';
+import { TrackerSchemaNotice } from '@/components/dashboard/tracker-schema-notice';
+import { WorkbookDashboard } from '@/components/dashboard/workbook-dashboard';
 import { WorkspaceHeader } from '@/components/layout/workspace-header';
 import { currentPeriod } from '@/lib/analytics/engine';
-import { getStoredSnapshots, getTeamAnalytics } from '@/lib/analytics/queries';
+import { getStoredSnapshots, getWorkbookDashboard } from '@/lib/analytics/queries';
 import { requireProfile } from '@/lib/auth/profile';
+import { isMissingSchemaError } from '@/lib/supabase/schema-errors';
 
 export const metadata: Metadata = {
   title: 'Dashboard · TaskPulse',
@@ -28,10 +31,48 @@ export default async function DashboardPage() {
   const profile = await requireProfile();
   const period = currentPeriod();
 
-  const [analytics, snapshots] = await Promise.all([
-    getTeamAnalytics(period),
+  const [dashboardResult, snapshotsResult] = await Promise.allSettled([
+    getWorkbookDashboard(period),
     getStoredSnapshots(period),
   ]);
+
+  if (dashboardResult.status === 'rejected') {
+    if (isMissingSchemaError(dashboardResult.reason)) {
+      return (
+        <>
+          <WorkspaceHeader
+            title="Team performance"
+            description={`${period.label} · setup required`}
+          />
+          <div className="px-4 py-4 lg:px-6">
+            <TrackerSchemaNotice />
+          </div>
+        </>
+      );
+    }
+    throw dashboardResult.reason;
+  }
+
+  if (snapshotsResult.status === 'rejected') {
+    if (isMissingSchemaError(snapshotsResult.reason)) {
+      return (
+        <>
+          <WorkspaceHeader
+            title="Team performance"
+            description={`${period.label} · setup required`}
+          />
+          <div className="px-4 py-4 lg:px-6">
+            <TrackerSchemaNotice />
+          </div>
+        </>
+      );
+    }
+    throw snapshotsResult.reason;
+  }
+
+  const dashboard = dashboardResult.value;
+  const snapshots = snapshotsResult.value;
+  const { analytics, charts } = dashboard;
 
   const isDirector = profile.role === 'managing_director';
 
@@ -75,6 +116,8 @@ export default async function DashboardPage() {
             medianCriticality={analytics.medians.criticalityScore}
           />
         </div>
+
+        <WorkbookDashboard charts={charts} />
       </div>
     </>
   );

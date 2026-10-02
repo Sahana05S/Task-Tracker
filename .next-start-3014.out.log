@@ -1,0 +1,9 @@
+
+> taskpulse@0.1.0 start
+> next start -p 3014
+
+▲ Next.js 16.3.6
+- Local:         http://localhost:3014
+- Network:       http://192.168.56.1:3014
+✓ Ready in 616ms
+✓ Running next.config.ts took 119ms

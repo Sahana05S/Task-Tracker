@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { ClockIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 
 import { QuickLogTrigger } from '@/components/logs/quick-log-trigger';
@@ -21,6 +22,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { EMPTY_EFFORT, type TaskEffort } from '@/lib/logs/metrics';
+import { canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
 import { CATEGORY_LABELS } from '@/lib/tracker/enums';
 import {
   formatDate,
@@ -78,9 +80,9 @@ export function TaskCardList({
           <li key={task.id}>
             <TaskCard
               task={task}
-              assigneeName={memberNames.get(task.assigneeId) ?? 'Unassigned'}
+              assigneeNames={namesForIds(task.assigneeIds, memberNames)}
               effort={effortByTask.get(task.id) ?? EMPTY_EFFORT}
-              canEditOwnFields={canManage || task.assigneeId === currentUser.id}
+              canEditOwnFields={canUpdateTaskOwnFields(currentUser, task)}
               onOpenDetails={() => setDetailsTask(task)}
             />
           </li>
@@ -98,14 +100,8 @@ export function TaskCardList({
             <TaskDetails
               task={activeTask}
               effort={effortByTask.get(activeTask.id) ?? EMPTY_EFFORT}
-              assigneeName={
-                memberNames.get(activeTask.assigneeId) ?? 'Unassigned'
-              }
-              reviewerName={
-                activeTask.reviewerId
-                  ? (memberNames.get(activeTask.reviewerId) ?? 'Unknown')
-                  : null
-              }
+              assigneeNames={namesForIds(activeTask.assigneeIds, memberNames)}
+              reviewerNames={namesForIds(activeTask.reviewerIds, memberNames)}
               canManage={canManage}
               onEdit={() => {
                 setDetailsTask(null);
@@ -129,7 +125,7 @@ export function TaskCardList({
 
 interface TaskCardProps {
   task: Task;
-  assigneeName: string;
+  assigneeNames: readonly string[];
   effort: TaskEffort;
   canEditOwnFields: boolean;
   onOpenDetails: () => void;
@@ -137,7 +133,7 @@ interface TaskCardProps {
 
 function TaskCard({
   task,
-  assigneeName,
+  assigneeNames,
   effort,
   canEditOwnFields,
   onOpenDetails,
@@ -152,7 +148,12 @@ function TaskCard({
     <article className="soft-card-interactive flex flex-col">
       {/* Header */}
       <div className="border-border flex items-center gap-2 border-b px-4 py-2.5">
-        <span className="task-tag">{task.taskTag}</span>
+        <Link
+          href={`/tasks/${encodeURIComponent(task.taskTag)}`}
+          className="task-tag hover:underline"
+        >
+          {task.taskTag}
+        </Link>
         <CategoryBadge category={task.category} />
         <FreshnessIndicator freshness={task.freshness} className="ml-auto" />
       </div>
@@ -171,12 +172,22 @@ function TaskCard({
         <span className="flex items-center gap-2">
           <Avatar className="size-5">
             <AvatarFallback className="text-[9px]">
-              {getInitials(assigneeName)}
+              {getInitials(assigneeNames[0] ?? 'Unassigned')}
             </AvatarFallback>
           </Avatar>
-          <span className="truncate text-xs text-slate-500">
-            {assigneeName}
+          <span
+            className="truncate text-xs text-slate-500"
+            title={assigneeNames.join(', ')}
+          >
+            {assigneeNames.length > 0
+              ? assigneeNames.join(', ')
+              : 'Unassigned'}
           </span>
+          {assigneeNames.length > 1 ? (
+            <span className="badge-soft badge-neutral px-1.5 py-0 text-[10px]">
+              +{assigneeNames.length - 1}
+            </span>
+          ) : null}
           <PriorityBadge priority={task.priority} className="ml-auto" />
         </span>
 
@@ -251,8 +262,8 @@ function TaskCard({
 interface TaskDetailsProps {
   task: Task;
   effort: TaskEffort;
-  assigneeName: string;
-  reviewerName: string | null;
+  assigneeNames: readonly string[];
+  reviewerNames: readonly string[];
   canManage: boolean;
   onEdit: () => void;
   onRequestDelete: () => void;
@@ -261,8 +272,8 @@ interface TaskDetailsProps {
 function TaskDetails({
   task,
   effort,
-  assigneeName,
-  reviewerName,
+  assigneeNames,
+  reviewerNames,
   canManage,
   onEdit,
   onRequestDelete,
@@ -271,7 +282,12 @@ function TaskDetails({
     <>
       <SheetHeader>
         <div className="flex items-center gap-2">
-          <span className="task-tag">{task.taskTag}</span>
+          <Link
+            href={`/tasks/${encodeURIComponent(task.taskTag)}`}
+            className="task-tag hover:underline"
+          >
+            {task.taskTag}
+          </Link>
           <CategoryBadge category={task.category} />
           <FreshnessIndicator freshness={task.freshness} className="ml-auto" />
         </div>
@@ -285,8 +301,18 @@ function TaskDetails({
         ) : null}
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-          <Detail label="Assignee" value={assigneeName} />
-          <Detail label="Reviewer" value={reviewerName ?? '\u2014'} />
+          <Detail
+            label="Assignees"
+            value={
+              assigneeNames.length > 0 ? assigneeNames.join(', ') : 'Unassigned'
+            }
+          />
+          <Detail
+            label="Reviewers"
+            value={
+              reviewerNames.length > 0 ? reviewerNames.join(', ') : '\u2014'
+            }
+          />
           <Detail label="Priority" value={task.priority} />
           <Detail label="Status" value={task.status} />
           <Detail label="Scale" value={formatNumeric(task.taskScale)} numeric />
@@ -360,6 +386,13 @@ function TaskDetails({
       </div>
     </>
   );
+}
+
+function namesForIds(
+  ids: readonly string[],
+  memberNames: ReadonlyMap<string, string>,
+): string[] {
+  return ids.map((id) => memberNames.get(id) ?? 'Unknown');
 }
 
 function Detail({

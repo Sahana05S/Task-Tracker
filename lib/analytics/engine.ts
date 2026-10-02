@@ -1,6 +1,16 @@
 import { roundToNumericScale } from '@/lib/logs/metrics';
+import {
+  summarizeAttendance,
+  type AttendanceSummary,
+} from '@/lib/attendance/summary';
 import { PRIORITY_WEIGHTS } from '@/lib/tracker/enums';
-import type { DailyTaskLog, Task, User, UserRole } from '@/types/tracker';
+import type {
+  AttendanceRecord,
+  DailyTaskLog,
+  Task,
+  User,
+  UserRole,
+} from '@/types/tracker';
 
 /**
  * Team performance engine.
@@ -232,6 +242,7 @@ export interface MemberPerformance {
   };
   /** Whether this member holds the top composite score. */
   isStarPerformer: boolean;
+  attendance: AttendanceSummary;
 }
 
 export interface TeamMedians {
@@ -256,6 +267,11 @@ export interface TeamTotals {
   contributingMemberCount: number;
   eligibleTaskCount: number;
   rottenTaskCount: number;
+  attendanceHours: number;
+  offHours: number;
+  payableDays: number;
+  absentDays: number;
+  leaveDays: number;
 }
 
 export interface TeamAnalytics {
@@ -271,6 +287,7 @@ export interface AnalyticsInput {
   members: readonly User[];
   tasks: readonly Task[];
   logs: readonly DailyTaskLog[];
+  attendanceRecords?: readonly AttendanceRecord[];
   period: AnalyticsPeriod;
 }
 
@@ -302,6 +319,14 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
 
   const taskById = new Map<string, Task>();
   for (const task of input.tasks) taskById.set(task.id, task);
+
+  const attendanceByUser = new Map<string, AttendanceRecord[]>();
+  for (const record of input.attendanceRecords ?? []) {
+    if (!isWithinPeriod(record.attendanceDate, period)) continue;
+    const records = attendanceByUser.get(record.userId) ?? [];
+    records.push(record);
+    attendanceByUser.set(record.userId, records);
+  }
 
   const accumulators = new Map<string, Accumulator>();
   for (const member of activeMembers) {
@@ -549,6 +574,9 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
       ),
       starBreakdown: breakdown,
       isStarPerformer: false,
+      attendance: summarizeAttendance(
+        attendanceByUser.get(accumulator.member.id) ?? [],
+      ),
     };
   });
 
@@ -592,6 +620,11 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
     allocations.length === 0
       ? 0
       : roundToNumericScale(Math.max(...allocations) - Math.min(...allocations));
+  const attendanceSummary = summarizeAttendance(
+    scored.flatMap((member) =>
+      attendanceByUser.get(member.userId) ?? [],
+    ),
+  );
 
   return {
     period,
@@ -611,6 +644,11 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
       contributingMemberCount: candidates.length,
       eligibleTaskCount,
       rottenTaskCount,
+      attendanceHours: attendanceSummary.attendanceHours,
+      offHours: attendanceSummary.offHours,
+      payableDays: attendanceSummary.payableDays,
+      absentDays: attendanceSummary.absentDays,
+      leaveDays: attendanceSummary.leaveDays,
     },
     starPerformer,
   };

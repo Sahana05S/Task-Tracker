@@ -137,7 +137,7 @@ BEGIN
         PERFORM cron.schedule(
             'taskpulse-freshness-decay',
             '0 * * * *',   -- every hour, on the hour
-            $$SELECT public.decay_task_freshness()$$
+            $cron$SELECT public.decay_task_freshness()$cron$
         );
 
         RAISE NOTICE 'pg_cron job "taskpulse-freshness-decay" scheduled (hourly).';

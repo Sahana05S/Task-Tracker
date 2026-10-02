@@ -29,6 +29,8 @@ function makeLog(
     progressDelta: overrides.progressDelta ?? null,
     updateNotes: overrides.updateNotes ?? null,
     rawLinks: overrides.rawLinks ?? null,
+    logSource: overrides.logSource ?? 'Manual',
+    sourceTimerId: overrides.sourceTimerId ?? null,
     createdAt: overrides.createdAt ?? '2026-09-01T08:00:00Z',
   };
 }

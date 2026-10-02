@@ -1,8 +1,17 @@
 import {
+  CalendarCheckIcon,
+  CalendarRangeIcon,
   ClockIcon,
+  DollarSignIcon,
+  FileTextIcon,
+  LightbulbIcon,
   LayoutDashboardIcon,
   ListChecksIcon,
+  MessageSquareIcon,
+  BookOpenIcon,
+  UsersIcon,
   TargetIcon,
+  WrenchIcon,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -44,9 +53,63 @@ export const NAV_ITEMS: readonly NavItem[] = [
     inBottomNav: true,
   },
   {
+    label: 'Timelines',
+    href: '/timelines',
+    icon: CalendarRangeIcon,
+    inBottomNav: false,
+  },
+  {
+    label: 'Task Tools',
+    href: '/task-tools',
+    icon: WrenchIcon,
+    inBottomNav: false,
+  },
+  {
     label: 'Logs',
     href: '/logs',
     icon: ClockIcon,
+    inBottomNav: false,
+  },
+  {
+    label: 'Attendance',
+    href: '/attendance',
+    icon: CalendarCheckIcon,
+    inBottomNav: false,
+  },
+  {
+    label: 'Reports',
+    href: '/reports',
+    icon: FileTextIcon,
+    inBottomNav: false,
+  },
+  {
+    label: 'Daily Facts',
+    href: '/daily-facts',
+    icon: BookOpenIcon,
+    inBottomNav: false,
+  },
+  {
+    label: 'Ideas',
+    href: '/ideas',
+    icon: LightbulbIcon,
+    inBottomNav: false,
+  },
+  {
+    label: 'Suggestions',
+    href: '/suggestions',
+    icon: MessageSquareIcon,
+    inBottomNav: false,
+  },
+  {
+    label: 'Sales',
+    href: '/sales',
+    icon: DollarSignIcon,
+    inBottomNav: false,
+  },
+  {
+    label: 'Team',
+    href: '/team',
+    icon: UsersIcon,
     inBottomNav: false,
   },
   {

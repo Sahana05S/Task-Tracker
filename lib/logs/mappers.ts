@@ -12,7 +12,7 @@ import type { DailyTaskLog } from '@/types/tracker';
 
 /** Explicit column list for log selects. */
 export const LOG_COLUMNS =
-  'id, task_id, user_id, log_date, hours_worked, progress_delta, update_notes, raw_links, created_at' as const;
+  'id, task_id, user_id, log_date, hours_worked, progress_delta, update_notes, raw_links, log_source, source_timer_id, created_at' as const;
 
 export function mapDailyTaskLog(row: DailyTaskLogRow): DailyTaskLog {
   return {
@@ -24,6 +24,8 @@ export function mapDailyTaskLog(row: DailyTaskLogRow): DailyTaskLog {
     progressDelta: row.progress_delta,
     updateNotes: row.update_notes,
     rawLinks: row.raw_links,
+    logSource: row.log_source,
+    sourceTimerId: row.source_timer_id,
     createdAt: row.created_at,
   };
 }

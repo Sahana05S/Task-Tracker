@@ -76,7 +76,10 @@ export function filterTasks(
   const needle = filters.search.trim().toLowerCase();
 
   return tasks.filter((task) => {
-    if (filters.assigneeId !== ALL && task.assigneeId !== filters.assigneeId) {
+    if (
+      filters.assigneeId !== ALL &&
+      !task.assigneeIds.includes(filters.assigneeId)
+    ) {
       return false;
     }
     if (filters.category !== ALL && task.category !== filters.category) {
@@ -177,6 +180,11 @@ export function sortTasks(
   const factor = sort.direction === 'asc' ? 1 : -1;
   const hoursFor = (task: Task): number =>
     effortByTask.get(task.id)?.hoursLogged ?? 0;
+  const assigneeLabelFor = (task: Task): string =>
+    task.assigneeIds
+      .map((assigneeId) => assigneeNames.get(assigneeId) ?? '')
+      .filter(Boolean)
+      .join(', ');
 
   const compare = (a: Task, b: Task): number => {
     switch (sort.key) {
@@ -187,9 +195,7 @@ export function sortTasks(
       case 'category':
         return a.category.localeCompare(b.category);
       case 'assignee':
-        return (assigneeNames.get(a.assigneeId) ?? '').localeCompare(
-          assigneeNames.get(b.assigneeId) ?? '',
-        );
+        return assigneeLabelFor(a).localeCompare(assigneeLabelFor(b));
       case 'priority':
         return PRIORITY_WEIGHTS[a.priority] - PRIORITY_WEIGHTS[b.priority];
       case 'status':

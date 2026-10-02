@@ -78,6 +78,54 @@ export type TaskFreshness = 'Fresh' | 'Stale' | 'Rotten';
  */
 export type MilestoneStatus = 'Planned' | 'In Progress' | 'Achieved';
 
+/** PostgreSQL ENUM `task_assignment_role`. */
+export type TaskAssignmentRole = 'Owner' | 'Collaborator' | 'Support';
+
+/** PostgreSQL ENUM `task_reviewer_role`. */
+export type TaskReviewerRole = 'Primary' | 'Secondary' | 'Observer';
+
+/** PostgreSQL ENUM `task_relation_type`. */
+export type TaskRelationType =
+  | 'Dependency'
+  | 'Support'
+  | 'Carryover'
+  | 'Subtask'
+  | 'Blocks'
+  | 'Related';
+
+/** PostgreSQL ENUM `task_link_type`. */
+export type TaskLinkType =
+  | 'Folder'
+  | 'Document'
+  | 'Account'
+  | 'Flowchart'
+  | 'Engineering'
+  | 'Drawing'
+  | 'Checklist'
+  | 'Raw Link'
+  | 'Other';
+
+/** PostgreSQL ENUM `checklist_node_type`. */
+export type ChecklistNodeType = 'Page' | 'Group' | 'Item' | 'Task';
+
+/** PostgreSQL ENUM `task_timer_status`. */
+export type TaskTimerStatus = 'Running' | 'Stopped' | 'Discarded';
+
+/** PostgreSQL ENUM `task_log_source`. */
+export type TaskLogSource = 'Manual' | 'Timer' | 'Imported';
+
+/** PostgreSQL ENUM `attendance_status`. */
+export type AttendanceStatus =
+  | 'Present'
+  | 'Absent'
+  | 'Half Day'
+  | 'Holiday'
+  | 'Leave'
+  | 'Off Hours';
+
+/** PostgreSQL ENUM `report_status`. */
+export type ReportStatus = 'Draft' | 'Final';
+
 /* -------------------------------------------------------------------------- */
 /* Table row models                                                           */
 /* -------------------------------------------------------------------------- */
@@ -121,6 +169,10 @@ export interface Task {
   assigneeId: string;
   /** `reviewer_id` — FK to `users.id`, ON DELETE SET NULL. */
   reviewerId: string | null;
+  /** Multi-assignee user IDs from `task_assignees`, with `assigneeId` as fallback. */
+  assigneeIds: string[];
+  /** Multi-reviewer user IDs from `task_reviewers`, with `reviewerId` as fallback. */
+  reviewerIds: string[];
 
   /** `task_scale` — assigned work weight. */
   taskScale: number | null;
@@ -182,6 +234,10 @@ export interface DailyTaskLog {
   updateNotes: string | null;
   /** `raw_links` — TEXT[] of asset URLs (documents, drawings, boards). */
   rawLinks: string[] | null;
+  /** `log_source` — whether this came from manual entry, a timer, or import. */
+  logSource: TaskLogSource;
+  /** `source_timer_id` — timer session that produced this log, when applicable. */
+  sourceTimerId: string | null;
   /** `created_at` — ISO 8601 timestamp. */
   createdAt: string;
 }
@@ -212,6 +268,10 @@ export interface MonthlyPerformanceSnapshot {
   criticalityScore: number | null;
   /** `freshness_score` — composite freshness rating for the month. */
   freshnessScore: number | null;
+  attendanceHours: number | null;
+  payableDays: number | null;
+  absentDays: number | null;
+  leaveDays: number | null;
   /** `is_star_performer` — winner of the composite monthly score. */
   isStarPerformer: boolean | null;
 
@@ -274,6 +334,264 @@ export interface CompanyMilestone {
   dueDate: string | null;
   /** `created_at` — ISO 8601 timestamp. */
   createdAt: string;
+}
+
+/** Row of `public.task_assignees` â€” multi-assignee task membership. */
+export interface TaskAssignee {
+  id: string;
+  taskId: string;
+  userId: string;
+  assignmentRole: TaskAssignmentRole;
+  isPrimary: boolean;
+  assignedBy: string | null;
+  assignedAt: string;
+  createdAt: string;
+}
+
+/** Row of `public.task_reviewers` â€” multi-reviewer task membership. */
+export interface TaskReviewer {
+  id: string;
+  taskId: string;
+  userId: string;
+  reviewerRole: TaskReviewerRole;
+  isPrimary: boolean;
+  assignedBy: string | null;
+  reviewDueAt: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+}
+
+/** Row of `public.task_dependencies` â€” reusable task/subtask relations. */
+export interface TaskDependency {
+  id: string;
+  predecessorTaskId: string;
+  successorTaskId: string;
+  relationType: TaskRelationType;
+  notes: string | null;
+  createdBy: string | null;
+  createdAt: string;
+}
+
+/** Row of `public.task_detail_sections` â€” structured task page sections. */
+export interface TaskDetailSection {
+  id: string;
+  taskId: string;
+  keyName: string;
+  title: string;
+  content: string | null;
+  updatedBy: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+/** Row of `public.task_links` â€” task folders, documents, drawings and assets. */
+export interface TaskLink {
+  id: string;
+  taskId: string;
+  linkType: TaskLinkType;
+  label: string;
+  url: string | null;
+  storagePath: string | null;
+  notes: string | null;
+  createdBy: string | null;
+  createdAt: string;
+}
+
+/** Row of `public.checklist_templates`. */
+export interface ChecklistTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.checklist_template_nodes`. */
+export interface ChecklistTemplateNode {
+  id: string;
+  templateId: string;
+  parentNodeId: string | null;
+  nodeType: ChecklistNodeType;
+  title: string;
+  description: string | null;
+  sortOrder: number;
+  createdAt: string;
+}
+
+/** Row of `public.task_checklists` â€” one master checklist per task. */
+export interface TaskChecklist {
+  id: string;
+  taskId: string;
+  templateId: string | null;
+  title: string;
+  syncProgressToTask: boolean;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.checklist_nodes` â€” hierarchical equal-weight checklist item. */
+export interface ChecklistNode {
+  id: string;
+  checklistId: string;
+  parentNodeId: string | null;
+  linkedTaskId: string | null;
+  nodeType: ChecklistNodeType;
+  title: string;
+  description: string | null;
+  isComplete: boolean;
+  sortOrder: number;
+  estimatedMinutes: number | null;
+  elapsedSeconds: number;
+  completedBy: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.task_timers` â€” server-backed task timer sessions. */
+export interface TaskTimer {
+  id: string;
+  taskId: string;
+  userId: string;
+  status: TaskTimerStatus;
+  startedAt: string;
+  stoppedAt: string | null;
+  elapsedSeconds: number;
+  generatedLogId: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.attendance_records`. */
+export interface AttendanceRecord {
+  id: string;
+  userId: string;
+  attendanceDate: string;
+  status: AttendanceStatus;
+  checkInAt: string | null;
+  checkOutAt: string | null;
+  attendanceHours: number;
+  offHours: number;
+  holidayName: string | null;
+  notes: string | null;
+  recordedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.daily_star_records`. */
+export interface DailyStarRecord {
+  id: string;
+  starDate: string;
+  userId: string;
+  score: number;
+  productivityComponent: number;
+  progressComponent: number;
+  checklistComponent: number;
+  freshnessComponent: number;
+  attendanceComponent: number;
+  reason: string | null;
+  isOverride: boolean;
+  overrideBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.performance_score_components`. */
+export interface PerformanceScoreComponent {
+  id: string;
+  userId: string;
+  scoreDate: string;
+  metricKey: string;
+  metricValue: number;
+  sourceTable: string | null;
+  sourceId: string | null;
+  createdAt: string;
+}
+
+/** Row of `public.meeting_points`. */
+export interface MeetingPoint {
+  id: string;
+  meetingDate: string;
+  meetingType: string | null;
+  postedBy: string | null;
+  point: string;
+  folderUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.daily_facts`. */
+export interface DailyFact {
+  id: string;
+  factDate: string;
+  postedBy: string | null;
+  fact: string;
+  folderUrl: string | null;
+  isValidated: boolean;
+  validatedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.ideas`. */
+export interface Idea {
+  id: string;
+  ideaDate: string;
+  postedBy: string | null;
+  idea: string;
+  folderUrl: string | null;
+  isValidated: boolean;
+  validatedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.suggestions`. */
+export interface Suggestion {
+  id: string;
+  suggestionDate: string;
+  postedBy: string | null;
+  suggestion: string;
+  folderUrl: string | null;
+  isValidated: boolean;
+  validatedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.sales_logs`. */
+export interface SalesLog {
+  id: string;
+  saleDate: string;
+  salesBy: string | null;
+  projectBuiltUpArea: string | null;
+  projectLocation: string | null;
+  clientName: string | null;
+  projectFolderUrl: string | null;
+  isNewProject: boolean;
+  basementPaymentReceived: boolean;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Row of `public.report_snapshots`. */
+export interface ReportSnapshot {
+  id: string;
+  reportType: string;
+  title: string;
+  status: ReportStatus;
+  periodStart: string | null;
+  periodEnd: string | null;
+  employeeId: string | null;
+  payload: unknown;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /* -------------------------------------------------------------------------- */

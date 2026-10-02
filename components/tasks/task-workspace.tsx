@@ -29,8 +29,8 @@ import {
   type TaskFilterState,
   type TaskSortState,
 } from '@/lib/tasks/filters';
-import { TASK_MANAGER_ROLES } from '@/lib/tracker/enums';
-import type { Task, User, UserRole } from '@/types/tracker';
+import { canManageTasks } from '@/lib/tasks/permissions';
+import type { Task, User } from '@/types/tracker';
 
 export interface TaskWorkspaceProps {
   tasks: readonly Task[];
@@ -84,9 +84,7 @@ export function TaskWorkspace({
     router.replace('/tasks', { scroll: false });
   }, [wantsNew, router]);
 
-  const canManage = (TASK_MANAGER_ROLES as readonly UserRole[]).includes(
-    currentUser.role,
-  );
+  const canManage = canManageTasks(currentUser.role);
 
   const memberNames = React.useMemo(() => {
     const map = new Map<string, string>();

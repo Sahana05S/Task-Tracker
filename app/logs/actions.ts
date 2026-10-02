@@ -11,6 +11,7 @@ import {
   isMetricsEligible,
   sumHours,
 } from '@/lib/logs/metrics';
+import { recalculateTaskMetrics as recalculateTaskMetricsForTask } from '@/lib/logs/task-metrics';
 import { getLoggableTasksFor } from '@/lib/logs/queries';
 import { createClient } from '@/lib/supabase/server';
 import { TASK_MANAGER_ROLES } from '@/lib/tracker/enums';
@@ -265,61 +266,13 @@ async function recalculateTaskMetrics(
   progressDelta: number,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = await createClient();
-
-  const { data: task, error: taskError } = await supabase
-    .from('tasks')
-    .select('task_scale, progress_percentage, category')
-    .eq('id', taskId)
-    .maybeSingle();
-
-  if (taskError) return { ok: false, error: describeDatabaseError(taskError) };
-  if (!task) return { ok: false, error: 'That task no longer exists.' };
-
-  // Read after the log write, so the new or removed entry is included.
-  const { data: logRows, error: logError } = await supabase
-    .from('daily_task_logs')
-    .select('hours_worked')
-    .eq('task_id', taskId);
-
-  if (logError) return { ok: false, error: describeDatabaseError(logError) };
-
-  const hoursLogged = sumHours(
-    logRows.map((row) => ({ hoursWorked: row.hours_worked })),
-  );
-
-  const nextProgress = applyProgressDelta(
-    task.progress_percentage,
-    progressDelta,
-  );
-  const scaledProgress = computeScaledProgress(task.task_scale, nextProgress);
-
-  const { error: updateError } = await supabase
-    .from('tasks')
-    .update({
-      progress_percentage: nextProgress,
-      task_productivity: computeProductivity(scaledProgress, hoursLogged),
-      valid_for_metrics: isMetricsEligible(
-        hoursLogged,
-        task.task_scale,
-        task.category,
-      ),
-      // domain-rules.md: a task that is actively logged counts as Fresh.
-      // Decay back to Stale and Rotten still needs a scheduled job.
-      freshness: 'Fresh',
-    })
-    .eq('id', taskId);
-
-  if (updateError) {
-    return { ok: false, error: describeDatabaseError(updateError) };
-  }
-
-  return { ok: true };
+  return recalculateTaskMetricsForTask(supabase, taskId, progressDelta);
 }
 
 /**
  * Confirms the actor may log effort against a task.
  *
- * Restricted to the assignee, or a manager. This must match the UPDATE policy on
+ * Restricted to an assignee, or a manager. This must match the UPDATE policy on
  * `tasks`: the recalculation writes to the task row, so anyone allowed to log
  * here also has to be allowed to update there, or the log would be saved and the
  * metrics would silently fail to follow.
@@ -341,7 +294,22 @@ async function resolveLoggableTask(
   if (error) return { ok: false, error: describeDatabaseError(error) };
   if (!data) return { ok: false, error: 'That task no longer exists.' };
 
-  if (!isTaskManager(profile.role) && data.assignee_id !== profile.id) {
+  if (isTaskManager(profile.role) || data.assignee_id === profile.id) {
+    return { ok: true, task: { id: data.id, assigneeId: data.assignee_id } };
+  }
+
+  const { data: assignment, error: assignmentError } = await supabase
+    .from('task_assignees')
+    .select('id')
+    .eq('task_id', taskId)
+    .eq('user_id', profile.id)
+    .maybeSingle();
+
+  if (assignmentError) {
+    return { ok: false, error: describeDatabaseError(assignmentError) };
+  }
+
+  if (!assignment) {
     return {
       ok: false,
       error: 'You can only log effort against tasks assigned to you.',

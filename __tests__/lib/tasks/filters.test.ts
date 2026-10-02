@@ -26,6 +26,8 @@ function makeTask(overrides: Partial<Task> & { id: string; taskTag: string }): T
     comments: overrides.comments ?? null,
     assigneeId: overrides.assigneeId ?? 'user-1',
     reviewerId: overrides.reviewerId ?? null,
+    assigneeIds: overrides.assigneeIds ?? [overrides.assigneeId ?? 'user-1'],
+    reviewerIds: overrides.reviewerIds ?? [],
     taskScale: 'taskScale' in overrides ? (overrides.taskScale ?? null) : 10,
     progressPercentage: overrides.progressPercentage ?? 0,
     scaledProgress: overrides.scaledProgress ?? 0,
@@ -124,6 +126,25 @@ describe('filterTasks', () => {
     expect(result.map((t) => t.id)).toEqual(['t1', 't3']);
   });
 
+  it('filters by any assignee in a multi-assignee task', () => {
+    const tasks = [
+      ...TASKS,
+      makeTask({
+        id: 't5',
+        taskTag: 'Sep26_T5',
+        assigneeId: 'user-1',
+        assigneeIds: ['user-1', 'user-4'],
+      }),
+    ];
+
+    const result = filterTasks(tasks, {
+      ...EMPTY_FILTERS,
+      assigneeId: 'user-4',
+    });
+
+    expect(result.map((task) => task.id)).toEqual(['t5']);
+  });
+
   it('filters by category', () => {
     const result = filterTasks(TASKS, { ...EMPTY_FILTERS, category: 'PJT' });
     expect(result.map((t) => t.id)).toEqual(['t1']);
@@ -218,7 +239,9 @@ describe('sortTasks — assignee name ordering', () => {
       ['user-3', 'Mike'],
     ]);
     const result = sortTasks(TASKS, { key: 'assignee', direction: 'asc' }, names);
-    const sortedNames = result.map((t) => names.get(t.assigneeId) ?? '');
+    const sortedNames = result.map((t) =>
+      t.assigneeIds.map((assigneeId) => names.get(assigneeId) ?? '').join(', '),
+    );
     expect(sortedNames).toEqual([...sortedNames].sort((a, b) => a.localeCompare(b)));
   });
 });

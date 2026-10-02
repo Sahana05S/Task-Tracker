@@ -81,7 +81,20 @@ hold even if the application is bypassed entirely.
 | `/login` | public | Accepts `?tab=signin` / `?tab=signup` |
 | `/dashboard` | authenticated | Team analytics, star performer, snapshots |
 | `/tasks` | authenticated | Task grid (desktop) and cards (mobile/tablet) |
+| `/tasks/[taskTag]` | authenticated | Individual task page with details, links, logs, dependencies and timers |
+| `/tasks/[taskTag]/checklist` | authenticated | Master checklist tree with progress sync |
 | `/logs` | authenticated | Personal effort history |
+| `/timelines` | authenticated | Gantt-style task timeline grouped by assignee |
+| `/team` | authenticated | Team index, profile links, reports and daily star records |
+| `/team/[employeeId]` | authenticated | Employee profile, reports, logs and individual analytics charts |
+| `/team/[employeeId]/reports` | authenticated | Employee report snapshots and score/star history |
+| `/attendance` | authenticated | Attendance records and monthly attendance totals |
+| `/task-tools` | authenticated | Web replacement for workbook custom menus and Apps Script workflows |
+| `/reports` | authenticated | Saved report snapshots |
+| `/daily-facts` | authenticated | Daily facts capture page |
+| `/ideas` | authenticated | Ideas capture page |
+| `/suggestions` | authenticated | Suggestions capture page |
+| `/sales` | authenticated | Sales log support page |
 | `/milestones` | authenticated | Vision, mission, values, monthly milestones. Leadership edits in place |
 | `/settings` | authenticated | Account details; display name is the one editable field |
 
@@ -146,13 +159,20 @@ Apply the migrations **in order**. Each depends on the one before it.
 | 2 | `supabase/migrations/02_auth_provisioning.sql` | `handle_new_user` trigger that provisions a `public.users` row on signup, plus a self-service profile update policy |
 | 3 | `supabase/migrations/03_log_deletion_policy.sql` | DELETE policy so a member can remove their own effort logs |
 | 4 | `supabase/migrations/04_milestones_and_vision.sql` | `milestone_status` enum, `company_statements` and `company_milestones` tables, their RLS policies, and seed content for the milestones tab |
+| 5 | `supabase/migrations/05_freshness_decay.sql` | Freshness decay function so inactive open tasks age from `Fresh` to `Stale` or `Rotten` |
+| 6 | `supabase/migrations/06_oauth_profile_support.sql` | Profile support for OAuth sign-in metadata |
+| 7 | `supabase/migrations/07_tracker_replacement_foundation.sql` | Workbook replacement tables for multi-assignees, reviewers, task dependencies, task pages, task links, checklist templates, timers, attendance, stars, support modules, and report snapshots |
+| 8 | `supabase/migrations/08_checklist_progress_sync.sql` | Checklist progress rollups and task progress synchronization helpers |
+| 9 | `supabase/migrations/09_attendance_snapshot_totals.sql` | Attendance totals added to monthly performance snapshots |
 
 Apply them with `supabase db push`, or paste each file into the Supabase SQL
 Editor and run it once.
 
 If `/milestones` shows a "Migration not applied" notice, `04` is the one that has
-not been run. The page detects the two tables being absent and says so rather than
-failing, so the rest of the workspace keeps working in the meantime.
+not been run. If task pages, checklist pages, attendance, team reports, timers, or
+task tools fail because a table is missing, apply migrations `07` through `09` in
+order. The page-level notices handle known optional tables where possible, but the
+full tracker replacement requires every migration in the table above.
 
 `04` depends on three objects the earlier files create — `public.users`,
 `get_user_role()` and `set_updated_at()` — so the order is not optional. It seeds
@@ -195,8 +215,18 @@ WHERE email = 'you@example.com';
 | --- | --- |
 | `users` | Profiles, keyed to `auth.users.id`. Carries `employee_id` and `role` |
 | `tasks` | Work items with scale weight, progress, priority, status, freshness |
+| `task_assignees` / `task_reviewers` | Multi-person task ownership and review roles |
+| `task_dependencies` | Reusable task/subtask/support/carryover relationships |
+| `task_detail_sections` | Structured task-page sections replacing per-task sheets |
+| `task_links` | Task folders, documents, drawings, checklists and other work-file URLs |
+| `task_checklists` / `checklist_nodes` | Hierarchical master checklists with progress rollup |
+| `task_timers` | Background timers started/stopped by assigned members |
 | `daily_task_logs` | One effort entry: hours, progress delta, notes, asset links |
+| `attendance_records` | Daily attendance rows and hours |
+| `daily_star_records` | Automatically computed daily star performer records |
 | `monthly_performance_snapshots` | Frozen monthly statistics, one row per member per month |
+| `performance_score_components` | Audit trail for daily score calculations |
+| `report_snapshots` | Saved general and employee report payloads |
 | `company_statements` | One editable block per showcase card: vision, mission, core values |
 | `company_milestones` | Monthly organisational goals with an owner, a delivered/target count and a deadline |
 
@@ -413,7 +443,7 @@ lib/
   tracker/                 enums, labels, formatters
   marketing/               static typed landing-page content
 
-supabase/migrations/       01, 02, 03, 04 — apply in order
+supabase/migrations/       01 through 09 — apply in order
 types/                     database.ts (wire), tracker.ts (domain)
 proxy.ts                   edge session refresh and route guard
 ```
@@ -425,12 +455,22 @@ proxy.ts                   edge session refresh and route guard
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Development server |
+| `npm test` | Vitest unit suite |
 | `npm run build` | Production build (runs TypeScript) |
 | `npm run start` | Serve the production build |
 | `npm run typecheck` | `tsc --noEmit` |
 
 There is no `lint` script. `next lint` was removed from the CLI in Next.js 16, and ESLint is
 not installed, so nothing would run. `npm run typecheck` is the static check for this project.
+
+---
+
+## QA checklist
+
+Final workbook-replacement QA is tracked in `docs/final-qa-checklist.md`. Run
+`npm test`, `npm run typecheck`, and `npm run build` before deployment. The
+checklist also records the anonymous auth smoke test and the manual
+manager/member smoke checks that require real Supabase QA accounts.
 
 ---
 

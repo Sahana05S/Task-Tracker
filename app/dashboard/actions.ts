@@ -92,6 +92,10 @@ function toSnapshotRow(
     loading_percentage_diff: member.loadingDiff,
     criticality_score: member.criticalityScore,
     freshness_score: member.freshnessScore,
+    attendance_hours: member.attendance.attendanceHours,
+    payable_days: member.attendance.payableDays,
+    absent_days: member.attendance.absentDays,
+    leave_days: member.attendance.leaveDays,
     is_star_performer: member.isStarPerformer,
   };
 }

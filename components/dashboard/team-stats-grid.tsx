@@ -37,7 +37,7 @@ export function TeamStatsGrid({ analytics }: TeamStatsGridProps) {
   const { totals, medians } = analytics;
 
   return (
-    <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <dl className="grid grid-cols-2 gap-3 xl:grid-cols-5">
       <StatCard
         hero
         label="Team average productivity"
@@ -74,6 +74,13 @@ export function TeamStatsGrid({ analytics }: TeamStatsGridProps) {
             ? `${formatNumeric(totals.eligibleHours)} h metric-eligible`
             : `${totals.contributingMemberCount} of ${totals.activeMemberCount} contributed`
         }
+      />
+
+      <StatCard
+        label="Attendance hours"
+        value={formatNumeric(totals.attendanceHours)}
+        unit="h"
+        detail={`${formatNumeric(totals.payableDays)} payable days · ${formatNumeric(totals.offHours)} off-hours`}
       />
 
       <StatCard

@@ -4,14 +4,15 @@ import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 import { getCurrentProfile } from '@/lib/auth/profile';
+import { syncTaskProgressForLinkedTask } from '@/lib/checklists/sync';
 import { createClient } from '@/lib/supabase/server';
 import {
   isTaskCategory,
   isTaskPriority,
   isTaskStatus,
-  TASK_MANAGER_ROLES,
 } from '@/lib/tracker/enums';
-import type { ActionResponse, TaskStatus, User, UserRole } from '@/types/tracker';
+import { canManageTasks } from '@/lib/tasks/permissions';
+import type { ActionResponse, TaskStatus, User } from '@/types/tracker';
 
 /**
  * Task Server Actions.
@@ -47,10 +48,6 @@ async function resolveActor(): Promise<Actor> {
   }
 
   return { ok: true, profile };
-}
-
-function isTaskManager(role: UserRole): boolean {
-  return (TASK_MANAGER_ROLES as readonly UserRole[]).includes(role);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -102,6 +99,28 @@ function readRequiredId(formData: FormData, key: string): string | null {
   return UUID_PATTERN.test(value) ? value : null;
 }
 
+function readIdList(
+  formData: FormData,
+  multiKey: string,
+  legacyKey?: string,
+): string[] | null {
+  const rawValues = formData
+    .getAll(multiKey)
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.trim())
+    .filter((value) => value !== '' && value !== NO_SELECTION);
+
+  if (rawValues.length === 0 && legacyKey) {
+    const legacyValue = readRequiredId(formData, legacyKey);
+    if (legacyValue) rawValues.push(legacyValue);
+  }
+
+  const uniqueValues = [...new Set(rawValues)];
+  return uniqueValues.every((value) => UUID_PATTERN.test(value))
+    ? uniqueValues
+    : null;
+}
+
 /**
  * Parses a numeric field. Returns `null` for blank input and `undefined` for
  * input that is present but not a finite number, letting the caller tell
@@ -149,6 +168,68 @@ function describeDatabaseError(error: PostgrestError): string {
   }
 }
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function syncTaskParticipants(
+  supabase: SupabaseServerClient,
+  taskId: string,
+  assigneeIds: readonly string[],
+  reviewerIds: readonly string[],
+  actorId: string,
+): Promise<string | null> {
+  const { error: assigneeDeleteError } = await supabase
+    .from('task_assignees')
+    .delete()
+    .eq('task_id', taskId);
+
+  if (assigneeDeleteError) {
+    return describeDatabaseError(assigneeDeleteError);
+  }
+
+  const { error: reviewerDeleteError } = await supabase
+    .from('task_reviewers')
+    .delete()
+    .eq('task_id', taskId);
+
+  if (reviewerDeleteError) {
+    return describeDatabaseError(reviewerDeleteError);
+  }
+
+  const assigneeRows = assigneeIds.map((userId, index) => ({
+    task_id: taskId,
+    user_id: userId,
+    assignment_role: index === 0 ? 'Owner' as const : 'Collaborator' as const,
+    is_primary: index === 0,
+    assigned_by: actorId,
+  }));
+
+  const { error: assigneeInsertError } = await supabase
+    .from('task_assignees')
+    .insert(assigneeRows);
+
+  if (assigneeInsertError) {
+    return describeDatabaseError(assigneeInsertError);
+  }
+
+  if (reviewerIds.length === 0) {
+    return null;
+  }
+
+  const reviewerRows = reviewerIds.map((userId, index) => ({
+    task_id: taskId,
+    user_id: userId,
+    reviewer_role: index === 0 ? 'Primary' as const : 'Secondary' as const,
+    is_primary: index === 0,
+    assigned_by: actorId,
+  }));
+
+  const { error: reviewerInsertError } = await supabase
+    .from('task_reviewers')
+    .insert(reviewerRows);
+
+  return reviewerInsertError ? describeDatabaseError(reviewerInsertError) : null;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Create                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -160,7 +241,7 @@ export async function createTask(
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
 
-  if (!isTaskManager(actor.profile.role)) {
+  if (!canManageTasks(actor.profile.role)) {
     return {
       success: false,
       error: 'Only managing directors and project engineers can create tasks.',
@@ -171,10 +252,12 @@ export async function createTask(
   const title = readString(formData, 'title');
   const category = readString(formData, 'category');
   const priority = readString(formData, 'priority');
-  const assigneeId = readRequiredId(formData, 'assigneeId');
-  const reviewerId = readOptionalId(formData, 'reviewerId');
+  const assigneeIds = readIdList(formData, 'assigneeIds', 'assigneeId');
+  const reviewerIds = readIdList(formData, 'reviewerIds', 'reviewerId');
   const dueDate = readNullableString(formData, 'dueDate');
   const taskScale = readNullableNumber(formData, 'taskScale');
+  const assigneeId = assigneeIds?.[0] ?? null;
+  const reviewerId = reviewerIds?.[0] ?? null;
 
   if (taskTag === '') return { success: false, error: 'Enter a task tag.' };
   if (taskTag.length > 30) {
@@ -190,11 +273,14 @@ export async function createTask(
   if (!isTaskPriority(priority)) {
     return { success: false, error: 'Select a valid priority.' };
   }
-  if (assigneeId === null) {
-    return { success: false, error: 'Select an assignee.' };
+  if (assigneeIds === null) {
+    return { success: false, error: 'One or more selected assignees are invalid.' };
   }
-  if (reviewerId === undefined) {
-    return { success: false, error: 'The selected reviewer is not valid.' };
+  if (assigneeIds.length === 0 || assigneeId === null) {
+    return { success: false, error: 'Select at least one assignee.' };
+  }
+  if (reviewerIds === null) {
+    return { success: false, error: 'One or more selected reviewers are invalid.' };
   }
   if (taskScale === undefined) {
     return { success: false, error: 'Task scale must be a number.' };
@@ -232,6 +318,18 @@ export async function createTask(
     return { success: false, error: describeDatabaseError(error) };
   }
 
+  const participantError = await syncTaskParticipants(
+    supabase,
+    data.id,
+    assigneeIds,
+    reviewerIds,
+    actor.profile.id,
+  );
+
+  if (participantError) {
+    return { success: false, error: participantError };
+  }
+
   revalidatePath('/tasks');
   revalidatePath('/dashboard');
 
@@ -249,7 +347,7 @@ export async function updateTask(
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
 
-  if (!isTaskManager(actor.profile.role)) {
+  if (!canManageTasks(actor.profile.role)) {
     return {
       success: false,
       error:
@@ -264,10 +362,12 @@ export async function updateTask(
   const title = readString(formData, 'title');
   const category = readString(formData, 'category');
   const priority = readString(formData, 'priority');
-  const assigneeId = readRequiredId(formData, 'assigneeId');
-  const reviewerId = readOptionalId(formData, 'reviewerId');
+  const assigneeIds = readIdList(formData, 'assigneeIds', 'assigneeId');
+  const reviewerIds = readIdList(formData, 'reviewerIds', 'reviewerId');
   const dueDate = readNullableString(formData, 'dueDate');
   const taskScale = readNullableNumber(formData, 'taskScale');
+  const assigneeId = assigneeIds?.[0] ?? null;
+  const reviewerId = reviewerIds?.[0] ?? null;
 
   if (taskTag === '') return { success: false, error: 'Enter a task tag.' };
   if (taskTag.length > 30) {
@@ -283,11 +383,14 @@ export async function updateTask(
   if (!isTaskPriority(priority)) {
     return { success: false, error: 'Select a valid priority.' };
   }
-  if (assigneeId === null) {
-    return { success: false, error: 'Select an assignee.' };
+  if (assigneeIds === null) {
+    return { success: false, error: 'One or more selected assignees are invalid.' };
   }
-  if (reviewerId === undefined) {
-    return { success: false, error: 'The selected reviewer is not valid.' };
+  if (assigneeIds.length === 0 || assigneeId === null) {
+    return { success: false, error: 'Select at least one assignee.' };
+  }
+  if (reviewerIds === null) {
+    return { success: false, error: 'One or more selected reviewers are invalid.' };
   }
   if (taskScale === undefined) {
     return { success: false, error: 'Task scale must be a number.' };
@@ -317,6 +420,18 @@ export async function updateTask(
     return { success: false, error: describeDatabaseError(error) };
   }
 
+  const participantError = await syncTaskParticipants(
+    supabase,
+    taskId,
+    assigneeIds,
+    reviewerIds,
+    actor.profile.id,
+  );
+
+  if (participantError) {
+    return { success: false, error: participantError };
+  }
+
   revalidatePath('/tasks');
   revalidatePath('/dashboard');
 
@@ -338,7 +453,7 @@ async function assertCanUpdateOwnFields(
   profile: User,
   taskId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (isTaskManager(profile.role)) return { ok: true };
+  if (canManageTasks(profile.role)) return { ok: true };
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -350,7 +465,22 @@ async function assertCanUpdateOwnFields(
   if (error) return { ok: false, error: describeDatabaseError(error) };
   if (!data) return { ok: false, error: 'That task no longer exists.' };
 
-  if (data.assignee_id !== profile.id) {
+  if (data.assignee_id === profile.id) {
+    return { ok: true };
+  }
+
+  const { data: assignment, error: assignmentError } = await supabase
+    .from('task_assignees')
+    .select('id')
+    .eq('task_id', taskId)
+    .eq('user_id', profile.id)
+    .maybeSingle();
+
+  if (assignmentError) {
+    return { ok: false, error: describeDatabaseError(assignmentError) };
+  }
+
+  if (!assignment) {
     return {
       ok: false,
       error: 'You can only update tasks assigned to you.',
@@ -418,6 +548,14 @@ export async function updateTaskStatus(
     return { success: false, error: describeDatabaseError(error) };
   }
 
+  const syncedParents = await syncTaskProgressForLinkedTask(supabase, taskId);
+  if (!syncedParents.ok) {
+    return {
+      success: false,
+      error: `Task status updated, but parent checklist progress could not be synced: ${syncedParents.error}`,
+    };
+  }
+
   revalidatePath('/tasks');
   revalidatePath('/dashboard');
 
@@ -458,6 +596,14 @@ export async function updateTaskProgress(
     return { success: false, error: describeDatabaseError(error) };
   }
 
+  const syncedParents = await syncTaskProgressForLinkedTask(supabase, taskId);
+  if (!syncedParents.ok) {
+    return {
+      success: false,
+      error: `Task progress updated, but parent checklist progress could not be synced: ${syncedParents.error}`,
+    };
+  }
+
   revalidatePath('/tasks');
   revalidatePath('/dashboard');
 
@@ -472,7 +618,7 @@ export async function deleteTask(taskId: string): Promise<TaskActionState> {
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
 
-  if (!isTaskManager(actor.profile.role)) {
+  if (!canManageTasks(actor.profile.role)) {
     return {
       success: false,
       error: 'Only managing directors and project engineers can delete tasks.',

@@ -10,7 +10,7 @@ import {
   type AnalyticsInput,
   type AnalyticsPeriod,
 } from '@/lib/analytics/engine';
-import type { DailyTaskLog, Task, User } from '@/types/tracker';
+import type { AttendanceRecord, DailyTaskLog, Task, User } from '@/types/tracker';
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
@@ -39,6 +39,8 @@ function makeTask(overrides: Partial<Task> & { id: string; taskTag: string; assi
     comments: null,
     assigneeId: overrides.assigneeId,
     reviewerId: null,
+    assigneeIds: overrides.assigneeIds ?? [overrides.assigneeId],
+    reviewerIds: overrides.reviewerIds ?? [],
     taskScale: 'taskScale' in overrides ? (overrides.taskScale ?? null) : 10,
     progressPercentage: overrides.progressPercentage ?? 0,
     scaledProgress: overrides.scaledProgress ?? 0,
@@ -66,7 +68,29 @@ function makeLog(overrides: Partial<DailyTaskLog> & { taskId: string; userId: st
     progressDelta: overrides.progressDelta ?? null,
     updateNotes: overrides.updateNotes ?? null,
     rawLinks: overrides.rawLinks ?? null,
+    logSource: overrides.logSource ?? 'Manual',
+    sourceTimerId: overrides.sourceTimerId ?? null,
     createdAt: overrides.createdAt ?? '2026-09-15T08:00:00Z',
+  };
+}
+
+function makeAttendance(
+  overrides: Partial<AttendanceRecord> & { userId: string; attendanceDate: string },
+): AttendanceRecord {
+  return {
+    id: overrides.id ?? `attendance-${overrides.userId}-${overrides.attendanceDate}`,
+    userId: overrides.userId,
+    attendanceDate: overrides.attendanceDate,
+    status: overrides.status ?? 'Present',
+    checkInAt: overrides.checkInAt ?? null,
+    checkOutAt: overrides.checkOutAt ?? null,
+    attendanceHours: overrides.attendanceHours ?? 8,
+    offHours: overrides.offHours ?? 0,
+    holidayName: overrides.holidayName ?? null,
+    notes: overrides.notes ?? null,
+    recordedBy: overrides.recordedBy ?? null,
+    createdAt: overrides.createdAt ?? '2026-09-15T08:00:00Z',
+    updatedAt: overrides.updatedAt ?? '2026-09-15T08:00:00Z',
   };
 }
 
@@ -415,6 +439,54 @@ describe('computeTeamAnalytics', () => {
     expect(result.totals.scaledProgress).toBe(3);
     expect(result.totals.activeMemberCount).toBe(1);
     expect(result.totals.contributingMemberCount).toBe(1);
+  });
+
+  it('feeds attendance totals into member and dashboard analytics', () => {
+    const u1 = makeUser({ id: 'u1' });
+    const u2 = makeUser({ id: 'u2' });
+
+    const result = computeTeamAnalytics({
+      members: [u1, u2],
+      tasks: [],
+      logs: [],
+      attendanceRecords: [
+        makeAttendance({
+          userId: 'u1',
+          attendanceDate: '2026-09-02',
+          status: 'Present',
+          attendanceHours: 8,
+        }),
+        makeAttendance({
+          userId: 'u1',
+          attendanceDate: '2026-09-03',
+          status: 'Half Day',
+          attendanceHours: 4,
+        }),
+        makeAttendance({
+          userId: 'u2',
+          attendanceDate: '2026-09-04',
+          status: 'Absent',
+          attendanceHours: 0,
+        }),
+        makeAttendance({
+          userId: 'u2',
+          attendanceDate: '2026-08-31',
+          status: 'Present',
+          attendanceHours: 8,
+        }),
+      ],
+      period: SEP_2026,
+    });
+
+    const u1Perf = result.members.find((member) => member.userId === 'u1')!;
+    const u2Perf = result.members.find((member) => member.userId === 'u2')!;
+
+    expect(u1Perf.attendance.attendanceHours).toBe(12);
+    expect(u1Perf.attendance.payableDays).toBe(1.5);
+    expect(u2Perf.attendance.absentDays).toBe(1);
+    expect(result.totals.attendanceHours).toBe(12);
+    expect(result.totals.payableDays).toBe(1.5);
+    expect(result.totals.absentDays).toBe(1);
   });
 
   it('null productivity for members with no eligible hours', () => {

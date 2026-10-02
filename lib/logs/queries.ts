@@ -91,16 +91,46 @@ export async function getTaskEffortTotals(): Promise<Map<string, TaskEffort>> {
 export async function getLoggableTasksFor(userId: string): Promise<Task[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data: legacyRows, error: legacyError } = await supabase
     .from('tasks')
     .select(TASK_COLUMNS)
     .eq('assignee_id', userId)
     .not('status', 'in', '("Done","Discarded")')
     .order('task_tag', { ascending: true });
 
-  if (error) {
-    throw new Error(`Failed to load loggable tasks: ${error.message}`);
+  if (legacyError) {
+    throw new Error(`Failed to load loggable tasks: ${legacyError.message}`);
   }
 
-  return mapTasks(data);
+  const { data: assignmentRows, error: assignmentError } = await supabase
+    .from('task_assignees')
+    .select('task_id')
+    .eq('user_id', userId);
+
+  if (assignmentError) {
+    return mapTasks(legacyRows);
+  }
+
+  const legacyTaskIds = new Set(legacyRows.map((row) => row.id));
+  const joinedTaskIds = assignmentRows
+    .map((row) => row.task_id)
+    .filter((taskId) => !legacyTaskIds.has(taskId));
+
+  if (joinedTaskIds.length === 0) {
+    return mapTasks(legacyRows);
+  }
+
+  const { data: joinedRows, error: joinedError } = await supabase
+    .from('tasks')
+    .select(TASK_COLUMNS)
+    .in('id', joinedTaskIds)
+    .not('status', 'in', '("Done","Discarded")');
+
+  if (joinedError) {
+    throw new Error(`Failed to load joined loggable tasks: ${joinedError.message}`);
+  }
+
+  return mapTasks([...legacyRows, ...joinedRows]).sort((a, b) =>
+    a.taskTag.localeCompare(b.taskTag),
+  );
 }

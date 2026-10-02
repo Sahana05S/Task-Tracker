@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { isProtectedPath } from '@/lib/auth/protected-routes';
 import { updateSession } from '@/lib/supabase/middleware';
 
 /**
@@ -23,27 +24,6 @@ import { updateSession } from '@/lib/supabase/middleware';
  * action — is enforced in `app/(workspace)/layout.tsx` and ultimately by the
  * RLS policies in the database.
  */
-
-/**
- * Route prefixes that require an authenticated session.
- *
- * Must be kept in step with the routes under `app/(workspace)/`. The guarded
- * layout would refuse an unlisted route anyway, but only after the request has
- * reached the server and rendered; listing it here turns it away at the edge.
- */
-const PROTECTED_PREFIXES = [
-  '/dashboard',
-  '/tasks',
-  '/logs',
-  '/milestones',
-  '/settings',
-] as const;
-
-function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
-}
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { response, user } = await updateSession(request);

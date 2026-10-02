@@ -36,15 +36,6 @@ export interface TaskDialogProps {
   defaultAssigneeId: string;
 }
 
-/**
- * Sentinel for "no reviewer".
- *
- * Radix Select reserves the empty string for "nothing selected", so an optional
- * reference cannot round-trip as `''`. The Server Action maps this value back to
- * NULL.
- */
-const NO_REVIEWER = 'none';
-
 const INITIAL_STATE: TaskActionState | null = null;
 
 /**
@@ -154,19 +145,27 @@ function TaskForm({
   const [priority, setPriority] = React.useState<string>(
     task?.priority ?? 'Medium',
   );
-  const [assigneeId, setAssigneeId] = React.useState<string>(
-    task?.assigneeId ?? defaultAssigneeId,
+  const [assigneeIds, setAssigneeIds] = React.useState<Set<string>>(
+    () => new Set(task?.assigneeIds ?? [defaultAssigneeId]),
   );
-  const [reviewerId, setReviewerId] = React.useState<string>(
-    task?.reviewerId ?? NO_REVIEWER,
+  const [reviewerIds, setReviewerIds] = React.useState<Set<string>>(
+    () => new Set(task?.reviewerIds ?? []),
   );
 
   const activeMembers = members.filter((member) => member.isActive);
-
-  const memberOptions = activeMembers.map((member) => ({
-    value: member.id,
-    label: member.fullName,
-  }));
+  const toggleSelection = (
+    current: Set<string>,
+    nextValue: string,
+    checked: boolean,
+  ) => {
+    const next = new Set(current);
+    if (checked) {
+      next.add(nextValue);
+    } else {
+      next.delete(nextValue);
+    }
+    return next;
+  };
 
   return (
     <form action={action} className="flex min-h-0 flex-1 flex-col">
@@ -254,28 +253,40 @@ function TaskForm({
           />
         </Field>
 
-        <LabeledSelect
-          id="task-assignee"
-          label="Assignee"
-          name="assigneeId"
-          value={assigneeId}
-          onValueChange={setAssigneeId}
-          options={memberOptions}
+        <Field
+          id="task-assignees"
+          label="Assignees"
+          hint="At least one. The first selected member becomes the primary assignee."
           required
-        />
+        >
+          <MemberCheckboxGroup
+            name="assigneeIds"
+            members={activeMembers}
+            selectedIds={assigneeIds}
+            onChange={(memberId, checked) =>
+              setAssigneeIds((current) =>
+                toggleSelection(current, memberId, checked),
+              )
+            }
+          />
+        </Field>
 
-        <LabeledSelect
-          id="task-reviewer"
-          label="Reviewer"
-          name="reviewerId"
-          value={reviewerId}
-          onValueChange={setReviewerId}
-          options={[
-            { value: NO_REVIEWER, label: 'No reviewer' },
-            ...memberOptions,
-          ]}
-          hint="Optional second pair of eyes."
-        />
+        <Field
+          id="task-reviewers"
+          label="Reviewers"
+          hint="Optional. Multiple reviewers can be selected."
+        >
+          <MemberCheckboxGroup
+            name="reviewerIds"
+            members={activeMembers}
+            selectedIds={reviewerIds}
+            onChange={(memberId, checked) =>
+              setReviewerIds((current) =>
+                toggleSelection(current, memberId, checked),
+              )
+            }
+          />
+        </Field>
 
         <FormError message={error} className="sm:col-span-2" />
       </div>
@@ -303,5 +314,41 @@ function TaskForm({
         </Button>
       </SheetFooter>
     </form>
+  );
+}
+
+function MemberCheckboxGroup({
+  name,
+  members,
+  selectedIds,
+  onChange,
+}: {
+  name: string;
+  members: readonly User[];
+  selectedIds: ReadonlySet<string>;
+  onChange: (memberId: string, checked: boolean) => void;
+}) {
+  return (
+    <div className="border-border max-h-40 overflow-y-auto rounded-md border bg-white p-2">
+      {members.map((member) => (
+        <label
+          key={member.id}
+          className="hover:bg-muted flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
+        >
+          <input
+            type="checkbox"
+            name={name}
+            value={member.id}
+            checked={selectedIds.has(member.id)}
+            onChange={(event) => onChange(member.id, event.target.checked)}
+            className="accent-primary size-3.5"
+          />
+          <span className="truncate">{member.fullName}</span>
+          <span className="text-muted-foreground ml-auto text-xs">
+            {member.employeeId}
+          </span>
+        </label>
+      ))}
+    </div>
   );
 }
