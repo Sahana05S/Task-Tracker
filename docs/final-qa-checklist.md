@@ -67,7 +67,7 @@ These checks require a real manager account and a real member account in Supabas
 
 ## Latest Local Verification
 
-Run on October 2, 2026 from `e:\Task Tracker` after the README QA/setup updates:
+Run on October 2, 2026 from `e:\Task Tracker` after the manual-migration recovery updates:
 
 | Gate | Result |
 | --- | --- |

@@ -1,5 +1,12 @@
 # Google Sheet Replacement Implementation Spec
 
+> M00 note (10 October 2026): This document describes historical or provisional
+> behavior. Conflicting business rules and completion claims are superseded by
+> [RULES](plans/RULES.md), [DECISIONS](plans/DECISIONS.md) and
+> the [M00 conflict ledger](plans/M00-evidence.md#older-documentation-conflicts).
+> Retain unrelated architecture notes. Named missing script handlers do not
+> establish implemented parity. M01 has not started.
+
 This document maps the September 2026 Google Sheet task tracker into the
 TaskPulse web app. It is a planning/specification artifact only: it does not
 change the public landing page, routes, database, or product behavior.

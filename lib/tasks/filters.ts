@@ -1,7 +1,7 @@
 import type { TaskEffort } from '@/lib/logs/metrics';
 import {
   FRESHNESS_ORDER,
-  PRIORITY_WEIGHTS,
+  PRIORITY_SORT_ORDER,
   STATUS_ORDER,
 } from '@/lib/tracker/enums';
 import type {
@@ -197,11 +197,11 @@ export function sortTasks(
       case 'assignee':
         return assigneeLabelFor(a).localeCompare(assigneeLabelFor(b));
       case 'priority':
-        return PRIORITY_WEIGHTS[a.priority] - PRIORITY_WEIGHTS[b.priority];
+        return PRIORITY_SORT_ORDER[a.priority] - PRIORITY_SORT_ORDER[b.priority];
       case 'status':
         return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
       case 'freshness':
-        return FRESHNESS_ORDER[a.freshness] - FRESHNESS_ORDER[b.freshness];
+        return (a.freshness === null ? 6 : FRESHNESS_ORDER[a.freshness]) - (b.freshness === null ? 6 : FRESHNESS_ORDER[b.freshness]);
       case 'taskScale':
         return compareNullableNumbers(a.taskScale, b.taskScale);
       case 'progressPercentage':

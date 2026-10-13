@@ -68,7 +68,7 @@ export async function getCurrentProfile(): Promise<User | null> {
 export async function requireProfile(): Promise<User> {
   const profile = await getCurrentProfile();
 
-  if (!profile) {
+  if (!profile || !profile.isActive) {
     redirect('/login');
   }
 

@@ -15,5 +15,9 @@ export function canManageSupportRecords(role: UserRole): boolean {
 }
 
 export function canManageReportSnapshots(role: UserRole): boolean {
-  return (TASK_MANAGER_ROLES as readonly UserRole[]).includes(role);
+  return role === 'managing_director';
+}
+
+export function canValidateSupportRecord(user: Pick<User, 'id' | 'role' | 'isActive'>, postedBy: string | null): boolean {
+  return user.isActive && canManageSupportRecords(user.role) && postedBy !== null && postedBy !== user.id;
 }

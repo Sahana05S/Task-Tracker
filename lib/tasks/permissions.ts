@@ -13,8 +13,8 @@ export function isAssignedToTask(
 }
 
 export function canUpdateTaskOwnFields(
-  user: Pick<User, 'id' | 'role'>,
+  user: Pick<User, 'id' | 'role' | 'isActive'>,
   task: Pick<Task, 'assigneeId' | 'assigneeIds'>,
 ): boolean {
-  return canManageTasks(user.role) || isAssignedToTask(task, user.id);
+  return user.isActive && (canManageTasks(user.role) || isAssignedToTask(task, user.id));
 }

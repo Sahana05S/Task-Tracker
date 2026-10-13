@@ -74,6 +74,9 @@ export interface Database {
       tasks: TableDefinition<
         {
           id: string;
+          participant_credit_mode: "legacy" | "configured";
+          participant_version: number;
+          metric_version: number;
           task_tag: string;
           title: string;
           category: TaskCategory;
@@ -83,11 +86,23 @@ export interface Database {
           reviewer_id: string | null;
           task_scale: number | null;
           progress_percentage: number | null;
+          progress_owner?: 'manual'|'checklist';
           scaled_progress: number | null;
           task_productivity: number | null;
           priority: TaskPriority;
           status: TaskStatus;
-          freshness: TaskFreshness;
+          freshness: TaskFreshness | null;
+          productivity_available?: boolean;
+          lifecycle_version?: number;
+          work_revision?: number;
+          started_date?: string | null;
+          eligibility_reasons?: string[];
+          freshness_reason?: string | null;
+          scale_mode?: string;
+          scale_inputs?: Json;
+          scale_override?: number | null;
+          scale_provenance?: string;
+          scale_version?: number;
           valid_for_metrics: boolean;
           assigned_date: string;
           due_date: string | null;
@@ -128,6 +143,16 @@ export interface Database {
           log_date: string;
           hours_worked: number;
           progress_delta: number | null;
+          requested_progress_delta?: number | null;
+          timer_segment_number?: number | null;
+          timer_duration_seconds?: number | null;
+          effective_progress_delta?: number | null;
+          execution_version?: number;
+          reversed_at?: string | null;
+          participant_version?: number | null;
+          credit_shares?: Json | null;
+          credit_scale?: number | null;
+          effect_contract?: string | null;
           update_notes: string | null;
           raw_links: string[] | null;
           log_source: TaskLogSource;
@@ -150,6 +175,9 @@ export interface Database {
       >;
       monthly_performance_snapshots: TableDefinition<
         {
+          calculation_rule_version?:string;
+          calculation_context?:Json|null;
+          factor_components?:Json|null;
           id: string;
           user_id: string;
           snapshot_month: number;
@@ -173,6 +201,9 @@ export interface Database {
           snapshot_month: number;
           snapshot_year: number;
           total_logged_hours?: number | null;
+          calculation_rule_version?:string;
+          calculation_context?:Json|null;
+          factor_components?:Json|null;
           total_progress?: number | null;
           productivity_score?: number | null;
           loading_percentage_diff?: number | null;
@@ -235,6 +266,7 @@ export interface Database {
           id: string;
           task_id: string;
           user_id: string;
+          share_units: number | null;
           assignment_role: TaskAssignmentRole;
           is_primary: boolean;
           assigned_by: string | null;
@@ -244,6 +276,7 @@ export interface Database {
         OptionalId & {
           task_id: string;
           user_id: string;
+          share_units?: number | null;
           assignment_role?: TaskAssignmentRole;
           is_primary?: boolean;
           assigned_by?: string | null;
@@ -260,6 +293,7 @@ export interface Database {
           is_primary: boolean;
           assigned_by: string | null;
           review_due_at: string | null;
+          review_approved: boolean | null;
           reviewed_at: string | null;
           created_at: string;
         },
@@ -270,6 +304,7 @@ export interface Database {
           is_primary?: boolean;
           assigned_by?: string | null;
           review_due_at?: string | null;
+          review_approved?: boolean | null;
           reviewed_at?: string | null;
           created_at?: string;
         }
@@ -293,6 +328,11 @@ export interface Database {
           created_at?: string;
         }
       >;
+      task_detail_fields: TableDefinition<{key_name:string;title:string;group_name:string},{key_name:string;title:string;group_name:string}>;
+      task_detail_templates: TableDefinition<{id:string;name:string;created_by:string|null;created_at:string},{name:string;id?:string;created_by?:string|null}>;
+      task_detail_template_versions: TableDefinition<{id:string;template_id:string;version:number;payload:Json;requires_review:boolean;created_by:string|null;created_at:string},{template_id:string;version:number;payload:Json;id?:string}>;
+      task_detail_instances: TableDefinition<{task_id:string;template_version_id:string;instructions:Json;initialized_at:string;initialized_by:string|null;provider_state:'not_requested'|'pending'|'failed'|'succeeded'},{task_id:string;template_version_id:string;instructions:Json}>;
+      task_detail_review_flags: TableDefinition<{id:string;task_id:string;source_section_id:string|null;reason:string},{task_id:string;reason:string;source_section_id?:string|null}>;
       task_detail_sections: TableDefinition<
         {
           id: string;
@@ -316,6 +356,9 @@ export interface Database {
         {
           id: string;
           task_id: string;
+          ipo_role: 'input'|'process'|'output'|'reference'|null;
+          related_employee_id:string|null;
+          related_report_id:string|null;
           link_type: TaskLinkType;
           label: string;
           url: string | null;
@@ -326,6 +369,9 @@ export interface Database {
         },
         OptionalId & {
           task_id: string;
+          ipo_role?: 'input'|'process'|'output'|'reference'|null;
+          related_employee_id?:string|null;
+          related_report_id?:string|null;
           link_type?: TaskLinkType;
           label: string;
           url?: string | null;
@@ -400,6 +446,8 @@ export interface Database {
           title: string;
           description: string | null;
           is_complete: boolean;
+          detail_section?: 'setup'|'activity'|'closure'|null;
+          completion_state?: 'Yes'|'No'|'N/A';
           sort_order: number;
           estimated_minutes: number | null;
           elapsed_seconds: number;
@@ -429,6 +477,7 @@ export interface Database {
           task_id: string;
           user_id: string;
           status: TaskTimerStatus;
+          execution_version?: number;
           started_at: string;
           stopped_at: string | null;
           elapsed_seconds: number;
@@ -461,6 +510,9 @@ export interface Database {
           holiday_name: string | null;
           notes: string | null;
           recorded_by: string | null;
+          record_version?:number;
+          hours_confirmed?:boolean;
+          record_state?:'active'|'withdrawn';
         } & TimestampColumns,
         OptionalId & {
           user_id: string;
@@ -537,6 +589,19 @@ export interface Database {
           posted_by: string | null;
           point: string;
           folder_url: string | null;
+          record_version?:number;
+          validation_state?:'legacy_unvalidated'|'pending'|'validated'|'rejected'|'withdrawn';
+          validation_at?:string|null;
+          validation_reason?:string|null;
+          related_task_id?:string|null;
+          validated_by?:string|null;
+          owner_id?:string|null;
+          point_type?:string|null;
+          resolution?:string|null;
+          comments?:string|null;
+          resolution_status?:string|null;
+          resolution_due?:string|null;
+          resolved_on?:string|null;
         } & TimestampColumns,
         OptionalId & {
           meeting_date?: string;
@@ -557,6 +622,11 @@ export interface Database {
           folder_url: string | null;
           is_validated: boolean;
           validated_by: string | null;
+          record_version?:number;
+          validation_state?:'legacy_unvalidated'|'pending'|'validated'|'rejected'|'withdrawn';
+          validation_at?:string|null;
+          validation_reason?:string|null;
+          related_task_id?:string|null;
         } & TimestampColumns,
         OptionalId & {
           fact_date?: string;
@@ -578,6 +648,11 @@ export interface Database {
           folder_url: string | null;
           is_validated: boolean;
           validated_by: string | null;
+          record_version?:number;
+          validation_state?:'legacy_unvalidated'|'pending'|'validated'|'rejected'|'withdrawn';
+          validation_at?:string|null;
+          validation_reason?:string|null;
+          related_task_id?:string|null;
         } & TimestampColumns,
         OptionalId & {
           idea_date?: string;
@@ -599,6 +674,11 @@ export interface Database {
           folder_url: string | null;
           is_validated: boolean;
           validated_by: string | null;
+          record_version?:number;
+          validation_state?:'legacy_unvalidated'|'pending'|'validated'|'rejected'|'withdrawn';
+          validation_at?:string|null;
+          validation_reason?:string|null;
+          related_task_id?:string|null;
         } & TimestampColumns,
         OptionalId & {
           suggestion_date?: string;
@@ -623,6 +703,12 @@ export interface Database {
           is_new_project: boolean;
           basement_payment_received: boolean;
           notes: string | null;
+          record_version?:number;
+          validation_state?:'legacy_unvalidated'|'pending'|'validated'|'rejected'|'withdrawn';
+          validation_at?:string|null;
+          validation_reason?:string|null;
+          related_task_id?:string|null;
+          validated_by?:string|null;
         } & TimestampColumns,
         OptionalId & {
           sale_date?: string;
@@ -640,6 +726,7 @@ export interface Database {
       >;
       report_snapshots: TableDefinition<
         {
+          calculation_rule_version?:string;
           id: string;
           report_type: string;
           title: string;
@@ -654,6 +741,7 @@ export interface Database {
           report_type: string;
           title: string;
           status?: ReportStatus;
+          calculation_rule_version?:string;
           period_start?: string | null;
           period_end?: string | null;
           employee_id?: string | null;
@@ -666,10 +754,39 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
+      performance_source_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
+      claim_performance_jobs:{Args:{p_limit?:number};Returns:Json};
+      finish_performance_job:{Args:{p_job:string;p_lease:string;p_result:Json|null;p_error?:string|null};Returns:undefined};
+      dated_record_command:{Args:{p_kind:string;p_id:string|null;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
+      dated_record_history:{Args:{p_kind:string;p_id:string};Returns:Json};
+      attendance_input_context:{Args:{p_user:string;p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
+      contribution_input_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
+      checklist_command: {Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
+      checklist_rollups: {Args:{p_task_ids:string[]};Returns:Json};
+      task_details_command: {Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
+      publish_task_detail_template: {Args:{p_template:string|null;p_name:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
+      team_task_effort_totals: { Args: Record<string, never>; Returns: {task_id: string; hours_logged: number; log_count: number}[] };
+      task_credit_summary: { Args: Record<string, never>; Returns: Json };
+      create_task_log: { Args: { p_task_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
+      correct_task_log: { Args: { p_log_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
+      reverse_task_log: { Args: { p_log_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
+      start_task_timer: { Args: { p_task_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
+      stop_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
+      discard_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
+      set_task_participants: { Args: { p_task_id: string; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number; p_accept_legacy?: boolean }; Returns: number };
+      save_task_with_participants: { Args: { p_task_id: string | null; p_fields: Json; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number | null; p_accept_legacy: boolean; p_operation_id: string }; Returns: string };
+      participant_reconciliation: { Args: Record<never, never>; Returns: Json };
+      record_task_review: { Args: { p_task_id: string; p_approved: boolean }; Returns: undefined };
+      recalculate_task_metrics: { Args: { p_task_id: string; p_progress_delta: number }; Returns: undefined };
+      task_effort_summary: { Args: { p_task_id: string }; Returns: { hours_logged: number; log_count: number }[] };
+      team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
+      is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
+      can_read_employee_details: { Args: { p_user_id: string | null }; Returns: boolean };
       get_user_role: {
         Args: Record<never, never>;
-        Returns: UserRole;
+        Returns: UserRole | null;
       };
+      task_lifecycle_command: { Args: { p_task_id: string; p_command: string; p_payload: Json; p_expected_version: number; p_operation_id: string }; Returns: Json };
       decay_task_freshness: {
         Args: Record<never, never>;
         Returns: {
@@ -684,7 +801,18 @@ export interface Database {
       task_category: TaskCategory;
       task_priority: TaskPriority;
       task_status: TaskStatus;
-      task_freshness: TaskFreshness;
+      task_freshness: TaskFreshness | null;
+          productivity_available?: boolean;
+          lifecycle_version?: number;
+          work_revision?: number;
+          started_date?: string | null;
+          eligibility_reasons?: string[];
+          freshness_reason?: string | null;
+          scale_mode?: string;
+          scale_inputs?: Json;
+          scale_override?: number | null;
+          scale_provenance?: string;
+          scale_version?: number;
       milestone_status: MilestoneStatus;
       task_assignment_role: TaskAssignmentRole;
       task_reviewer_role: TaskReviewerRole;

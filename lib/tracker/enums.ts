@@ -131,13 +131,8 @@ export const TASK_PRIORITIES = [
  * Phase 5 and, here, to sort the priority column by severity instead of
  * alphabetically.
  */
-export const PRIORITY_WEIGHTS = {
-  Focus: 4,
-  High: 3,
-  Medium: 2,
-  Low: 1,
-  No: 0,
-} satisfies Record<TaskPriority, number>;
+export { PRIORITY_WEIGHTS } from '@/lib/tasks/contract';
+export const PRIORITY_SORT_ORDER: Record<TaskPriority, number> = { No: 0, Low: 1, Medium: 2, High: 3, Focus: 4 };
 
 export function isTaskPriority(value: string): value is TaskPriority {
   return (TASK_PRIORITIES as readonly string[]).includes(value);
@@ -152,6 +147,7 @@ export const TASK_STATUSES = [
   'In Progress',
   'Done',
   'Discarded',
+  'Stopped', 'On-Hold', 'Carryover',
 ] as const satisfies readonly TaskStatus[];
 
 /** Pipeline order for sorting, rather than the alphabetical default. */
@@ -160,6 +156,9 @@ export const STATUS_ORDER = {
   'In Progress': 1,
   Done: 2,
   Discarded: 3,
+  Stopped: 4,
+  'On-Hold': 5,
+  Carryover: 6,
 } satisfies Record<TaskStatus, number>;
 
 export function isTaskStatus(value: string): value is TaskStatus {
@@ -170,61 +169,9 @@ export function isTaskStatus(value: string): value is TaskStatus {
 /* Freshness                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export const TASK_FRESHNESS_STATES = [
-  'Fresh',
-  'Stale',
-  'Rotten',
-] as const satisfies readonly TaskFreshness[];
-
-/** Decay order, so sorting surfaces rotten work first when descending. */
-export const FRESHNESS_ORDER = {
-  Fresh: 0,
-  Stale: 1,
-  Rotten: 2,
-} satisfies Record<TaskFreshness, number>;
-
-/** Day thresholds from `domain-rules.md`, kept next to the states they define. */
-export const FRESHNESS_THRESHOLD_DAYS = {
-  /** Updated within this many days counts as Fresh. */
-  stale: 7,
-  /** Beyond this many days without completion counts as Rotten. */
-  rotten: 14,
-} as const;
-
-/**
- * Classifies a task's freshness from its `updated_at` timestamp and status.
- *
- * Mirrors the CASE expression in `supabase/migrations/05_freshness_decay.sql`
- * exactly, so application code and tests produce the same result as the
- * scheduled decay job without a database round-trip.
- *
- * Done and Discarded tasks are not decayed — a completed task that has not
- * been touched in 30 days is finished, not rotten. Pass the task's status so
- * the function can skip the calculation for terminal rows and return the
- * task's current freshness value unchanged.
- *
- * @param updatedAt  The task's `updated_at` ISO 8601 timestamp.
- * @param status     The task's current status.
- * @param now        Override for the current time (useful in tests).
- */
-export function computeFreshness(
-  updatedAt: string,
-  status: import('@/types/tracker').TaskStatus,
-  now: Date = new Date(),
-): TaskFreshness {
-  // Terminal tasks are never decayed; their freshness carries no meaning for
-  // the star formula (they are excluded from the relevant eligibility checks).
-  if (status === 'Done' || status === 'Discarded') {
-    return 'Fresh'; // sentinel — not used in analytics for terminal tasks
-  }
-
-  const ageMs = now.getTime() - new Date(updatedAt).getTime();
-  const ageDays = ageMs / (1000 * 60 * 60 * 24);
-
-  if (ageDays <= FRESHNESS_THRESHOLD_DAYS.stale) return 'Fresh';
-  if (ageDays <= FRESHNESS_THRESHOLD_DAYS.rotten) return 'Stale';
-  return 'Rotten';
-}
+export const TASK_FRESHNESS_STATES = ['Super Fresh', 'Fresh', 'Almost Fresh', 'Almost Stale', 'Stale', 'Rotten'] as const satisfies readonly TaskFreshness[];
+export const FRESHNESS_ORDER: Record<TaskFreshness, number> = { 'Super Fresh': 0, Fresh: 1, 'Almost Fresh': 2, 'Almost Stale': 3, Stale: 4, Rotten: 5 };
+export { classifyFreshness as computeFreshness } from '@/lib/tasks/contract';
 
 export function isTaskFreshness(value: string): value is TaskFreshness {
   return (TASK_FRESHNESS_STATES as readonly string[]).includes(value);

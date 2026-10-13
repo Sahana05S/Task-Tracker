@@ -1,0 +1,27 @@
+{
+  "as_of": "2026-10-12",
+  "scope": "read-only selected database; no automatic reconciliation",
+  "task_count": 2,
+  "blocked_policy": "Duplicate legacy links and unknown effects require individually authorized reconciliation; preserve all records.",
+  "snapshot_count": 1,
+  "date_exceptions": [
+    {
+      "reason": "missing_or_invalid_dates",
+      "task_id": "10000000-0000-0000-0000-000000000001",
+      "task_tag": "T1"
+    },
+    {
+      "reason": "missing_or_invalid_dates",
+      "task_id": "10000000-0000-0000-0000-000000000002",
+      "task_tag": "T2"
+    }
+  ],
+  "eligibility_changes": [],
+  "cron_catalog_present": false,
+  "invalid_effort_count": 0,
+  "duplicate_timer_links": [],
+  "timer_link_exceptions": [],
+  "legacy_unknown_effect_count": 0,
+  "precision_projection_changes": [],
+  "deployed_job_replacement_verified": false
+}

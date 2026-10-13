@@ -1,3 +1,8 @@
+import { optionalEmployeePerformance } from '@/lib/team/performance-availability';
+import { getTaskWorkspaceData } from '@/lib/tasks/queries';
+import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
+import { getCurrentProfile } from '@/lib/auth/profile';
+import { canViewEmployeeReports } from '@/lib/team/permissions';
 import {
   currentPeriod,
   type AnalyticsPeriod,
@@ -51,6 +56,7 @@ import type { TaskLinkRow } from '@/types/database';
 export interface TeamIndexMember {
   readonly user: User;
   readonly performance: MemberPerformance | null;
+  readonly performanceUnavailableReason?: string;
   readonly dailyStarCount: number;
   readonly currentPerformanceScore: number | null;
   readonly reportCount: number;
@@ -66,6 +72,7 @@ export interface EmployeeProfileData {
   readonly period: AnalyticsPeriod;
   readonly employee: User;
   readonly performance: MemberPerformance | null;
+  readonly performanceUnavailableReason?: string;
   readonly tasks: readonly Task[];
   readonly taskLinks: readonly TaskLink[];
   readonly logs: readonly DailyTaskLog[];
@@ -90,6 +97,7 @@ export interface EmployeeReportsData {
   readonly period: AnalyticsPeriod;
   readonly employee: User;
   readonly performance: MemberPerformance | null;
+  readonly performanceUnavailableReason?: string;
   readonly reports: readonly ReportSnapshot[];
   readonly scoreComponents: readonly PerformanceScoreComponent[];
   readonly stars: readonly DailyStarRecord[];
@@ -100,34 +108,18 @@ export async function getTeamIndexData(
   period: AnalyticsPeriod = currentPeriod(),
 ): Promise<TeamIndexData> {
   const supabase = await createClient();
-  const [analytics, supportData] = await Promise.all([
+  const [analytics, supportData, summaryInputs] = await Promise.all([
     getTeamAnalytics(period),
     getSupportModuleData(period),
+    getTeamSummaryInputs(period),
   ]);
   const userIds = analytics.members.map((member) => member.userId);
 
-  const [starRows, reportRows] =
-    userIds.length === 0
-      ? [[], []]
-      : await Promise.all([
-          selectOrEmpty(
-            supabase
-              .from('daily_star_records')
-              .select(DAILY_STAR_COLUMNS)
-              .in('user_id', userIds)
-              .gte('star_date', period.startDate)
-              .lte('star_date', period.endDate),
-          ),
-          selectOrEmpty(
-            supabase
-              .from('report_snapshots')
-              .select(REPORT_SNAPSHOT_COLUMNS)
-              .in('employee_id', userIds),
-          ),
-        ]);
-
+  const starRows = userIds.length === 0 ? [] : await selectOrEmpty(
+    supabase.from('daily_star_records').select(DAILY_STAR_COLUMNS).in('user_id', userIds)
+      .gte('star_date', period.startDate).lte('star_date', period.endDate),
+  );
   const stars = mapDailyStarRecords(starRows);
-  const reports = mapReportSnapshots(reportRows);
 
   return {
     period,
@@ -137,9 +129,8 @@ export async function getTeamIndexData(
       dailyStarCount: stars.filter((star) => star.userId === performance.userId)
         .length,
       currentPerformanceScore: performance.starScore,
-      reportCount: reports.filter(
-        (report) => report.employeeId === performance.userId,
-      ).length,
+      performanceUnavailableReason:performance.performanceUnavailableReason,
+      reportCount: summaryInputs.reportCounts.get(performance.userId) ?? 0,
     })),
     supportSummary: supportData.summary,
   };
@@ -152,17 +143,16 @@ export async function getEmployeeProfileData(
 ): Promise<EmployeeProfileData | null> {
   const supabase = await createClient();
   const employee = await getEmployeeByEmployeeId(employeeId);
-  if (!employee) return null;
+  const viewer = await getCurrentProfile();
+  if (!employee || !viewer || !canViewEmployeeReports(viewer, employee)) return null;
 
-  const analytics = await getTeamAnalytics(period);
-  const performance =
-    analytics.members.find((member) => member.userId === employee.id) ?? null;
+  const {performance,performanceUnavailableReason}=await optionalEmployeePerformance(()=>getTeamAnalytics(period),employee.id);
   const [tasks, logs, stars, attendance, reports] = await Promise.all([
     getAssignedTasks(employee.id),
     selectOrEmpty(
       supabase
         .from('daily_task_logs')
-        .select(LOG_COLUMNS)
+        .select(LOG_COLUMNS).is('reversed_at', null)
         .eq('user_id', employee.id)
         .gte('log_date', period.startDate)
         .lte('log_date', period.endDate)
@@ -210,6 +200,7 @@ export async function getEmployeeProfileData(
     period,
     employee,
     performance,
+    performanceUnavailableReason,
     tasks,
     taskLinks,
     logs: mappedLogs,
@@ -251,11 +242,10 @@ export async function getEmployeeReportsData(
 ): Promise<EmployeeReportsData | null> {
   const supabase = await createClient();
   const employee = await getEmployeeByEmployeeId(employeeId);
-  if (!employee) return null;
+  const viewer = await getCurrentProfile();
+  if (!employee || !viewer || !canViewEmployeeReports(viewer, employee)) return null;
 
-  const analytics = await getTeamAnalytics(period);
-  const performance =
-    analytics.members.find((member) => member.userId === employee.id) ?? null;
+  const {performance,performanceUnavailableReason}=await optionalEmployeePerformance(()=>getTeamAnalytics(period),employee.id);
   const [reports, components, stars, attendance] = await Promise.all([
     selectOrEmpty(
       supabase
@@ -296,6 +286,7 @@ export async function getEmployeeReportsData(
     period,
     employee,
     performance,
+    performanceUnavailableReason,
     reports: mapReportSnapshots(reports),
     scoreComponents: mapPerformanceScoreComponents(components),
     stars: mapDailyStarRecords(stars),
@@ -318,39 +309,8 @@ export async function getEmployeeByEmployeeId(
 }
 
 async function getAssignedTasks(userId: string): Promise<Task[]> {
-  const supabase = await createClient();
-  const [legacyRows, assignmentRows] = await Promise.all([
-    selectOrEmpty(
-      supabase
-        .from('tasks')
-        .select(TASK_COLUMNS)
-        .eq('assignee_id', userId)
-        .order('task_tag'),
-    ),
-    selectOrEmpty(
-      supabase.from('task_assignees').select('task_id').eq('user_id', userId),
-    ),
-  ]);
-
-  const legacyIds = new Set(legacyRows.map((row) => row.id));
-  const joinedIds = assignmentRows
-    .map((row) => row.task_id)
-    .filter((taskId) => !legacyIds.has(taskId));
-  const joinedRows =
-    joinedIds.length === 0
-      ? []
-      : await selectOrEmpty(
-          supabase.from('tasks').select(TASK_COLUMNS).in('id', joinedIds),
-        );
-
-  const tasks = mapTasks([...legacyRows, ...joinedRows]).map((task) =>
-    withTaskParticipants(task, {
-      assigneeIds:
-        task.assigneeId === userId ? [userId] : [task.assigneeId, userId],
-    }),
-  );
-
-  return tasks.sort((a, b) => a.taskTag.localeCompare(b.taskTag));
+  const {tasks} = await getTaskWorkspaceData();
+  return tasks.filter((task) => task.assigneeIds.includes(userId)).sort((a,b) => a.taskTag.localeCompare(b.taskTag));
 }
 
 async function getTaskLinks(taskIds: readonly string[]): Promise<TaskLink[]> {

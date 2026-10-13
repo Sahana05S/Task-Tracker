@@ -1,3 +1,7 @@
+import type { CalculationContext,CalculationResult,MemberCalculation } from '@/lib/performance/engine';
+import { Exact } from '@/lib/performance/exact';
+import { eligibilityReasons, FRESHNESS_SCORES } from '@/lib/tasks/contract';
+import { UnmeasuredProgressError } from '@/lib/analytics/availability';
 import { roundToNumericScale } from '@/lib/logs/metrics';
 import {
   summarizeAttendance,
@@ -12,65 +16,10 @@ import type {
   UserRole,
 } from '@/types/tracker';
 
-/**
- * Team performance engine.
- *
- * Implements the mathematical models in `domain-rules.md`:
- *
- *   P_i                = Σ Scaled Progress_i / Σ Hours Logged_i
- *   Productivity Diff  = P_i − Median(P)
- *   Allocation %_i     = (Σ Task Scale_i / Σ Team Task Scale) × 100
- *   Loading Diff       = Allocation %_i − Median(Allocation %)
- *   Criticality_i      = mean priority weight of assigned tasks
- *   Criticality Diff   = Criticality_i − Median(Criticality)
- *   S_i                = 0.4·ProdDiff + 0.3·Progress + 0.2·Freshness − 0.1·Rotten
- *
- * Pure and side-effect free: no React, no Supabase. Everything it needs arrives
- * as arguments so the same code serves the dashboard, the snapshot action, and
- * the tests.
- *
- * ---------------------------------------------------------------------------
- * INTERPRETATIONS
- *
- * `domain-rules.md` leaves three things undefined. Each choice is recorded at
- * the point it is applied, and summarised here.
- *
- * 1. Period scoping of the productivity numerator. The spec says "Σ Scaled
- *    Progress" but `tasks.scaled_progress` is cumulative for the life of the
- *    task, while hours are scoped to the month. Dividing a lifetime numerator by
- *    a monthly denominator is not a rate. So monthly scaled progress is derived
- *    from the logs instead: Σ (task scale × progress delta / 100) over the
- *    period. Numerator and denominator then cover the same window.
- *
- * 2. Freshness Score is named in the star formula and has a column in
- *    `monthly_performance_snapshots`, but is never defined. Implemented as a
- *    weighted share of a member's carried tasks: Fresh 1.0, Stale 0.5,
- *    Rotten 0.0, giving a 0–1 figure that rises as a portfolio stays current.
- *
- * 3. "Active tracking period" membership of tasks. A task counts toward a
- *    member's workload for a month if it was assigned on or before the month
- *    ended and had not already been completed before the month began.
- * ---------------------------------------------------------------------------
+/** Operational analytics compatibility facade. All performance scores/raw factor
+ * results come from lib/performance; no local composite formula or award selection.
+ * Existing counts/charts remain operational observations, not an alternate engine.
  */
-
-/* -------------------------------------------------------------------------- */
-/* Star performer weights                                                     */
-/* -------------------------------------------------------------------------- */
-
-/** Composite score weights, from `domain-rules.md`. */
-export const STAR_WEIGHTS = {
-  productivityDiff: 0.4,
-  scaledProgress: 0.3,
-  freshnessScore: 0.2,
-  rottenCount: 0.1,
-} as const;
-
-/** Freshness contribution per state, for the freshness score. */
-const FRESHNESS_VALUE = {
-  Fresh: 1,
-  Stale: 0.5,
-  Rotten: 0,
-} as const;
 
 /* -------------------------------------------------------------------------- */
 /* Period                                                                     */
@@ -111,7 +60,8 @@ export function resolvePeriod(year: number, month: number): AnalyticsPeriod {
 
 /** The calendar month containing `now`. */
 export function currentPeriod(now: Date = new Date()): AnalyticsPeriod {
-  return resolvePeriod(now.getUTCFullYear(), now.getUTCMonth() + 1);
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit'}).formatToParts(now);
+  return resolvePeriod(Number(parts.find(p=>p.type==='year')!.value),Number(parts.find(p=>p.type==='month')!.value));
 }
 
 function isWithinPeriod(isoDate: string, period: AnalyticsPeriod): boolean {
@@ -144,7 +94,7 @@ export function median(values: readonly number[]): number | null {
   const upper = sorted[middle];
   if (lower === undefined || upper === undefined) return null;
 
-  return roundToNumericScale((lower + upper) / 2);
+  return (lower + upper) / 2;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -162,12 +112,7 @@ export function median(values: readonly number[]): number | null {
  * depends on hours logged, which is a moving target, and a stale flag would
  * quietly distort the medians. Eligibility is recomputed from the task itself.
  */
-export function isTaskEligible(task: Task): boolean {
-  if (task.category === 'OT') return false;
-  if (task.status === 'Discarded') return false;
-  if (task.taskScale === null || task.taskScale <= 0) return false;
-  return true;
-}
+export function isTaskEligible(task: Task): boolean { return eligibilityReasons(task).length === 0; }
 
 /**
  * Whether an eligible task counted toward a member's workload during a period.
@@ -204,8 +149,8 @@ export interface MemberPerformance {
    * `hoursLogged` is the honest total and may be larger.
    */
   eligibleHours: number;
-  /** Scaled progress produced inside the period. */
-  scaledProgress: number;
+  /** Shared-engine period credit; null when the requested input is unknown. */
+  scaledProgress: number|null;
   /** P_i, or `null` when no eligible hours were logged and the rate is undefined. */
   productivity: number | null;
   /** P_i − Median(P). */
@@ -214,11 +159,11 @@ export interface MemberPerformance {
   /** Σ task scale carried in the period. */
   taskScale: number;
   /** Share of total team scale, as a percentage. */
-  allocationPercent: number;
+  allocationPercent: number|null;
   /** Allocation % − Median(Allocation %). */
   loadingDiff: number | null;
 
-  /** Mean priority weight of carried tasks. */
+  /** Sum of known eligible task priority weights; shared attribution is unavailable. */
   criticalityScore: number | null;
   /** Criticality − Median(Criticality). */
   criticalityDiff: number | null;
@@ -232,7 +177,10 @@ export interface MemberPerformance {
   taskCount: number;
 
   /** Composite star score S_i. */
-  starScore: number;
+  starScore: number | null;
+  calculation?: MemberCalculation;
+  calculationContext?:CalculationContext;
+  performanceUnavailableReason?: string;
   /** Contribution of each term, so the composite can be read rather than trusted. */
   starBreakdown: {
     productivityDiff: number;
@@ -256,7 +204,7 @@ export interface TeamTotals {
   hoursLogged: number;
   /** Hours against metric-eligible tasks only. */
   eligibleHours: number;
-  scaledProgress: number;
+  scaledProgress: number|null;
   taskScale: number;
   /** Team-wide rate: total scaled progress over total eligible hours. */
   averageProductivity: number | null;
@@ -276,6 +224,7 @@ export interface TeamTotals {
 
 export interface TeamAnalytics {
   period: AnalyticsPeriod;
+  calculation?: CalculationResult;
   members: MemberPerformance[];
   medians: TeamMedians;
   totals: TeamTotals;
@@ -284,10 +233,12 @@ export interface TeamAnalytics {
 }
 
 export interface AnalyticsInput {
+  calculation?: CalculationResult;
   members: readonly User[];
   tasks: readonly Task[];
-  logs: readonly DailyTaskLog[];
+  logs: readonly (Pick<DailyTaskLog, "userId" | "taskId" | "logDate" | "hoursWorked" | "progressDelta"> & Pick<DailyTaskLog, "creditShares" | "creditScale" | "effectUnknown">)[];
   attendanceRecords?: readonly AttendanceRecord[];
+  attendanceSummaries?: ReadonlyMap<string, AttendanceSummary>;
   period: AnalyticsPeriod;
 }
 
@@ -308,14 +259,17 @@ interface Accumulator {
   freshCount: number;
   staleCount: number;
   rottenCount: number;
+  freshnessSum: number;
+  unsettledAttribution: boolean;
+  freshnessUnavailable: boolean;
 }
 
 export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
   const { period } = input;
+  if (!input.calculation && input.logs.some(log=>log.effectUnknown)) throw new UnmeasuredProgressError();
 
-  // Evaluations run "across all active members": deactivated accounts neither
-  // contribute to nor are ranked against the medians.
-  const activeMembers = input.members.filter((member) => member.isActive);
+  // Shared calculation membership reflects active status at the requested as-of.
+  const activeMembers = input.members.filter((member) => input.calculation ? input.calculation.members.some(observed=>observed.userId===member.id) : member.isActive);
 
   const taskById = new Map<string, Task>();
   for (const task of input.tasks) taskById.set(task.id, task);
@@ -341,6 +295,9 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
       freshCount: 0,
       staleCount: 0,
       rottenCount: 0,
+      freshnessSum: 0,
+      unsettledAttribution: false,
+      freshnessUnavailable: false,
     });
   }
 
@@ -353,31 +310,33 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
     if (!isTaskEligible(task)) continue;
     if (!isTaskCarriedInPeriod(task, period)) continue;
 
-    const accumulator = accumulators.get(task.assigneeId);
-    // Tasks held by a deactivated member are skipped entirely, including from the
-    // counts. Counting them while excluding their scale from the allocation
-    // denominator would make the stats card claim a progress total "across N
-    // tasks" for an N that included work nobody active is carrying.
-    if (!accumulator) continue;
-
-    eligibleTaskCount++;
-    if (task.freshness === 'Rotten') rottenTaskCount++;
-
-    accumulator.taskScale += task.taskScale ?? 0;
-    accumulator.weightSum += PRIORITY_WEIGHTS[task.priority];
-    accumulator.taskCount++;
-
-    switch (task.freshness) {
-      case 'Fresh':
-        accumulator.freshCount++;
-        break;
-      case 'Stale':
-        accumulator.staleCount++;
-        break;
-      case 'Rotten':
-        accumulator.rottenCount++;
-        break;
+    // Additive shares do not disappear when a different primary is inactive.
+    // Preserve the existing active-member cohort without renormalizing shares.
+    if (task.participantCreditMode === 'configured' && task.participantShares) {
+      for (const [id, units] of Object.entries(task.participantShares)) {
+        const recipient = accumulators.get(id);
+        if (recipient) recipient.taskScale += (task.taskScale ?? 0) * units / 1_000_000;
+      }
     }
+    const ids=task.participantCreditMode==='configured' && task.participantShares ? Object.keys(task.participantShares) : [...new Set(task.assigneeIds.length ? task.assigneeIds : [task.assigneeId])];
+    const recipients=ids.map(id=>accumulators.get(id)).filter((item):item is Accumulator=>item!==undefined);
+    if (!recipients.length) continue;
+    eligibleTaskCount++;
+    if(task.freshness==='Rotten') rottenTaskCount++;
+    if(task.participantCreditMode!=='configured') { const primary=accumulators.get(task.assigneeId); if(primary) primary.taskScale+=task.taskScale ?? 0; }
+    for(const accumulator of recipients) {
+      accumulator.taskCount++; // operational assigned-task count, not shared completion credit
+      if(ids.length>1) accumulator.unsettledAttribution=true;
+      if(ids.length===1) accumulator.weightSum+=PRIORITY_WEIGHTS[task.priority];
+      if(task.freshness===null) { accumulator.freshnessUnavailable=true; continue; }
+      if(ids.length===1) accumulator.freshnessSum+=FRESHNESS_SCORES[task.freshness];
+      switch(task.freshness) {
+        case 'Super Fresh': case 'Fresh': case 'Almost Fresh': accumulator.freshCount++;break;
+        case 'Almost Stale': case 'Stale': accumulator.staleCount++;break;
+        case 'Rotten': accumulator.rottenCount++;break;
+      }
+    }
+
   }
 
   /* --- Effort: hours and the progress they produced ---------------------- */
@@ -386,9 +345,9 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
     if (!isWithinPeriod(log.logDate, period)) continue;
 
     const accumulator = accumulators.get(log.userId);
-    if (!accumulator) continue;
+    if (!accumulator && !log.creditShares) continue;
 
-    accumulator.hoursLogged += log.hoursWorked;
+    if (accumulator) accumulator.hoursLogged += log.hoursWorked;
 
     const task = taskById.get(log.taskId);
     if (!task || !isTaskEligible(task)) continue;
@@ -398,13 +357,18 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
     // from median calculations, and that has to cover the hours as well as the
     // progress: counting OT time against a rate it can never contribute to would
     // penalise a member for logging it honestly.
-    accumulator.eligibleHours += log.hoursWorked;
+    if (accumulator) accumulator.eligibleHours += log.hoursWorked;
 
-    // Monthly scaled progress, per interpretation 1 above. Uses the task's
-    // current scale against the historical delta; a task re-weighted mid-month
-    // therefore restates its earlier entries at the new weight.
-    accumulator.scaledProgress +=
-      (task.taskScale ?? 0) * ((log.progressDelta ?? 0) / 100);
+    // Execution aggregates carry the scale/shares captured when credit was
+    // earned. Legacy input fallback is retained only for old pure fixtures.
+    const credit = (log.creditScale ?? task.taskScale ?? 0) * ((log.progressDelta ?? 0) / 100);
+    const shares = log.creditShares ?? task.participantShares;
+    if (shares) {
+      for (const [id, units] of Object.entries(shares)) {
+        const recipient = accumulators.get(id);
+        if (recipient) recipient.scaledProgress += credit * units / 1_000_000;
+      }
+    } else if (accumulator) accumulator.scaledProgress += credit;
   }
 
   /* --- Totals ------------------------------------------------------------ */
@@ -439,7 +403,7 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
   const primaries: Primary[] = [...accumulators.values()].map(
     (accumulator) => {
       const hoursLogged = roundToNumericScale(accumulator.hoursLogged);
-      const eligibleHours = roundToNumericScale(accumulator.eligibleHours);
+      const eligibleHours = accumulator.eligibleHours;
       const scaledProgress = roundToNumericScale(accumulator.scaledProgress);
       const taskScale = roundToNumericScale(accumulator.taskScale);
 
@@ -450,28 +414,17 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
         scaledProgress,
         // Undefined rather than zero when no eligible hours were logged, matching
         // the treatment of task_productivity.
-        productivity:
-          eligibleHours > 0
-            ? roundToNumericScale(scaledProgress / eligibleHours)
-            : null,
+        productivity: null,
         taskScale,
         allocationPercent:
           totalTaskScale > 0
             ? roundToNumericScale((taskScale / totalTaskScale) * 100)
             : 0,
         criticalityScore:
-          accumulator.taskCount > 0
-            ? roundToNumericScale(accumulator.weightSum / accumulator.taskCount)
+          accumulator.taskCount > 0 && !accumulator.unsettledAttribution
+            ? accumulator.weightSum
             : null,
-        freshnessScore:
-          accumulator.taskCount > 0
-            ? roundToNumericScale(
-                (accumulator.freshCount * FRESHNESS_VALUE.Fresh +
-                  accumulator.staleCount * FRESHNESS_VALUE.Stale +
-                  accumulator.rottenCount * FRESHNESS_VALUE.Rotten) /
-                  accumulator.taskCount,
-              )
-            : null,
+        freshnessScore: accumulator.taskCount>0 && !accumulator.unsettledAttribution && !accumulator.freshnessUnavailable ? accumulator.freshnessSum : null,
       };
     },
   );
@@ -492,7 +445,7 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
     allocationPercent: median(primaries.map((p) => p.allocationPercent)),
     // Criticality: only members holding tasks; the mean of an empty set is
     // undefined, not zero.
-    criticalityScore: median(
+    criticalityScore: [...accumulators.values()].some(a=>a.unsettledAttribution) ? null : median(
       primaries
         .map((p) => p.criticalityScore)
         .filter((value): value is number => value !== null),
@@ -523,23 +476,9 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
           )
         : null;
 
-    // A null differential contributes nothing rather than penalising: a member
-    // with no logged hours should be neither rewarded nor punished by a term
-    // that cannot be computed for them.
-    const breakdown = {
-      productivityDiff: roundToNumericScale(
-        STAR_WEIGHTS.productivityDiff * (productivityDiff ?? 0),
-      ),
-      scaledProgress: roundToNumericScale(
-        STAR_WEIGHTS.scaledProgress * primary.scaledProgress,
-      ),
-      freshnessScore: roundToNumericScale(
-        STAR_WEIGHTS.freshnessScore * (primary.freshnessScore ?? 0),
-      ),
-      rottenPenalty: roundToNumericScale(
-        STAR_WEIGHTS.rottenCount * accumulator.rottenCount,
-      ),
-    };
+    const calculation=input.calculation?.members.find(member=>member.userId===accumulator.member.id);
+    // Retained shape for old operational fixtures; no competing score arithmetic.
+    const breakdown={productivityDiff:0,scaledProgress:0,freshnessScore:0,rottenPenalty:0};
 
     return {
       userId: accumulator.member.id,
@@ -549,73 +488,45 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
 
       hoursLogged: primary.hoursLogged,
       eligibleHours: primary.eligibleHours,
-      scaledProgress: primary.scaledProgress,
-      productivity: primary.productivity,
-      productivityDiff,
+      scaledProgress: calculation ? calculation.factors.progress.rawValue : primary.scaledProgress,
+      productivity: calculation?.factors.productivity.rawValue ?? null,
+      productivityDiff: calculation?.factors.productivity.delta ?? null,
 
       taskScale: primary.taskScale,
-      allocationPercent: primary.allocationPercent,
-      loadingDiff,
+      allocationPercent: calculation ? (calculation.factors.loading.rawValue===null?null:calculation.factors.loading.rawValue*100) : primary.allocationPercent,
+      loadingDiff: calculation?.factors.loading.delta ?? null,
 
-      criticalityScore: primary.criticalityScore,
-      criticalityDiff,
+      criticalityScore: calculation ? calculation.factors.criticality.rawValue : primary.criticalityScore,
+      criticalityDiff: calculation?.factors.criticality.delta ?? null,
 
-      freshnessScore: primary.freshnessScore,
+      freshnessScore: calculation ? calculation.factors.freshness.rawValue : primary.freshnessScore,
       freshCount: accumulator.freshCount,
       staleCount: accumulator.staleCount,
       rottenCount: accumulator.rottenCount,
       taskCount: accumulator.taskCount,
 
-      starScore: roundToNumericScale(
-        breakdown.productivityDiff +
-          breakdown.scaledProgress +
-          breakdown.freshnessScore -
-          breakdown.rottenPenalty,
-      ),
+      calculation,
+      calculationContext:input.calculation?.context,
+      performanceUnavailableReason: calculation?.status==='complete' ? undefined : 'Ten-factor performance is incomplete. See the shared factor inputs and reasons; no final ranking or award is certified.',
+      starScore: calculation?.composite ?? null,
       starBreakdown: breakdown,
       isStarPerformer: false,
-      attendance: summarizeAttendance(
+      attendance: input.attendanceSummaries?.get(accumulator.member.id) ?? summarizeAttendance(
         attendanceByUser.get(accumulator.member.id) ?? [],
       ),
     };
   });
 
-  /* --- Star performer --------------------------------------------------- */
-
-  // Only members who actually logged effort are eligible. A member with no
-  // recorded hours can still score on freshness alone, and awarding them the
-  // month would be indefensible.
-  const candidates = scored.filter((member) => member.hoursLogged > 0);
-
-  const starPerformer =
-    candidates.length === 0
-      ? null
-      : candidates.reduce((best, candidate) => {
-          if (candidate.starScore !== best.starScore) {
-            return candidate.starScore > best.starScore ? candidate : best;
-          }
-          // Deterministic tie-breaks: more progress first, then name, so the
-          // same inputs always crown the same person.
-          if (candidate.scaledProgress !== best.scaledProgress) {
-            return candidate.scaledProgress > best.scaledProgress
-              ? candidate
-              : best;
-          }
-          return candidate.fullName.localeCompare(best.fullName) < 0
-            ? candidate
-            : best;
-        });
-
-  if (starPerformer) {
-    starPerformer.isStarPerformer = true;
-  }
+  // M08 owns award selection. An incomplete result cannot produce a winner.
+  const candidates=scored.filter(member=>member.hoursLogged>0);
+  const starPerformer=null;
 
   /* --- Ordering and spread ---------------------------------------------- */
 
   // Highest composite first, so the dashboard reads as a ranking.
-  scored.sort((a, b) => b.starScore - a.starScore || a.fullName.localeCompare(b.fullName));
+  scored.sort((a,b)=>a.fullName.localeCompare(b.fullName));
 
-  const allocations = scored.map((member) => member.allocationPercent);
+  const allocations = scored.map((member) => member.allocationPercent).filter((v):v is number=>v!==null);
   const allocationSpread =
     allocations.length === 0
       ? 0
@@ -628,17 +539,15 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
 
   return {
     period,
+    calculation: input.calculation,
     members: scored,
-    medians,
+    medians: input.calculation ? {productivity:input.calculation.members[0]?.factors.productivity.median ?? null,allocationPercent:input.calculation.members[0]?.factors.loading.median === null || !input.calculation.members.length ? null : input.calculation.members[0].factors.loading.median! * 100,criticalityScore:input.calculation.members[0]?.factors.criticality.median ?? null} : {productivity:null,allocationPercent:null,criticalityScore:null},
     totals: {
       hoursLogged: totalHours,
       eligibleHours: totalEligibleHours,
-      scaledProgress: totalScaledProgress,
+      scaledProgress: input.calculation ? (input.calculation.members.every(m=>m.factors.progress.rawExact!==null)?input.calculation.members.reduce((s,m)=>s.add(Exact.from(m.factors.progress.rawExact!)),Exact.from(0)).number():null) : totalScaledProgress,
       taskScale: totalTaskScale,
-      averageProductivity:
-        totalEligibleHours > 0
-          ? roundToNumericScale(totalScaledProgress / totalEligibleHours)
-          : null,
+      averageProductivity: null, // No unapproved team productivity aggregation.
       allocationSpread,
       activeMemberCount: activeMembers.length,
       contributingMemberCount: candidates.length,

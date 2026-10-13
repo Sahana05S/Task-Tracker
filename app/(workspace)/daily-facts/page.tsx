@@ -7,7 +7,7 @@ import { canManageSupportRecords } from '@/lib/support/permissions';
 import { getSupportModuleData } from '@/lib/support/queries';
 
 export const metadata: Metadata = {
-  title: 'Daily Facts · TaskPulse',
+  title: 'Daily Facts Â· TaskPulse',
 };
 
 export default async function DailyFactsPage() {
@@ -18,7 +18,7 @@ export default async function DailyFactsPage() {
     <>
       <WorkspaceHeader
         title="Daily facts"
-        description={`${data.period.label} · ${data.summary.facts.total} facts · ${data.summary.facts.validated} validated`}
+        description={`${data.period.label} Â· ${data.summary.facts.total} facts Â· ${data.summary.facts.validated} validated`}
       />
       <div className="px-4 py-4 lg:px-6">
         <KnowledgeModule
@@ -32,6 +32,8 @@ export default async function DailyFactsPage() {
             href: '/daily-facts',
           }}
           entries={data.facts}
+          tasks={data.tasks}
+          inputContext={data.inputContext}
           members={data.members}
           currentUser={profile}
           canManage={canManageSupportRecords(profile.role)}

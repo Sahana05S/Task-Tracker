@@ -1,4 +1,7 @@
 'use client';
+import { NativeTemplateSelect } from './native-details-editor';
+import type { NativeTemplate } from '@/lib/tasks/details-contract';
+import { prepareOperation } from '@/lib/commands/client-operation';
 
 import * as React from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
@@ -34,6 +37,7 @@ export interface TaskDialogProps {
   members: readonly User[];
   /** Pre-selected assignee for new tasks, normally the current user. */
   defaultAssigneeId: string;
+  templates?: readonly NativeTemplate[];
 }
 
 const INITIAL_STATE: TaskActionState | null = null;
@@ -55,15 +59,16 @@ export function TaskDialog({
   task,
   members,
   defaultAssigneeId,
+  templates=[],
 }: TaskDialogProps) {
   const isEdit = task !== null;
 
   const [createState, createAction, createPending] = React.useActionState(
-    createTask,
+    async (previous:TaskActionState|null,form:FormData)=>{try {const finish=await prepareOperation(form,'save_task_with_participants'); const result=await createTask(previous,form); if(result.success) finish(); return result;} catch {return {success:false,error:'Response interrupted; retry the same task to recover its result.'};}},
     INITIAL_STATE,
   );
   const [editState, editAction, editPending] = React.useActionState(
-    updateTask,
+    async (previous:TaskActionState|null,form:FormData)=>{try {const finish=await prepareOperation(form,'save_task_with_participants'); const result=await updateTask(previous,form); if(result.success) finish(); return result;} catch {return {success:false,error:'Response interrupted; retry the same edit to recover its result.'};}},
     INITIAL_STATE,
   );
 
@@ -74,9 +79,10 @@ export function TaskDialog({
   // Close once the action reports success. Data refresh is handled by the
   // revalidatePath calls inside the actions.
   const succeeded = state?.success === true;
+  const handledState=React.useRef<TaskActionState|null>(null);
   React.useEffect(() => {
-    if (succeeded && open) onOpenChange(false);
-  }, [succeeded, open, onOpenChange]);
+    if (succeeded && open && state!==handledState.current) {handledState.current=state;onOpenChange(false);}
+  }, [succeeded, open, onOpenChange, state]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -103,6 +109,7 @@ export function TaskDialog({
           task={task}
           members={members}
           defaultAssigneeId={defaultAssigneeId}
+          templates={templates}
           action={isEdit ? editAction : createAction}
           pending={pending}
           error={error}
@@ -121,6 +128,7 @@ interface TaskFormProps {
   task: Task | null;
   members: readonly User[];
   defaultAssigneeId: string;
+  templates?: readonly NativeTemplate[];
   action: (formData: FormData) => void;
   pending: boolean;
   error?: string;
@@ -135,6 +143,7 @@ function TaskForm({
   pending,
   error,
   onCancel,
+  templates=[],
 }: TaskFormProps) {
   const isEdit = task !== null;
 
@@ -145,6 +154,8 @@ function TaskForm({
   const [priority, setPriority] = React.useState<string>(
     task?.priority ?? 'Medium',
   );
+  const [operationId, setOperationId] = React.useState('');
+  React.useEffect(() => setOperationId(crypto.randomUUID()), []);
   const [assigneeIds, setAssigneeIds] = React.useState<Set<string>>(
     () => new Set(task?.assigneeIds ?? [defaultAssigneeId]),
   );
@@ -169,7 +180,22 @@ function TaskForm({
 
   return (
     <form action={action} className="flex min-h-0 flex-1 flex-col">
+      {!isEdit ? <div className="grid gap-2 p-3"><NativeTemplateSelect templates={templates}/><label className="text-sm">Initialization<select name="initializationMode" defaultValue="automatic" className="rounded border p-2"><option value="automatic">Automatically after saving</option><option value="manual">Initialize manually later</option></select></label><label className="text-sm">Description<textarea name="description" className="w-full rounded border p-2"/></label></div> : null}
       {isEdit ? <input type="hidden" name="taskId" value={task.id} /> : null}
+      <input type="hidden" name="lifecycleVersion" value={task?.lifecycleVersion ?? 0} />
+      <input type="hidden" name="participantVersion" value={task?.participantVersion ?? 0} />
+      <input type="hidden" name="operationId" value={operationId} />
+      <Field id="participant-shares" label="Participant shares" hint="Leave all blank to keep current shares, or use equal shares when changing participants. Explicit percentages must total 100%.">
+        {[...assigneeIds].map((id) => <label key={id} className="flex items-center gap-2 text-sm">
+          {members.find((member) => member.id === id)?.fullName ?? id}
+          <Input name={`sharePercent:${id}`} type="number" min="0" max="100" step="0.0001" placeholder={task?.participantShares?.[id] !== undefined ? `${task.participantShares[id] / 10000}% currently` : 'Equal share'} />
+        </label>)}
+      </Field>
+      {task?.participantCreditMode === 'legacy' ? <div className="grid gap-2 text-sm">
+        <a href="/task-tools/participants" target="_blank" rel="noopener noreferrer" className="underline">Review participant reconciliation</a>
+        <label className="flex gap-2"><input type="checkbox" name="acceptLegacyShares" />I reviewed this task's legacy participants and approve configuring these shares.</label>
+        <p className="text-muted-foreground">Share changes apply to future credit. Earlier earned credit and frozen reports stay unchanged.</p>
+      </div> : null}
 
       <div className="grid gap-4 overflow-y-auto px-4 py-4 sm:grid-cols-2">
         <Field id="task-title" label="Title" className="sm:col-span-2" required>
@@ -193,6 +219,7 @@ function TaskForm({
           <Input
             id="task-tag"
             name="taskTag"
+            readOnly={Boolean(task)}
             defaultValue={task?.taskTag ?? ''}
             maxLength={30}
             placeholder="Sep26_T5"
@@ -209,6 +236,7 @@ function TaskForm({
           <Input
             id="task-scale"
             name="taskScale"
+            readOnly={Boolean(task)}
             type="number"
             min={0}
             step="0.01"

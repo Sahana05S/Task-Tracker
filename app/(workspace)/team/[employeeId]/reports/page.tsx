@@ -1,4 +1,6 @@
+import { displayPerformance } from '@/lib/performance/exact';
 import type { Metadata } from 'next';
+import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -55,12 +57,14 @@ export default async function EmployeeReportsPage({
       />
 
       <div className="grid gap-4 px-4 py-4 lg:px-6">
+        {data.performanceUnavailableReason ? <p role="status" className="text-sm text-amber-800">{data.performanceUnavailableReason} Saved reports and effort history remain available.</p> : null}
+        {data.performance?.calculation?<PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/>:null}
         <section id="charts" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <ChartCard
             label="Performance score"
             value={
               data.performance
-                ? formatNumeric(data.performance.starScore)
+                ? displayPerformance(data.performance.calculation?.compositeExact??null,2)
                 : '—'
             }
             detail="Current period composite score"
@@ -71,9 +75,9 @@ export default async function EmployeeReportsPage({
               data.performance?.productivity === null ||
               data.performance?.productivity === undefined
                 ? '—'
-                : `${formatNumeric(data.performance.productivity)}/h`
+                : `${displayPerformance(data.performance.calculation?.factors.productivity.rawExact??null)}/h`
             }
-            detail="Progress per eligible task hour"
+            detail="Scaled progress per regular attendance hour"
           />
           <ChartCard
             label="Attendance"
@@ -88,7 +92,7 @@ export default async function EmployeeReportsPage({
         </section>
 
         <section className="grid gap-4 xl:grid-cols-2">
-          <Panel title="Score components">
+          <Panel title="Legacy saved score components (pre-M07)">
             {data.scoreComponents.length === 0 ? (
               <EmptyText>No score component rows yet.</EmptyText>
             ) : (

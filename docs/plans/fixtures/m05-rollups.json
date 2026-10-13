@@ -1,0 +1,549 @@
+[
+  {
+    "name": "Yes No NA gives 50",
+    "nodes": [
+      {
+        "id": "yes",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "no",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No"
+      },
+      {
+        "id": "na",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "N/A"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": 50,
+    "expectedComplete": false
+  },
+  {
+    "name": "Unequal groups retain equal direct weights",
+    "nodes": [
+      {
+        "id": "g1",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Group",
+        "completionState": "No"
+      },
+      {
+        "id": "g2",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Group",
+        "completionState": "No"
+      },
+      {
+        "id": "0",
+        "parentNodeId": "g1",
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "1",
+        "parentNodeId": "g1",
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "2",
+        "parentNodeId": "g1",
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "3",
+        "parentNodeId": "g1",
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "bad",
+        "parentNodeId": "g2",
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": 50
+  },
+  {
+    "name": "Setup 0 Activity 80 Closure 0",
+    "nodes": [
+      {
+        "id": "setup",
+        "parentNodeId": null,
+        "section": "setup",
+        "nodeType": "Item",
+        "completionState": "No"
+      },
+      {
+        "id": "closure",
+        "parentNodeId": null,
+        "section": "closure",
+        "nodeType": "Item",
+        "completionState": "No"
+      },
+      {
+        "id": "0",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "1",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "2",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "3",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "4",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": false
+      }
+    },
+    "expectedProgress": 80,
+    "expectedComplete": false
+  },
+  {
+    "name": "All NA has no percentage",
+    "nodes": [
+      {
+        "id": "na",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "N/A"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": null,
+    "expectedComplete": true,
+    "expectedActivityState": "not_applicable"
+  },
+  {
+    "name": "Explicitly empty has no percentage",
+    "nodes": [],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": null,
+    "expectedComplete": true,
+    "expectedActivityState": "not_applicable"
+  },
+  {
+    "name": "Missing sections block completion",
+    "nodes": [],
+    "initialization": {},
+    "expectedProgress": null,
+    "expectedComplete": false,
+    "expectedActivityState": "missing"
+  },
+  {
+    "name": "Uninitialized blocks completion",
+    "nodes": [],
+    "initialization": {
+      "setup": {
+        "initialized": false,
+        "intentionalEmpty": false
+      },
+      "activity": {
+        "initialized": false,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": false,
+        "intentionalEmpty": false
+      }
+    },
+    "expectedProgress": null,
+    "expectedComplete": false,
+    "expectedActivityState": "uninitialized"
+  },
+  {
+    "name": "Linked 50 never complete",
+    "nodes": [
+      {
+        "id": "link",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No",
+        "linkedTaskId": "task",
+        "progressPercentage": 50,
+        "linkedStatus": "In Progress"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": 50,
+    "expectedComplete": false
+  },
+  {
+    "name": "Linked 100 is not automatically Done",
+    "nodes": [
+      {
+        "id": "link",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No",
+        "linkedTaskId": "task",
+        "progressPercentage": 100,
+        "linkedStatus": "In Progress"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": 100,
+    "expectedComplete": false
+  },
+  {
+    "name": "Linked Done 100 is complete",
+    "nodes": [
+      {
+        "id": "link",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No",
+        "linkedTaskId": "task",
+        "progressPercentage": 100,
+        "linkedStatus": "Done"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": 100,
+    "expectedComplete": true
+  },
+  {
+    "name": "Linked Done 50 surfaces mismatch",
+    "nodes": [
+      {
+        "id": "link",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No",
+        "linkedTaskId": "task",
+        "progressPercentage": 50,
+        "linkedStatus": "Done"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": null,
+    "expectedError": "linked_done_mismatch",
+    "expectedComplete": false
+  },
+  {
+    "name": "Missing linked inputs are unavailable",
+    "nodes": [
+      {
+        "id": "link",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Task",
+        "completionState": "No",
+        "linkedTaskId": "missing",
+        "progressPercentage": null
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": null,
+    "expectedError": "linked_unavailable"
+  },
+  {
+    "name": "Rootless cycle is an error",
+    "nodes": [
+      {
+        "id": "a",
+        "parentNodeId": "b",
+        "section": "activity",
+        "nodeType": "Group",
+        "completionState": "No"
+      },
+      {
+        "id": "b",
+        "parentNodeId": "a",
+        "section": "activity",
+        "nodeType": "Group",
+        "completionState": "No"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": null,
+    "expectedError": "cycle"
+  },
+  {
+    "name": "Missing parent is an error",
+    "nodes": [
+      {
+        "id": "a",
+        "parentNodeId": "missing",
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": null,
+    "expectedError": "missing_parent"
+  },
+  {
+    "name": "Unsectioned originals need review",
+    "nodes": [
+      {
+        "id": "a",
+        "parentNodeId": null,
+        "section": null,
+        "nodeType": "Item",
+        "completionState": "No"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": null,
+    "expectedError": "unsectioned"
+  },
+  {
+    "name": "Retain intermediate thirds",
+    "nodes": [
+      {
+        "id": "yes",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "Yes"
+      },
+      {
+        "id": "no",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No"
+      },
+      {
+        "id": "no2",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No"
+      }
+    ],
+    "initialization": {
+      "setup": {
+        "initialized": true,
+        "intentionalEmpty": true
+      },
+      "activity": {
+        "initialized": true,
+        "intentionalEmpty": false
+      },
+      "closure": {
+        "initialized": true,
+        "intentionalEmpty": true
+      }
+    },
+    "expectedProgress": 33.333333333333336
+  }
+]

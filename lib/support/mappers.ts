@@ -14,16 +14,16 @@ import type {
 } from '@/types/tracker';
 
 export const DAILY_FACT_COLUMNS =
-  'id, fact_date, posted_by, fact, folder_url, is_validated, validated_by, created_at, updated_at' as const;
+  'id, fact_date, posted_by, fact, folder_url, is_validated, validated_by, created_at, updated_at, record_version, validation_state, validation_at, validation_reason, related_task_id' as const;
 
 export const IDEA_COLUMNS =
-  'id, idea_date, posted_by, idea, folder_url, is_validated, validated_by, created_at, updated_at' as const;
+  'id, idea_date, posted_by, idea, folder_url, is_validated, validated_by, created_at, updated_at, record_version, validation_state, validation_at, validation_reason, related_task_id' as const;
 
 export const SUGGESTION_COLUMNS =
-  'id, suggestion_date, posted_by, suggestion, folder_url, is_validated, validated_by, created_at, updated_at' as const;
+  'id, suggestion_date, posted_by, suggestion, folder_url, is_validated, validated_by, created_at, updated_at, record_version, validation_state, validation_at, validation_reason, related_task_id' as const;
 
 export const SALES_LOG_COLUMNS =
-  'id, sale_date, sales_by, project_built_up_area, project_location, client_name, project_folder_url, is_new_project, basement_payment_received, notes, created_at, updated_at' as const;
+  'id, sale_date, sales_by, project_built_up_area, project_location, client_name, project_folder_url, is_new_project, basement_payment_received, notes, created_at, updated_at, record_version, validation_state, validation_at, validation_reason, related_task_id' as const;
 
 export const REPORT_SNAPSHOT_COLUMNS =
   'id, report_type, title, status, period_start, period_end, employee_id, payload, created_by, created_at, updated_at' as const;
@@ -37,6 +37,12 @@ export function mapDailyFact(row: DailyFactRow): DailyFact {
     folderUrl: row.folder_url,
     isValidated: row.is_validated,
     validatedBy: row.validated_by,
+    recordVersion: row.record_version ?? 0,
+    validationState: row.validation_state ?? 'legacy_unvalidated',
+    validationAt: row.validation_at ?? null,
+    validatorId: row.validated_by ?? null,
+    validationReason: row.validation_reason ?? null,
+    relatedTaskId: row.related_task_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -51,6 +57,12 @@ export function mapIdea(row: IdeaRow): Idea {
     folderUrl: row.folder_url,
     isValidated: row.is_validated,
     validatedBy: row.validated_by,
+    recordVersion: row.record_version ?? 0,
+    validationState: row.validation_state ?? 'legacy_unvalidated',
+    validationAt: row.validation_at ?? null,
+    validatorId: row.validated_by ?? null,
+    validationReason: row.validation_reason ?? null,
+    relatedTaskId: row.related_task_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -65,6 +77,12 @@ export function mapSuggestion(row: SuggestionRow): Suggestion {
     folderUrl: row.folder_url,
     isValidated: row.is_validated,
     validatedBy: row.validated_by,
+    recordVersion: row.record_version ?? 0,
+    validationState: row.validation_state ?? 'legacy_unvalidated',
+    validationAt: row.validation_at ?? null,
+    validatorId: row.validated_by ?? null,
+    validationReason: row.validation_reason ?? null,
+    relatedTaskId: row.related_task_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -82,6 +100,12 @@ export function mapSalesLog(row: SalesLogRow): SalesLog {
     isNewProject: row.is_new_project,
     basementPaymentReceived: row.basement_payment_received,
     notes: row.notes,
+    recordVersion: row.record_version ?? 0,
+    validationState: row.validation_state ?? 'legacy_unvalidated',
+    validationAt: row.validation_at ?? null,
+    validatorId: row.validated_by ?? null,
+    validationReason: row.validation_reason ?? null,
+    relatedTaskId: row.related_task_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

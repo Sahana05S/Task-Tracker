@@ -1,3 +1,4 @@
+import { loadAttendanceContext, type AttendanceInputContext } from '@/lib/support/input-context';
 import {
   ATTENDANCE_COLUMNS,
   mapAttendanceRecords,
@@ -8,6 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { AttendanceRecord, User } from '@/types/tracker';
 
 export interface AttendanceModuleData {
+  readonly inputContexts: ReadonlyMap<string,AttendanceInputContext>;
   readonly members: readonly User[];
   readonly records: readonly AttendanceRecord[];
   readonly summaries: readonly AttendanceMemberSummary[];
@@ -63,7 +65,11 @@ export async function getAttendanceModuleData({
     recordsByUser.set(record.userId, entries);
   }
 
+  const exclusive=new Date(`${endDate}T00:00:00Z`);exclusive.setUTCDate(exclusive.getUTCDate()+1);
+  const asOf=new Date().toISOString();
+  const inputContexts=new Map(await Promise.all(visibleMembers.map(async u=>[u.id,await loadAttendanceContext(supabase,u.id,startDate,exclusive.toISOString().slice(0,10),asOf)] as const)));
   return {
+    inputContexts,
     members: visibleMembers,
     records,
     summaries: visibleMembers.map((user) => {

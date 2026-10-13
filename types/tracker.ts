@@ -1,3 +1,4 @@
+import type { DatedRecordMetadata } from '@/lib/support/contract';
 /**
  * TaskPulse — Domain Model Type Definitions
  *
@@ -58,7 +59,7 @@ export type TaskCategory =
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Focus' | 'No';
 
 /** PostgreSQL ENUM `task_status`. Declaration order matches the migration. */
-export type TaskStatus = 'Not Started' | 'In Progress' | 'Discarded' | 'Done';
+export type TaskStatus = 'Not Started' | 'In Progress' | 'Discarded' | 'Done' | 'Stopped' | 'On-Hold' | 'Carryover';
 
 /**
  * PostgreSQL ENUM `task_freshness`.
@@ -67,7 +68,7 @@ export type TaskStatus = 'Not Started' | 'In Progress' | 'Discarded' | 'Done';
  * Stale  no activity for 7–14 days
  * Rotten inactive for over 14 days without reaching completion
  */
-export type TaskFreshness = 'Fresh' | 'Stale' | 'Rotten';
+export type TaskFreshness = 'Super Fresh' | 'Fresh' | 'Almost Fresh' | 'Almost Stale' | 'Stale' | 'Rotten';
 
 /**
  * PostgreSQL ENUM `milestone_status`, from `04_milestones_and_vision.sql`.
@@ -152,6 +153,10 @@ export interface User {
 
 /** Row of `public.tasks`. */
 export interface Task {
+  participantCreditMode?: "legacy" | "configured";
+  participantVersion?: number;
+  earnedProgressCredits?: Record<string, number>;
+  participantShares?: Record<string, number> | null;
   /** UUID primary key. */
   id: string;
   /** `task_tag` — unique sheet-style identifier, e.g. `"Sep26_T5"`. */
@@ -178,6 +183,7 @@ export interface Task {
   taskScale: number | null;
   /** `progress_percentage` — constrained to the inclusive range 0–100. */
   progressPercentage: number | null;
+  progressOwner?: 'manual'|'checklist';
   /**
    * `scaled_progress` — GENERATED ALWAYS AS
    * `task_scale * (progress_percentage / 100.0)` STORED.
@@ -194,7 +200,17 @@ export interface Task {
   /** `status` — defaults to `'Not Started'`. */
   status: TaskStatus;
   /** `freshness` — defaults to `'Fresh'`. */
-  freshness: TaskFreshness;
+  freshness: TaskFreshness | null;
+  freshnessReason?: string | null;
+  eligibilityReasons?: string[];
+  lifecycleVersion?: number;
+  workRevision?: number;
+  scaleMode?: string;
+  scaleInputs?: Record<string, unknown>;
+  scaleOverride?: number | null;
+  scaleProvenance?: string;
+  scaleVersion?: number;
+  startedDate?: string | null;
   /**
    * `valid_for_metrics` — true only when hours logged > 0 and task scale > 0.
    * Tasks flagged false are excluded from team median calculations.
@@ -230,6 +246,15 @@ export interface DailyTaskLog {
   hoursWorked: number;
   /** `progress_delta` — incremental percentage points added by this log. */
   progressDelta: number | null;
+  requestedProgressDelta?: number | null;
+  timerSegmentNumber?: number | null;
+  timerDurationSeconds?: number | null;
+  effectiveProgressDelta?: number | null;
+  effectUnknown?: boolean;
+  executionVersion?: number;
+  reversedAt?: string | null;
+  creditShares?: Record<string, number> | null;
+  creditScale?: number | null;
   /** `update_notes` — nullable. */
   updateNotes: string | null;
   /** `raw_links` — TEXT[] of asset URLs (documents, drawings, boards). */
@@ -386,6 +411,9 @@ export interface TaskDetailSection {
 
 /** Row of `public.task_links` â€” task folders, documents, drawings and assets. */
 export interface TaskLink {
+  ipoRole?: 'input'|'process'|'output'|'reference'|null;
+  relatedEmployeeId?: string|null;
+  relatedReportId?: string|null;
   id: string;
   taskId: string;
   linkType: TaskLinkType;
@@ -441,6 +469,8 @@ export interface ChecklistNode {
   title: string;
   description: string | null;
   isComplete: boolean;
+  section?: 'setup'|'activity'|'closure'|null;
+  completionState?: 'Yes'|'No'|'N/A';
   sortOrder: number;
   estimatedMinutes: number | null;
   elapsedSeconds: number;
@@ -456,6 +486,7 @@ export interface TaskTimer {
   taskId: string;
   userId: string;
   status: TaskTimerStatus;
+  executionVersion?: number;
   startedAt: string;
   stoppedAt: string | null;
   elapsedSeconds: number;
@@ -480,6 +511,9 @@ export interface AttendanceRecord {
   recordedBy: string | null;
   createdAt: string;
   updatedAt: string;
+  recordVersion?:number;
+  hoursConfirmed?:boolean;
+  recordState?:'active'|'withdrawn';
 }
 
 /** Row of `public.daily_star_records`. */
@@ -513,7 +547,7 @@ export interface PerformanceScoreComponent {
 }
 
 /** Row of `public.meeting_points`. */
-export interface MeetingPoint {
+export interface MeetingPoint extends DatedRecordMetadata {
   id: string;
   meetingDate: string;
   meetingType: string | null;
@@ -525,7 +559,7 @@ export interface MeetingPoint {
 }
 
 /** Row of `public.daily_facts`. */
-export interface DailyFact {
+export interface DailyFact extends DatedRecordMetadata {
   id: string;
   factDate: string;
   postedBy: string | null;
@@ -538,7 +572,7 @@ export interface DailyFact {
 }
 
 /** Row of `public.ideas`. */
-export interface Idea {
+export interface Idea extends DatedRecordMetadata {
   id: string;
   ideaDate: string;
   postedBy: string | null;
@@ -551,7 +585,7 @@ export interface Idea {
 }
 
 /** Row of `public.suggestions`. */
-export interface Suggestion {
+export interface Suggestion extends DatedRecordMetadata {
   id: string;
   suggestionDate: string;
   postedBy: string | null;
@@ -564,7 +598,7 @@ export interface Suggestion {
 }
 
 /** Row of `public.sales_logs`. */
-export interface SalesLog {
+export interface SalesLog extends DatedRecordMetadata {
   id: string;
   saleDate: string;
   salesBy: string | null;
@@ -606,4 +640,5 @@ export type ActionResponse<T> = {
   success: boolean;
   data?: T;
   error?: string;
+  errorCode?: 'conflict' | 'forbidden' | 'validation' | 'unavailable';
 };

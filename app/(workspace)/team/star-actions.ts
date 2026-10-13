@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 
 import { getCurrentProfile } from '@/lib/auth/profile';
 import { storeDailyStarCalculation } from '@/lib/stars/daily';
-import { canManageTasks } from '@/lib/tasks/permissions';
 import type { ActionResponse, User } from '@/types/tracker';
 
 export type DailyStarActionState = ActionResponse<{
@@ -39,10 +38,10 @@ export async function calculateDailyStarAction(
 ): Promise<DailyStarActionState> {
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) {
+  if (actor.profile.role !== 'managing_director') {
     return {
       success: false,
-      error: 'Only managers can calculate and store daily stars.',
+      error: 'Only the managing director can calculate and store daily stars.',
     };
   }
 
@@ -74,10 +73,10 @@ export async function overrideDailyStarAction(
 ): Promise<DailyStarActionState> {
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) {
+  if (actor.profile.role !== 'managing_director') {
     return {
       success: false,
-      error: 'Only managers can override a daily star.',
+      error: 'Only the managing director can override a daily star.',
     };
   }
 

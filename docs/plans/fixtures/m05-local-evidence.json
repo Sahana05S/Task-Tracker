@@ -1,0 +1,33 @@
+{
+  "module": "M05",
+  "date": "2026-10-12",
+  "state": "implemented_awaiting_native_verification",
+  "migration": "18_checklist_rollups_and_propagation.sql",
+  "focused": {
+    "files": 3,
+    "tests": 30,
+    "result": "pass"
+  },
+  "full_regression": {
+    "files": 33,
+    "tests": 288,
+    "result": "pass"
+  },
+  "typecheck": "pass",
+  "production_build": "pass",
+  "disposable_postgresql": {
+    "version": "17.11",
+    "endpoint": "127.0.0.1:15432",
+    "fresh": "01-18 pass",
+    "upgrade": "01-17 to18 pass",
+    "authorization": "pass",
+    "concurrency_receipts_and_rollback": "pass",
+    "final_initialization_and_fractional_preview": "pass",
+    "auth": "subject shim, not native GoTrue"
+  },
+  "native_api_browser": "not run: Docker pipe/config/accounts/fixtures unavailable",
+  "real_reconciliation": "not performed",
+  "remaining_m05_questions": [],
+  "production_apply_deploy_drive_m06": "not performed",
+  "preservation_hashes": "six pass"
+}

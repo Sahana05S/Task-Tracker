@@ -1,10 +1,14 @@
 'use server';
 
+import { randomUUID } from 'node:crypto';
+import { readParticipantShares } from '@/lib/tasks/shares';
+
 import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 import { getCurrentProfile } from '@/lib/auth/profile';
-import { syncTaskProgressForLinkedTask } from '@/lib/checklists/sync';
+import { commandIdentity, executionError } from '@/lib/commands/result';
+import type { Json } from '@/types/database';
 import { createClient } from '@/lib/supabase/server';
 import {
   isTaskCategory,
@@ -160,74 +164,14 @@ function describeDatabaseError(error: PostgrestError): string {
     case '23503':
       return 'The selected assignee or reviewer no longer exists.';
     case '23514':
-      return 'A value is outside its permitted range.';
+      return error.message;
+    case '40001':
+      return 'Someone changed the participants. Reload the task and review the current shares.';
     case '42501':
       return 'You do not have permission to perform that change.';
     default:
       return error.message;
   }
-}
-
-type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
-
-async function syncTaskParticipants(
-  supabase: SupabaseServerClient,
-  taskId: string,
-  assigneeIds: readonly string[],
-  reviewerIds: readonly string[],
-  actorId: string,
-): Promise<string | null> {
-  const { error: assigneeDeleteError } = await supabase
-    .from('task_assignees')
-    .delete()
-    .eq('task_id', taskId);
-
-  if (assigneeDeleteError) {
-    return describeDatabaseError(assigneeDeleteError);
-  }
-
-  const { error: reviewerDeleteError } = await supabase
-    .from('task_reviewers')
-    .delete()
-    .eq('task_id', taskId);
-
-  if (reviewerDeleteError) {
-    return describeDatabaseError(reviewerDeleteError);
-  }
-
-  const assigneeRows = assigneeIds.map((userId, index) => ({
-    task_id: taskId,
-    user_id: userId,
-    assignment_role: index === 0 ? 'Owner' as const : 'Collaborator' as const,
-    is_primary: index === 0,
-    assigned_by: actorId,
-  }));
-
-  const { error: assigneeInsertError } = await supabase
-    .from('task_assignees')
-    .insert(assigneeRows);
-
-  if (assigneeInsertError) {
-    return describeDatabaseError(assigneeInsertError);
-  }
-
-  if (reviewerIds.length === 0) {
-    return null;
-  }
-
-  const reviewerRows = reviewerIds.map((userId, index) => ({
-    task_id: taskId,
-    user_id: userId,
-    reviewer_role: index === 0 ? 'Primary' as const : 'Secondary' as const,
-    is_primary: index === 0,
-    assigned_by: actorId,
-  }));
-
-  const { error: reviewerInsertError } = await supabase
-    .from('task_reviewers')
-    .insert(reviewerRows);
-
-  return reviewerInsertError ? describeDatabaseError(reviewerInsertError) : null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -257,7 +201,6 @@ export async function createTask(
   const dueDate = readNullableString(formData, 'dueDate');
   const taskScale = readNullableNumber(formData, 'taskScale');
   const assigneeId = assigneeIds?.[0] ?? null;
-  const reviewerId = reviewerIds?.[0] ?? null;
 
   if (taskTag === '') return { success: false, error: 'Enter a task tag.' };
   if (taskTag.length > 30) {
@@ -289,51 +232,28 @@ export async function createTask(
     return { success: false, error: 'Task scale cannot be negative.' };
   }
 
+  let shares: number[] | null;
+  try { shares = readParticipantShares(formData, assigneeIds); }
+  catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Invalid shares.' }; }
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert({
-      task_tag: taskTag,
-      title,
-      category,
-      priority,
-      assignee_id: assigneeId,
-      reviewer_id: reviewerId,
-      due_date: dueDate,
-      task_scale: taskScale,
-      // `scaled_progress` is omitted deliberately: it is GENERATED ALWAYS and
-      // PostgreSQL rejects any write that targets it.
-      //
-      // Metrics eligibility, per domain-rules.md, needs hours logged > 0 AND
-      // scale > 0, and excludes off-hours entries. Only the static half is
-      // knowable at creation, so apply that and let the Phase 4 logger promote
-      // the task once hours exist.
-      valid_for_metrics:
-        taskScale !== null && taskScale > 0 && category !== 'OT',
-    })
-    .select('id')
-    .single();
-
-  if (error) {
-    return { success: false, error: describeDatabaseError(error) };
-  }
-
-  const participantError = await syncTaskParticipants(
-    supabase,
-    data.id,
-    assigneeIds,
-    reviewerIds,
-    actor.profile.id,
-  );
-
-  if (participantError) {
-    return { success: false, error: participantError };
-  }
+  const { data, error } = await supabase.rpc('save_task_with_participants', {
+    p_task_id: null,
+    p_fields: { task_tag: taskTag, title, category, priority, due_date: dueDate, task_scale: taskScale,
+      description: readString(formData,'description') || null,
+      template_version_id: readString(formData,'templateVersionId') || null,
+      initialize_details: readString(formData,'initializationMode') !== 'manual' },
+    p_assignees: assigneeIds, p_reviewers: reviewerIds, p_share_units: shares,
+    p_expected_version: null,
+    p_accept_legacy: formData.get('acceptLegacyShares') === 'on',
+    p_operation_id: readString(formData, 'operationId') || randomUUID(),
+  });
+  if (error) return { success: false, error: describeDatabaseError(error) };
 
   revalidatePath('/tasks');
   revalidatePath('/dashboard');
+  revalidatePath('/task-tools');
 
-  return { success: true, data: { taskId: data.id } };
+  return { success: true, data: { taskId: data } };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -355,6 +275,8 @@ export async function updateTask(
     };
   }
 
+  const versionText = readString(formData, 'participantVersion');
+  if (!/^\d+$/.test(versionText) || !Number.isSafeInteger(Number(versionText))) return { success: false, error: 'Reload the task before editing its participants.' };
   const taskId = readString(formData, 'taskId');
   if (taskId === '') return { success: false, error: 'Missing task reference.' };
 
@@ -367,7 +289,6 @@ export async function updateTask(
   const dueDate = readNullableString(formData, 'dueDate');
   const taskScale = readNullableNumber(formData, 'taskScale');
   const assigneeId = assigneeIds?.[0] ?? null;
-  const reviewerId = reviewerIds?.[0] ?? null;
 
   if (taskTag === '') return { success: false, error: 'Enter a task tag.' };
   if (taskTag.length > 30) {
@@ -399,38 +320,19 @@ export async function updateTask(
     return { success: false, error: 'Task scale cannot be negative.' };
   }
 
+  let shares: number[] | null;
+  try { shares = readParticipantShares(formData, assigneeIds); }
+  catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Invalid shares.' }; }
   const supabase = await createClient();
-  const { error } = await supabase
-    .from('tasks')
-    .update({
-      task_tag: taskTag,
-      title,
-      category,
-      priority,
-      assignee_id: assigneeId,
-      reviewer_id: reviewerId,
-      due_date: dueDate,
-      task_scale: taskScale,
-      valid_for_metrics:
-        taskScale !== null && taskScale > 0 && category !== 'OT',
-    })
-    .eq('id', taskId);
-
-  if (error) {
-    return { success: false, error: describeDatabaseError(error) };
-  }
-
-  const participantError = await syncTaskParticipants(
-    supabase,
-    taskId,
-    assigneeIds,
-    reviewerIds,
-    actor.profile.id,
-  );
-
-  if (participantError) {
-    return { success: false, error: participantError };
-  }
+  const { data, error } = await supabase.rpc('save_task_with_participants', {
+    p_task_id: taskId,
+    p_fields: { task_tag: taskTag, title, category, priority, due_date: dueDate, expected_lifecycle_version: Number(readString(formData, "lifecycleVersion")) },
+    p_assignees: assigneeIds, p_reviewers: reviewerIds, p_share_units: shares,
+    p_expected_version: Number(versionText),
+    p_accept_legacy: formData.get('acceptLegacyShares') === 'on',
+    p_operation_id: readString(formData, 'operationId') || randomUUID(),
+  });
+  if (error) return { success: false, error: describeDatabaseError(error) };
 
   revalidatePath('/tasks');
   revalidatePath('/dashboard');
@@ -490,124 +392,43 @@ async function assertCanUpdateOwnFields(
   return { ok: true };
 }
 
-export async function updateTaskStatus(
-  taskId: string,
-  status: TaskStatus,
-): Promise<TaskActionState> {
+async function taskCommand(taskId: string, command: string, payload: Json, version: number | undefined, operationId: string | undefined): Promise<TaskActionState> {
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
-
-  if (!isTaskStatus(status)) {
-    return { success: false, error: 'Unrecognised status.' };
-  }
-
-  const permitted = await assertCanUpdateOwnFields(actor.profile, taskId);
-  if (!permitted.ok) return { success: false, error: permitted.error };
-
+  if (!UUID_PATTERN.test(taskId) || !operationId || !UUID_PATTERN.test(operationId) || version === undefined || !Number.isSafeInteger(version) || version < 0) return { success: false, error: 'Reload the task before submitting this change.' };
   const supabase = await createClient();
-
-  // Completion bookkeeping. The schema carries completed_date and met_deadline
-  // but nothing else populates them, and the deadline-compliance reporting in
-  // product-requirements.md depends on both.
-  //
-  // Progress is deliberately left alone: forcing it to 100 on Done would
-  // overwrite a real measurement with an assumption.
-  let completedDate: string | null = null;
-  let metDeadline: boolean | null = null;
-
-  if (status === 'Done') {
-    const { data: existing, error: readError } = await supabase
-      .from('tasks')
-      .select('due_date')
-      .eq('id', taskId)
-      .maybeSingle();
-
-    if (readError) {
-      return { success: false, error: describeDatabaseError(readError) };
-    }
-    if (!existing) {
-      return { success: false, error: 'That task no longer exists.' };
-    }
-
-    completedDate = todayIso();
-    // Null when undated: an absent deadline cannot be met or missed.
-    metDeadline =
-      existing.due_date === null ? null : completedDate <= existing.due_date;
-  }
-
-  const { error } = await supabase
-    .from('tasks')
-    .update({
-      status,
-      completed_date: completedDate,
-      met_deadline: metDeadline,
-    })
-    .eq('id', taskId);
-
-  if (error) {
-    return { success: false, error: describeDatabaseError(error) };
-  }
-
-  const syncedParents = await syncTaskProgressForLinkedTask(supabase, taskId);
-  if (!syncedParents.ok) {
-    return {
-      success: false,
-      error: `Task status updated, but parent checklist progress could not be synced: ${syncedParents.error}`,
-    };
-  }
-
-  revalidatePath('/tasks');
-  revalidatePath('/dashboard');
-
-  return { success: true, data: { taskId } };
+  const { error } = await supabase.rpc('task_lifecycle_command', {p_task_id:taskId,p_command:command,p_payload:payload,p_expected_version:version,p_operation_id:operationId});
+  if (error) return { ...executionError(error), data: undefined };
+  revalidatePath('/tasks'); revalidatePath('/tasks','layout'); revalidatePath('/dashboard'); revalidatePath('/task-tools');
+  return { success:true,data:{taskId} };
 }
-
-/* -------------------------------------------------------------------------- */
-/* Inline progress                                                            */
-/* -------------------------------------------------------------------------- */
-
-export async function updateTaskProgress(
-  taskId: string,
-  progressPercentage: number,
-): Promise<TaskActionState> {
-  const actor = await resolveActor();
-  if (!actor.ok) return { success: false, error: actor.error };
-
-  if (!Number.isFinite(progressPercentage)) {
-    return { success: false, error: 'Progress must be a number.' };
+export async function updateTaskStatus(taskId: string,status: TaskStatus,version?: number,operationId?: string,reason?: string): Promise<TaskActionState> {
+  if (!isTaskStatus(status)) return {success:false,error:'Unrecognised status.'};
+  return taskCommand(taskId,'transition',{status,reason:reason ?? null},version,operationId);
+}
+export async function updateTaskProgress(taskId: string,progressPercentage: number,version?: number,operationId?: string): Promise<TaskActionState> {
+  return taskCommand(taskId,'progress',{progress:progressPercentage},version,operationId);
+}
+export async function changeTaskLifecycle(_previous: TaskActionState | null, formData: FormData): Promise<TaskActionState> {
+  const identity=commandIdentity(formData), command=readString(formData,'command');
+  if (!identity.operationId || identity.version===null || !['transition','scale','review'].includes(command)) return {success:false,error:'Invalid task command; reload and retry.'};
+  let payload: Json;
+  if (command==='transition') payload={status:readString(formData,'status'),reason:readString(formData,'reason')};
+  else if (command==='review') payload={approved:readString(formData,'approved')==='true'};
+  else {
+    const mode=readString(formData,'mode');
+    const required=mode==='manual'?['value']:mode==='hours'?['multiplier']:mode==='activity_count'?['activityCount','unitScale']:['percentage'];
+    if(required.some(key=>readString(formData,key)==='')) return {success:false,error:'Enter the required scale inputs; blank values are unmeasured.'};
+    let sourceId=readString(formData,'sourceTaskId');
+    if (mode==='linked' && !sourceId) { const db=await createClient(); const found=await db.from('tasks').select('id').eq('task_tag',readString(formData,'sourceTaskTag')).maybeSingle(); if(found.error || !found.data) return {success:false,error:'Source task tag was not found.'}; sourceId=found.data.id; }
+    const inputs=mode==='manual' ? {value:Number(readString(formData,'value'))} : mode==='hours' ? {multiplier:Number(readString(formData,'multiplier'))}
+      : mode==='activity_count' ? {activity_count:Number(readString(formData,'activityCount')),unit_scale:Number(readString(formData,'unitScale'))}
+      : {source_task_id:sourceId,percentage:Number(readString(formData,'percentage'))};
+    const rawOverride=readString(formData,'override');
+    payload={mode,inputs,override:rawOverride===''?null:Number(rawOverride),reason:readString(formData,'reason'),provenance:readString(formData,'provenance')};
+    if (Object.values(inputs).some(v=>typeof v==='number' && !Number.isFinite(v)) || (rawOverride!=='' && !Number.isFinite(Number(rawOverride)))) return {success:false,error:'Scale inputs must be finite numbers.'};
   }
-  if (progressPercentage < 0 || progressPercentage > 100) {
-    return { success: false, error: 'Progress must be between 0 and 100.' };
-  }
-
-  const permitted = await assertCanUpdateOwnFields(actor.profile, taskId);
-  if (!permitted.ok) return { success: false, error: permitted.error };
-
-  const supabase = await createClient();
-
-  // Only progress_percentage is written. scaled_progress is a generated STORED
-  // column, so PostgreSQL recomputes task_scale * (progress / 100) itself.
-  const { error } = await supabase
-    .from('tasks')
-    .update({ progress_percentage: progressPercentage })
-    .eq('id', taskId);
-
-  if (error) {
-    return { success: false, error: describeDatabaseError(error) };
-  }
-
-  const syncedParents = await syncTaskProgressForLinkedTask(supabase, taskId);
-  if (!syncedParents.ok) {
-    return {
-      success: false,
-      error: `Task progress updated, but parent checklist progress could not be synced: ${syncedParents.error}`,
-    };
-  }
-
-  revalidatePath('/tasks');
-  revalidatePath('/dashboard');
-
-  return { success: true, data: { taskId } };
+  return taskCommand(readString(formData,'taskId'),command,payload,identity.version,identity.operationId);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -642,4 +463,10 @@ export async function deleteTask(taskId: string): Promise<TaskActionState> {
   revalidatePath('/dashboard');
 
   return { success: true, data: { taskId } };
+}
+
+export async function recordTaskReview(previous: TaskActionState | null, formData: FormData): Promise<TaskActionState> {
+ formData.set('command','review');
+ if (!['true','false'].includes(readString(formData,'approved'))) return {success:false,error:'Choose a review decision.'};
+ return changeTaskLifecycle(previous,formData);
 }

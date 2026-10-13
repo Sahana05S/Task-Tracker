@@ -2,10 +2,11 @@ import { canManageTasks, isAssignedToTask } from '@/lib/tasks/permissions';
 import type { Task, User } from '@/types/tracker';
 
 export function canStartTimerForTask(
-  user: Pick<User, 'id' | 'role'>,
+  user: Pick<User, 'id' | 'role' | 'isActive'>,
   task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'status'>,
 ): boolean {
   return (
+    user.isActive &&
     task.status !== 'Done' &&
     task.status !== 'Discarded' &&
     (canManageTasks(user.role) || isAssignedToTask(task, user.id))
@@ -13,8 +14,8 @@ export function canStartTimerForTask(
 }
 
 export function canManageTimerRecord(
-  user: Pick<User, 'id' | 'role'>,
+  user: Pick<User, 'id' | 'role' | 'isActive'>,
   timer: { readonly userId: string },
 ): boolean {
-  return canManageTasks(user.role) || timer.userId === user.id;
+  return user.isActive && (canManageTasks(user.role) || timer.userId === user.id);
 }

@@ -1,0 +1,32 @@
+{
+  "source": "Disposable synthetic upgrade fixture, not deployed records",
+  "migration": "10_permissions_and_participant_contract.sql",
+  "rows": [
+    {
+      "mode": "legacy",
+      "task_id": "10000000-0000-0000-0000-000000000001",
+      "version": 0,
+      "task_tag": "T1",
+      "participants": [
+        {
+          "primary": false,
+          "user_id": "00000000-0000-0000-0000-000000000005",
+          "share_units": null
+        }
+      ],
+      "legacy_primary": "00000000-0000-0000-0000-000000000004",
+      "legacy_reviewer": "00000000-0000-0000-0000-000000000006",
+      "requires_review": true
+    },
+    {
+      "mode": "legacy",
+      "task_id": "10000000-0000-0000-0000-000000000002",
+      "version": 0,
+      "task_tag": "T2",
+      "participants": [],
+      "legacy_primary": "00000000-0000-0000-0000-000000000005",
+      "legacy_reviewer": null,
+      "requires_review": true
+    }
+  ]
+}

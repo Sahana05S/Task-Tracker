@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
 
 import { AllocationChart } from '@/components/dashboard/allocation-chart';
 import { ProductivityChart } from '@/components/dashboard/productivity-chart';
@@ -98,12 +99,14 @@ export default async function DashboardPage() {
 
       <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
         <StarPerformerCard
+          unavailableReason={analytics.calculation?.status==='incomplete' ? 'Ten-factor performance is incomplete. Final ranking and awards are unavailable; individual raw inputs and reasons appear below.' : 'Award selection awaits M08.'}
           performer={analytics.starPerformer}
           periodLabel={analytics.period.label}
           medianProductivity={analytics.medians.productivity}
         />
 
         <TeamStatsGrid analytics={analytics} />
+        {analytics.calculation?.members.map(result=><details key={result.userId}><summary className="cursor-pointer">{analytics.members.find(m=>m.userId===result.userId)?.fullName??'Employee'} - performance inputs</summary><PerformanceBreakdown result={result} context={analytics.calculation?.context}/></details>)}
 
         <div className="grid gap-4 xl:grid-cols-2">
           <ProductivityChart

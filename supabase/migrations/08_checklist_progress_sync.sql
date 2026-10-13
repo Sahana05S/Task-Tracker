@@ -8,4 +8,4 @@
 -- ===========================================================================
 
 ALTER TABLE public.task_checklists
-    ADD COLUMN sync_progress_to_task BOOLEAN NOT NULL DEFAULT false;
+    ADD COLUMN IF NOT EXISTS sync_progress_to_task BOOLEAN NOT NULL DEFAULT false;

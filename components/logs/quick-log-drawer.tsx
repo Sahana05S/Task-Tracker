@@ -1,4 +1,5 @@
 'use client';
+import { prepareOperation } from '@/lib/commands/client-operation';
 
 import * as React from 'react';
 import {
@@ -81,11 +82,17 @@ export function QuickLogDrawer({
   const isEdit = log !== null;
 
   const [createState, createAction, createPending] = React.useActionState(
-    createTaskLog,
+    async (previous: LogActionState|null, form: FormData) => {
+      try { const confirmed=await prepareOperation(form,'createTaskLog'); const result=await createTaskLog(previous,form); if(result.success) confirmed(); return result; }
+      catch { return {success:false,error:'Response interrupted. Retry the same values to recover the saved result.'}; }
+    },
     INITIAL_STATE,
   );
   const [editState, editAction, editPending] = React.useActionState(
-    updateTaskLog,
+    async (previous: LogActionState|null, form: FormData) => {
+      try { const confirmed=await prepareOperation(form,'updateTaskLog'); const result=await updateTaskLog(previous,form); if(result.success) confirmed(); return result; }
+      catch { return {success:false,error:'Response interrupted. Retry the same values to recover the saved result.'}; }
+    },
     INITIAL_STATE,
   );
 
@@ -121,9 +128,11 @@ export function QuickLogDrawer({
     };
   }, [open]);
 
+  const handledResult=React.useRef<LogActionState|null>(null);
   const succeeded = state?.success === true;
   React.useEffect(() => {
-    if (succeeded && open) {
+    if (succeeded && open && handledResult.current !== state) {
+      handledResult.current=state;
       onOpenChange(false);
       // The drawer closes on success, so the confirmation has to live outside it.
       toast.success(isEdit ? 'Log entry updated' : 'Hours logged', {
@@ -131,7 +140,7 @@ export function QuickLogDrawer({
           'Task progress and productivity have been recalculated.',
       });
     }
-  }, [succeeded, open, onOpenChange, isEdit]);
+  }, [succeeded, open, onOpenChange, isEdit, state]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -205,9 +214,8 @@ function LogForm({
     log ? String(log.hoursWorked) : '',
   );
   const [delta, setDelta] = React.useState(
-    log?.progressDelta !== null && log?.progressDelta !== undefined
-      ? String(log.progressDelta)
-      : '',
+    log && (log.requestedProgressDelta ?? log.progressDelta) != null
+      ? String(log.requestedProgressDelta ?? log.progressDelta) : '',
   );
   const [links, setLinks] = React.useState<string[]>(
     log?.rawLinks && log.rawLinks.length > 0 ? [...log.rawLinks] : [''],
@@ -221,9 +229,11 @@ function LogForm({
   // Preview the outcome so the delta is not a guess. Mirrors the same helpers
   // the Server Action uses, so the number shown is the number that will land.
   const currentProgress = selected?.progressPercentage ?? null;
-  const nextProgress = deltaIsNumber
-    ? applyProgressDelta(currentProgress, parsedDelta)
-    : null;
+  const nextProgress = !deltaIsNumber ? null : isEdit
+    ? parsedDelta === (log?.requestedProgressDelta ?? log?.progressDelta) ? currentProgress
+      : log?.effectiveProgressDelta == null ? null
+      : applyProgressDelta(currentProgress, parsedDelta-log.effectiveProgressDelta)
+    : applyProgressDelta(currentProgress, parsedDelta);
   const nextScaled =
     nextProgress === null
       ? null
@@ -233,7 +243,8 @@ function LogForm({
 
   return (
     <form action={action} className="flex min-h-0 flex-1 flex-col">
-      {isEdit ? <input type="hidden" name="logId" value={log.id} /> : null}
+      {isEdit ? <><input type="hidden" name="taskId" value={log.taskId} /><input type="hidden" name="logId" value={log.id} /><input type="hidden" name="expectedVersion" value={log.executionVersion ?? 0} />
+      <label className="grid gap-1 px-4 pt-3 text-sm">Correction reason<input name="reason" required maxLength={1000} className="border rounded px-2 py-1" /></label></> : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
         {noTasks ? (
@@ -248,7 +259,7 @@ function LogForm({
             name="taskId"
             value={taskId}
             onValueChange={setTaskId}
-            disabled={noTasks}
+            disabled={noTasks || isEdit}
             required
           >
             <SelectTrigger id="log-task">
@@ -301,7 +312,7 @@ function LogForm({
 
         <Field
           id="log-delta"
-          label="Progress added"
+          label="Progress requested"
           hint="Percentage points to add to the task's current progress. Negative values correct an overstatement."
         >
           <Input

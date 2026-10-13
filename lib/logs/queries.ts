@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
 import {
-  aggregateEffortByTask,
   type TaskEffort,
 } from '@/lib/logs/metrics';
 import { mapTasks, TASK_COLUMNS } from '@/lib/tasks/mappers';
@@ -20,9 +19,8 @@ export interface LogHistoryData {
 /**
  * Loads one user's effort history, newest first, with the tasks it references.
  *
- * Scoped to a single user by explicit filter, not by RLS: the SELECT policy on
- * `daily_task_logs` intentionally exposes the whole team for transparency, so
- * "my history" has to be narrowed here.
+ * Scoped explicitly to the requested employee, with self/manager privacy
+ * enforced again by the database.
  */
 export async function getMyLogHistory(userId: string): Promise<LogHistoryData> {
   const supabase = await createClient();
@@ -31,6 +29,7 @@ export async function getMyLogHistory(userId: string): Promise<LogHistoryData> {
     .from('daily_task_logs')
     .select(LOG_COLUMNS)
     .eq('user_id', userId)
+    .is('reversed_at', null)
     .order('log_date', { ascending: false })
     .order('created_at', { ascending: false });
 
@@ -68,17 +67,9 @@ export async function getMyLogHistory(userId: string): Promise<LogHistoryData> {
 export async function getTaskEffortTotals(): Promise<Map<string, TaskEffort>> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('daily_task_logs')
-    .select('task_id, hours_worked');
-
-  if (error) {
-    throw new Error(`Failed to load effort totals: ${error.message}`);
-  }
-
-  return aggregateEffortByTask(
-    data.map((row) => ({ taskId: row.task_id, hoursWorked: row.hours_worked })),
-  );
+  const {data,error}=await supabase.rpc('team_task_effort_totals');
+  if(error) throw new Error(`Failed to load effort totals: ${error.message}`);
+  return new Map(data.map(row=>[row.task_id,{hoursLogged:row.hours_logged,logCount:row.log_count}]));
 }
 
 /**

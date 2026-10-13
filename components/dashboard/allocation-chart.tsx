@@ -1,4 +1,5 @@
 'use client';
+import { displayPerformance } from '@/lib/performance/exact';
 
 import * as React from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
@@ -46,7 +47,7 @@ export function AllocationChart({
   const data: Datum[] = React.useMemo(
     () =>
       members
-        .filter((member) => member.allocationPercent > 0)
+        .filter((member):member is MemberPerformance & {allocationPercent:number} => member.allocationPercent !== null && member.allocationPercent > 0)
         .sort((a, b) => b.allocationPercent - a.allocationPercent)
         .map((member, index) => ({
           fullName: member.fullName,
@@ -63,15 +64,18 @@ export function AllocationChart({
   const unloaded = members.filter(
     (member) => member.allocationPercent === 0,
   ).length;
+  const unavailable=members.some(member=>member.allocationPercent===null);
+  const remainder=100-data.reduce((sum,member)=>sum+member.allocationPercent,0);
+  const ringData=!unavailable && remainder>0.000001 ? [...data,{fullName:'Inactive assigned share',allocationPercent:remainder,taskScale:0,taskCount:0,loadingDiff:null,criticalityScore:null,color:'#94a3b8'}] : data;
 
-  if (data.length === 0) {
+  if (data.length === 0 || unavailable) {
     return (
       <ChartShell
         title="Priority & workload distribution"
         subtitle="Share of total team task scale per member"
       >
         <EmptyNote>
-          No metric-eligible workload is assigned in this period.
+          Workload shares are unavailable or no eligible workload is assigned in this period.
         </EmptyNote>
       </ChartShell>
     );
@@ -93,7 +97,7 @@ export function AllocationChart({
             <PieChart>
               <Tooltip content={<AllocationTooltip />} />
               <Pie
-                data={data}
+                data={ringData}
                 dataKey="allocationPercent"
                 nameKey="fullName"
                 innerRadius="58%"
@@ -102,7 +106,7 @@ export function AllocationChart({
                 strokeWidth={1}
                 stroke="var(--color-white)"
               >
-                {data.map((datum) => (
+                {ringData.map((datum) => (
                   <Cell key={datum.fullName} fill={datum.color} />
                 ))}
               </Pie>
@@ -166,10 +170,10 @@ export function AllocationChart({
                 >
                   {datum.loadingDiff === null
                     ? '\u2014'
-                    : `${datum.loadingDiff >= 0 ? '+' : ''}${formatNumeric(datum.loadingDiff)}`}
+                    : `${datum.loadingDiff >= 0 ? '+' : ''}${formatNumeric(datum.loadingDiff*100)} pp`}
                 </td>
                 <td className="text-foreground py-1.5 text-right tabular">
-                  {formatNumeric(datum.criticalityScore)}
+                  {displayPerformance(datum.criticalityScore)}
                 </td>
               </tr>
             ))}
@@ -237,7 +241,7 @@ function AllocationTooltip({
         <div className="flex items-baseline justify-between gap-4">
           <dt>Criticality</dt>
           <dd className="font-medium text-slate-900 tabular">
-            {formatNumeric(datum.criticalityScore)}
+            {displayPerformance(datum.criticalityScore)}
           </dd>
         </div>
       </dl>

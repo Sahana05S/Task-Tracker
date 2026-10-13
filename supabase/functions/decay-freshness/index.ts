@@ -1,7 +1,7 @@
 /**
  * TaskPulse — Freshness Decay Edge Function
  *
- * Invokes `public.decay_task_freshness()` (created by migration 05) via a
+ * Invokes `public.decay_task_freshness()` (calendar contract replaced by migration 16) via a
  * Supabase RPC call. Runs as `service_role` so the SECURITY DEFINER function
  * can write `tasks.freshness` regardless of RLS.
  *

@@ -1,4 +1,5 @@
 'use client';
+import { prepareOperation } from '@/lib/commands/client-operation';
 
 import * as React from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
@@ -10,8 +11,10 @@ import { cn } from '@/lib/utils';
 
 export interface ProgressInputProps {
   taskId: string;
+  version?: number;
   taskTag: string;
   progressPercentage: number | null;
+  progressOwner?: 'manual'|'checklist';
   /** False renders the value as static text. */
   canEdit: boolean;
   className?: string;
@@ -37,8 +40,10 @@ function toFieldValue(progress: number | null): string {
  */
 export function ProgressInput({
   taskId,
+  version,
   taskTag,
   progressPercentage,
+  progressOwner,
   canEdit,
   className,
 }: ProgressInputProps) {
@@ -67,7 +72,7 @@ export function ProgressInput({
     return (
       <div className={cn('flex flex-col gap-1', className)}>
         <span className="sheet-numeric text-xs text-slate-900">
-          {committed === null ? '\u2014' : `${committed}%`}
+          {committed === null ? 'Unavailable' : `${committed}%`}{progressOwner==='checklist'?' ? Activity':''}
         </span>
         <progress
           className="task-progress"
@@ -115,7 +120,13 @@ export function ProgressInput({
     setInvalid(false);
 
     startTransition(async () => {
-      const result = await updateTaskProgress(taskId, rounded);
+      const form=new FormData(); form.set('taskId',taskId); form.set('command','progress'); form.set('value',String(rounded)); form.set('expectedVersion',String(version ?? 0));
+      let result;
+      try {
+        const finish=await prepareOperation(form,'progress');
+        result=await updateTaskProgress(taskId,rounded,Number(form.get('expectedVersion')),String(form.get('operationId')));
+        if (result.success) finish();
+      } catch { result={success:false,error:'Response unavailable. Retry the same change to recover its result.'}; }
       if (!result.success) {
         setCommitted(previous);
         setDraft(toFieldValue(previous));

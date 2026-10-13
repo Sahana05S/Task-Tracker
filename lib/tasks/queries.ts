@@ -45,7 +45,7 @@ export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
       .from('users')
       .select(USER_COLUMNS)
       .order('full_name', { ascending: true }),
-    supabase.from('task_assignees').select('task_id, user_id, is_primary'),
+    supabase.from('task_assignees').select('task_id, user_id, is_primary, share_units'),
     supabase.from('task_reviewers').select('task_id, user_id, is_primary'),
   ]);
 
@@ -55,6 +55,8 @@ export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
   if (memberResult.error) {
     throw new Error(`Failed to load members: ${memberResult.error.message}`);
   }
+  if (assigneeResult.error) throw new Error(`Failed to load participants: ${assigneeResult.error.message}`);
+  if (reviewerResult.error) throw new Error(`Failed to load reviewers: ${reviewerResult.error.message}`);
 
   let tasks = mapTasks(taskResult.data);
 
@@ -71,7 +73,7 @@ export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
     }
 
     tasks = tasks.map((task) =>
-      withTaskParticipants(task, {
+      withTaskParticipants({ ...task, participantShares: task.participantCreditMode === "configured" ? Object.fromEntries(assigneeResult.data.filter((row) => row.task_id === task.id).map((row) => [row.user_id, row.share_units ?? 0])) : null }, {
         assigneeIds: assigneesByTask.get(task.id),
         reviewerIds: task.reviewerIds,
       }),

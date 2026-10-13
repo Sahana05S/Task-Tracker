@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canCreateSupportRecord,
+  canValidateSupportRecord,
   canManageReportSnapshots,
   canManageSupportRecords,
 } from '@/lib/support/permissions';
@@ -29,10 +30,18 @@ describe('support permissions', () => {
     }
   });
 
-  it('restricts report snapshots to leadership roles', () => {
+  it('restricts report snapshot writes to the director', () => {
     expect(canManageReportSnapshots('managing_director')).toBe(true);
-    expect(canManageReportSnapshots('project_engineer')).toBe(true);
+    expect(canManageReportSnapshots('project_engineer')).toBe(false);
     expect(canManageReportSnapshots('data_manager')).toBe(false);
     expect(canManageReportSnapshots('team_member')).toBe(false);
   });
+});
+
+it('requires an active independent administrator for validation', () => {
+  const dm = {id:'dm',role:'data_manager' as const,isActive:true};
+  expect(canValidateSupportRecord(dm,'author')).toBe(true);
+  expect(canValidateSupportRecord(dm,'dm')).toBe(false);
+  expect(canValidateSupportRecord({...dm,isActive:false},'author')).toBe(false);
+  expect(canValidateSupportRecord({...dm,role:'team_member'},'author')).toBe(false);
 });

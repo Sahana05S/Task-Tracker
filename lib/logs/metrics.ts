@@ -1,3 +1,5 @@
+import { eligibilityReasons } from '@/lib/tasks/contract';
+import type { Task } from '@/types/tracker';
 import type { DailyTaskLog, TaskCategory } from '@/types/tracker';
 
 /**
@@ -84,11 +86,11 @@ export function computeScaledProgress(
   progressPercentage: number | null,
 ): number | null {
   if (taskScale === null || progressPercentage === null) return null;
-  return roundToNumericScale(taskScale * (progressPercentage / 100));
+  return taskScale * progressPercentage / 100;
 }
 
 /**
- * Task Productivity = Scaled Progress / Total Hours Worked.
+ * Task productivity = progress percentage points / total hours worked.
  *
  * Returns `null` when it cannot be computed rather than 0. Zero productivity
  * means "worked and produced nothing"; no logged hours means the rate is
@@ -96,12 +98,12 @@ export function computeScaledProgress(
  * nobody has started.
  */
 export function computeProductivity(
-  scaledProgress: number | null,
+  progressPercentage: number | null,
   hoursLogged: number,
 ): number | null {
-  if (scaledProgress === null) return null;
+  if (progressPercentage === null) return null;
   if (!Number.isFinite(hoursLogged) || hoursLogged <= 0) return null;
-  return roundToNumericScale(scaledProgress / hoursLogged);
+  return roundToNumericScale(progressPercentage / hoursLogged);
 }
 
 /**
@@ -109,21 +111,11 @@ export function computeProductivity(
  * logged must exceed zero AND task scale must exceed zero, and off-hours
  * entries are excluded outright.
  */
-export function isMetricsEligible(
-  hoursLogged: number,
-  taskScale: number | null,
-  category: TaskCategory,
-): boolean {
-  if (category === 'OT') return false;
-  if (taskScale === null || taskScale <= 0) return false;
-  return hoursLogged > 0;
-}
+export function isMetricsEligible(task: Pick<Task,'priority'|'status'|'taskScale'|'progressPercentage'>): boolean { return eligibilityReasons(task).length===0; }
 
 /** Total hours across a set of logs, rounded to the column's scale. */
 export function sumHours(logs: readonly { hoursWorked: number }[]): number {
-  return roundToNumericScale(
-    logs.reduce((total, log) => total + log.hoursWorked, 0),
-  );
+  return logs.reduce((total, log) => total + log.hoursWorked, 0);
 }
 
 /** Total progress delta across a set of logs. */

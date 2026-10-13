@@ -1,5 +1,12 @@
 # Apps Script Workflow Map
 
+> M00 note (10 October 2026): This document describes historical or provisional
+> behavior. Conflicting business rules and completion claims are superseded by
+> [RULES](plans/RULES.md), [DECISIONS](plans/DECISIONS.md) and
+> the [M00 conflict ledger](plans/M00-evidence.md#older-documentation-conflicts).
+> Retain unrelated architecture notes. Named missing script handlers do not
+> establish implemented parity. M01 has not started.
+
 The uploaded `app-scripts` folder confirms that the workbook custom menus are mostly orchestration around task pages, Drive folders/files, support-task duplication, timers, logs, checklist updates, refreshes, and reports.
 
 | Apps Script entry | Workbook behavior | Web app equivalent |

@@ -1,3 +1,4 @@
+import { classifyFreshness, eligibilityReasons } from '@/lib/tasks/contract';
 import type { TaskRow } from '@/types/database';
 import type { Task } from '@/types/tracker';
 
@@ -23,11 +24,14 @@ import type { Task } from '@/types/tracker';
  * defeats that inference and collapses the result to an error type.
  */
 export const TASK_COLUMNS =
-  'id, task_tag, title, category, description, comments, assignee_id, reviewer_id, task_scale, progress_percentage, scaled_progress, task_productivity, priority, status, freshness, valid_for_metrics, assigned_date, due_date, completed_date, met_deadline, created_at, updated_at' as const;
+  'id, participant_credit_mode, participant_version, metric_version, lifecycle_version, work_revision, productivity_available, started_date, scale_mode, scale_inputs, scale_override, scale_provenance, scale_version, eligibility_reasons, freshness_reason, task_tag, title, category, description, comments, assignee_id, reviewer_id, task_scale, progress_owner, progress_percentage, scaled_progress, task_productivity, priority, status, freshness, valid_for_metrics, assigned_date, due_date, completed_date, met_deadline, created_at, updated_at' as const;
 
 export function mapTask(row: TaskRow): Task {
+  const freshness = classifyFreshness({ assignedDate: row.assigned_date, dueDate: row.due_date, completedDate: row.completed_date, status: row.status });
   return {
     id: row.id,
+    participantCreditMode: row.participant_credit_mode ?? "legacy",
+    participantVersion: row.participant_version ?? 0,
     taskTag: row.task_tag,
     title: row.title,
     category: row.category,
@@ -39,12 +43,23 @@ export function mapTask(row: TaskRow): Task {
     reviewerIds: row.reviewer_id ? [row.reviewer_id] : [],
     taskScale: row.task_scale,
     progressPercentage: row.progress_percentage,
+    progressOwner: row.progress_owner ?? 'manual',
     scaledProgress: row.scaled_progress,
-    taskProductivity: row.task_productivity,
+    taskProductivity: row.productivity_available === false ? null : row.task_productivity,
     priority: row.priority,
     status: row.status,
-    freshness: row.freshness,
-    validForMetrics: row.valid_for_metrics,
+    freshness: freshness.state,
+    freshnessReason: freshness.reason,
+    lifecycleVersion: row.lifecycle_version ?? 0,
+    workRevision: row.work_revision ?? 0,
+    startedDate: row.started_date ?? null,
+    scaleMode: row.scale_mode ?? "manual",
+    scaleInputs: row.scale_inputs as Record<string, unknown> ?? {},
+    scaleOverride: row.scale_override ?? null,
+    scaleVersion: row.scale_version ?? 0,
+    scaleProvenance: row.scale_provenance ?? "legacy stored value",
+    eligibilityReasons: eligibilityReasons({priority:row.priority,status:row.status,taskScale:row.task_scale,progressPercentage:row.progress_percentage}),
+    validForMetrics: eligibilityReasons({priority:row.priority,status:row.status,taskScale:row.task_scale,progressPercentage:row.progress_percentage}).length === 0,
     assignedDate: row.assigned_date,
     dueDate: row.due_date,
     completedDate: row.completed_date,
@@ -65,8 +80,10 @@ export function withTaskParticipants(
     readonly reviewerIds?: readonly string[];
   },
 ): Task {
-  const assigneeIds = [...new Set(participants.assigneeIds ?? [])];
-  const reviewerIds = [...new Set(participants.reviewerIds ?? [])];
+  // Legacy primaries remain canonical compatibility projections even when old
+  // join rows are missing or disagree; reconciliation never drops the owner.
+  const assigneeIds = [...new Set([...(task.participantCreditMode === "configured" ? [] : [task.assigneeId]), ...(participants.assigneeIds ?? task.assigneeIds)])];
+  const reviewerIds = [...new Set([...(task.reviewerId ? [task.reviewerId] : []), ...(participants.reviewerIds ?? task.reviewerIds)])];
 
   return {
     ...task,

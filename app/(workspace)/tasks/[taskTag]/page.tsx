@@ -1,3 +1,11 @@
+import { DETAIL_FIELDS,ipoLinks,sectionsForRole } from '@/lib/tasks/details-contract';
+import { NativeDetailsEditor,InitializeDetailsForm } from '@/components/tasks/native-details-editor';
+import { getNativeDetailState,getNativeTemplates,getVisibleReportChoices } from '@/lib/tasks/native-details';
+import { getTaskWorkspaceData } from '@/lib/tasks/queries';
+import { TaskLifecyclePanel } from '@/components/tasks/task-lifecycle-panel';
+import { ELIGIBILITY_LABELS } from '@/lib/tasks/contract';
+import { ExecutionForm } from '@/components/tasks/execution-form';
+import { TaskReviewForm } from '@/components/tasks/task-review-form';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -61,6 +69,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
   const { data } = routeState;
   const canManage = canManageTasks(currentUser.role);
+  const [native,templates,workspace,reports]=await Promise.all([getNativeDetailState(data.task.id),getNativeTemplates(),canManage?getTaskWorkspaceData():Promise.resolve({tasks:[],members:[]}),canManage?getVisibleReportChoices():Promise.resolve([])]);
   const canUseTimer = canStartTimerForTask(currentUser, data.task);
   const visibleTimers = canManage
     ? data.timers
@@ -82,16 +91,12 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
   const sectionsByKey = new Map(
     data.sections.map((section) => [section.keyName, section]),
   );
-  const smartGoals = [
-    sectionValue(sectionsByKey, 'smart_specific'),
-    sectionValue(sectionsByKey, 'smart_measurable'),
-    sectionValue(sectionsByKey, 'smart_achievable'),
-    sectionValue(sectionsByKey, 'smart_relevant'),
-    sectionValue(sectionsByKey, 'smart_time_bound'),
-  ];
+  const smartFields=DETAIL_FIELDS.filter(f=>f.group==='smart');
+  const smartGoals=smartFields.map(f=>sectionValue(sectionsByKey,f.key));
 
   return (
     <>
+      {data.task.reviewerIds.includes(currentUser.id) ? <div className="p-4"><TaskReviewForm taskId={data.task.id} version={data.task.lifecycleVersion ?? 0} /></div> : null}
       <WorkspaceHeader
         title={data.task.taskTag}
         description={data.task.title}
@@ -115,6 +120,9 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
       <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_22rem] lg:px-6">
         <main className="grid gap-4">
+          {canManageTasks(currentUser.role) ? <TaskLifecyclePanel task={data.task} /> : null}
+          <p className="text-sm">Metric eligibility: {data.task.validForMetrics ? "Eligible" : (data.task.eligibilityReasons ?? []).map(reason=>ELIGIBILITY_LABELS[reason] ?? reason).join(", ")}. Hours are required separately for productivity.</p>
+          <p className="text-sm">Participant shares: {data.task.participantShares ? Object.entries(data.task.participantShares).map(([id,units])=>`${memberNames.get(id) ?? id}: ${units/10000}%`).join(", ") : "Legacy attribution awaiting reconciliation"}. Completion, criticality and freshness attribution remain undecided for shared work.</p>
           <section className="soft-card grid gap-4 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="task-tag">{data.task.taskTag}</span>
@@ -130,7 +138,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
               <h2 className="text-foreground text-lg font-semibold">
                 {data.task.title}
               </h2>
-              {data.task.description ? (
+              {sectionValue(sectionsByKey,'description') ? (
                 <p className="text-muted-foreground mt-2 text-sm">
                   {data.task.description}
                 </p>
@@ -149,7 +157,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
               <Detail label="Status" value={data.task.status} />
               <Detail
                 label="Task freshness"
-                value={data.task.freshness}
+                value={data.task.freshness ?? `Unavailable: ${data.task.freshnessReason ?? "date evidence missing"}`}
               />
               <Detail
                 label="Scale"
@@ -167,7 +175,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
                 numeric
               />
               <Detail
-                label="Checklist progress"
+                label="Activity checklist progress"
                 value={formatPercent(data.checklistProgressPercentage)}
                 numeric
               />
@@ -213,16 +221,22 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
             ) : null}
           </section>
 
+          <Panel title="Native task details">
+            <p className="text-sm">{native.instance?'Native task/details ready':'Native details not initialized'}</p>
+            <p className="text-sm">Provider work: {native.instance?.providerState??'not_requested'}. Google Drive operations are not implemented.</p>
+            {native.instance ? <details><summary>Template instructions ? {templates.find(t=>t.id===native.instance?.templateVersionId)?.name ?? 'Template'} ? version {templates.find(t=>t.id===native.instance?.templateVersionId)?.version}</summary>{DETAIL_FIELDS.map(f=>native.instance?.instructions[f.key]?<p key={f.key}><strong>{f.label}:</strong> {native.instance.instructions[f.key]}</p>:null)}</details> : canManage?<InitializeDetailsForm task={data.task} templates={templates}/>:null}
+            {canManage ? <details><summary>Edit structured details and links</summary><NativeDetailsEditor task={data.task} sections={data.sections} tasks={workspace.tasks} members={data.members} reports={reports}/></details>:null}
+            {sectionValue(sectionsByKey,'description')?<TextBlock title="Description" body={sectionValue(sectionsByKey,'description')!}/>:null}
+            {sectionValue(sectionsByKey,'reviewer_notes')?<TextBlock title="Reviewer notes" body={sectionValue(sectionsByKey,'reviewer_notes')!}/>:null}
+            {native.flags.length?<details><summary>Legacy content retained ? review required ({native.flags.length})</summary>{native.flags.map(flag=>{const source=data.sections.find(s=>s.id===flag.source_section_id);return <div key={flag.id}><p>{source?.title} ? {flag.reason}</p><p className="whitespace-pre-wrap">{source?.content}</p></div>;})}</details>:null}
+            {data.links.some(l=>!l.ipoRole)?<p className="text-sm">Legacy links have no confirmed IPO role and are retained here for review.</p>:null}
+            {data.links.filter(l=>!l.ipoRole || l.ipoRole==='reference').map(l=><AssetLink key={l.id} link={l}/>)}
+          </Panel>
+
           <section className="grid gap-4 lg:grid-cols-2">
             <Panel title="SMART goal statements">
               <div className="grid gap-2">
-                {[
-                  'Specific',
-                  'Measurable',
-                  'Achievable',
-                  'Relevant',
-                  'Time-bound',
-                ].map((label, index) => (
+                {smartFields.map(f=>f.label).map((label, index) => (
                   <SmartGoalRow
                     key={label}
                     label={label}
@@ -246,10 +260,10 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
                 </div>
                 <progress
                   className="task-progress w-full"
-                  value={data.checklistProgressPercentage}
+                  value={data.checklistProgressPercentage??undefined}
                   max={100}
                   data-complete={
-                    data.checklistProgressPercentage >= 100 ? 'true' : 'false'
+                    data.checklistProgressPercentage!==null && data.checklistProgressPercentage >= 100 ? 'true' : 'false'
                   }
                   aria-label="Master checklist progress"
                 />
@@ -267,14 +281,14 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
             <LinkPanel
               title="Inputs"
               empty="No task inputs have been linked."
-              links={inputLinks(data.links)}
-              sections={prefixedSections(data.sections, 'input_')}
+              links={ipoLinks(data.links,'input')}
+              sections={sectionsForRole(data.sections,'input')}
             />
             <LinkPanel
               title="Process"
               empty="No process links have been added."
-              links={processLinks(data.links)}
-              sections={prefixedSections(data.sections, 'process_')}
+              links={ipoLinks(data.links,'process')}
+              sections={sectionsForRole(data.sections,'process')}
               extraLink={{
                 label: 'Master checklist',
                 href: `/tasks/${encodeURIComponent(data.task.taskTag)}/checklist`,
@@ -283,8 +297,8 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
             <LinkPanel
               title="Outputs"
               empty="No task outputs have been linked."
-              links={outputLinks(data.links)}
-              sections={prefixedSections(data.sections, 'output_')}
+              links={ipoLinks(data.links,'output')}
+              sections={sectionsForRole(data.sections,'output')}
             />
           </section>
 
@@ -329,11 +343,11 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
           <Panel title="Updates from master checklist">
             <dl className="grid gap-2">
-              <CompactMetric label="Start status" value={data.checklist ? 'Created' : 'Not created'} />
+              <CompactMetric label="Setup status" value={data.checklistRollup?.sections.setup.state.replaceAll('_',' ')??'Unavailable'} />
               <CompactMetric
                 label="Closure status"
                 value={
-                  data.checklistProgressPercentage >= 100 ? 'Closed' : 'Open'
+                  data.checklistRollup?.sections.closure.state==='not_applicable'?'Not applicable':data.checklistRollup?.sections.closure.isComplete?'Complete':'Pending'
                 }
               />
               <CompactMetric
@@ -480,7 +494,8 @@ function LinkPanel({
 }
 
 function AssetLink({ link }: { link: TaskLink }) {
-  const href = link.url ?? link.storagePath;
+  const rawHref = link.url ?? link.storagePath;
+  const href = rawHref && (/^https?:\/\//i.test(rawHref) || /^\/(team\/|reports#report-)/.test(rawHref)) ? rawHref : null;
   const label = `${link.linkType}: ${link.label}`;
 
   if (!href) {
@@ -646,7 +661,7 @@ function TimerControl({
             {formatDateTime(activeTimer.startedAt)}
           </span>
         </div>
-        <form action={asFormAction(stopTaskTimer)} className="grid gap-2">
+        <ExecutionForm action={stopTaskTimer} scope="stopTaskTimer" className="grid gap-2"><input type="hidden" name="expectedVersion" value={activeTimer.executionVersion ?? 0} />
           <input type="hidden" name="timerId" value={activeTimer.id} />
           <label className="grid gap-1 text-sm">
             <span className="font-medium text-slate-900">Stop note</span>
@@ -661,20 +676,20 @@ function TimerControl({
               Stop and log
             </Button>
           </div>
-        </form>
-        <form action={asFormAction(discardTaskTimer)}>
+        </ExecutionForm>
+        <ExecutionForm action={discardTaskTimer} scope="discardTaskTimer"><label className="grid gap-1 text-sm">Reason<input name="reason" required maxLength={1000} className="border rounded px-2 py-1" /></label><input type="hidden" name="expectedVersion" value={activeTimer.executionVersion ?? 0} />
           <input type="hidden" name="timerId" value={activeTimer.id} />
           <input type="hidden" name="taskTag" value={taskTag} />
           <Button type="submit" variant="ghost" size="sm">
             Discard timer
           </Button>
-        </form>
+        </ExecutionForm>
       </div>
     );
   }
 
   return (
-    <form action={asFormAction(startTaskTimer)} className="grid gap-2">
+    <ExecutionForm action={startTaskTimer} scope="startTaskTimer" className="grid gap-2">
       <input type="hidden" name="taskTag" value={taskTag} />
       <label className="grid gap-1 text-sm">
         <span className="font-medium text-slate-900">Start note</span>
@@ -687,7 +702,7 @@ function TimerControl({
       <Button type="submit" size="sm">
         Start timer
       </Button>
-    </form>
+    </ExecutionForm>
   );
 }
 
@@ -737,25 +752,25 @@ function TimerRecords({
                 </p>
               </div>
               {timer.status === 'Running' && canManageThisTimer ? (
-                <form action={asFormAction(stopTaskTimer)}>
+                <ExecutionForm action={stopTaskTimer} scope="stopTaskTimer"><input type="hidden" name="expectedVersion" value={timer.executionVersion ?? 0} />
                   <input type="hidden" name="timerId" value={timer.id} />
                   <Button type="submit" variant="outline" size="sm">
                     Stop
                   </Button>
-                </form>
+                </ExecutionForm>
               ) : null}
             </div>
             {timer.notes ? (
               <p className="mt-2 text-xs text-slate-700">{timer.notes}</p>
             ) : null}
             {timer.status === 'Running' && canManageThisTimer ? (
-              <form action={asFormAction(discardTaskTimer)} className="mt-2">
+              <ExecutionForm action={discardTaskTimer} scope="discardTaskTimer" className="mt-2"><label className="grid gap-1 text-sm">Reason<input name="reason" required maxLength={1000} className="border rounded px-2 py-1" /></label><input type="hidden" name="expectedVersion" value={timer.executionVersion ?? 0} />
                 <input type="hidden" name="timerId" value={timer.id} />
                 <input type="hidden" name="taskTag" value={taskTag} />
                 <Button type="submit" variant="ghost" size="sm">
                   Discard
                 </Button>
-              </form>
+              </ExecutionForm>
             ) : null}
           </div>
         );
@@ -780,7 +795,7 @@ function ManualTimeForm({
   }
 
   return (
-    <form action={asFormAction(enterManualTaskTime)} className="grid gap-2">
+    <ExecutionForm action={enterManualTaskTime} scope="enterManualTaskTime" className="grid gap-2">
       <input type="hidden" name="taskTag" value={taskTag} />
       <label className="grid gap-1 text-sm">
         <span className="font-medium text-slate-900">Date</span>
@@ -826,7 +841,7 @@ function ManualTimeForm({
       <Button type="submit" size="sm">
         Save manual time
       </Button>
-    </form>
+    </ExecutionForm>
   );
 }
 
@@ -846,32 +861,6 @@ function sectionValue(
   return sectionsByKey.get(key)?.content ?? null;
 }
 
-function prefixedSections(
-  sections: readonly TaskDetailSection[],
-  prefix: string,
-): TaskDetailSection[] {
-  return sections.filter((section) => section.keyName.startsWith(prefix));
-}
-
-function inputLinks(links: readonly TaskLink[]): TaskLink[] {
-  const inputTypes = new Set([
-    'Document',
-    'Account',
-    'Flowchart',
-    'Engineering',
-    'Drawing',
-  ]);
-  return links.filter((link) => inputTypes.has(link.linkType));
-}
-
-function processLinks(links: readonly TaskLink[]): TaskLink[] {
-  const processTypes = new Set(['Checklist', 'Folder', 'Raw Link', 'Other']);
-  return links.filter((link) => processTypes.has(link.linkType));
-}
-
-function outputLinks(links: readonly TaskLink[]): TaskLink[] {
-  return links.filter((link) => link.notes?.toLowerCase().includes('output'));
-}
 
 function formatNames(names: readonly string[], fallback: string): string {
   return names.length > 0 ? names.join(', ') : fallback;

@@ -96,6 +96,9 @@ function toSnapshotRow(
     payable_days: member.attendance.payableDays,
     absent_days: member.attendance.absentDays,
     leave_days: member.attendance.leaveDays,
+    calculation_rule_version:member.calculationContext?.ruleVersion??'m07-unavailable',
+    calculation_context:member.calculationContext as unknown as import('@/types/database').Json,
+    factor_components:member.calculation?.factors as unknown as import('@/types/database').Json,
     is_star_performer: member.isStarPerformer,
   };
 }
@@ -157,6 +160,8 @@ export async function freezeMonthlySnapshot(
       error: 'There are no active members to snapshot.',
     };
   }
+
+  if(analytics.calculation?.status!=='complete') return {success:false,error:'A complete ten-factor calculation is required. Missing factors cannot be stored as zero or frozen as a certified report.'};
 
   const rows = analytics.members.map((member) =>
     toSnapshotRow(member, period.year, period.month),

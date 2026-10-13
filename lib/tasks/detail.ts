@@ -1,6 +1,7 @@
-import { computeChecklistProgress } from '@/lib/checklists/progress';
+import type { ChecklistRollup } from '@/lib/checklists/progress';
+import { loadChecklistRollups } from '@/lib/checklists/read-model';
 import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
-import { EMPTY_EFFORT, type TaskEffort } from '@/lib/logs/metrics';
+import type { TaskEffort } from '@/lib/logs/metrics';
 import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -44,7 +45,8 @@ export interface TaskDetailData {
   readonly checklist: TaskChecklist | null;
   readonly checklistNodes: readonly ChecklistNode[];
   readonly linkedTasksById: ReadonlyMap<string, Task>;
-  readonly checklistProgressPercentage: number;
+  readonly checklistProgressPercentage: number | null;
+  readonly checklistRollup?: ChecklistRollup;
   readonly effort: TaskEffort;
 }
 
@@ -111,6 +113,7 @@ export async function getTaskDetailData(
     logRows,
     timerRows,
     checklistRow,
+    effortResult,
   ] = await Promise.all([
     supabase.from('users').select(USER_COLUMNS).order('full_name'),
     selectOrEmpty(supabase.from('task_assignees').select('task_id, user_id, is_primary').eq('task_id', task.id)),
@@ -127,7 +130,7 @@ export async function getTaskDetailData(
     selectOrEmpty(
       supabase
         .from('daily_task_logs')
-        .select(LOG_COLUMNS)
+        .select(LOG_COLUMNS).is('reversed_at', null)
         .eq('task_id', task.id)
         .order('log_date', { ascending: false })
         .order('created_at', { ascending: false }),
@@ -142,6 +145,7 @@ export async function getTaskDetailData(
     selectOneOrNull(
       supabase.from('task_checklists').select('*').eq('task_id', task.id).maybeSingle(),
     ),
+    supabase.rpc('task_effort_summary', {p_task_id: task.id}),
   ]);
 
   if (memberResult.error) {
@@ -183,19 +187,7 @@ export async function getTaskDetailData(
   const linkedTasksById = new Map(
     linkedTaskRows.map((row) => [row.id, mapTask(row)]),
   );
-  const checklistProgress = computeChecklistProgress(
-    checklistNodes.map((node) => ({
-      id: node.id,
-      parentNodeId: node.parentNodeId,
-      isComplete:
-        node.isComplete ||
-        linkedTasksById.get(node.linkedTaskId ?? '')?.status === 'Done',
-      progressPercentage:
-        node.linkedTaskId === null
-          ? undefined
-          : linkedTasksById.get(node.linkedTaskId)?.progressPercentage,
-    })),
-  );
+  const checklistProgress = (await loadChecklistRollups(supabase,[task.id])).get(task.id)!;
 
   const dependencyTaskIds = [
     ...new Set(
@@ -217,19 +209,17 @@ export async function getTaskDetailData(
   );
 
   const logs = mapDailyTaskLogs(logRows);
-  const effort = logs.reduce<TaskEffort>(
-    (total, log) => ({
-      hoursLogged: total.hoursLogged + log.hoursWorked,
-      logCount: total.logCount + 1,
-    }),
-    EMPTY_EFFORT,
-  );
+  if (effortResult.error) throw new Error(`Failed to load task effort: ${effortResult.error.message}`);
+  const effort: TaskEffort = {
+    hoursLogged: effortResult.data?.[0]?.hours_logged ?? 0,
+    logCount: effortResult.data?.[0]?.log_count ?? 0,
+  };
 
   return {
     task,
     members: memberResult.data.map(mapUser),
     sections: sectionRows.map(mapTaskDetailSection),
-    links: linkRows.map(mapTaskLink),
+    links: linkRows.map(row=>{const link=mapTaskLink(row);const member=memberResult.data.find(m=>m.id===row.related_employee_id);return member?{...link,url:'/team/'+encodeURIComponent(member.employee_id)}:link;}),
     dependencies: dependencyRows.map((row) => {
       const otherTaskId =
         row.predecessor_task_id === task.id
@@ -246,7 +236,8 @@ export async function getTaskDetailData(
     checklist,
     checklistNodes,
     linkedTasksById,
-    checklistProgressPercentage: checklistProgress.overallProgressPercentage,
+    checklistProgressPercentage: checklistProgress.taskProgress,
+    checklistRollup: checklistProgress,
     effort,
   };
 }
@@ -307,6 +298,9 @@ function mapTaskLink(row: TaskLinkRow): TaskLink {
   return {
     id: row.id,
     taskId: row.task_id,
+    ipoRole: row.ipo_role,
+    relatedEmployeeId: row.related_employee_id,
+    relatedReportId: row.related_report_id,
     linkType: row.link_type,
     label: row.label,
     url: row.url,
@@ -352,6 +346,8 @@ function mapChecklistNode(row: ChecklistNodeRow): ChecklistNode {
     title: row.title,
     description: row.description,
     isComplete: row.is_complete,
+    section: row.detail_section ?? null,
+    completionState: row.completion_state ?? (row.is_complete?'Yes':'No'),
     sortOrder: row.sort_order,
     estimatedMinutes: row.estimated_minutes,
     elapsedSeconds: row.elapsed_seconds,

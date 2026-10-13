@@ -22,7 +22,7 @@ function makeTask(
     assigneeIds: overrides.assigneeIds ?? [overrides.assigneeId],
     reviewerIds: overrides.reviewerIds ?? [],
     taskScale: overrides.taskScale ?? 100,
-    progressPercentage: overrides.progressPercentage ?? 0,
+    progressPercentage: overrides.progressPercentage ?? 20,
     scaledProgress: overrides.scaledProgress ?? 0,
     taskProductivity: overrides.taskProductivity ?? null,
     priority: overrides.priority ?? 'Medium',
@@ -194,7 +194,7 @@ describe('buildEmployeeAnalyticsCharts', () => {
     expect(charts.loadingTrend.find((point) => point.date === '2026-09-01')?.value).toBe(100);
     expect(charts.loadingTrend.find((point) => point.date === '2026-09-05')?.value).toBe(150);
     expect(charts.loadingTrend.find((point) => point.date === '2026-09-11')?.value).toBe(100);
-    expect(charts.criticalityTrend.find((point) => point.date === '2026-09-05')?.value).toBe(2.5);
+    expect(charts.criticalityTrend.find((point) => point.date === '2026-09-05')?.value).toBe(1.75);
     expect(charts.taskTypes.find((bucket) => bucket.key === 'T')?.value).toBe(1);
     expect(charts.taskTypes.find((bucket) => bucket.key === 'MKT')?.value).toBe(1);
     expect(charts.taskPriorities.find((bucket) => bucket.key === 'High')?.value).toBe(1);
@@ -228,4 +228,12 @@ describe('buildEmployeeAnalyticsCharts', () => {
     expect(charts.taskFreshness.every((bucket) => bucket.value === 0)).toBe(true);
     expect(charts.taskDocumentation.every((bucket) => bucket.value === 0)).toBe(true);
   });
+});
+
+it('leaves unsettled shared daily-credit trends unavailable rather than fabricating values', () => {
+  const task={...makeTask({id:'s',taskTag:'S1',assigneeId:'a'}),participantCreditMode:'configured' as const,
+    participantShares:{a:400000,b:600000}};
+  const charts=buildEmployeeAnalyticsCharts({period:SEP_2026,performance:null,tasks:[task],logs:[],stars:[],links:[]});
+  expect([charts.progressTrend,charts.productivityTrend,charts.loadingTrend,charts.completionTrend,charts.criticalityTrend]).toEqual([[],[],[],[],[]]);
+  expect(charts.taskTypes.some((bucket) => bucket.value>0)).toBe(true);
 });

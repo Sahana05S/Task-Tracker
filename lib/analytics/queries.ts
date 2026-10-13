@@ -1,3 +1,6 @@
+import { classifyFreshness, kolkataDate } from '@/lib/tasks/contract';
+import { loadPerformance } from '@/lib/performance/queries';
+import { parseTaskCredits } from '@/lib/tasks/credit-summary';
 import {
   computeTeamAnalytics,
   currentPeriod,
@@ -8,11 +11,8 @@ import {
   buildWorkbookDashboardCharts,
   type WorkbookDashboardCharts,
 } from '@/lib/analytics/dashboard-charts';
-import {
-  ATTENDANCE_COLUMNS,
-  mapAttendanceRecords,
-} from '@/lib/attendance/mappers';
-import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
+import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
+import type { AnalyticsInput } from '@/lib/analytics/engine';
 import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -20,7 +20,6 @@ import {
   TASK_COLUMNS,
   withTaskParticipants,
 } from '@/lib/tasks/mappers';
-import type { AttendanceRecord, DailyTaskLog, Task, User } from '@/types/tracker';
 
 /**
  * Server-side reads for the analytics dashboard.
@@ -66,33 +65,23 @@ export async function getWorkbookDashboard(
   };
 }
 
-interface AnalyticsSource {
-  members: User[];
-  tasks: Task[];
-  logs: DailyTaskLog[];
-  attendanceRecords: AttendanceRecord[];
-  period: AnalyticsPeriod;
-}
+type AnalyticsSource = AnalyticsInput;
 
 async function getAnalyticsSource(
   period: AnalyticsPeriod,
 ): Promise<AnalyticsSource> {
   const supabase = await createClient();
+  const today=kolkataDate();
+  const asOfInstant=period.endDate<today?new Date(`${period.endDate}T23:59:59.999+05:30`).toISOString():new Date().toISOString();
+  const exclusive=new Date(`${period.endDate}T00:00:00Z`);exclusive.setUTCDate(exclusive.getUTCDate()+1);
+  const performance=await loadPerformance(supabase,period.startDate,exclusive.toISOString().slice(0,10),asOfInstant);
 
-  const [memberResult, taskResult, assigneeResult, logResult, attendanceResult] = await Promise.all([
+  const [memberResult, taskResult, assigneeResult, summary, creditResult] = await Promise.all([
     supabase.from('users').select(USER_COLUMNS).order('full_name'),
     supabase.from('tasks').select(TASK_COLUMNS),
-    supabase.from('task_assignees').select('task_id, user_id, is_primary'),
-    supabase
-      .from('daily_task_logs')
-      .select(LOG_COLUMNS)
-      .gte('log_date', period.startDate)
-      .lte('log_date', period.endDate),
-    supabase
-      .from('attendance_records')
-      .select(ATTENDANCE_COLUMNS)
-      .gte('attendance_date', period.startDate)
-      .lte('attendance_date', period.endDate),
+    supabase.from('task_assignees').select('task_id, user_id, is_primary, share_units'),
+    getTeamSummaryInputs(period),
+    supabase.rpc('task_credit_summary'),
   ]);
 
   if (memberResult.error) {
@@ -106,15 +95,6 @@ async function getAnalyticsSource(
       `Failed to load task assignees: ${assigneeResult.error.message}`,
     );
   }
-  if (logResult.error) {
-    throw new Error(`Failed to load logs: ${logResult.error.message}`);
-  }
-  if (attendanceResult.error) {
-    throw new Error(
-      `Failed to load attendance: ${attendanceResult.error.message}`,
-    );
-  }
-
   const assigneesByTask = new Map<string, string[]>();
   for (const row of assigneeResult.data) {
     const existing = assigneesByTask.get(row.task_id) ?? [];
@@ -126,18 +106,26 @@ async function getAnalyticsSource(
     assigneesByTask.set(row.task_id, existing);
   }
 
-  const tasks = mapTasks(taskResult.data).map((task) =>
-    withTaskParticipants(task, {
+  if (creditResult.error) throw new Error(`Failed to load earned credit: ${creditResult.error.message}`);
+  const credits=parseTaskCredits(creditResult.data);
+  const localToday=kolkataDate();
+  const asOf=period.endDate<localToday ? period.endDate : localToday;
+  const tasks = mapTasks(taskResult.data).map(task=>{ const fresh=classifyFreshness(task,asOf); return {...task,freshness:fresh.state,freshnessReason:fresh.reason}; }).map((task) =>
+    withTaskParticipants({ ...task, earnedProgressCredits: credits.get(task.id) ?? {}, participantShares: task.participantCreditMode === "configured" ? Object.fromEntries(assigneeResult.data.filter((row) => row.task_id === task.id).map((row) => [row.user_id, row.share_units ?? 0])) : null }, {
       assigneeIds: assigneesByTask.get(task.id),
       reviewerIds: task.reviewerIds,
     }),
   );
 
   return {
-    members: memberResult.data.map(mapUser),
+    calculation: performance.calculation,
+    members: memberResult.data.map(mapUser).map(member=>{
+      const observed=performance.sources.members.find(source=>source.id===member.id);
+      return observed ? {...member,fullName:observed.fullName,employeeId:observed.employeeId,role:observed.role,isActive:observed.active} : {...member,isActive:false};
+    }),
     tasks,
-    logs: mapDailyTaskLogs(logResult.data),
-    attendanceRecords: mapAttendanceRecords(attendanceResult.data),
+    logs: summary.logs,
+    attendanceSummaries: summary.attendanceSummaries,
     period,
   };
 }

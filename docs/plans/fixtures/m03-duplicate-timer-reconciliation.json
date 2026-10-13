@@ -1,0 +1,68 @@
+{
+  "as_of": "2026-10-12",
+  "scope": "read-only selected database; no automatic reconciliation",
+  "task_count": 2,
+  "blocked_policy": "Duplicate legacy links and unknown effects require individually authorized reconciliation; preserve all records.",
+  "snapshot_count": 1,
+  "date_exceptions": [
+    {
+      "reason": "missing_or_invalid_dates",
+      "task_id": "10000000-0000-0000-0000-000000000001",
+      "task_tag": "T1"
+    },
+    {
+      "reason": "missing_or_invalid_dates",
+      "task_id": "10000000-0000-0000-0000-000000000002",
+      "task_tag": "T2"
+    }
+  ],
+  "eligibility_changes": [
+    {
+      "id": "10000000-0000-0000-0000-000000000001",
+      "task_tag": "T1",
+      "scale_mode": null,
+      "date_exception": "missing_or_invalid_dates",
+      "stored_eligible": true,
+      "proposed_eligible": false,
+      "stored_scaled_progress": 0.0,
+      "proposed_scaled_progress": 0.0
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000002",
+      "task_tag": "T2",
+      "scale_mode": null,
+      "date_exception": "missing_or_invalid_dates",
+      "stored_eligible": true,
+      "proposed_eligible": false,
+      "stored_scaled_progress": 0.0,
+      "proposed_scaled_progress": 0.0
+    }
+  ],
+  "cron_catalog_present": false,
+  "invalid_effort_count": 0,
+  "duplicate_timer_links": [
+    {
+      "log_ids": [
+        "5ffefed0-39c8-46ec-be9b-6cc0351eb158",
+        "f1b59d36-1c71-4c0d-8db1-fe901115ab55"
+      ],
+      "link_count": 2,
+      "source_timer_id": "50000000-0000-0000-0000-000000000001"
+    }
+  ],
+  "timer_link_exceptions": [
+    {
+      "log_id": "5ffefed0-39c8-46ec-be9b-6cc0351eb158",
+      "reason": "legacy_reverse_link_mismatch",
+      "source_timer_id": "50000000-0000-0000-0000-000000000001"
+    },
+    {
+      "log_id": "f1b59d36-1c71-4c0d-8db1-fe901115ab55",
+      "reason": "legacy_reverse_link_mismatch",
+      "source_timer_id": "50000000-0000-0000-0000-000000000001"
+    }
+  ],
+  "legacy_unknown_effect_count": 2,
+  "precision_projection_changes": [],
+  "deployed_job_replacement_verified": false
+}

@@ -180,6 +180,9 @@ function statusBarClass(status: TimelineTaskBar['status']): string {
       return 'border-sky-300 bg-sky-100 text-sky-950';
     case 'Discarded':
       return 'border-slate-300 bg-slate-100 text-slate-500 line-through';
+    case 'Stopped':
+    case 'On-Hold':
+    case 'Carryover':
     case 'Not Started':
       return 'border-amber-300 bg-amber-100 text-amber-950';
   }
@@ -187,11 +190,15 @@ function statusBarClass(status: TimelineTaskBar['status']): string {
 
 function freshnessRingClass(freshness: TimelineTaskBar['freshness']): string {
   switch (freshness) {
+    case 'Super Fresh':
+    case 'Almost Fresh':
     case 'Fresh':
       return 'ring-1 ring-emerald-400/70';
+    case 'Almost Stale':
     case 'Stale':
       return 'ring-1 ring-amber-400/80';
     case 'Rotten':
       return 'ring-1 ring-rose-500/80';
+    default: return 'ring-1 ring-slate-400/50';
   }
 }

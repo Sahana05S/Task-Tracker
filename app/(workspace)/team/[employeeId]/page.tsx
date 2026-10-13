@@ -1,4 +1,6 @@
+import { displayPerformance } from '@/lib/performance/exact';
 import type { Metadata } from 'next';
+import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -68,6 +70,9 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
         }
       />
 
+      {data.performanceUnavailableReason ? <p role="status" className="mx-4 mt-4 text-sm text-amber-800">{data.performanceUnavailableReason} Saved reports and effort history remain available.</p> : null}
+      {data.performance?.calculation?<div className="mx-4 mt-4"><PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/></div>:null}
+
       <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_24rem] lg:px-6">
         <main className="grid gap-4">
           <section className="soft-card grid gap-4 p-4">
@@ -83,7 +88,7 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
                 label="Current perf score"
                 value={
                   data.performance
-                    ? formatNumeric(data.performance.starScore)
+                    ? displayPerformance(data.performance.calculation?.compositeExact??null,2)
                     : '—'
                 }
               />
@@ -143,7 +148,8 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
             <TaskList tasks={data.tasks} />
           </Panel>
 
-          <EmployeeAnalyticsChartsPanel charts={data.charts} />
+          {data.tasks.some((task) => task.participantCreditMode === 'configured' && Object.keys(task.participantShares ?? {}).length > 1) ? <p className="text-sm text-muted-foreground">Historical or daily shared-credit trends are unavailable until period and historical attribution rules are approved. Monthly shared totals remain available.</p> : null}
+        <EmployeeAnalyticsChartsPanel charts={data.charts} />
 
           <section className="grid gap-4 xl:grid-cols-2">
             <Panel title="Today's tasks">

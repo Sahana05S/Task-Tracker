@@ -6,8 +6,8 @@ export function canManageAttendance(role: User['role']): boolean {
 }
 
 export function canEditAttendanceRecord(
-  user: Pick<User, 'id' | 'role'>,
+  user: Pick<User, 'id' | 'role' | 'isActive'>,
   record: Pick<AttendanceRecord, 'userId'>,
 ): boolean {
-  return canManageAttendance(user.role) || record.userId === user.id;
+  return user.isActive && (canManageAttendance(user.role) || record.userId === user.id);
 }

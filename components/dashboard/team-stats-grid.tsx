@@ -1,3 +1,4 @@
+import { displayPerformance } from '@/lib/performance/exact';
 import * as React from 'react';
 
 import type { TeamAnalytics } from '@/lib/analytics/engine';
@@ -49,14 +50,14 @@ export function TeamStatsGrid({ analytics }: TeamStatsGridProps) {
         unit={totals.averageProductivity === null ? undefined : '/h'}
         detail={
           medians.productivity === null
-            ? 'No hours logged this period'
-            : `Median ${formatNumeric(medians.productivity)} /h`
+            ? 'Productivity inputs unavailable'
+            : `Median ${displayPerformance(medians.productivity)} /h`
         }
       />
 
       <StatCard
         label="Total scaled progress"
-        value={formatNumeric(totals.scaledProgress)}
+        value={displayPerformance(totals.scaledProgress)}
         detail={`${totals.eligibleTaskCount} metric-eligible ${
           totals.eligibleTaskCount === 1 ? 'task' : 'tasks'
         }`}

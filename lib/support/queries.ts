@@ -1,3 +1,7 @@
+import { kolkataDate } from '@/lib/tasks/contract';
+import { loadContributionContext, type ContributionInputContext } from '@/lib/support/input-context';
+import type { TaskChoice } from '@/components/support/dated-record-module';
+import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
 import { currentPeriod, type AnalyticsPeriod } from '@/lib/analytics/engine';
 import {
   DAILY_FACT_COLUMNS,
@@ -24,6 +28,8 @@ import type {
 
 export interface SupportModuleData {
   readonly period: AnalyticsPeriod;
+  readonly tasks: readonly TaskChoice[];
+  readonly inputContext: ContributionInputContext;
   readonly members: readonly User[];
   readonly facts: readonly DailyFact[];
   readonly ideas: readonly Idea[];
@@ -67,10 +73,10 @@ export interface EmployeeSupportSummary {
 }
 
 export async function getSupportModuleData(
-  period: AnalyticsPeriod = currentPeriod(),
+  period: AnalyticsPeriod = currentPeriod(new Date(kolkataDate()+'T12:00:00Z')),
 ): Promise<SupportModuleData> {
   const supabase = await createClient();
-  const [memberResult, factRows, ideaRows, suggestionRows, salesRows, reportRows] =
+  const [memberResult, factRows, ideaRows, suggestionRows, salesRows, reportRows, summaryInputs, taskChoices] =
     await Promise.all([
       supabase.from('users').select(USER_COLUMNS).order('full_name'),
       selectOrEmpty(
@@ -113,12 +119,17 @@ export async function getSupportModuleData(
           .or(`period_end.is.null,period_end.gte.${period.startDate}`)
           .order('created_at', { ascending: false }),
       ),
+      getTeamSummaryInputs(period),
+      supabase.from('tasks').select('id, task_tag, title'),
     ]);
 
   if (memberResult.error) {
     throw new Error(`Failed to load members: ${memberResult.error.message}`);
   }
 
+  if(taskChoices.error)throw new Error(`Failed to load related tasks: ${taskChoices.error.message}`);
+  const endExclusive=new Date(`${period.endDate}T00:00:00Z`);endExclusive.setUTCDate(endExclusive.getUTCDate()+1);
+  const inputContext=await loadContributionContext(supabase,period.startDate,endExclusive.toISOString().slice(0,10),new Date().toISOString());
   const facts = factRows.map(mapDailyFact);
   const ideas = ideaRows.map(mapIdea);
   const suggestions = suggestionRows.map(mapSuggestion);
@@ -127,13 +138,15 @@ export async function getSupportModuleData(
 
   return {
     period,
+    inputContext,
+    tasks:taskChoices.data.map(t=>({id:t.id,tag:t.task_tag,title:t.title})),
     members: memberResult.data.map(mapUser),
     facts,
     ideas,
     suggestions,
     salesLogs,
     reports,
-    summary: summarizeSupport({ facts, ideas, suggestions, salesLogs, reports }),
+    summary: { ...summarizeSupport({ facts, ideas, suggestions, salesLogs, reports }), reports: summaryInputs.reportSummary },
   };
 }
 
@@ -243,7 +256,6 @@ async function selectOrEmpty<T>(
 ): Promise<T[]> {
   const { data, error } = await query;
   if (error) {
-    if (error.code === '42P01') return [];
     throw new Error(error.message);
   }
   return data ?? [];

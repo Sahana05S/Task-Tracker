@@ -7,7 +7,7 @@ export interface TimelineTaskBar {
   readonly title: string;
   readonly href: string;
   readonly status: TaskStatus;
-  readonly freshness: TaskFreshness;
+  readonly freshness: TaskFreshness | null;
   readonly startDate: string;
   readonly endDate: string;
   readonly offsetPercent: number;

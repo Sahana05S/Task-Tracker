@@ -9,7 +9,6 @@ import { WorkspaceHeader } from '@/components/layout/workspace-header';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
 import { requireProfile } from '@/lib/auth/profile';
-import { canManageTasks } from '@/lib/tasks/permissions';
 import { canViewTeamModule } from '@/lib/team/permissions';
 import { getTeamIndexData } from '@/lib/team/queries';
 import { employeeHref, employeeReportsHref } from '@/lib/team/routes';
@@ -32,7 +31,7 @@ export default async function TeamPage() {
   }
 
   const data = await getTeamIndexData();
-  const canManage = canManageTasks(profile.role);
+  const canManage = profile.isActive && profile.role === 'managing_director';
 
   return (
     <>

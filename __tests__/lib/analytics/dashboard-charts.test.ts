@@ -212,10 +212,8 @@ describe('buildWorkbookDashboardCharts', () => {
       { key: 'missed', label: 'Missed deadline', value: 1 },
       { key: 'open', label: 'Open overdue', value: 1 },
     ]);
-    expect(charts.priorityLoadingOnTeam).toEqual([
-      { userId: 'alice', label: 'Alice Admin', value: 7 },
-      { userId: 'bob', label: 'Bob Builder', value: 5 },
-    ]);
+    expect(charts.priorityLoadingOnTeam).toEqual([]);
+    expect(charts.priorityLoadingUnavailableReason).toContain('shared performance context');
     expect(charts.totalProgressByTeam).toEqual([
       { userId: 'alice', label: 'Alice Admin', value: 150, taskCount: 2 },
       { userId: 'bob', label: 'Bob Builder', value: 125, taskCount: 2 },
@@ -253,4 +251,12 @@ describe('buildWorkbookDashboardCharts', () => {
       overdueOpenTaskCount: 0,
     });
   });
+});
+
+it('distributes configured scaled-progress chart credit without duplicating the total', () => {
+  const task = {...makeTask({id:'s',taskTag:'S1',assigneeId:'a',assigneeIds:['a','b'],scaledProgress:4}),
+    participantCreditMode:'configured' as const,participantShares:{a:400000,b:600000}};
+  const charts=buildWorkbookDashboardCharts({period:SEP_2026,analytics:makeAnalytics([]),
+    members:[makeUser({id:'a',fullName:'A'}),makeUser({id:'b',fullName:'B'})],tasks:[task]});
+  expect(charts.totalProgressByTeam.map((entry) => entry.value).sort()).toEqual([1.6,2.4]);
 });

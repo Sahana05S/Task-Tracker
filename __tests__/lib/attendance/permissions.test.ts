@@ -16,19 +16,19 @@ describe('attendance permissions', () => {
   it('allows users to edit their own records and managers to edit all', () => {
     expect(
       canEditAttendanceRecord(
-        { id: 'user-1', role: 'team_member' },
+        { id: 'user-1', role: 'team_member', isActive: true },
         { userId: 'user-1' },
       ),
     ).toBe(true);
     expect(
       canEditAttendanceRecord(
-        { id: 'manager', role: 'project_engineer' },
+        { id: 'manager', role: 'project_engineer', isActive: true },
         { userId: 'user-1' },
       ),
     ).toBe(true);
     expect(
       canEditAttendanceRecord(
-        { id: 'user-2', role: 'team_member' },
+        { id: 'user-2', role: 'team_member', isActive: true },
         { userId: 'user-1' },
       ),
     ).toBe(false);

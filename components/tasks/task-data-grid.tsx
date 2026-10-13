@@ -168,10 +168,12 @@ export function TaskDataGrid({
 
                 <td className="w-28">
                   <ProgressInput
+          version={task.lifecycleVersion}
                     taskId={task.id}
                     taskTag={task.taskTag}
                     progressPercentage={task.progressPercentage}
-                    canEdit={canEditOwnFields}
+                    progressOwner={task.progressOwner}
+                    canEdit={canEditOwnFields && task.progressOwner!=='checklist'}
                   />
                 </td>
 
@@ -209,7 +211,7 @@ export function TaskDataGrid({
                   title={
                     task.taskProductivity === null
                       ? 'No hours logged yet'
-                      : `${formatNumeric(task.scaledProgress)} scaled progress over ${formatNumeric(effort.hoursLogged)} hours`
+                      : `${formatNumeric(task.progressPercentage)} progress points over ${formatNumeric(effort.hoursLogged)} hours`
                   }
                 >
                   {formatNumeric(task.taskProductivity)}
@@ -221,6 +223,7 @@ export function TaskDataGrid({
 
                 <td>
                   <StatusSelect
+          version={task.lifecycleVersion}
                     taskId={task.id}
                     taskTag={task.taskTag}
                     status={task.status}

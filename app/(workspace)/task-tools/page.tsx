@@ -1,8 +1,14 @@
+import Link from 'next/link';
+import { NativeTemplateSelect } from '@/components/tasks/native-details-editor';
+import { NativeTemplateManager } from '@/components/tasks/native-template-manager';
+import { DETAIL_FIELDS,type NativeTemplate } from '@/lib/tasks/details-contract';
+import { getNativeTemplates } from '@/lib/tasks/native-details';
+import { ExecutionForm } from '@/components/tasks/execution-form';
+import { randomUUID } from 'node:crypto';
+import { TaskToolsEdit } from '@/components/tasks/task-tools-edit';
 import type { Metadata } from 'next';
 
 import {
-  addChecklistNodeFromTools,
-  createMasterChecklistFromTools,
   createSplitSupportTaskAction,
   createSupportTaskAction,
   createTaskDetailsWithFolderAction,
@@ -14,7 +20,6 @@ import {
   generateReportFromToolsAction,
   refreshTaskMetricsAction,
   renameTaskFolderLinkAction,
-  setChecklistProgressSyncFromTools,
   updateTaskDetailsAction,
   updateTaskFromTools,
   updateTaskStatusFromTools,
@@ -52,14 +57,16 @@ interface RunningTimer {
   taskId: string;
   userId: string;
   startedAt: string;
+  executionVersion: number;
 }
 
 export default async function TaskToolsPage() {
   const profile = await requireProfile();
   const canManage = canManageTasks(profile.role);
-  const [{ tasks, members }, runningTimers] = await Promise.all([
+  const [{ tasks, members }, runningTimers, templates] = await Promise.all([
     getTaskWorkspaceData(),
     getRunningTimers(),
+    getNativeTemplates(),
   ]);
   const period = currentPeriod();
 
@@ -71,6 +78,7 @@ export default async function TaskToolsPage() {
       />
 
       <div className="grid gap-4 px-4 py-4 lg:px-6">
+        {canManage ? <a href="/task-tools/participants" className="text-sm underline">Review participant reconciliation</a> : null}
         <section className="soft-card p-4">
           <h2 className="text-foreground text-sm font-semibold">
             Workbook menu coverage
@@ -104,19 +112,20 @@ export default async function TaskToolsPage() {
           </ToolCard>
           <ToolCard title="Task import / create flow">
             {canManage ? (
-              <TaskCreateForm members={members} />
+              <TaskCreateForm members={members} templates={templates} />
             ) : (
               <PermissionNote />
             )}
           </ToolCard>
           <ToolCard title="Task details update">
             {canManage ? (
-              <TaskDetailsForm tasks={tasks} />
+              <TaskDetailsForm tasks={tasks} templates={templates} />
             ) : (
               <PermissionNote />
             )}
           </ToolCard>
-          <ToolCard title="Create work files">
+          {canManage ? <ToolCard title="Native template versions"><NativeTemplateManager templates={templates}/></ToolCard> : null}
+          <ToolCard title="Save asset links">
             {canManage ? (
               <WorkFileForm tasks={tasks} />
             ) : (
@@ -149,7 +158,7 @@ export default async function TaskToolsPage() {
           </ToolCard>
           <ToolCard title="Report generation">
             {canManage ? (
-              <ReportForms members={members} period={period} />
+              profile.role === 'managing_director' ? <ReportForms members={members} period={period} /> : <p className="text-sm">Only the managing director can save or close reports.</p>
             ) : (
               <PermissionNote />
             )}
@@ -189,19 +198,19 @@ function TaskTimerForms({
 
   return (
     <div className="grid gap-3">
-      <form action={asFormAction(startTaskTimer)} className="grid gap-2">
+      <ExecutionForm action={startTaskTimer} scope="startTaskTimer" className="grid gap-2">
         <TaskTagSelect tasks={tasks} name="taskTag" />
         <input name="notes" className={inputClass} placeholder="Timer note, optional" />
         <Button type="submit" size="sm">Run timer</Button>
-      </form>
-      <form action={asFormAction(stopTaskTimer)} className="grid gap-2 border-t border-slate-200 pt-3">
+      </ExecutionForm>
+      <ExecutionForm action={stopTaskTimer} scope="stopTaskTimer" className="grid gap-2 border-t border-slate-200 pt-3">
         <select name="timerId" className={inputClass} required>
           <option value="">Select running timer</option>
           {timers.map((timer) => {
             const task = tasksById.get(timer.taskId);
             const member = membersById.get(timer.userId);
             return (
-              <option key={timer.id} value={timer.id}>
+              <option key={timer.id} value={`${timer.id}:${timer.executionVersion}`}>
                 {task?.taskTag ?? 'Unknown task'} · {member?.fullName ?? 'Unknown'} · {new Date(timer.startedAt).toLocaleString()}
               </option>
             );
@@ -209,44 +218,45 @@ function TaskTimerForms({
         </select>
         <input name="notes" className={inputClass} placeholder="Stop note, optional" />
         <Button type="submit" size="sm" variant="outline">Stop timer</Button>
-      </form>
-      <form action={asFormAction(enterManualTaskTime)} className="grid gap-2 border-t border-slate-200 pt-3">
+      </ExecutionForm>
+      <ExecutionForm action={enterManualTaskTime} scope="enterManualTaskTime" className="grid gap-2 border-t border-slate-200 pt-3">
         <TaskTagSelect tasks={tasks} name="taskTag" />
-        <input type="date" name="logDate" className={inputClass} />
+        <input type="date" name="logDate" className={inputClass} required />
         <input type="number" step="0.25" min="0" max="24" name="hoursWorked" className={inputClass} placeholder="Hours worked" required />
         <input type="number" step="1" name="progressDelta" className={inputClass} placeholder="Progress added %" />
         <input name="notes" className={inputClass} placeholder="Manual time note" />
         <Button type="submit" size="sm" variant="accent">Enter time</Button>
-      </form>
+      </ExecutionForm>
     </div>
   );
 }
 
 function TaskLogForm({ tasks }: { tasks: readonly Task[] }) {
   return (
-    <form action={asFormAction(createTaskLogFromTools)} className="grid gap-2">
+    <ExecutionForm action={createTaskLogFromTools} scope="createTaskLogFromTools" className="grid gap-2">
       <TaskIdSelect tasks={tasks} name="taskId" />
-      <input type="date" name="logDate" className={inputClass} />
+      <input type="date" name="logDate" className={inputClass} required />
       <input type="number" step="0.25" min="0" max="24" name="hoursWorked" className={inputClass} placeholder="Hours worked" required />
       <input type="number" step="1" name="progressDelta" className={inputClass} placeholder="Progress added %" />
       <textarea name="updateNotes" className={textareaClass} placeholder="Task update" />
       <input name="rawLinks" className={inputClass} placeholder="Raw link URL, optional" />
       <Button type="submit" size="sm">Save task log</Button>
-    </form>
+    </ExecutionForm>
   );
 }
 
 function StatusForm({ tasks }: { tasks: readonly Task[] }) {
   return (
-    <form action={asFormAction(updateTaskStatusFromTools)} className="grid gap-2">
-      <TaskIdSelect tasks={tasks} name="taskId" />
+    <ExecutionForm action={updateTaskStatusFromTools} scope="transition" className="grid gap-2">
+      <select name="taskVersion" className={inputClass} required>{tasks.map(task=><option key={task.id} value={`${task.id}:${task.lifecycleVersion ?? 0}`}>{task.taskTag} ? {task.title}</option>)}</select>
       <select name="status" className={inputClass} required>
         {TASK_STATUSES.map((status) => (
           <option key={status} value={status}>{status}</option>
         ))}
       </select>
+      <label>Reason (required for manager cancellation, reset or carryover)<input name="reason" className={inputClass} /></label>
       <Button type="submit" size="sm">Update status</Button>
-    </form>
+    </ExecutionForm>
   );
 }
 
@@ -259,9 +269,10 @@ function RefreshMetricsForm({ tasks }: { tasks: readonly Task[] }) {
   );
 }
 
-function TaskCreateForm({ members }: { members: readonly User[] }) {
+function TaskCreateForm({ members,templates }: { members: readonly User[];templates:readonly NativeTemplate[] }) {
   return (
-    <form action={asFormAction(createTaskFromTools)} className="grid gap-2">
+    <ExecutionForm action={createTaskFromTools} scope="createTaskTools" className="grid gap-2">
+      <input type="hidden" name="operationId" value={randomUUID()} />
       <input name="taskTag" className={inputClass} placeholder="Task tag" required />
       <input name="title" className={inputClass} placeholder="Task title" required />
       <TaxonomySelect name="category" values={TASK_CATEGORIES} />
@@ -270,74 +281,30 @@ function TaskCreateForm({ members }: { members: readonly User[] }) {
       <MemberSelect members={members} name="reviewerIds" label="Reviewers" optional multiple />
       <input type="date" name="dueDate" className={inputClass} />
       <input type="number" step="0.01" min="0" name="taskScale" className={inputClass} placeholder="Task scale" />
+      <NativeTemplateSelect templates={templates}/>
+      <select name="initializationMode" className={inputClass}><option value="automatic">Initialize automatically after saving</option><option value="manual">Initialize manually later</option></select>
+      <textarea name="description" className={textareaClass} placeholder="Description"/>
       <Button type="submit" size="sm">Create task</Button>
-    </form>
+    </ExecutionForm>
   );
 }
 
 function TaskEditForm({ tasks, members }: { tasks: readonly Task[]; members: readonly User[] }) {
-  return (
-    <form action={asFormAction(updateTaskFromTools)} className="grid gap-2">
-      <TaskIdSelect tasks={tasks} name="taskId" />
-      <input name="taskTag" className={inputClass} placeholder="New task tag" required />
-      <input name="title" className={inputClass} placeholder="New title" required />
-      <TaxonomySelect name="category" values={TASK_CATEGORIES} />
-      <TaxonomySelect name="priority" values={TASK_PRIORITIES} />
-      <MemberSelect members={members} name="assigneeIds" label="Assignees" multiple />
-      <MemberSelect members={members} name="reviewerIds" label="Reviewers" optional multiple />
-      <input type="date" name="dueDate" className={inputClass} />
-      <input type="number" step="0.01" min="0" name="taskScale" className={inputClass} placeholder="Task scale" />
-      <Button type="submit" size="sm">Update task details</Button>
-    </form>
-  );
+  return <TaskToolsEdit tasks={tasks} members={members} />;
 }
 
-function TaskDetailsForm({ tasks }: { tasks: readonly Task[] }) {
-  return (
-    <div className="grid gap-3">
-      <form action={asFormAction(createTaskDetailsWithFolderAction)} className="grid gap-2">
-        <TaskIdSelect tasks={tasks} name="taskId" />
-        <input name="folderUrl" type="url" className={inputClass} placeholder="Task folder URL, optional" />
-        <input name="masterChecklistUrl" type="url" className={inputClass} placeholder="Master checklist URL, optional" />
-        <input name="carryoverTaskTag" className={inputClass} placeholder="Carryover task tag, optional" />
-        <Button type="submit" size="sm">Create task details page</Button>
-      </form>
-      <form action={asFormAction(updateTaskDetailsAction)} className="grid gap-2 border-t border-slate-200 pt-3">
-        <TaskIdSelect tasks={tasks} name="taskId" />
-        <input name="keyName" className={inputClass} placeholder="Section key, e.g. smart-goals" required />
-        <input name="title" className={inputClass} placeholder="Section title" required />
-        <textarea name="content" className={textareaClass} placeholder="Details content" />
-        <Button type="submit" size="sm" variant="outline">Save details</Button>
-      </form>
-      <form action={asFormAction(renameTaskFolderLinkAction)} className="grid gap-2 border-t border-slate-200 pt-3">
-        <TaskIdSelect tasks={tasks} name="taskId" />
-        <input name="taskTitle" className={inputClass} placeholder="Folder title replacement" required />
-        <Button type="submit" size="sm" variant="accent">Rename task folder link</Button>
-      </form>
-    </div>
-  );
+function TaskDetailsForm({tasks,templates}:{tasks:readonly Task[];templates:readonly NativeTemplate[]}) {
+ return <div className="grid gap-3"><ExecutionForm action={createTaskDetailsWithFolderAction} scope="initializeDetailsTools"><TaskIdSelect tasks={tasks} name="taskVersion" versioned/><NativeTemplateSelect templates={templates}/><Button type="submit">Initialize native details</Button></ExecutionForm>
+ <p className="text-sm">Edit SMART, IPO, relationships and reviewer notes on the task page. Reinitialization preserves content.</p>{tasks.map(t=><Link key={t.id} className="text-sm underline" href={'/tasks/'+encodeURIComponent(t.taskTag)}>{t.taskTag} ? {t.title}</Link>)}</div>;
 }
-
-function WorkFileForm({ tasks }: { tasks: readonly Task[] }) {
-  return (
-    <form action={asFormAction(createWorkFileLinkAction)} className="grid gap-2">
-      <TaskIdSelect tasks={tasks} name="taskId" />
-      <select name="linkType" className={inputClass}>
-        {['Folder', 'Document', 'Account', 'Flowchart', 'Engineering', 'Drawing', 'Checklist', 'Raw Link', 'Other'].map((type) => (
-          <option key={type} value={type}>{type}</option>
-        ))}
-      </select>
-      <input name="label" className={inputClass} placeholder="Work file label" required />
-      <input name="url" type="url" className={inputClass} placeholder="Folder or asset URL" required />
-      <textarea name="notes" className={textareaClass} placeholder="Notes" />
-      <Button type="submit" size="sm">Create work-file link</Button>
-    </form>
-  );
+function WorkFileForm({tasks}:{tasks:readonly Task[]}) {
+ return <ExecutionForm action={createWorkFileLinkAction} scope="saveAssetTools"><TaskIdSelect tasks={tasks} name="taskVersion" versioned/><select name="ipoRole" className={inputClass}>{['input','process','output','reference'].map(r=><option key={r}>{r}</option>)}</select><select name="linkType" className={inputClass}>{['Folder','Document','Account','Flowchart','Engineering','Drawing','Checklist','Raw Link','Other'].map(t=><option key={t}>{t}</option>)}</select><input name="label" required placeholder="Asset label" className={inputClass}/><input name="url" type="url" required placeholder="Existing asset URL" className={inputClass}/><textarea name="notes" className={textareaClass}/><p className="text-sm">This saves a link. Provider work is not requested.</p><Button type="submit">Save asset link</Button></ExecutionForm>;
 }
 
 function DuplicateTaskForm({ tasks }: { tasks: readonly Task[] }) {
   return (
     <form action={asFormAction(duplicateTaskAction)} className="grid gap-2">
+      <input type="hidden" name="operationId" value={randomUUID()} />
       <TaskIdSelect tasks={tasks} name="sourceTaskId" />
       <input name="newTaskTag" className={inputClass} placeholder="New global task tag" required />
       <input name="title" className={inputClass} placeholder="New title, optional" />
@@ -391,45 +358,8 @@ function SupportTaskForms({ tasks, members }: { tasks: readonly Task[]; members:
   );
 }
 
-function ChecklistForms({ tasks, canManage }: { tasks: readonly Task[]; canManage: boolean }) {
-  return (
-    <div className="grid gap-3">
-      <form action={asFormAction(createMasterChecklistFromTools)} className="grid gap-2">
-        <TaskTagSelect tasks={tasks} name="taskTag" />
-        <input name="title" className={inputClass} placeholder="Checklist title" />
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="syncProgressToTask" defaultChecked />
-          Sync progress to task
-        </label>
-        <Button type="submit" size="sm">Create master checklist</Button>
-      </form>
-      {canManage ? (
-        <>
-          <form action={asFormAction(addChecklistNodeFromTools)} className="grid gap-2 border-t border-slate-200 pt-3">
-            <TaskTagSelect tasks={tasks} name="taskTag" />
-            <input name="checklistId" className={inputClass} placeholder="Checklist UUID" required />
-            <input name="parentNodeId" className={inputClass} placeholder="Parent node UUID, optional" />
-            <select name="nodeType" className={inputClass}>
-              {CHECKLIST_NODE_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
-            </select>
-            <input name="title" className={inputClass} placeholder="Checklist item title" required />
-            <input name="linkedTaskTag" className={inputClass} placeholder="Linked task tag for Task nodes" />
-            <textarea name="description" className={textareaClass} placeholder="Description" />
-            <Button type="submit" size="sm" variant="outline">Add checklist node</Button>
-          </form>
-          <form action={asFormAction(setChecklistProgressSyncFromTools)} className="grid gap-2 border-t border-slate-200 pt-3">
-            <TaskTagSelect tasks={tasks} name="taskTag" />
-            <input name="checklistId" className={inputClass} placeholder="Checklist UUID" required />
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="syncProgressToTask" defaultChecked />
-              Sync checklist progress to task
-            </label>
-            <Button type="submit" size="sm" variant="accent">Update checklist sync</Button>
-          </form>
-        </>
-      ) : null}
-    </div>
-  );
+function ChecklistForms({tasks,canManage}:{tasks:readonly Task[];canManage:boolean}) {
+ return <div className="grid gap-3"><p>Open a task checklist to review Setup, Activity and Closure, linked tasks and progress ownership.</p>{canManage?<p className="text-sm text-muted-foreground">New checklists start in manual mode. Ownership switches require a reviewed preview and reason.</p>:null}<div className="grid max-h-72 gap-2 overflow-auto">{tasks.map(t=><Link key={t.id} href={`/tasks/${encodeURIComponent(t.taskTag)}/checklist`} className="text-primary underline">{t.taskTag} ? {t.title}</Link>)}</div></div>;
 }
 
 function ReportForms({
@@ -462,12 +392,12 @@ function ReportForms({
   );
 }
 
-function TaskIdSelect({ tasks, name }: { tasks: readonly Task[]; name: string }) {
+function TaskIdSelect({ tasks, name,versioned=false }: { tasks: readonly Task[]; name: string;versioned?:boolean }) {
   return (
     <select name={name} className={inputClass} required>
       <option value="">Select task</option>
       {tasks.map((task) => (
-        <option key={task.id} value={task.id}>{task.taskTag} · {task.title}</option>
+        <option key={task.id} value={versioned?`${task.id}:${task.lifecycleVersion??0}`:task.id}>{task.taskTag} · {task.title}</option>
       ))}
     </select>
   );
@@ -535,7 +465,7 @@ async function getRunningTimers(): Promise<RunningTimer[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('task_timers')
-    .select('id, task_id, user_id, started_at')
+    .select('id, task_id, user_id, started_at, execution_version')
     .eq('status', 'Running')
     .order('started_at', { ascending: false });
 
@@ -545,6 +475,7 @@ async function getRunningTimers(): Promise<RunningTimer[]> {
     taskId: row.task_id,
     userId: row.user_id,
     startedAt: row.started_at,
+    executionVersion: row.execution_version ?? 0,
   }));
 }
 

@@ -6,7 +6,6 @@ import {
   isTaskEligible,
   median,
   resolvePeriod,
-  STAR_WEIGHTS,
   type AnalyticsInput,
   type AnalyticsPeriod,
 } from '@/lib/analytics/engine';
@@ -42,11 +41,11 @@ function makeTask(overrides: Partial<Task> & { id: string; taskTag: string; assi
     assigneeIds: overrides.assigneeIds ?? [overrides.assigneeId],
     reviewerIds: overrides.reviewerIds ?? [],
     taskScale: 'taskScale' in overrides ? (overrides.taskScale ?? null) : 10,
-    progressPercentage: overrides.progressPercentage ?? 0,
+    progressPercentage: overrides.progressPercentage ?? 20,
     scaledProgress: overrides.scaledProgress ?? 0,
     taskProductivity: overrides.taskProductivity ?? null,
     priority: overrides.priority ?? 'Medium',
-    status: overrides.status ?? 'Not Started',
+    status: overrides.status ?? 'In Progress',
     freshness: overrides.freshness ?? 'Fresh',
     validForMetrics: overrides.validForMetrics ?? false,
     assignedDate: overrides.assignedDate ?? '2026-09-01',
@@ -182,9 +181,9 @@ describe('isTaskEligible', () => {
     expect(isTaskEligible(task)).toBe(true);
   });
 
-  it('is ineligible for OT category', () => {
+  it('does not exclude OT category independently', () => {
     const task = makeTask({ id: 't1', taskTag: 'T1', assigneeId: 'u1', category: 'OT' });
-    expect(isTaskEligible(task)).toBe(false);
+    expect(isTaskEligible(task)).toBe(true);
   });
 
   it('is ineligible for Discarded status', () => {
@@ -282,7 +281,7 @@ describe('computeTeamAnalytics', () => {
     expect(result.starPerformer).toBeNull();
   });
 
-  it('computes basic productivity for a single member', () => {
+  it('does not substitute task hours for an unavailable employee attendance rate', () => {
     // 10-scale task, log with +20% progress delta and 4 hours
     // Scaled progress contribution = 10 × (20/100) = 2.0
     // Productivity = 2.0 / 4 = 0.5
@@ -301,10 +300,10 @@ describe('computeTeamAnalytics', () => {
     expect(m.hoursLogged).toBe(4);
     expect(m.eligibleHours).toBe(4);
     expect(m.scaledProgress).toBe(2);
-    expect(m.productivity).toBe(0.5);
+    expect(m.productivity).toBeNull();
   });
 
-  it('excludes OT hours from eligibleHours but not hoursLogged', () => {
+  it('includes otherwise eligible OT hours without a category exclusion', () => {
     const member = makeUser({ id: 'u1' });
     const regularTask = makeTask({ id: 't1', taskTag: 'T1', assigneeId: 'u1', taskScale: 10, category: 'T' });
     const otTask = makeTask({ id: 't2', taskTag: 'T2', assigneeId: 'u1', taskScale: 5, category: 'OT' });
@@ -323,7 +322,7 @@ describe('computeTeamAnalytics', () => {
 
     const m = result.members[0]!;
     expect(m.hoursLogged).toBe(5);    // all hours
-    expect(m.eligibleHours).toBe(3);  // OT excluded
+    expect(m.eligibleHours).toBe(5);  // source contract has no OT-only exclusion
   });
 
   it('excludes inactive members from analysis', () => {
@@ -379,11 +378,11 @@ describe('computeTeamAnalytics', () => {
       period: SEP_2026,
     });
 
-    expect(result.starPerformer?.userId).toBe('u1');
-    expect(result.starPerformer?.isStarPerformer).toBe(true);
+    expect(result.starPerformer).toBeNull();
+    expect(result.members.every(m=>m.starScore===null)).toBe(true);
   });
 
-  it('marks exactly one member as isStarPerformer', () => {
+  it('keeps award selection outside M07', () => {
     const u1 = makeUser({ id: 'u1' });
     const u2 = makeUser({ id: 'u2' });
     const t1 = makeTask({ id: 't1', taskTag: 'T1', assigneeId: 'u1', taskScale: 10 });
@@ -400,7 +399,7 @@ describe('computeTeamAnalytics', () => {
     });
 
     const stars = result.members.filter((m) => m.isStarPerformer);
-    expect(stars).toHaveLength(1);
+    expect(stars).toHaveLength(0);
   });
 
   it('computes allocation percent as share of total team scale', () => {
@@ -490,9 +489,9 @@ describe('computeTeamAnalytics', () => {
   });
 
   it('null productivity for members with no eligible hours', () => {
-    // Member who only logged OT hours gets null productivity
+    // No-priority work is excluded independently of category
     const u1 = makeUser({ id: 'u1' });
-    const otTask = makeTask({ id: 't1', taskTag: 'T1', assigneeId: 'u1', taskScale: 5, category: 'OT' });
+    const otTask = makeTask({ id: 't1', taskTag: 'T1', assigneeId: 'u1', taskScale: 5, category: 'OT', priority:'No' });
     const log = makeLog({ taskId: 't1', userId: 'u1', hoursWorked: 4, progressDelta: 20 });
 
     const result = computeTeamAnalytics({
@@ -505,12 +504,59 @@ describe('computeTeamAnalytics', () => {
     expect(result.members[0]!.productivity).toBeNull();
   });
 
-  it('STAR_WEIGHTS sum to approximately 1.0', () => {
-    const sum =
-      STAR_WEIGHTS.productivityDiff +
-      STAR_WEIGHTS.scaledProgress +
-      STAR_WEIGHTS.freshnessScore +
-      STAR_WEIGHTS.rottenCount;
-    expect(sum).toBeCloseTo(1.0);
+
+});
+
+describe('M01 approved additive shared credit', () => {
+  it('distributes scale and progress while retaining actual hours on the worker', () => {
+    const task = { ...makeTask({id:'shared',taskTag:'S1',assigneeId:'a',taskScale:8,validForMetrics:true}),
+      participantCreditMode: 'configured' as const, participantShares: {a:400000,b:600000} };
+    const result = computeTeamAnalytics({members:[makeUser({id:'a'}),makeUser({id:'b'})],tasks:[task],
+      logs:[makeLog({taskId:'shared',userId:'a',hoursWorked:8,progressDelta:50})],period:SEP_2026});
+    const a=result.members.find((member) => member.userId==='a')!;
+    const b=result.members.find((member) => member.userId==='b')!;
+    expect([a.taskScale,b.taskScale]).toEqual([3.2,4.8]);
+    expect([a.scaledProgress,b.scaledProgress]).toEqual([1.6,2.4]);
+    expect([a.hoursLogged,b.hoursLogged]).toEqual([8,0]);
+    expect(result.totals.taskScale).toBe(8);
+    expect(result.totals.scaledProgress).toBe(4);
+    expect([a.taskCount,b.taskCount]).toEqual([1,1]);
+    expect([a.criticalityScore,b.criticalityScore,a.freshnessScore,b.freshnessScore]).toEqual([null,null,null,null]);
+    expect([a.starScore,b.starScore,result.starPerformer]).toEqual([null,null,null]);
+    expect(result.medians.criticalityScore).toBeNull();
   });
+});
+
+it('retains an active participant share when the primary is inactive without redistributing inactive credit', () => {
+  const task={...makeTask({id:'s',taskTag:'S',assigneeId:'a',taskScale:10,validForMetrics:true}),
+    participantCreditMode:'configured' as const,participantShares:{a:500000,b:500000}};
+  const analytics=computeTeamAnalytics({period:SEP_2026,members:[makeUser({id:'a',isActive:false}),makeUser({id:'b'})],
+    tasks:[task],logs:[makeLog({taskId:'s',userId:'b',hoursWorked:4,progressDelta:50})]});
+  expect(analytics.members[0].taskScale).toBe(5);
+  expect(analytics.members[0].scaledProgress).toBe(2.5);
+  expect(analytics.members[0].hoursLogged).toBe(4);
+});
+
+
+it('M02 keeps earned shares and scale when current assignments change', () => {
+  const task={...makeTask({id:'t',taskTag:'T',assigneeId:'b',taskScale:8}),
+    participantCreditMode:'configured' as const,participantShares:{b:700000,c:300000}};
+  const result=computeTeamAnalytics({period:SEP_2026,members:[makeUser({id:'a'}),makeUser({id:'b'}),makeUser({id:'c'})],
+    tasks:[task],logs:[{...makeLog({taskId:'t',userId:'b',hoursWorked:2,progressDelta:5}),
+      creditShares:{a:500000,b:500000},creditScale:8}]});
+  expect(result.members.map(member=>member.scaledProgress)).toEqual([0.2,0.2,0]);
+  expect(['a','b','c'].map(id=>result.members.find(member=>member.userId===id)!.hoursLogged)).toEqual([0,2,0]);
+  expect(result.totals.scaledProgress).toBe(0.4);
+});
+
+it('M02 reports unmeasured historical progress as unavailable before scoring',()=>{
+ expect(()=>computeTeamAnalytics({period:SEP_2026,members:[makeUser({id:'a'})],tasks:[],
+   logs:[{...makeLog({taskId:'unknown',userId:'a'}),effectUnknown:true}]})).toThrow('unknown');
+});
+
+it('missing freshness blocks its score while retaining known priority and additive workload',()=>{
+ const task={...makeTask({id:'t',taskTag:'T',assigneeId:'a',taskScale:8}),freshness:null};
+ const result=computeTeamAnalytics({period:SEP_2026,members:[makeUser({id:'a'})],tasks:[task],logs:[]});
+ expect(result.members[0].criticalityScore).toBe(0.75);expect(result.members[0].taskScale).toBe(8);
+ expect(result.members[0].freshnessScore).toBeNull();expect(result.members[0].starScore).toBeNull();
 });

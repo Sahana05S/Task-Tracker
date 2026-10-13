@@ -1,0 +1,1103 @@
+{
+  "tables": [
+    {
+      "owner": "postgres",
+      "table": "attendance_records",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "checklist_nodes",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "checklist_template_nodes",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "checklist_templates",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "company_milestones",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "company_statements",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "daily_facts",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "daily_star_records",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "daily_task_logs",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "ideas",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "meeting_points",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "monthly_performance_snapshots",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "performance_score_components",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "report_snapshots",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "sales_logs",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "suggestions",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "task_assignees",
+      "policy_count": 1,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": false,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "task_checklists",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "task_dependencies",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "task_detail_sections",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "task_links",
+      "policy_count": 2,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "task_reviewers",
+      "policy_count": 1,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": false,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "task_timers",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "tasks",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    },
+    {
+      "owner": "postgres",
+      "table": "users",
+      "policy_count": 3,
+      "anonymous_write": false,
+      "authenticated_read": true,
+      "authenticated_update": true,
+      "service_direct_write": false
+    }
+  ],
+  "definers": [
+    {
+      "schema": "public",
+      "function": "can_read_employee_details(uuid)",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "public",
+      "function": "decay_task_freshness()",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": true,
+      "anonymous_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": "public",
+      "function": "get_user_role()",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "public",
+      "function": "handle_new_user()",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": "public",
+      "function": "is_task_assignee(uuid)",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "public",
+      "function": "participant_reconciliation()",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "public",
+      "function": "recalculate_task_metrics(uuid,numeric)",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "public",
+      "function": "record_task_review(uuid,boolean)",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "public",
+      "function": "save_task_with_participants(uuid,jsonb,uuid[],uuid[],integer[],bigint,boolean,uuid)",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "public",
+      "function": "set_task_participants(uuid,uuid[],uuid[],integer[],bigint,boolean)",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "public",
+      "function": "task_effort_summary(uuid)",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "schema": "taskpulse_private",
+      "function": "taskpulse_private.audit_write()",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": "taskpulse_private",
+      "function": "taskpulse_private.check_participants()",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": "taskpulse_private",
+      "function": "taskpulse_private.decay_task_freshness()",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": "taskpulse_private",
+      "function": "taskpulse_private.seed_new_task()",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "schema": "public",
+      "function": "team_summary_inputs(integer,integer)",
+      "settings": [
+        "search_path=\"\""
+      ],
+      "service_execute": false,
+      "anonymous_execute": false,
+      "authenticated_execute": true
+    }
+  ],
+  "environment": "Disposable PostgreSQL, auth/JWT shim; not deployed Supabase",
+  "server_version": "17.11",
+  "policies": [
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "attendance_records",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "((user_id = auth.uid()) AND (get_user_role() IS NOT NULL))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "attendance_records",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_own_attendance",
+      "schemaname": "public",
+      "with_check": "((user_id = auth.uid()) AND (get_user_role() IS NOT NULL))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "can_read_employee_details(user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "attendance_records",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "checklist_nodes",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM task_checklists c\n  WHERE ((c.id = checklist_nodes.checklist_id) AND is_task_assignee(c.task_id))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "checklist_nodes",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_check_completion",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM task_checklists c\n  WHERE ((c.id = checklist_nodes.checklist_id) AND is_task_assignee(c.task_id))))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "checklist_nodes",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "checklist_template_nodes",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "checklist_template_nodes",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "checklist_templates",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "checklist_templates",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "company_milestones",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "company_milestones",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "company_statements",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "company_statements",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "daily_facts",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "daily_facts",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_own_support_insert",
+      "schemaname": "public",
+      "with_check": "((posted_by = auth.uid()) AND (get_user_role() IS NOT NULL))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "daily_facts",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = 'managing_director'::user_role)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "daily_star_records",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = 'managing_director'::user_role)"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "daily_star_records",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "daily_task_logs",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "((user_id = auth.uid()) AND is_task_assignee(task_id))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "daily_task_logs",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_own_work",
+      "schemaname": "public",
+      "with_check": "((user_id = auth.uid()) AND is_task_assignee(task_id))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "can_read_employee_details(user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "daily_task_logs",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "ideas",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "ideas",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_own_support_insert",
+      "schemaname": "public",
+      "with_check": "((posted_by = auth.uid()) AND (get_user_role() IS NOT NULL))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "ideas",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "meeting_points",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "meeting_points",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_own_support_insert",
+      "schemaname": "public",
+      "with_check": "((posted_by = auth.uid()) AND (get_user_role() IS NOT NULL))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "meeting_points",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = 'managing_director'::user_role)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "monthly_performance_snapshots",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = 'managing_director'::user_role)"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "can_read_employee_details(user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "monthly_performance_snapshots",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = 'managing_director'::user_role)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "performance_score_components",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = 'managing_director'::user_role)"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "can_read_employee_details(user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "performance_score_components",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = 'managing_director'::user_role)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "report_snapshots",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = 'managing_director'::user_role)"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "can_read_employee_details(employee_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "report_snapshots",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "sales_logs",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "sales_logs",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_own_support_insert",
+      "schemaname": "public",
+      "with_check": "((sales_by = auth.uid()) AND (get_user_role() IS NOT NULL))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "sales_logs",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "suggestions",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role, 'data_manager'::user_role]))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "suggestions",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_own_support_insert",
+      "schemaname": "public",
+      "with_check": "((posted_by = auth.uid()) AND (get_user_role() IS NOT NULL))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "suggestions",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_assignees",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_checklists",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_checklists",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_dependencies",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_dependencies",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_detail_sections",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_detail_sections",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_links",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_links",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_reviewers",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_timers",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "((user_id = auth.uid()) AND is_task_assignee(task_id))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_timers",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_own_work",
+      "schemaname": "public",
+      "with_check": "((user_id = auth.uid()) AND is_task_assignee(task_id))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "can_read_employee_details(user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "task_timers",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "tasks",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = ANY (ARRAY['managing_director'::user_role, 'project_engineer'::user_role]))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "is_task_assignee(id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "tasks",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_execution",
+      "schemaname": "public",
+      "with_check": "is_task_assignee(id)"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(get_user_role() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "tasks",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(get_user_role() = 'managing_director'::user_role)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "users",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_admin",
+      "schemaname": "public",
+      "with_check": "(get_user_role() = 'managing_director'::user_role)"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((id = auth.uid()) OR (get_user_role() IS NOT NULL))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "users",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((id = auth.uid()) AND (get_user_role() IS NOT NULL))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "users",
+      "permissive": "PERMISSIVE",
+      "policyname": "m01_self_profile",
+      "schemaname": "public",
+      "with_check": "(id = auth.uid())"
+    }
+  ]
+}

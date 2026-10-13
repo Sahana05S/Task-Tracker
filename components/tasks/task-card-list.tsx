@@ -238,6 +238,7 @@ function TaskCard({
       {/* Footer */}
       <div className="border-border flex items-center gap-2 border-t px-4 py-2.5">
         <StatusSelect
+          version={task.lifecycleVersion}
           taskId={task.id}
           taskTag={task.taskTag}
           status={task.status}

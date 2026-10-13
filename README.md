@@ -174,6 +174,13 @@ task tools fail because a table is missing, apply migrations `07` through `09` i
 order. The page-level notices handle known optional tables where possible, but the
 full tracker replacement requires every migration in the table above.
 
+When applying migrations manually in the Supabase SQL Editor, run one file at a
+time and stop on the first error. If earlier files report "already exists", check
+which objects are present before continuing; do not skip ahead to later files
+unless the prerequisite tables/functions exist. After applying `01` through `09`,
+paste `supabase/verify_tracker_replacement.sql` into the SQL Editor; every row
+should report `ok`.
+
 `04` depends on three objects the earlier files create — `public.users`,
 `get_user_role()` and `set_updated_at()` — so the order is not optional. It seeds
 the vision, mission, values and five milestones, and both seed statements are safe

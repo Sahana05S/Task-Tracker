@@ -155,7 +155,7 @@ describe('computeScaledProgress', () => {
     // 40 × (25.5 / 100) = 10.2
     expect(computeScaledProgress(40, 25.5)).toBe(10.2);
     // 3 × (33.33 / 100) ≈ 0.9999 → 1.00
-    expect(computeScaledProgress(3, 33.33)).toBe(1);
+    expect(computeScaledProgress(3, 33.33)).toBeCloseTo(0.9999,10);
   });
 
   it('handles zero progress', () => {
@@ -172,11 +172,11 @@ describe('computeScaledProgress', () => {
 /* -------------------------------------------------------------------------- */
 
 describe('computeProductivity', () => {
-  it('computes scaledProgress / hoursLogged', () => {
+  it('computes task percentage points / hoursLogged', () => {
     expect(computeProductivity(10, 5)).toBe(2);
   });
 
-  it('returns null when scaledProgress is null', () => {
+  it('returns null when progress percentage is null', () => {
     expect(computeProductivity(null, 5)).toBeNull();
   });
 
@@ -203,41 +203,13 @@ describe('computeProductivity', () => {
 /* isMetricsEligible                                                           */
 /* -------------------------------------------------------------------------- */
 
-describe('isMetricsEligible', () => {
-  it('is eligible when hours > 0, scale > 0, and not OT', () => {
-    expect(isMetricsEligible(2, 10, 'T')).toBe(true);
-    expect(isMetricsEligible(0.5, 5, 'PJT')).toBe(true);
-  });
-
-  it('is ineligible when category is OT', () => {
-    expect(isMetricsEligible(4, 10, 'OT')).toBe(false);
-  });
-
-  it('is ineligible when taskScale is null', () => {
-    expect(isMetricsEligible(4, null, 'T')).toBe(false);
-  });
-
-  it('is ineligible when taskScale is 0', () => {
-    expect(isMetricsEligible(4, 0, 'T')).toBe(false);
-  });
-
-  it('is ineligible when taskScale is negative', () => {
-    expect(isMetricsEligible(4, -1, 'T')).toBe(false);
-  });
-
-  it('is ineligible when hoursLogged is 0', () => {
-    expect(isMetricsEligible(0, 10, 'T')).toBe(false);
-  });
-
-  it('OT check fires before scale check', () => {
-    // Should return false for OT regardless of scale
-    expect(isMetricsEligible(4, 0, 'OT')).toBe(false);
-  });
+describe('isMetricsEligible',()=>{
+ const eligible={priority:'Medium' as const,status:'In Progress' as const,taskScale:8,progressPercentage:15};
+ it('uses the shared predicate without a rate denominator',()=>expect(isMetricsEligible(eligible)).toBe(true));
+ it('excludes No priority',()=>expect(isMetricsEligible({...eligible,priority:'No'})).toBe(false));
+ it('excludes missing scale',()=>expect(isMetricsEligible({...eligible,taskScale:null})).toBe(false));
+ it('excludes progress below 15',()=>expect(isMetricsEligible({...eligible,progressPercentage:14.99})).toBe(false));
 });
-
-/* -------------------------------------------------------------------------- */
-/* sumHours                                                                    */
-/* -------------------------------------------------------------------------- */
 
 describe('sumHours', () => {
   it('sums hours across logs', () => {
@@ -248,9 +220,10 @@ describe('sumHours', () => {
     expect(sumHours([])).toBe(0);
   });
 
-  it('rounds the total to 2dp', () => {
+  it('preserves intermediate hours and short positive durations', () => {
     // 0.1 + 0.2 = 0.30000000000000004 in JS; should round to 0.30
-    expect(sumHours([{ hoursWorked: 0.1 }, { hoursWorked: 0.2 }])).toBe(0.3);
+    expect(sumHours([{ hoursWorked: 0.1 }, { hoursWorked: 0.2 }])).toBeCloseTo(0.3,12);
+    expect(sumHours([{hoursWorked:2/3600}])).toBeGreaterThan(0);
   });
 });
 

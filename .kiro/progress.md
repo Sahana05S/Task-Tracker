@@ -1,5 +1,12 @@
 # TaskPulse — Build Progress
 
+> M00 note (10 October 2026): This document describes historical or provisional
+> behavior. Conflicting business rules and completion claims are superseded by
+> [RULES](../docs/plans/RULES.md), [DECISIONS](../docs/plans/DECISIONS.md) and
+> the [M00 conflict ledger](../docs/plans/M00-evidence.md#older-documentation-conflicts).
+> Retain unrelated architecture notes. Named missing script handlers do not
+> establish implemented parity. M01 has not started.
+
 Briefing note for a fresh context session. Records what exists, what was decided
 and why, and what is deliberately unfinished.
 

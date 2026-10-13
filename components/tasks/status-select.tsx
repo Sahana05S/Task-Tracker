@@ -1,4 +1,5 @@
 'use client';
+import { prepareOperation } from '@/lib/commands/client-operation';
 
 import * as React from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
@@ -18,6 +19,7 @@ import type { TaskStatus } from '@/types/tracker';
 
 export interface StatusSelectProps {
   taskId: string;
+  version?: number;
   taskTag: string;
   status: TaskStatus;
   /** False renders a read-only badge instead of a picker. */
@@ -39,6 +41,7 @@ export interface StatusSelectProps {
  */
 export function StatusSelect({
   taskId,
+  version,
   taskTag,
   status,
   canEdit,
@@ -53,7 +56,7 @@ export function StatusSelect({
     setValue(status);
   }, [status]);
 
-  if (!canEdit) {
+  if (!canEdit || status === 'Done' || status === 'Discarded') {
     return <StatusBadge status={value} className={className} />;
   }
 
@@ -65,7 +68,13 @@ export function StatusSelect({
     setValue(candidate);
 
     startTransition(async () => {
-      const result = await updateTaskStatus(taskId, candidate);
+      const form=new FormData(); form.set('taskId',taskId); form.set('command','transition'); form.set('value',String(candidate)); form.set('expectedVersion',String(version ?? 0));
+      let result;
+      try {
+        const finish=await prepareOperation(form,'transition');
+        result=await updateTaskStatus(taskId,candidate,Number(form.get('expectedVersion')),String(form.get('operationId')));
+        if (result.success) finish();
+      } catch { result={success:false,error:'Response unavailable. Retry the same change to recover its result.'}; }
       if (!result.success) {
         setValue(previous);
         toast.error(`${taskTag} status not saved`, {
@@ -87,7 +96,7 @@ export function StatusSelect({
         </SelectTrigger>
         <SelectContent>
           {TASK_STATUSES.map((entry) => (
-            <SelectItem key={entry} value={entry}>
+            <SelectItem key={entry} value={entry} disabled={entry === 'Discarded' || entry === 'Carryover' || entry === 'Not Started'}>
               <StatusBadge status={entry} />
             </SelectItem>
           ))}

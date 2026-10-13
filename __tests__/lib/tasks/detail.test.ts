@@ -6,6 +6,14 @@ import {
   type TaskDetailData,
 } from '@/lib/tasks/detail';
 import { EMPTY_EFFORT } from '@/lib/logs/metrics';
+import { withTaskParticipants } from '@/lib/tasks/mappers';
+
+it('retains legacy primaries when join rows are missing or disagree', () => {
+  const task={...createTaskDetailData('Legacy').task,reviewerId:'legacy-reviewer'};
+  const mapped=withTaskParticipants(task,{assigneeIds:['secondary'],reviewerIds:['secondary-reviewer']});
+  expect(mapped.assigneeIds).toEqual(['user-id','secondary']);
+  expect(mapped.reviewerIds).toEqual(['legacy-reviewer','secondary-reviewer']);
+});
 
 describe('task detail route helpers', () => {
   it('normalizes plain and encoded task tags', () => {

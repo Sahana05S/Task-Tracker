@@ -7,7 +7,7 @@ import { canManageSupportRecords } from '@/lib/support/permissions';
 import { getSupportModuleData } from '@/lib/support/queries';
 
 export const metadata: Metadata = {
-  title: 'Suggestions · TaskPulse',
+  title: 'Suggestions Â· TaskPulse',
 };
 
 export default async function SuggestionsPage() {
@@ -18,7 +18,7 @@ export default async function SuggestionsPage() {
     <>
       <WorkspaceHeader
         title="Suggestions"
-        description={`${data.period.label} · ${data.summary.suggestions.total} suggestions · ${data.summary.suggestions.validated} validated`}
+        description={`${data.period.label} Â· ${data.summary.suggestions.total} suggestions Â· ${data.summary.suggestions.validated} validated`}
       />
       <div className="px-4 py-4 lg:px-6">
         <KnowledgeModule
@@ -32,6 +32,8 @@ export default async function SuggestionsPage() {
             href: '/suggestions',
           }}
           entries={data.suggestions}
+          tasks={data.tasks}
+          inputContext={data.inputContext}
           members={data.members}
           currentUser={profile}
           canManage={canManageSupportRecords(profile.role)}

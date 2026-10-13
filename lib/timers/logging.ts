@@ -1,3 +1,4 @@
+// Historical draft helper only. M02 live timer stops derive duration/date in PostgreSQL.
 import { computeTimerStopSummary } from '@/lib/timers/elapsed';
 
 export interface TimerLogDraft {

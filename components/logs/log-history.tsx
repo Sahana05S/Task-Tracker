@@ -1,4 +1,5 @@
 'use client';
+import { prepareOperation } from '@/lib/commands/client-operation';
 
 import * as React from 'react';
 import {
@@ -163,7 +164,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
             number is, so an icon beside it is redundant. */}
         <span className="ml-auto flex items-center gap-2.5 font-mono text-[11px] tabular">
           <span className="text-foreground font-semibold">
-            {formatNumeric(log.hoursWorked)} h
+            {log.hoursWorked>0 && log.hoursWorked<0.01 ? `${(log.hoursWorked*3600).toFixed(3)} seconds` : `${formatNumeric(log.hoursWorked)} h`}
           </span>
           {delta !== 0 ? (
             <span
@@ -218,6 +219,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
           variant="ghost"
           size="sm"
           onClick={onEdit}
+          disabled={log.sourceTimerId != null}
           className="h-7 px-2"
         >
           Edit
@@ -229,7 +231,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
           onClick={onRequestDelete}
           className="h-7 px-2 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
         >
-          Delete
+          Reverse
         </Button>
       </div>
     </article>
@@ -266,6 +268,7 @@ function DeleteLogConfirmation({
 }) {
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+  const [reason,setReason]=React.useState('');
 
   React.useEffect(() => {
     if (log) setError(null);
@@ -277,10 +280,13 @@ function DeleteLogConfirmation({
     const tag = task?.taskTag ?? 'the task';
 
     startTransition(async () => {
-      const result = await deleteTaskLog(log.id);
+      const form=new FormData(); form.set('logId',log.id); form.set('reason',reason); form.set('expectedVersion',String(log.executionVersion ?? 0));
+      let result;
+      try { const finish=await prepareOperation(form,'reverse_log'); result=await deleteTaskLog(log.id,String(form.get('operationId')),Number(form.get('expectedVersion')),reason); if(result.success) finish(); }
+      catch { result={success:false,error:'Response unavailable. Retry the same reversal to recover its result.'}; }
       if (result.success) {
         onClose();
-        toast.success('Log entry deleted', {
+        toast.success('Log entry reversed', {
           description: `${hours} hours removed from ${tag}, and its progress withdrawn.`,
         });
       } else {
@@ -298,25 +304,13 @@ function DeleteLogConfirmation({
     >
       <SheetContent side="bottom" className="sm:mx-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Delete log entry</SheetTitle>
+          <SheetTitle>Reverse mistaken log</SheetTitle>
           <SheetDescription>
-            {log ? (
-              <>
-                {formatNumeric(log.hoursWorked)} hours on{' '}
-                <span className="task-tag">{task?.taskTag ?? 'this task'}</span>{' '}
-                will be removed
-                {log.progressDelta ? (
-                  <>
-                    , and the {log.progressDelta}% it contributed will be taken
-                    back off the task's progress
-                  </>
-                ) : null}
-                .
-              </>
-            ) : null}
+            The original entry stays in history. Reversal withdraws its actual applied effect and hours; frozen periods and unknown legacy effects require reconciliation.
           </SheetDescription>
         </SheetHeader>
 
+        <label className="mx-4 text-sm">Reason<input className="block w-full rounded border p-2" value={reason} onChange={event=>setReason(event.target.value)} required /></label>
         {error ? (
           <div
             role="alert"
@@ -343,15 +337,15 @@ function DeleteLogConfirmation({
             type="button"
             variant="destructive"
             onClick={confirm}
-            disabled={pending}
+            disabled={pending || reason.trim()==='' || log?.effectiveProgressDelta === null}
           >
             {pending ? (
               <>
                 <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
-                Deleting
+                Reversing
               </>
             ) : (
-              'Delete entry'
+              'Reverse entry'
             )}
           </Button>
         </SheetFooter>

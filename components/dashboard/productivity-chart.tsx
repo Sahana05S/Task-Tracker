@@ -1,4 +1,5 @@
 'use client';
+import { displayPerformance } from '@/lib/performance/exact';
 
 import * as React from 'react';
 import {
@@ -35,7 +36,7 @@ interface Datum {
   productivity: number;
   differential: number | null;
   hoursLogged: number;
-  scaledProgress: number;
+  scaledProgress: number|null;
 }
 
 /**
@@ -45,8 +46,7 @@ interface Datum {
  * so the differential is the visible gap rather than a number to be looked up.
  * Bars above the median read emerald, below it rose.
  *
- * Members with no logged hours are omitted rather than drawn at zero: their rate
- * is undefined, and a zero bar would read as measured underperformance.
+ * Members with unavailable attendance or earned credit are omitted from the rate comparison.
  */
 export function ProductivityChart({
   members,
@@ -77,10 +77,10 @@ export function ProductivityChart({
     return (
       <ChartShell
         title="Productivity differentials"
-        subtitle="Scaled progress per hour against the team median"
+        subtitle="Period scaled credit per regular attendance hour against the factor median"
       >
         <EmptyNote>
-          No member logged hours in this period, so there is no rate to compare.
+          Productivity inputs are unavailable; a rate cannot be compared.
         </EmptyNote>
       </ChartShell>
     );
@@ -89,10 +89,10 @@ export function ProductivityChart({
   return (
     <ChartShell
       title="Productivity differentials"
-      subtitle="Scaled progress per hour against the team median"
+      subtitle="Period scaled credit per regular attendance hour against the factor median"
       footer={
         omitted > 0
-          ? `${omitted} ${omitted === 1 ? 'member' : 'members'} omitted: no hours logged, so no rate is defined.`
+          ? `${omitted} ${omitted === 1 ? 'member' : 'members'} omitted: attendance or earned-credit inputs are unavailable.`
           : undefined
       }
     >
@@ -131,7 +131,7 @@ export function ProductivityChart({
                 stroke={CHART_REFERENCE}
                 strokeDasharray="4 4"
                 label={{
-                  value: `Median ${formatNumeric(medianProductivity)}`,
+                  value: `Median ${displayPerformance(medianProductivity)}`,
                   position: 'insideTopRight',
                   fill: CHART_REFERENCE,
                   fontSize: 11,
@@ -187,21 +187,21 @@ function ProductivityTooltip({ active, payload }: ProductivityTooltipProps) {
       <dl className="text-muted-foreground mt-1.5 flex flex-col gap-0.5">
         <Row
           label="Productivity"
-          value={`${formatNumeric(datum.productivity)} /h`}
+          value={`${displayPerformance(datum.productivity)} /h`}
         />
         <Row
           label="vs median"
           value={
             datum.differential === null
               ? '\u2014'
-              : `${datum.differential >= 0 ? '+' : ''}${formatNumeric(datum.differential)}`
+              : `${datum.differential >= 0 ? '+' : ''}${displayPerformance(datum.differential)}`
           }
         />
         <Row
           label="Scaled progress"
-          value={formatNumeric(datum.scaledProgress)}
+          value={displayPerformance(datum.scaledProgress)}
         />
-        <Row label="Hours" value={formatNumeric(datum.hoursLogged)} />
+        <Row label="Task hours (actual effort)" value={formatNumeric(datum.hoursLogged)} />
       </dl>
     </div>
   );

@@ -7,7 +7,7 @@
 -- ===========================================================================
 
 ALTER TABLE public.monthly_performance_snapshots
-    ADD COLUMN attendance_hours NUMERIC(8, 2),
-    ADD COLUMN payable_days NUMERIC(6, 2),
-    ADD COLUMN absent_days NUMERIC(6, 2),
-    ADD COLUMN leave_days NUMERIC(6, 2);
+    ADD COLUMN IF NOT EXISTS attendance_hours NUMERIC(8, 2),
+    ADD COLUMN IF NOT EXISTS payable_days NUMERIC(6, 2),
+    ADD COLUMN IF NOT EXISTS absent_days NUMERIC(6, 2),
+    ADD COLUMN IF NOT EXISTS leave_days NUMERIC(6, 2);

@@ -1,3 +1,4 @@
+import { eligibilityReasons } from '@/lib/tasks/contract';
 import {
   isTaskCarriedInPeriod,
   median,
@@ -52,6 +53,8 @@ export interface WorkbookDashboardCharts {
   tasksDoneByDate: DateBucket[];
   deadlineOutcomes: DeadlineOutcomeBucket[];
   priorityLoadingOnTeam: DashboardMemberMetric[];
+  priorityLoadingUnavailableReason?: string;
+  performanceUnavailableReason?: string;
   totalProgressByTeam: DashboardMemberMetric[];
   summary: {
     trackedTaskCount: number;
@@ -83,7 +86,9 @@ export function buildWorkbookDashboardCharts({
     (task) => task.status === 'Done' && task.completedDate !== null,
   );
 
-  const starScores = analytics.members.map((member) => member.starScore);
+  const performanceIncomplete=analytics.calculation?.status==='incomplete'||analytics.members.some(member=>member.starScore===null);
+  const starScores = analytics.members.map((member) => member.starScore).filter((score):score is number=>score!==null);
+  const sharedPriority=trackedTasks.some(task=>task.assigneeIds.length>1 || Object.keys(task.participantShares ?? {}).length>1);
   const performanceMedian = median(starScores);
 
   const assigneeCounts = new Map<string, number>();
@@ -107,11 +112,7 @@ export function buildWorkbookDashboardCharts({
       assigneeCounts.set(assigneeId, (assigneeCounts.get(assigneeId) ?? 0) + 1);
       priorityLoad.set(
         assigneeId,
-        (priorityLoad.get(assigneeId) ?? 0) + PRIORITY_WEIGHTS[task.priority],
-      );
-      progressByMember.set(
-        assigneeId,
-        (progressByMember.get(assigneeId) ?? 0) + taskProgressValue(task),
+        (priorityLoad.get(assigneeId) ?? 0) + (eligibilityReasons(task).length===0 ? PRIORITY_WEIGHTS[task.priority] : 0),
       );
       progressTaskCounts.set(
         assigneeId,
@@ -120,17 +121,25 @@ export function buildWorkbookDashboardCharts({
     }
   }
 
+  for (const task of trackedTasks) {
+    const credits=task.earnedProgressCredits ?? Object.fromEntries(assigneeIdsForTask(task).map(id=>[id,
+      taskProgressValue(task)*(task.participantCreditMode==='configured' ? (task.participantShares?.[id]??0)/1_000_000 : 1)]));
+    for (const [id,credit] of Object.entries(credits)) {
+      if (memberNames.has(id)) progressByMember.set(id,(progressByMember.get(id)??0)+credit);
+    }
+  }
+
   const tasksDoneByDate = buildTasksDoneByDate(completedTasks, period);
   const deadlineOutcomes = buildDeadlineOutcomes(trackedTasks, period);
 
   return {
     performanceWithMedian: {
-      median: performanceMedian,
-      members: analytics.members.map((member) => ({
+      median: performanceIncomplete ? null : performanceMedian,
+      members: (performanceIncomplete ? [] : analytics.members.filter(member=>member.starScore!==null)).map((member) => ({
         userId: member.userId,
         label: member.fullName,
-        value: member.starScore,
-        median: performanceMedian,
+        value: member.starScore!,
+        median: performanceIncomplete ? null : performanceMedian,
         taskCount: member.taskCount,
       })),
     },
@@ -152,8 +161,10 @@ export function buildWorkbookDashboardCharts({
     })),
     tasksDoneByDate,
     deadlineOutcomes,
-    priorityLoadingOnTeam: memberMetricsFromMap(priorityLoad, memberNames),
-    totalProgressByTeam: memberMetricsFromMap(progressByMember, memberNames).map(
+    priorityLoadingOnTeam: analytics.calculation ? analytics.members.filter(member=>member.criticalityScore!==null).map(member=>({userId:member.userId,label:member.fullName,value:member.criticalityScore!})) : sharedPriority ? [] : memberMetricsFromMap(priorityLoad, memberNames),
+    performanceUnavailableReason: performanceIncomplete ? "Ten-factor performance is incomplete; final ranking is unavailable. See factor inputs and reasons." : undefined,
+    priorityLoadingUnavailableReason: analytics.calculation ? (analytics.members.some(member=>member.criticalityScore===null)?"Criticality inputs are unavailable for some members.":undefined) : sharedPriority ? "Priority attribution requires the shared performance context." : undefined,
+    totalProgressByTeam: analytics.calculation ? analytics.members.filter(member=>member.scaledProgress!==null).map(member=>({userId:member.userId,label:member.fullName,value:member.scaledProgress!,taskCount:member.taskCount})) : memberMetricsFromMap(progressByMember, memberNames).map(
       (metric) => ({
         ...metric,
         taskCount: progressTaskCounts.get(metric.userId) ?? 0,

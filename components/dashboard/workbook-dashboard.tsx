@@ -21,18 +21,18 @@ export function WorkbookDashboard({
       <div className="flex flex-col gap-1">
         <h2 className="panel-title text-lg">Workbook dashboard charts</h2>
         <p className="text-muted-foreground text-sm">
-          Live equivalents of the sheet dashboard: progress, allocation, status,
+          Task progress, allocation, status,
           deadlines, task mix, and team loading.
         </p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <SignedBarCard
-          title="Performance with median"
-          subtitle="Monthly star score for every team member"
+          title="Performance preview with median"
+          subtitle="Shared ten-factor score; incomplete results are unavailable"
           items={charts.performanceWithMedian.members}
           median={charts.performanceWithMedian.median}
-          empty="No member performance has been calculated for this period."
+          empty={charts.performanceUnavailableReason ?? "No member performance has been calculated for this period."}
         />
         <BarListCard
           title="Total progress"
@@ -68,7 +68,7 @@ export function WorkbookDashboard({
           title="Priority loading on team"
           subtitle="Sum of priority weights carried by each assignee"
           items={charts.priorityLoadingOnTeam}
-          empty="No priority loading has been assigned yet."
+          empty={charts.priorityLoadingUnavailableReason ?? "No priority loading has been assigned yet."}
         />
         <TimelineCard
           title="Tasks done by date"

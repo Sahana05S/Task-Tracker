@@ -83,6 +83,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     inBottomNav: false,
   },
   {
+    label: 'Meeting Points',
+    href: '/meeting-points',
+    icon: MessageSquareIcon,
+    inBottomNav: false,
+  },
+  {
     label: 'Daily Facts',
     href: '/daily-facts',
     icon: BookOpenIcon,

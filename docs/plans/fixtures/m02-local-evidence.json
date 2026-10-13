@@ -1,0 +1,37 @@
+{
+  "source": "Disposable PostgreSQL auth shim, not deployed/native Supabase",
+  "migrations": [
+    "12_atomic_execution_commands.sql",
+    "13_execution_credit_summary.sql"
+  ],
+  "databases": [
+    "taskpulse_m02_fresh_test",
+    "taskpulse_m02_upgrade_test"
+  ],
+  "checks": "fresh/upgrade/auth/RLS/retries/rollback/concurrency/credit; record/date safeguards retained",
+  "catalog": {
+    "private_tables": [
+      "audit_events",
+      "command_receipts",
+      "earned_credit_events",
+      "log_revisions",
+      "outbox_jobs",
+      "participant_versions",
+      "task_credit_balances"
+    ],
+    "execution_commands": [
+      "correct_task_log",
+      "create_task_log",
+      "discard_task_timer",
+      "reverse_task_log",
+      "start_task_timer",
+      "stop_task_timer"
+    ],
+    "timer_unique_indexes": [
+      "CREATE UNIQUE INDEX daily_task_logs_pkey ON public.daily_task_logs USING btree (id)",
+      "CREATE UNIQUE INDEX idx_task_timers_one_running_per_user ON public.task_timers USING btree (user_id) WHERE (status = 'Running'::task_timer_status)",
+      "CREATE UNIQUE INDEX m02_one_log_per_timer ON public.daily_task_logs USING btree (source_timer_id) WHERE (source_timer_id IS NOT NULL)",
+      "CREATE UNIQUE INDEX task_timers_pkey ON public.task_timers USING btree (id)"
+    ]
+  }
+}

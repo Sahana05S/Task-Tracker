@@ -35,7 +35,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { authUserId, profile } = await getAuthState();
 
   // Already signed in with a usable profile: nothing to do here.
-  if (profile) {
+  if (profile?.isActive) {
     redirect(destination);
   }
 
@@ -59,7 +59,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs">
-          {isOrphaned ? (
+          {profile && !profile.isActive ? (
+            <div className="grid gap-4">
+              <p role="alert" className="text-sm">Your account is deactivated. Contact a managing director to restore access.</p>
+              <form action={logout}><Button type="submit" variant="outline">Sign out</Button></form>
+            </div>
+          ) : isOrphaned ? (
             <OrphanedAccountNotice />
           ) : (
             <AuthForm

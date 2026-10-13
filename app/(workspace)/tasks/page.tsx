@@ -1,3 +1,4 @@
+import { getNativeTemplates } from '@/lib/tasks/native-details';
 import type { Metadata } from 'next';
 
 import { WorkspaceHeader } from '@/components/layout/workspace-header';
@@ -24,9 +25,10 @@ export const metadata: Metadata = {
 export default async function TasksPage() {
   const profile = await requireProfile();
 
-  const [{ tasks, members }, effortTotals] = await Promise.all([
+  const [{ tasks, members }, effortTotals, templates] = await Promise.all([
     getTaskWorkspaceData(),
     getTaskEffortTotals(),
+    getNativeTemplates(),
   ]);
 
   const canManage = (TASK_MANAGER_ROLES as readonly UserRole[]).includes(
@@ -54,6 +56,7 @@ export default async function TasksPage() {
       <div className="px-4 py-4 lg:px-6">
         <TaskWorkspace
           tasks={tasks}
+          templates={templates}
           members={members}
           // Maps are not serialisable across the server-to-client boundary, so the
           // aggregate crosses as entries and is rebuilt on the client.

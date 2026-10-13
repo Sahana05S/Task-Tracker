@@ -1,17 +1,19 @@
 'use server';
 
+import { loadChecklistRollups } from '@/lib/checklists/read-model';
+
+import { initializeTaskDetails,saveTaskDetails,addTaskAsset,renameNativeLink } from '@/app/tasks/detail-actions';
+import { randomUUID } from 'node:crypto';
+
 import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 import { createTask, updateTask, updateTaskStatus } from '@/app/tasks/actions';
-import { createTaskLog } from '@/app/logs/actions';
-import {
-  addChecklistNode,
-  createMasterChecklist,
-  setChecklistProgressSync,
-} from '@/app/(workspace)/tasks/[taskTag]/checklist/actions';
+import { createTaskLog, type LogActionState } from '@/app/logs/actions';
+
 import { freezeMonthlySnapshot } from '@/app/dashboard/actions';
 import { getTeamAnalytics } from '@/lib/analytics/queries';
+import { performanceReport } from '@/lib/performance/report';
 import { getCurrentProfile } from '@/lib/auth/profile';
 import { recalculateTaskMetrics } from '@/lib/logs/task-metrics';
 import { createClient } from '@/lib/supabase/server';
@@ -64,36 +66,15 @@ export async function updateTaskFromTools(
 
 export async function createTaskLogFromTools(
   formData: FormData,
-): Promise<ActionResponse<{ logId: string }>> {
+): Promise<LogActionState> {
   return createTaskLog(null, formData);
 }
 
-export async function updateTaskStatusFromTools(
-  formData: FormData,
-): Promise<TaskToolsActionState> {
-  const taskId = readUuid(formData, 'taskId');
-  const status = readString(formData, 'status');
-  if (!taskId) return { success: false, error: 'Select a task.' };
-  if (!isTaskStatus(status)) return { success: false, error: 'Select a valid status.' };
-  return updateTaskStatus(taskId, status);
-}
-
-export async function createMasterChecklistFromTools(
-  formData: FormData,
-): Promise<ActionResponse<{ checklistId?: string; nodeId?: string }>> {
-  return createMasterChecklist(formData);
-}
-
-export async function addChecklistNodeFromTools(
-  formData: FormData,
-): Promise<ActionResponse<{ checklistId?: string; nodeId?: string }>> {
-  return addChecklistNode(formData);
-}
-
-export async function setChecklistProgressSyncFromTools(
-  formData: FormData,
-): Promise<ActionResponse<{ checklistId?: string; nodeId?: string }>> {
-  return setChecklistProgressSync(formData);
+export async function updateTaskStatusFromTools(formData: FormData): Promise<TaskToolsActionState> {
+  const taskId=readString(formData,'taskId'),version=readString(formData,'expectedVersion');
+  const status=readString(formData,'status');
+  if (!UUID_PATTERN.test(taskId ?? '') || !isTaskStatus(status) || !/^\d+$/.test(version ?? '')) return {success:false,error:'Select a task and valid status.'};
+  return updateTaskStatus(taskId,status,Number(version),readString(formData,'operationId'),readString(formData,'reason'));
 }
 
 export async function refreshTaskMetricsAction(
@@ -144,40 +125,40 @@ export async function duplicateTaskAction(
   if (sourceError) return { success: false, error: describeDatabaseError(sourceError) };
   if (!source) return { success: false, error: 'That source task no longer exists.' };
 
-  const title = readString(formData, 'title') || `${source.title} (Copy)`;
-  const { data: created, error: createError } = await supabase
-    .from('tasks')
-    .insert({
-      task_tag: newTaskTag,
-      title,
-      category: source.category,
-      description: source.description,
-      comments: source.comments,
-      assignee_id: source.assignee_id,
-      reviewer_id: source.reviewer_id,
-      task_scale: source.task_scale,
-      priority: source.priority,
-      due_date: source.due_date,
-      progress_percentage: 0,
-      status: 'Not Started',
-      freshness: 'Fresh',
-      valid_for_metrics: false,
-    })
-    .select('id')
-    .single();
-
-  if (createError) return { success: false, error: describeDatabaseError(createError) };
-
+  const [assignees,reviewers] = await Promise.all([
+    supabase.from('task_assignees').select('user_id,share_units').eq('task_id',sourceTaskId),
+    supabase.from('task_reviewers').select('user_id').eq('task_id',sourceTaskId),
+  ]);
+  if (assignees.error) return {success:false,error:describeDatabaseError(assignees.error)};
+  if (reviewers.error) return {success:false,error:describeDatabaseError(reviewers.error)};
+  const assigneeIds = [...new Set([source.assignee_id,...assignees.data.map((row) => row.user_id)])];
+  const reviewerIds = [...new Set([...(source.reviewer_id ? [source.reviewer_id] : []),...reviewers.data.map((row) => row.user_id)])];
+  const shares = assigneeIds.map((id) => assignees.data.find((row) => row.user_id===id)?.share_units ?? null);
+  if (assigneeIds.length>1 && shares.some((value) => value===null)) {
+    return {success:false,error:'Review legacy shared credit before copying this task.'};
+  }
+  const [detailCopy,linkCopy]=await Promise.all([supabase.from('task_detail_sections').select('id').eq('task_id',sourceTaskId).limit(1),supabase.from('task_links').select('id').eq('task_id',sourceTaskId).limit(1)]);
+  if(detailCopy.error || linkCopy.error)return {success:false,error:'Could not inspect source content.'};
+  if(detailCopy.data.length || linkCopy.data.length)return {success:false,error:'Copying initialized task content requires the atomic M09 duplication workflow. No copy was created.'};
+  const title = readString(formData,'title') || `${source.title} (Copy)`;
+  const {data: createdId,error: createError} = await supabase.rpc('save_task_with_participants', {
+    p_task_id:null,p_fields:{task_tag:newTaskTag,title,category:source.category,priority:source.priority,due_date:source.due_date,task_scale:source.task_scale,description:source.description,comments:source.comments},
+    p_assignees:assigneeIds,p_reviewers:reviewerIds,p_share_units:shares.every((value) => value!==null) ? shares as number[] : null,
+    p_expected_version:null,p_accept_legacy:false,p_operation_id:readString(formData,'operationId') || randomUUID(),
+  });
+  if (createError) return {success:false,error:describeDatabaseError(createError)};
+  // Permissions/participants already committed together. Other copied content
+  // remains the existing M09 workflow and does not grant any additional rights.
   const copyError = await copyTaskSupportRows(
     supabase,
     sourceTaskId,
-    created.id,
+    createdId,
     actor.profile.id,
   );
   if (copyError) return { success: false, error: copyError };
 
   revalidateTaskToolPaths(newTaskTag);
-  return { success: true, data: { taskId: created.id, taskTag: newTaskTag } };
+  return { success: true, data: { taskId: createdId, taskTag: newTaskTag } };
 }
 
 export async function createSupportTaskAction(
@@ -228,16 +209,6 @@ export async function createSupportTaskAction(
 
   if (error) return { success: false, error: describeDatabaseError(error) };
 
-  const { error: assignmentError } = await supabase.from('task_assignees').insert({
-    task_id: created.id,
-    user_id: assigneeId,
-    assignment_role: 'Support',
-    is_primary: true,
-    assigned_by: actor.profile.id,
-  });
-  if (assignmentError) {
-    return { success: false, error: describeDatabaseError(assignmentError) };
-  }
 
   const { error: relationError } = await supabase.from('task_dependencies').insert({
     predecessor_task_id: parentTaskId,
@@ -312,8 +283,6 @@ export async function createSplitSupportTaskAction(
       .from('tasks')
       .update({
         task_scale: splitResult.sourceScaleAfterSplit,
-        valid_for_metrics:
-          splitResult.sourceScaleAfterSplit > 0 && source.category !== 'OT',
       })
       .eq('id', sourceTaskId);
     if (updateError) return { success: false, error: describeDatabaseError(updateError) };
@@ -343,29 +312,7 @@ export async function createSplitSupportTaskAction(
 
   if (error) return { success: false, error: describeDatabaseError(error) };
 
-  const { error: assignmentError } = await supabase.from('task_assignees').insert({
-    task_id: created.id,
-    user_id: assigneeId,
-    assignment_role: 'Support',
-    is_primary: true,
-    assigned_by: actor.profile.id,
-  });
-  if (assignmentError) {
-    return { success: false, error: describeDatabaseError(assignmentError) };
-  }
 
-  if (reviewerId) {
-    const { error: reviewerError } = await supabase.from('task_reviewers').insert({
-      task_id: created.id,
-      user_id: reviewerId,
-      reviewer_role: 'Primary',
-      is_primary: true,
-      assigned_by: actor.profile.id,
-    });
-    if (reviewerError) {
-      return { success: false, error: describeDatabaseError(reviewerError) };
-    }
-  }
 
   const { error: relationError } = await supabase.from('task_dependencies').insert({
     predecessor_task_id: sourceTaskId,
@@ -380,214 +327,18 @@ export async function createSplitSupportTaskAction(
   return { success: true, data: { taskId: created.id, taskTag } };
 }
 
-export async function updateTaskDetailsAction(
-  formData: FormData,
-): Promise<TaskToolsActionState> {
-  const actor = await resolveActor();
-  if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) {
-    return { success: false, error: 'Only managers can update task details.' };
-  }
-
-  const taskId = readUuid(formData, 'taskId');
-  const keyName = slugKey(readString(formData, 'keyName'));
-  const title = readString(formData, 'title');
-  if (!taskId) return { success: false, error: 'Select a task.' };
-  if (!keyName) return { success: false, error: 'Enter a detail key.' };
-  if (!title) return { success: false, error: 'Enter a detail title.' };
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('task_detail_sections')
-    .upsert(
-      {
-        task_id: taskId,
-        key_name: keyName,
-        title,
-        content: readNullableString(formData, 'content'),
-        updated_by: actor.profile.id,
-      },
-      { onConflict: 'task_id,key_name' },
-    )
-    .select('id')
-    .single();
-
-  if (error) return { success: false, error: describeDatabaseError(error) };
-  revalidateTaskToolPaths();
-  return { success: true, data: { id: data.id, taskId } };
-}
-
-export async function createTaskDetailsWithFolderAction(
-  formData: FormData,
-): Promise<TaskToolsActionState> {
-  const actor = await resolveActor();
-  if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) {
-    return { success: false, error: 'Only managers can create task detail pages.' };
-  }
-
-  const taskId = readUuid(formData, 'taskId');
-  if (!taskId) return { success: false, error: 'Select a task.' };
-
-  const supabase = await createClient();
-  const { data: task, error: taskError } = await supabase
-    .from('tasks')
-    .select('id, task_tag, title')
-    .eq('id', taskId)
-    .maybeSingle();
-  if (taskError) return { success: false, error: describeDatabaseError(taskError) };
-  if (!task) return { success: false, error: 'That task no longer exists.' };
-
-  const carryoverTaskTag = readNullableString(formData, 'carryoverTaskTag');
-  const folderUrl = readNullableString(formData, 'folderUrl');
-  const masterChecklistUrl = readNullableString(formData, 'masterChecklistUrl');
-
-  const sections = [
-    ['task_summary', 'Task summary', task.title],
-    ['smart_goals', 'SMART goal statements', 'Specific\nMeasurable\nAchievable\nRelevant\nTime-Bound'],
-    ['inputs', 'Inputs', 'Document\nAccount\nFlowchart\nEngineering\nDrawing\nDependency Tasks'],
-    ['process', 'Process', 'Master Checklist\nDocument\nAccount\nFlowchart\nEngineering\nDrawing\nDependency Tasks'],
-    ['outputs', 'Outputs', 'Document\nAccount\nFlowchart\nEngineering\nDrawing\nDependency Tasks'],
-    ['task_log', 'Task log', 'Date\nUpdate\nHours Worked\nRaw Links'],
-    ['carryover', 'Carryover task', carryoverTaskTag ?? ''],
-  ] as const;
-
-  const { error: sectionError } = await supabase.from('task_detail_sections').upsert(
-    sections.map(([keyName, title, content]) => ({
-      task_id: taskId,
-      key_name: keyName,
-      title,
-      content,
-      updated_by: actor.profile.id,
-    })),
-    { onConflict: 'task_id,key_name' },
-  );
-  if (sectionError) return { success: false, error: describeDatabaseError(sectionError) };
-
-  const links = [
-    folderUrl
-      ? {
-          task_id: taskId,
-          link_type: 'Folder' as const,
-          label: `${task.task_tag} - Task Folder`,
-          url: folderUrl,
-          storage_path: null,
-          notes: 'Equivalent to Apps Script createFolderFromSelection.',
-          created_by: actor.profile.id,
-        }
-      : null,
-    masterChecklistUrl
-      ? {
-          task_id: taskId,
-          link_type: 'Checklist' as const,
-          label: `${task.task_tag} - Master Checklist`,
-          url: masterChecklistUrl,
-          storage_path: null,
-          notes: 'Master checklist linked from the task page.',
-          created_by: actor.profile.id,
-        }
-      : null,
-  ].filter((link): link is NonNullable<typeof link> => link !== null);
-
-  if (links.length > 0) {
-    const { error: linkError } = await supabase.from('task_links').insert(links);
-    if (linkError) return { success: false, error: describeDatabaseError(linkError) };
-  }
-
-  revalidateTaskToolPaths(task.task_tag);
-  return { success: true, data: { taskId, taskTag: task.task_tag } };
-}
-
-export async function createWorkFileLinkAction(
-  formData: FormData,
-): Promise<TaskToolsActionState> {
-  const actor = await resolveActor();
-  if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) {
-    return { success: false, error: 'Only managers can create task work-file links.' };
-  }
-
-  const taskId = readUuid(formData, 'taskId');
-  const label = readString(formData, 'label');
-  const url = readNullableString(formData, 'url');
-  const linkType = readTaskLinkType(formData);
-  if (!taskId) return { success: false, error: 'Select a task.' };
-  if (!label) return { success: false, error: 'Enter a file label.' };
-  if (!url) return { success: false, error: 'Enter a folder or asset URL.' };
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('task_links')
-    .insert({
-      task_id: taskId,
-      link_type: linkType,
-      label,
-      url,
-      storage_path: null,
-      notes: readNullableString(formData, 'notes'),
-      created_by: actor.profile.id,
-    })
-    .select('id')
-    .single();
-
-  if (error) return { success: false, error: describeDatabaseError(error) };
-  revalidateTaskToolPaths();
-  return { success: true, data: { id: data.id, taskId } };
-}
-
-export async function renameTaskFolderLinkAction(
-  formData: FormData,
-): Promise<TaskToolsActionState> {
-  const actor = await resolveActor();
-  if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) {
-    return { success: false, error: 'Only managers can rename task folder links.' };
-  }
-
-  const taskId = readUuid(formData, 'taskId');
-  const taskTitle = readString(formData, 'taskTitle');
-  if (!taskId) return { success: false, error: 'Select a task.' };
-  if (!taskTitle) return { success: false, error: 'Enter the task title replacement.' };
-
-  const supabase = await createClient();
-  const { data: folderLink, error: readError } = await supabase
-    .from('task_links')
-    .select('id, label, notes')
-    .eq('task_id', taskId)
-    .eq('link_type', 'Folder')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (readError) return { success: false, error: describeDatabaseError(readError) };
-  if (!folderLink) return { success: false, error: 'No task folder link exists yet.' };
-
-  const nextLabel = folderLink.label.includes('[Task Title]')
-    ? folderLink.label.replace('[Task Title]', taskTitle)
-    : `${folderLink.label} - ${taskTitle}`;
-
-  const { error } = await supabase
-    .from('task_links')
-    .update({
-      label: nextLabel,
-      notes: folderLink.notes
-        ? `${folderLink.notes}\nRenamed task folder title to: ${taskTitle}`
-        : `Renamed task folder title to: ${taskTitle}`,
-    })
-    .eq('id', folderLink.id);
-
-  if (error) return { success: false, error: describeDatabaseError(error) };
-  revalidateTaskToolPaths();
-  return { success: true, data: { id: folderLink.id, taskId } };
-}
+export async function updateTaskDetailsAction(form:FormData){return saveTaskDetails(form);}
+export async function createTaskDetailsWithFolderAction(form:FormData){return initializeTaskDetails(form);}
+export async function createWorkFileLinkAction(form:FormData){return addTaskAsset(form);}
+export async function renameTaskFolderLinkAction(form:FormData){return renameNativeLink(form);}
 
 export async function generateReportFromToolsAction(
   formData: FormData,
 ): Promise<TaskToolsActionState> {
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) {
-    return { success: false, error: 'Only managers can generate reports.' };
+  if (actor.profile.role !== 'managing_director') {
+    return { success: false, error: 'Only the managing director can create report snapshots.' };
   }
 
   const period = readPeriod(formData);
@@ -598,7 +349,25 @@ export async function generateReportFromToolsAction(
   const targetMember = employeeId
     ? analytics.members.find((member) => member.userId === employeeId)
     : null;
+  const supabase = await createClient();
+  const {data:taskRows,error:taskError}=await supabase.from('tasks').select('id, assignee_id');
+  if(taskError)return {success:false,error:taskError.message};
+  let taskIds=taskRows.map(t=>t.id);
+  if(employeeId) {
+    const {data:assigned,error:assignmentError}=await supabase.from('task_assignees').select('task_id').eq('user_id',employeeId);
+    if(assignmentError)return {success:false,error:assignmentError.message};
+    const ids=new Set(assigned.map(a=>a.task_id));
+    taskIds=taskRows.filter(t=>t.assignee_id===employeeId || ids.has(t.id)).map(t=>t.id);
+  }
+  const checklistObservations=await loadChecklistRollups(supabase,taskIds);
   const payload = {
+    performanceRuleVersion:analytics.calculation?.context.ruleVersion??'m07-unavailable',
+    calculationContext:analytics.calculation?.context??null,
+    calculationStatus:analytics.calculation?.status??'incomplete',
+    performance:analytics.calculation?performanceReport(analytics.calculation,employeeId):null,
+    checklistContract:'m05-checklist-v1',
+    checklistAsOf:new Date().toISOString(),
+    currentChecklists:Object.fromEntries(checklistObservations),
     period,
     generatedBy: actor.profile.id,
     reportKind: targetMember ? 'employee' : 'general',
@@ -619,13 +388,13 @@ export async function generateReportFromToolsAction(
         },
   };
 
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from('report_snapshots')
     .insert({
       report_type: reportType,
       title,
-      status: 'Final',
+      status: analytics.calculation?.status==='complete'?'Final':'Draft',
+      calculation_rule_version:analytics.calculation?.context.ruleVersion??'m07-unavailable',
       period_start: period.startDate,
       period_end: period.endDate,
       employee_id: employeeId,
@@ -696,54 +465,11 @@ async function copyTaskSupportRows(
   targetTaskId: string,
   actorId: string,
 ): Promise<string | null> {
-  const [assignees, reviewers, sections, links] = await Promise.all([
-    supabase
-      .from('task_assignees')
-      .select('user_id, assignment_role, is_primary')
-      .eq('task_id', sourceTaskId),
-    supabase
-      .from('task_reviewers')
-      .select('user_id, reviewer_role, is_primary')
-      .eq('task_id', sourceTaskId),
-    supabase
-      .from('task_detail_sections')
-      .select('key_name, title, content')
-      .eq('task_id', sourceTaskId),
-    supabase
-      .from('task_links')
-      .select('link_type, label, url, storage_path, notes')
-      .eq('task_id', sourceTaskId),
+  const [sections, links] = await Promise.all([
+    supabase.from('task_detail_sections').select('key_name, title, content').eq('task_id',sourceTaskId),
+    supabase.from('task_links').select('link_type, label, url, storage_path, notes').eq('task_id',sourceTaskId),
   ]);
-
-  for (const result of [assignees, reviewers, sections, links]) {
-    if (result.error) return describeDatabaseError(result.error);
-  }
-
-  if ((assignees.data ?? []).length > 0) {
-    const { error } = await supabase.from('task_assignees').insert(
-      (assignees.data ?? []).map((row) => ({
-        task_id: targetTaskId,
-        user_id: row.user_id,
-        assignment_role: row.assignment_role,
-        is_primary: row.is_primary,
-        assigned_by: actorId,
-      })),
-    );
-    if (error) return describeDatabaseError(error);
-  }
-
-  if ((reviewers.data ?? []).length > 0) {
-    const { error } = await supabase.from('task_reviewers').insert(
-      (reviewers.data ?? []).map((row) => ({
-        task_id: targetTaskId,
-        user_id: row.user_id,
-        reviewer_role: row.reviewer_role,
-        is_primary: row.is_primary,
-        assigned_by: actorId,
-      })),
-    );
-    if (error) return describeDatabaseError(error);
-  }
+  for (const result of [sections,links]) if (result.error) return describeDatabaseError(result.error);
 
   if ((sections.data ?? []).length > 0) {
     const { error } = await supabase.from('task_detail_sections').insert(

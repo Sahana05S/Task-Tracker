@@ -1,5 +1,6 @@
 'use client';
 
+import type { NativeTemplate } from '@/lib/tasks/details-contract';
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircleIcon, LoaderCircleIcon, SearchXIcon } from 'lucide-react';
@@ -43,6 +44,7 @@ export interface TaskWorkspaceProps {
    */
   effortEntries: readonly (readonly [string, TaskEffort])[];
   currentUser: User;
+  templates?: readonly NativeTemplate[];
 }
 
 /**
@@ -58,6 +60,7 @@ export function TaskWorkspace({
   members,
   effortEntries,
   currentUser,
+  templates=[],
 }: TaskWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,6 +182,7 @@ export function TaskWorkspace({
       )}
 
       <TaskDialog
+        templates={templates}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         task={editingTask}

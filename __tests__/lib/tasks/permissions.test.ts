@@ -28,18 +28,18 @@ describe('task permissions', () => {
   it('allows managers or assigned users to update own task fields', () => {
     expect(
       canUpdateTaskOwnFields(
-        { id: 'manager', role: 'project_engineer' },
+        { id: 'manager', role: 'project_engineer', isActive: true },
         task,
       ),
     ).toBe(true);
     expect(
       canUpdateTaskOwnFields(
-        { id: 'secondary-user', role: 'team_member' },
+        { id: 'secondary-user', role: 'team_member', isActive: true },
         task,
       ),
     ).toBe(true);
     expect(
-      canUpdateTaskOwnFields({ id: 'other-user', role: 'team_member' }, task),
+      canUpdateTaskOwnFields({ id: 'other-user', role: 'team_member', isActive: true }, task),
     ).toBe(false);
   });
 });

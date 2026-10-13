@@ -30,6 +30,9 @@ const STATUS_CLASSES = {
   Done: 'badge-status-done',
   'In Progress': 'badge-status-in-progress',
   'Not Started': 'badge-status-not-started',
+  Stopped: 'status-not-started',
+  'On-Hold': 'status-not-started',
+  Carryover: 'status-in-progress',
   Discarded: 'badge-status-discarded',
 } satisfies Record<TaskStatus, string>;
 
@@ -45,6 +48,9 @@ const FRESHNESS_CLASSES = {
   Fresh: 'freshness-fresh',
   Stale: 'freshness-stale',
   Rotten: 'freshness-rotten',
+  'Super Fresh': 'freshness-fresh',
+  'Almost Fresh': 'freshness-fresh',
+  'Almost Stale': 'freshness-stale',
 } satisfies Record<TaskFreshness, string>;
 
 /* -------------------------------------------------------------------------- */
@@ -86,7 +92,7 @@ export function PriorityBadge({
 }
 
 export interface FreshnessIndicatorProps extends React.ComponentProps<'span'> {
-  freshness: TaskFreshness;
+  freshness: TaskFreshness | null;
 }
 
 export function FreshnessIndicator({
@@ -98,13 +104,13 @@ export function FreshnessIndicator({
     <span
       className={cn(
         'freshness-indicator',
-        FRESHNESS_CLASSES[freshness],
+        freshness === null ? "text-slate-500" : FRESHNESS_CLASSES[freshness],
         className,
       )}
       {...props}
     >
       <span aria-hidden="true" className="freshness-dot" />
-      {freshness}
+      {freshness ?? "Unavailable"}
     </span>
   );
 }

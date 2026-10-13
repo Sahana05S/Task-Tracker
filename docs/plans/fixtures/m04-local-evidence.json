@@ -1,0 +1,35 @@
+{
+  "scope": "Disposable loopback PostgreSQL 17.11; auth subject shim; not native Supabase/API/browser or production",
+  "migrations": [
+    "17_native_task_details_and_templates.sql"
+  ],
+  "databases": {
+    "taskpulse_m04_fresh_test": {
+      "review_flags": {},
+      "snapshot_count": 1,
+      "native_instances": 4,
+      "provider_requests": 0,
+      "preserved_old_task_tags": [
+        "T1",
+        "T2"
+      ],
+      "legacy_templates_needing_review": 0
+    },
+    "taskpulse_m04_upgrade_test": {
+      "review_flags": {
+        "canonical_conflict": 1,
+        "legacy_instruction": 2,
+        "legacy_mapped_copy": 2,
+        "ambiguous_legacy_text": 1
+      },
+      "snapshot_count": 1,
+      "native_instances": 5,
+      "provider_requests": 0,
+      "preserved_old_task_tags": [
+        "T1",
+        "T2"
+      ],
+      "legacy_templates_needing_review": 1
+    }
+  }
+}

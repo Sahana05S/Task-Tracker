@@ -1,10 +1,11 @@
+// Historical formula regression coverage only; M07 conformance has separate fixtures.
 import { describe, expect, it } from 'vitest';
 
 import {
   attendanceIsValidForDailyStar,
   scoreDailyStarCandidate,
   selectDailyStarWinner,
-} from '@/lib/stars/scoring';
+} from '@/lib/stars/legacy-scoring';
 
 describe('scoreDailyStarCandidate', () => {
   it('scores effort, progress, checklist completion, freshness, and attendance', () => {
