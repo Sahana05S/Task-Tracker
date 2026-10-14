@@ -1,5 +1,18 @@
 # Independent acceptance cases
 
+## M08 approved acceptance - 13 October 2026
+
+Complete-vector fixtures verify highest exact score, invalid attendance denial,
+complete/no-eligible outcome, missing sales/population blocking, exact tie guards,
+four wins beating three, shared-score count tie-break, missing coverage and
+nonwinner measured-zero history. The 13 October reply approves D10; explicit
+fixture choices remain independent evidence. Added cases verify the precise
+approved MTD cutoff, initial versus correction as-of and exclusion of future
+assignments from older windows. Real SQL
+guards/retries/rollback/overrides/frozen evidence is in [M08 evidence](M08-evidence.md).
+Positive complete persistence tests use an owner-only synthetic sales availability
+adapter; they do not establish a business-field mapping or native delivery.
+
 ## M07 approved conformance - 13 October 2026
 
 `__tests__/lib/performance/engine.test.ts` applies literal A02/A03/A07/A08/A09/A10
@@ -135,3 +148,84 @@ fixed fixtures independently; its command tests also cover graphs, diamonds,
 permissions, concurrency, receipt replay, credit preservation, frozen-parent
 rollback and current-review Done gates. See M05-evidence.md. Native auth/API and
 browser layers remain unperformed; passing these cases does not certify them.
+
+## M09 independent versus blocked acceptance - 13 October 2026
+
+Independent transaction/permission/preview/race/rollback and single existing Done/Reopen/section/refresh safeguards are tested in tools/test_m09_database.py. Draft fixture-only cases cover all8 support modes, linked future scale with retained earnings, cycles, copy resets and atomic batches. These do not accept D09/D12 business proposals. Actual carryover/archive, activation of support/copy/batch defaults, historical import scope and original-handler equivalence remain blocked by specific decisions or missing sources. Native auth/API/browser/provider verification is outstanding.
+
+## M09 approved acceptance - 13 October 2026
+
+All three follow-up policies are approved. The approved PostgreSQL harness tests
+all8 variants, whole-source Uneven, fractional proportional, prospective credit,
+rollback/retry/races, actual carryover6/0 retaining old4, read-only archives and
+preserved original/frozen records. Shared TypeScript fixtures prove no prior-
+period factor change and current successor workload/earned1.2 after20% new work.
+Completion and period credit survive archive; date boundaries are explicit.
+Focused edge checks exercise copied Yes/N/A/linked reset, preserved template/
+description, cleared other content/no asset reuse, archived derivation freeze,
+running-timer protection and shared refresh. Native auth/API/browser tests remain
+outstanding, source-handler parity is unavailable where missing, and import is
+explicitly user-deferred rather than an implementation gap.
+
+## M10 independent acceptance - 13 October 2026
+
+37 mock Drive cases (31 in the focused run, all37 in the final regression) cover loss after remote/local success, marker visibility
+lag/no duplicates, reserved folder ID, identity/parent mismatch, actual rename
+requests, template version guard, shortcut target, partial copies, safe errors,
+sharing conflicts/recovery and credential boundaries. Portable fresh/upgrade
+checks additionally prove active role/version/replay, native/outbox rollback,
+concurrent claims/resource fencing, verified provider link protection and retained
+archive/frozen-report guards. See M10-evidence. Real Google/Supabase/browser
+acceptance remains unchecked, pending D11 and approved sandbox configuration.
+
+
+M10 approved follow-up (13 October 2026): the three replies settle initial D11
+business choices. Forward27 and the runtime guard bind the sole supplied root,
+Shared Drive/service identity, exact IPO layout, no templates, three file kinds,
+manual phase, native authority and mapped new-file comments. Live ancestry checks
+protect moved assets. A protected read-only bootstrap resolves actual Drive/account
+identity once server credentials are securely supplied; the worker stays disabled.
+Missing service identity/credentials/reviewer map and real/native verification are
+technical setup, not unanswered business-policy choices. Earlier proposals are
+historical. Drawing/Form are user-deferred; no production or M11. See M10-evidence
+and M10-configuration for current checks, pending configuration and recovery.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.
+
+## M11 acceptance evidence — 13 October 2026
+
+See [M11-evidence.md](M11-evidence.md) for passed independent tests and
+disposable-database authorization/migration checks, and
+[M11-view-coverage.md](M11-view-coverage.md) for sheet-by-sheet view mapping.
+M11 remains implemented awaiting verification because signed-in native API and
+desktop/mobile browser checks could not run. Source gaps do not become zero scores,
+awards or invented historical points. The earlier M10 handoff text above does
+not restrict this subsequently authorized module.
+
+## M12 acceptance evidence — 13 October 2026
+
+See [M12-evidence.md](M12-evidence.md). Disposable PostgreSQL fresh/upgrade
+checks cover immutable revision writes, replay/conflict, concurrency, injected
+rollback, director-only correction, named closed-record guards, continuing work,
+legacy preservation and scoped reads. Focused output checks cover archived
+exact factors, uncertified labels and revision differences. Native signed-in
+Supabase/API/browser and complete certified-result tests remain outstanding;
+the synthetic incomplete fixture is not scoring certification.

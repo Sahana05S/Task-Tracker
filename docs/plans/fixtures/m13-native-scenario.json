@@ -1,0 +1,67 @@
+{
+  "contract": "m13-native-acceptance-scenario-v1",
+  "status": "partially seeded and checked in the separate hosted M13 test project; remaining scenarios below are unrun",
+  "hostedTestRef": "ngpmwzksekkpvrgoqngk",
+  "seededRunId": "F87E37",
+  "seededSubset": [
+    "seven real Auth roles including inactive",
+    "shared and outside tasks with 50/50 and 100% shares",
+    "one 1-hour/+20% log with captured scale/shares and idempotent retry",
+    "nested Activity Yes/No/N/A checklist with intentionally empty Setup and Closure No",
+    "one measured 8-hour attendance day with employee/manager detail scoping",
+    "one independently validated fact with self-review denial"
+  ],
+  "environment": "identified disposable native project only",
+  "periodStart": "2026-08-01",
+  "asOfLocalDate": "2026-08-01",
+  "actors": [
+    { "employeeId": "M13-DIR", "role": "managing_director", "active": true },
+    { "employeeId": "M13-ENG", "role": "project_engineer", "active": true },
+    { "employeeId": "M13-DM", "role": "data_manager", "active": true },
+    { "employeeId": "M13-REV", "role": "team_member", "active": true, "relation": "assigned reviewer" },
+    { "employeeId": "M13-A", "role": "team_member", "active": true },
+    { "employeeId": "M13-B", "role": "team_member", "active": true },
+    { "employeeId": "M13-INACTIVE", "role": "team_member", "active": false }
+  ],
+  "sharedTask": {
+    "tag": "M13-SHARED-01",
+    "scale": "10",
+    "priority": "High",
+    "assignedDate": "2026-08-01",
+    "dueDate": "2026-08-05",
+    "shares": [
+      { "employeeId": "M13-A", "share": "0.5" },
+      { "employeeId": "M13-B", "share": "0.5" }
+    ],
+    "reviewer": "M13-REV",
+    "activityTree": {
+      "parent": "Inspection",
+      "leaves": ["Yes", "No", "N/A"],
+      "expectedApplicablePercent": "50"
+    },
+    "setup": "manager-confirmed intentionally empty",
+    "closure": "one required No leaf until completed"
+  },
+  "independentExpectations": {
+    "highCriticalityPerAssignee": "0.5",
+    "superFreshCreditPerAssignee": "1.5",
+    "scale10At20PercentTotalEarned": "2",
+    "scale10At20PercentEarnedPerAssignee": "1",
+    "attendance8AndTaskHours8": "valid",
+    "attendance8AndTaskHours8_01": "invalid",
+    "missingSalesFactor": "unavailable; no final score or certified award",
+    "closedIncompleteMonth": "incomplete_uncertified; no certified winner"
+  },
+  "additionalScenarios": [
+    "manual and automatic task initialization with the same native state",
+    "nested Yes/No/N/A checklist and linked task completion",
+    "Asia/Kolkata midnight timer with reload and same-operation stop retry",
+    "retained log correction and reversal",
+    "independent support review, self-validation denial and reviewed reset",
+    "all eight support variants, duplication and dated carryover",
+    "director-only complete-run override and non-certified close",
+    "named-record exact-date correction and retained revision export",
+    "cross-task, inactive, anonymous and self-role-escalation denials"
+  ],
+  "syntheticCertifiedPath": "requires a fixture-only sales availability adapter; never certify real records from it"
+}

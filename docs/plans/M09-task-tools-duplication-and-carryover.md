@@ -1,6 +1,6 @@
 # M09 — Task Tools, support splitting, duplication and carryover
 
-Status: draft, not started. Required predecessors: M02, M03, M04, M05.
+Status: Implemented awaiting native verification. All three follow-up policies approved; historical import deferred by user. Required predecessors: M02, M03, M04, M05.
 
 ## Outcome
 
@@ -47,3 +47,27 @@ Do not claim exact missing-handler semantics without user decisions. External fi
 D08/D09/D12 resolve scale/batch/import choices. Validate limits and transactions in a disposable environment; a preview must match the actual committed command.
 
 Use the shared definition of done in IMPLEMENTATION.md. Update STATUS.md with acceptance evidence, actual migration/revision, tests and limitations. Recheck predecessor contracts if their code has advanced. Planning proposals become authoritative only when confirmed in DECISIONS.md.
+
+## Current independent boundary
+
+See [M09 evidence](M09-evidence.md) and [all34 menu items](M09-menu-coverage.md).
+Migration24 leaves disputed policy NULL. Copy/batch tests use an explicit draft
+fixture only; carryover/archive execution retains a separate guard. No import,
+physical removal, provider operation or full missing-handler replication is
+claimed. Once the outstanding answers arrive, activate approved behavior through
+another forward migration, implement the dated handoff/archive boundaries and
+run the focused checks. M09 cannot be marked implemented until those items finish.
+
+## Approved completion and verification
+
+The later13 October answers supersede the independent pending-policy boundary.
+Migrations24-25 implement approved support/copy/batch/remaining-work handoff and
+retained archive. Source10 Even gives5+5, fractional proportional20.5% gives2.05
+and future4.1 when source doubles, with earlier credit unchanged. Native complete
+and incomplete atomic batch checks preserve M05 proof. Carryover10 at40% creates
+new6 at0%, retaining source4 and making it read-only. Earlier-period factors and
+frozen snapshots remain unchanged. Historical import is user-deferred.
+
+All focused source tests and PostgreSQL fresh/upgrade checks pass; see evidence
+for exact counts and remaining native auth/API/browser/provider verification.
+No full missing-handler parity claim, production apply/deploy, Drive or M10/M11.

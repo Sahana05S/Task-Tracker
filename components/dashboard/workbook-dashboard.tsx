@@ -36,7 +36,7 @@ export function WorkbookDashboard({
         />
         <BarListCard
           title="Total progress"
-          subtitle="Current scaled progress from tracked tasks"
+          subtitle="Period-earned captured scaled progress from tracked tasks"
           items={charts.totalProgressByTeam}
           empty="No task progress is available yet."
         />

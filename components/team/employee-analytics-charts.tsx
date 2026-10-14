@@ -40,7 +40,7 @@ export function EmployeeAnalyticsChartsPanel({
       <div className="flex flex-col gap-1">
         <h2 className="panel-title text-lg">Individual analytics charts</h2>
         <p className="text-muted-foreground text-sm">
-          Daily trends and task mix for this employee, calculated from live
+          Dated month-to-date observations and as-of task mix, calculated from recorded
           task, log, star, and documentation data.
         </p>
       </div>
@@ -48,37 +48,37 @@ export function EmployeeAnalyticsChartsPanel({
       <div className="grid gap-4 xl:grid-cols-2">
         <TrendChart
           title="Performance score trend"
-          subtitle="Daily star score, with current period score as fallback"
+          subtitle="Dated M07 month-to-date scores; missing inputs leave gaps"
           data={charts.performanceScoreTrend}
           empty="No performance score data is available yet."
         />
         <TrendChart
           title="Productivity trend"
-          subtitle="Daily scaled progress per task hour"
+          subtitle="Month-to-date earned credit / regular attendance hours"
           data={charts.productivityTrend}
-          empty="No logged task hours are available yet."
+          empty="Dated productivity evidence is unavailable."
         />
         <TrendChart
           title="Progress trend"
-          subtitle="Cumulative scaled progress from task logs"
+          subtitle="Period-earned captured scaled credit, including checklist/manual work"
           data={charts.progressTrend}
-          empty="No progress deltas have been logged yet."
+          empty="Dated progress evidence is unavailable."
         />
         <TrendChart
           title="Completion trend"
-          subtitle="Cumulative tasks completed this period"
+          subtitle="Month-to-date completion credit at captured shares"
           data={charts.completionTrend}
-          empty="No assigned tasks were completed this period."
+          empty="Dated completion evidence is unavailable."
         />
         <TrendChart
           title="Loading trend"
-          subtitle="Assigned task scale carried each day"
+          subtitle="Normalized loading fraction from dated carried-task evidence"
           data={charts.loadingTrend}
           empty="No task loading exists for this employee yet."
         />
         <TrendChart
           title="Criticality trend"
-          subtitle="Average priority weight of carried tasks"
+          subtitle="Normalized priority credit from dated evidence"
           data={charts.criticalityTrend}
           empty="No priority-bearing tasks are available yet."
         />
@@ -130,7 +130,7 @@ function TrendChart({
 }) {
   return (
     <ChartShell title={title} subtitle={subtitle}>
-      {data.length === 0 ? (
+      {data.length === 0 || data.every(p=>p.value===null) ? (
         <EmptyChart>{empty}</EmptyChart>
       ) : (
         <div className="soft-inset h-64 w-full p-2">
@@ -157,6 +157,7 @@ function TrendChart({
               />
               <Tooltip content={<TrendTooltip />} />
               <Line
+                connectNulls={false}
                 type="monotone"
                 dataKey="value"
                 stroke={CHART_POSITIVE}
@@ -169,6 +170,7 @@ function TrendChart({
           </ResponsiveContainer>
         </div>
       )}
+      <details className="mt-2"><summary>Read chart values</summary><table className="w-full text-sm"><thead><tr><th>Date</th><th>Value</th></tr></thead><tbody>{data.map(p=><tr key={p.date}><td>{p.date}</td><td>{p.display??(p.value===null?'Unavailable':p.value.toFixed(6))}</td></tr>)}</tbody></table></details>
     </ChartShell>
   );
 }
@@ -310,7 +312,7 @@ function TrendTooltip({
 
   return (
     <TooltipShell title={point.label}>
-      <TooltipRow label="Value" value={formatNumeric(point.value)} />
+      <TooltipRow label="Value" value={point.display??(point.value===null?'Unavailable':point.value.toFixed(6))} />
     </TooltipShell>
   );
 }

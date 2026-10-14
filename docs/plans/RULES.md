@@ -1,5 +1,44 @@
 # Business rule contract
 
+## M13 source availability confirmation — 13 October 2026
+
+The user confirmed that BN/BO/BP sales source definitions will be supplied
+later. Until then the sales factor, dependent final score/ranking and certified
+awards remain Unavailable. Older records lacking dated owner/share/scale,
+business-date or review provenance remain non-certified until reconciled with
+authoritative evidence. Synthetic adapter values are test fixtures only.
+This confirms the existing M06–M12 guarded behavior; it adds no score formula.
+
+## M12 approved archive boundary — 13 October 2026
+
+Month reports have live/draft, closed and correction states. Directors alone
+close or authorize bounded corrections. A closed revision preserves its own
+Kolkata as-of, M07 rule/source context, factors, retained award runs, effective
+wins, reasons and actor; later corrections create another revision. Earlier
+revisions remain readable and are marked superseded by a later current revision.
+Incomplete evidence may be retained as a clearly non-certified archive; no
+missing factor or winner becomes zero or certified. Correction grants identify
+existing record UUIDs and exact dates, and expire when a new revision closes.
+Prospective current-period work on continuing tasks remains possible. The old
+upsert-based Freeze action is retired. Existing pre-M07 snapshots/reports retain
+their original rule labels and values; no historical reconstruction is implied.
+
+## M08 approved award boundary - 13 October 2026
+
+Awards consume exact M07 scores; attendance gates eligibility without a bonus.
+Missing factors/competitor evidence block comparison; technical failures remain
+failed/retryable, separate from complete/no-eligible outcomes. Persist all
+candidates/context/sources/gates/revisions. Narrow workers commit calculated
+results; directors request the same pipeline and alone may override under an
+approved policy. Source changes invalidate observed open days atomically; frozen
+archives deny ordinary changes. Old awards remain legacy/uncertified, excluded
+from certified monthly counts and daily score measurements. The user approved
+MTD/day participation/report-validity gates, no-winner exact ties and eligible
+director override/count replacement with reaffirmation after corrections.
+Forward23 activates these policies with an end-of-day initial source cutoff;
+new correction revisions retain date/window with a new M07 as-of. Before cutoff,
+record blocked and wait durably until due. No production schedule is enabled.
+
 ## M07 approved shared engine - 13 October 2026
 
 `m07-ten-factor-v1` implements the exact confirmed ten-term median-difference
@@ -279,3 +318,87 @@ storage/display precision and factor cohorts are D04. Additive credit/source
 schema and permission boundaries are documented in M00-permissions.md.
 
 Use a named rule version such as `workbook-parity-v1` only when its dependent decisions are resolved. Record user-approved changes in DECISIONS.md and fixtures. Never retroactively reinterpret old snapshots without a new revision.
+
+## M09 contract boundary - 13 October 2026
+
+Confirmed: Even transfers half; Uneven transfers an approved amount; Proportional remains a live linked percentage without reducing source; Absolute independent without source reduction; Effort retains category and Skill uses SD. Copy/status/date/batch/archive proposals are recorded in DECISIONS, not confirmed rules. Technical invariants are actor/version-bound preview, atomic writes, retry safety and retained history. M01 through M08 scoring, approvals, scales and history rules remain unchanged.
+
+## Approved M09 contract - 13 October 2026
+
+The follow-up explicitly approves all D09/D12 proposals recorded in DECISIONS.
+Forward25 activates native support/copy/phase/atomic-batch and remaining-work
+handoff/retained archive after24. Exact fractional proportional percentages are
+allowed; Uneven may transfer the whole source; source inputs and historical
+captures survive prospective overrides. Copies reset execution/review/leaf state
+and section initialization, preserving known shares/templates/description and
+copying no assets. Historical import is deferred by user.
+
+Archive is a dated operational boundary, not Discarded or deletion. Keep source
+identity, progress, scale, dates, logs and captured completion/earned attribution.
+Exclude archives only from carried loading/criticality/freshness when effective
+by as-of and before that window's exclusive end. Keep actual period earnings and
+Done completion; older windows and frozen snapshots stay intact. Database guards
+make archived sources and their execution/detail/checklist/participant/review
+records read-only. Propagation and freshness workers skip frozen archive branches.
+The ten-factor formula, units, medians/cohorts, rounding and award policies remain
+unchanged. Missing inputs remain unavailable.
+
+A prospective whole-source transfer may leave current scale0. Captured period
+credit remains attributed at its earning scale/shares; current zero scale excludes
+carried workload but does not erase earlier measured period earnings. Other
+existing task eligibility checks remain unchanged; unavailable historical captures
+are still unavailable, not invented zero or credit.
+
+## M10 provider boundary - 13 October 2026
+
+The M10 request requires actual provider effects with retained identity/attempts,
+verified labels/URLs and replay-safe recovery, separate from manual links. Reuse
+the outbox; never expose credentials, infer Drive scopes from login, invent source
+IDs/templates/sharing or automatically delete uncertain assets. Native tasks must
+remain usable while provider work is unavailable. Preserve M09 archive/handoff
+and M07/M08 formulas. D11 policy remains unapproved and disabled; the native-only
+checklist adapter and commenter/no-sharing alternatives are proposals, not answers.
+See M10-evidence, M10-configuration and DECISIONS for verification/approval scope.
+
+
+## Approved M10 follow-up - 13 October 2026
+
+The user selected "Shared Drive + dedicated service account (Recommended)" and
+"Native checklists + reviewer comments (Recommended)". The supplied sandbox
+root is `13G0w_T5i6cKUMiREETYlpH9Z_3G-RyGH`.
+
+Approved exact initial phase:
+- Only that sandbox folder; no existing business-folder mutations or broader sharing.
+- `[Employee ID]/[Task Tag] - [Task Title]/{Input,Process,Output}`.
+- No templates initially; Docs/Sheets/Slides only. Drawing/Form are deferred by user.
+- Manual initialization during sandbox tests. The existing automatic native hook
+  stays implemented but disabled for provider operations until sandbox tests pass.
+- Native checklists are canonical; external copies are assets, with no two-way sync.
+- Approved mapped reviewer commenter access only on newly created/copied files,
+  with notifications suppressed. No predecessor/folder/public/domain ACL changes.
+
+The selected recommended service identity uses the explicit `drive` scope,
+constrained to the approved sandbox by database policy and live parent checks.
+Actual account principal, Shared Drive ID, credentials and reviewer-email map
+remain unconfigured. Folder Shared Drive membership is unverified; it is not
+inferred from the URL. No production or M11 authorization was added.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.

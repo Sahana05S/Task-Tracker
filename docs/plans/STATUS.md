@@ -24,12 +24,12 @@ verification; sales mapping/provenance remain guarded. See its evidence/handoff.
 | [M05](M05-checklist-engine-and-sync.md) | Implemented awaiting verification | Approved empty/N/A and prospective switching; native auth/API/browser outstanding | Migration18; [evidence](M05-evidence.md) |
 | [M06](M06-attendance-and-contribution-records.md) | Implemented awaiting verification | Both follow-up policies approved; native auth/API/browser outstanding; sales mapping/legacy provenance guarded | Migrations 19-20; [evidence](M06-evidence.md) |
 | [M07](M07-ten-factor-performance-engine.md) | Implemented awaiting verification | D02/D03/D04 approved; sales/provenance guarded; native checks outstanding | Migration21; [evidence](M07-evidence.md) |
-| [M08](M08-daily-and-monthly-awards.md) | Not started | M07 | — |
-| [M09](M09-task-tools-duplication-and-carryover.md) | Not started | M02, M03, M04, M05 | — |
-| [M10](M10-drive-and-file-automation.md) | Not started | M01, M02, M04, M09; D11 and provider setup | — |
-| [M11](M11-dashboard-profiles-timelines-and-reports.md) | Not started | M07, M08, M09 | — |
-| [M12](M12-month-close-and-report-revisions.md) | Not started | M02, M07, M08, M11 | — |
-| [M13](M13-end-to-end-qa-and-rollout.md) | Not started | M01–M09, M11, M12; M10 for full external parity | — |
+| [M08](M08-daily-and-monthly-awards.md) | Implemented awaiting verification | All D10 answers approved; sales/history guarded; native delivery checks outstanding | Migrations22-23; [evidence](M08-evidence.md) |
+| [M09](M09-task-tools-duplication-and-carryover.md) | Implemented awaiting verification | All D09/D12 follow-ups approved; import deferred by user; native auth/API/browser outstanding | Migrations24-25; [evidence](M09-evidence.md) |
+| [M10](M10-drive-and-file-automation.md) | Deferred by user; independent code/tests retained | Live Drive integration, credential setup and provider verification deferred; manual links available; no provider completion | Migrations26-27 unchanged; [evidence](M10-evidence.md) |
+| [M11](M11-dashboard-profiles-timelines-and-reports.md) | Implemented awaiting verification | M07/M08/M09; signed-in browser and native Supabase checks outstanding; sales/history guarded | Migration 28; [evidence](M11-evidence.md), [view coverage](M11-view-coverage.md) |
+| [M12](M12-month-close-and-report-revisions.md) | Implemented awaiting native and certified-path verification | M02, M07, M08, M11; sales mapping/provenance still unavailable | Forward 29; [evidence](M12-evidence.md) |
+| [M13](M13-end-to-end-qa-and-rollout.md) | Release preparation complete; acceptance incomplete | Native auth/API/browser/worker and sales/provenance gates; M10 deferred | [evidence](M13-evidence.md), [readiness](RELEASE-READINESS.md), [runbook](RELEASE-RUNBOOK.md) |
 
 
 ## State vocabulary
@@ -55,6 +55,32 @@ Next ready module:
 ```
 
 ## Session handoff
+
+### 13 October 2026 - M08 approved award implementation
+
+M08 is implemented awaiting native verification.
+
+M08 and all three D10 recommendations are approved. Selection consumes M07
+exact results; forward22 retains all
+candidate/run/override evidence and atomic source-versioned commands. Source
+corrections invalidate open days, leases/receipts protect retries and frozen
+archives deny ordinary changes. Director controls, team/dashboard monitoring and
+employee nonwinner history are wired. Legacy rows remain uncertified and excluded
+from monthly counts/current daily score points. No production apply/deploy/jobs,
+M09, M12 or Drive operations.
+
+Forward23 activates MTD/end-of-day/day participation/report gates, exact
+no-winner ties and eligible director overrides replacing counts with reaffirmation
+after corrections. Schedule stays disabled; missing sales/competitor sources
+block outcomes. Initial observations use the cutoff, correction revisions their
+new as-of; future-assigned tasks cannot enter earlier report windows. Focused9 files/65 tests and full42 files/360 tests,
+TypeScript/build and real PostgreSQL fresh01-23/upgrade01-21 to22/23 pass; native
+JWT/API/browser and real worker delivery remain unperformed. Complete positive
+SQL tests use an explicitly synthetic owner-only sales adapter, not live mapping.
+Final guard/metadata checks pass, as do26 preservation hashes, planning links
+and diff checks. The three D10 questions were presented after independent work
+and all recommended choices are now approved and implemented. See [M08 evidence](M08-evidence.md).
+
 
 ### 13 October 2026 - M07 implementation and approved follow-ups
 
@@ -403,3 +429,199 @@ No additional M05 business answer is pending. Reconcile legacy roles/shares/
 missing source data individually, then rehearse18 and the app in a native sandbox
 before rollout. The disposable loopback cluster is stopped at handoff; cached test
 artifacts remain outside the repo. M06 requires a separate instruction.
+
+## M09 handoff - 13 October 2026
+
+Independent native framework/inventory/verification is complete. M09 remains
+partial: copies, support defaults and multi-task batches await D09/D12; actual
+dated carryover/archive activation and import scope are still unresolved.
+Migration24 was applied only to two disposable loopback databases. No production
+migrations, deployments, Drive operations, M10/M11 or score/award changes.
+Read M09-evidence for exact checks and question proposals; preserve all existing
+M08 work and earlier migrations. Native Supabase/auth/API/browser checks remain
+unperformed. Do not certify draft fixture policy as a business decision.
+
+## M09 approved completion - 13 October 2026
+
+All three follow-up answers are recorded in DECISIONS. Forward25 activates24 and
+adds the dated read-only handoff/archive boundary. M09 is implemented awaiting
+native verification: all8 support variants, explicit copy/phase/atomic batches,
+reasoned retained archive and actual remaining-work carryover are present. Prior
+pending-policy statements above are historical. Historical import is deferred by
+user;22 source bodies/provider references remain missing, with native equivalents
+and unavailable parity distinguished in the latest menu ledger.
+
+Fresh01-25 and upgrade01-24-to25 portable database tests pass; report fixtures
+prove earlier earnings/factors and frozen snapshots remain. See M09-evidence for
+exact test totals, checks and the owner-only synthetic historical share fixture.
+No production apply/deploy, Drive, M10/M11 or scoring/award-policy changes. For
+rollout, check the actual deployed migration ledger and apply only missing forward
+migrations after explicit authorization, then run native auth/API/browser checks.
+No next-module work is authorized here.
+
+
+## M10 handoff - 13 October 2026
+
+Partially implemented and awaiting D11 setup/approval and native/provider
+verification. Existing outbox supports actual Drive folder/file/copy/rename/
+shortcut and explicit new-file reviewer sharing through a gated server worker.
+No default account/root/template/sharing policy, credentials or schedule was
+installed; configuration is NULL and worker disabled. Native tasks stay usable.
+47 regression files / 427 tests (37 Drive cases), focused31, typecheck/build and fresh/upgrade
+01-26 disposable PostgreSQL passed; real Google, native auth/API and browser
+checks did not run. See M10-evidence and fixtures/m10-verification-summary.json.
+No production apply/deploy/sharing, historical import, scoring/award/carryover
+policy changes or M11. Missing sales mapping is independent of Drive setup.
+
+## M10 approved setup handoff - 13 October 2026
+
+All three D11 replies are recorded in DECISIONS. Shared Drive/service identity,
+sole supplied sandbox root, exact employee/task/IPO paths, no templates, three
+native file kinds, manual testing, native authority and new-file mapped comments
+are approved. Forward27 seals this initial policy; the runtime checks the same
+approval and live ancestry before provider writes. Neither the policy nor
+credentials/worker was installed in a live environment. Automatic path stays
+implemented but disabled. Read-only GET setup diagnostics can verify the root
+and discover its actual Shared Drive ID after secure identity provisioning.
+Account/reviewer setup and real Google/native/API/browser verification remain
+pending. See M10-evidence for current checks. No production apply/deploy, business
+folder mutation, broader ACLs, M11 or scoring/award/carryover policy change.
+
+Current M10 follow-up: 451 tests/49 files, all61 Drive cases; focused59,
+typecheck/build and fresh01-27/upgrade26-to27 passed. Prior32 protected files
+and migration26 unchanged. Account secrets/email and reviewer map remain missing.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.
+
+M10 deferral closure checks: focused64, full454 tests/50 files, typecheck,
+production build and preservation passed. No new SQL or live-provider check.
+See fixtures/m10-deferred-verification-summary.json. Proceed to the separately
+selected M11 work without requiring Drive credentials.
+
+## M11 implementation handoff — 13 October 2026
+
+The user's subsequent pasted M11 request authorizes dashboard/profile/timeline/
+live-report work. The earlier M10 statement “M11 is the next planned module” is
+historical and superseded by this entry. M11 is **implemented awaiting native
+verification**, not released. [Evidence](M11-evidence.md) and [workbook view
+coverage](M11-view-coverage.md) record exact behavior and gaps. Forward migration
+28 adds prospective presentation history and a scoped live read RPC; it has run
+only in disposable PostgreSQL. The shared M07 engine/M08 award policy were not
+rewritten. No production migration, deployment, worker activation, Drive action
+or M12 work occurred.
+
+Checks: 466 tests/52 files, focused M11 tests, typecheck, production build,
+PostgreSQL fresh 01–28 and upgrade 01–27→28 with nonzero shared work/attendance/
+contributions, role denials and rollback, and 38-file preservation passed.
+Server-rendered markup passed. Signed-in native Supabase/API/browser desktop and
+mobile checks remain unavailable in this environment and must not be inferred
+from mocks. BN/BO/BP sales mapping and legacy provenance remain missing and block
+dependent certification only. Both original XLSX references are present; Drive
+integration remains user-deferred. No new business decision was invented.
+
+## M12 implementation handoff — 13 October 2026
+
+The subsequent M12 request and two user answers authorize immutable month
+archives, visibly non-certified incomplete close and named-record/exact-date
+correction. Forward migration 29 adds versioned director-only close/revision
+commands, retained M07/M08/M11 evidence, scoped archive reads and closed-date
+guards. Reports/exports now choose live or a retained revision, and the old
+overwriteable Freeze action is retired. See [M12 evidence](M12-evidence.md).
+Existing 01–28 migrations, legacy snapshot rows and original formula labels are
+preserved. The certified path remains unavailable with the unresolved sales and
+legacy history sources. M10 Drive integration remains user-deferred. Native
+Supabase/API/browser and positive certified-path checks are outstanding; no
+production migration/deployment, worker enablement or M13 work occurred.
+
+Final M12 local checks: 9 focused archive/export tests; 471 tests in 53 files; typecheck and
+production build passed. Disposable PostgreSQL fresh 01–29 and upgrade
+01–28→29 passed with concurrency, rollback, role, correction and archive-read
+checks. These use the JWT-role shim, not native Supabase authentication.
+
+## M13 acceptance and release-preparation handoff — 13 October 2026
+
+The subsequent pasted M13 request authorizes only test-environment acceptance
+and preparation. The [M13 evidence](M13-evidence.md), [readiness matrix](RELEASE-READINESS.md)
+and [runbook](RELEASE-RUNBOOK.md) separate core, certified scoring/awards and
+deferred Drive. An [operator guide](../OPERATIONS.md) covers native workflows.
+Local migration sequence remains 01–29; M13 adds no SQL or app behavior change.
+The workspace is uncommitted on `main` at `7764489ac6bcc13f0062e67b401c7c9738f5848b`,
+so there is no exact deployable M13 revision or known deployed migration ledger.
+
+Docker's Linux engine pipe is unavailable; local native Supabase/Auth/PostgREST,
+signed-in browser and delivered worker checks did not run. The linked Supabase
+project is unclassified and untouched. Portable PostgreSQL 17 fresh 01–29,
+upgrade 01–28→29 and JWT-role-shim transaction/permission tests passed. A
+separate disposable logical restore matched nine table digests and four retained
+revisions. The new CI workflow has not run remotely. Final app check totals are
+recorded in M13 evidence. Both supplied workbooks remain present and unchanged;
+read-only BN/BO/BP reinspection confirms missing sales definitions. The user
+answered both M13 source questions: missing sales-dependent results stay
+Unavailable, and older records without dated provenance stay non-certified
+until authoritative evidence is supplied. No synthetic adapter certifies real
+scores, awards or archives. No production migration, deployment, worker/Drive
+activation or import occurred. M13 acceptance remains incomplete.
+
+## M13 separate hosted Supabase follow-up — 13 October 2026
+
+The user created `TaskPulse M13 Test` (`ngpmwzksekkpvrgoqngk`). Before writes,
+the CLI confirmed it was healthy and distinct from the app's existing
+`sbtxtsisjhuciobxykcm` project. The existing `.env.local` and repository
+Supabase link were left unchanged. An isolated linked CLI work directory held
+hash-matched copies of migrations 01–29; remote history was empty, dry run
+listed 01–29, and a fresh hosted push and 29-row ledger check passed. This
+supersedes the earlier “no native project” status, without implying a hosted
+legacy upgrade or any production change.
+
+Seven synthetic Auth accounts and bounded records were created only in the
+test project. The rerunnable [hosted harness](../../tools/test_m13_hosted_auth.py)
+passed native sign-in/role, manager task creation and idempotency, 50/50 shares,
+member log/credit capture and retry, manager/assignee nested checklist with N/A,
+measured attendance and detail scoping, independent fact review, protected
+field/cross-task/anonymous/inactive/self-escalation/self-validation/member month-command
+denials. The detailed cases and limits are in [M13 evidence](M13-evidence.md).
+One initial future as-of test request was rejected as required and corrected;
+the final run passed. Native browser/worker/full lifecycle/award/archive
+delivery, hosted legacy upgrade/recovery and complete certified scores remain
+unverified. Drive remains deferred and sales/legacy source gaps unchanged.
+M13 remains incomplete; no production migration, deploy or worker activation.
+
+## M13 hosted signed-in browser and clock boundary — 14 October 2026
+
+A temporary local app process used the separate hosted test URL/key without
+editing `.env.local` or the original Supabase link. Synthetic sign-in, desktop
+task list/detail/nested checklist/dashboard/reports and a mobile-width task
+list passed in headless Edge. This is browser smoke, not a complete workflow or
+deployed revision. Hosted direct API also passed the current-month live
+presentation RPC with a database-sourced timestamp.
+
+The browser initially found dashboard and reports HTTP 500 when independent
+app-host “now” timestamps crossed PostgreSQL's strict nonfuture boundary.
+Native probing showed immediate host “now” rejected (23514), while 5s/30s
+earlier succeeded. Default live as-of now trails by 10s; reports and team
+queries pass the chosen as-of into supporting contribution reads. Explicit
+historical times remain unchanged. Focused presentation/team tests 12/12,
+full unit suite 472/472, typecheck, production build and final hosted browser
+smoke passed. The build used unchanged `.env.local`; the browser process used
+the isolated test project. The 13 October blanket “no browser” lines above
+are superseded. Worker delivery, complete role/workflow journeys, hosted
+upgrade/restore, sales definitions and legacy certification remain open. No
+production migration/deploy, Drive operation or worker activation occurred.

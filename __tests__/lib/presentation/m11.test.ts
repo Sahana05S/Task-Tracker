@@ -1,0 +1,28 @@
+import { createElement } from 'react';
+import { describe,it,expect,vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { buildPresentation } from '@/lib/presentation/model';
+import { viewContext } from '@/lib/presentation/context';
+import { liveReport,reportCsv,csvCell } from '@/lib/presentation/export';
+import { resolvePerformance } from '@/lib/performance/sources';
+import { FACTORS } from '@/lib/performance/engine';
+import { buildEmployeeAnalyticsCharts } from '@/lib/team/employee-charts';
+import { LiveReport } from '@/components/reports/live-report';
+import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
+import { TeamStatsGrid } from '@/components/dashboard/team-stats-grid';
+const response=JSON.parse(readFileSync('docs/plans/fixtures/m11-fresh-context.json','utf-8'));
+const view=viewContext(response.sources.periodStart.slice(0,7),response.sources.asOf,new Date(response.sources.asOf));
+const employee='00000000-0000-0000-0000-000000000004';
+const model=()=>buildPresentation(response,view,employee);
+describe('M11 independent presentation acceptance',()=>{
+ it('defaults live as-of behind hosted DB clock while retaining explicit historical as-of',()=>{const now=new Date('2026-10-14T01:23:49.059Z');expect(viewContext(undefined,undefined,now).asOf).toBe('2026-10-14T01:23:39.059Z');expect(viewContext('2026-10','2026-10-13T12:00:00.000Z',now).asOf).toBe('2026-10-13T12:00:00.000Z');const boundary=viewContext(undefined,undefined,new Date('2026-10-31T18:30:05.000Z'));expect(boundary.period.startDate).toBe('2026-10-01');expect(boundary.asOfLocalDate).toBe('2026-10-31');});
+ it('dashboard, profile and report retain the identical M07 exact result and context',()=>{const m=model(),r=liveReport(m);expect(m.calculation).toEqual(resolvePerformance(response.sources));expect(r.performance.context).toEqual(m.calculation.context);expect(r.performance.members).toEqual(m.calculation.members.filter(m=>m.userId===employee));expect(Object.keys(r.performance.members[0].factors)).toEqual([...FACTORS]);expect(m.analytics.members.find(m=>m.userId===employee)?.calculation).toEqual(r.performance.members[0]);});
+ it('missing sales stays unavailable with a partial subtotal and no final ranking',()=>{const result=model().calculation.members.find(m=>m.userId===employee)!;expect(result.factors.sales.available).toBe(false);expect(result.compositeExact).toBeNull();expect(result.eligibleForRanking).toBe(false);const html=renderToStaticMarkup(createElement(PerformanceBreakdown,{result,context:model().calculation.context}));expect(html).toContain('Available-factor subtotal');expect(html).toContain('Final score unavailable');expect(html).toContain('Cohort and sources');});
+ it('never creates future observations or rebuilds history from current tasks',()=>{const m=model(),charts=buildEmployeeAnalyticsCharts({period:view.period,performance:null,tasks:m.tasks,logs:m.logs,links:[],stars:[],employeeId:employee,observations:m.series});expect(charts.loadingTrend.every(p=>p.date<=view.asOfLocalDate)).toBe(true);expect(charts.loadingTrend.length).toBe(m.series.length);expect(charts.taskFreshness.filter(b=>b.key!=='Unavailable').map(b=>b.key).sort()).toEqual(['Super Fresh','Almost Fresh','Fresh','Almost Stale','Stale','Rotten'].sort());expect(buildEmployeeAnalyticsCharts({period:view.period,performance:null,tasks:m.tasks,logs:m.logs,links:[],stars:[]}).loadingTrend).toEqual([]);});
+ it('reconciles captured shared credit without duplicating team earnings and distinguishes task productivity',()=>{const m=model(),t=m.sources.tasks.find(t=>t.tag==='M11-SYNTHETIC')!;expect(Number(t.periodCredits![employee])).toBe(1);expect(Number(t.periodCredits![employee])+Number(t.periodCredits!['00000000-0000-0000-0000-000000000005'])).toBe(2);expect(m.taskRates.find(r=>r.taskId===t.id)?.value).toBe('20.000000');expect(m.logs[0].hoursWorked).toBe(1);});
+ it('exports context, units, evidence and unavailable values without spreadsheet commands',()=>{const csv=reportCsv(model());expect(csv).toContain('Asia/Kolkata');expect(csv).toContain('Unavailable');for(const value of ['=SUM(1,2)',' +cmd','\t@cmd','-1+2','\r=cmd'])expect(csvCell(value)).toMatch(/^"'/);expect(csvCell('normal "label"')).toBe('"normal ""label"""');});
+ it('renders named selectors, downloads, copy, private scope and stable task links',()=>{const html=renderToStaticMarkup(createElement(LiveReport,{model:model()}));expect(html).toContain('name="period"');expect(html).toContain('name="asOf"');expect(html).toContain('Download CSV');expect(html).toContain('Copy report text');expect(html).toContain('Automatic Drive operations are unavailable');expect(html).toContain('/tasks/');expect(html).toContain('aria-label="Download live report"');});
+ it('does not present missing team attendance as healthy zero',()=>{const m=model();const html=renderToStaticMarkup(createElement(TeamStatsGrid,{analytics:m.analytics,attendanceComplete:false}));expect(html).toContain('Known regular attendance hours');expect(html).toContain('Unavailable');expect(html).toContain('daily attendance inputs are missing');});
+ it('source-contract failures remain failures',()=>{expect(()=>buildPresentation({},view)).toThrow('unavailable');expect(()=>buildPresentation(response,{...view,asOf:'2026-01-01T00:00:00Z'})).toThrow('mismatch');});
+});

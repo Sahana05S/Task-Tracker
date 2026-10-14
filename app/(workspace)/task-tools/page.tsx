@@ -1,3 +1,5 @@
+import { DriveOperations,type DriveReadModel } from '@/components/tasks/drive-operations';
+import { TaskToolsOperations } from '@/components/tasks/task-tools-operations';
 import Link from 'next/link';
 import { NativeTemplateSelect } from '@/components/tasks/native-details-editor';
 import { NativeTemplateManager } from '@/components/tasks/native-template-manager';
@@ -9,16 +11,11 @@ import { TaskToolsEdit } from '@/components/tasks/task-tools-edit';
 import type { Metadata } from 'next';
 
 import {
-  createSplitSupportTaskAction,
-  createSupportTaskAction,
   createTaskDetailsWithFolderAction,
   createTaskFromTools,
   createTaskLogFromTools,
   createWorkFileLinkAction,
-  duplicateTaskAction,
-  freezeMonthlySnapshotFromTools,
   generateReportFromToolsAction,
-  refreshTaskMetricsAction,
   renameTaskFolderLinkAction,
   updateTaskDetailsAction,
   updateTaskFromTools,
@@ -68,6 +65,9 @@ export default async function TaskToolsPage() {
     getRunningTimers(),
     getNativeTemplates(),
   ]);
+  const driveDb=await createClient();
+  const driveRead=await driveDb.rpc('drive_read_model',{});
+  const driveModel=driveRead.error?null:driveRead.data as unknown as DriveReadModel;
   const period = currentPeriod();
 
   return (
@@ -89,7 +89,7 @@ export default async function TaskToolsPage() {
                 {workflow.label}
                 <span className="text-muted-foreground mt-1 block font-normal">
                   {canUseWorkbookWorkflow(profile.role, workflow)
-                    ? 'Available'
+                    ? workflow.status
                     : 'Manager-only'}
                 </span>
               </div>
@@ -97,6 +97,7 @@ export default async function TaskToolsPage() {
           </div>
         </section>
 
+        <DriveOperations tasks={tasks} model={driveModel} canManage={canManage}/>
         <div className="grid gap-4 xl:grid-cols-2">
           <ToolCard title="Task timer">
             <TaskTimerForms tasks={tasks} timers={runningTimers} members={members} />
@@ -107,10 +108,10 @@ export default async function TaskToolsPage() {
           <ToolCard title="Task status update">
             <StatusForm tasks={tasks} />
           </ToolCard>
-          <ToolCard title="Refresh metrics">
-            <RefreshMetricsForm tasks={tasks} />
+          <ToolCard title="Task operations and tag export">
+            <TaskToolsOperations tasks={tasks} members={members} canManage={canManage}/>
           </ToolCard>
-          <ToolCard title="Task import / create flow">
+          <ToolCard title="Create a new task">
             {canManage ? (
               <TaskCreateForm members={members} templates={templates} />
             ) : (
@@ -125,23 +126,9 @@ export default async function TaskToolsPage() {
             )}
           </ToolCard>
           {canManage ? <ToolCard title="Native template versions"><NativeTemplateManager templates={templates}/></ToolCard> : null}
-          <ToolCard title="Save asset links">
+          <ToolCard title="Add existing asset links">
             {canManage ? (
               <WorkFileForm tasks={tasks} />
-            ) : (
-              <PermissionNote />
-            )}
-          </ToolCard>
-          <ToolCard title="Task duplication">
-            {canManage ? (
-              <DuplicateTaskForm tasks={tasks} />
-            ) : (
-              <PermissionNote />
-            )}
-          </ToolCard>
-          <ToolCard title="Support task creation">
-            {canManage ? (
-              <SupportTaskForms tasks={tasks} members={members} />
             ) : (
               <PermissionNote />
             )}
@@ -260,15 +247,6 @@ function StatusForm({ tasks }: { tasks: readonly Task[] }) {
   );
 }
 
-function RefreshMetricsForm({ tasks }: { tasks: readonly Task[] }) {
-  return (
-    <form action={asFormAction(refreshTaskMetricsAction)} className="grid gap-2">
-      <TaskIdSelect tasks={tasks} name="taskId" />
-      <Button type="submit" size="sm" variant="outline">Refresh task metrics</Button>
-    </form>
-  );
-}
-
 function TaskCreateForm({ members,templates }: { members: readonly User[];templates:readonly NativeTemplate[] }) {
   return (
     <ExecutionForm action={createTaskFromTools} scope="createTaskTools" className="grid gap-2">
@@ -298,64 +276,7 @@ function TaskDetailsForm({tasks,templates}:{tasks:readonly Task[];templates:read
  <p className="text-sm">Edit SMART, IPO, relationships and reviewer notes on the task page. Reinitialization preserves content.</p>{tasks.map(t=><Link key={t.id} className="text-sm underline" href={'/tasks/'+encodeURIComponent(t.taskTag)}>{t.taskTag} ? {t.title}</Link>)}</div>;
 }
 function WorkFileForm({tasks}:{tasks:readonly Task[]}) {
- return <ExecutionForm action={createWorkFileLinkAction} scope="saveAssetTools"><TaskIdSelect tasks={tasks} name="taskVersion" versioned/><select name="ipoRole" className={inputClass}>{['input','process','output','reference'].map(r=><option key={r}>{r}</option>)}</select><select name="linkType" className={inputClass}>{['Folder','Document','Account','Flowchart','Engineering','Drawing','Checklist','Raw Link','Other'].map(t=><option key={t}>{t}</option>)}</select><input name="label" required placeholder="Asset label" className={inputClass}/><input name="url" type="url" required placeholder="Existing asset URL" className={inputClass}/><textarea name="notes" className={textareaClass}/><p className="text-sm">This saves a link. Provider work is not requested.</p><Button type="submit">Save asset link</Button></ExecutionForm>;
-}
-
-function DuplicateTaskForm({ tasks }: { tasks: readonly Task[] }) {
-  return (
-    <form action={asFormAction(duplicateTaskAction)} className="grid gap-2">
-      <input type="hidden" name="operationId" value={randomUUID()} />
-      <TaskIdSelect tasks={tasks} name="sourceTaskId" />
-      <input name="newTaskTag" className={inputClass} placeholder="New global task tag" required />
-      <input name="title" className={inputClass} placeholder="New title, optional" />
-      <Button type="submit" size="sm">Duplicate task</Button>
-    </form>
-  );
-}
-
-function SupportTaskForms({ tasks, members }: { tasks: readonly Task[]; members: readonly User[] }) {
-  return (
-    <div className="grid gap-3">
-      <form action={asFormAction(createSupportTaskAction)} className="grid gap-2">
-        <TaskIdSelect tasks={tasks} name="parentTaskId" />
-        <input name="taskTag" className={inputClass} placeholder="Support task tag" required />
-        <input name="title" className={inputClass} placeholder="Support task title" required />
-        <TaxonomySelect name="category" values={TASK_CATEGORIES} />
-        <TaxonomySelect name="priority" values={TASK_PRIORITIES} />
-        <MemberSelect members={members} name="assigneeId" label="Assignee" />
-        <MemberSelect members={members} name="reviewerId" label="Reviewer" optional />
-        <input type="date" name="dueDate" className={inputClass} />
-        <input type="number" step="0.01" min="0" name="taskScale" className={inputClass} placeholder="Task scale" />
-        <textarea name="description" className={textareaClass} placeholder="Description" />
-        <textarea name="notes" className={textareaClass} placeholder="Support relation notes" />
-        <Button type="submit" size="sm">Create support task</Button>
-      </form>
-      <form action={asFormAction(createSplitSupportTaskAction)} className="grid gap-2 border-t border-slate-200 pt-3">
-        <TaskIdSelect tasks={tasks} name="sourceTaskId" />
-        <div className="grid grid-cols-2 gap-2">
-          <select name="supportKind" className={inputClass}>
-            <option value="effort">Effort Support</option>
-            <option value="skill">Skill Support</option>
-          </select>
-          <select name="splitMode" className={inputClass}>
-            <option value="split-even">Split Even</option>
-            <option value="split-uneven">Split Uneven</option>
-            <option value="proportional">Proportional Support</option>
-            <option value="absolute">Absolute Scale Support</option>
-          </select>
-        </div>
-        <input name="taskTag" className={inputClass} placeholder="New support task tag" required />
-        <input name="title" className={inputClass} placeholder="Support title, optional" />
-        <MemberSelect members={members} name="assigneeId" label="Support assignee" />
-        <MemberSelect members={members} name="reviewerId" label="Reviewer override" optional />
-        <div className="grid grid-cols-2 gap-2">
-          <input type="number" step="0.01" min="0" name="splitAmount" className={inputClass} placeholder="Scale for uneven/absolute" />
-          <input type="number" step="1" min="0" max="100" name="splitPercentage" className={inputClass} placeholder="% for proportional" />
-        </div>
-        <Button type="submit" size="sm" variant="accent">Create split support task</Button>
-      </form>
-    </div>
-  );
+ return <ExecutionForm action={createWorkFileLinkAction} scope="saveAssetTools"><TaskIdSelect tasks={tasks} name="taskVersion" versioned/><select name="ipoRole" className={inputClass}>{['input','process','output','reference'].map(r=><option key={r}>{r}</option>)}</select><select name="linkType" className={inputClass}>{['Folder','Document','Account','Flowchart','Engineering','Drawing','Checklist','Raw Link','Other'].map(t=><option key={t}>{t}</option>)}</select><input name="label" required placeholder="Asset label" className={inputClass}/><input name="url" type="url" required placeholder="Existing asset URL" className={inputClass}/><textarea name="notes" className={textareaClass}/><p className="text-sm">This saves a link. Provider work is not requested.</p><Button type="submit">Add existing link</Button></ExecutionForm>;
 }
 
 function ChecklistForms({tasks,canManage}:{tasks:readonly Task[];canManage:boolean}) {
@@ -381,13 +302,7 @@ function ReportForms({
         <MemberSelect members={members} name="employeeId" label="Employee report target" optional />
         <Button type="submit" size="sm">Generate report snapshot</Button>
       </form>
-      <form action={asFormAction(freezeMonthlySnapshotFromTools)} className="grid gap-2 border-t border-slate-200 pt-3">
-        <div className="grid grid-cols-2 gap-2">
-          <input type="number" name="year" className={inputClass} defaultValue={period.year} />
-          <input type="number" name="month" className={inputClass} min="1" max="12" defaultValue={period.month} />
-        </div>
-        <Button type="submit" size="sm" variant="outline">Freeze monthly performance</Button>
-      </form>
+      <div className="border-t border-slate-200 pt-3"><Link className="underline" href={`/reports?period=${period.startDate.slice(0,7)}`}>Review month archive and close controls</Link></div>
     </div>
   );
 }
@@ -396,7 +311,7 @@ function TaskIdSelect({ tasks, name,versioned=false }: { tasks: readonly Task[];
   return (
     <select name={name} className={inputClass} required>
       <option value="">Select task</option>
-      {tasks.map((task) => (
+      {tasks.filter(task=>!task.archivedEffectiveDate).map((task) => (
         <option key={task.id} value={versioned?`${task.id}:${task.lifecycleVersion??0}`:task.id}>{task.taskTag} · {task.title}</option>
       ))}
     </select>
@@ -407,7 +322,7 @@ function TaskTagSelect({ tasks, name }: { tasks: readonly Task[]; name: string }
   return (
     <select name={name} className={inputClass} required>
       <option value="">Select task</option>
-      {tasks.map((task) => (
+      {tasks.filter(task=>!task.archivedEffectiveDate).map((task) => (
         <option key={task.id} value={task.taskTag}>{task.taskTag} · {task.title}</option>
       ))}
     </select>

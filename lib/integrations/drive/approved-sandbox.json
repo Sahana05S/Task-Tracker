@@ -1,0 +1,16 @@
+{
+  "id": "m10-approved-sandbox-2026-10-13",
+  "sandbox": true,
+  "auth": "shared_drive_service_account",
+  "scope": "drive",
+  "rootId": "13G0w_T5i6cKUMiREETYlpH9Z_3G-RyGH",
+  "employeeName": "[Employee ID]",
+  "taskName": "[Task Tag] - [Task Title]",
+  "roleFolders": {"input": ["Input"], "process": ["Process"], "output": ["Output"]},
+  "templates": {},
+  "initializeTemplates": [],
+  "blankKinds": ["document", "sheet", "slides"],
+  "autoInitialize": false,
+  "checklistAuthority": "native",
+  "reviewerSharing": "commenter_files"
+}

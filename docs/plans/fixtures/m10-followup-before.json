@@ -1,0 +1,9 @@
+{
+  "lib\\integrations\\drive\\auth.ts": "e657802683be65d95fe420bbac3bf916c5fd421122f0f9db76e2cb5e2c9f78de",
+  "lib\\integrations\\drive\\contract.ts": "6484292e846c4193b15ebe07ed442dd22ce00a9c65d71b190936e559dfe7ad7d",
+  "lib\\integrations\\drive\\jobs.ts": "686eba174a073a4b6803767f5bcc44d999c74a342c87c3a22157744fe9cc8dde",
+  "lib\\integrations\\drive\\plan.ts": "62ef4e762a36a62e5d2e68bd5d02768b860df5748ea2a49361190884647847b0",
+  "lib\\integrations\\drive\\provider.ts": "a56b7dde065f91c467fb3ef43d7e37e14498b02bdca00af63948ee5cb0aa8182",
+  "supabase\\migrations\\26_drive_outbox_and_verified_assets.sql": "ff21d79633f2d2087325b38dabfb35f9d6aedd2c13889f1573aca0bc259d3e05",
+  "app\\api\\internal\\drive\\route.ts": "198a97db6bce0b7d23652c95e4b50039b32f1178d5962f0c09e104b19fa3a0c3"
+}

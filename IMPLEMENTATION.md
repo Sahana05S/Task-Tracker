@@ -51,6 +51,15 @@ All dependent database writes commit or roll back together. Acquire locks in con
 
 ## Validation and evidence
 
+M08 selects from M07 results without another score formula. Migration22 retains
+all candidate/run/override evidence and scopes director requests and service
+commits to `award_command`. Source versions, leases, receipts, invalidation and
+safe audit are atomic. The sandbox endpoint is disabled by default; code is not
+native delivery evidence. The 13 October D10 approvals are active in forward23:
+MTD/end-of-day/day attendance gates, exact no-winner ties and eligible reasoned
+director overrides replacing counts, with reaffirmation after corrections. Legacy
+winner rows remain uncertified and never become employee daily score points.
+
 M07 uses `lib/performance/` for the sole composite engine and source/report/award
 adapter contract. Exact values persist as numerator/denominator strings; numeric
 fields are compatibility projections. The 13 October approved D02/D03/D04
@@ -176,3 +185,90 @@ and frozen reports remain intact; later checklist effects are prospective.
 See docs/plans/M05-evidence.md and STATUS.md for exact checks and reconciliation.
 Native Supabase auth/API/browser and deployed data remain unverified. M06, scoring,
 provider execution, production migrations and deployment remain outside scope.
+
+## M09 independent implementation - 13 October 2026
+
+The current M09 request authorizes the native framework and verification in
+[migration24](supabase/migrations/24_task_tools_atomic_previews.sql). Production
+policy remains NULL. Durable previews, actor-bound operation receipts, locked
+source fingerprints and atomic rollback build on M02 through M05. Single approved
+lifecycle/section/refresh commands are available; draft copies/batches and dated
+handoff/archive require D09/D12 answers. No original-handler equivalence is
+claimed for 22 missing bodies, or provider parity for native-only tools. See
+[workflow inventory](docs/plans/M09-menu-coverage.md) and
+[evidence](docs/plans/M09-evidence.md). No M10/M11 or rollout is authorized.
+
+## M09 follow-up approvals - 13 October 2026
+
+The user answered all three M09 questions: "Approve recommended bounds and copy
+defaults", "Approve calendar phases and atomic batches", and "Approve remaining-
+work handoff, archive and import deferral". This expressly supersedes the earlier
+M09 pending-policy notes, but does not authorize production apply/deploy, Drive
+operations, M10/M11 or a scoring/award formula change. Forward25 activates the
+exact D09/D12 contract after24; the earlier draft tests remain historical evidence.
+
+M09 is implemented awaiting native verification with migrations24-25. Exact
+approved defaults are in DECISIONS, independent source results and checks in
+M09-evidence, and all34 actions in M09-menu-coverage. Historical import is user-
+deferred; missing source/provider parity remains explicit. Do not activate by
+editing24;25 supplies the approved write/observation/dated population safeguards.
+No M10/M11 or production rollout is authorized.
+
+## M10 external transaction boundary - 13 October 2026
+
+Provider requests join native initialization atomically in the existing outbox.
+Remote calls occur outside transactions, preceded by persisted intent, followed
+by metadata verification. Identities/reservations and resource leases fence
+replays; uncertain native responses require read-only reconciliation. Partial
+creation and sharing remain separate evidence. D11 is unapproved and policy NULL.
+See docs/plans/M10-evidence.md for exact checks and real-provider limitations.
+
+
+M10 approved follow-up (13 October 2026): the three replies settle initial D11
+business choices. Forward27 and the runtime guard bind the sole supplied root,
+Shared Drive/service identity, exact IPO layout, no templates, three file kinds,
+manual phase, native authority and mapped new-file comments. Live ancestry checks
+protect moved assets. A protected read-only bootstrap resolves actual Drive/account
+identity once server credentials are securely supplied; the worker stays disabled.
+Missing service identity/credentials/reviewer map and real/native verification are
+technical setup, not unanswered business-policy choices. Earlier proposals are
+historical. Drawing/Form are user-deferred; no production or M11. See M10-evidence
+and M10-configuration for current checks, pending configuration and recovery.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.
+
+## M11 implementation boundary — 13 October 2026
+
+The subsequent M11 request supersedes the older handoff sentence above. The
+single M07 calculation result now feeds M11 surfaces and report exports. M08
+remains the sole award policy. Migration 28 is forward-only, unapplied outside
+disposable test databases. Consult `docs/plans/M11-evidence.md` for tests,
+permission scope, open verification and M10/M12 boundaries.
+
+## M12 implementation boundary — 13 October 2026
+
+The user authorized M12 after M11 and approved non-certified incomplete close
+and named-record/exact-date correction scope. Migration 29 introduces immutable
+revision evidence, actor/version/idempotency commands and closed-source guards;
+the report selector and exports read a chosen retained revision. Missing M07/M08
+evidence remains visibly unavailable. See `docs/plans/M12-evidence.md` for
+disposable tests, native verification gaps and recovery. No production migration,
+deployment, schedule, Drive operation or M13 work is authorized.

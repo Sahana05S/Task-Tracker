@@ -1,0 +1,17 @@
+{
+  "preservationChecked": 29,
+  "preserved": 29,
+  "fullTestFiles": 44,
+  "fullTests": 390,
+  "focusedFiles": 6,
+  "focusedTests": 66,
+  "typecheck": "passed",
+  "build": "passed",
+  "freshInstall": "01-25 passed",
+  "upgrade": "01-24 seed then25 passed",
+  "approvedEdgeDatabases": 2,
+  "nativeSupabaseApiBrowser": "unperformed",
+  "productionApplied": false,
+  "providerOperations": false,
+  "historicalImport": "deferred_by_user"
+}

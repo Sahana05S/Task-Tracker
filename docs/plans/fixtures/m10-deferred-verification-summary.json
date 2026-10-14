@@ -1,0 +1,38 @@
+{
+  "module": "M10",
+  "date": "2026-10-13",
+  "state": "Deferred by user; independent code/tests retained; no provider completion",
+  "realIntegrationDeferredByUser": true,
+  "credentialSetupDeferredByUser": true,
+  "providerWorkersDisabled": true,
+  "setupDiagnosticsDisabled": true,
+  "providerRequestsAndRetriesDisabled": true,
+  "environmentFlagsCannotOverrideDeferral": true,
+  "manualAssetLinksAvailable": true,
+  "coreTrackerBlockedByDriveCredentials": false,
+  "actualGoogleVerification": "deferred and unperformed",
+  "realDriveMutations": 0,
+  "focused": {
+    "files": 6,
+    "tests": 64,
+    "passed": true
+  },
+  "regression": {
+    "files": 50,
+    "tests": 454,
+    "passed": true
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "diffCheck": "passed",
+  "preservation": {
+    "baselineFiles": 32,
+    "passed": true,
+    "migrations26and27Unchanged": true
+  },
+  "databaseChecksThisTurn": "not rerun; no SQL changes. Prior fresh01-27 and upgrade01-26-to27 passes retained in historical evidence.",
+  "nativeAuthAndBrowserVerification": "outstanding; not certified by mock/JWT-shim checks",
+  "productionChanges": false,
+  "nextModule": "M11",
+  "M11Started": false
+}

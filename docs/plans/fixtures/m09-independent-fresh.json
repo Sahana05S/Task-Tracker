@@ -1,0 +1,53 @@
+{
+  "contract": "m09-independent-draft-verification",
+  "database": "taskpulse_m09_fresh_test",
+  "businessPolicyApproved": false,
+  "copyItems": [
+    {
+      "scale": "6.0000000000000000",
+      "title": "carryover-draft - Carryover",
+      "shares": [
+        1000000
+      ],
+      "dueDate": null,
+      "taskTag": "TT-000031",
+      "category": "T",
+      "priority": "High",
+      "assignees": [
+        "00000000-0000-0000-0000-000000000004"
+      ],
+      "reviewers": [
+        "00000000-0000-0000-0000-000000000006"
+      ],
+      "scaleMode": "manual",
+      "scaleInputs": {
+        "value": 6.0
+      },
+      "assignedDate": "2026-10-13",
+      "sourceTaskId": "3d2fc9fb-f958-4ebf-bd21-87140a2537c9",
+      "scaleOverride": null,
+      "templateVersionId": "04000000-0000-0000-0000-000000000002"
+    }
+  ],
+  "preservedFrozenSnapshot": true,
+  "checks": [
+    "fresh_or_upgrade",
+    "policy_guard",
+    "authorization",
+    "single_done_review_gates",
+    "single_reopen_reason",
+    "all8_draft_splits",
+    "rollback_all_writes",
+    "idempotency",
+    "stale_preview",
+    "concurrent_conflict",
+    "proportional_future_scale_retained_credit",
+    "cycle_denial",
+    "draft_batch_tags",
+    "draft_reset_structure_reviews",
+    "atomic_bulk_failure",
+    "carryover_archive_execution_guard",
+    "even_prior_credit4_retained_future_delta0_5",
+    "concurrent_batch_preview_tags_unique_commit_or_conflict"
+  ]
+}

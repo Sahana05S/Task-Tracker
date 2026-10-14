@@ -1,4 +1,8 @@
+import { getLivePresentation } from '@/lib/presentation/queries';
+import { viewContext,type ViewContext } from '@/lib/presentation/context';
+import type { LivePresentation } from '@/lib/presentation/model';
 import { optionalEmployeePerformance } from '@/lib/team/performance-availability';
+import { getAwards,type AwardReadModel } from '@/lib/stars/read-model';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
 import { getCurrentProfile } from '@/lib/auth/profile';
@@ -63,12 +67,16 @@ export interface TeamIndexMember {
 }
 
 export interface TeamIndexData {
+  readonly presentation:LivePresentation;
+  readonly awards:AwardReadModel;
   readonly period: AnalyticsPeriod;
   readonly members: readonly TeamIndexMember[];
   readonly supportSummary: SupportSummary;
 }
 
 export interface EmployeeProfileData {
+  readonly presentation:LivePresentation;
+  readonly awards:AwardReadModel;
   readonly period: AnalyticsPeriod;
   readonly employee: User;
   readonly performance: MemberPerformance | null;
@@ -94,6 +102,8 @@ export interface EmployeeProfileData {
 }
 
 export interface EmployeeReportsData {
+  readonly presentation:LivePresentation;
+  readonly awards:AwardReadModel;
   readonly period: AnalyticsPeriod;
   readonly employee: User;
   readonly performance: MemberPerformance | null;
@@ -106,11 +116,13 @@ export interface EmployeeReportsData {
 
 export async function getTeamIndexData(
   period: AnalyticsPeriod = currentPeriod(),
+  context:ViewContext=viewContext(period.startDate.slice(0,7)),
 ): Promise<TeamIndexData> {
   const supabase = await createClient();
+  const presentation=await getLivePresentation(context);
   const [analytics, supportData, summaryInputs] = await Promise.all([
-    getTeamAnalytics(period),
-    getSupportModuleData(period),
+    Promise.resolve(presentation.analytics),
+    getSupportModuleData(period,context.asOf),
     getTeamSummaryInputs(period),
   ]);
   const userIds = analytics.members.map((member) => member.userId);
@@ -120,13 +132,16 @@ export async function getTeamIndexData(
       .gte('star_date', period.startDate).lte('star_date', period.endDate),
   );
   const stars = mapDailyStarRecords(starRows);
+  const awards=presentation.awards!;
 
   return {
+    presentation,
+    awards,
     period,
     members: analytics.members.map((performance) => ({
       user: performanceToUser(performance),
       performance,
-      dailyStarCount: stars.filter((star) => star.userId === performance.userId)
+      dailyStarCount: awards.days.filter(day=>day.certified&&day.status==='completed_winner'&&day.winnerId===performance.userId)
         .length,
       currentPerformanceScore: performance.starScore,
       performanceUnavailableReason:performance.performanceUnavailableReason,
@@ -146,8 +161,10 @@ export async function getEmployeeProfileData(
   const viewer = await getCurrentProfile();
   if (!employee || !viewer || !canViewEmployeeReports(viewer, employee)) return null;
 
-  const {performance,performanceUnavailableReason}=await optionalEmployeePerformance(()=>getTeamAnalytics(period),employee.id);
-  const [tasks, logs, stars, attendance, reports] = await Promise.all([
+  const presentation=await getLivePresentation(viewContext(period.startDate.slice(0,7),now.toISOString()),employee.id);
+  const performance=presentation.analytics.members.find(m=>m.userId===employee.id)??null;
+  const performanceUnavailableReason=performance?.calculation?.status==='incomplete'?'Required performance inputs are unavailable.':undefined;
+  const [currentTasks, logs, stars, attendance, reports] = await Promise.all([
     getAssignedTasks(employee.id),
     selectOrEmpty(
       supabase
@@ -186,17 +203,21 @@ export async function getEmployeeProfileData(
     ),
   ]);
 
-  const mappedLogs = mapDailyTaskLogs(logs);
+  const tasks=presentation.tasks;
+  const mappedLogs = presentation.logs;
   const mappedAttendance = mapAttendanceRecords(attendance);
-  const taskLinks = await getTaskLinks(tasks.map((task) => task.id));
-  const supportData = await getSupportModuleData(period);
-  const today = dateInTimeZone(now, 'Asia/Kolkata');
+  const taskLinks = presentation.assets.map(row=>mapTaskLink(row as unknown as TaskLinkRow));
+  const supportData = await getSupportModuleData(period,presentation.view.asOf);
+  const today = presentation.view.asOfLocalDate;
   const yesterday = previousIsoDate(today);
   const todayLogs = mappedLogs.filter((log) => log.logDate === today);
   const yesterdayLogs = mappedLogs.filter((log) => log.logDate === yesterday);
   const mappedStars = mapDailyStarRecords(stars);
+  const awards=presentation.awards!;
 
   return {
+    presentation,
+    awards,
     period,
     employee,
     performance,
@@ -206,11 +227,11 @@ export async function getEmployeeProfileData(
     logs: mappedLogs,
     todayLogs,
     yesterdayLogs,
-    todayTasks: tasksForLogs(tasks, todayLogs),
-    yesterdayTasks: tasksForLogs(tasks, yesterdayLogs),
+    todayTasks: tasksForDateEvidence(tasks, todayLogs, today),
+    yesterdayTasks: tasksForDateEvidence(tasks, yesterdayLogs, yesterday),
     stars: mappedStars,
     attendance: mappedAttendance,
-    attendanceSummary: summarizeAttendance(mappedAttendance),
+    attendanceSummary: presentation.analytics.members.find(m=>m.userId===employee.id)?.attendance??summarizeAttendance([]),
     taskHourSummary: {
       totalHours: sumHours(mappedLogs),
       todayHours: sumHours(todayLogs),
@@ -223,6 +244,8 @@ export async function getEmployeeProfileData(
       tasks,
       logs: mappedLogs,
       stars: mappedStars,
+      scoreHistory:awards.history,
+      observations:presentation.series,employeeId:employee.id,
       links: taskLinks,
     }),
     supportSummary: summarizeEmployeeSupport({
@@ -239,13 +262,16 @@ export async function getEmployeeProfileData(
 export async function getEmployeeReportsData(
   employeeId: string,
   period: AnalyticsPeriod = currentPeriod(),
+  now:Date=new Date(),
 ): Promise<EmployeeReportsData | null> {
   const supabase = await createClient();
   const employee = await getEmployeeByEmployeeId(employeeId);
   const viewer = await getCurrentProfile();
   if (!employee || !viewer || !canViewEmployeeReports(viewer, employee)) return null;
 
-  const {performance,performanceUnavailableReason}=await optionalEmployeePerformance(()=>getTeamAnalytics(period),employee.id);
+  const presentation=await getLivePresentation(viewContext(period.startDate.slice(0,7),now.toISOString()),employee.id);
+  const performance=presentation.analytics.members.find(m=>m.userId===employee.id)??null;
+  const performanceUnavailableReason=performance?.calculation?.status==='incomplete'?'Required performance inputs are unavailable.':undefined;
   const [reports, components, stars, attendance] = await Promise.all([
     selectOrEmpty(
       supabase
@@ -282,7 +308,10 @@ export async function getEmployeeReportsData(
     ),
   ]);
 
+  const awards=presentation.awards!;
   return {
+    presentation,
+    awards,
     period,
     employee,
     performance,
@@ -290,7 +319,7 @@ export async function getEmployeeReportsData(
     reports: mapReportSnapshots(reports),
     scoreComponents: mapPerformanceScoreComponents(components),
     stars: mapDailyStarRecords(stars),
-    attendanceSummary: summarizeAttendance(mapAttendanceRecords(attendance)),
+    attendanceSummary: presentation.analytics.members.find(m=>m.userId===employee.id)?.attendance??summarizeAttendance([]),
   };
 }
 
@@ -343,12 +372,13 @@ function mapTaskLink(row: TaskLinkRow): TaskLink {
   };
 }
 
-function tasksForLogs(
+function tasksForDateEvidence(
   tasks: readonly Task[],
   logs: readonly DailyTaskLog[],
+  date: string,
 ): Task[] {
   const taskIds = new Set(logs.map((log) => log.taskId));
-  return tasks.filter((task) => taskIds.has(task.id));
+  return tasks.filter((task) => taskIds.has(task.id) || task.assignedDate===date || task.dueDate===date || task.completedDate===date);
 }
 
 function previousIsoDate(isoDate: string): string {

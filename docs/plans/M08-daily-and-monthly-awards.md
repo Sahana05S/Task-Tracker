@@ -1,6 +1,8 @@
 # M08 — Automatic daily stars and monthly awards
 
-Status: draft, not started. Required predecessors: M07.
+Status: implemented awaiting native verification on 13 October 2026. All three
+D10 follow-up policies are approved and active through migration23. See [M08 evidence](M08-evidence.md).
+Native verification/delivery remain outstanding. Required predecessor: M07.
 
 ## Outcome
 
@@ -26,12 +28,16 @@ AwardRun contains date, ruleVersion, context, candidates, eligibility reasons, w
 
 ## Acceptance and verification
 
-- [ ] High-score but invalid-attendance member cannot win.
-- [ ] No valid candidates produces no award, not an arbitrary alphabetic winner.
-- [ ] Daily scheduled/manual retries produce one effective award per date/revision.
-- [ ] MemberA with4 wins beats memberB with3 despiteB having higher performance; tied wins use shared performance.
-- [ ] Corrections, overrides and closed-month behavior are auditable and deterministic.
-- [ ] Employee daily score history includes non-winners, not just winner dates.
+- [x] High-score but invalid-attendance member cannot win.
+- [x] No valid candidates produces no award, not an arbitrary alphabetic winner.
+- [x] Daily scheduled/manual retries produce one effective award per date/revision.
+- [x] MemberA with4 wins beats memberB with3 despiteB having higher performance; tied wins use shared performance.
+- [x] Corrections, overrides and closed-month behavior are auditable and deterministic.
+- [x] Employee daily score history includes non-winners, not just winner dates.
+
+These checks are independent fixture/disposable SQL evidence. D10 policies are
+approved; native authentication/browser and real scheduler/HTTP delivery remain
+unperformed. Missing sales/inputs and frozen archives retain explicit guards.
 
 ## UI / workflow integration
 
@@ -43,6 +49,7 @@ Do not retain current five-factor daily-star weights or grant ordinary users awa
 
 ## Decisions and rollout
 
-Resolve D10/D13; deployment requires configured scheduler/timezone/identity. Database tests and scheduler replay tests precede live automation.
+D10 and existing D13 role boundaries are approved; rollout still requires
+authorized scheduler/timezone/identity configuration and native checks. Database tests and scheduler replay tests precede live automation.
 
 Use the shared definition of done in IMPLEMENTATION.md. Update STATUS.md with acceptance evidence, actual migration/revision, tests and limitations. Recheck predecessor contracts if their code has advanced. Planning proposals become authoritative only when confirmed in DECISIONS.md.

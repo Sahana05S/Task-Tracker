@@ -42,7 +42,7 @@ function makeTask(
     freshness: overrides.freshness ?? 'Fresh',
     validForMetrics: overrides.validForMetrics ?? true,
     assignedDate: overrides.assignedDate ?? '2026-09-01',
-    dueDate: overrides.dueDate ?? '2026-09-05',
+    dueDate: overrides.dueDate === undefined ? '2026-09-05' : overrides.dueDate,
     completedDate: overrides.completedDate ?? null,
     metDeadline: overrides.metDeadline ?? null,
     createdAt: overrides.createdAt ?? '2026-09-01T00:00:00Z',
@@ -131,7 +131,7 @@ describe('buildTaskTimeline', () => {
     expect(timeline.ticks.at(-1)?.date).toBe('2026-09-30');
   });
 
-  it('normalizes missing or backwards due dates to the assigned date', () => {
+  it('keeps missing or backwards deadlines explicitly undated', () => {
     const timeline = buildTaskTimeline({
       fallbackPeriod: SEP_2026,
       members: [makeUser({ id: 'alice', fullName: 'Alice Admin' })],
@@ -153,17 +153,8 @@ describe('buildTaskTimeline', () => {
       ],
     });
 
-    expect(timeline.endDate).toBe('2026-09-20');
-    expect(
-      timeline.groups[0]?.tasks.map((task) => ({
-        tag: task.taskTag,
-        start: task.startDate,
-        end: task.endDate,
-        duration: task.durationDays,
-      })),
-    ).toEqual([
-      { tag: 'Sep26_T1', start: '2026-09-15', end: '2026-09-15', duration: 1 },
-      { tag: 'Sep26_T2', start: '2026-09-20', end: '2026-09-20', duration: 1 },
-    ]);
+    expect(timeline.endDate).toBe('2026-09-30');
+    expect(timeline.groups).toEqual([]);
+    expect(timeline.undated.map(t=>t.reason)).toEqual(['Missing or invalid deadline','Deadline precedes assignment']);
   });
 });

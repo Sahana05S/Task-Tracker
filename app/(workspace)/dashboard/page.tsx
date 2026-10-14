@@ -1,10 +1,14 @@
+import { getLivePresentation } from '@/lib/presentation/queries';
+import { viewContext } from '@/lib/presentation/context';
+import { ReportContext } from '@/components/reports/view-context';
 import type { Metadata } from 'next';
 import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
 
 import { AllocationChart } from '@/components/dashboard/allocation-chart';
 import { ProductivityChart } from '@/components/dashboard/productivity-chart';
-import { SnapshotButton } from '@/components/dashboard/snapshot-button';
 import { StarPerformerCard } from '@/components/dashboard/star-performer-card';
+import { getAwards } from '@/lib/stars/read-model';
+import { createClient } from '@/lib/supabase/server';
 import { TeamStatsGrid } from '@/components/dashboard/team-stats-grid';
 import { TrackerSchemaNotice } from '@/components/dashboard/tracker-schema-notice';
 import { WorkbookDashboard } from '@/components/dashboard/workbook-dashboard';
@@ -28,12 +32,15 @@ export const metadata: Metadata = {
  * Only the chart widgets, the snapshot control and the header are Client
  * Components, which keeps Recharts out of the bundle for everything else.
  */
-export default async function DashboardPage() {
+export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {
   const profile = await requireProfile();
-  const period = currentPeriod();
+  const query=await searchParams;
+  const context=viewContext(query.period,query.asOf);
+  const period=context.period;
+  const presentation=await getLivePresentation(context);
 
   const [dashboardResult, snapshotsResult] = await Promise.allSettled([
-    getWorkbookDashboard(period),
+    getWorkbookDashboard(period,context),
     getStoredSnapshots(period),
   ]);
 
@@ -74,8 +81,7 @@ export default async function DashboardPage() {
   const dashboard = dashboardResult.value;
   const snapshots = snapshotsResult.value;
   const { analytics, charts } = dashboard;
-
-  const isDirector = profile.role === 'managing_director';
+  const awards=presentation.awards!;
 
   return (
     <>
@@ -84,28 +90,21 @@ export default async function DashboardPage() {
         description={`${analytics.period.label} · ${analytics.totals.activeMemberCount} active ${
           analytics.totals.activeMemberCount === 1 ? 'member' : 'members'
         } · compared against the team median`}
-        actions={
-          // Writing snapshots is a managing_director right, per the RLS policy.
-          isDirector ? (
-            <SnapshotButton
-              year={period.year}
-              month={period.month}
-              periodLabel={period.label}
-              storedCount={snapshots.length}
-            />
-          ) : null
-        }
+        actions={<span className="text-muted-foreground text-xs">{snapshots.length} retained snapshot rows · original rules. Month revision follows M12.</span>}
       />
 
       <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
+        <ReportContext model={presentation}/>
         <StarPerformerCard
+          awards={awards}
           unavailableReason={analytics.calculation?.status==='incomplete' ? 'Ten-factor performance is incomplete. Final ranking and awards are unavailable; individual raw inputs and reasons appear below.' : 'Award selection awaits M08.'}
           performer={analytics.starPerformer}
           periodLabel={analytics.period.label}
           medianProductivity={analytics.medians.productivity}
         />
 
-        <TeamStatsGrid analytics={analytics} />
+        {presentation.awardAvailabilityReason?<p role="status">{presentation.awardAvailabilityReason}</p>:null}
+        <TeamStatsGrid analytics={analytics} attendanceComplete={presentation.sources.members.filter(member=>member.active).every(member=>presentation.sources.attendance.find(a=>a.userId===member.id)?.available===true)} />
         {analytics.calculation?.members.map(result=><details key={result.userId}><summary className="cursor-pointer">{analytics.members.find(m=>m.userId===result.userId)?.fullName??'Employee'} - performance inputs</summary><PerformanceBreakdown result={result} context={analytics.calculation?.context}/></details>)}
 
         <div className="grid gap-4 xl:grid-cols-2">

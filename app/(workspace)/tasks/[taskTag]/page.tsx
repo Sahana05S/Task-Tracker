@@ -68,9 +68,11 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
   }
 
   const { data } = routeState;
-  const canManage = canManageTasks(currentUser.role);
+  const archived=!!data.task.archivedEffectiveDate;
+  const successor=data.dependencies.find(d=>d.otherTask?.id===data.task.handoffSuccessorId)?.otherTask;
+  const canManage = canManageTasks(currentUser.role)&&!archived;
   const [native,templates,workspace,reports]=await Promise.all([getNativeDetailState(data.task.id),getNativeTemplates(),canManage?getTaskWorkspaceData():Promise.resolve({tasks:[],members:[]}),canManage?getVisibleReportChoices():Promise.resolve([])]);
-  const canUseTimer = canStartTimerForTask(currentUser, data.task);
+  const canUseTimer = !archived&&canStartTimerForTask(currentUser, data.task);
   const visibleTimers = canManage
     ? data.timers
     : data.timers.filter((timer) => timer.userId === currentUser.id);
@@ -96,7 +98,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
   return (
     <>
-      {data.task.reviewerIds.includes(currentUser.id) ? <div className="p-4"><TaskReviewForm taskId={data.task.id} version={data.task.lifecycleVersion ?? 0} /></div> : null}
+      {!archived&&data.task.reviewerIds.includes(currentUser.id) ? <div className="p-4"><TaskReviewForm taskId={data.task.id} version={data.task.lifecycleVersion ?? 0} /></div> : null}
       <WorkspaceHeader
         title={data.task.taskTag}
         description={data.task.title}
@@ -120,7 +122,8 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
       <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_22rem] lg:px-6">
         <main className="grid gap-4">
-          {canManageTasks(currentUser.role) ? <TaskLifecyclePanel task={data.task} /> : null}
+          {archived?<p className="soft-card p-4" role="status">Archived on {data.task.archivedEffectiveDate}. This task and its retained history are read-only. {data.task.archiveReason}{successor?<Link className="ml-2 underline" href={`/tasks/${encodeURIComponent(successor.taskTag)}`}>Continue on {successor.taskTag} - {successor.title}</Link>:null}</p>:null}
+          {canManage ? <TaskLifecyclePanel task={data.task} /> : null}
           <p className="text-sm">Metric eligibility: {data.task.validForMetrics ? "Eligible" : (data.task.eligibilityReasons ?? []).map(reason=>ELIGIBILITY_LABELS[reason] ?? reason).join(", ")}. Hours are required separately for productivity.</p>
           <p className="text-sm">Participant shares: {data.task.participantShares ? Object.entries(data.task.participantShares).map(([id,units])=>`${memberNames.get(id) ?? id}: ${units/10000}%`).join(", ") : "Legacy attribution awaiting reconciliation"}. Completion, criticality and freshness attribution remain undecided for shared work.</p>
           <section className="soft-card grid gap-4 p-4">
@@ -223,7 +226,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
           <Panel title="Native task details">
             <p className="text-sm">{native.instance?'Native task/details ready':'Native details not initialized'}</p>
-            <p className="text-sm">Provider work: {native.instance?.providerState??'not_requested'}. Google Drive operations are not implemented.</p>
+            <p className="text-sm">Provider work: {native.instance?.providerState??'not_requested'}. Automatic Google Drive operations are unavailable; integration is deferred. Existing asset links remain available.</p>
             {native.instance ? <details><summary>Template instructions ? {templates.find(t=>t.id===native.instance?.templateVersionId)?.name ?? 'Template'} ? version {templates.find(t=>t.id===native.instance?.templateVersionId)?.version}</summary>{DETAIL_FIELDS.map(f=>native.instance?.instructions[f.key]?<p key={f.key}><strong>{f.label}:</strong> {native.instance.instructions[f.key]}</p>:null)}</details> : canManage?<InitializeDetailsForm task={data.task} templates={templates}/>:null}
             {canManage ? <details><summary>Edit structured details and links</summary><NativeDetailsEditor task={data.task} sections={data.sections} tasks={workspace.tasks} members={data.members} reports={reports}/></details>:null}
             {sectionValue(sectionsByKey,'description')?<TextBlock title="Description" body={sectionValue(sectionsByKey,'description')!}/>:null}

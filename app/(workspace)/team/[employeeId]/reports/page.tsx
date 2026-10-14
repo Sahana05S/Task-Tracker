@@ -1,13 +1,18 @@
+import { LiveReport } from '@/components/reports/live-report';
+import { ArchivedReport } from '@/components/reports/archived-report';
+import { monthHistory,monthRevision } from '@/lib/month/archive';
+import { viewContext,viewQuery } from '@/lib/presentation/context';
 import { displayPerformance } from '@/lib/performance/exact';
 import type { Metadata } from 'next';
 import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
+import { AwardHistory } from '@/components/team/award-history';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { WorkspaceHeader } from '@/components/layout/workspace-header';
 import { requireProfile } from '@/lib/auth/profile';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
-import { getEmployeeReportsData } from '@/lib/team/queries';
+import { getEmployeeByEmployeeId,getEmployeeReportsData } from '@/lib/team/queries';
 import {
   normalizeEmployeeIdParam,
   resolveEmployeeRouteState,
@@ -16,10 +21,11 @@ import { formatDate, formatNumeric } from '@/lib/tracker/format';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;
+  searchParams:Promise<{period?:string;asOf?:string;revision?:string}>;
 }
 
 export async function generateMetadata({
-  params,
+  params,searchParams,
 }: EmployeeReportsPageProps): Promise<Metadata> {
   const { employeeId } = await params;
   const normalized = normalizeEmployeeIdParam(employeeId);
@@ -27,19 +33,32 @@ export async function generateMetadata({
 }
 
 export default async function EmployeeReportsPage({
-  params,
+  params,searchParams,
 }: EmployeeReportsPageProps) {
   const viewer = await requireProfile();
+  const query=await searchParams;
+  const context=viewContext(query.period,query.asOf);
   const { employeeId } = await params;
+  if(query.revision){
+    const normalized=normalizeEmployeeIdParam(employeeId),revision=Number(query.revision);
+    if(!normalized||!Number.isSafeInteger(revision)||revision<1)notFound();
+    const employee=await getEmployeeByEmployeeId(normalized);
+    if(!employee||!canViewEmployeeReports(viewer,employee))notFound();
+    const archive=await monthRevision(context.period.startDate,revision,employee.id);
+    if(!archive)notFound();
+    const previous=revision>1?await monthRevision(context.period.startDate,revision-1,employee.id):null;
+    return <><WorkspaceHeader title={`${employee.fullName} · archived report`} description={`${context.period.label} · revision ${revision}`}/><div className="grid gap-4 px-4 py-4 lg:px-6"><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="underline" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></div></>;
+  }
   const routeState = await resolveEmployeeRouteState(
     employeeId,
-    getEmployeeReportsData,
+    id=>getEmployeeReportsData(id,context.period,new Date(context.asOf)),
   );
 
   if (routeState.status !== 'ready') notFound();
 
   const data = routeState.data;
   if (!canViewEmployeeReports(viewer, data.employee)) notFound();
+  const archiveHistory=await monthHistory(context.period.startDate);
 
   return (
     <>
@@ -48,7 +67,7 @@ export default async function EmployeeReportsPage({
         description={`${data.period.label} · performance, chart links, stars, and saved reports`}
         actions={
           <Link
-            href={`/team/${encodeURIComponent(data.employee.employeeId)}`}
+            href={`/team/${encodeURIComponent(data.employee.employeeId)}?${viewQuery(context)}`}
             className="border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors"
           >
             Back to profile
@@ -57,8 +76,12 @@ export default async function EmployeeReportsPage({
       />
 
       <div className="grid gap-4 px-4 py-4 lg:px-6">
+        {archiveHistory.revisions.length?<nav aria-label="Employee report revisions" className="flex flex-wrap gap-3">{archiveHistory.revisions.map(r=><Link className="underline" key={r.number} href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}&revision=${r.number}`}>Revision {r.number} · {r.certification==='certified'?'Certified':'Incomplete'}</Link>)}</nav>:null}
+        <LiveReport model={data.presentation}/>
+        <h2 className="font-semibold">Retained reports · original rules</h2>
         {data.performanceUnavailableReason ? <p role="status" className="text-sm text-amber-800">{data.performanceUnavailableReason} Saved reports and effort history remain available.</p> : null}
         {data.performance?.calculation?<PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/>:null}
+        <AwardHistory awards={data.awards}/>
         <section id="charts" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <ChartCard
             label="Performance score"
@@ -85,8 +108,8 @@ export default async function EmployeeReportsPage({
             detail={`${formatNumeric(data.attendanceSummary.payableDays)} payable days`}
           />
           <ChartCard
-            label="Daily stars"
-            value={String(data.stars.length)}
+            label="Legacy daily stars · uncertified"
+            value={String(data.awards.monthly.counts[data.employee.id]??0)}
             detail="Recorded daily star wins"
           />
         </section>

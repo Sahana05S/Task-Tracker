@@ -24,12 +24,15 @@ import type { Task } from '@/types/tracker';
  * defeats that inference and collapses the result to an error type.
  */
 export const TASK_COLUMNS =
-  'id, participant_credit_mode, participant_version, metric_version, lifecycle_version, work_revision, productivity_available, started_date, scale_mode, scale_inputs, scale_override, scale_provenance, scale_version, eligibility_reasons, freshness_reason, task_tag, title, category, description, comments, assignee_id, reviewer_id, task_scale, progress_owner, progress_percentage, scaled_progress, task_productivity, priority, status, freshness, valid_for_metrics, assigned_date, due_date, completed_date, met_deadline, created_at, updated_at' as const;
+  'id, archived_effective_date, archive_reason, handoff_successor_id, participant_credit_mode, participant_version, metric_version, lifecycle_version, work_revision, productivity_available, started_date, scale_mode, scale_inputs, scale_override, scale_provenance, scale_version, eligibility_reasons, freshness_reason, task_tag, title, category, description, comments, assignee_id, reviewer_id, task_scale, progress_owner, progress_percentage, scaled_progress, task_productivity, priority, status, freshness, valid_for_metrics, assigned_date, due_date, completed_date, met_deadline, created_at, updated_at' as const;
 
 export function mapTask(row: TaskRow): Task {
   const freshness = classifyFreshness({ assignedDate: row.assigned_date, dueDate: row.due_date, completedDate: row.completed_date, status: row.status });
   return {
     id: row.id,
+    archivedEffectiveDate:row.archived_effective_date??null,
+    archiveReason:row.archive_reason??null,
+    handoffSuccessorId:row.handoff_successor_id??null,
     participantCreditMode: row.participant_credit_mode ?? "legacy",
     participantVersion: row.participant_version ?? 0,
     taskTag: row.task_tag,

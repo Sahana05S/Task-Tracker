@@ -1,5 +1,20 @@
 # Sources and baseline findings
 
+## M08 source and legacy audit - 13 October 2026
+
+Both supplied XLSX remain present with their M00 hashes. Recorded evidence
+confirms shared daily highest score and monthly daily-win counts/current score
+tie-break, but not D10 cutoff/window/final ties/override semantics. External
+attendance, missing handlers/templates, BN/BO/BP subtotals, previous-month/
+linked-checklist and original trigger/configuration gaps are unchanged.
+
+M07 guarded live awards but the dormant old writer still contained five terms,
+delete/insert score resets and winner-only records. M08 replaces that write path.
+Migration22 retains original legacy IDs/values with additive old-rule/uncertified
+metadata; source/cohort/cutoff provenance is not recoverable from winner columns.
+No deployed records were inspected or retrospectively certified. Employee score
+charts now use retained candidate observations and omit stale/superseded points.
+
 ## M07 recheck - 13 October 2026
 
 Both supplied XLSX hashes still match the M00/M06 inventory. No additional source
@@ -210,3 +225,83 @@ while explicitly rejecting a healthy fake zero for unavailable inputs. Workbook
 caches are not recalculation proof. No workbook was modified or sample content
 imported. Missing source material listed above remains missing; no private URL
 or external linked source was fetched.
+
+## M09 source reconciliation - 13 October 2026
+
+Rechecked On Open Actions:34 items,12 supplied bodies,22 missing bodies; full latest ledger is M09-menu-coverage.md. Uneven source prompt says half while validation permits whole; approval still required. Both previously supplied XLSX references remain available; no additional workbook/script reference was supplied. Missing:22 handler bodies, TemplateDialog.html, BlankFilesDialog.html, provider template/folder registry, external attendance source, Summary BN/BO/BP mapping, historical attribution/carryover/linked-checklist evidence and installed trigger configuration. No provider access was performed.
+
+The supplied Create Folder from selection helper does contain a B5-tag lookup
+and a real Drive shortcut to the predecessor folder. That establishes only
+provider linkage, not database carryover progress/remaining-scale/dating policy.
+M09 does not call this helper. Old-period execution and source history remain
+missing reference evidence; no status/scale contract was inferred from a shortcut.
+
+## M09 approved source reconciliation - 13 October 2026
+
+The three follow-ups settle D09/D12 native behavior, including the whole-source
+Uneven correction, fractional percentages, reset copying, explicit calendar
+phases, atomic batches, remaining-work carryover and retained manager archive.
+Historical import is user-deferred. These are approved native definitions where
+handler bodies are missing; they do not recover original scripts or template
+assets. Both XLSX and primary menu/support script hashes match the M00 ledger.
+Source/body/provider gaps remain unchanged and scoped in M09-menu-coverage.
+
+Old source share/scale/section provenance is still guarded, never fabricated by
+M09. Approved database tests deliberately seed a known historical share timestamp
+as an owner-only synthetic fixture after proving ordinary backdated credit is
+rejected. That fixture is not an import/reconciliation API or a claim that real
+historical evidence exists. No workbook data/provider records were changed.
+
+## M10 source inspection - 13 October 2026
+
+Read Create Folder from selection.gs, Create Work Files.gs and Rename Task
+Folder.gs. Confirmed real folder/create/copy/rename/shortcut effects, recursive
+template copying, tag/title substitution and reviewer-comment helper calls.
+TemplateDialog/BlankFilesDialog HTML, Templates Info registry/template trees and
+getreviewerEmail/addCommentAccessByUrl/createMasterCheckList/openmasterchecklist bodies
+are unavailable. Source role-folder depth is inconsistent; exact missing behavior
+is not inferred. Hardcoded source IDs are not deployment defaults. The XLSX and
+existing scripts remain references. Current official Google Docs/Sheets/Slides/
+Drive API/auth/scope/shortcut guidance and distinctions between supported API
+and actual provider verification are linked in M10-configuration.md.
+
+
+M10 approved follow-up (13 October 2026): the three replies settle initial D11
+business choices. Forward27 and the runtime guard bind the sole supplied root,
+Shared Drive/service identity, exact IPO layout, no templates, three file kinds,
+manual phase, native authority and mapped new-file comments. Live ancestry checks
+protect moved assets. A protected read-only bootstrap resolves actual Drive/account
+identity once server credentials are securely supplied; the worker stays disabled.
+Missing service identity/credentials/reviewer map and real/native verification are
+technical setup, not unanswered business-policy choices. Earlier proposals are
+historical. Drawing/Form are user-deferred; no production or M11. See M10-evidence
+and M10-configuration for current checks, pending configuration and recovery.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.
+
+## M11 view mapping update — 13 October 2026
+
+The older M10 handoff text above is historical. M11's actual workbook sheet to
+dashboard/profile/timeline/live-report coverage is recorded in
+[M11-view-coverage.md](M11-view-coverage.md). The two source XLSX files remain
+available; no new external workbook/script source was supplied. Summary BN/BO/BP
+sales mapping, legacy provenance and the 22 missing menu handler bodies remain
+missing. M11 preserves their explicit unavailable/deferred states.

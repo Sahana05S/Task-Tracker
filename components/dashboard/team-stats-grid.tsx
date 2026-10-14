@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 
 export interface TeamStatsGridProps {
   analytics: TeamAnalytics;
+  attendanceComplete?: boolean;
 }
 
 interface StatCardProps {
@@ -34,29 +35,29 @@ interface StatCardProps {
  * Every card pairs its figure with the denominator behind it: a rate is never shown
  * without the quantity it came from.
  */
-export function TeamStatsGrid({ analytics }: TeamStatsGridProps) {
+export function TeamStatsGrid({ analytics, attendanceComplete = true }: TeamStatsGridProps) {
   const { totals, medians } = analytics;
 
   return (
     <dl className="grid grid-cols-2 gap-3 xl:grid-cols-5">
       <StatCard
         hero
-        label="Team average productivity"
+        label="Median employee productivity"
         value={
-          totals.averageProductivity === null
+          medians.productivity === null
             ? '\u2014'
-            : formatNumeric(totals.averageProductivity)
+            : displayPerformance(medians.productivity)
         }
-        unit={totals.averageProductivity === null ? undefined : '/h'}
+        unit={medians.productivity === null ? undefined : '/h'}
         detail={
           medians.productivity === null
             ? 'Productivity inputs unavailable'
-            : `Median ${displayPerformance(medians.productivity)} /h`
+            : 'Period-earned scaled credit / regular attendance hours'
         }
       />
 
       <StatCard
-        label="Total scaled progress"
+        label="Period-earned scaled credit"
         value={displayPerformance(totals.scaledProgress)}
         detail={`${totals.eligibleTaskCount} metric-eligible ${
           totals.eligibleTaskCount === 1 ? 'task' : 'tasks'
@@ -64,7 +65,7 @@ export function TeamStatsGrid({ analytics }: TeamStatsGridProps) {
       />
 
       <StatCard
-        label="Total hours logged"
+        label="Visible detail log hours"
         value={formatNumeric(totals.hoursLogged)}
         unit="h"
         detail={
@@ -72,16 +73,16 @@ export function TeamStatsGrid({ analytics }: TeamStatsGridProps) {
           // against off-hours or zero-scale tasks. Those hours are real but cannot
           // contribute to a productivity rate.
           totals.eligibleHours !== totals.hoursLogged
-            ? `${formatNumeric(totals.eligibleHours)} h metric-eligible`
+            ? `${formatNumeric(totals.eligibleHours)} h against eligible tasks; employee productivity uses attendance`
             : `${totals.contributingMemberCount} of ${totals.activeMemberCount} contributed`
         }
       />
 
       <StatCard
-        label="Attendance hours"
-        value={formatNumeric(totals.attendanceHours)}
-        unit="h"
-        detail={`${formatNumeric(totals.payableDays)} payable days · ${formatNumeric(totals.offHours)} off-hours`}
+        label="Known regular attendance hours"
+        value={attendanceComplete ? formatNumeric(totals.attendanceHours) : 'Unavailable'}
+        unit={attendanceComplete ? 'h' : undefined}
+        detail={attendanceComplete ? `${formatNumeric(totals.payableDays)} payable days · ${formatNumeric(totals.offHours)} off-hours` : 'One or more daily attendance inputs are missing; see report validity.'}
       />
 
       <StatCard

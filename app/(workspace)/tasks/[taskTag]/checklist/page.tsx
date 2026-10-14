@@ -12,7 +12,7 @@ import { checklistCommand } from './actions';
 export default async function ChecklistPage({params}:{params:Promise<{taskTag:string}>}) {
  const user=await requireProfile();const route=await resolveTaskDetailRouteState((await params).taskTag);
  if(route.status!=='ready') notFound();
- const d=route.data;const r=d.checklistRollup!;const manager=canManageTasks(user.role);const executor=canUpdateTaskOwnFields(user,d.task);const open=!['Done','Discarded'].includes(d.task.status);
+ const d=route.data;const r=d.checklistRollup!;const manager=canManageTasks(user.role);const executor=canUpdateTaskOwnFields(user,d.task);const open=!d.task.archivedEffectiveDate&&!['Done','Discarded'].includes(d.task.status);
  const choices=manager?(await getTaskWorkspaceData()).tasks.filter(t=>t.id!==d.task.id):[];
  const groups=d.checklistNodes.filter(n=>['Group','Page'].includes(n.nodeType)&&!n.linkedTaskId);
  const percentage=(p:number|null)=>p===null?'Unavailable':formatPercent(p);

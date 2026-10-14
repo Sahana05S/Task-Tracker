@@ -165,7 +165,10 @@ function TimelineLegend() {
       <StatusBadge status="Done" />
       <StatusBadge status="Discarded" />
       <span className="mx-1 hidden h-4 w-px bg-slate-200 sm:inline-block" />
+      <FreshnessIndicator freshness="Super Fresh" />
+      <FreshnessIndicator freshness="Almost Fresh" />
       <FreshnessIndicator freshness="Fresh" />
+      <FreshnessIndicator freshness="Almost Stale" />
       <FreshnessIndicator freshness="Stale" />
       <FreshnessIndicator freshness="Rotten" />
     </div>

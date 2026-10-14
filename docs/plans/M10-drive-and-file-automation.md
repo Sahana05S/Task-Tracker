@@ -1,6 +1,16 @@
 # M10 — Google Drive and work-file automation
 
-Status: draft, not started. Required predecessors: M01, M02, M04, M09; D11 and provider setup.
+Status: real integration and credential setup deferred by user; independent code/tests retained.
+No provider completion or real Google verification is claimed. Manual links remain available.
+Required predecessors: M01, M02, M04, M09; D11 business choices are approved; technical identity setup and live verification are now explicitly deferred.
+
+The 13 October M10 request authorizes the independent implementation in forward26. The subsequent three replies approve the sandbox
+phase enforced by forward27 and the fixed runtime approval contract.
+See [evidence](M10-evidence.md), [configuration](M10-configuration.md) and
+[menu coverage](M10-menu-coverage.md). Live database policy remains NULL and worker disabled; the pending configuration
+records the approved root/choices without inventing missing identities.
+The original acceptance checkboxes below require real provider verification;
+mock/disposable checks are recorded separately and do not check them off.
 
 ## Outcome
 
@@ -46,3 +56,23 @@ Do not hardcode source script folder IDs as universal defaults or assume Google 
 D11 is a real integration blocker. Confirm current provider API behavior from official documentation during implementation. Test in a sandbox root before production configuration; core scoring release may proceed with this track explicitly deferred.
 
 Use the shared definition of done in IMPLEMENTATION.md. Update STATUS.md with acceptance evidence, actual migration/revision, tests and limitations. Recheck predecessor contracts if their code has advanced. Planning proposals become authoritative only when confirmed in DECISIONS.md.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.

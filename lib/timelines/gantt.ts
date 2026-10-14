@@ -34,6 +34,7 @@ export interface TaskTimeline {
   readonly totalDays: number;
   readonly ticks: readonly TimelineTick[];
   readonly groups: readonly TimelineAssigneeGroup[];
+  readonly undated: readonly {task:Task;reason:string}[];
 }
 
 export function buildTaskTimeline({
@@ -46,11 +47,10 @@ export function buildTaskTimeline({
   fallbackPeriod: AnalyticsPeriod;
 }): TaskTimeline {
   const membersById = new Map(members.map((member) => [member.id, member]));
-  const datedTasks = tasks.map((task) => ({
-    task,
-    startDate: task.assignedDate,
-    endDate: normalizeEndDate(task.assignedDate, task.dueDate ?? task.completedDate),
-  }));
+  const valid=(d:string|null)=>!!d&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d))&&new Date(d).toISOString().slice(0,10)===d;
+  const undated=tasks.filter(t=>!valid(t.assignedDate)||!valid(t.dueDate)||t.dueDate!<t.assignedDate).map(task=>({task,reason:!valid(task.assignedDate)?'Missing or invalid assignment date':!valid(task.dueDate)?'Missing or invalid deadline':'Deadline precedes assignment'}));
+  const omitted=new Set(undated.map(t=>t.task.id));
+  const datedTasks=tasks.filter(t=>!omitted.has(t.id)).map(task=>({task,startDate:task.assignedDate,endDate:task.dueDate!}));
 
   const startDate =
     minIsoDate(datedTasks.map((entry) => entry.startDate)) ??
@@ -88,6 +88,7 @@ export function buildTaskTimeline({
     endDate,
     totalDays,
     ticks: buildTimelineTicks(startDate, endDate),
+    undated,
     groups: [...groupsById.values()].sort((left, right) =>
       left.name.localeCompare(right.name),
     ),

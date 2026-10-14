@@ -1,6 +1,6 @@
 # M12 — Month close, snapshots and report revisions
 
-Status: draft, not started. Required predecessors: M02, M07, M08, M11.
+Status: implemented awaiting native and certified-path verification, 13 October 2026. Required predecessors: M02, M07, M08, M11. See [M12 evidence](M12-evidence.md); historical proposal language below is retained for comparison.
 
 ## Outcome
 
@@ -26,12 +26,12 @@ PeriodRevision identifies organization/period/revision, status, cutoff, ruleVers
 
 ## Acceptance and verification
 
-- [ ] Rerunning close cannot overwrite an existing closed revision.
-- [ ] Editing live scale/logs after close does not change that revision's report.
-- [ ] Authorized correction creates revision2 with reason/diff while revision1 remains readable.
-- [ ] Unauthorized reopen/closed-period write is rejected at database level.
-- [ ] Concurrent close and correction produces one consistent revision or a clear conflict.
-- [ ] Exports reproduce archived totals, medians and award counts independently.
+- [x] Rerunning close cannot overwrite an existing closed revision (disposable PostgreSQL).
+- [x] Later source edits cannot change an immutable archived report (disposable PostgreSQL).
+- [x] Authorized correction creates a later retained revision with reason/diff.
+- [x] Unauthorized reopen/closed-period writes are rejected at the database boundary.
+- [x] Concurrent close attempts produce one committed revision and a conflict for the other.
+- [x] Exports select the stored revision and retain factor/award evidence; exact source-to-score replay, certified path and native API/browser verification remain outstanding.
 
 ## UI / workflow integration
 

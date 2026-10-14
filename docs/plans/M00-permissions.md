@@ -1,5 +1,45 @@
 # M00 permission and compatibility draft
 
+## Superseding M12 close boundary — 13 October 2026
+
+The user approved director-only incomplete, non-certified close and bounded
+correction of named existing records within exact dates. Migration 29 adds
+versioned close/revision commands and PostgreSQL guards. Reports choose live or
+an immutable revision; the former Freeze upsert is retired. See
+[M12 evidence](M12-evidence.md). Historical proposal rows below do not grant
+current permissions.
+
+## Superseding M10 implementation boundary - 13 October 2026
+
+Active MD/PE provider requests use the existing outbox with current actor/context,
+archive and lease checks. Private credentials never join task records; verified
+assets cannot use legacy label-only rename. D11 account/root/template/authority/
+sharing choices remain unapproved; policy NULL and worker disabled. Configured
+reviewer access is limited to mapped individual commenters on new files, pending
+approval. No predecessor ACL changes, production rollout, M11 or uncertain cleanup.
+See [M10 evidence](M10-evidence.md). Earlier module restrictions are historical.
+
+## Superseding M09 approved boundary - 13 October 2026
+
+All D09/D12 follow-ups approve active manager native copies/support/phase batches,
+atomic per-preview commands and reasoned dated handoff/retained archive. Copies
+reset execution/reviews and assets; prior earned shares/scales remain retained.
+Archived source/detail/checklist/participant/review/log/timer records are read-only
+at the database boundary; Done/reopen still require existing M05/M03 proof.
+Historical import is user-deferred. See [M09 evidence](M09-evidence.md). Earlier
+proposal/pending text below is historical; no production or M10/M11 authorized.
+
+
+## Superseding M08 approved boundary - 13 October 2026
+
+Directors request calculations; narrow workers alone commit complete populations
+after source/version/lease checks. Only directors override; incomplete results
+stay guarded. Detailed candidate history is employee/MD/PE-only, team outcomes
+aggregate, inactive/anonymous writes denied. Immutable automatic evidence survives
+overrides/corrections. Legacy direct award/component writes are denied. All three
+D10 follow-up policies are approved and active via23; see
+[M08 evidence](M08-evidence.md). No production scheduling/M09/M12.
+
 ## Superseding M07 approved boundary - 13 October 2026
 
 The subsequent M07 request authorizes the shared engine and source/consumer/
@@ -134,3 +174,35 @@ calculation. Recommended proposal for D04: exact decimal/rational calculations
 for the reference contract, factor-specific explicit cohorts, round only at
 approved storage/display boundaries and test PostgreSQL/TypeScript parity.
 Final NUMERIC precision, rounding and zero/missing policy are unapproved.
+
+
+M10 approved follow-up (13 October 2026): the three replies settle initial D11
+business choices. Forward27 and the runtime guard bind the sole supplied root,
+Shared Drive/service identity, exact IPO layout, no templates, three file kinds,
+manual phase, native authority and mapped new-file comments. Live ancestry checks
+protect moved assets. A protected read-only bootstrap resolves actual Drive/account
+identity once server credentials are securely supplied; the worker stays disabled.
+Missing service identity/credentials/reviewer map and real/native verification are
+technical setup, not unanswered business-policy choices. Earlier proposals are
+historical. Drawing/Form are user-deferred; no production or M11. See M10-evidence
+and M10-configuration for current checks, pending configuration and recovery.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.

@@ -12,9 +12,7 @@ export interface WorkspaceHeaderProps {
   /** One line of context beneath the title. */
   description?: string;
   /**
-   * Page-specific controls, rendered to the right of the global ones — so
-   * Recompute snapshot lands beside Log Hours and the bell rather than in a
-   * separate bar.
+   * Page-specific actions appear beside Log Hours and the bell.
    */
   actions?: React.ReactNode;
 }

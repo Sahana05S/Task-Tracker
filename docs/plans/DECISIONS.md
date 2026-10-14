@@ -1,5 +1,77 @@
 # Decisions to settle during M00
 
+## M13 source/certification answers — 13 October 2026
+
+The user answered the two M13 source questions:
+
+1. Keep sales, final rankings and certified awards **Unavailable** while the
+   original per-employee BN/BO/BP definitions are missing. The user will
+   supply the source definitions later. Nearby sales-log labels and the BQ
+   combination formula are not an approved field mapping.
+2. Keep older records with unproven owner, share/scale, business date or review
+   history **non-certified**. A dated source export or record-by-record
+   reconciliation is required to establish provenance. No legacy status or
+   attribution may be inferred from a current row or old snapshot.
+
+These answers affirm the existing guarded fallback and do not approve
+synthetic sales values for real data or a production release.
+
+## M12 approved month archive policies — 13 October 2026
+
+The user's M12 request retains director-only close and correction authority.
+Two follow-up answers approve:
+
+1. An incomplete month may be closed as an explicitly non-certified archive.
+   Missing sales, history, score, attendance or award evidence remains unavailable
+   with reasons and no certified winner. This preserves September's known rows
+   without fabricating the missing ten-factor result.
+2. A director may authorize correction only for named existing source record
+   UUIDs (log/reversal, attendance, fact, idea, suggestion, sale) or a named
+   task's dated attribution, within explicit dates inside that month and with
+   a reason. Every other closed-month record remains locked. A corrected
+   September 30 attendance row does not unlock unrelated September records.
+
+The archive captures the M07 result/source inputs and retained M08 award runs;
+it does not approve another formula. Legacy snapshots keep their old rule labels.
+The BN/BO/BP sales mapping and legacy provenance remain unresolved and prevent
+certified current historical results. No further M12 business choice is pending.
+
+## M08 authorization and approved D10 choices - 13 October 2026
+
+Authority: user's M08 pasted request. Independent selection, atomic evidence,
+invalidation, sandbox worker/schedule integration, read models and tests are
+authorized. The user approved all three recommended options after independent
+work and checks were complete. The following bounded policies are now active:
+
+1. Daily context/gates: month-to-date through the selected Kolkata day,
+   finalized just after midnight using an initial end-of-day source cutoff.
+   Active-as-of candidates need positive regular attendance that day and valid
+   day/report-window records. Known invalid attendance excludes; missing evidence
+   blocks comparison. Open corrections create new observed revisions while
+   preserving award date/window and the same M07 as-of rules. Every elapsed day,
+   including holidays/no-winner days, needs a recorded outcome. Example: October12
+   compares October1-12 earned credit/attendance, not only October12 logs.
+2. Exact ties: no winner for exact highest daily score ties and final
+   monthly ties after equal counts/current exact shared scores. Retain tied IDs
+   and reasons; no alphabetic selection or rounded comparison. Zero effective
+   wins means no monthly winner. Example: four wins each and exactly10.10 each
+   records a tied month without choosing arbitrarily.
+3. Overrides: director-only reasoned choice among complete eligible
+   candidates; replace the effective daily winner/count and retain automatic
+   evidence. No incomplete/failed/stale override. After corrections, fresh
+   complete calculation plus director reaffirmation is required before an old
+   override counts again. Example: replacing A with B removes A's one effective
+   win and gives B one; never count both.
+
+Policy `m08-approved-2026-10-13` is activated by forward23 after independent22.
+Initial cutoff is23:59:59.999 Asia/Kolkata; initial observation is at that cutoff,
+while retained correction revisions use their newly observed as-of time. The
+same M07 factor/cohort/share rules apply; later-assigned tasks cannot enter an
+earlier report window. Scheduling remains disabled until separately configured
+in a sandbox or explicitly authorized for rollout. Fixture choices are not approval.
+Unresolved sales is covered by the authorized blocked-run fallback, not a new
+question. See [M08 evidence](M08-evidence.md).
+
 ## M07 authorization and approved choices - 13 October 2026
 
 The M07 pasted request authorizes the sole ten-factor engine, source adapters,
@@ -225,7 +297,9 @@ The table below tracks remaining choices; approved portions above supersede its 
 | D07 | Approved lifecycle, section representation pending | Reasoned manager cancel/reopen/Carryover and assignee pause/resume are implemented. Assigned reviews invalidate on relevant work. Done requires initialized section evidence unavailable until M05; no implicit completion. | M05 Done evidence |
 | D08 | Supported prospective scales; custom/history rules remain open | M03 supports the source-backed families, explicit multipliers/overrides/provenance and scale versions. New/custom families, legacy derivation recovery and historical reweighting require separate evidence/authorization. | M09/custom formulas; M07 historical inputs |
 | D09 | Uneven split bounds, status/date copy and batch phase semantics | Actual script allows amount<=source despite prompt saying<=half. Weekly/day-count/all-team/suffix handlers are named but bodies are missing; define parameters/dates/count limits explicitly. | M09 |
-| D10 | Attendance validity, day cutoff, award ties, holidays/off-hours and override effect | M06 approves per-day Asia/Kolkata regular+off capacity once and explicit special-state rules. Award eligibility/ties/no-winner/overrides remain M08 decisions; no bonus scoring. | M06, M08 |
+| D10 | Attendance validity, day cutoff, award ties, holidays/off-hours and override effect | M06 approves per-day Asia/Kolkata regular+off capacity once and explicit special-state rules. M08 follow-up approves MTD/day-positive attendance/report gates, end-of-day
+cutoff, exact no-winner ties and eligible director override count replacement/
+reaffirmation. No bonus scoring or production scheduling. | M06, M08 |
 | D11 | Drive ownership/account, destination root, scopes, template tree, reviewer sharing and native/external checklist authority | Recommended app-native checklist is canonical and Drive copy is an asset unless two-way sync is explicitly wanted. Configure provider access; do not use hardcoded script IDs as deployment defaults. | M10 |
 | D12 | Auto-generation validity, tag edits, deletion/archive, historical import and duplicate inheritance | Recommended saved valid entry triggers initializer, stable tags or audited aliases, archive over destructive removal, duplication resets execution state. Existing docs say no historical import, but confirm whether that is current user intent. | M03, M04, M09 |
 | D13 | Remaining close/revision workflow and closed-task fields | Role and report visibility boundaries are confirmed above, including director-only close/revision/override authority. Versioned revision mechanics, late corrections and closed-task field changes still need decisions. | M12; D07 lifecycle |
@@ -333,3 +407,146 @@ Small next decision set, proposed only:
    through an audited reason. Example: Activity 100% with pending review stays
    In Progress. Empty/all-N/A sections still need an explicit interpretation in
    M05. No proposal here has been implemented as an approved rule.
+
+## M09 outstanding choices - 13 October 2026 (proposals only)
+
+No new business rule is approved by the M09 request beyond its expressly
+confirmed support arithmetic/category and prior recorded M01 through M08 decisions.
+The independent framework keeps `tool_policy.config` NULL. Disposable tests inject
+`m09-draft-fixture-only`, then restore NULL; passing them proves technical behavior,
+not approved inheritance. Questions below bundle only related choices:
+
+1. **D09/D12 support and copy inheritance.** Recommended Uneven 0 through whole source
+   (matching actual validation, correcting the misleading half prompt), Absolute
+   0 through 500 and Proportional 0 through 100%. Even/Uneven use a reasoned prospective override
+   while keeping the original scale family and earlier earned captures. New work
+   starts Not Started/0%, manual progress, with no logs/timers/approvals or asset
+   links. Copy source category/priority/description, exact published template and
+   current checklist structure; reset all leaves (including N/A) to No, convert
+   linked-task leaves to ordinary items for reassessment, uninitialize sections,
+   clear other editable content/comments. Regular copies retain known shares and
+   assigned reviewers; support uses one selected active assignee at 100%. Explicit
+   new assignment/deadline dates replace inherited old dates; no missing deadline
+   is invented. Hours-derived copies start zero without an existing explicit
+   override; other scale families retain their measured inputs/override. Example:
+   scale10 Even creates5 and reduces the source to5, preserving previous earnings.
+2. **D12 phase/batch semantics.** Recommended weekly=count contiguous seven-calendar-
+   day phases; day-count=count phases of explicitly chosen calendar days; all-team=
+   one independent task per active member; number/suffix=count independent copies
+   on the explicitly chosen dates with numbered title suffixes. Phases repeat the
+   source's applicable scale family rather than dividing it; source unchanged.
+   Recommended all-or-nothing batches including Done/Reopen: one stale task or
+   failed checklist/review gate rejects the entire batch and identifies its tag.
+   Example: Nov1 weekly2 produces Nov1 to 7 and Nov8 to 14. These source handlers are
+   missing, so these are newly defined native parameters, not replication claims.
+3. **D12 dated handoff/archive/import scope.** Recommended carry earlier unfinished
+   work into the current started month as remaining manual scale and 0% new progress;
+   source identity/dates/earned credit/history and old reports remain retained.
+   A reasoned dated handoff prevents further source execution and avoids duplicate
+   current carried workload; it does not erase actual period earnings. Example:
+   scale10 at40% produces new scale6 at0%, retaining old earned4. Recommend retained
+   manager archive with a reason instead of deletion, and defer historical import
+   until provenance/source mapping is explicitly requested. Archive population and
+   write-boundary activation remain pending; no current scoring policy is changed.
+
+None of these recommendations is a user-approved deferral or activation. Actual
+carryover/archive execution remains blocked even in draft fixture configuration.
+
+## M09 follow-up approvals - 13 October 2026
+
+The user answered all three M09 questions: "Approve recommended bounds and copy
+defaults", "Approve calendar phases and atomic batches", and "Approve remaining-
+work handoff, archive and import deferral". This expressly supersedes the earlier
+M09 pending-policy notes, but does not authorize production apply/deploy, Drive
+operations, M10/M11 or a scoring/award formula change. Forward25 activates the
+exact D09/D12 contract after24; the earlier draft tests remain historical evidence.
+
+Approved D09: Uneven 0 through the whole source; Absolute 0 through500; live
+Proportional 0 through100%, including exact fractional percentages. Even/Uneven
+use audited prospective source overrides, preserving formula inputs and earlier
+credit. Skill usesSD; Effort retains source category.
+
+Approved D12 copy contract: Not Started/0%/manual progress, explicit new dates,
+no logs/timers/approvals/assets; retained metadata description/category/priority,
+exact published template version and current checklist layout. All leaves,
+including N/A, reset toNo; linked leaves become ordinary items; sections become
+uninitialized; other editable content/comments clear. Copies preserve known
+shares/reviewers; support has one chosen active assignee at100%. Hours-derived
+copies restart atzero unless an explicit override exists. No historical share
+reassignment, hidden alias, scale reweighting or provider-file copying is granted.
+
+Approved D12 phases: consecutive seven-calendar-day weekly periods; explicit
+calendar-day/count phases; all-team one independent task per active member;
+number/suffix counted independent copies on explicit dates. Each repeats the
+applicable source scale family and does not reduce the source. All batches are
+atomic, with failing tags and existing Done/review/reopen gates.
+
+Approved D12 handoff/archive: earlier unfinished measured work carries into the
+current month as new remaining manual scale and0% progress. New task relationship
+and reasoned dated predecessor archive commit together. Predecessor identity,
+original dates/earnings/source records and earlier-period reports are retained;
+ordinary writes are blocked, and it leaves subsequent carried workload. Example:
+10 at40% becomes new6 at0% with old4 earned intact. Current carried loading,
+criticality and freshness exclude an archive effective within that report window
+and known at its as-of date; retained period earnings and actual Done completion
+remain counted, and later archive dates do not alter earlier-period factors.
+Reasoned manager archive replaces physical removal. Historical import is
+**deferred by user** until explicitly requested with source mapping/provenance.
+No general restore/revision authority or reconstructed historical provenance is
+invented. Active timers must be stopped before archival to avoid stranding effort.
+
+## D11 implementation proposal and outstanding setup - 13 October 2026
+
+The M10 request authorizes independent code/tests and asks for missing setup
+afterward; it does not answer D11. No ownership/root/template/sharing/checklist
+authority decision is recorded as approved. Forward26 defaults to NULL policy.
+The adapter supports organization Shared Drive/service identity or organization
+OAuth with an explicit approved scope; native canonical checklists only; mapped
+commenter access on new files or no added sharing; explicit employee/task/role
+paths, registry versions and supported kinds; manual/optional auto initialization.
+Recommended initial configuration and exact questions are in M10-configuration
+and M10-evidence. No consent/Picker UI, automatic legacy-folder adoption or
+external checklist sync is inferred. D09/D12/M07/M08 approvals remain unchanged.
+
+
+## Approved M10 follow-up - 13 October 2026
+
+The user selected "Shared Drive + dedicated service account (Recommended)" and
+"Native checklists + reviewer comments (Recommended)". The supplied sandbox
+root is `13G0w_T5i6cKUMiREETYlpH9Z_3G-RyGH`.
+
+Approved exact initial phase:
+- Only that sandbox folder; no existing business-folder mutations or broader sharing.
+- `[Employee ID]/[Task Tag] - [Task Title]/{Input,Process,Output}`.
+- No templates initially; Docs/Sheets/Slides only. Drawing/Form are deferred by user.
+- Manual initialization during sandbox tests. The existing automatic native hook
+  stays implemented but disabled for provider operations until sandbox tests pass.
+- Native checklists are canonical; external copies are assets, with no two-way sync.
+- Approved mapped reviewer commenter access only on newly created/copied files,
+  with notifications suppressed. No predecessor/folder/public/domain ACL changes.
+
+The selected recommended service identity uses the explicit `drive` scope,
+constrained to the approved sandbox by database policy and live parent checks.
+Actual account principal, Shared Drive ID, credentials and reviewer-email map
+remain unconfigured. Folder Shared Drive membership is unverified; it is not
+inferred from the URL. No production or M11 authorization was added.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.

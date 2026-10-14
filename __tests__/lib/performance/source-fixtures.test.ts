@@ -64,4 +64,8 @@ describe.each(['fresh','upgrade'])('M07 PostgreSQL source conformance (%s)',kind
   expect(a.factors.completion.rawValue).toBe(.5);expect(a.factors.productivity.rawValue).toBeNull();expect(a.factors.productivity.population).not.toContain(employee);
   expect(a.factors.completion.population).toContain(employee);expect(a.factors.completion.population.length).toBeGreaterThan(2);
  });
+ it('does not carry later-assigned tasks into an earlier report window when corrections have a newer as-of',()=>{
+  const input=sources(),t=input.tasks.find(t=>t.id==='10000000-0000-0000-0000-000000000001')!;input.periodEndExclusive='2026-10-13';input.asOfLocalDate='2026-10-14';t.assignedDate='2026-10-14';
+  const a=resolvePerformance(input).members.find(m=>m.userId===employee)!;expect(a.factors.criticality.rawValue).toBe(0);expect(a.factors.loading.rawValue).toBeNull();
+ });
 });

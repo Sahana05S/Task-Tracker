@@ -181,20 +181,9 @@ describe('buildEmployeeAnalyticsCharts', () => {
       links: [makeLink({ taskId: 'task-1', linkType: 'Document' })],
     });
 
-    expect(charts.performanceScoreTrend.filter((point) => point.value > 0)).toEqual([
-      { date: '2026-09-02', label: 'Sep 2', value: 3 },
-      { date: '2026-09-06', label: 'Sep 6', value: 4 },
-    ]);
-    expect(charts.productivityTrend).toEqual([
-      { date: '2026-09-02', label: 'Sep 2', value: 5 },
-      { date: '2026-09-06', label: 'Sep 6', value: 10 },
-    ]);
-    expect(charts.progressTrend.find((point) => point.date === '2026-09-06')?.value).toBe(20);
-    expect(charts.completionTrend.find((point) => point.date === '2026-09-10')?.value).toBe(1);
-    expect(charts.loadingTrend.find((point) => point.date === '2026-09-01')?.value).toBe(100);
-    expect(charts.loadingTrend.find((point) => point.date === '2026-09-05')?.value).toBe(150);
-    expect(charts.loadingTrend.find((point) => point.date === '2026-09-11')?.value).toBe(100);
-    expect(charts.criticalityTrend.find((point) => point.date === '2026-09-05')?.value).toBe(1.75);
+    expect(charts.performanceScoreTrend).toEqual([]); // Legacy winner records are not calculated candidate history.
+    // M11: current tasks and logs cannot certify past factor observations.
+    expect([charts.productivityTrend,charts.progressTrend,charts.completionTrend,charts.loadingTrend,charts.criticalityTrend]).toEqual([[],[],[],[],[]]);
     expect(charts.taskTypes.find((bucket) => bucket.key === 'T')?.value).toBe(1);
     expect(charts.taskTypes.find((bucket) => bucket.key === 'MKT')?.value).toBe(1);
     expect(charts.taskPriorities.find((bucket) => bucket.key === 'High')?.value).toBe(1);
@@ -204,7 +193,7 @@ describe('buildEmployeeAnalyticsCharts', () => {
     expect(charts.taskDocumentation.find((bucket) => bucket.key === 'Missing')?.value).toBe(1);
   });
 
-  it('returns empty trends and zeroed distributions with fallback performance score', () => {
+  it('keeps daily score history empty without actual candidate observations', () => {
     const charts = buildEmployeeAnalyticsCharts({
       period: SEP_2026,
       performance: makePerformance(12.5),
@@ -214,9 +203,7 @@ describe('buildEmployeeAnalyticsCharts', () => {
       links: [],
     });
 
-    expect(charts.performanceScoreTrend).toEqual([
-      { date: '2026-09-30', label: 'Sep 30', value: 12.5 },
-    ]);
+    expect(charts.performanceScoreTrend).toEqual([]);
     expect(charts.productivityTrend).toEqual([]);
     expect(charts.progressTrend).toEqual([]);
     expect(charts.completionTrend).toEqual([]);

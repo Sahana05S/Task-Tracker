@@ -36,7 +36,7 @@ export default async function TasksPage() {
   );
 
   const openCount = tasks.filter(
-    (task) => task.status !== 'Done' && task.status !== 'Discarded',
+    (task) => !task.archivedEffectiveDate && task.status !== 'Done' && task.status !== 'Discarded',
   ).length;
 
   return (

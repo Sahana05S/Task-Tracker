@@ -1,0 +1,84 @@
+# TaskPulse operating guide (current local implementation)
+
+These workflows describe the current application code. They need signed-in
+staging verification before production use. Drive automation is disabled;
+**Add Existing Link** saves a URL only and does not create or rename a Drive file.
+
+## Start and review work
+
+Managers create tasks with an assignee, priority, dates, scale mode and native
+details. Manual initialization and the valid-entry automatic path create the
+same native task details/checklist structure; the automatic path does not run
+Drive operations. Published templates are versioned. A new copy starts at
+Not Started, 0% progress, with fresh checklist state; inspect its dates,
+members and details before assigning work.
+
+Use the task's SMART and Input/Process/Output panels for native details. Setup,
+Activity and Closure are separate checklist sections. Assigned members mark
+permitted leaf items Yes, No or N/A. N/A is excluded from the percentage;
+empty or all-N/A sections display Not applicable. A manager must explicitly
+confirm an intentionally empty section. Only Activity can own task progress,
+after a manager's reasoned mode switch with a preview. A switch changes current
+progress but does not rewrite earlier earned credit. Done requires initialized
+section evidence and current assigned-reviewer approvals; a percentage alone
+does not close a task. Relevant work invalidates stale approvals.
+
+## Record time, attendance and contributions
+
+Use the task timer or an explicit log to enter measured effort. A timer crossing
+Asia/Kolkata midnight produces dated segments. On reload, inspect the active
+timer before stopping; retry an operation with the same operation identity
+rather than adding a second log. Corrections and reversals retain history;
+reversal removes effective credit without physically deleting the source.
+Earlier captured scale and participant shares remain attached to prior credit.
+
+Record attendance for every elapsed local day in a report period. Present and
+Half Day require measured regular hours; Off Hours/Holiday may record separate
+measured off-hours with zero regular hours. Absent/Leave record zero of both.
+Task hours for each date must fit that date's regular plus off-hours. Missing
+attendance stays Unavailable and excess effort makes the period invalid;
+another day's spare hours cannot make it valid. Attendance is an award gate,
+not a score bonus.
+
+Authors may edit or withdraw their own pending fact, idea or suggestion.
+Managers/data managers validate another person's contribution; self-validation
+is denied. A reviewed correction needs a reason and resets the entry to pending
+while retaining the previous review. Pending, validated, rejected and withdrawn
+have distinct credit. Use the original business date and the report's as-of
+time when investigating differences. Sales entries may be recorded, but the
+BN/BO/BP score mapping is unresolved, so a sales factor can be Unavailable.
+
+## Read performance and awards
+
+Select the same month and as-of date across dashboard, employee profile and
+live report before comparing them. The ten factors show raw value, factor
+median, difference, weighted contribution and source/availability reasons.
+Task productivity is task percentage points per logged hour; employee
+productivity is credited scaled progress per regular attendance hour. Shared
+task attribution uses the recorded shares. Missing source data is not a zero
+score. If any required factor or valid attendance is absent, no final ranking
+or certified award should be inferred from a visible subtotal.
+
+Daily awards use month-to-date context through each Kolkata day and require
+positive regular attendance that day plus valid daily/month-to-date evidence.
+Exact top ties record no winner. A director may override a complete run only
+to another eligible candidate, with a reason; a later recalculation needs
+reaffirmation. Failed or blocked worker runs need investigation and replay in
+an approved environment. Production award scheduling is not enabled by this
+guide.
+
+## Reports and closed months
+
+Live reports can be selected by period/as-of. A director may retain a draft or
+close a month. When score/award evidence is missing, the close is explicitly
+**Incomplete — not certified**, with reasons and no certified winner. Closing
+does not invent absent sales or history. Use the retained revision selector to
+view/download the same archived evidence later; exports follow the selected
+revision and employee detail permissions.
+
+For a closed-month correction, the director names the existing source record
+or task attribution, exact in-month dates and reason. Only that scope is opened.
+After the correction and recomputation, publishing creates a new retained
+revision; the earlier revision remains selectable and visibly superseded.
+Ordinary edits to unrelated closed records remain blocked. A database backup
+and operational release procedure are in [the release runbook](plans/RELEASE-RUNBOOK.md).

@@ -1,0 +1,71 @@
+{
+  "module": "M10",
+  "date": "2026-10-13",
+  "state": "implemented awaiting account setup and native/provider verification",
+  "head": "7764489ac6bcc13f0062e67b401c7c9738f5848b",
+  "businessChoicesApproved": true,
+  "approvedPolicy": "lib/integrations/drive/approved-sandbox.json",
+  "pendingConfiguration": "docs/plans/fixtures/m10-approved-sandbox.pending.json",
+  "rootVerified": false,
+  "livePolicyInstalled": false,
+  "workerEnabled": false,
+  "autoInitialize": false,
+  "credentialsConfigured": false,
+  "reviewerMappingConfigured": false,
+  "scope": "drive",
+  "newMigration": "27_approved_drive_sandbox_boundary.sql",
+  "migrationSha256": "58163107e67aeec849f51f9c38e92bd1c913f7b1f0bc0fead2f9656eb77f2c9d",
+  "preservation": {
+    "passed": true,
+    "baselineFiles": 32,
+    "migration26Unchanged": true
+  },
+  "focused": {
+    "previousPassedFiles": 5,
+    "previousPassedTests": 59,
+    "finalDriveCases": 61,
+    "finalDriveCasesPassedInRegression": true
+  },
+  "regression": {
+    "passed": true,
+    "files": 49,
+    "tests": 451
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "disposablePostgres": {
+    "fresh01to27": "passed",
+    "upgrade01to26_then27": "passed",
+    "incompatiblePolicyUpgradeRefusedWithoutReplacement": "passed",
+    "policyRootsPathsKindsTemplatesAutoScopeAuthoritySharing": "passed",
+    "manualReplayAndRoles": "passed",
+    "safeReadModelAndRetainedReports": "passed",
+    "authModel": "JWT-role shim; no native GoTrue/PostgREST"
+  },
+  "environmentNamesOnly": {
+    "TASKPULSE_DRIVE_SERVICE_ACCOUNT_JSON": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    },
+    "TASKPULSE_DRIVE_SERVICE_ACCOUNT_EMAIL": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    },
+    "TASKPULSE_DRIVE_WORKER_TOKEN": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    },
+    "TASKPULSE_DRIVE_WORKER_ENABLED": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    }
+  },
+  "realGoogleCalls": 0,
+  "productionChanges": false,
+  "unperformed": [
+    "authenticated Google root/principal/Shared Drive verification",
+    "real sandbox folder/file/rename/shortcut/sharing and failure/retry trials",
+    "native Supabase/GoTrue/PostgREST authorization",
+    "signed-in browser/API flows"
+  ]
+}

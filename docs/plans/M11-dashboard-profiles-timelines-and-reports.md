@@ -1,6 +1,11 @@
 # M11 — Dashboard, employee analytics, timelines and reports
 
-Status: draft, not started. Required predecessors: M07, M08, M09.
+Status: implemented awaiting native verification (13 October 2026). Required predecessors: M07, M08, M09. See [M11 evidence](M11-evidence.md) and [view coverage](M11-view-coverage.md). The draft below records the original planned acceptance scope; evidence states which checks actually passed.
+
+The user explicitly deferred real M10 Drive integration/credential setup.
+Missing Drive credentials do not block this core tracker module. Read the current
+STATUS and M10 handoff; provider completion must not be inferred. No M11
+implementation was performed while finishing the M10 deferral record.
 
 ## Outcome
 

@@ -1,3 +1,8 @@
+import { TaskRelations } from '@/components/timelines/task-relations';
+import Link from 'next/link';
+import { getLivePresentation } from '@/lib/presentation/queries';
+import { viewContext } from '@/lib/presentation/context';
+import { ReportContext } from '@/components/reports/view-context';
 import type { Metadata } from 'next';
 
 import { WorkspaceHeader } from '@/components/layout/workspace-header';
@@ -11,11 +16,12 @@ export const metadata: Metadata = {
   title: 'Timelines · TaskPulse',
 };
 
-export default async function TimelinesPage() {
+export default async function TimelinesPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {
   await requireProfile();
 
-  const period = currentPeriod();
-  const { tasks, members } = await getTaskWorkspaceData();
+  const query=await searchParams;const context=viewContext(query.period,query.asOf);
+  const period=context.period;const presentation=await getLivePresentation(context);
+  const {tasks,members}=presentation;
   const timeline = buildTaskTimeline({
     tasks,
     members,
@@ -31,7 +37,7 @@ export default async function TimelinesPage() {
     <>
       <WorkspaceHeader
         title="Task timelines"
-        description={`${timeline.groups.length} assignees · ${assignedTaskCount} scheduled task bars · ${timeline.totalDays} day range`}
+        description={`${timeline.groups.length} assignees · ${assignedTaskCount} assignment bars (shared tasks repeat by assignee) · ${timeline.totalDays} day range`}
       />
 
       <div className="grid gap-4 px-4 py-4 lg:px-6">
@@ -41,7 +47,10 @@ export default async function TimelinesPage() {
           <Metric label="Visible task bars" value={String(assignedTaskCount)} />
         </section>
 
+        <ReportContext model={presentation}/>
         <TaskGantt timeline={timeline} />
+        <section className="soft-card p-4"><h2 className="font-semibold">Undated tasks</h2>{timeline.undated.map(({task,reason})=><p key={task.id}><Link className="underline" href={'/tasks/'+encodeURIComponent(task.taskTag)}>{task.taskTag} · {task.title}</Link> — {reason}</p>)}</section>
+        <TaskRelations model={presentation}/>
       </div>
     </>
   );

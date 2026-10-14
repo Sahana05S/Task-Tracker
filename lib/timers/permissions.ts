@@ -3,10 +3,10 @@ import type { Task, User } from '@/types/tracker';
 
 export function canStartTimerForTask(
   user: Pick<User, 'id' | 'role' | 'isActive'>,
-  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'status'>,
+  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'status' | 'archivedEffectiveDate'>,
 ): boolean {
   return (
-    user.isActive &&
+    user.isActive && !task.archivedEffectiveDate &&
     task.status !== 'Done' &&
     task.status !== 'Discarded' &&
     (canManageTasks(user.role) || isAssignedToTask(task, user.id))

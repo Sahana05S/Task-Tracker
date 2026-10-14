@@ -1,0 +1,93 @@
+{
+  "module": "M10",
+  "date": "2026-10-13",
+  "state": "partially implemented; D11/setup and provider/native verification pending",
+  "head": "7764489ac6bcc13f0062e67b401c7c9738f5848b",
+  "migration": "26_drive_outbox_and_verified_assets.sql",
+  "migrationSha256": "ff21d79633f2d2087325b38dabfb35f9d6aedd2c13889f1573aca0bc259d3e05",
+  "preservation": {
+    "passed": true,
+    "files": 32
+  },
+  "focused": {
+    "files": 3,
+    "tests": 31,
+    "passed": true
+  },
+  "regression": {
+    "files": 47,
+    "tests": 427,
+    "passed": true
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "disposablePostgres": {
+    "fresh01to26": "passed",
+    "upgrade01to25_then26": "passed",
+    "nativeOutboxRollback": "passed",
+    "rolesVersionsReplay": "passed",
+    "completionReceiptReplay": "passed",
+    "claimsResourceFencing": "passed",
+    "markerParentBoundId": "passed",
+    "archiveAndFrozenSnapshotPreservation": "passed",
+    "fixtures": {
+      "taskpulse_m10_fresh_test": {
+        "assets": 1,
+        "events": 18,
+        "requests": 5,
+        "verifiedLinks": 1,
+        "nonDriveRunning": 0
+      },
+      "taskpulse_m10_upgrade_test": {
+        "assets": 1,
+        "events": 18,
+        "requests": 5,
+        "verifiedLinks": 1,
+        "nonDriveRunning": 0
+      }
+    },
+    "authModel": "JWT-role shim; no native GoTrue/PostgREST"
+  },
+  "environmentNamesOnly": {
+    "TASKPULSE_DRIVE_WORKER_ENABLED": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    },
+    "TASKPULSE_DRIVE_WORKER_TOKEN": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    },
+    "TASKPULSE_DRIVE_SERVICE_ACCOUNT_JSON": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    },
+    "TASKPULSE_DRIVE_OAUTH_CLIENT_ID": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    },
+    "TASKPULSE_DRIVE_OAUTH_CLIENT_SECRET": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    },
+    "TASKPULSE_DRIVE_OAUTH_REFRESH_TOKEN": {
+      "processNamePresent": false,
+      "localFileNamePresent": false
+    }
+  },
+  "realGoogleCalls": 0,
+  "unperformed": [
+    "Google authorization and principal/root/template access",
+    "real folder/file/copy/rename/shortcut/sharing verification",
+    "real timeout/revocation/quota/partial-copy injection",
+    "native Supabase/GoTrue/PostgREST authorization",
+    "signed-in browser/API checks"
+  ],
+  "productionChanges": false,
+  "workerEnabled": false,
+  "D11Approved": false,
+  "finalDriveCoverage": {
+    "files": 3,
+    "tests": 37,
+    "passedWithinFinalRegression": true
+  }
+}

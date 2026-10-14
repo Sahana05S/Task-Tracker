@@ -1,5 +1,27 @@
 # Task Tracker project instructions
 
+## Superseding M13 authorization — 13 October 2026
+
+The user's subsequent pasted M13 request authorizes integrated acceptance,
+disposable test-environment work and release preparation, superseding the older
+no-M13 line below. Read `docs/plans/M13-evidence.md`,
+`docs/plans/RELEASE-READINESS.md`, `docs/plans/RELEASE-RUNBOOK.md` and STATUS for
+the actual checks and outstanding gates. No production migrations, deployment,
+worker activation, Drive integration or historical import are authorized.
+Native Supabase/auth/browser verification and real scoring certification remain
+outstanding until their identified environment/source blockers are resolved.
+
+## Current M11 authorization (13 October 2026)
+
+The user's subsequent M06–M11 requests supersede the older module stop line
+below. M11 dashboard/profile/timeline/live-report work is implemented awaiting
+native verification; read `docs/plans/M11-evidence.md`,
+`docs/plans/M11-view-coverage.md` and STATUS.md for the exact current boundary.
+Migration 28 is forward only and has run only in disposable databases. M10 real
+Google Drive integration remains explicitly deferred by the user; M12, provider
+operations, production migrations and deployment remain outside authorization.
+Preserve the recorded M07/M08 rules and earlier user edits.
+
 ## Current module authorization (13 October 2026)
 
 The planning files are now at the repository root and `docs/plans/`. Read
@@ -23,6 +45,15 @@ earlier no-M07 instruction. The 13 October follow-up approves D02 period earning
 deploy, start M08 or perform Drive operations. See M07-evidence.md and STATUS.
 
 ## Read before implementation
+
+The subsequent 13 October M08 request authorizes independent award selection,
+atomic commands, retained candidate evidence and sandbox worker integration. It
+supersedes earlier no-M08 instructions. M07's exact approvals remain unchanged;
+D10 daily MTD/end-of-day/participation/report gates, no-winner exact ties and
+director eligible override/count replacement with reaffirmation after corrections
+are approved in the subsequent 13 October reply. Forward23 activates them after22;
+sales/history completeness and native verification retain safeguards. No production
+apply/deploy/scheduling, M09, Drive operations or M12 workflow.
 
 Read `PLAN.md`, `IMPLEMENTATION.md`, `docs/plans/RULES.md`, `docs/plans/DECISIONS.md`, `docs/plans/STATUS.md`, and the active module plan. Apply any narrower AGENTS.md instructions in directories you change. User instructions take precedence.
 
@@ -55,3 +86,96 @@ This is an existing Next.js/Supabase app. Improve it incrementally. Complete the
 Run the focused tests, `npm run typecheck`, and a production build when the changed code affects build/runtime behavior. For database changes run fresh-install, upgrade, authorization and rollback/failure tests in a disposable database. If an environment is unavailable, report the exact unperformed checks; do not claim they passed.
 
 Update STATUS.md and the active module's completion evidence. Explain what changed, why, checks performed, remaining risks and migration/deployment steps. Preserve existing user changes. Do not publish, merge or apply production migrations unless that action is within the user's current authorization.
+
+## M09 current authorization - 13 October 2026
+
+The subsequent pasted M09 request authorizes Task Tools inventory, durable
+previews, atomic support/copy/batch framework and disposable testing. It
+supersedes the historical no-M09 boundary. D09 bounds and D12 inheritance,
+phase/handoff/archive/import policy remain undecided; draft fixture policy is
+never business approval. Complete independent work, then obtain the smallest
+necessary choices. No production apply/deploy, Drive operations, M10/M11 or
+scoring/award policy change is authorized. Read M09-evidence and STATUS.
+
+## M09 follow-up approvals - 13 October 2026
+
+The user answered all three M09 questions: "Approve recommended bounds and copy
+defaults", "Approve calendar phases and atomic batches", and "Approve remaining-
+work handoff, archive and import deferral". This expressly supersedes the earlier
+M09 pending-policy notes, but does not authorize production apply/deploy, Drive
+operations, M10/M11 or a scoring/award formula change. Forward25 activates the
+exact D09/D12 contract after24; the earlier draft tests remain historical evidence.
+
+## Superseding M10 authorization - 13 October 2026
+
+The subsequent pasted M10 request authorizes independent server Drive
+implementation, the existing outbox adapter and disposable tests. It supersedes
+earlier no-M10/Drive module boundaries. D11 is unresolved: account/root/templates,
+sharing and checklist authority have no approved defaults. Policy remains NULL
+and worker disabled. See M10-evidence and M10-configuration. Real side effects
+require explicit approved sandbox setup. No production apply/deploy/workers/
+sharing, M11, historical import or scoring/award/carryover policy changes.
+
+
+## Approved M10 follow-up - 13 October 2026
+
+The user selected "Shared Drive + dedicated service account (Recommended)" and
+"Native checklists + reviewer comments (Recommended)". The supplied sandbox
+root is `13G0w_T5i6cKUMiREETYlpH9Z_3G-RyGH`.
+
+Approved exact initial phase:
+- Only that sandbox folder; no existing business-folder mutations or broader sharing.
+- `[Employee ID]/[Task Tag] - [Task Title]/{Input,Process,Output}`.
+- No templates initially; Docs/Sheets/Slides only. Drawing/Form are deferred by user.
+- Manual initialization during sandbox tests. The existing automatic native hook
+  stays implemented but disabled for provider operations until sandbox tests pass.
+- Native checklists are canonical; external copies are assets, with no two-way sync.
+- Approved mapped reviewer commenter access only on newly created/copied files,
+  with notifications suppressed. No predecessor/folder/public/domain ACL changes.
+
+The selected recommended service identity uses the explicit `drive` scope,
+constrained to the approved sandbox by database policy and live parent checks.
+Actual account principal, Shared Drive ID, credentials and reviewer-email map
+remain unconfigured. Folder Shared Drive membership is unverified; it is not
+inferred from the URL. No production or M11 authorization was added.
+
+
+## M10 live integration deferred by user - 13 October 2026
+
+The user explicitly said "Defer real Google Drive integration and credential
+setup for now." Manual asset links remain available. Provider workers, setup
+diagnostics, create/copy/rename/shortcut/sharing requests and retries are unavailable
+under the current explicit runtime deferral, even if sandbox environment flags
+are supplied. No credentials or mappings are requested during this deferral.
+Automatic initialization code is retained but provider operations stay disabled.
+Native details, checklists, execution, scoring, awards and reports do not depend
+on Drive credentials. This supersedes earlier requests to provision/test now.
+
+M10's independent code and tests are documented; actual Google side effects,
+account/root/Shared Drive verification, real failure trials and provider-backed
+browser flows are deferred and unverified. This is not provider completion.
+Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
+an explicit future resume. No credentials, schedules, real Drive changes,
+production apply/deploy or migration rewriting occurred. M11 is the next planned
+module; this handoff does not implement it, and Drive is not a prerequisite.
+
+## Superseding M12 authorization — 13 October 2026
+
+The subsequent M12 pasted request authorizes month-close/revision code and
+disposable checks. The user approved non-certified incomplete archives and
+director correction limited to named existing records and exact dates. Forward
+migration 29 and report/export selection are in the local workspace; see
+`docs/plans/M12-evidence.md`. Earlier no-M12 statements are historical. No
+production apply, deployment, worker activation, Drive operation or M13 work is
+authorized. Native signed-in verification and a positive certified-path fixture
+remain outstanding while sales/history sources are unavailable.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

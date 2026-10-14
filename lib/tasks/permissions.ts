@@ -14,7 +14,7 @@ export function isAssignedToTask(
 
 export function canUpdateTaskOwnFields(
   user: Pick<User, 'id' | 'role' | 'isActive'>,
-  task: Pick<Task, 'assigneeId' | 'assigneeIds'>,
+  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'archivedEffectiveDate'>,
 ): boolean {
-  return user.isActive && (canManageTasks(user.role) || isAssignedToTask(task, user.id));
+  return !task.archivedEffectiveDate && user.isActive && (canManageTasks(user.role) || isAssignedToTask(task, user.id));
 }

@@ -103,6 +103,9 @@ export interface Database {
           scale_override?: number | null;
           scale_provenance?: string;
           scale_version?: number;
+          archived_effective_date?:string|null;
+          archive_reason?:string|null;
+          handoff_successor_id?:string|null;
           valid_for_metrics: boolean;
           assigned_date: string;
           due_date: string | null;
@@ -754,6 +757,24 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
+      month_archive_command:{Args:{p_command:string;p_period:string;p_payload:Json;p_operation:string;p_expected_version?:number|null};Returns:Json};
+      month_archive_read:{Args:{p_period:string;p_revision?:number|null;p_employee?:string|null};Returns:Json};
+      month_archive_history:{Args:{p_period:string};Returns:Json};
+      live_presentation_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string;p_employee?:string|null};Returns:Json};
+      drive_command:{Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
+      drive_read_model:{Args:Record<string,never>;Returns:Json};
+      claim_drive_jobs:{Args:{p_limit?:number};Returns:Json};
+      drive_job_context:{Args:{p_job:string;p_lease:string};Returns:Json};
+      drive_job_plan:{Args:{p_job:string;p_lease:string;p_steps:Json};Returns:undefined};
+      drive_asset_checkpoint:{Args:{p_job:string;p_lease:string;p_key:string;p_state?:Json|null};Returns:Json};
+      finish_drive_job:{Args:{p_job:string;p_lease:string;p_error?:string|null};Returns:undefined};
+      task_tools_preview:{Args:{p_command:string;p_payload:Json};Returns:Json};
+      task_tools_command:{Args:{p_preview:string;p_operation:string};Returns:Json};
+      award_command:{Args:{p_command:string;p_payload:Json;p_operation:string};Returns:Json};
+      claim_award_jobs:{Args:{p_limit?:number};Returns:Json};
+      queue_due_awards:{Args:{p_from:string;p_through:string;p_operation:string};Returns:Json};
+      award_policy_context:{Args:Record<string,never>;Returns:Json};
+      award_read_model:{Args:{p_from:string;p_to_exclusive:string;p_employee?:string|null};Returns:Json};
       performance_source_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
       claim_performance_jobs:{Args:{p_limit?:number};Returns:Json};
       finish_performance_job:{Args:{p_job:string;p_lease:string;p_result:Json|null;p_error?:string|null};Returns:undefined};

@@ -315,7 +315,7 @@ function TaskDetails({
             }
           />
           <Detail label="Priority" value={task.priority} />
-          <Detail label="Status" value={task.status} />
+          <Detail label="Status" value={task.archivedEffectiveDate?`${task.status} (archived, read-only)`:task.status} />
           <Detail label="Scale" value={formatNumeric(task.taskScale)} numeric />
           <Detail
             label="Progress"
@@ -360,7 +360,7 @@ function TaskDetails({
           </div>
         ) : null}
 
-        {canManage ? (
+        {canManage&&!task.archivedEffectiveDate ? (
           <div className="flex gap-2 pt-2">
             <Button
               type="button"

@@ -4,11 +4,14 @@ import { revalidatePath } from 'next/cache';
 
 import { getCurrentProfile } from '@/lib/auth/profile';
 import { storeDailyStarCalculation } from '@/lib/stars/daily';
+import { commandIdentity } from '@/lib/commands/result';
+import { kolkataDate } from '@/lib/tasks/contract';
 import type { ActionResponse, User } from '@/types/tracker';
 
 export type DailyStarActionState = ActionResponse<{
   starDate: string;
   userId: string | null;
+  status:string;
 }>;
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -30,7 +33,7 @@ function readString(formData: FormData, key: string): string {
 }
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return kolkataDate();
 }
 
 export async function calculateDailyStarAction(
@@ -51,11 +54,12 @@ export async function calculateDailyStarAction(
   }
 
   try {
-    const record = await storeDailyStarCalculation({ starDate });
+    const identity=commandIdentity(formData);if(!identity.operationId)return {success:false,error:'Operation key required.'};
+    const record = await storeDailyStarCalculation({ starDate,operationId:identity.operationId });
     revalidateDailyStarViews();
     return {
       success: true,
-      data: { starDate, userId: record?.userId ?? null },
+      data: { starDate, userId: record.winnerId ?? null,status:record.status },
     };
   } catch (error) {
     return {
@@ -98,16 +102,17 @@ export async function overrideDailyStarAction(
   }
 
   try {
+    const identity=commandIdentity(formData);if(!identity.operationId||identity.version===null)return {success:false,error:'Current award version and operation key required.'};
     const record = await storeDailyStarCalculation({
-      starDate,
+      starDate,operationId:identity.operationId,expectedVersion:identity.version,runId:readString(formData,'runId'),
       overrideUserId,
       overrideReason,
-      overrideBy: actor.profile.id,
+
     });
     revalidateDailyStarViews();
     return {
       success: true,
-      data: { starDate, userId: record?.userId ?? null },
+      data: { starDate, userId: record.winnerId ?? null,status:record.status },
     };
   } catch (error) {
     return {

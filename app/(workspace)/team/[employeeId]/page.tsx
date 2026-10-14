@@ -1,6 +1,9 @@
+import { LiveReport } from '@/components/reports/live-report';
+import { viewContext,viewQuery } from '@/lib/presentation/context';
 import { displayPerformance } from '@/lib/performance/exact';
 import type { Metadata } from 'next';
 import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
+import { AwardHistory } from '@/components/team/award-history';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -24,6 +27,7 @@ import type { DailyStarRecord, DailyTaskLog, Task } from '@/types/tracker';
 
 interface EmployeePageProps {
   params: Promise<{ employeeId: string }>;
+  searchParams:Promise<{period?:string;asOf?:string}>;
 }
 
 export async function generateMetadata({
@@ -34,12 +38,14 @@ export async function generateMetadata({
   return { title: `${normalized ?? 'Employee'} · Team · TaskPulse` };
 }
 
-export default async function EmployeePage({ params }: EmployeePageProps) {
+export default async function EmployeePage({ params,searchParams }: EmployeePageProps) {
   const viewer = await requireProfile();
+  const query=await searchParams;
+  const context=viewContext(query.period,query.asOf);
   const { employeeId } = await params;
   const routeState = await resolveEmployeeRouteState(
     employeeId,
-    getEmployeeProfileData,
+    id=>getEmployeeProfileData(id,context.period,new Date(context.asOf)),
   );
 
   if (routeState.status !== 'ready') notFound();
@@ -55,7 +61,7 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
         actions={
           <div className="flex items-center gap-2">
             <Link
-              href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports`}
+              href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?${viewQuery(context)}`}
               className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors"
             >
               Reports & charts
@@ -70,8 +76,10 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
         }
       />
 
+      <div className="mx-4 mt-4"><LiveReport model={data.presentation}/></div>
       {data.performanceUnavailableReason ? <p role="status" className="mx-4 mt-4 text-sm text-amber-800">{data.performanceUnavailableReason} Saved reports and effort history remain available.</p> : null}
       {data.performance?.calculation?<div className="mx-4 mt-4"><PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/></div>:null}
+      <div className="mx-4 mt-4"><AwardHistory awards={data.awards}/></div>
 
       <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_24rem] lg:px-6">
         <main className="grid gap-4">
@@ -83,9 +91,9 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
               </span>
             </div>
             <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric label="Daily star count" value={String(data.stars.length)} />
+              <Metric label="Effective daily wins" value={String(data.awards.monthly.counts[data.employee.id]??0)} />
               <Metric
-                label="Current perf score"
+                label="As-of performance score"
                 value={
                   data.performance
                     ? displayPerformance(data.performance.calculation?.compositeExact??null,2)
@@ -94,7 +102,7 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
               />
               <Metric
                 label="Attendance hours"
-                value={formatNumeric(data.attendanceSummary.attendanceHours)}
+                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.attendanceHours):'Unavailable'}
                 unit="h"
               />
               <Metric
@@ -104,11 +112,11 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
               />
               <Metric
                 label="Payable days"
-                value={formatNumeric(data.attendanceSummary.payableDays)}
+                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.payableDays): 'Unavailable'}
               />
               <Metric
                 label="Off-hours"
-                value={formatNumeric(data.attendanceSummary.offHours)}
+                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.offHours): 'Unavailable'}
                 unit="h"
               />
               <Metric
@@ -122,20 +130,18 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
                 unit="h"
               />
               <Metric
-                label="Support posts"
+                label="As-of support posts"
                 value={String(
-                  data.supportSummary.facts +
-                    data.supportSummary.ideas +
-                    data.supportSummary.suggestions,
+                  data.presentation.contributions.filter(c=>['fact','idea','suggestion'].includes(c.kind)).length,
                 )}
               />
               <Metric
                 label="Validated support"
-                value={String(data.supportSummary.validatedContributions)}
+                value={String(data.presentation.contributions.filter(c=>['fact','idea','suggestion'].includes(c.kind)&&c.source.validation_state==='validated').length)}
               />
               <Metric
                 label="Sales logs"
-                value={String(data.supportSummary.salesLogs)}
+                value={String(data.presentation.contributions.filter(c=>c.kind==='sale').length)}
               />
               <Metric
                 label="Employee reports"
@@ -148,7 +154,7 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
             <TaskList tasks={data.tasks} />
           </Panel>
 
-          {data.tasks.some((task) => task.participantCreditMode === 'configured' && Object.keys(task.participantShares ?? {}).length > 1) ? <p className="text-sm text-muted-foreground">Historical or daily shared-credit trends are unavailable until period and historical attribution rules are approved. Monthly shared totals remain available.</p> : null}
+          <p className="text-sm text-muted-foreground">Dated charts use captured scale/shares and recorded as-of inputs. Missing history creates gaps; shared work does not duplicate team credit.</p>
         <EmployeeAnalyticsChartsPanel charts={data.charts} />
 
           <section className="grid gap-4 xl:grid-cols-2">
@@ -169,7 +175,7 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
         </main>
 
         <aside className="grid h-fit gap-4">
-          <Panel title="Daily star log">
+          <Panel title="Legacy star records · uncertified">
             <DailyStarLog stars={data.stars} />
           </Panel>
 
@@ -194,7 +200,7 @@ export default async function EmployeePage({ params }: EmployeePageProps) {
                 Attendance
               </Link>
               <Link
-                href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports`}
+                href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?${viewQuery(context)}`}
                 className="text-primary font-medium hover:underline"
               >
                 Reports & charts

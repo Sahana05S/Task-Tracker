@@ -229,6 +229,7 @@ export function TaskDataGrid({
                     status={task.status}
                     canEdit={canEditOwnFields}
                   />
+                  {task.archivedEffectiveDate?<span className="block text-xs">Archived (read-only)</span>:null}
                 </td>
 
                 <td className="text-xs whitespace-nowrap text-slate-600">
@@ -262,7 +263,7 @@ export function TaskDataGrid({
                 </td>
 
                 <td>
-                  {canManage ? (
+                  {canManage&&!task.archivedEffectiveDate ? (
                     <RowActions
                       task={task}
                       onEdit={onEdit}

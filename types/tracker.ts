@@ -215,6 +215,9 @@ export interface Task {
    * `valid_for_metrics` — true only when hours logged > 0 and task scale > 0.
    * Tasks flagged false are excluded from team median calculations.
    */
+  archivedEffectiveDate?:string|null;
+  archiveReason?:string|null;
+  handoffSuccessorId?:string|null;
   validForMetrics: boolean;
 
   /** `assigned_date` — ISO date (`YYYY-MM-DD`). */

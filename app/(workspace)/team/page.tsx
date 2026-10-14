@@ -1,10 +1,10 @@
+import { ReportContext } from '@/components/reports/view-context';
+import { viewContext,viewQuery } from '@/lib/presentation/context';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import {
-  calculateDailyStarAction,
-  overrideDailyStarAction,
-} from '@/app/(workspace)/team/star-actions';
+import { AwardControls } from '@/components/team/award-controls';
+import { AwardStatus } from '@/components/team/award-status';
 import { WorkspaceHeader } from '@/components/layout/workspace-header';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: 'Team · TaskPulse',
 };
 
-export default async function TeamPage() {
+export default async function TeamPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {
   const profile = await requireProfile();
 
   if (!canViewTeamModule(profile)) {
@@ -30,7 +30,8 @@ export default async function TeamPage() {
     );
   }
 
-  const data = await getTeamIndexData();
+  const query=await searchParams;const context=viewContext(query.period,query.asOf);
+  const data = await getTeamIndexData(context.period,context);
   const canManage = profile.isActive && profile.role === 'managing_director';
 
   return (
@@ -41,9 +42,12 @@ export default async function TeamPage() {
       />
 
       <div className="grid gap-4 px-4 py-4 lg:px-6">
+        <ReportContext model={data.presentation}/>
+        <h2 className="text-sm">Current support index · retained records, separate from as-of scoring</h2>
         <SupportSummaryCards summary={data.supportSummary} />
 
-        {canManage ? <DailyStarManager members={data.members} /> : null}
+        <AwardStatus awards={data.awards} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
+        {canManage ? <AwardControls awards={data.awards} members={data.members.map(m=>({id:m.user.id,fullName:m.user.fullName}))} /> : null}
 
         {data.members.length === 0 ? (
           <EmptyShell
@@ -60,7 +64,7 @@ export default async function TeamPage() {
                     <th>Profile</th>
                     <th>Reports</th>
                     <th>Charts</th>
-                    <th className="text-right">Daily stars</th>
+                    <th className="text-right">Certified daily wins</th>
                     <th className="text-right">Current perf score</th>
                     <th className="text-right">Attendance h</th>
                     <th className="text-right">Task h</th>
@@ -81,17 +85,17 @@ export default async function TeamPage() {
                         </div>
                       </td>
                       <td className="text-xs">
-                        <Link className="text-primary font-medium hover:underline" href={employeeHref(user)}>
+                        <Link className="text-primary font-medium hover:underline" href={employeeHref(user)+'?'+viewQuery(context)}>
                           Open profile
                         </Link>
                       </td>
                       <td className="text-xs">
-                        <Link className="text-primary font-medium hover:underline" href={employeeReportsHref(user)}>
+                        <Link className="text-primary font-medium hover:underline" href={employeeReportsHref(user)+'?'+viewQuery(context)}>
                           {reportCount} report{reportCount === 1 ? '' : 's'}
                         </Link>
                       </td>
                       <td className="text-xs">
-                        <Link className="text-primary font-medium hover:underline" href={`/team/${encodeURIComponent(user.employeeId)}/reports#charts`}>
+                        <Link className="text-primary font-medium hover:underline" href={`/team/${encodeURIComponent(user.employeeId)}/reports?${viewQuery(context)}#charts`}>
                           Charts
                         </Link>
                       </td>
@@ -102,10 +106,10 @@ export default async function TeamPage() {
                           : formatNumeric(currentPerformanceScore)}
                       </td>
                       <td className="sheet-numeric text-xs">
-                        {formatNumeric(performance?.attendance.attendanceHours ?? 0)}
+                        {data.presentation.sources.attendance.find(a=>a.userId===user.id)?.available?formatNumeric(performance?.attendance.attendanceHours??0):'Unavailable'}
                       </td>
                       <td className="sheet-numeric text-xs">
-                        {formatNumeric(performance?.hoursLogged ?? 0)}
+                        {data.presentation.scope==='manager_team_detail'||user.id===profile.id?formatNumeric(performance?.hoursLogged??0):'Detail scope unavailable'}
                       </td>
                     </tr>
                   ))}
@@ -178,102 +182,6 @@ function SupportCard({
       <dd className="metric-trend">{detail}</dd>
     </Link>
   );
-}
-
-function DailyStarManager({
-  members,
-}: {
-  members: Awaited<ReturnType<typeof getTeamIndexData>>['members'];
-}) {
-  const today = new Date().toISOString().slice(0, 10);
-
-  return (
-    <section className="soft-card grid gap-4 p-4 xl:grid-cols-2">
-      <div>
-        <h2 className="text-foreground text-sm font-semibold">
-          Automatic daily star
-        </h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Calculates from task effort, scaled progress, productivity, checklist
-          completion, freshness, and attendance validity.
-        </p>
-        <form
-          action={asFormAction(calculateDailyStarAction)}
-          className="mt-3 flex flex-wrap items-end gap-2"
-        >
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-slate-900">Date</span>
-            <input
-              type="date"
-              name="starDate"
-              defaultValue={today}
-              className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-            />
-          </label>
-          <Button type="submit" size="sm">
-            Calculate star
-          </Button>
-        </form>
-      </div>
-
-      <div>
-        <h2 className="text-foreground text-sm font-semibold">
-          Manager override
-        </h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Use only when source data is incorrect, and describe the correction.
-        </p>
-        <form
-          action={asFormAction(overrideDailyStarAction)}
-          className="mt-3 grid gap-2"
-        >
-          <div className="grid gap-2 sm:grid-cols-2">
-            <label className="grid gap-1 text-sm">
-              <span className="font-medium text-slate-900">Date</span>
-              <input
-                type="date"
-                name="starDate"
-                defaultValue={today}
-                className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-              />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="font-medium text-slate-900">Correct star</span>
-              <select
-                name="overrideUserId"
-                className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-                required
-              >
-                <option value="">Select employee</option>
-                {members.map(({ user }) => (
-                  <option key={user.id} value={user.id}>
-                    {user.fullName}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <textarea
-            name="overrideReason"
-            className="border-input bg-background min-h-20 rounded-md border px-3 py-2 text-sm"
-            placeholder="Explain the incorrect data and correction."
-            required
-          />
-          <Button type="submit" size="sm" variant="outline" className="w-fit">
-            Override star
-          </Button>
-        </form>
-      </div>
-    </section>
-  );
-}
-
-type ServerFormAction = (formData: FormData) => void | Promise<void>;
-
-function asFormAction(
-  action: (formData: FormData) => Promise<unknown>,
-): ServerFormAction {
-  return action as ServerFormAction;
 }
 
 function EmptyShell({

@@ -1,4 +1,5 @@
 import { kolkataDate } from '@/lib/tasks/contract';
+import { LIVE_AS_OF_LAG_MS } from '@/lib/presentation/context';
 import { loadContributionContext, type ContributionInputContext } from '@/lib/support/input-context';
 import type { TaskChoice } from '@/components/support/dated-record-module';
 import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
@@ -74,6 +75,7 @@ export interface EmployeeSupportSummary {
 
 export async function getSupportModuleData(
   period: AnalyticsPeriod = currentPeriod(new Date(kolkataDate()+'T12:00:00Z')),
+  asOf: string = new Date(Date.now()-LIVE_AS_OF_LAG_MS).toISOString(),
 ): Promise<SupportModuleData> {
   const supabase = await createClient();
   const [memberResult, factRows, ideaRows, suggestionRows, salesRows, reportRows, summaryInputs, taskChoices] =
@@ -129,7 +131,7 @@ export async function getSupportModuleData(
 
   if(taskChoices.error)throw new Error(`Failed to load related tasks: ${taskChoices.error.message}`);
   const endExclusive=new Date(`${period.endDate}T00:00:00Z`);endExclusive.setUTCDate(endExclusive.getUTCDate()+1);
-  const inputContext=await loadContributionContext(supabase,period.startDate,endExclusive.toISOString().slice(0,10),new Date().toISOString());
+  const inputContext=await loadContributionContext(supabase,period.startDate,endExclusive.toISOString().slice(0,10),asOf);
   const facts = factRows.map(mapDailyFact);
   const ideas = ideaRows.map(mapIdea);
   const suggestions = suggestionRows.map(mapSuggestion);

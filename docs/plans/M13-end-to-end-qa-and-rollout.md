@@ -1,6 +1,25 @@
 # M13 — End-to-end acceptance and release
 
-Status: draft, not started. Required predecessors: M01–M09, M11, M12; M10 for full external parity.
+14 October hosted update: a signed-in local browser against the isolated test
+project now renders desktop task/detail/checklist/dashboard/reports and the
+mobile task list. Real Auth/API checks and a fresh 01–29 hosted install passed.
+The dashboard/report near-now clock error was corrected and retested; see
+[M13 evidence](M13-evidence.md). Full workflows, workers, hosted upgrade/restore
+and certified scores remain open, so M13 is not complete.
+
+Hosted test update (13 October 2026): the distinct `TaskPulse M13 Test`
+project now has a fresh 01–29 install and a partial native GoTrue/PostgREST
+synthetic journey. [M13 evidence](M13-evidence.md) lists the exact passing
+cases and remaining browser, worker, upgrade and business-source gates. The
+older “native environment unavailable” statements in this plan and its
+linked release documents describe the pre-hosted baseline.
+
+Status: release preparation completed 13 October 2026; end-to-end acceptance
+incomplete. Required predecessors: M01–M09, M11, M12; M10 for full external
+parity is explicitly user-deferred. See [M13 evidence](M13-evidence.md),
+[readiness matrix](RELEASE-READINESS.md), [runbook](RELEASE-RUNBOOK.md) and
+[operator guide](../OPERATIONS.md). The historical plan below remains the
+acceptance checklist; unchecked items have not been promoted by local tests.
 
 ## Outcome
 

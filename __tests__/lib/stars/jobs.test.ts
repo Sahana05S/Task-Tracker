@@ -1,0 +1,12 @@
+import { describe,it,expect,vi } from 'vitest';
+import { runAwardJobs } from '@/lib/stars/jobs';
+import { calculateAward } from '@/lib/stars/calculation';
+vi.mock('@/lib/stars/calculation',()=>({calculateAward:vi.fn()}));
+const lease={id:'job-fixture',date:'2026-10-12',leaseToken:'lease-fixture',version:4};
+const policy={id:'fixture'};
+const db=(error=false)=>({rpc:vi.fn(async(name:string,args:unknown)=>name==='award_policy_context'?{data:{policy},error:null}:name==='claim_award_jobs'?{data:[lease],error:null}:{data:{status:'blocked'},error:error&&(args as {p_command:string}).p_command==='commit'?{code:'40001'}:null})});
+describe('M08 durable worker outcomes',()=>{
+ it('retains an incomplete calculation as blocked, not a successful winner',async()=>{vi.mocked(calculateAward).mockResolvedValue({status:'blocked',winnerId:null,reasons:['award_policy_unapproved'],context:{businessDate:lease.date,asOf:'fixture'},candidates:[]});const client=db();expect(await runAwardJobs(client as never)).toEqual([{jobId:lease.id,status:'blocked'}]);expect(client.rpc).toHaveBeenLastCalledWith('award_command',expect.objectContaining({p_command:'commit',p_operation:lease.leaseToken}));});
+ it('records source failure rather than calling it no eligible candidates',async()=>{vi.mocked(calculateAward).mockRejectedValue(new Error('Source unavailable'));const client=db();expect(await runAwardJobs(client as never)).toEqual([{jobId:lease.id,status:'failed'}]);expect(client.rpc).toHaveBeenLastCalledWith('award_command',expect.objectContaining({p_command:'fail',p_payload:expect.objectContaining({errorCode:'source_query_failed'})}));});
+ it('turns a concurrent source conflict into a retryable failure outcome',async()=>{vi.mocked(calculateAward).mockResolvedValue({status:'blocked',winnerId:null,reasons:['award_policy_unapproved'],context:{businessDate:lease.date,asOf:'fixture'},candidates:[]});const client=db(true);expect(await runAwardJobs(client as never)).toEqual([{jobId:lease.id,status:'failed'}]);expect(client.rpc).toHaveBeenLastCalledWith('award_command',expect.objectContaining({p_command:'fail',p_payload:expect.objectContaining({errorCode:'source_changed'})}));});
+});

@@ -10,6 +10,7 @@ export interface SourceTask {
   id:string;tag:string;category:Task['category'];priority:Task['priority'];status:Task['status'];assignedDate:string;dueDate:string|null;completedDate:string|null;
   progress:string|null;scale:string|null;scaleVersion:string;shareVersion:string;creditMode:string;primaryAssignee:string;participants:string[];
   shares:Record<string,number|null>|null;credits:Record<string,string>;taskHours:string;unknownEffect:boolean;revision:string;
+  archivedEffectiveDate?:string|null;handoffSuccessorId?:string|null;
   periodCredits?:Record<string,string>;periodCreditUnknown?:boolean;completionShares?:Record<string,number>|null;completionPrimary?:string|null;
 }
 export interface PerformanceSources {
@@ -42,6 +43,10 @@ function attribution(t:SourceTask,policy:PerformancePolicy,completion=false):Rec
   if(!shares||Object.values(shares).some(v=>!Number.isInteger(v)||v===null||v<0)||Object.values(shares).reduce<number>((sum,v)=>sum+(v??0),0)!==1_000_000)return null;
   return Object.fromEntries(Object.entries(shares).map(([id,units])=>[id,Exact.from(units!).div(Exact.from(1_000_000))]));
 }
+/** Archive dates affect carried work only; later archives cannot erase earlier periods. */
+export function archiveAffectsCarriedWindow(date:string|null|undefined,periodEndExclusive:string,asOfLocalDate:string):boolean {
+  return !!date&&date<=asOfLocalDate&&date<periodEndExclusive;
+}
 export function resolvePerformance(sources:PerformanceSources,policy:PerformancePolicy|null=APPROVED_PERFORMANCE_POLICY):CalculationResult {
   const members=sources.members.filter(m=>m.active),ids=members.map(m=>m.id);
   const context:CalculationContext={ruleVersion:PERFORMANCE_RULE_VERSION,periodStart:sources.periodStart,periodEndExclusive:sources.periodEndExclusive,asOf:sources.asOf,asOfLocalDate:sources.asOfLocalDate,timezone:'Asia/Kolkata',
@@ -52,10 +57,10 @@ export function resolvePerformance(sources:PerformanceSources,policy:Performance
     try{
       const scale=t.scale===null?null:Exact.from(t.scale),progress=t.progress===null?null:Exact.from(t.progress);
       const reasons=eligibilityReasons({taskScale:scale?.number()??null,progressPercentage:progress?.number()??null,status:t.status,priority:t.priority});
-      return {t,scale,progress,reasons,eligible:reasons.length===0&&t.assignedDate<=sources.asOfLocalDate&&!(t.completedDate&&t.completedDate<sources.periodStart)};
+      return {t,scale,progress,reasons,eligible:reasons.length===0&&t.assignedDate<=sources.asOfLocalDate&&t.assignedDate<sources.periodEndExclusive&&!(t.completedDate&&t.completedDate<sources.periodStart)};
     }catch{return {t,scale:null,progress:null,reasons:['task_numeric_source_invalid'],eligible:false};}
   });
-  const carried=taskValues.filter(t=>t.eligible),scaleTotal=carried.reduce((sum,t)=>sum.add(t.scale!),Exact.from(0));
+  const carried=taskValues.filter(({t,eligible})=>eligible&&!archiveAffectsCarriedWindow(t.archivedEffectiveDate,sources.periodEndExclusive,sources.asOfLocalDate)),scaleTotal=carried.reduce((sum,t)=>sum.add(t.scale!),Exact.from(0));
   const input:MemberRawInputs[]=members.map(member=>{
     const factors=Object.fromEntries(FACTORS.map(f=>[f,unavailableRaw('factor_policy_unapproved')])) as Record<Factor,RawFactor>;
     const contributions=sources.contributions.employeeFactors.find(row=>row.userId===member.id);
@@ -73,21 +78,27 @@ export function resolvePerformance(sources:PerformanceSources,policy:Performance
       for(const item of taskValues){
         const t=item.t,involves=t.participants.includes(member.id)||Object.hasOwn(t.credits,member.id)||Object.hasOwn(t.periodCredits??{},member.id)||Object.hasOwn(t.completionShares??{},member.id);
         if(!involves)continue;
-        refs.push({...provenance(t),exclusionReasons:item.reasons});
-        if(item.reasons.length===0&&t.assignedDate<=sources.asOfLocalDate&&policy.progressWindow==='period_earned'){
+        const archived=archiveAffectsCarriedWindow(t.archivedEffectiveDate,sources.periodEndExclusive,sources.asOfLocalDate);
+        refs.push({...provenance(t),exclusionReasons:[...item.reasons,...(archived?['archived_excluded_from_carried_workload']:[]),...(t.assignedDate>=sources.periodEndExclusive?['task_assigned_after_report_period']:[]),...(t.assignedDate>sources.asOfLocalDate?['task_assignment_after_asof']:[]),...(t.completedDate&&t.completedDate<sources.periodStart?['task_completed_before_report_period']:[])]});
+        if(item.reasons.every(reason=>reason==='scale_nonpositive')&&t.assignedDate<=sources.asOfLocalDate&&t.assignedDate<sources.periodEndExclusive&&policy.progressWindow==='period_earned'){
           if(t.periodCreditUnknown||!t.periodCredits)fail('progress','period_earned_credit_unknown');
           else if(Object.hasOwn(t.periodCredits,member.id))sums.progress=sums.progress.add(Exact.from(t.periodCredits[member.id]));
         }
         if(!item.eligible)continue;
         if(t.status==='Done'&&(!t.completedDate||t.completedDate>sources.asOfLocalDate||item.progress?.compare(Exact.from(100))!==0)){
-          fail('completion','completion_observation_inconsistent');fail('freshness','completion_observation_inconsistent');
+          fail('completion','completion_observation_inconsistent');if(!archived)fail('freshness','completion_observation_inconsistent');
         }
-        const share=t.creditMode==='configured'&&t.shares&&Object.values(t.shares).every(v=>v!==null&&Number.isInteger(v)&&v>=0)&&Object.values(t.shares).reduce<number>((sum,v)=>sum+(v??0),0)===1_000_000?(t.shares[member.id]??0):null;
-        if(share===null||share===undefined)fail('loading','participant_share_history_unknown');else sums.scale=sums.scale.add(item.scale!.mul(Exact.from(share).div(Exact.from(1_000_000))));
+        if(t.status==='Done'&&t.completedDate&&t.completedDate>=sources.periodStart&&t.completedDate<sources.periodEndExclusive&&t.completedDate<=sources.asOfLocalDate&&(policy.completion==='done_in_period'||!!t.dueDate&&t.completedDate<=t.dueDate)){
+          const completedAllocation=attribution(t,policy,true);
+          if(!completedAllocation)fail('completion','completion_participant_history_unknown');else if(completedAllocation[member.id])sums.completion=sums.completion.add(completedAllocation[member.id]);
+        }
         if(policy.progressWindow==='retained_cumulative'){
           if(t.unknownEffect||t.creditMode!=='configured')fail('progress','earned_credit_provenance_unknown');
           else if(Object.hasOwn(t.credits,member.id))sums.progress=sums.progress.add(Exact.from(t.credits[member.id]));
         }
+        if(archived)continue;
+        const share=t.creditMode==='configured'&&t.shares&&Object.values(t.shares).every(v=>v!==null&&Number.isInteger(v)&&v>=0)&&Object.values(t.shares).reduce<number>((sum,v)=>sum+(v??0),0)===1_000_000?(t.shares[member.id]??0):null;
+        if(share===null||share===undefined)fail('loading','participant_share_history_unknown');else sums.scale=sums.scale.add(item.scale!.mul(Exact.from(share).div(Exact.from(1_000_000))));
         const allocation=attribution(t,policy);
         if(!allocation){fail('criticality','nonadditive_share_history_unknown');fail('freshness','nonadditive_share_history_unknown');}
         else if(allocation[member.id]){
@@ -95,11 +106,7 @@ export function resolvePerformance(sources:PerformanceSources,policy:Performance
           const freshness=classifyFreshness({assignedDate:t.assignedDate,dueDate:t.dueDate,completedDate:t.completedDate,status:t.status},sources.asOfLocalDate);
           if(freshness.state===null)fail('freshness',freshness.reason??'freshness_unavailable');else sums.freshness=sums.freshness.add(Exact.from(FRESHNESS_SCORES[freshness.state]).mul(allocation[member.id]));
         }
-        if(t.status==='Done'&&t.completedDate&&t.completedDate>=sources.periodStart&&t.completedDate<sources.periodEndExclusive&&t.completedDate<=sources.asOfLocalDate){
-          if(policy.completion==='on_time_done_in_period'&&(!t.dueDate||t.completedDate>t.dueDate))continue;
-          const completedAllocation=attribution(t,policy,true);
-          if(!completedAllocation)fail('completion','completion_participant_history_unknown');else if(completedAllocation[member.id])sums.completion=sums.completion.add(completedAllocation[member.id]);
-        }
+
       }
       const raw=(f:Factor,value:Exact)=>reasons[f]?.length?{value:null,available:false,reasons:[...new Set(reasons[f])],sources:refs}:measuredRaw(value.json(),refs);
       factors.progress=raw('progress',sums.progress);factors.criticality=raw('criticality',sums.criticality);factors.freshness=raw('freshness',sums.freshness);factors.completion=raw('completion',sums.completion);
