@@ -1,0 +1,49 @@
+import type { CalculationResult } from '@/lib/performance/engine';
+import type { LivePresentation } from '@/lib/presentation/model';
+import type { AwardReadModel } from '@/lib/stars/read-model';
+import { ReportContext } from '@/components/reports/view-context';
+import { AwardStatus } from '@/components/team/award-status';
+import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
+
+/**
+ * Optional diagnostics, collapsed by default: calculation context, award runs
+ * with their exact reason codes, and per-member factor inputs. Per-member
+ * inputs follow the existing presentation scope: managers see the team, a
+ * member sees only their own (team_summary_with_own_details), an employee
+ * report sees that employee.
+ */
+export function CalculationDetails({presentation,calculation,awards,names,viewerId,snapshotCount}:{
+  presentation: LivePresentation;
+  calculation: CalculationResult | null | undefined;
+  awards?: AwardReadModel;
+  names: Record<string, string>;
+  viewerId: string;
+  snapshotCount: number;
+}) {
+  const visible = (userId: string) => presentation.scope === 'manager_team_detail'
+    || (presentation.scope === 'employee_detail' ? userId === presentation.employeeId : userId === viewerId);
+  const members = (calculation?.members ?? []).filter(member => visible(member.userId));
+  return (
+    <details id="calculation-details" className="soft-card group p-4">
+      <summary className="cursor-pointer list-none">
+        <span className="panel-title text-base">Calculation details</span>
+        <span className="text-muted-foreground ml-2 text-xs">Sources, rule versions, award runs and per-person inputs</span>
+      </summary>
+      <div className="mt-4 grid gap-4">
+        <ReportContext model={presentation} />
+        <p className="text-muted-foreground text-xs">{snapshotCount} retained monthly snapshot rows (original rules).</p>
+        {awards ? <AwardStatus awards={awards} names={names} /> : null}
+        <section className="grid gap-2" aria-label="Performance inputs">
+          <h3 className="text-sm font-semibold">Performance inputs</h3>
+          {members.length === 0 ? <p className="text-muted-foreground text-sm">No individual inputs are visible to you for this period.</p> : null}
+          {members.map(result => (
+            <details key={result.userId} className="rounded-md border p-3">
+              <summary className="cursor-pointer text-sm font-medium">{names[result.userId] ?? 'Employee'}</summary>
+              <PerformanceBreakdown result={result} context={calculation?.context} />
+            </details>
+          ))}
+        </section>
+      </div>
+    </details>
+  );
+}

@@ -19,7 +19,7 @@ export function WorkbookDashboard({
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="panel-title text-lg">Workbook dashboard charts</h2>
+        <h2 className="panel-title text-lg">Task overview</h2>
         <p className="text-muted-foreground text-sm">
           Task progress, allocation, status,
           deadlines, task mix, and team loading.

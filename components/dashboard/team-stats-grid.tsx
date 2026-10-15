@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 export interface TeamStatsGridProps {
   analytics: TeamAnalytics;
   attendanceComplete?: boolean;
+  /** Active members with at least one day lacking attendance. */
+  attendanceMissing?: { missing: number; total: number };
 }
 
 interface StatCardProps {
@@ -35,7 +37,7 @@ interface StatCardProps {
  * Every card pairs its figure with the denominator behind it: a rate is never shown
  * without the quantity it came from.
  */
-export function TeamStatsGrid({ analytics, attendanceComplete = true }: TeamStatsGridProps) {
+export function TeamStatsGrid({ analytics, attendanceComplete = true, attendanceMissing }: TeamStatsGridProps) {
   const { totals, medians } = analytics;
 
   return (
@@ -51,21 +53,23 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true }: TeamStat
         unit={medians.productivity === null ? undefined : '/h'}
         detail={
           medians.productivity === null
-            ? 'Productivity inputs unavailable'
+            ? 'Not available: required inputs are missing'
             : 'Period-earned scaled credit / regular attendance hours'
         }
       />
 
       <StatCard
-        label="Period-earned scaled credit"
-        value={displayPerformance(totals.scaledProgress)}
-        detail={`${totals.eligibleTaskCount} metric-eligible ${
+        label="Scaled credit earned"
+        // Two decimals on the tile (approved 15 Oct); six-decimal factor values
+        // remain in Calculation details.
+        value={formatNumeric(totals.scaledProgress)}
+        detail={`${totals.eligibleTaskCount} eligible ${
           totals.eligibleTaskCount === 1 ? 'task' : 'tasks'
         }`}
       />
 
       <StatCard
-        label="Visible detail log hours"
+        label="Logged hours"
         value={formatHours(totals.hoursLogged)}
         unit="h"
         detail={
@@ -73,16 +77,16 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true }: TeamStat
           // against off-hours or zero-scale tasks. Those hours are real but cannot
           // contribute to a productivity rate.
           totals.eligibleHours !== totals.hoursLogged
-            ? `${formatHours(totals.eligibleHours)} h against eligible tasks; employee productivity uses attendance`
+            ? `${formatHours(totals.eligibleHours)} h on eligible tasks`
             : `${totals.contributingMemberCount} of ${totals.activeMemberCount} contributed`
         }
       />
 
       <StatCard
-        label="Known regular attendance hours"
-        value={attendanceComplete ? formatHours(totals.attendanceHours) : 'Unavailable'}
+        label="Attendance hours"
+        value={attendanceComplete ? formatHours(totals.attendanceHours) : 'Incomplete'}
         unit={attendanceComplete ? 'h' : undefined}
-        detail={attendanceComplete ? `${formatNumeric(totals.payableDays)} payable days · ${formatHours(totals.offHours)} off-hours` : 'One or more daily attendance inputs are missing; see report validity.'}
+        detail={attendanceComplete ? `${formatNumeric(totals.payableDays)} payable days · ${formatHours(totals.offHours)} off-hours` : attendanceMissing ? `${attendanceMissing.missing} of ${attendanceMissing.total} members have days without attendance` : 'Some days have no attendance recorded'}
       />
 
       <StatCard

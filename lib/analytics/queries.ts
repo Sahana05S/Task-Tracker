@@ -46,6 +46,7 @@ export async function getWorkbookDashboard(
       members: source.members,
       tasks: source.tasks,
       period,
+      asOfDate: context.asOfLocalDate,
     }),
   };
 }

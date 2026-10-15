@@ -260,3 +260,18 @@ it('distributes configured scaled-progress chart credit without duplicating the 
     members:[makeUser({id:'a',fullName:'A'}),makeUser({id:'b',fullName:'B'})],tasks:[task]});
   expect(charts.totalProgressByTeam.map((entry) => entry.value).sort()).toEqual([1.6,2.4]);
 });
+
+it('counts open work as overdue only when due before the live as-of date', () => {
+  const open=(id:string,dueDate:string)=>makeTask({id,taskTag:id,assigneeId:'a',status:'In Progress',dueDate,completedDate:null,metDeadline:null});
+  const input={period:SEP_2026,analytics:makeAnalytics([]),members:[makeUser({id:'a',fullName:'A'})],
+    tasks:[open('due-before',  '2026-09-10'),open('due-later','2026-09-25')]};
+  const live=buildWorkbookDashboardCharts({...input,asOfDate:'2026-09-15'});
+  expect(live.summary.overdueOpenTaskCount).toBe(1);
+  // A past month (as-of after it ended) keeps the period-end boundary.
+  expect(buildWorkbookDashboardCharts({...input,asOfDate:'2026-10-15'}).summary.overdueOpenTaskCount).toBe(2);
+  expect(buildWorkbookDashboardCharts(input).summary.overdueOpenTaskCount).toBe(2);
+  // Work archived by the as-of date (e.g. a carryover predecessor) is not open.
+  const archived={...open('handed-off','2026-09-05'),archivedEffectiveDate:'2026-09-12'};
+  expect(buildWorkbookDashboardCharts({...input,tasks:[archived],asOfDate:'2026-09-15'}).summary.overdueOpenTaskCount).toBe(0);
+  expect(buildWorkbookDashboardCharts({...input,tasks:[archived],asOfDate:'2026-09-10'}).summary.overdueOpenTaskCount).toBe(1);
+});

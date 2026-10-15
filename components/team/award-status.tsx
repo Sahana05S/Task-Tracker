@@ -2,7 +2,7 @@ import type { AwardReadModel } from '@/lib/stars/read-model';
 import { displayPerformance } from '@/lib/performance/exact';
 export function AwardStatus({awards,names={}}:{awards:AwardReadModel;names?:Record<string,string>}) {
  const name=(id:string|null)=>id?names[id]??id:'None';
- return <section className="soft-card overflow-auto p-4"><h2 className="font-semibold">Daily stars and monthly award</h2>
+ return <section className="soft-card relative overflow-auto p-4"><h2 className="font-semibold">Daily stars and monthly award</h2>
  <p className="text-sm">Month: {awards.monthly.status}. Winner: {name(awards.monthly.winnerId)}. {awards.monthly.reasons.join('; ')}</p>
  <p className="text-xs">Automatic schedule: {awards.scheduleEnabled?'configured; delivery requires verification':'not configured'}. {awards.policyApproved?'Approved policy recorded.':'Daily award policy awaits decisions.'}</p>
  <p className="text-xs">{awards.legacy.length} legacy records retained; excluded from certified monthly counts.</p>

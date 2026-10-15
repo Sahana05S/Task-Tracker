@@ -68,6 +68,8 @@ export interface WorkbookDashboardInput {
   members: readonly User[];
   tasks: readonly Task[];
   period: AnalyticsPeriod;
+  /** Asia/Kolkata as-of date; overdue means due before it, not merely before month end. */
+  asOfDate?: string;
 }
 
 export function buildWorkbookDashboardCharts({
@@ -75,6 +77,7 @@ export function buildWorkbookDashboardCharts({
   members,
   tasks,
   period,
+  asOfDate,
 }: WorkbookDashboardInput): WorkbookDashboardCharts {
   const activeMembers = members.filter((member) => member.isActive);
   const memberNames = new Map(
@@ -130,7 +133,7 @@ export function buildWorkbookDashboardCharts({
   }
 
   const tasksDoneByDate = buildTasksDoneByDate(completedTasks, period);
-  const deadlineOutcomes = buildDeadlineOutcomes(trackedTasks, period);
+  const deadlineOutcomes = buildDeadlineOutcomes(trackedTasks, period, asOfDate);
 
   return {
     performanceWithMedian: {
@@ -239,7 +242,11 @@ function buildTasksDoneByDate(
 function buildDeadlineOutcomes(
   tasks: readonly Task[],
   period: AnalyticsPeriod,
+  asOfDate?: string,
 ): DeadlineOutcomeBucket[] {
+  // A live month is evaluated at its as-of date: work due later this month is
+  // not yet overdue. Past months keep the period-end boundary.
+  const overdueBefore = asOfDate && asOfDate < period.endDate ? asOfDate : period.endDate;
   let met = 0;
   let missed = 0;
   let open = 0;
@@ -254,7 +261,9 @@ function buildDeadlineOutcomes(
     if (
       task.status !== 'Discarded' &&
       task.dueDate !== null &&
-      task.dueDate < period.endDate
+      task.dueDate < overdueBefore &&
+      // Archived (e.g. handed off by carryover) work is no longer open.
+      !(task.archivedEffectiveDate && task.archivedEffectiveDate <= (asOfDate ?? period.endDate))
     ) {
       open++;
     }
