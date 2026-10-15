@@ -179,7 +179,20 @@ function TaskForm({
   };
 
   return (
-    <form action={action} className="flex min-h-0 flex-1 flex-col">
+    // React 19 resets a form after every action, including a refused one, which
+    // cleared typed text and desynchronized the controlled assignee/reviewer
+    // checkboxes from what the next submit sends. A default-prevented onSubmit
+    // dispatching in a transition makes React skip that reset; `action` keeps
+    // React's guard against native pre-hydration submission.
+    <form
+      action={action}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        React.startTransition(() => action(data));
+      }}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       {!isEdit ? <div className="grid gap-2 p-3"><NativeTemplateSelect templates={templates}/><label className="text-sm">Initialization<select name="initializationMode" defaultValue="automatic" className="rounded border p-2"><option value="automatic">Automatically after saving</option><option value="manual">Initialize manually later</option></select></label><label className="text-sm">Description<textarea name="description" className="w-full rounded border p-2"/></label></div> : null}
       {isEdit ? <input type="hidden" name="taskId" value={task.id} /> : null}
       <input type="hidden" name="lifecycleVersion" value={task?.lifecycleVersion ?? 0} />

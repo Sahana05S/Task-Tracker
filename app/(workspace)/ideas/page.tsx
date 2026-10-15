@@ -7,7 +7,7 @@ import { canManageSupportRecords } from '@/lib/support/permissions';
 import { getSupportModuleData } from '@/lib/support/queries';
 
 export const metadata: Metadata = {
-  title: 'Ideas Â· TaskPulse',
+  title: 'Ideas · TaskPulse',
 };
 
 export default async function IdeasPage() {
@@ -18,7 +18,7 @@ export default async function IdeasPage() {
     <>
       <WorkspaceHeader
         title="Ideas"
-        description={`${data.period.label} Â· ${data.summary.ideas.total} ideas Â· ${data.summary.ideas.validated} validated`}
+        description={`${data.period.label} · ${data.summary.ideas.total} ideas · ${data.summary.ideas.validated} validated`}
       />
       <div className="px-4 py-4 lg:px-6">
         <KnowledgeModule

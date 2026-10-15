@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentProfile } from '@/lib/auth/profile';
-import { viewContext } from '@/lib/presentation/context';
+import { liveViewContext } from '@/lib/presentation/clock';
 import { getLivePresentation } from '@/lib/presentation/queries';
 import { liveReport,reportCsv,reportText } from '@/lib/presentation/export';
 import { archivedReport,archivedText,archivedCsv,monthRevision } from '@/lib/month/archive';
@@ -8,7 +8,7 @@ export async function GET(request:Request){
  const profile=await getCurrentProfile();if(!profile?.isActive)return NextResponse.json({error:'Active authentication required.'},{status:403});
  const p=new URL(request.url).searchParams,employee=p.get('employee');
  if(employee&&employee!==profile.id&&!['managing_director','project_engineer'].includes(profile.role))return NextResponse.json({error:'Employee detail access denied.'},{status:403});
- let context;try{context=viewContext(p.get('period')??undefined,p.get('asOf')??undefined);}catch{return NextResponse.json({error:'Invalid report context.'},{status:400});}
+ let context;try{context=await liveViewContext(p.get('period')??undefined,p.get('asOf')??undefined);}catch{return NextResponse.json({error:'Invalid report context.'},{status:400});}
  const format=p.get('format')??'json';if(!['json','csv','text'].includes(format))return NextResponse.json({error:'Unsupported export format.'},{status:400});
  const revisionText=p.get('revision'),revision=revisionText===null?null:Number(revisionText);
  if(revision!==null&&(!Number.isSafeInteger(revision)||revision<1))return NextResponse.json({error:'Invalid revision.'},{status:400});

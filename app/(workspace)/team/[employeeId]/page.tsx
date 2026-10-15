@@ -288,7 +288,7 @@ function TaskList({ tasks }: { tasks: readonly Task[] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="sheet-grid min-w-[56rem]">
         <thead>
           <tr>
@@ -394,7 +394,7 @@ function TaskLogCompilation({
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
 
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="sheet-grid min-w-[52rem]">
         <thead>
           <tr>

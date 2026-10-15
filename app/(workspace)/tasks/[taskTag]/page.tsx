@@ -3,7 +3,7 @@ import { NativeDetailsEditor,InitializeDetailsForm } from '@/components/tasks/na
 import { getNativeDetailState,getNativeTemplates,getVisibleReportChoices } from '@/lib/tasks/native-details';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { TaskLifecyclePanel } from '@/components/tasks/task-lifecycle-panel';
-import { ELIGIBILITY_LABELS } from '@/lib/tasks/contract';
+import { ELIGIBILITY_LABELS,kolkataDate } from '@/lib/tasks/contract';
 import { ExecutionForm } from '@/components/tasks/execution-form';
 import { TaskReviewForm } from '@/components/tasks/task-review-form';
 import type { Metadata } from 'next';
@@ -227,11 +227,11 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
           <Panel title="Native task details">
             <p className="text-sm">{native.instance?'Native task/details ready':'Native details not initialized'}</p>
             <p className="text-sm">Provider work: {native.instance?.providerState??'not_requested'}. Automatic Google Drive operations are unavailable; integration is deferred. Existing asset links remain available.</p>
-            {native.instance ? <details><summary>Template instructions ? {templates.find(t=>t.id===native.instance?.templateVersionId)?.name ?? 'Template'} ? version {templates.find(t=>t.id===native.instance?.templateVersionId)?.version}</summary>{DETAIL_FIELDS.map(f=>native.instance?.instructions[f.key]?<p key={f.key}><strong>{f.label}:</strong> {native.instance.instructions[f.key]}</p>:null)}</details> : canManage?<InitializeDetailsForm task={data.task} templates={templates}/>:null}
+            {native.instance ? <details><summary>Template instructions · {templates.find(t=>t.id===native.instance?.templateVersionId)?.name ?? 'Template'} · version {templates.find(t=>t.id===native.instance?.templateVersionId)?.version}</summary>{DETAIL_FIELDS.map(f=>native.instance?.instructions[f.key]?<p key={f.key}><strong>{f.label}:</strong> {native.instance.instructions[f.key]}</p>:null)}</details> : canManage?<InitializeDetailsForm task={data.task} templates={templates}/>:null}
             {canManage ? <details><summary>Edit structured details and links</summary><NativeDetailsEditor task={data.task} sections={data.sections} tasks={workspace.tasks} members={data.members} reports={reports}/></details>:null}
             {sectionValue(sectionsByKey,'description')?<TextBlock title="Description" body={sectionValue(sectionsByKey,'description')!}/>:null}
             {sectionValue(sectionsByKey,'reviewer_notes')?<TextBlock title="Reviewer notes" body={sectionValue(sectionsByKey,'reviewer_notes')!}/>:null}
-            {native.flags.length?<details><summary>Legacy content retained ? review required ({native.flags.length})</summary>{native.flags.map(flag=>{const source=data.sections.find(s=>s.id===flag.source_section_id);return <div key={flag.id}><p>{source?.title} ? {flag.reason}</p><p className="whitespace-pre-wrap">{source?.content}</p></div>;})}</details>:null}
+            {native.flags.length?<details><summary>Legacy content retained · review required ({native.flags.length})</summary>{native.flags.map(flag=>{const source=data.sections.find(s=>s.id===flag.source_section_id);return <div key={flag.id}><p>{source?.title} · {flag.reason}</p><p className="whitespace-pre-wrap">{source?.content}</p></div>;})}</details>:null}
             {data.links.some(l=>!l.ipoRole)?<p className="text-sm">Legacy links have no confirmed IPO role and are retained here for review.</p>:null}
             {data.links.filter(l=>!l.ipoRole || l.ipoRole==='reference').map(l=><AssetLink key={l.id} link={l}/>)}
           </Panel>
@@ -805,7 +805,7 @@ function ManualTimeForm({
         <input
           type="date"
           name="logDate"
-          defaultValue={new Date().toISOString().slice(0, 10)}
+          defaultValue={kolkataDate()}
           className="border-input bg-background h-9 rounded-md border px-3 text-sm"
         />
       </label>

@@ -235,7 +235,7 @@ function TaskLogForm({ tasks }: { tasks: readonly Task[] }) {
 function StatusForm({ tasks }: { tasks: readonly Task[] }) {
   return (
     <ExecutionForm action={updateTaskStatusFromTools} scope="transition" className="grid gap-2">
-      <select name="taskVersion" className={inputClass} required>{tasks.map(task=><option key={task.id} value={`${task.id}:${task.lifecycleVersion ?? 0}`}>{task.taskTag} ? {task.title}</option>)}</select>
+      <select name="taskVersion" className={inputClass} required>{tasks.map(task=><option key={task.id} value={`${task.id}:${task.lifecycleVersion ?? 0}`}>{task.taskTag} · {task.title}</option>)}</select>
       <select name="status" className={inputClass} required>
         {TASK_STATUSES.map((status) => (
           <option key={status} value={status}>{status}</option>
@@ -273,14 +273,14 @@ function TaskEditForm({ tasks, members }: { tasks: readonly Task[]; members: rea
 
 function TaskDetailsForm({tasks,templates}:{tasks:readonly Task[];templates:readonly NativeTemplate[]}) {
  return <div className="grid gap-3"><ExecutionForm action={createTaskDetailsWithFolderAction} scope="initializeDetailsTools"><TaskIdSelect tasks={tasks} name="taskVersion" versioned/><NativeTemplateSelect templates={templates}/><Button type="submit">Initialize native details</Button></ExecutionForm>
- <p className="text-sm">Edit SMART, IPO, relationships and reviewer notes on the task page. Reinitialization preserves content.</p>{tasks.map(t=><Link key={t.id} className="text-sm underline" href={'/tasks/'+encodeURIComponent(t.taskTag)}>{t.taskTag} ? {t.title}</Link>)}</div>;
+ <p className="text-sm">Edit SMART, IPO, relationships and reviewer notes on the task page. Reinitialization preserves content.</p>{tasks.map(t=><Link key={t.id} className="text-sm underline" href={'/tasks/'+encodeURIComponent(t.taskTag)}>{t.taskTag} · {t.title}</Link>)}</div>;
 }
 function WorkFileForm({tasks}:{tasks:readonly Task[]}) {
  return <ExecutionForm action={createWorkFileLinkAction} scope="saveAssetTools"><TaskIdSelect tasks={tasks} name="taskVersion" versioned/><select name="ipoRole" className={inputClass}>{['input','process','output','reference'].map(r=><option key={r}>{r}</option>)}</select><select name="linkType" className={inputClass}>{['Folder','Document','Account','Flowchart','Engineering','Drawing','Checklist','Raw Link','Other'].map(t=><option key={t}>{t}</option>)}</select><input name="label" required placeholder="Asset label" className={inputClass}/><input name="url" type="url" required placeholder="Existing asset URL" className={inputClass}/><textarea name="notes" className={textareaClass}/><p className="text-sm">This saves a link. Provider work is not requested.</p><Button type="submit">Add existing link</Button></ExecutionForm>;
 }
 
 function ChecklistForms({tasks,canManage}:{tasks:readonly Task[];canManage:boolean}) {
- return <div className="grid gap-3"><p>Open a task checklist to review Setup, Activity and Closure, linked tasks and progress ownership.</p>{canManage?<p className="text-sm text-muted-foreground">New checklists start in manual mode. Ownership switches require a reviewed preview and reason.</p>:null}<div className="grid max-h-72 gap-2 overflow-auto">{tasks.map(t=><Link key={t.id} href={`/tasks/${encodeURIComponent(t.taskTag)}/checklist`} className="text-primary underline">{t.taskTag} ? {t.title}</Link>)}</div></div>;
+ return <div className="grid gap-3"><p>Open a task checklist to review Setup, Activity and Closure, linked tasks and progress ownership.</p>{canManage?<p className="text-sm text-muted-foreground">New checklists start in manual mode. Ownership switches require a reviewed preview and reason.</p>:null}<div className="grid max-h-72 gap-2 overflow-auto">{tasks.map(t=><Link key={t.id} href={`/tasks/${encodeURIComponent(t.taskTag)}/checklist`} className="text-primary underline">{t.taskTag} · {t.title}</Link>)}</div></div>;
 }
 
 function ReportForms({

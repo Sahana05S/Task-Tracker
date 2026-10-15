@@ -166,6 +166,16 @@
 
 @layer base {
   /*
+    Grid items default to min-width: auto, so an implicit auto track grows to its
+    widest descendant (a wide table, a long token) and pushes the page sideways
+    on phones. Letting grid children shrink keeps every track within its
+    container; wide content scrolls inside its own overflow container instead.
+  */
+  .grid > * {
+    min-width: 0;
+  }
+
+  /*
     One family for the whole document. Declared on both html and body: html so
     that content Radix portals outside the React tree still inherits it, body so
     that a stray utility on <html> cannot strand the page on a UA default.

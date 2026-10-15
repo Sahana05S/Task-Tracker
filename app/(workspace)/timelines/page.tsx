@@ -1,7 +1,7 @@
 import { TaskRelations } from '@/components/timelines/task-relations';
 import Link from 'next/link';
 import { getLivePresentation } from '@/lib/presentation/queries';
-import { viewContext } from '@/lib/presentation/context';
+import { liveViewContext } from '@/lib/presentation/clock';
 import { ReportContext } from '@/components/reports/view-context';
 import type { Metadata } from 'next';
 
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default async function TimelinesPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {
   await requireProfile();
 
-  const query=await searchParams;const context=viewContext(query.period,query.asOf);
+  const query=await searchParams;const context=await liveViewContext(query.period,query.asOf);
   const period=context.period;const presentation=await getLivePresentation(context);
   const {tasks,members}=presentation;
   const timeline = buildTaskTimeline({

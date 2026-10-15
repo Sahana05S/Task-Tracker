@@ -1,7 +1,8 @@
 import { LiveReport } from '@/components/reports/live-report';
 import { ArchivedReport } from '@/components/reports/archived-report';
 import { monthHistory,monthRevision } from '@/lib/month/archive';
-import { viewContext,viewQuery } from '@/lib/presentation/context';
+import { viewQuery } from '@/lib/presentation/context';
+import { liveViewContext } from '@/lib/presentation/clock';
 import { displayPerformance } from '@/lib/performance/exact';
 import type { Metadata } from 'next';
 import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
@@ -37,7 +38,7 @@ export default async function EmployeeReportsPage({
 }: EmployeeReportsPageProps) {
   const viewer = await requireProfile();
   const query=await searchParams;
-  const context=viewContext(query.period,query.asOf);
+  const context=await liveViewContext(query.period,query.asOf);
   const { employeeId } = await params;
   if(query.revision){
     const normalized=normalizeEmployeeIdParam(employeeId),revision=Number(query.revision);

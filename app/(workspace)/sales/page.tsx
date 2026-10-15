@@ -7,7 +7,7 @@ import { canManageSupportRecords } from '@/lib/support/permissions';
 import { getSupportModuleData } from '@/lib/support/queries';
 
 export const metadata: Metadata = {
-  title: 'Sales Log Â· TaskPulse',
+  title: 'Sales Log · TaskPulse',
 };
 
 export default async function SalesPage() {
@@ -18,7 +18,7 @@ export default async function SalesPage() {
     <>
       <WorkspaceHeader
         title="Sales log"
-        description={`${data.period.label} Â· ${data.summary.sales.total} sales entries Â· ${data.summary.sales.newProjects} new projects`}
+        description={`${data.period.label} · ${data.summary.sales.total} sales entries · ${data.summary.sales.newProjects} new projects`}
       />
       <div className="px-4 py-4 lg:px-6">
         <SalesLogModule

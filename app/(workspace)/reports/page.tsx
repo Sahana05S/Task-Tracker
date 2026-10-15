@@ -4,7 +4,7 @@ import { MonthArchiveControls } from '@/components/reports/month-archive-control
 import { monthHistory,monthRevision } from '@/lib/month/archive';
 import { randomUUID } from 'node:crypto';
 import { getLivePresentation } from '@/lib/presentation/queries';
-import { viewContext } from '@/lib/presentation/context';
+import { liveViewContext } from '@/lib/presentation/clock';
 import { kolkataDate } from '@/lib/tasks/contract';
 import type { Metadata } from 'next';
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default async function ReportsPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string;revision?:string}>}) {
   const profile = await requireProfile();
   const query=await searchParams;
-  const context=viewContext(query.period,query.asOf);
+  const context=await liveViewContext(query.period,query.asOf);
   const revision=query.revision?Number(query.revision):null;
   if(revision!==null&&(!Number.isSafeInteger(revision)||revision<1))throw new Error('Invalid archive revision.');
   const history=await monthHistory(context.period.startDate);

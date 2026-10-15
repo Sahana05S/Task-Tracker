@@ -1,5 +1,6 @@
 import { ReportContext } from '@/components/reports/view-context';
-import { viewContext,viewQuery } from '@/lib/presentation/context';
+import { viewQuery } from '@/lib/presentation/context';
+import { liveViewContext } from '@/lib/presentation/clock';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -30,7 +31,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
     );
   }
 
-  const query=await searchParams;const context=viewContext(query.period,query.asOf);
+  const query=await searchParams;const context=await liveViewContext(query.period,query.asOf);
   const data = await getTeamIndexData(context.period,context);
   const canManage = profile.isActive && profile.role === 'managing_director';
 

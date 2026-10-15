@@ -1,5 +1,5 @@
 import { getLivePresentation } from '@/lib/presentation/queries';
-import { viewContext } from '@/lib/presentation/context';
+import { liveViewContext } from '@/lib/presentation/clock';
 import { ReportContext } from '@/components/reports/view-context';
 import type { Metadata } from 'next';
 import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {
   const profile = await requireProfile();
   const query=await searchParams;
-  const context=viewContext(query.period,query.asOf);
+  const context=await liveViewContext(query.period,query.asOf);
   const period=context.period;
   const presentation=await getLivePresentation(context);
 

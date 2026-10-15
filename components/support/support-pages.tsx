@@ -150,9 +150,9 @@ function ReportRow({
       <td className="text-xs">{report.reportType}</td>
       <td className="text-xs">{report.status}</td>
       <td className="text-xs">{report.employeeId ? memberNames.get(report.employeeId) ?? 'Unknown' : 'General'}</td>
-      <td className="text-xs">{formatDate(report.periodStart)} â€“ {formatDate(report.periodEnd)}</td>
+      <td className="text-xs">{formatDate(report.periodStart)} – {formatDate(report.periodEnd)}</td>
       <td className="max-w-80 text-xs">
-        {payload.folderUrl ? <Link href={payload.folderUrl} target="_blank" className="text-primary font-medium hover:underline">Open folder</Link> : payload.summary ?? 'â€”'}
+        {payload.folderUrl ? <Link href={payload.folderUrl} target="_blank" className="text-primary font-medium hover:underline">Open folder</Link> : payload.summary ?? '—'}
       </td>
       {canManage ? (
         <td className="min-w-[22rem] text-xs">

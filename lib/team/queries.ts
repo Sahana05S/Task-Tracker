@@ -161,7 +161,7 @@ export async function getEmployeeProfileData(
   const viewer = await getCurrentProfile();
   if (!employee || !viewer || !canViewEmployeeReports(viewer, employee)) return null;
 
-  const presentation=await getLivePresentation(viewContext(period.startDate.slice(0,7),now.toISOString()),employee.id);
+  const presentation=await getLivePresentation(viewContext(period.startDate.slice(0,7),now.toISOString(),now,0),employee.id); // now: page's validated as-of
   const performance=presentation.analytics.members.find(m=>m.userId===employee.id)??null;
   const performanceUnavailableReason=performance?.calculation?.status==='incomplete'?'Required performance inputs are unavailable.':undefined;
   const [currentTasks, logs, stars, attendance, reports] = await Promise.all([
@@ -269,7 +269,7 @@ export async function getEmployeeReportsData(
   const viewer = await getCurrentProfile();
   if (!employee || !viewer || !canViewEmployeeReports(viewer, employee)) return null;
 
-  const presentation=await getLivePresentation(viewContext(period.startDate.slice(0,7),now.toISOString()),employee.id);
+  const presentation=await getLivePresentation(viewContext(period.startDate.slice(0,7),now.toISOString(),now,0),employee.id); // now: page's validated as-of
   const performance=presentation.analytics.members.find(m=>m.userId===employee.id)??null;
   const performanceUnavailableReason=performance?.calculation?.status==='incomplete'?'Required performance inputs are unavailable.':undefined;
   const [reports, components, stars, attendance] = await Promise.all([

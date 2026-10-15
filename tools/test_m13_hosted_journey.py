@@ -24,7 +24,7 @@ def operation():
 
 
 class Hosted:
-    def __init__(self, workdir):
+    def __init__(self, workdir, reset_passwords=True):
         link = workdir / "supabase" / ".temp" / "project-ref"
         projects = cli("projects", "list", "--output", "json")
         project = next((p for p in projects if p.get("id") == REF), None)
@@ -43,6 +43,24 @@ class Hosted:
         self.public, self.admin = found["anon"], found["service_role"]
         self.tokens = {}
         self.passwords = {}
+        self.sessions = {}
+        if not reset_passwords:
+            # One-time admin magic-link token verified directly: no email is
+            # sent and synthetic passwords are left unchanged.
+            for code, actor in self.actors.items():
+                if code == "INACTIVE":
+                    continue
+                status, link = request(REF, self.admin, "POST", "/auth/v1/admin/generate_link",
+                                       {"type": "magiclink", "email": actor["email"]}, self.admin)
+                if status != 200:
+                    raise AssertionError(f"Synthetic link generation failed: {code} HTTP {status}")
+                status, session = request(REF, self.public, "POST", "/auth/v1/verify",
+                                          {"type": "magiclink", "token_hash": link["hashed_token"]})
+                if status != 200:
+                    raise AssertionError(f"Synthetic link verification failed: {code} HTTP {status}")
+                self.tokens[code] = session["access_token"]
+                self.sessions[code] = session
+            return
         for code, actor in self.actors.items():
             password = secrets.token_urlsafe(30)
             status, _ = request(REF, self.admin, "PUT", f"/auth/v1/admin/users/{actor['id']}",

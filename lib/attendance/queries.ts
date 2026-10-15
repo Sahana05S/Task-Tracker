@@ -6,7 +6,7 @@ import {
 import { summarizeAttendance } from '@/lib/attendance/summary';
 import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
 import { createClient } from '@/lib/supabase/server';
-import { LIVE_AS_OF_LAG_MS } from '@/lib/presentation/context';
+import { observationInstant } from '@/lib/presentation/clock';
 import type { AttendanceRecord, User } from '@/types/tracker';
 
 export interface AttendanceModuleData {
@@ -67,8 +67,8 @@ export async function getAttendanceModuleData({
   }
 
   const exclusive=new Date(`${endDate}T00:00:00Z`);exclusive.setUTCDate(exclusive.getUTCDate()+1);
-  // The input context rejects a future as-of; use the shared live observation margin.
-  const asOf=new Date(Date.now()-LIVE_AS_OF_LAG_MS).toISOString();
+  // The input context rejects a future as-of; observe at the database clock.
+  const asOf=(await observationInstant(supabase)).instant.toISOString();
   const inputContexts=new Map(await Promise.all(visibleMembers.map(async u=>[u.id,await loadAttendanceContext(supabase,u.id,startDate,exclusive.toISOString().slice(0,10),asOf)] as const)));
   return {
     inputContexts,
