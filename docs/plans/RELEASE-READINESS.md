@@ -34,36 +34,34 @@ is not configured, so it is not tested. Readiness is unchanged: core release
 **No**; certified scoring/awards **Blocked**. See the final section of
 [M13 evidence](M13-evidence.md).
 
-## Release requirements by scope — 15 October 2026 (later)
+## Release requirements by scope — 15 October 2026 (final)
 
-Tested revision `28efe3deadc3b111f14917ea505ad392c3d1cb23`. Details: M13-evidence (top section).
+Tested revision `ca788f6bd2c34ed3bb1df8c92e5962ba7ec65c02`; it supersedes `28efe3d`. Details: M13-evidence (top
+sections).
 
-**Core operations** (tasks, details, checklists, review/Done, timers/logs,
-attendance, contributions, Task Tools, incomplete archives/exports, views).
-**Not ready yet.**
-- Passed on the test project: browser acceptance with reload persistence,
-  representative error recovery, role checks, status parity, and no mobile
-  overflow.
-- Open release gates:
-  1. A hosted predecessor→candidate upgrade (01–29→30, or 28→30). It needs a
-     separately approved hosted project or branch, because the test project
-     must not be reset.
-  2. A real Supabase backup/PITR restore drill, using either Docker or a
-     database credential for `pg_dump`.
-  3. An approved target environment for staging/production comparison and
+**Core operations.** **Application acceptance complete on the test project;
+release not ready.**
+- Passed in the browser with reload persistence and representative refusals:
+  task create/edit/initialize, templates, checklists, review/Done gates
+  including bulk Done, timers/logs, attendance, contributions, every Task
+  Tools mode (support, duplicate, weekly, day-count, suffix, all-team,
+  carryover, section, refresh, archive, reopen, bulk Done), archive
+  close/correction/export, and profile/timeline parity. Mobile overflow is 0.
+- No known open application defect.
+- Release gates still open (deployment/recovery):
+  1. A hosted predecessor→candidate upgrade (01–29→32). It needs a separately
+     approved hosted project or branch; the test project must not be reset.
+  2. A real Supabase backup/PITR restore drill, using Docker or a database
+     credential for `pg_dump`. Only logical table rehearsals exist.
+  3. An approved staging/production target, release artifact/build ID and
      deployment.
   4. Lint is not configured.
-- Remaining acceptance checks (not blockers): a carryover commit through the
-  UI, possible only once an open prior-month task exists (on or after
-  1 November); the remaining Task Tools batch modes; template-based creation;
-  and the decision on hours display precision (D04).
 
 **Certified scoring and awards.** **Blocked** by the BN/BO/BP sales mapping
-and older-record provenance; this is unchanged. Engine, worker, retry and
-replay paths deliver `blocked`/`incomplete` with no winner.
+and older-record provenance; this is unchanged. Workers and engine deliver
+`blocked`/`incomplete` with no winner.
 
-**Drive integration.** **Deferred by the user.** Manual asset links work, and
-provider operations stay disabled.
+**Drive integration.** **Deferred by the user.** Manual asset links only.
 
 ## Signed-in hosted-test smoke — 14 October 2026
 

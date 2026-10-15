@@ -706,3 +706,23 @@ M13-evidence.
 
   No passwords were reset in this follow-up. The refused attempts consumed
   `TT-000004`–`000006` and `TT-000008`.
+
+## M13 remaining application items — 15 October 2026 (final)
+
+**Tested revision `ca788f6bd2c34ed3bb1df8c92e5962ba7ec65c02`** on `m13-verification` (not merged, pushed or
+deployed). Evidence: the top section of M13-evidence.
+
+- Checks:
+  - `vitest run`: 60 files, 487 passed. The 2 opt-in hosted tests were last
+    passed on `28efe3d`; the worker code is unchanged since.
+  - `npm run typecheck` and `npm run build` (24 pages) passed.
+  - `tools/test_m13_task_tools_closed_period.py` passed.
+  - All 11 browser phases passed on the test project.
+  - Lint is not configured.
+- Migrations 31/32 (Task Tools preview eligibility) were applied only to the
+  test project, whose ledger is now 32.
+- Hosted writes (test project only): migrations 31/32, tasks `TT-000009`–`22`,
+  `M13-F87E37-TPL`, the "M13 UI template" v1, the reopen/re-approval/Done of
+  `M13-F87E37-UI2`, a section confirmation, an archive, refresh jobs, and
+  timer/log entries from rerun phases.
+- Closed September and retained evidence are untouched.

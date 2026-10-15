@@ -550,3 +550,21 @@ Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
 an explicit future resume. No credentials, schedules, real Drive changes,
 production apply/deploy or migration rewriting occurred. M11 is the next planned
 module; this handoff does not implement it, and Drive is not a prerequisite.
+
+
+## M13 hours display format approved by user - 15 October 2026
+
+The user selected "2 decimals + \"<0.01 h\" (Recommended)". It settles only the
+display part of D04's precision question for hours:
+
+- Every on-screen hours value shows two decimals, keeping each surface's
+  existing unit convention.
+- A non-zero value that would round to 0.00 shows as `<0.01` (or `>-0.01`).
+- The Logs seconds special case is removed.
+- The text report export uses the same format.
+- CSV/JSON exports keep exact stored values for reconciliation.
+
+Stored precision (unbounded `numeric`), every calculation, and the approved
+six-decimal factor and two-decimal score displays are unchanged. Implemented by
+`formatHours` in `lib/tracker/format.ts`.
+

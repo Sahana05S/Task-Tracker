@@ -1,5 +1,91 @@
 # M13 end-to-end acceptance and release preparation — 13 October 2026
 
+## Remaining application items — 15 October 2026 (final)
+
+**Tested revision: `ca788f6bd2c34ed3bb1df8c92e5962ba7ec65c02`** (branch `m13-verification`, after `28efe3d`/`743abff`).
+Only `ngpmwzksekkpvrgoqngk` was used. It was not reset, closed September and
+all retained evidence are untouched, and no clock was changed.
+
+### Task Tools preview/commit eligibility (migrations 31 and 32)
+- Cause: `task_tools_preview` allocated and reserved `TT-` tags for every
+  planned copy and did not check two rules that commit enforces: the m12
+  closed-month source guard (trigger on `tasks`) and `assert_task_open_date`
+  (Final report and monthly snapshot periods). Closed-month duplicates
+  therefore previewed as committable and consumed numbers at commit
+  (`TT-000004`–`000006` and `TT-000008`).
+- Fix:
+  - `31_task_tools_closed_period_preview.sql` adds the reason
+    `closed_period_requires_named_correction` when any planned assignment or
+    due date falls in a non-live month. That is the guard's rule for an unsaved
+    task, which no correction scope can name. It also allocates and reserves
+    tags only for a committable plan.
+  - `32_task_tools_frozen_period_preview.sql` calls the authoritative
+    `assert_open_date` per planned assignee and assignment date, adding
+    `frozen_report_period_requires_revision`. It was a separate forward
+    migration because 31 was already applied.
+  - Commit and the database guards remain authoritative.
+  - The UI shows "No number allocated" for an unallocated plan.
+  - Numbering is still not gapless: a ready preview that expires keeps its
+    reservation.
+- Evidence:
+  - `tools/test_m13_task_tools_closed_period.py` runs on a disposable copy of
+    the exact hosted-data clone:
+    - closed-September, August→September-deadline and weekly-into-September
+      previews are refused with no sequence or reservation change;
+    - an August duplicate is ready;
+    - a Final report over August refuses with no allocation.
+  - Local checks also passed: upgrade 30→31→32 and fresh install 01–32.
+  - Hosted: dry runs listed only 31, then only 32; the ledger is now 32.
+  - Browser: the closed-month preview is not committable, shows no number,
+    and its Commit button is disabled. The hosted tag sequence stayed at 8
+    across the refusals.
+
+### Browser checks completed (`tools/test_m13_hosted_core_browser.py`)
+- **Batch modes:**
+  - Weekly (`TT-000011`/`12`), day-count (`TT-000013`/`14`), number + suffix
+    (`TT-000015`/`16`) and one task per active member (`TT-000017`–`22`) were
+    committed, each shown in the tracker after reload.
+  - Refresh shared metrics queued two recomputations. Confirm Setup/Activity/
+    Closure (intentionally empty) persisted as "Gate satisfied". Retained
+    archive made `TT-000012` read-only.
+  - Manager reopen of `M13-F87E37-UI2` committed. Bulk Done then refused it
+    per task ("needs every assigned reviewer approval"), and the task stayed
+    open. After the reviewer re-approved, bulk Done committed and persisted.
+- **Template:**
+  - "M13 UI template" v1 (Specific instruction plus one activity item) was
+    published from Task Tools.
+  - `M13-F87E37-TPL` was created from it in the task dialog. After reload it
+    shows "Template instructions · M13 UI template · version 1", the
+    instruction and the copied checklist item.
+- **Carryover:** the fixture uses **August 2026**, an open earlier period: it
+  has no `month_periods` row, Final report or snapshot.
+  - A Single duplicate of `M13-F87E37-TOOLS` with assignment date 20 August
+    created `TT-000009`.
+  - *Carryover to this month* (October) then committed `TT-000010`. After
+    reload, `TT-000009` is archived with 20 Aug, and the timeline shows the
+    carryover relation.
+  - No SQL, clock change or business-rule change was used.
+- **Hours display:** profile *Recorded effort* and *Daily attendance validity*
+  and the Attendance page now show the approved two-decimal format (for
+  example `8.00 0.00 0.00`).
+- **Final run on `ca788f6bd2c34ed3bb1df8c92e5962ba7ec65c02`:** all 11 phases passed. Parity covers A's 15 tasks;
+  deadline-less copies are listed under Undated tasks. There is no horizontal
+  overflow at 390 px.
+
+### Hours display precision (user decision recorded in DECISIONS)
+- Before:
+  - `formatNumeric` (2 decimals) on the tracker grid and cards, task detail,
+    Logs, dashboard, profile summary and logs, and employee reports;
+  - a seconds special case on Logs entries below 0.01 h;
+  - raw, unformatted values on profile *Recorded effort*
+    (`0.0007447833333333333`), the validity and attendance tables (exact
+    20-digit text), record history and the text export.
+- Now `formatHours` gives two decimals, with `<0.01` for a non-zero value that
+  would round to zero, on every screen and in the text report. CSV/JSON keep
+  exact values. Stored precision and calculations are unchanged.
+  `format-hours.test.ts` covers the rule.
+
+
 ## Clock, restore and browser acceptance investigation — 15 October 2026 (later)
 
 Scope: the follow-up investigations on branch `m13-verification`. Only
