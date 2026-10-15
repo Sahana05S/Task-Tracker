@@ -34,6 +34,37 @@ is not configured, so it is not tested. Readiness is unchanged: core release
 **No**; certified scoring/awards **Blocked**. See the final section of
 [M13 evidence](M13-evidence.md).
 
+## Release requirements by scope — 15 October 2026 (later)
+
+Tested revision `28efe3deadc3b111f14917ea505ad392c3d1cb23`. Details: M13-evidence (top section).
+
+**Core operations** (tasks, details, checklists, review/Done, timers/logs,
+attendance, contributions, Task Tools, incomplete archives/exports, views).
+**Not ready yet.**
+- Passed on the test project: browser acceptance with reload persistence,
+  representative error recovery, role checks, status parity, and no mobile
+  overflow.
+- Open release gates:
+  1. A hosted predecessor→candidate upgrade (01–29→30, or 28→30). It needs a
+     separately approved hosted project or branch, because the test project
+     must not be reset.
+  2. A real Supabase backup/PITR restore drill, using either Docker or a
+     database credential for `pg_dump`.
+  3. An approved target environment for staging/production comparison and
+     deployment.
+  4. Lint is not configured.
+- Remaining acceptance checks (not blockers): a carryover commit through the
+  UI, possible only once an open prior-month task exists (on or after
+  1 November); the remaining Task Tools batch modes; template-based creation;
+  and the decision on hours display precision (D04).
+
+**Certified scoring and awards.** **Blocked** by the BN/BO/BP sales mapping
+and older-record provenance; this is unchanged. Engine, worker, retry and
+replay paths deliver `blocked`/`incomplete` with no winner.
+
+**Drive integration.** **Deferred by the user.** Manual asset links work, and
+provider operations stay disabled.
+
 ## Signed-in hosted-test smoke — 14 October 2026
 
 The isolated test project now passes real Auth/API checks and a temporary local

@@ -26,7 +26,15 @@ on production, seed production data or enable workers. The tested candidate
 commit is `2c1d08438c890ab1a8dc95bab74bf3d8046f2688` (branch
 `m13-verification`; the earlier `7764489`-plus-uncommitted reference is
 historical). It is a verified source commit, not a built or deployed artifact;
-record the artifact/build ID separately before any staging/prod comparison. The latest local migration is
+record the artifact/build ID separately before any staging/prod comparison.
+**Update (later 15 October):** the candidate now includes forward migration
+`30_observation_clock.sql` (SHA-256
+`B56A319B85BC8060A87951EDBC121FEC2BB34DAC3AF6372678AB0894370EAE7B`), the
+database-authoritative as-of. The app falls back to the 10-second margin
+until 30 is applied, so deploying the app before or after the migration is
+safe. The hosted test project ledger is now 30. The final candidate commit is
+named in STATUS; it supersedes the hash above. The 29-migration statements
+below remain historical. The latest local migration is
 `29_month_archive_and_revisions.sql` (SHA-256
 `59B9CA142E0FB3C480090C2E623F7E7EC5EB6557FC4B63F82E704BF5064C58D8`).
 Never replay an already-applied migration merely because it exists locally.

@@ -1,5 +1,160 @@
 # M13 end-to-end acceptance and release preparation — 13 October 2026
 
+## Clock, restore and browser acceptance investigation — 15 October 2026 (later)
+
+Scope: the follow-up investigations on branch `m13-verification`. Only
+`ngpmwzksekkpvrgoqngk` was used. It was not reset, and no retained evidence was
+removed. **Tested revision: `28efe3deadc3b111f14917ea505ad392c3d1cb23`**, which supersedes `2c1d084` in the next
+section. Its checks are listed in the final section of STATUS.md.
+
+### 1. Clock fixes: database-authoritative as-of (migration 30)
+
+- Measured skew between the app host and the hosted database was under ~1.5–3.5 s
+  in 3 samples, with the database timestamp inside each request window.
+- The 10-second margin **did omit valid records from live views**. In the
+  browser, an attendance record saved for 12 October showed as *Missing record*
+  on the immediate reload and appeared about 10 s later. Persisted results did
+  not silently omit records: M07 `finish_performance_job` and archive commit
+  compare the watermark with `clock_timestamp()` and raise `40001`. A write in
+  the gap therefore forced a retry (M07, after 5 minutes) or a refused close.
+  The M08 award commit validates only the watermark at its stated as-of, which
+  is the intended as-of observation semantics.
+- Fix: forward migration `30_observation_clock.sql` adds
+  `public.observation_clock()`, which returns `clock_timestamp()`; only
+  `authenticated` and `service_role` may execute it. `lib/presentation/clock.ts`
+  takes the default as-of from it, truncated to milliseconds so it never
+  exceeds the database clock. This now drives live pages and export
+  (`liveViewContext`), attendance, support inputs, archive capture and both
+  workers. If the function is unavailable, it falls back to the old margin.
+  Explicit as-of values are still rejected after the database clock. No
+  database nonfuture, cutoff, 15-minute archive or watermark check changed.
+  Callers that rebuild a context from a validated as-of now pass it as `now`,
+  so an app clock behind the database cannot falsely reject it.
+- Evidence:
+  - New and updated unit tests: `observation-clock`, `archive-clock`,
+    `jobs-clock`, `stars/jobs`, `attendance-clock`.
+  - Local PG18: upgrade 29→30 on a copy of the exact hosted-data clone; fresh
+    install 01–30; `anon` denied, `authenticated`/`service_role` allowed;
+    re-applying fails atomically.
+  - Hosted: `supabase db push` (dry run listed only 30) brought the ledger to
+    30.
+  - Browser: attendance saved for 11 October showed `Present 8 0 0 Valid` on the
+    immediate reload.
+  - The opt-in hosted worker test passed: a real M07 lease recorded its result
+    1.1 s after its database as-of, versus 8.8 s for the earlier margin-based
+    runs, and remains `blocked`/`required_inputs_unavailable`.
+
+### 2. PG17→PG18 restore failure: root cause was the restore procedure
+
+- The constraint is `daily_task_logs.timer_segment_consistent` (migration 14),
+  specifically `hours_worked = timer_duration_seconds/3600`. The retained
+  clone log shows: `new row for relation "daily_task_logs" violates check
+  constraint "timer_segment_consistent"`, with `hours_worked` =
+  `0.0007447833333333333`. The earlier local adjustment replaced the equality
+  with `abs(hours_worked*3600 - timer_duration_seconds) < 1e-15` in the clone
+  only.
+- Cause: **the restore procedure, not schema behaviour, migration compatibility
+  or the PostgreSQL version.**
+  - Hosted PG17.11 stores `0.00074478333333333333`, and `2.681220/3600` gives
+    the same value on both PG17.11 and PG18.3, so the CHECK holds on both.
+  - The Supabase CLI prints numbers nested inside `jsonb` as float64
+    (`0.0007447833333333333`), and the harness also parsed them with Python
+    floats. Once rounded, the value fails the CHECK on **both** versions.
+  - The earlier verifier parsed both sides the same way, so its "68 tables
+    equal" result could not detect numeric precision loss in any table.
+- Corrected rehearsal (`tools/test_m13_hosted_restore_exact.py`), with hosted
+  access read-only:
+  - Each table was captured as `jsonb` text with an md5 digest taken in the
+    same hosted statement.
+  - It was imported into a fresh, **unmodified** 01–29 PG18 schema. The timer
+    CHECK definition is identical to hosted, and every row passed every CHECK.
+  - All 68 tables plus the 7 synthetic Auth rows have byte-identical canonical
+    digests to hosted, and the constraint-definition digest matches.
+  - A same-version PG18 `pg_dump -Fc`/`pg_restore --exit-on-error` round trip of
+    that clone also matches every digest; FKs and CHECKs are re-validated on
+    restore.
+  - The original modified clone and its files remain as superseded evidence.
+- Not covered: this is a logical rehearsal of application tables. It is not a
+  Supabase Auth/Storage/config backup or PITR. A PG17→PG17 restore was not
+  possible: only PG18 binaries are installed. A direct `pg_dump` of the hosted
+  database was not possible either: there is no database password in the test
+  configuration, and `supabase db dump` needs Docker.
+
+### 3. Browser acceptance (`tools/test_m13_hosted_core_browser.py`)
+
+- Setup:
+  - Sessions came from one-time admin magic-link tokens (no email sent,
+    synthetic passwords unchanged).
+  - A temporary `next dev` pointed at the test project and was opened on
+    `localhost`, because on `127.0.0.1` Next 16 refuses the HMR socket
+    cross-origin and keeps reloading the page.
+  - Each phase checks state before acting. New bounded synthetic records:
+    `M13-F87E37-UI1`, `TT-000007`, a fact, attendance for 11–12 October, logs,
+    and a timer.
+- Final run on the tested revision: all eight phases passed (`task`,
+  `checklist`, `timerlog`, `attendance`, `contribution`, `tools`, `reports`,
+  `parity`). A fresh task, `M13-F87E37-UI2`, then repeated create-after-refusal
+  and the full checklist → 50% rollup → refused premature Done → N/A →
+  Activity-derived 100% → refused pre-review Done → reviewer approval → Done
+  path. Its participant version stayed at 1, so the assignees and reviewer came
+  from the create that followed the refusal. Every step was verified after a
+  reload. Representative refusals showed visible errors and kept the typed
+  input: duplicate tag, closed-month log/attendance, Absent with hours,
+  non-existent correction record, closed-month duplicate, Done-task edits.
+  Role checks: authors had no self-review control and unassigned members no
+  approval control. Parity: status matched for A's 6 tasks across tracker,
+  profile and timeline (deadline-less `TT-000007` appears under Undated), and
+  the own profile at 390 px matched the director's view.
+- Application defects found and fixed:
+  1. **Form reset after a refused command (data-loss risk).** React 19 resets
+     any `<form action>` after every action, including refused ones. In the
+     task dialog this cleared the typed fields and unchecked the controlled
+     assignee/reviewer boxes in the DOM while React state still held them.
+     The resubmitted task `M13-F87E37-UI1` was created with **only the director
+     as assignee and no reviewer**; its participants were then corrected
+     through the edit dialog. The same reset cleared all ~30 `ExecutionForm`
+     forms after any refusal. Fix: a default-prevented `onSubmit` dispatches in
+     a transition (React then skips its reset), `ExecutionForm` resets only on
+     success, and the `action` prop is kept. Without it, a pre-hydration click
+     natively `GET`-submitted form contents into the URL; this regression was
+     caught by the harness and fixed.
+  2. **Live views omitted just-saved records**: item 1.
+  3. **Horizontal page overflow.** At 390 px, nine pages scrolled sideways,
+     including the profile by 556 px. At 1365 px, the director's `/tasks` page
+     overflowed by 314 px. Causes:
+     - grid items' `min-width: auto` in implicit tracks;
+     - an unwrapped contribution table;
+     - `sr-only` spans and Radix's hidden native `<select>`s (absolutely
+       positioned) escaping unpositioned scroll wrappers;
+     - an unconstrained related-task `<select>`.
+
+     Fix: base rule `.grid > * { min-width: 0 }`, one table wrapper, three
+     `relative` scroll wrappers, and `max-w-full` on the details-editor
+     controls. Measured result: 0 px on 20 workspace pages for member and
+     director at 390 px and director at 1365 px. The `parity` phase now
+     asserts 0 px on the profile.
+  4. **Mis-encoded text from `7764489`.** There were 19 `Â·`/`â€“`/`â€”`
+     sequences in 6 files and 10 separators lost to a literal `?` in 3 files
+     (for example "Template instructions ? Blank native task ? version 1"),
+     plus `Saving?` instead of `Saving…`. All are restored;
+     `source-encoding.test.ts` guards against the mojibake.
+  5. **UTC default dates.** The task page's manual-time date defaulted to the
+     UTC day, so it pre-filled yesterday between 00:00 and 05:30 IST. It now
+     uses `kolkataDate()`.
+  6. **Contribution records showed `· Unknown`.** `record_state` exists only on
+     attendance. The suffix now appears only when present.
+- Findings left open (no approved rule):
+  - Hours display precision differs by surface: `0.00` on the task, the
+    float-truncated `0.0007447833333333333` under Recorded effort, and the exact
+    20-digit value in the validity table. Display precision is undecided under
+    D04.
+  - Task Tools previews a closed-month duplicate as committable and refuses it
+    only at commit, consuming a `TT-` number each time (`TT-000004`–`000006`).
+- Carryover commit through the UI is **not testable now**: no open prior-month
+  predecessor exists, and September is closed. A same-month carryover correctly
+  cannot be committed. The command-level carryover in the 15 October journey
+  remains the evidence.
+
 ## Final verification and candidate identity — 15 October 2026
 
 Release candidate: `2c1d08438c890ab1a8dc95bab74bf3d8046f2688` on branch

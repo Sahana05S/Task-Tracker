@@ -672,3 +672,37 @@ outcomes. Lint configuration, hosted 01–28→29 upgrade, full Supabase
 backup/PITR, unmodified cross-version restore, full browser form/error-recovery
 coverage and BN/BO/BP certification remain open. Details: M13-evidence (final
 verification section). Not merged, deployed or applied to production.
+
+## M13 clock/restore/browser follow-up — 15 October 2026 (later)
+
+Tested revision `28efe3deadc3b111f14917ea505ad392c3d1cb23` (branch `m13-verification`; parent `33cbd93`). Not merged,
+pushed, deployed or applied to production. Evidence: the top section of
+M13-evidence.
+
+- Checks: full `vitest run` (59 files, 484 passed; 2 opt-in hosted tests
+  skipped there and run separately, both passed); `npm run typecheck`; and
+  `npm run build` (Next 16.3.6, 24 pages). Lint is not configured. All eight
+  browser phases passed on this tree, plus a fresh full create/checklist/review/
+  Done run (`M13-F87E37-UI2`). Overflow at 390 px and 1365 px is 0 on 20
+  workspace pages.
+- Migration 30 (`observation_clock`) is in the repository and was applied by
+  `supabase db push` **only** to `ngpmwzksekkpvrgoqngk`, whose ledger is now 30.
+  Local PG18 checks passed: upgrade from the exact hosted-data clone, fresh
+  01–30 install, grants, and a refused re-apply.
+- Restore: the PG17→PG18 failure came from the capture procedure's float
+  round trip. An exact-text rehearsal into the unmodified schema, plus a PG18
+  pg_dump/pg_restore round trip, matched all 68 tables and 7 Auth rows by
+  digest. Full Supabase backup/PITR, a PG17→PG17 restore and the hosted
+  01–28→29 upgrade remain not done.
+- Hosted writes this follow-up (test project only):
+  - migration 30;
+  - tasks `M13-F87E37-UI1`/`UI2` and `TT-000007`, plus their
+    checklists/reviews;
+  - timers and logs on `M13-F87E37-TIMER`;
+  - attendance for A on 11 and 12 October;
+  - one fact and its validation;
+  - one M07 lease from the opt-in worker test;
+  - one-time magic-link tokens.
+
+  No passwords were reset in this follow-up. The refused attempts consumed
+  `TT-000004`–`000006` and `TT-000008`.
