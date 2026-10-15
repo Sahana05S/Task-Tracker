@@ -726,3 +726,27 @@ deployed). Evidence: the top section of M13-evidence.
   `M13-F87E37-UI2`, a section confirmation, an archive, refresh jobs, and
   timer/log entries from rerun phases.
 - Closed September and retained evidence are untouched.
+
+## Dashboard cleanup - 15 October 2026
+
+Revision `ae31726` on `m13-verification` (not merged, pushed or deployed).
+- New layout, top to bottom: header with a compact month picker; a
+  plain-language status banner when the month is incomplete; KPI tiles;
+  productivity and workload charts; an award summary (days decided, a
+  per-day strip, monthly status); the unchanged task-overview charts; and a
+  collapsed "Calculation details" (report context and as-of picker, snapshot
+  count, the full award table with reason codes, per-member inputs scoped by
+  presentation scope).
+- Desktop page height went from 3351 px to 2757 px.
+- Checks:
+  - `vitest run`: 61 files, 492 passed. The M11 attendance-tile assertion was
+    updated to the new wording; it still requires "Incomplete" rather than
+    zero.
+  - typecheck and build passed.
+  - On the running local app against the test project:
+    - Director details list all six members; employee A sees only their own.
+    - "Open overdue" is 0 and matches the database.
+    - Horizontal overflow is 0 at 1365 px and 390 px, with details open or
+      closed.
+- The full browser acceptance suites were not rerun, per instruction.
+

@@ -568,3 +568,22 @@ Stored precision (unbounded `numeric`), every calculation, and the approved
 six-decimal factor and two-decimal score displays are unchanged. Implemented by
 `formatHours` in `lib/tracker/format.ts`.
 
+## Dashboard cleanup approved by user - 15 October 2026
+
+The user approved the proposed dashboard structure ("ok do it") together with
+the recommended answers to its three open points:
+
+1. **Open overdue.** The figure counts open, unarchived work due before the
+   live as-of date. Previously it counted everything due before month end,
+   which showed 14 mid-month when 0 tasks were actually past due. Past months
+   keep the period-end boundary. A carryover-archived predecessor is no longer
+   counted as open.
+2. **Scaled-credit tile.** It shows two decimals. Six-decimal factor values
+   (D04) remain in Calculation details.
+3. **Per-member inputs.** They follow the existing presentation scope: a
+   member sees only their own breakdown, and managers see the team.
+
+Plain wording replaces raw reason codes on the dashboard. The codes stay in
+Calculation details, exports and data. No calculation, permission or
+availability safeguard changed otherwise.
+
