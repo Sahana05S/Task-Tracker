@@ -770,7 +770,7 @@ exclusions of "waiting for help", PNG tracing and mascot work.
   "team appreciation" slot shows recently validated contributions; there are
   no peer stars or new rules.
 - **Checks:**
-  - unit tests (497) and typecheck passed;
+  - unit tests (496 passed; 2 opt-in hosted skipped) and typecheck passed;
   - production build passed (25 pages);
   - all 11 browser acceptance phases passed against the local test-project
     server;
