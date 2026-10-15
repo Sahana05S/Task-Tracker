@@ -750,3 +750,40 @@ Revision `ae31726` on `m13-verification` (not merged, pushed or deployed).
       closed.
 - The full browser acceptance suites were not rerun, per instruction.
 
+## Redesign slice 1 (visual system, navigation, Today) - 15 October 2026
+
+Revision `090ee34` on `m13-verification` (not merged, pushed or deployed). The
+inputs were the user-approved Stitch DESIGN.md, Today layout
+`today_dashboard_2` (its HTML rendered locally, because the screenshot is
+unusable), "Missions" terminology, the approved navigation, and the
+exclusions of "waiting for help", PNG tracing and mascot work.
+
+- **Visual system.** Plus Jakarta Sans, a lavender canvas, violet for
+  interaction, gold for recognition only, and mint for progress and success,
+  on bento cards. The landing CTA and login were restyled.
+- **Navigation.** A top bar with Today, Missions, Records, Team, Reports and
+  More, plus section tabs. Phones get Today, Missions, Team and More tabs, a
+  separate *Log hours* action and a More sheet. A "Timer running" pill shows
+  on every page. Routes, role visibility and permissions are unchanged.
+  `/today` is the signed-in home; `/dashboard` is Team › Analytics.
+- **Today.** Real data with explicit empty and unavailable states. The
+  "team appreciation" slot shows recently validated contributions; there are
+  no peer stars or new rules.
+- **Checks:**
+  - unit tests (497) and typecheck passed;
+  - production build passed (25 pages);
+  - all 11 browser acceptance phases passed against the local test-project
+    server;
+  - the timer pill, the phone *Log hours* action and every More-sheet
+    destination were verified;
+  - overflow is 0 at 390, 768 and 1365 px on the pages checked.
+  The Today rendering was compared with the Stitch HTML rendered at the same
+  three widths. Lint is not configured.
+- **Known gaps for later slices:**
+  - Page bodies other than Today keep their old layouts and "task" wording.
+  - Missions tags wrap in the grid (pre-existing).
+  - Landing-page product screenshots are images of the old green UI and need
+    recapturing.
+  - The Notifications bell still has no behaviour (pre-existing).
+  - There is still no permanent logo or mascot (deferred).
+
