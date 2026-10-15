@@ -18,7 +18,7 @@ import {
   normalizeEmployeeIdParam,
   resolveEmployeeRouteState,
 } from '@/lib/team/routes';
-import { formatDate, formatNumeric } from '@/lib/tracker/format';
+import { formatDate, formatNumeric, formatHours } from '@/lib/tracker/format';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;
@@ -105,7 +105,7 @@ export default async function EmployeeReportsPage({
           />
           <ChartCard
             label="Attendance"
-            value={`${formatNumeric(data.attendanceSummary.attendanceHours)}h`}
+            value={`${formatHours(data.attendanceSummary.attendanceHours)}h`}
             detail={`${formatNumeric(data.attendanceSummary.payableDays)} payable days`}
           />
           <ChartCard

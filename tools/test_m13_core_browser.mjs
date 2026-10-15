@@ -76,6 +76,52 @@ async function refused(form, button, label, pattern) {
   console.log(`PASS ${label} refused with visible error: ${result.text.slice(0, 140)}`);
 }
 
+
+/** Task Tools panel helpers: choose an operation, preview, commit. */
+async function toolsPanel(page) {
+  await open(page, '/task-tools');
+  const operation = page.getByLabel('Task operation');
+  const form = page.locator('form').filter({ has: page.getByRole('button', { name: 'Prepare preview' }) });
+  const panel = operation.locator('xpath=..');
+  const tools = {
+    form, panel,
+    async choose(label) { await operation.selectOption(typeof label === 'string' ? { label } : label); },
+    async selectTasks(tags) {
+      const values = [];
+      for (const tag of tags) {
+        values.push(await form.locator('select[name="taskIds"] option').filter({ hasText: new RegExp(`^${tag} `) }).first().getAttribute('value'));
+      }
+      await form.locator('select[name="taskIds"]').selectOption(values);
+    },
+    async preview() {
+      await form.getByRole('button', { name: 'Prepare preview' }).click();
+      const outcome = panel.getByText(/item\(s\)\. Preview expires/).or(panel.locator(':scope > p[role="status"]')).first();
+      await outcome.waitFor({ timeout: 120000 });
+      return (await panel.innerText()).trim();
+    },
+    async commit(label, { expectRefusal = false } = {}) {
+      const text = await tools.preview();
+      assert.match(text, /Preview expires/, `${label}: preview failed: ${text.slice(0, 300)}`);
+      assert.doesNotMatch(text, /Cannot commit/, `${label}: preview not committable: ${text.slice(0, 300)}`);
+      await page.getByRole('button', { name: /^Commit/ }).click();
+      const msg = panel.locator(':scope > p[role="status"]');
+      await msg.waitFor({ timeout: 120000 });
+      const result = (await msg.innerText()).trim();
+      if (expectRefusal) {
+        // Item outcomes are reported per task; success reads committed/created/queued.
+        assert.doesNotMatch(result, /: (committed|created|shared recomputation queued)\b/, `${label} was unexpectedly committed: ${result}`);
+        console.log(`PASS ${label} refused atomically at commit: ${result.slice(0, 160)}`);
+      } else {
+        assert.match(result, /^[A-Z0-9-]+: (committed|created|shared recomputation queued)\b/, `${label} commit failed: ${result.slice(0, 300)}`);
+        console.log(`PASS ${label} committed: ${result.slice(0, 200)}`);
+      }
+      return result;
+    },
+  };
+  return tools;
+}
+const tagsIn = result => [...result.matchAll(/([A-Z0-9]+-[A-Z0-9-]+): /g)].map(m => m[1]);
+
 const phases = {
   /** Create (with duplicate-tag recovery), automatic initialization, edit, structured details. */
   async task() {
@@ -403,17 +449,11 @@ const phases = {
     await choose('Single duplicate', 'M13-F87E37-TOOLS · M13 TOOLS acceptance');
     await form.locator('input[name="startDate"]').fill('2026-09-12');
     const closed = await preview();
-    const blocked = await page.getByText(/Cannot commit/).count();
-    if (!blocked) {
-      const commit = page.getByRole('button', { name: /^Commit/ });
-      await commit.click();
-      const msg = panel.locator(':scope > p[role="status"]');
-      await msg.waitFor({ timeout: 120000 });
-      assert.doesNotMatch(await msg.innerText(), /created/i, 'Closed-month duplicate was committed');
-      console.log(`PASS closed-month duplicate refused at commit: ${(await msg.innerText()).slice(0, 140)}`);
-    } else {
-      console.log(`PASS closed-month duplicate preview cannot commit: ${closed.slice(0, 140)}`);
-    }
+    const panelText = await panel.innerText();
+    assert.match(panelText, /Cannot commit: closed period requires named correction/, `Closed-month preview not refused: ${closed}`);
+    assert.match(panelText, /No number allocated/, 'Refused preview still shows an allocated task number');
+    assert.ok(await page.getByRole('button', { name: /^Commit/ }).isDisabled(), 'Refused preview can still be committed');
+    console.log('PASS closed-month duplicate preview is not committable and allocates no task number');
     await choose('Carryover to this month', 'M13-F87E37-TOOLS · M13 TOOLS acceptance');
     await form.locator('input[name="startDate"]').fill(TODAY);
     await form.locator('input[name="targetMonth"]').fill(TODAY.slice(0, 7));
@@ -422,7 +462,7 @@ const phases = {
     const carryText = await bodyText(page);
     assert.ok(/Cannot commit/.test(carryText) || !/Preview expires/.test(carry),
       'Same-month carryover preview was committable');
-    console.log('PASS same-month carryover is not committable (no open prior-month predecessor exists)');
+    console.log('PASS same-month carryover (source assigned this month) is not committable');
 
     const before = await page.locator('select[name="sourceTaskId"] option, select[name="taskIds"] option').allInnerTexts();
     if (!before.some(t => /M13 TOOLS acceptance \(Copy 1\) - Effort Support/.test(t))) {
@@ -498,8 +538,9 @@ const phases = {
       timelineAll.set(m[1], m[2]);
     }
     // Deadline-less tasks are listed under "Undated tasks" without a bar/status.
-    const undated = page.getByRole('heading', { name: 'Undated tasks' }).locator('xpath=following-sibling::*[1]');
-    const undatedTags = new Set((await undated.locator('a').allInnerTexts()).map(t => t.split(' ')[0]));
+    const timelineText = await page.locator('main').first().innerText();
+    const undatedText = timelineText.slice(timelineText.indexOf('Undated tasks'), timelineText.indexOf('Dependencies and carryover'));
+    const undatedTags = new Set([...undatedText.matchAll(/([A-Z0-9]+-[A-Z0-9-]+) · /g)].map(m => m[1]));
     await open(page, '/tasks');
     const tracker = new Map();
     for (const text of await page.locator('table tbody tr').allInnerTexts()) {
@@ -519,6 +560,15 @@ const phases = {
     console.log(`INFO profile tasks for A: ${[...profile].map(([t, s]) => `${t}=${s}`).join(', ')}`);
     assert.deepEqual(mismatches, [], `Status parity mismatches: ${mismatches.join('; ')}`);
     console.log(`PASS status parity for ${profile.size} profile tasks across tracker and timeline`);
+    // Approved hours format: two decimals, "<0.01" for tiny non-zero values.
+    await open(page, '/team/M13-F87E37-A');
+    for (const heading of ['Recorded effort', 'Daily attendance validity']) {
+      const text = await page.getByRole('heading', { name: heading }).locator('xpath=ancestor::section[1]').innerText();
+      assert.doesNotMatch(text, /\d+\.\d{3,}/, `${heading} shows unformatted hours`);
+    }
+    await open(page, '/attendance');
+    assert.doesNotMatch(await page.locator('main').first().innerText(), /\d+\.\d{3,}/, 'Attendance shows unformatted hours');
+    console.log('PASS profile effort/validity and attendance hours use the approved two-decimal format');
     await context.close();
     const mobile = await signIn('A', 390);
     await open(mobile.page, '/team/M13-F87E37-A');
@@ -529,6 +579,175 @@ const phases = {
     assert.ok(overflow <= 0, `Own profile scrolls sideways at 390px by ${overflow}px`);
     console.log(`PASS own profile at 390px matches director view (${mobileProfile.size} tasks) with no horizontal page overflow`);
     await mobile.context.close();
+  },
+
+
+  /** Remaining Task Tools modes: batches, section, refresh, archive, reopen/Done. */
+  async batch() {
+    const { context, page } = await signIn('DIR');
+    const tracker = async () => { await open(page, '/tasks'); return bodyText(page); };
+    const copies = [
+      ['Weekly phases', 'M13-F87E37-TIMER · M13 TIMER acceptance', 'M13 TIMER acceptance (Copy 2)', { count: '2' }, 2],
+      ['Day-count phases', 'M13-F87E37-JOURNEY · M13 JOURNEY acceptance', 'M13 JOURNEY acceptance (Copy 2)', { count: '2', phaseDays: '3' }, 2],
+      ['Number and suffix', 'M13-F87E37-TIMER · M13 TIMER acceptance', 'M13 TIMER acceptance Lot 2', { count: '2', suffix: 'Lot' }, 2],
+      ['One task per active team member', 'M13-F87E37-OUTSIDE · M13 Synthetic OUTSIDE', 'M13 Synthetic OUTSIDE (Copy 1)', {}, 6],
+    ];
+    for (const [mode, source, marker, fields, expected] of copies) {
+      if ((await tracker()).includes(marker)) { console.log(`PASS (rerun) ${mode} copies already present`); continue; }
+      const tools = await toolsPanel(page);
+      await tools.choose(mode);
+      await tools.form.locator('select[name="sourceTaskId"]').selectOption({ label: source });
+      await tools.form.locator('input[name="startDate"]').fill(TODAY);
+      for (const [name, value] of Object.entries(fields)) await tools.form.locator(`[name="${name}"]`).fill(value);
+      const tags = tagsIn(await tools.commit(mode));
+      assert.equal(tags.length, expected, `${mode} created ${tags.length} tasks`);
+      const listed = await tracker();
+      for (const tag of tags) assert.ok(listed.includes(tag), `${tag} missing from tracker after reload`);
+      console.log(`PASS ${mode}: ${tags.join(', ')} persist in tracker after reload`);
+    }
+    await open(page, '/tasks');
+    const weekly = [];
+    for (const n of [1, 2]) {
+      const row = page.locator('tr').filter({ hasText: `M13 TIMER acceptance (Copy ${n})` }).first();
+      weekly.push((await row.innerText()).split(/\s/)[0]);
+    }
+    let tools = await toolsPanel(page);
+    await tools.choose('Refresh shared metrics');
+    // Archived tasks are not offered; weekly[1] is archived below on a first run.
+    await tools.selectTasks([weekly[0], 'M13-F87E37-TIMER']);
+    await tools.commit('refresh metrics on two tasks');
+    await open(page, '/tasks');
+    const archived = /Archived/.test(await page.locator('tr').filter({ hasText: weekly[1] }).innerText());
+    if (!archived) {
+      tools = await toolsPanel(page);
+      await tools.choose('Confirm Setup / Activity / Closure');
+      await tools.selectTasks([weekly[0]]);
+      await tools.form.locator('select[name="section"]').selectOption('setup');
+      await tools.form.locator('select[name="intentionalEmpty"]').selectOption('true');
+      await tools.form.locator('input[name="reason"]').fill('M13 UI section confirmation');
+      await tools.commit('section confirmation');
+      tools = await toolsPanel(page);
+      await tools.choose('Retained archive');
+      await tools.selectTasks([weekly[1]]);
+      await tools.form.locator('input[name="reason"]').fill('M13 UI archive of a synthetic copy');
+      await tools.commit('archive');
+    }
+    await open(page, '/tasks');
+    assert.match(await page.locator('tr').filter({ hasText: weekly[1] }).innerText(), /Archived/, 'Archived copy not read-only after reload');
+    console.log(`PASS ${weekly[1]} shows archived/read-only after reload`);
+    await open(page, `/tasks/${weekly[0]}/checklist`);
+    assert.match(await bodyText(page), /setup\s+Not applicable\s+not applicable - Gate satisfied/i, 'Section confirmation not visible');
+    console.log(`PASS ${weekly[0]} setup section confirmation persists after reload`);
+
+    const ui2 = 'M13-F87E37-UI2';
+    await open(page, `/tasks/${ui2}`);
+    if (/Status\s*Done/.test(await page.locator('dl').first().textContent())) {
+      tools = await toolsPanel(page);
+      await tools.choose('Manager reopen');
+      await tools.selectTasks([ui2]);
+      await tools.form.locator('input[name="reason"]').fill('M13 UI reopen for bulk Done check');
+      await tools.commit('manager reopen of a Done task');
+    } else {
+      console.log('INFO (rerun) UI2 already reopened');
+    }
+    tools = await toolsPanel(page);
+    await tools.choose('Done (checklist and review gates)');
+    await tools.selectTasks([ui2]);
+    await tools.commit('bulk Done without current reviewer approval', { expectRefusal: true });
+    await open(page, `/tasks/${ui2}`);
+    assert.doesNotMatch(await page.locator('dl').first().textContent(), /Status\s*Done/, 'Refused bulk Done changed status');
+    console.log('PASS refused bulk Done left the reopened task open after reload');
+    const reviewer = await signIn('REV');
+    await open(reviewer.page, `/tasks/${ui2}`);
+    await saved(formWith(reviewer.page, 'Approve review'), 'Approve review', 'reviewer re-approved reopened work');
+    await reviewer.context.close();
+    tools = await toolsPanel(page);
+    await tools.choose('Done (checklist and review gates)');
+    await tools.selectTasks([ui2]);
+    await tools.commit('bulk Done after re-approval');
+    await open(page, `/tasks/${ui2}`);
+    assert.match(await page.locator('dl').first().textContent(), /Status\s*Done/, 'Bulk Done did not persist');
+    console.log('PASS bulk Done persists after reload');
+    await context.close();
+  },
+
+  /** Carryover through the UI from an open earlier month (August) into the current month. */
+  async carryover() {
+    const { context, page } = await signIn('DIR');
+    await open(page, '/tasks');
+    if (/M13 TOOLS acceptance \(Copy 1\) - Carryover/.test(await bodyText(page))) {
+      console.log('PASS (rerun) carryover successor already present');
+    } else {
+      let tools = await toolsPanel(page);
+      await tools.choose('Single duplicate');
+      await tools.form.locator('select[name="sourceTaskId"]').selectOption({ label: 'M13-F87E37-TOOLS · M13 TOOLS acceptance' });
+      await tools.form.locator('input[name="startDate"]').fill('2026-08-20');
+      await tools.form.locator('input[name="dueDate"]').fill('2026-08-31');
+      const [predecessor] = tagsIn(await tools.commit('August-assigned duplicate (open earlier period)'));
+      tools = await toolsPanel(page);
+      await tools.choose('Carryover to this month');
+      const value = await tools.form.locator('select[name="sourceTaskId"] option').filter({ hasText: new RegExp(`^${predecessor} `) }).first().getAttribute('value');
+      await tools.form.locator('select[name="sourceTaskId"]').selectOption(value);
+      await tools.form.locator('input[name="startDate"]').fill(TODAY);
+      await tools.form.locator('input[name="targetMonth"]').fill(TODAY.slice(0, 7));
+      await tools.form.locator('input[name="reason"]').fill('M13 UI carryover of unfinished August work');
+      const [successor] = tagsIn(await tools.commit('carryover from August into the current month'));
+      await open(page, '/tasks');
+      const before = await page.locator('tr').filter({ hasText: predecessor }).innerText();
+      assert.match(before, /Archived/, 'Carryover predecessor not archived');
+      assert.match(before, /20 Aug 2026/, 'Predecessor is not August-assigned');
+      const after = await page.locator('tr').filter({ hasText: successor }).innerText();
+      assert.match(after, /M13 TOOLS acceptance \(Copy 1\) - Carryover/, 'Carryover successor missing');
+      assert.match(after, /\d{2} Oct 2026/, 'Successor is not assigned in the current month');
+      console.log(`PASS ${predecessor} (assigned 20 Aug) archived and handed off to ${successor} after reload`);
+    }
+    await open(page, '/timelines');
+    assert.match(await bodyText(page), /M13 TOOLS acceptance \(Copy 1\) - Carryover/, 'Timeline lacks the carryover successor');
+    console.log('PASS timeline shows the carryover relation');
+    await context.close();
+  },
+
+  /** Publish a native template version, create a task from it, and verify both. */
+  async template() {
+    const { context, page } = await signIn('DIR');
+    const name = 'M13 UI template';
+    await open(page, '/tasks?new=1');
+    let dialog = page.getByRole('dialog');
+    await dialog.waitFor();
+    if (!(await dialog.locator('select[name="templateVersionId"] option').filter({ hasText: name }).count())) {
+      await open(page, '/task-tools');
+      const publish = formWith(page, 'Publish template version');
+      await publish.locator('input[name="templateName"]').fill(name);
+      await publish.locator('textarea[name="instruction_smart_specific"]').fill('State the measurable template outcome');
+      await publish.getByRole('button', { name: 'Add checklist item' }).click();
+      await publish.getByLabel('Checklist item').fill('Template activity step');
+      await saved(publish, 'Publish template version', 'published native template version 1');
+    }
+    const tag = 'M13-F87E37-TPL';
+    await open(page, '/tasks');
+    if (!(await page.getByRole('link', { name: tag, exact: true }).count())) {
+      await open(page, '/tasks?new=1');
+      dialog = page.getByRole('dialog');
+      const value = await dialog.locator('select[name="templateVersionId"] option').filter({ hasText: name }).first().getAttribute('value');
+      await dialog.locator('select[name="templateVersionId"]').selectOption(value);
+      await dialog.locator('input[name="title"]').fill('M13 template-based task');
+      await dialog.locator('input[name="taskTag"]').fill(tag);
+      await dialog.locator('input[name="taskScale"]').fill('5');
+      await dialog.locator('input[name="dueDate"]').fill('2026-10-30');
+      await dialog.locator(`input[name="assigneeIds"][value="${actors.A.id}"]`).check();
+      await dialog.locator(`input[name="reviewerIds"][value="${actors.REV.id}"]`).check();
+      await dialog.getByRole('button', { name: 'Create task' }).click();
+      await dialog.waitFor({ state: 'hidden', timeout: 120000 });
+    }
+    await open(page, `/tasks/${tag}`);
+    const detail = await page.locator('main').first().textContent();
+    assert.match(detail, /Template instructions · M13 UI template · version 1/, 'Template version not captured on the task');
+    assert.match(detail, /Native task\/details ready/, 'Template task not initialized');
+    assert.match(detail, /State the measurable template outcome/, 'Template instruction missing');
+    await open(page, `/tasks/${tag}/checklist`);
+    assert.match(await bodyText(page), /Template activity step/, 'Template checklist item not copied');
+    console.log('PASS task created from template persists with captured version, instructions and checklist after reload');
+    await context.close();
   },
 
   async diagnose() {

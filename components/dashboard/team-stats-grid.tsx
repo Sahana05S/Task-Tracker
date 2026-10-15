@@ -2,7 +2,7 @@ import { displayPerformance } from '@/lib/performance/exact';
 import * as React from 'react';
 
 import type { TeamAnalytics } from '@/lib/analytics/engine';
-import { formatNumeric } from '@/lib/tracker/format';
+import { formatNumeric, formatHours } from '@/lib/tracker/format';
 import { cn } from '@/lib/utils';
 
 export interface TeamStatsGridProps {
@@ -66,23 +66,23 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true }: TeamStat
 
       <StatCard
         label="Visible detail log hours"
-        value={formatNumeric(totals.hoursLogged)}
+        value={formatHours(totals.hoursLogged)}
         unit="h"
         detail={
           // Called out only when they diverge, which happens when hours are logged
           // against off-hours or zero-scale tasks. Those hours are real but cannot
           // contribute to a productivity rate.
           totals.eligibleHours !== totals.hoursLogged
-            ? `${formatNumeric(totals.eligibleHours)} h against eligible tasks; employee productivity uses attendance`
+            ? `${formatHours(totals.eligibleHours)} h against eligible tasks; employee productivity uses attendance`
             : `${totals.contributingMemberCount} of ${totals.activeMemberCount} contributed`
         }
       />
 
       <StatCard
         label="Known regular attendance hours"
-        value={attendanceComplete ? formatNumeric(totals.attendanceHours) : 'Unavailable'}
+        value={attendanceComplete ? formatHours(totals.attendanceHours) : 'Unavailable'}
         unit={attendanceComplete ? 'h' : undefined}
-        detail={attendanceComplete ? `${formatNumeric(totals.payableDays)} payable days · ${formatNumeric(totals.offHours)} off-hours` : 'One or more daily attendance inputs are missing; see report validity.'}
+        detail={attendanceComplete ? `${formatNumeric(totals.payableDays)} payable days · ${formatHours(totals.offHours)} off-hours` : 'One or more daily attendance inputs are missing; see report validity.'}
       />
 
       <StatCard

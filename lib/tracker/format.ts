@@ -18,6 +18,20 @@ export function formatNumeric(
   return value.toFixed(fractionDigits);
 }
 
+/**
+ * Hours for display: two decimals everywhere. A non-zero value that would round
+ * to 0.00 shows as "<0.01" (or ">-0.01") rather than a misleading zero. Accepts
+ * exact numeric strings; display only, so stored precision is unaffected.
+ */
+export function formatHours(value: number | string | null | undefined): string {
+  if (value === null || value === undefined || value === '') return EM_DASH;
+  const hours = Number(value);
+  if (!Number.isFinite(hours)) return EM_DASH;
+  const fixed = hours.toFixed(2);
+  if (hours !== 0 && Number(fixed) === 0) return hours > 0 ? '<0.01' : '>-0.01';
+  return fixed;
+}
+
 /** Percentage with a trailing sign, or an em dash when unset. */
 export function formatPercent(value: number | null): string {
   if (value === null) return EM_DASH;

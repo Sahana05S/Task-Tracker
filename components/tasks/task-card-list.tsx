@@ -24,13 +24,7 @@ import {
 import { EMPTY_EFFORT, type TaskEffort } from '@/lib/logs/metrics';
 import { canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
 import { CATEGORY_LABELS } from '@/lib/tracker/enums';
-import {
-  formatDate,
-  formatNumeric,
-  formatPercent,
-  isOverdue,
-  toProgressValue,
-} from '@/lib/tracker/format';
+import { formatDate, formatNumeric, formatPercent, isOverdue, toProgressValue, formatHours } from '@/lib/tracker/format';
 import { cn, getInitials } from '@/lib/utils';
 import type { Task, User } from '@/types/tracker';
 
@@ -212,7 +206,7 @@ function TaskCard({
               className="mr-1 inline size-3 align-[-1px]"
               aria-hidden="true"
             />
-            {formatNumeric(effort.hoursLogged)} h logged
+            {formatHours(effort.hoursLogged)} h logged
           </span>
           <span className="tabular">
             Scaled {formatNumeric(task.scaledProgress)}
@@ -329,7 +323,7 @@ function TaskDetails({
           />
           <Detail
             label="Hours logged"
-            value={formatNumeric(effort.hoursLogged)}
+            value={formatHours(effort.hoursLogged)}
             numeric
           />
           <Detail

@@ -23,7 +23,7 @@ import {
   shortName,
 } from '@/components/dashboard/chart-palette';
 import type { MemberPerformance } from '@/lib/analytics/engine';
-import { formatNumeric } from '@/lib/tracker/format';
+import { formatHours } from '@/lib/tracker/format';
 
 export interface ProductivityChartProps {
   members: readonly MemberPerformance[];
@@ -201,7 +201,7 @@ function ProductivityTooltip({ active, payload }: ProductivityTooltipProps) {
           label="Scaled progress"
           value={displayPerformance(datum.scaledProgress)}
         />
-        <Row label="Task hours (actual effort)" value={formatNumeric(datum.hoursLogged)} />
+        <Row label="Task hours (actual effort)" value={formatHours(datum.hoursLogged)} />
       </dl>
     </div>
   );

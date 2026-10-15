@@ -25,7 +25,7 @@ import {
 } from '@/lib/tasks/detail';
 import { canManageTasks } from '@/lib/tasks/permissions';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
-import { formatDate, formatNumeric, formatPercent } from '@/lib/tracker/format';
+import { formatDate, formatNumeric, formatPercent, formatHours } from '@/lib/tracker/format';
 import type {
   DailyTaskLog,
   TaskDetailSection,
@@ -184,7 +184,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
               />
               <Detail
                 label="Total hours"
-                value={formatNumeric(data.effort.hoursLogged)}
+                value={formatHours(data.effort.hoursLogged)}
                 numeric
               />
               <Detail
@@ -612,7 +612,7 @@ function TaskLogTable({
                 {log.updateNotes ?? '—'}
               </td>
               <td className="sheet-numeric text-xs">
-                {formatNumeric(log.hoursWorked)}
+                {formatHours(log.hoursWorked)}
               </td>
               <td className="text-xs">{log.logSource}</td>
               <td className="text-xs">

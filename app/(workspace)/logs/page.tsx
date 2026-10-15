@@ -5,7 +5,7 @@ import { LogHistory } from '@/components/logs/log-history';
 import { requireProfile } from '@/lib/auth/profile';
 import { getMyLogHistory } from '@/lib/logs/queries';
 import { sumHours } from '@/lib/logs/metrics';
-import { formatNumeric } from '@/lib/tracker/format';
+import { formatHours } from '@/lib/tracker/format';
 
 export const metadata: Metadata = {
   title: 'Logs · TaskPulse',
@@ -31,7 +31,7 @@ export default async function LogsPage() {
         description={
           logs.length === 0
             ? 'No entries recorded yet'
-            : `${logs.length} ${logs.length === 1 ? 'entry' : 'entries'} · ${formatNumeric(totalHours)} hours logged`
+            : `${logs.length} ${logs.length === 1 ? 'entry' : 'entries'} · ${formatHours(totalHours)} hours logged`
         }
       />
 

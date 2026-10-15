@@ -33,7 +33,7 @@ import {
   type TaskSortState,
 } from '@/lib/tasks/filters';
 import { canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
-import { formatDate, formatNumeric, isOverdue } from '@/lib/tracker/format';
+import { formatDate, formatNumeric, isOverdue, formatHours } from '@/lib/tracker/format';
 import { cn, getInitials } from '@/lib/utils';
 import type { Task, User } from '@/types/tracker';
 
@@ -203,7 +203,7 @@ export function TaskDataGrid({
 
                 {/* Aggregated from daily_task_logs; no column on tasks. */}
                 <td className="sheet-numeric text-xs">
-                  {formatNumeric(effort.hoursLogged)}
+                  {formatHours(effort.hoursLogged)}
                 </td>
 
                 <td
@@ -211,7 +211,7 @@ export function TaskDataGrid({
                   title={
                     task.taskProductivity === null
                       ? 'No hours logged yet'
-                      : `${formatNumeric(task.progressPercentage)} progress points over ${formatNumeric(effort.hoursLogged)} hours`
+                      : `${formatNumeric(task.progressPercentage)} progress points over ${formatHours(effort.hoursLogged)} hours`
                   }
                 >
                   {formatNumeric(task.taskProductivity)}

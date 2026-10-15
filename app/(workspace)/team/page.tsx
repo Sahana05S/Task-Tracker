@@ -13,7 +13,7 @@ import { requireProfile } from '@/lib/auth/profile';
 import { canViewTeamModule } from '@/lib/team/permissions';
 import { getTeamIndexData } from '@/lib/team/queries';
 import { employeeHref, employeeReportsHref } from '@/lib/team/routes';
-import { formatNumeric } from '@/lib/tracker/format';
+import { formatNumeric, formatHours } from '@/lib/tracker/format';
 
 export const metadata: Metadata = {
   title: 'Team · TaskPulse',
@@ -107,10 +107,10 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                           : formatNumeric(currentPerformanceScore)}
                       </td>
                       <td className="sheet-numeric text-xs">
-                        {data.presentation.sources.attendance.find(a=>a.userId===user.id)?.available?formatNumeric(performance?.attendance.attendanceHours??0):'Unavailable'}
+                        {data.presentation.sources.attendance.find(a=>a.userId===user.id)?.available?formatHours(performance?.attendance.attendanceHours??0):'Unavailable'}
                       </td>
                       <td className="sheet-numeric text-xs">
-                        {data.presentation.scope==='manager_team_detail'||user.id===profile.id?formatNumeric(performance?.hoursLogged??0):'Detail scope unavailable'}
+                        {data.presentation.scope==='manager_team_detail'||user.id===profile.id?formatHours(performance?.hoursLogged??0):'Detail scope unavailable'}
                       </td>
                     </tr>
                   ))}

@@ -22,7 +22,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { groupLogsByDate } from '@/lib/logs/metrics';
-import { formatDate, formatNumeric } from '@/lib/tracker/format';
+import { formatDate, formatNumeric, formatHours } from '@/lib/tracker/format';
 import { cn } from '@/lib/utils';
 import type { DailyTaskLog, Task } from '@/types/tracker';
 
@@ -86,7 +86,7 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
                   {formatDate(group.logDate)}
                 </h3>
                 <span className="text-muted-foreground font-mono text-[11px] font-semibold tabular">
-                  {formatNumeric(group.totalHours)} h
+                  {formatHours(group.totalHours)} h
                 </span>
                 {group.totalProgressDelta !== 0 ? (
                   <span
@@ -164,7 +164,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
             number is, so an icon beside it is redundant. */}
         <span className="ml-auto flex items-center gap-2.5 font-mono text-[11px] tabular">
           <span className="text-foreground font-semibold">
-            {log.hoursWorked>0 && log.hoursWorked<0.01 ? `${(log.hoursWorked*3600).toFixed(3)} seconds` : `${formatNumeric(log.hoursWorked)} h`}
+            {`${formatHours(log.hoursWorked)} h`}
           </span>
           {delta !== 0 ? (
             <span
@@ -276,7 +276,7 @@ function DeleteLogConfirmation({
 
   const confirm = () => {
     if (!log) return;
-    const hours = formatNumeric(log.hoursWorked);
+    const hours = formatHours(log.hoursWorked);
     const tag = task?.taskTag ?? 'the task';
 
     startTransition(async () => {

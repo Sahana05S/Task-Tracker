@@ -22,7 +22,7 @@ import {
   normalizeEmployeeIdParam,
   resolveEmployeeRouteState,
 } from '@/lib/team/routes';
-import { formatDate, formatNumeric, formatPercent } from '@/lib/tracker/format';
+import { formatDate, formatNumeric, formatPercent, formatHours } from '@/lib/tracker/format';
 import type { DailyStarRecord, DailyTaskLog, Task } from '@/types/tracker';
 
 interface EmployeePageProps {
@@ -102,12 +102,12 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
               />
               <Metric
                 label="Attendance hours"
-                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.attendanceHours):'Unavailable'}
+                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.attendanceHours):'Unavailable'}
                 unit="h"
               />
               <Metric
                 label="Task hours"
-                value={formatNumeric(data.taskHourSummary.totalHours)}
+                value={formatHours(data.taskHourSummary.totalHours)}
                 unit="h"
               />
               <Metric
@@ -116,17 +116,17 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
               />
               <Metric
                 label="Off-hours"
-                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.offHours): 'Unavailable'}
+                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.offHours): 'Unavailable'}
                 unit="h"
               />
               <Metric
                 label="Today task hours"
-                value={formatNumeric(data.taskHourSummary.todayHours)}
+                value={formatHours(data.taskHourSummary.todayHours)}
                 unit="h"
               />
               <Metric
                 label="Yesterday task hours"
-                value={formatNumeric(data.taskHourSummary.yesterdayHours)}
+                value={formatHours(data.taskHourSummary.yesterdayHours)}
                 unit="h"
               />
               <Metric
@@ -366,7 +366,7 @@ function TaskLogSummary({
                 </p>
               </div>
               <span className="tabular text-xs font-medium">
-                {formatNumeric(log.hoursWorked)}h
+                {formatHours(log.hoursWorked)}h
               </span>
             </div>
           </div>
@@ -416,7 +416,7 @@ function TaskLogCompilation({
               </td>
               <td className="max-w-96 text-xs">{log.updateNotes ?? '—'}</td>
               <td className="sheet-numeric text-xs">
-                {formatNumeric(log.hoursWorked)}
+                {formatHours(log.hoursWorked)}
               </td>
               <td className="text-xs">{log.logSource}</td>
             </tr>

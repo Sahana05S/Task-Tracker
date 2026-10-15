@@ -1,6 +1,7 @@
 import { Exact } from '@/lib/performance/exact';
 import { performanceReport } from '@/lib/performance/report';
 import type { LivePresentation } from './model';
+import { formatHours } from '@/lib/tracker/format';
 export function liveReport(model:LivePresentation){return {label:'Live report; not a frozen month',context:model.view,scope:model.scope,detailsAvailable:model.detailsAvailable,detailsAvailableFrom:model.detailsAvailableFrom,presentationWatermark:model.presentationWatermark,awardAvailability:model.awardAvailabilityReason??'Retained M08 observations',awards:model.awards,performance:performanceReport(model.calculation,model.employeeId),tasks:model.tasks,taskProductivity:model.taskRates,logs:model.logs,today:model.today,yesterday:model.yesterday,attendance:model.attendance,sections:model.checklists,contributions:model.contributions,assets:model.assets,relations:model.relations};}
 export function csvCell(value:unknown):string {let s=value==null?'':String(value);if(/^[\s\u0000-\u001f]*[=+@-]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
 export function reportCsv(model:LivePresentation):string {
@@ -19,8 +20,8 @@ export function reportText(model:LivePresentation):string {
  }
  lines.push('','Tasks (current progress is separate from period-earned credit):');
  for(const t of model.tasks)lines.push(`${t.taskTag}: ${t.title}; ${t.status}; progress ${t.progressPercentage??'Unavailable'}%; deadline ${t.dueDate??'Undated'}; task productivity ${model.taskRates.find(r=>r.taskId===t.id)?.value??'Unavailable'} percentage points/task-hour`);
- lines.push('','Effort:');for(const l of model.logs)lines.push(`${l.logDate}: ${model.tasks.find(t=>t.id===l.taskId)?.taskTag??l.taskId}, ${l.hoursWorked} h. ${l.updateNotes??''} ${(l.rawLinks??[]).join(' ')}`);
- lines.push('','Attendance:');for(const a of model.attendance)for(const d of a.days)lines.push(`${a.userId} ${d.businessDate}: ${d.status??'Unavailable'}, regular ${d.attendanceHours??'Unavailable'} h, off-hours ${d.offHours??'Unavailable'} h, validity ${d.valid===null?'Unavailable':d.valid?'valid':'invalid'}. ${d.reasons.join('; ')}`);
+ lines.push('','Effort:');for(const l of model.logs)lines.push(`${l.logDate}: ${model.tasks.find(t=>t.id===l.taskId)?.taskTag??l.taskId}, ${formatHours(l.hoursWorked)} h. ${l.updateNotes??''} ${(l.rawLinks??[]).join(' ')}`);
+ lines.push('','Attendance:');for(const a of model.attendance)for(const d of a.days)lines.push(`${a.userId} ${d.businessDate}: ${d.status??'Unavailable'}, regular ${d.attendanceHours==null?'Unavailable':formatHours(d.attendanceHours)} h, off-hours ${d.offHours==null?'Unavailable':formatHours(d.offHours)} h, validity ${d.valid===null?'Unavailable':d.valid?'valid':'invalid'}. ${d.reasons.join('; ')}`);
  lines.push('','Section summaries:',JSON.stringify(model.checklists,null,2),'Contribution records:',JSON.stringify(model.contributions,null,2),'Existing asset links:',JSON.stringify(model.assets,null,2));
  return lines.join('\n');
 }
