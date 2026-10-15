@@ -22,10 +22,11 @@ immutable candidate commit and record its hash only after focused, full,
 typecheck and build checks pass; a local build alone is not a deployment.
 
 **Stop line:** this is preparation, not authorization to deploy, run migrations
-on production, seed production data or enable workers. The exact app artifact
-cannot be named yet: current `main` is `7764489ac6bcc13f0062e67b401c7c9738f5848b`
-with uncommitted M01–M13 work. Create and verify an immutable release commit
-before any staging/prod comparison. The latest local migration is
+on production, seed production data or enable workers. The tested candidate
+commit is `2c1d08438c890ab1a8dc95bab74bf3d8046f2688` (branch
+`m13-verification`; the earlier `7764489`-plus-uncommitted reference is
+historical). It is a verified source commit, not a built or deployed artifact;
+record the artifact/build ID separately before any staging/prod comparison. The latest local migration is
 `29_month_archive_and_revisions.sql` (SHA-256
 `59B9CA142E0FB3C480090C2E623F7E7EC5EB6557FC4B63F82E704BF5064C58D8`).
 Never replay an already-applied migration merely because it exists locally.

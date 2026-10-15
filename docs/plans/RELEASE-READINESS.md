@@ -24,9 +24,15 @@ readiness remains **No**; the certified scoring/award scope remains **Blocked**
 by BN/BO/BP and legacy provenance. Drive remains user-deferred.
 
 The previously documented `7764489` plus uncommitted tree is historical: this
-continuation began from clean `7e6d914`. Its own release-candidate identity is
-recorded in the final M13 handoff; neither an uncommitted diff nor a local build
-is a deployed revision.
+continuation began from clean `7e6d914`. Neither an uncommitted diff nor a local
+build is a deployed revision.
+
+**Tested candidate (15 October final):** `2c1d08438c890ab1a8dc95bab74bf3d8046f2688`
+on branch `m13-verification`. Unit (476), focused clock regressions, typecheck,
+build and the hosted read-only archive/mobile/export verification passed. Lint
+is not configured, so it is not tested. Readiness is unchanged: core release
+**No**; certified scoring/awards **Blocked**. See the final section of
+[M13 evidence](M13-evidence.md).
 
 ## Signed-in hosted-test smoke — 14 October 2026
 

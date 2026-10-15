@@ -658,3 +658,17 @@ older provenance still block certified scoring/awards only. Core browser
 form/error recovery and exact production-target parity remain outstanding.
 No original-project/production/Drive mutation, deployment or historical import
 occurred. See RELEASE-READINESS for the updated matrix and exact test results.
+
+## M13 final verification — 15 October 2026
+
+Candidate `2c1d08438c890ab1a8dc95bab74bf3d8046f2688` (branch `m13-verification`)
+adds the nonfuture observation margin to the attendance input context. That is
+the same clock defect class as the archive and worker fixes, and it ships with a
+regression test. On this tree, 476 unit tests, typecheck and the production
+build passed. Lint is not configured. The hosted read-only archive `verify`
+phase passed, including the 390 px member task-detail/checklist observation and
+the 200/403 export scoping. Direct reads confirmed the retained award and M07
+outcomes. Lint configuration, hosted 01–28→29 upgrade, full Supabase
+backup/PITR, unmodified cross-version restore, full browser form/error-recovery
+coverage and BN/BO/BP certification remain open. Details: M13-evidence (final
+verification section). Not merged, deployed or applied to production.

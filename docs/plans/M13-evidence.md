@@ -1,5 +1,62 @@
 # M13 end-to-end acceptance and release preparation — 13 October 2026
 
+## Final verification and candidate identity — 15 October 2026
+
+Release candidate: `2c1d08438c890ab1a8dc95bab74bf3d8046f2688` on branch
+`m13-verification` (parent `e805e6a`, which committed the hosted continuation
+below). It supersedes the "final candidate identity" placeholder in the next
+section. Not merged, tagged, deployed or applied to production.
+
+Candidate change: `lib/attendance/queries.ts` still passed the app's immediate
+clock to `attendance_input_context`, which raises 23514 for
+`p_as_of > clock_timestamp()` (migrations 20/21). This is the same near-now
+defect class fixed for archive capture and the M07/M08 workers. It now uses
+`LIVE_AS_OF_LAG_MS`, and `__tests__/lib/attendance/attendance-clock.test.ts`
+fails without the fix and passes with it. It was found by code review and was
+not observed on the hosted attendance page. `stars/read-model.ts` compares its
+clock only locally and Task Tools' `checklistAsOf` is a stored label, so neither
+needs the margin.
+
+Checks on the candidate tree:
+
+- Full `vitest run`: 56 files / 476 tests passed. The 2 skipped tests are the
+  opt-in hosted integration file, which needs process-only test credentials.
+- Focused clock regressions (archive, M07 jobs, M08 jobs, presentation context,
+  attendance) passed.
+- `npm run typecheck` and `npm run build` (Next 16.3.6, 24 static pages)
+  passed.
+- Lint was not run: the repository has no ESLint config or lint script.
+- Hosted read-only `verify` phase of `tools/test_m13_hosted_archive_browser.py`
+  ran on `ngpmwzksekkpvrgoqngk` (`TaskPulse M13 Test`, confirmed by name, status
+  and isolated workdir link before use). It passed: revision 2 rendered on
+  desktop and at 390 px; at 390 px the member also saw task
+  `M13-F87E37-JOURNEY` detail ("Inspect synthetic site") and its checklist
+  ("Acceptance steps", "Journey Yes"). Director/own CSV export returned 200 and
+  another member/data manager received 403. Retained revisions 1 and 2 are
+  `incomplete_uncertified`, their source inputs differ, and no winner is named.
+  The harness's only hosted writes were rotating the seven synthetic users'
+  passwords. The fact fixture already existed and no close/correction/revise ran.
+- Direct hosted reads: ledger 29, September `closed` (version 3), 2 revisions,
+  9 tasks (the journey, split, duplicate and carryover tasks are included). The
+  award day 13 Oct job had 2 attempts and 14 Oct had 3. Every award run has
+  `certified=false` and `winner_id=null`. Final state is `blocked` with
+  `required_inputs_unavailable`, and earlier `failed` runs are retained. Two
+  M07 runs (`m07-ten-factor-v1`) delivered `blocked` with
+  `required_inputs_unavailable`. One pre-fix M07 job remains `failed` with
+  `source_query_failed`; the claim function still selects failed jobs, so it is
+  retryable, and it was not rerun. Invalidation jobs that were never leased sit
+  in the claimable `blocked` state. The worker was not rerun, because the
+  durable rows already show delivery, retry and replay.
+
+Classification of the issues found during M13:
+
+- Application defects, fixed with regressions: archive capture, M07 recompute
+  and M08 revision near-now clock; attendance input context (latent, same class).
+- Test-harness issues, corrected: assuming blank detail/checklist rows were
+  absent; the browser reload exceeding Playwright's 30 s default.
+- Environment limits, unresolved: Docker is absent for `supabase db dump`, and
+  the PG17.11→PG18.3 timer numeric CHECK difference affects only the local clone.
+
 ## Hosted continuation — 15 October 2026
 
 This continuation used only `ngpmwzksekkpvrgoqngk` (`TaskPulse M13 Test`),
