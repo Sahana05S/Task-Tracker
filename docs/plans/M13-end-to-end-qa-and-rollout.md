@@ -1,5 +1,16 @@
 # M13 — End-to-end acceptance and release
 
+15 October continuation: the confirmed hosted test project now has a native
+task-to-Done, timer/log, Task Tools and non-certified archive/correction journey,
+plus signed-in scoped exports and real incomplete worker delivery. The 68-table
+hosted synthetic application snapshot was rebuilt in an isolated local PG18
+clone with a documented local-only timer precision adjustment. Hosted legacy
+upgrade, full Supabase backup/PITR, complete browser form/error-recovery parity,
+BN/BO/BP certification and production rollout remain open. See
+[M13 evidence](M13-evidence.md) and [readiness](RELEASE-READINESS.md) for exact
+passes and limits; historical statements below about no native environment or
+no worker delivery are superseded.
+
 14 October hosted update: a signed-in local browser against the isolated test
 project now renders desktop task/detail/checklist/dashboard/reports and the
 mobile task list. Real Auth/API checks and a fresh 01–29 hosted install passed.

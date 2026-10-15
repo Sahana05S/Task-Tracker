@@ -26,6 +26,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+__pycache__/
 
 # supabase local dev
 /supabase/.branches

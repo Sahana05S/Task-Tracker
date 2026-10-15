@@ -1,5 +1,26 @@
 # Staged release runbook — prepared 13 October 2026
 
+## M13 hosted rehearsal update — 15 October 2026
+
+The named disposable test project has local migrations 01–29 and synthetic
+native/browser acceptance evidence in [M13-evidence](M13-evidence.md). Do not
+reset that project to rehearse a predecessor upgrade. The original project,
+production and Drive provider remain out of scope. A separate local PG18 clone
+restored 68 captured test application tables, but a PG17→PG18 timer numeric
+CHECK required a local-only tolerance adjustment; no hosted schema or migration
+was modified. CLI `db dump` could not run without Docker. This clone is not a
+full Supabase Auth/config/Storage backup or PITR. Obtain a separately identified
+hosted predecessor or approved preview branch before the hosted 01–28→29
+upgrade/restore gate can pass; compare actual schema, grants and row digests.
+
+Core sandbox worker tests use only ephemeral child-process flags/tokens. The
+permanent award schedule and Drive worker remain disabled. A missing-sales day
+must retain `blocked`/`incomplete`, no certified score and no winner; a failed
+lease requires a safe retry and a zero-outcome replay. See M13 evidence for
+the exact delivered result and outstanding UI/recovery limits. Freeze an
+immutable candidate commit and record its hash only after focused, full,
+typecheck and build checks pass; a local build alone is not a deployment.
+
 **Stop line:** this is preparation, not authorization to deploy, run migrations
 on production, seed production data or enable workers. The exact app artifact
 cannot be named yet: current `main` is `7764489ac6bcc13f0062e67b401c7c9738f5848b`

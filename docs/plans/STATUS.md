@@ -625,3 +625,36 @@ the isolated test project. The 13 October blanket “no browser” lines above
 are superseded. Worker delivery, complete role/workflow journeys, hosted
 upgrade/restore, sales definitions and legacy certification remain open. No
 production migration/deploy, Drive operation or worker activation occurred.
+
+## M13 hosted continuation — 15 October 2026
+
+The working tree began clean at `7e6d914e6d5c840f216e55d01946e2ba924f00a2`.
+Using only the confirmed `TaskPulse M13 Test` ref `ngpmwzksekkpvrgoqngk`,
+native Auth/PostgREST passed automatic task detail initialization, SMART/IPO
+edits, nested Yes/No/N/A parent rollup, guarded Done and reviewer-only approval,
+timer stop/link, log correction/reversal, and support split/duplicate/carryover
+preview+commit with persisted scale checks. Earlier attendance, independent
+fact validation and inactive/anonymous/role denials remain valid. Signed-in
+director close/bounded correction/revise created two retained non-certified
+September revisions; desktop/mobile archived report and employee/manager CSV
+allowances passed, with other-member/data-manager detail exports denied 403.
+
+Hosted archive and recomputation workers exposed app-clock near-now errors.
+Archive capture, M07 job execution and M08 revision execution now use the
+existing ten-second observation margin; focused regression tests and real M07
+leased delivery passed. The real award endpoint delivered a blocked, winnerless
+result with sandbox-only credentials; failed-lease recovery and replay outcome
+are in M13 evidence. Drive workers and permanent schedules remain disabled.
+
+A private hosted synthetic-table capture was imported into an isolated local
+PG18 clone. Fresh 01–29 install and 68 JSON-normalized table comparisons,
+seven synthetic Auth IDs and two immutable archive revisions passed. Original
+PG17.11 timer rows failed PG18.3's exact division CHECK; only the local clone
+used a tolerance adjustment. This is not a full Supabase backup/PITR or hosted
+legacy upgrade. `supabase db dump` required an unavailable Docker engine, and
+no second confirmed hosted predecessor was used. The prior local PG17 upgrade
+test remains passed; hosted upgrade is outstanding. BN/BO/BP definitions and
+older provenance still block certified scoring/awards only. Core browser
+form/error recovery and exact production-target parity remain outstanding.
+No original-project/production/Drive mutation, deployment or historical import
+occurred. See RELEASE-READINESS for the updated matrix and exact test results.

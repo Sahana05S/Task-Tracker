@@ -1,5 +1,33 @@
 # Release readiness — 13 October 2026
 
+## M13 hosted acceptance continuation — 15 October 2026
+
+The confirmed disposable project (`ngpmwzksekkpvrgoqngk`) now has native
+task/details/checklist/Done/review, timer/log correction/reversal, support
+split/duplicate/carryover and incomplete archive/correction evidence. Signed-in
+director and employee archive/export flows passed, including other-member and
+data-manager 403 responses; representative task/report state was checked at
+desktop and mobile width. The previous attendance, independent contribution
+review and inactive/anonymous/role denials remain passed. Actual M07 job
+delivery retained an incomplete blocked result; the award endpoint produced a
+blocked, winnerless result with test-only credentials and workers. See the
+[current M13 evidence](M13-evidence.md) for exact assertions and retry state.
+
+The local PostgreSQL 18 recovery clone restored 68 hosted synthetic application
+tables and two archive revisions after a **local-only** numeric-check adjustment
+for a PG17→PG18 timer precision difference. This is not a full Supabase restore.
+Hosted 01–28→29 upgrade, full browser form/error-recovery coverage, certified
+scoring, real provider operations and production checks remain open. Docker is
+unavailable for CLI `db dump`; no second hosted predecessor was created because
+the current confirmed project and its evidence may not be reset. Core release
+readiness remains **No**; the certified scoring/award scope remains **Blocked**
+by BN/BO/BP and legacy provenance. Drive remains user-deferred.
+
+The previously documented `7764489` plus uncommitted tree is historical: this
+continuation began from clean `7e6d914`. Its own release-candidate identity is
+recorded in the final M13 handoff; neither an uncommitted diff nor a local build
+is a deployed revision.
+
 ## Signed-in hosted-test smoke — 14 October 2026
 
 The isolated test project now passes real Auth/API checks and a temporary local
@@ -53,18 +81,18 @@ linked evidence file; M13 reran the latest integrated 01–29 harness.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [M00 rule/source baseline](M00-evidence.md) | Rules/fixtures | Fixture consistency only | N/A | No | No | N/A | Source gaps remain |
 | [M01 schema/permissions](M01-evidence.md) | Yes | Yes | Yes | Partial | No | N/A | Native role/column/relationship checks passed; full matrix pending |
-| [M02 logs/timers](M02-evidence.md) | Yes | Yes | Yes | Partial | No | N/A | Native log/retry passed; timers/corrections pending |
-| [M03 lifecycle/scale](M03-evidence.md) | Yes | Yes | Yes | No | No | N/A | Legacy reconciliation remains |
-| [M04 details/templates](M04-evidence.md) | Yes | Yes | Yes | Partial | Partial | N/A | Native creation and signed-in task detail passed; template workflows pending |
-| [M05 checklists](M05-evidence.md) | Yes | Yes | Yes | Partial | Partial | N/A | Native nested/N/A and signed-in render passed; Done/linked work pending |
-| [M06 attendance/support](M06-evidence.md) | Yes | Yes | Yes | Partial | No | N/A | Native attendance/fact review passed; other modes and source gaps pending |
-| [M07 ten factors](M07-evidence.md) | Yes, guarded missing inputs | Yes | Yes | No | No | Recompute lease tested in PG only | Certification blocked |
-| [M08 awards](M08-evidence.md) | Yes, guarded missing inputs | Yes | Yes | No | No | Test endpoint/mocks, no delivered schedule | Certification blocked |
-| [M09 Task Tools](M09-evidence.md) | Yes; import deferred | Yes | Yes | No | No | N/A | Native flow pending |
+| [M02 logs/timers](M02-evidence.md) | Yes | Yes | Yes | Yes, synthetic timer/link and retained correction/reversal | Task detail smoke only | N/A | Native command path passed; full browser form journey open |
+| [M03 lifecycle/scale](M03-evidence.md) | Yes | Yes | Yes | Partial: guarded Done, prospective split/carryover scale | Partial task views | N/A | Legacy reconciliation remains |
+| [M04 details/templates](M04-evidence.md) | Yes | Yes | Yes | Partial: automatic initialization and SMART/IPO edits | Partial desktop/mobile detail | N/A | Published template browser path open |
+| [M05 checklists](M05-evidence.md) | Yes | Yes | Yes | Partial: nested Yes/No/N/A and Done gate | Partial desktop/mobile checklist | N/A | Linked-task browser work open |
+| [M06 attendance/support](M06-evidence.md) | Yes | Yes | Yes | Partial: attendance/fact review and role scoping | No full entry form journey | N/A | Other modes and source gaps pending |
+| [M07 ten factors](M07-evidence.md) | Yes, guarded missing inputs | Yes | Yes | Real leased incomplete run | Reports show unavailable | Delivered blocked run | Certification blocked; source evidence absent |
+| [M08 awards](M08-evidence.md) | Yes, guarded missing inputs | Yes | Yes | Blocked winnerless run and worker denials | Reports show unavailable | Sandbox endpoint delivery/replay; retry evidence in M13 | Certification blocked; no schedule activation |
+| [M09 Task Tools](M09-evidence.md) | Yes; import deferred | Yes | Yes | Native split/duplicate/carryover preview+commit passed | Task Tools form click-through open | N/A | Other batch modes not browser-verified |
 | [M10 Drive](M10-evidence.md) | Gated adapter; manual links | Mock/guard tests | Yes | No | No | No real provider call | **Deferred by user** |
-| [M11 views/reports](M11-evidence.md) | Yes | Yes | Yes | Partial | Partial | N/A | Native live context and desktop dashboard/reports render passed; cross-surface parity pending |
-| [M12 archives](M12-evidence.md) | Yes; incomplete close | Yes | Yes | Partial | No | No current M07/M08 delivered run | Native member denial passed; archive flow pending |
-| M13 integration | Readiness/CI/recovery preparation | Integrated regression | Fresh+upgrade+restore | Partial | Partial | No | Acceptance incomplete |
+| [M11 views/reports](M11-evidence.md) | Yes | Yes | Yes | Partial | Desktop reports and mobile retained revision/export checks | N/A | Profile/timeline and cross-surface parity pending |
+| [M12 archives](M12-evidence.md) | Yes; incomplete close | Yes | Yes | Native close, named correction, revision, scoped read | Director close/correction/revise and scoped CSV export passed | Incomplete award evidence retained | Certified path unavailable |
+| M13 integration | Readiness/CI/recovery preparation | Integrated regression | Fresh+upgrade+local hosted-table restore | Partial real Auth/API | Partial desktop/mobile journey | Delivered incomplete/blocked; no production schedule | Acceptance incomplete; hosted legacy upgrade/full restore open |
 
 ## Release scopes
 

@@ -1,5 +1,85 @@
 # M13 end-to-end acceptance and release preparation — 13 October 2026
 
+## Hosted continuation — 15 October 2026
+
+This continuation used only `ngpmwzksekkpvrgoqngk` (`TaskPulse M13 Test`),
+the existing isolated CLI workdir and seven synthetic Auth accounts. The
+starting working tree was clean at `7e6d914e6d5c840f216e55d01946e2ba924f00a2`,
+which supersedes the older `7764489`/uncommitted baseline below. The app's
+`.env.local`, original project, production, Drive workers and existing hosted
+test rows were not reset. Local migrations 01–29 and the hosted 29-row ledger
+were unchanged. New M13 tests use temporary process-only test credentials;
+none are printed or stored in the repository.
+
+`tools/test_m13_hosted_journey.py` ran real GoTrue/PostgREST commands and
+checked resulting rows. A managing director created an automatically
+initialized task; SMART/IPO edits and a manual asset URL persisted, while an
+assignee's structural edit failed. Assigned work set Yes/No/N/A leaves and
+produced the expected 50% nested Activity rollup. Premature Done failed;
+after all applicable leaves, 100% manual progress and the assigned reviewer's
+current approval, Done persisted with its completion date. Another member's
+review and cross-task checklist write failed. A real timer stop linked its
+retained log; a separate log was corrected and reversed without deletion.
+Approved native Task Tools preview/commit split 3 of 10 scale units, created a
+reset duplicate, and handed 6 remaining units from a 40%-complete prior-month
+task to a new 0%-progress carryover. This fixture used one test-only SQL update
+to date the synthetic carryover predecessor in September. The earlier native
+attendance/independent fact validation and inactive/anonymous/role denials
+remain in the preceding section; they were not rerun without cause.
+
+The signed-in archive browser journey closed September as `incomplete_uncertified`,
+opened a director correction naming one existing fact and exactly 12 September,
+then published revision 2 after a reasoned native fact correction. The two
+retained source inputs differ; both remain non-certified and name no winner.
+Director and employee CSV exports returned 200 for the employee, while another
+member and the data manager received 403. Revision 2 was rendered at desktop
+and mobile width. The earlier desktop task/checklist/dashboard/report and mobile
+task-list smoke remains valid; full click-through on every UI form, profile and
+timeline is still open. A Next development-server reload after successful
+close/revise exceeded Playwright's navigation timeout; database state and a
+fresh signed-in verification phase established the committed result. It is not
+counted as a successful reload/error-recovery UI check.
+
+Two real near-now worker/archive defects surfaced against the hosted database.
+Month capture and recomputation used the app host's immediate clock, which the
+database rejected as future; the M08 revision worker had the same exposure.
+They now share the existing ten-second observation margin from M11. Focused
+clock regressions cover archive and recomputation, and the award worker test
+covers revision time. A leased M07 job completed with an `incomplete` shared
+engine result; its durable outbox state is `blocked` with
+`required_inputs_unavailable`. The sandbox-only award endpoint used an
+ephemeral token/service key and a child-process worker flag, rejected a forged
+token, and delivered a blocked, uncertified, winnerless day. On 13 October's
+synthetic award, a controlled `source_query_failed` lease was retained, then
+delivered on attempt 2 as `blocked` with `required_inputs_unavailable` and no
+winner. Re-requesting the 14 October day exposed the near-now revision clock
+failure; after the margin fix, that retained failed job recovered on attempt 3
+to the same blocked/no-winner state. The next endpoint delivery returned zero
+outcomes. Direct hosted reads confirmed both dates have `certified=false`,
+`winner=null`, durable blocked jobs and no successful fabricated award.
+The permanent schedule and all Drive flags remain off.
+
+Hosted-source recovery captured the seven synthetic Auth identities (without
+password hashes) and 68 application tables to a private temporary directory.
+Fresh 01–29 migration install and a separate local PostgreSQL 18 application-
+table import passed, with JSON-normalized equality for all 68 tables, seven
+Auth IDs and two immutable month revisions. The original unmodified restore
+failed on `daily_task_logs.timer_segment_consistent`: hosted PG17.11 and local
+PG18.3 divide the retained timer duration with different numeric precision.
+Only the local clone received a 1e-15-second-equivalent tolerance check before
+the successful import; no repository/hosted constraint was changed. This proves
+a bounded synthetic table recovery, **not** a complete Supabase Auth/config/
+Storage backup or PITR, and not unmodified PG18 schema parity. `supabase db dump`
+could not run because Docker's Linux engine is absent. A hosted legacy upgrade
+still needs a separately isolated hosted predecessor; the current project was
+not reset or rolled back to 28. The prior local PG17 01–28→29 upgrade evidence
+remains separate and passed.
+
+At the time of this note, M13 code/tests/docs are a reviewed diff from clean
+`7e6d914`; final candidate identity and checks appear in the latest STATUS and
+readiness entry. BN/BO/BP and older-record provenance still prevent certified
+sales, final ranking and awards. No production operation or Drive call occurred.
+
 ## Signed-in browser and live-clock correction — 14 October 2026
 
 The fresh hosted test project was used by a temporary local Next.js process,

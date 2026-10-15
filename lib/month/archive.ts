@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { loadPerformance } from '@/lib/performance/queries';
 import { getAwards } from '@/lib/stars/read-model';
 import { resolvePeriod } from '@/lib/analytics/engine';
-import { nextDate } from '@/lib/presentation/context';
+import { nextDate,LIVE_AS_OF_LAG_MS } from '@/lib/presentation/context';
 import type { Json } from '@/types/database';
 import type { CalculationResult,MemberCalculation } from '@/lib/performance/engine';
 import type { MonthlySelection } from '@/lib/stars/contract';
@@ -35,7 +35,9 @@ export async function monthRevision(period:string,revision:number|null=null,empl
 export async function captureMonth(command:'draft'|'close'|'revise',period:string,expectedVersion:number,operation:string,reason:string){
  firstDay(period);
  const month=resolvePeriod(Number(period.slice(0,4)),Number(period.slice(5,7)));
- const asOf=new Date().toISOString(),db=await createClient();
+ // Month capture must use the same nonfuture observation margin as live reports;
+ // hosted PostgreSQL can trail the app clock by a few seconds.
+ const asOf=new Date(Date.now()-LIVE_AS_OF_LAG_MS).toISOString(),db=await createClient();
  const {sources,calculation}=await loadPerformance(db,period,nextDate(month.endDate),asOf);
  const awards=await getAwards(db,month,calculation);
  const r=await db.rpc('month_archive_command',{p_command:command,p_period:period,p_operation:operation,p_expected_version:expectedVersion,
