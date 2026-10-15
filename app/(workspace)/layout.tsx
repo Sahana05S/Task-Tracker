@@ -3,6 +3,7 @@ import * as React from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { requireProfile } from '@/lib/auth/profile';
 import { getNavCounts } from '@/lib/layout/nav-counts';
+import { getRunningTimers } from '@/lib/layout/running-timers';
 
 /**
  * Guarded layout for every workspace route.
@@ -21,10 +22,10 @@ export default async function WorkspaceLayout({
   readonly children: React.ReactNode;
 }) {
   const profile = await requireProfile();
-  const counts = await getNavCounts(profile.id);
+  const [counts, timers] = await Promise.all([getNavCounts(profile.id), getRunningTimers(profile.id)]);
 
   return (
-    <AppShell profile={profile} counts={counts}>
+    <AppShell profile={profile} counts={counts} timers={timers}>
       {children}
     </AppShell>
   );

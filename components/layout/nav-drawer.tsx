@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { useNavDrawer } from '@/components/layout/nav-drawer-context';
-import { isNavItemActive, NAV_ITEMS } from '@/components/layout/nav-items';
+import { MORE_ITEMS, NAV_SECTIONS, isTabActive, type NavTab } from '@/components/layout/nav-items';
 import { UserMenu } from '@/components/layout/user-menu';
 import {
   Sheet,
@@ -20,109 +20,75 @@ import type { User } from '@/types/tracker';
 
 export interface NavDrawerProps {
   counts: NavCounts;
-  /** Needed for the account row shown where the rail is hidden. */
   profile: User;
 }
 
 /**
- * Expanded navigation.
- *
- * Slides in over the content rather than pushing it, so opening the drawer never
- * reflows the grid behind it. The rail stays put underneath; this is the same
- * destinations with their labels and tallies attached.
- *
- * Counts come from the guarded layout as `head: true` exact counts, so the badges
- * cost a tally rather than a payload.
- *
- * The account row in the footer is `md:hidden` on purpose. The rail carries the
- * account menu from 768px up; below that the rail is hidden, and without this row
- * a phone would have no route to Settings or Sign Out at all. Gating it keeps
- * exactly one access point per viewport rather than two on the desktop.
+ * The phone "More" sheet: every destination, grouped exactly as the desktop top
+ * bar and section tabs, so nothing reachable on desktop is missing on a phone.
+ * Count badges are unchanged from the previous drawer.
  */
 export function NavDrawer({ counts, profile }: NavDrawerProps) {
   const pathname = usePathname();
   const { open, setOpen } = useNavDrawer();
 
-  const badgeFor = (href: string): number | null => {
+  const badge = (href: string): { value: number; caption: string } | null => {
     switch (href) {
       case '/tasks':
-        return counts.openTasks;
+        return { value: counts.openTasks, caption: 'open across the team' };
       case '/logs':
-        return counts.myLogsThisMonth;
+        return { value: counts.myLogsThisMonth, caption: 'entries this month' };
       case '/milestones':
-        return counts.openMilestones;
-      // Dashboard has no meaningful tally.
+        return { value: counts.openMilestones, caption: 'still in progress' };
       default:
         return null;
     }
   };
 
-  const captionFor = (href: string): string | null => {
-    switch (href) {
-      case '/tasks':
-        return 'open across the team';
-      case '/logs':
-        return 'entries this month';
-      case '/milestones':
-        return 'still in progress';
-      default:
-        return null;
-    }
+  const row = (tab: NavTab) => {
+    const active = isTabActive(pathname, tab);
+    const count = badge(tab.href);
+    const Icon = tab.icon;
+    return (
+      <Link
+        key={tab.href}
+        href={tab.href}
+        onClick={() => setOpen(false)}
+        aria-current={active ? 'page' : undefined}
+        className={cn('nav-item', active && 'nav-item-active', 'focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none')}
+      >
+        <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+        <span className="truncate">{tab.label}</span>
+        {count ? (
+          <>
+            <span className="nav-count" aria-hidden="true">{count.value}</span>
+            <span className="sr-only">{count.value} {count.caption}</span>
+          </>
+        ) : null}
+      </Link>
+    );
   };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="left" className="w-72 gap-0 sm:max-w-72">
+      <SheetContent side="bottom" className="max-h-[85dvh] gap-0 rounded-t-3xl">
         <SheetHeader>
-          <SheetTitle>TaskPulse</SheetTitle>
-          <SheetDescription>Multi-metric performance tracker</SheetDescription>
+          <SheetTitle>All destinations</SheetTitle>
+          <SheetDescription>Missions, records, team, reports and more</SheetDescription>
         </SheetHeader>
-
-        <nav aria-label="Workspace sections" className="flex flex-col gap-1 p-3">
-          {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
-            const active = isNavItemActive(pathname, href);
-            const badge = badgeFor(href);
-            const caption = captionFor(href);
-
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'nav-item',
-                  active && 'nav-item-active',
-                  'focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none',
-                )}
-              >
-                <Icon className="size-[18px] shrink-0" aria-hidden="true" />
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate">{label}</span>
-                  {caption && badge !== null ? (
-                    <span className="text-muted-foreground text-[11px] font-normal">
-                      {caption}
-                    </span>
-                  ) : null}
-                </span>
-                {badge !== null ? (
-                  // Announced together with the caption above, so the number is
-                  // never read out on its own.
-                  <span className="nav-count" aria-hidden="true">
-                    {badge}
-                  </span>
-                ) : null}
-                {badge !== null && caption ? (
-                  <span className="sr-only">
-                    {badge} {caption}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
+        <nav aria-label="All destinations" className="grid gap-4 overflow-y-auto px-3 pb-3">
+          {NAV_SECTIONS.map((section) => (
+            <section key={section.href} className="grid gap-1">
+              <h2 className="eyebrow px-3">{section.label}</h2>
+              {section.tabs.map(row)}
+            </section>
+          ))}
+          <section className="grid gap-1">
+            <h2 className="eyebrow px-3">More</h2>
+            {MORE_ITEMS.map(row)}
+          </section>
         </nav>
-
-        <SheetFooter className="border-border border-t px-2 py-2 md:hidden">
+        <SheetFooter className="border-border border-t px-2 py-2">
           <UserMenu profile={profile} variant="row" />
         </SheetFooter>
       </SheetContent>

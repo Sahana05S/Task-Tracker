@@ -44,13 +44,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const isOrphaned = authUserId !== null;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-slate-50 px-4 py-10">
+    <main className="bg-background flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <span className="flex size-10 items-center justify-center rounded-lg bg-slate-900 text-slate-50">
+          <span className="bg-primary text-primary-foreground flex size-10 items-center justify-center rounded-xl">
             <GaugeIcon className="size-5" aria-hidden="true" />
           </span>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-foreground text-xl font-bold tracking-tight">
             TaskPulse
           </h1>
           <p className="text-sm text-slate-500">
@@ -58,7 +58,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </p>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="soft-card p-6">
           {profile && !profile.isActive ? (
             <div className="grid gap-4">
               <p role="alert" className="text-sm">Your account is deactivated. Contact a managing director to restore access.</p>

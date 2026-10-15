@@ -1,135 +1,119 @@
 import {
+  BarChart3Icon,
+  BookOpenIcon,
   CalendarCheckIcon,
   CalendarRangeIcon,
   ClockIcon,
   DollarSignIcon,
   FileTextIcon,
   LightbulbIcon,
-  LayoutDashboardIcon,
   ListChecksIcon,
   MessageSquareIcon,
-  BookOpenIcon,
-  UsersIcon,
+  SettingsIcon,
+  SparklesIcon,
   TargetIcon,
+  UsersIcon,
   WrenchIcon,
   type LucideIcon,
 } from 'lucide-react';
 
 /**
- * Single source of truth for workspace navigation.
+ * Workspace navigation (redesign, approved 15 October 2026).
  *
- * Three surfaces consume this list: the permanent icon rail, the expanded drawer,
- * and the mobile bottom bar. The rail and the drawer render every entry; the
- * bottom bar renders only those flagged `inBottomNav`.
- *
- * Settings is deliberately absent. It is reached from the account menu, not from
- * navigation, so it does not compete with the four working destinations.
+ * Five primary destinations plus a More menu. Every existing route keeps its
+ * URL and permissions; grouped routes are reached through section tabs. Role
+ * visibility is unchanged: every role sees every destination, and each page and
+ * the database keep enforcing what a role may do there.
  */
-export interface NavItem {
+export interface NavTab {
+  readonly label: string;
+  readonly href: string;
+  /** Path prefixes that make this tab active. */
+  readonly match: readonly string[];
+  readonly icon: LucideIcon;
+}
+
+export interface NavSection {
   readonly label: string;
   readonly href: string;
   readonly icon: LucideIcon;
-  /**
-   * Whether this destination appears in the mobile bottom bar.
-   *
-   * The mobile layout allows four slots — Dashboard, Tasks, Log Hours and
-   * Milestones — so Logs is excluded here. It stays reachable on mobile through
-   * the drawer and through the quick-log sheet.
-   */
+  readonly tabs: readonly NavTab[];
+  /** Shown in the phone bottom bar; the rest live under More. */
   readonly inBottomNav: boolean;
 }
 
-export const NAV_ITEMS: readonly NavItem[] = [
+export const NAV_SECTIONS: readonly NavSection[] = [
   {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboardIcon,
+    label: 'Today',
+    href: '/today',
+    icon: SparklesIcon,
     inBottomNav: true,
+    tabs: [{ label: 'Today', href: '/today', match: ['/today'], icon: SparklesIcon }],
   },
   {
-    label: 'Tasks',
+    label: 'Missions',
     href: '/tasks',
     icon: ListChecksIcon,
     inBottomNav: true,
+    tabs: [
+      { label: 'Missions', href: '/tasks', match: ['/tasks'], icon: ListChecksIcon },
+      { label: 'Timeline', href: '/timelines', match: ['/timelines'], icon: CalendarRangeIcon },
+      { label: 'My time', href: '/logs', match: ['/logs'], icon: ClockIcon },
+      { label: 'Tools', href: '/task-tools', match: ['/task-tools'], icon: WrenchIcon },
+    ],
   },
   {
-    label: 'Timelines',
-    href: '/timelines',
-    icon: CalendarRangeIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Task Tools',
-    href: '/task-tools',
-    icon: WrenchIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Logs',
-    href: '/logs',
-    icon: ClockIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Attendance',
+    label: 'Records',
     href: '/attendance',
     icon: CalendarCheckIcon,
     inBottomNav: false,
+    tabs: [
+      { label: 'Attendance', href: '/attendance', match: ['/attendance', '/records/attendance'], icon: CalendarCheckIcon },
+      { label: 'Daily facts', href: '/daily-facts', match: ['/daily-facts', '/records/fact'], icon: BookOpenIcon },
+      { label: 'Ideas', href: '/ideas', match: ['/ideas', '/records/idea'], icon: LightbulbIcon },
+      { label: 'Suggestions', href: '/suggestions', match: ['/suggestions', '/records/suggestion'], icon: MessageSquareIcon },
+      { label: 'Sales', href: '/sales', match: ['/sales', '/records/sale'], icon: DollarSignIcon },
+      { label: 'Meeting points', href: '/meeting-points', match: ['/meeting-points', '/records/meeting'], icon: MessageSquareIcon },
+    ],
+  },
+  {
+    label: 'Team',
+    href: '/dashboard',
+    icon: UsersIcon,
+    inBottomNav: true,
+    tabs: [
+      { label: 'Analytics', href: '/dashboard', match: ['/dashboard'], icon: BarChart3Icon },
+      { label: 'People', href: '/team', match: ['/team'], icon: UsersIcon },
+    ],
   },
   {
     label: 'Reports',
     href: '/reports',
     icon: FileTextIcon,
     inBottomNav: false,
-  },
-  {
-    label: 'Meeting Points',
-    href: '/meeting-points',
-    icon: MessageSquareIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Daily Facts',
-    href: '/daily-facts',
-    icon: BookOpenIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Ideas',
-    href: '/ideas',
-    icon: LightbulbIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Suggestions',
-    href: '/suggestions',
-    icon: MessageSquareIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Sales',
-    href: '/sales',
-    icon: DollarSignIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Team',
-    href: '/team',
-    icon: UsersIcon,
-    inBottomNav: false,
-  },
-  {
-    label: 'Milestones',
-    href: '/milestones',
-    icon: TargetIcon,
-    inBottomNav: true,
+    tabs: [{ label: 'Reports', href: '/reports', match: ['/reports'], icon: FileTextIcon }],
   },
 ];
 
-/**
- * True when `pathname` is the given nav href or one of its descendants, so
- * `/tasks/abc` still highlights `Tasks`.
- */
-export function isNavItemActive(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
+/** Low-frequency destinations under More (desktop menu and phone sheet). */
+export const MORE_ITEMS: readonly NavTab[] = [
+  { label: 'Company', href: '/milestones', match: ['/milestones'], icon: TargetIcon },
+  { label: 'Settings', href: '/settings', match: ['/settings'], icon: SettingsIcon },
+];
+
+function matches(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+export function isTabActive(pathname: string, tab: NavTab): boolean {
+  return tab.match.some((prefix) => matches(pathname, prefix));
+}
+
+/** The primary section that owns a path, if any. */
+export function activeSection(pathname: string): NavSection | null {
+  return NAV_SECTIONS.find((section) => section.tabs.some((tab) => isTabActive(pathname, tab))) ?? null;
+}
+
+export function isMoreActive(pathname: string): boolean {
+  return MORE_ITEMS.some((item) => isTabActive(pathname, item));
 }

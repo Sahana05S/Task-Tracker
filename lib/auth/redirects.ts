@@ -8,7 +8,7 @@
  * the two drift apart and one of them grows an open redirect.
  */
 
-export const DEFAULT_REDIRECT = '/dashboard';
+export const DEFAULT_REDIRECT = '/today';
 
 /**
  * Narrows an untrusted `redirectTo` value to a safe same-origin path, falling

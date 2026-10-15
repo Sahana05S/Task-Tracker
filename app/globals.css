@@ -2,87 +2,77 @@
 @import 'tw-animate-css';
 
 /* ==========================================================================
-   TaskPulse — Utilitarian Workspace Theme
+   TaskPulse — Gamified Productivity visual system (Stitch DESIGN.md)
 
-   Surfaces are separated by stroke, not by elevation: white panels on a warm
-   off-white field, a modest 10px radius, and a hairline border doing the work a
-   drop shadow used to. A border is precise, costs no vertical space, and does not
-   imply that a panel is floating when it is not. Shadow is spent only on things
-   that genuinely float — dropdowns, selects, the nav sheet, the mobile bar.
-
-   Forest green is the single accent. It marks primary actions, the hero metric
-   and the active chart series, and appears nowhere else, so its presence always
-   means "this is the important one".
-
-   Light theme only. The product describes a single high-focus light workspace and
-   defines no dark equivalents, so no dark variant is declared.
+   Lavender canvas, white bento cards with a soft violet-tinted shadow, violet
+   for interaction, gold reserved for recognition (stars, awards) and mint for
+   progress/success. Peach/amber surfaces mark real warnings only (missing data,
+   refusals). Light theme only, as before.
    ========================================================================== */
 
 :root {
-  /*
-    Corners. Tightened for a utilitarian read: a 10px radius still softens a
-    container without making it look like a consumer widget.
-  */
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
-  /* ---- Field and surfaces ---------------------------------------------- */
-  --background: #f4f5f7; /* warm off-white page field   */
-  --foreground: #0f172a; /* near-black body text        */
-  --card: #ffffff; /* pure white card             */
-  --card-foreground: #0f172a;
+  /* ---- Canvas and surfaces --------------------------------------------- */
+  --background: #f7f6fd; /* pale lavender canvas */
+  --foreground: #1a172e;
+  --card: #ffffff;
+  --card-foreground: #1a172e;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --popover-foreground: #1a172e;
 
-  /*
-    Borders carry the structure. A hairline stroke separates surfaces more
-    precisely than a shadow and costs no vertical space, which is what a dense
-    data view needs. Shadows are reserved for things that genuinely float —
-    dropdowns, sheets, toasts.
-  */
-  --border: #e4e7ec;
-  --input: #d8dde5;
+  --border: #eae7f6; /* lavender border tint */
+  --input: #dcd8ee;
 
   /* ---- Text hierarchy -------------------------------------------------- */
-  --muted: #f7f8fa;
-  --muted-foreground: #64748b; /* slate-500, the secondary label tone */
+  --muted: #f3f1fa;
+  --muted-foreground: #5c5776;
 
-  /* ---- Forest accent --------------------------------------------------- */
-  --primary: #10533b;
+  /* ---- Violet interaction ---------------------------------------------- */
+  --primary: #6355e6;
   --primary-foreground: #ffffff;
-  /* Hover sits darker rather than lighter, so pressing feels like depth. */
-  --primary-hover: #0c4230;
-  /* Tint used for accent surfaces that must stay legible under dark text. */
-  --primary-subtle: #e7f0ec;
-  --primary-subtle-foreground: #10533b;
+  --primary-hover: #5846e0;
+  --primary-subtle: #eeecfc;
+  --primary-subtle-foreground: #4a39cc;
 
-  --secondary: #f1f3f6;
-  --secondary-foreground: #33415c;
-  --accent: #f1f3f6;
-  --accent-foreground: #33415c;
-  --ring: #10533b;
+  --secondary: #f1effb;
+  --secondary-foreground: #474554;
+  --accent: #f1effb;
+  --accent-foreground: #474554;
+  --ring: #6355e6;
 
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
 
-  /* ---- Chart series ----------------------------------------------------
-     Forest leads, so the primary series matches the accent. The rest are muted
-     enough to sit behind it without competing.
+  /* ---- Recognition (gold) and progress (mint) ---------------------------
+     Gold is only for stars, awards and recognised contributions. Mint is for
+     progress and success. Neither is a general accent.
      ------------------------------------------------------------------- */
-  --chart-1: #10533b;
-  --chart-2: #2f8f68;
-  --chart-3: #7cc0a1;
-  --chart-4: #f59e0b;
+  --recognition: #f5a623;
+  --recognition-subtle: #fff0d4;
+  --recognition-foreground: #8a5300;
+  --success: #10b981;
+  --success-strong: #047857;
+  --success-subtle: #e6f8f0;
+  --attention-subtle: #fff9eb;
+  --attention-border: #ffe6c7;
+  --attention-foreground: #8a4b00;
+
+  /* ---- Chart series ---------------------------------------------------- */
+  --chart-1: #6355e6;
+  --chart-2: #10b981;
+  --chart-3: #a5a0f0;
+  --chart-4: #f5a623;
   --chart-5: #0ea5e9;
   --chart-6: #f43f5e;
-  --chart-7: #8b5cf6;
+  --chart-7: #14b8a6;
   --chart-8: #94a3b8;
 
-  --chart-positive: #10533b;
+  --chart-positive: #059669;
   --chart-negative: #f43f5e;
-  /* Gridlines sit just above the card fill: present, never assertive. */
-  --chart-grid: #eef0f3;
-  --chart-axis: #94a3b8;
-  --chart-reference: #0f172a;
+  --chart-grid: #efedf8;
+  --chart-axis: #9a96b0;
+  --chart-reference: #1a172e;
 }
 
 @theme inline {
@@ -125,8 +115,18 @@
   --color-chart-axis: var(--chart-axis);
   --color-chart-reference: var(--chart-reference);
 
-  /* Clean neutral sans. Inter first, system stack behind it. */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+  --color-recognition: var(--recognition);
+  --color-recognition-subtle: var(--recognition-subtle);
+  --color-recognition-foreground: var(--recognition-foreground);
+  --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
+  --color-success-subtle: var(--success-subtle);
+  --color-attention-subtle: var(--attention-subtle);
+  --color-attention-border: var(--attention-border);
+  --color-attention-foreground: var(--attention-foreground);
+
+  /* Plus Jakarta Sans first, system stack behind it. */
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', Roboto, sans-serif;
 
   /*
@@ -150,7 +150,9 @@
     hard-edged drop shadow that would make it look pasted on. Panels that sit in
     the layout use a border instead; see `.soft-card`.
   */
-  --shadow-soft-lg: 0 14px 40px rgb(0 0 0 / 0.07);
+  --shadow-soft-lg: 0 16px 36px -4px rgb(99 85 230 / 0.12), 0 4px 12px -2px rgb(26 23 46 / 0.04);
+  /* Bento card elevation (DESIGN.md level 1). */
+  --shadow-card: 0 4px 20px -2px rgb(99 85 230 / 0.04), 0 2px 6px -1px rgb(26 23 46 / 0.02);
 
   /*
     Height of the workspace header's first row. The header pins itself to this,
@@ -158,7 +160,7 @@
     rather than behind. It is only accurate while the header is a single row,
     which is why the offset is applied from `sm` upwards only.
   */
-  --spacing-header: 3.5rem;
+  --spacing-header: 4rem;
 
   /* Height of the mobile bar, shared by the bar itself and the shell padding. */
   --spacing-bottom-nav: 4.5rem;
@@ -241,17 +243,17 @@
     data tool.
   */
   .soft-card {
-    @apply bg-card border-border rounded-lg border;
+    @apply bg-card border-border rounded-2xl border shadow-(--shadow-card);
   }
 
   /* Same surface where children must be clipped to the corner radius. */
   .soft-card-clip {
-    @apply bg-card border-border overflow-hidden rounded-lg border;
+    @apply bg-card border-border overflow-hidden rounded-2xl border shadow-(--shadow-card);
   }
 
   /* Interactive cards mark hover with the border, not with elevation. */
   .soft-card-interactive {
-    @apply bg-card border-border rounded-lg border transition-colors;
+    @apply bg-card border-border rounded-2xl border shadow-(--shadow-card) transition-colors;
   }
 
   .soft-card-interactive:hover {
@@ -273,14 +275,14 @@
      ---------------------------------------------------------------------- */
 
   .metric-card {
-    @apply bg-card border-border flex flex-col gap-1.5 rounded-lg border px-4
-      py-3.5;
+    @apply bg-card border-border flex flex-col gap-1.5 rounded-2xl border px-4
+      py-3.5 shadow-(--shadow-card);
   }
 
   /* Hero metric: full forest container, high-contrast text. */
   .metric-card-primary {
     @apply bg-primary text-primary-foreground border-primary flex flex-col gap-1.5
-      rounded-lg border px-4 py-3.5;
+      rounded-2xl border px-4 py-3.5;
   }
 
   /* Supporting line beneath a metric figure. */
@@ -307,19 +309,18 @@
 
   /* Large figure, as used by metric cards. */
   .stat-figure {
-    @apply font-mono text-2xl leading-none font-semibold tracking-tight
+    @apply font-sans text-2xl leading-none font-bold tracking-tight
       [font-variant-numeric:tabular-nums];
   }
 
   /* Section eyebrow: small, uppercase, widely tracked, muted. */
   .eyebrow {
-    @apply text-muted-foreground text-[11px] font-semibold tracking-[0.12em]
-      uppercase;
+    @apply text-primary text-[11px] font-bold tracking-[0.08em] uppercase;
   }
 
   /* Page or panel title. */
   .panel-title {
-    @apply text-foreground text-lg font-semibold tracking-tight;
+    @apply text-foreground text-lg font-bold tracking-tight;
   }
 }
 
@@ -336,8 +337,8 @@
 
 @layer components {
   .badge-soft {
-    @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px]
-      font-medium whitespace-nowrap;
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px]
+      font-semibold whitespace-nowrap;
   }
 
   /* --- Task status ------------------------------------------------------ */
@@ -361,19 +362,19 @@
 
   /* --- Task priority --------------------------------------------------- */
   .badge-priority-focus {
-    @apply bg-rose-100 font-semibold text-rose-800;
+    @apply bg-rose-100 font-bold text-rose-800;
   }
 
   .badge-priority-high {
-    @apply bg-orange-100 text-orange-800;
+    @apply bg-[#feeceb] text-[#c53030];
   }
 
   .badge-priority-medium {
-    @apply bg-sky-100 text-sky-800;
+    @apply bg-[#fef3e2] text-[#b45309];
   }
 
   .badge-priority-low {
-    @apply bg-slate-100 text-slate-600;
+    @apply bg-success-subtle text-success-strong;
   }
 
   /* Unprioritised: present but deliberately recessive. */
@@ -496,7 +497,46 @@
   /* Square icon button for header actions. Bordered, not floated. */
   .icon-button {
     @apply text-muted-foreground border-border flex size-9 shrink-0 items-center
-      justify-center rounded-md border bg-white transition-colors;
+      justify-center rounded-full border bg-white transition-colors;
+  }
+
+  /* Top-bar destination pills (desktop). */
+  .nav-pill {
+    @apply text-muted-foreground flex items-center gap-1.5 rounded-full px-3.5
+      py-1.5 text-sm font-medium whitespace-nowrap transition-colors;
+  }
+
+  .nav-pill:hover {
+    @apply text-foreground bg-white;
+  }
+
+  .nav-pill-active,
+  .nav-pill-active:hover {
+    @apply bg-primary text-primary-foreground shadow-sm;
+  }
+
+  /* Section tabs under the top bar (Missions, Records, Team). */
+  .section-tab {
+    @apply text-muted-foreground rounded-full px-3 py-1 text-sm font-medium
+      whitespace-nowrap transition-colors;
+  }
+
+  .section-tab:hover {
+    @apply text-foreground bg-muted;
+  }
+
+  .section-tab-active,
+  .section-tab-active:hover {
+    @apply bg-primary-subtle text-primary-subtle-foreground font-semibold;
+  }
+
+  /* Mint progress bar (DESIGN.md): 8px rounded track, mint fill. */
+  .progress-track {
+    @apply h-2 w-full overflow-hidden rounded-full bg-[#ebe7f6];
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full bg-linear-to-r from-[#10b981] to-[#34d399];
   }
 
   .icon-button:hover {

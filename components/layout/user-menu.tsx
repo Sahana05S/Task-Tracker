@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { LayoutDashboardIcon, LogOutIcon, SettingsIcon } from 'lucide-react';
+import { LogOutIcon, SettingsIcon, SparklesIcon } from 'lucide-react';
 
 import { logout } from '@/app/auth/actions';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
@@ -19,25 +19,23 @@ import type { User } from '@/types/tracker';
 export interface UserMenuProps {
   profile: User;
   /**
-   * `rail` is the square initials tile that sits at the foot of the icon rail.
-   * `row` is the wider trigger used in the expanded drawer, where there is room
-   * to show a name.
+   * `bar` is the round initials avatar in the top bar (every width).
+   * `row` is the wider trigger at the foot of the phone "More" sheet, where
+   * there is room to show a name.
    */
-  variant?: 'rail' | 'row';
+  variant?: 'bar' | 'row';
   className?: string;
 }
 
 /**
  * Account menu.
  *
- * The single access point for Settings and Sign Out. Exactly one instance is
- * reachable at any viewport: the rail tile from 768px up, the drawer row below
- * that, where the rail is hidden. No duplicate sign-out control exists in any
- * header.
+ * The access point for Settings and Sign Out: the top-bar avatar at every
+ * width, repeated as a row at the foot of the phone "More" sheet.
  */
 export function UserMenu({
   profile,
-  variant = 'rail',
+  variant = 'bar',
   className,
 }: UserMenuProps) {
   const initials = getInitials(profile.fullName);
@@ -59,13 +57,13 @@ export function UserMenu({
         title={profile.fullName}
         className={cn(
           'focus-visible:ring-primary/30 group flex shrink-0 items-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none',
-          variant === 'rail'
-            ? 'bg-muted text-foreground hover:bg-primary-subtle hover:text-primary size-9 justify-center font-mono text-xs font-semibold'
+          variant === 'bar'
+            ? 'bg-primary text-primary-foreground hover:bg-primary-hover size-9 justify-center rounded-full text-xs font-bold'
             : 'hover:bg-muted w-full gap-2.5 px-2 py-1.5 text-left',
           className,
         )}
       >
-        {variant === 'rail' ? (
+        {variant === 'bar' ? (
           initials
         ) : (
           <>
@@ -85,11 +83,10 @@ export function UserMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        side={variant === 'rail' ? 'right' : 'top'}
+        side={variant === 'bar' ? 'bottom' : 'top'}
         align="end"
         sideOffset={8}
-        // The rail trigger sits hard against the bottom of the viewport, so the
-        // panel needs room to shift rather than clipping against the edge.
+        // Room to shift rather than clip against the viewport edge.
         collisionPadding={12}
         className="w-60"
       >
@@ -121,9 +118,9 @@ export function UserMenu({
           link rather than a menu item that happens to navigate.
         */}
         <DropdownMenuItem asChild>
-          <Link href="/dashboard">
-            <LayoutDashboardIcon aria-hidden="true" />
-            Dashboard
+          <Link href="/today">
+            <SparklesIcon aria-hidden="true" />
+            Today
           </Link>
         </DropdownMenuItem>
 

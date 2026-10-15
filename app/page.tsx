@@ -26,7 +26,7 @@ export default async function HomePage() {
   const { profile } = await getAuthState();
 
   if (profile) {
-    redirect('/dashboard');
+    redirect('/today');
   }
 
   return (

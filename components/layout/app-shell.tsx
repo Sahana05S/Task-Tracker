@@ -3,50 +3,37 @@ import * as React from 'react';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { NavDrawer } from '@/components/layout/nav-drawer';
 import { NavDrawerProvider } from '@/components/layout/nav-drawer-context';
-import { NavRail } from '@/components/layout/nav-rail';
+import { SectionTabs } from '@/components/layout/section-tabs';
+import { TopBar } from '@/components/layout/top-bar';
 import type { NavCounts } from '@/lib/layout/nav-counts';
+import type { RunningTimer } from '@/lib/layout/running-timers';
 import type { User } from '@/types/tracker';
 
 export interface AppShellProps {
   /** The signed-in user's profile, resolved by the guarded layout. */
   profile: User;
-  /** Badge tallies for the expanded drawer. */
+  /** Badge tallies for the More sheet. */
   counts: NavCounts;
+  /** The user's running timers, for the top-bar pill. */
+  timers: readonly RunningTimer[];
   children: React.ReactNode;
 }
 
 /**
- * Workspace chrome.
- *
- * Three surfaces and nothing else:
- *
- *   - a permanent 56px icon rail, always collapsed, with the account menu at its
- *     foot
- *   - an expanded drawer that slides over the content when the header's menu
- *     button is pressed, carrying the account menu itself below 768px where the
- *     rail is hidden
- *   - a sticky bottom bar below 768px, where a fixed rail would cost too much of
- *     a phone screen
- *
- * There is no shell-level header. Each page renders `WorkspaceHeader` with its own
- * title and actions, which is what lets page-specific controls sit beside the
- * global ones in a single row instead of stacking two bars.
- *
- * The rail never expands in place, so the content column keeps one width at every
- * viewport and the data grid never reflows.
+ * Workspace chrome (redesign): a sticky top bar with the five destinations and
+ * More, section tabs for grouped destinations, and on phones a four-tab bottom
+ * bar, a separate "Log hours" action and a More sheet. Each page still renders
+ * its own `WorkspaceHeader` title row and actions.
  */
-export function AppShell({ profile, counts, children }: AppShellProps) {
+export function AppShell({ profile, counts, timers, children }: AppShellProps) {
   return (
     <NavDrawerProvider>
       <div className="bg-background min-h-dvh">
-        <NavRail profile={profile} />
-        <NavDrawer counts={counts} profile={profile} />
-
-        <div className="flex min-h-dvh flex-col md:pl-14">
-          <main className="flex-1 pb-24 md:pb-0">{children}</main>
-        </div>
-
+        <TopBar profile={profile} timers={timers} />
+        <SectionTabs />
+        <main className="pb-36 md:pb-0">{children}</main>
         <MobileBottomNav />
+        <NavDrawer counts={counts} profile={profile} />
       </div>
     </NavDrawerProvider>
   );

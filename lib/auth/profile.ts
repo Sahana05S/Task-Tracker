@@ -87,7 +87,7 @@ export async function requireRole(allowed: readonly UserRole[]): Promise<User> {
   const profile = await requireProfile();
 
   if (!allowed.includes(profile.role)) {
-    redirect('/dashboard');
+    redirect('/today');
   }
 
   return profile;

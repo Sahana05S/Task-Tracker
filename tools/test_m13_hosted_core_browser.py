@@ -30,9 +30,11 @@ def main(workdir, phases):
     browser_library = workdir / "browser-tools" / "node_modules" / "playwright-core"
     if not (browser_library / "package.json").is_file():
         raise RuntimeError("Temporary browser library is unavailable")
-    with socket.socket() as probe:
-        if probe.connect_ex(("127.0.0.1", PORT)) == 0:
-            raise RuntimeError("Dedicated browser port is in use")
+    existing = os.environ.get("M13_EXISTING_SERVER")
+    if not existing:
+        with socket.socket() as probe:
+            if probe.connect_ex(("127.0.0.1", PORT)) == 0:
+                raise RuntimeError("Dedicated browser port is in use")
     secrets = [h.public, h.admin, *h.tokens.values(),
                *(s["refresh_token"] for s in h.sessions.values())]
     def redact(text):
@@ -44,21 +46,23 @@ def main(workdir, phases):
                 "NEXT_PUBLIC_SUPABASE_ANON_KEY": h.public})
     browser_env = env.copy()
     browser_env.update({"M13_TEST_REF": REF, "M13_PLAYWRIGHT_PATH": str(browser_library),
+        "M13_BASE": existing or f"http://localhost:{PORT}",
         "M13_SESSIONS": json.dumps(h.sessions),
         "M13_ACTORS": json.dumps({c: {"id": a["id"], "employeeId": a["employee_id"]}
                                   for c, a in h.actors.items()})})
     server_log = tempfile.TemporaryFile(mode="w+t", encoding="utf-8")
-    server = subprocess.Popen(["node", str(ROOT / "node_modules" / "next" / "dist" / "bin" / "next"),
+    # An existing server must already point at the confirmed test project.
+    server = None if existing else subprocess.Popen(["node", str(ROOT / "node_modules" / "next" / "dist" / "bin" / "next"),
         "dev", "--webpack", "-p", str(PORT)], cwd=ROOT, env=env, stdout=server_log,
         stderr=subprocess.STDOUT,
         creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
     failed = []
     try:
         for _ in range(120):
-            if server.poll() is not None:
+            if server is not None and server.poll() is not None:
                 raise RuntimeError("Temporary app stopped early")
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/login", timeout=2) as response:
+                with urllib.request.urlopen(f"{existing or f'http://127.0.0.1:{PORT}'}/login", timeout=2) as response:
                     if response.status == 200:
                         break
             except (urllib.error.URLError, TimeoutError):
@@ -76,12 +80,13 @@ def main(workdir, phases):
                 server_log.seek(0)
                 print("SERVER TAIL:\n" + redact(server_log.read()[-2500:]), flush=True)
     finally:
-        server.terminate()
-        try:
-            server.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            server.kill()
-            server.wait(timeout=10)
+        if server is not None:
+            server.terminate()
+            try:
+                server.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                server.kill()
+                server.wait(timeout=10)
         server_log.close()
     if failed:
         raise SystemExit(f"FAILED phases: {failed}")

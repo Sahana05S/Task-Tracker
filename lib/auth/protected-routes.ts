@@ -15,6 +15,7 @@ export const PROTECTED_PREFIXES = [
   '/tasks',
   '/team',
   '/timelines',
+  '/today',
 ] as const;
 
 export function isProtectedPath(pathname: string): boolean {

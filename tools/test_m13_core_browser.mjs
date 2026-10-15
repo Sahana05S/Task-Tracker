@@ -8,7 +8,9 @@ const { chromium } = require(process.env.M13_PLAYWRIGHT_PATH);
 const ssrUtils = `${process.cwd()}/node_modules/@supabase/ssr/dist/main/utils`;
 const { createChunks } = require(`${ssrUtils}/chunker.js`);
 const { stringToBase64URL } = require(`${ssrUtils}/base64url.js`);
-const base = 'http://localhost:3111'; // same origin as next dev, so HMR/client effects work
+// Same origin as next dev, so HMR/client effects work. M13_BASE targets an
+// already-running local server instead of the harness's own.
+const base = process.env.M13_BASE ?? 'http://localhost:3111';
 const ref = process.env.M13_TEST_REF;
 const sessions = JSON.parse(process.env.M13_SESSIONS);
 const actors = JSON.parse(process.env.M13_ACTORS);

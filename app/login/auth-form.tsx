@@ -139,7 +139,7 @@ export function AuthForm({
       {/* Divider */}
       <div className="relative flex items-center justify-center">
         <div className="w-full border-t border-slate-200" />
-        <span className="bg-white px-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+        <span className="shrink-0 bg-white px-3 text-xs font-medium whitespace-nowrap text-slate-400 uppercase tracking-wider">
           or with email
         </span>
       </div>

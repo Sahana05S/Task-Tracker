@@ -72,7 +72,7 @@ export function ProgressInput({
     return (
       <div className={cn('flex flex-col gap-1', className)}>
         <span className="sheet-numeric text-xs text-slate-900">
-          {committed === null ? 'Unavailable' : `${committed}%`}{progressOwner==='checklist'?' ? Activity':''}
+          {committed === null ? 'Unavailable' : `${committed}%`}{progressOwner==='checklist'?' · Activity':''}
         </span>
         <progress
           className="task-progress"

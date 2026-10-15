@@ -16,7 +16,7 @@ export function SiteFooter() {
   return (
     <footer className="bg-white">
       {/* High-impact Closing CTA (Zoho style) */}
-      <div className="bg-[#143426] text-white py-16 lg:py-20">
+      <div className="bg-[#312d46] text-white py-16 lg:py-20">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-8 px-4 text-center sm:px-6 lg:flex-row lg:text-left">
           <div className="flex flex-col gap-3">
             <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">

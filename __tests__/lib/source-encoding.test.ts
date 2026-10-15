@@ -11,8 +11,10 @@ function sources(dir:string):string[] {
 it('keeps user-facing source text free of mis-encoded punctuation',()=>{
  // A separator lost to a literal "?" between JSX expressions; a ternary cannot have this shape.
  const lostSeparator=/\} \? [a-z]+ \{/;
+ // The same loss inside a string literal, e.g. ' ? Activity'.
+ const lostInString=/' \? [A-Z][a-z]+'/;
  const offenders=['app','components','lib'].flatMap(sources).filter(path=>{
-  const text=readFileSync(path,'utf8');return MOJIBAKE.test(text)||lostSeparator.test(text);
+  const text=readFileSync(path,'utf8');return MOJIBAKE.test(text)||lostSeparator.test(text)||lostInString.test(text);
  });
  expect(offenders).toEqual([]);
 });

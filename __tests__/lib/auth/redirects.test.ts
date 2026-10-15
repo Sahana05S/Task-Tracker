@@ -54,6 +54,6 @@ describe('safeRedirectPath', () => {
   });
 
   it('DEFAULT_REDIRECT is /dashboard', () => {
-    expect(DEFAULT_REDIRECT).toBe('/dashboard');
+    expect(DEFAULT_REDIRECT).toBe('/today');
   });
 });
