@@ -192,6 +192,38 @@ const phases = {
     assert.match(await page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Magnet 10 mm', exact: true }) }).innerText(), /Est\. 45 min/, 'Edited estimate not persisted');
     console.log('PASS edited estimate persists after reload');
 
+    // Item timer: start on the item's page, stop, and the time is a tagged task log.
+    await openRow('Nested Magnet 12 mm');
+    const timerPanel = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Item timer' }) });
+    if (await timerPanel.getByRole('button', { name: 'Stop and log time' }).count() === 0) {
+      assert.equal(await timerPanel.getByText(/already running elsewhere/).count(), 0, 'A has a timer running elsewhere; stop it first');
+      // The start form is replaced by the running controls, so the new state is the outcome.
+      await timerPanel.getByRole('button', { name: 'Start timer', exact: true }).click();
+      await timerPanel.getByText(/Timer running/).or(timerPanel.locator('[role="alert"]')).first().waitFor({ timeout: 120000 });
+      assert.equal(await timerPanel.locator('[role="alert"]').count(), 0, `Start timer refused: ${await timerPanel.innerText()}`);
+      console.log('PASS assignee started an item timer');
+      await reload(page);
+    } else {
+      console.log('INFO (rerun) item timer already running');
+    }
+    assert.match(await timerPanel.innerText(), /Timer running\s+\d+:\d{2}:\d{2}/, 'Running item timer not shown after reload');
+    await page.waitForTimeout(2500);
+    const stop = timerPanel.locator('form').filter({ has: page.getByRole('button', { name: 'Stop and log time', exact: true }) });
+    await stop.getByLabel('Timer notes').fill('M14 item timer log');
+    await stop.getByRole('button', { name: 'Stop and log time', exact: true }).click();
+    await timerPanel.getByRole('button', { name: 'Start timer', exact: true }).or(timerPanel.locator('[role="alert"]')).first().waitFor({ timeout: 120000 });
+    assert.equal(await timerPanel.locator('[role="alert"]').count(), 0, `Stop refused: ${await timerPanel.innerText()}`);
+    console.log('PASS assignee stopped the item timer and logged time');
+    await reload(page);
+    assert.match(await timerPanel.innerText(), /Logged here: \d+ (min|h)/, 'Item logged time missing after stop');
+    assert.ok(await timerPanel.getByRole('button', { name: 'Start timer' }).count(), 'Start timer not offered again after stop');
+    await open(page, `/tasks/${TAG}`);
+    assert.match(await bodyText(page), /M14 item timer log/, 'Item timer log is not on the mission activity');
+    console.log('PASS item timer time is an ordinary task log, shown on the item and the mission');
+    await page.goto(subUrl, { waitUntil: 'domcontentloaded' });
+    await hydrated(page);
+    assert.match(await page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Magnet 12 mm', exact: true }) }).innerText(), /Elapsed \d+ (min|h)/, 'Row elapsed time missing');
+
     await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Nested Protonite Products', exact: true }).click();
     await page.waitForURL(pageUrl);
     await hydrated(page);

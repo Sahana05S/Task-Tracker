@@ -933,3 +933,36 @@ On `m13-verification`; not merged or deployed. Details are in
   - The item timer is not built. Whether its time counts as task hours is
     still to be decided by the user.
   - The feature-parity audit against the sheet tracker comes next.
+
+## M14 checklist item timers - 16 October 2026
+
+On `m13-verification`; not merged or deployed. This follows the user's
+decision that stopping an item timer saves a normal task log tagged with the
+item. Details are in `docs/plans/M14-evidence.md`.
+
+- **What the user sees.**
+  - Every checklist item or page page has an "Item timer" panel: Start (with
+    an optional note), a live clock, "Stop and log time" and "Discard timer".
+  - Leaf rows have compact Start/Stop controls.
+  - "Logged here" and row "Elapsed" totals show the item's time; a page's
+    total includes the items inside it.
+  - The time is an ordinary task log, so it appears in task hours,
+    productivity, reports and the mission's activity once.
+- **Database.**
+  - Forward migration `34_checklist_item_timers.sql` adds item tags on timers
+    and logs, `start_checklist_item_timer` (built on the unchanged atomic timer
+    command), and triggers that copy the tag onto the stop's logs and block
+    forged or changed tags.
+  - Applied only to disposable local databases and the M13 test project.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-34; upgrades 32->33->34 with
+    existing data preserved) passed;
+  - unit tests (501 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project, all 12 browser phases: 11 passed in the combined
+    run. `task` timed out once waiting for a Missions card action (the dev
+    server was recompiling after the build) and passed when rerun alone. The
+    `nested` phase covers start, a reload while running, stop with a note,
+    and the logged time on the item, its row and the mission.
+- **Open:** reports do not yet break hours down by checklist item; the
+  feature-parity audit against the sheet tracker comes next.

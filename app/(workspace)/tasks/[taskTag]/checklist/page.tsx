@@ -34,13 +34,16 @@ import { MissionPanel, MissionProgress } from '@/components/missions/mission-ui'
 import { ExecutionForm } from '@/components/tasks/execution-form';
 import { Button } from '@/components/ui/button';
 import { requireProfile } from '@/lib/auth/profile';
+import { getChecklistItemTime } from '@/lib/checklists/item-time';
 import { CHECKLIST_SECTIONS, type ChecklistSection, type SectionProgress } from '@/lib/checklists/progress';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/lib/tasks/detail';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
+import { canStartTimerForTask } from '@/lib/timers/permissions';
 import { cn } from '@/lib/utils';
 import type { ChecklistNode } from '@/types/tracker';
 
+import { discardTaskTimer, startItemTimer, stopTaskTimer } from '../timer-actions';
 import { checklistCommand } from './actions';
 
 export async function generateMetadata({ params }: { params: Promise<{ taskTag: string }> }): Promise<Metadata> {
@@ -79,7 +82,10 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
   const manager = canManageTasks(user.role);
   const executor = canUpdateTaskOwnFields(user, d.task);
   const open = !d.task.archivedEffectiveDate && !['Done', 'Discarded'].includes(d.task.status);
-  const choices = manager ? (await getTaskWorkspaceData()).tasks.filter(t => t.id !== d.task.id) : [];
+  const [choices, timeInfo] = await Promise.all([
+    manager ? getTaskWorkspaceData().then(w => w.tasks.filter(t => t.id !== d.task.id)) : Promise.resolve([]),
+    getChecklistItemTime(d.task.id, user.id),
+  ]);
   const missionHref = `/tasks/${encodeURIComponent(d.task.taskTag)}`;
   const ctx: ChecklistContext = {
     action: checklistCommand,
@@ -91,6 +97,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
     manager,
     executor,
     open,
+    time: { info: timeInfo, canStart: canStartTimerForTask(user, d.task), start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer },
   };
   const groups = rootsBySection(d.checklistNodes);
   const ownerLabel = d.checklist?.syncProgressToTask ? 'Activity checklist' : 'Manual';

@@ -160,6 +160,7 @@ export interface Database {
           raw_links: string[] | null;
           log_source: TaskLogSource;
           source_timer_id: string | null;
+          checklist_node_id?: string | null;
           created_at: string;
         },
         {
@@ -487,6 +488,7 @@ export interface Database {
           elapsed_seconds: number;
           generated_log_id: string | null;
           notes: string | null;
+          checklist_node_id?: string | null;
         } & TimestampColumns,
         OptionalId & {
           task_id: string;
@@ -794,6 +796,7 @@ export interface Database {
       correct_task_log: { Args: { p_log_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       reverse_task_log: { Args: { p_log_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       start_task_timer: { Args: { p_task_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
+      start_checklist_item_timer: { Args: { p_node_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
       stop_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       discard_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       set_task_participants: { Args: { p_task_id: string; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number; p_accept_legacy?: boolean }; Returns: number };

@@ -11,6 +11,7 @@ import {
   PencilIcon,
   PlusIcon,
   SquareCheckIcon,
+  TimerIcon,
 } from 'lucide-react';
 
 import {
@@ -19,6 +20,8 @@ import {
   CompletionForm,
   EditNodeForms,
   EmptyRows,
+  ItemTimerControls,
+  loggedTime,
   ancestry,
   checklistHref,
   childrenOf,
@@ -29,11 +32,14 @@ import {
 } from '@/components/checklists/checklist-rows';
 import { MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
 import { requireProfile } from '@/lib/auth/profile';
+import { getChecklistItemTime } from '@/lib/checklists/item-time';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/lib/tasks/detail';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
+import { canStartTimerForTask } from '@/lib/timers/permissions';
 import { cn } from '@/lib/utils';
 
+import { discardTaskTimer, startItemTimer, stopTaskTimer } from '../../timer-actions';
 import { checklistCommand } from '../actions';
 
 type Params = Promise<{ taskTag: string; nodeId: string }>;
@@ -64,7 +70,11 @@ export default async function ChecklistNodePage({ params }: { params: Params }) 
   const manager = canManageTasks(user.role);
   const executor = canUpdateTaskOwnFields(user, d.task);
   const open = !d.task.archivedEffectiveDate && !['Done', 'Discarded'].includes(d.task.status);
-  const choices = manager ? (await getTaskWorkspaceData()).tasks.filter(t => t.id !== d.task.id) : [];
+  const [choices, timeInfo] = await Promise.all([
+    manager ? getTaskWorkspaceData().then(w => w.tasks.filter(t => t.id !== d.task.id)) : Promise.resolve([]),
+    getChecklistItemTime(d.task.id, user.id),
+  ]);
+  const canStart = canStartTimerForTask(user, d.task);
   const ctx: ChecklistContext = {
     action: checklistCommand,
     task: d.task,
@@ -75,6 +85,7 @@ export default async function ChecklistNodePage({ params }: { params: Params }) 
     manager,
     executor,
     open,
+    time: { info: timeInfo, canStart, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer },
   };
 
   const chain = ancestry(node.id, d.checklistNodes);
@@ -87,7 +98,7 @@ export default async function ChecklistNodePage({ params }: { params: Params }) 
   const notApplicable = progress?.applicable === false;
   const result = notApplicable ? 'N/A' : progress?.isComplete ? 'CLOSED' : 'OPEN';
   const estimate = formatMinutes(node.estimatedMinutes);
-  const elapsed = node.elapsedSeconds > 0 ? formatMinutes(Math.round(node.elapsedSeconds / 60)) : null;
+  const elapsed = loggedTime(ctx, node.id);
   const done = rows.filter(n => r.nodeProgress.find(p => p.id === n.id)?.isComplete).length;
   const canEdit = executor && open;
 
@@ -167,7 +178,7 @@ export default async function ChecklistNodePage({ params }: { params: Params }) 
         {estimate || elapsed || node.links.length ? (
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-white/70 px-4 py-3 text-sm">
             {estimate ? <span className="inline-flex items-center gap-1.5"><HourglassIcon className="text-primary size-4" aria-hidden="true" />Estimated {estimate}</span> : null}
-            {elapsed ? <span className="inline-flex items-center gap-1.5"><ClockIcon className="text-primary size-4" aria-hidden="true" />Elapsed {elapsed}</span> : null}
+            {elapsed ? <span className="inline-flex items-center gap-1.5"><ClockIcon className="text-primary size-4" aria-hidden="true" />Logged {elapsed}</span> : null}
             {node.links.map((url, i) => (
               <a key={url + i} href={url} target="_blank" rel="noopener noreferrer" className="text-primary inline-flex max-w-full min-w-0 items-center gap-1.5 font-medium hover:underline">
                 <ExternalLinkIcon className="size-4 shrink-0" aria-hidden="true" />
@@ -183,6 +194,22 @@ export default async function ChecklistNodePage({ params }: { params: Params }) 
           {!container && executor && open ? (
             <MissionPanel icon={SquareCheckIcon} title="Completion">
               <CompletionForm ctx={ctx} node={node} className="grid gap-1" />
+            </MissionPanel>
+          ) : null}
+
+          {timeInfo.available && (canStart || elapsed || timeInfo.runningByNode.has(node.id)) ? (
+            <MissionPanel
+              icon={TimerIcon}
+              title="Item timer"
+              subtitle={`Stopping saves a task log tagged with this ${container ? 'page' : 'item'}, so the time counts in task hours, productivity and reports.`}
+            >
+              <div className="grid gap-3">
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Logged here{container ? ' (including items inside)' : ''}: </span>
+                  <span className="font-semibold tabular-nums">{elapsed ?? 'None yet'}</span>
+                </p>
+                <ItemTimerControls ctx={ctx} node={node} />
+              </div>
             </MissionPanel>
           ) : null}
 

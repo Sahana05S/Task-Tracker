@@ -34,9 +34,20 @@ async function timerCommand(form: FormData,command: 'start'|'stop'|'discard'): P
 function committed(data: ExecutionResult): TimerActionState {
  for (const path of [`/tasks/${encodeURIComponent(data.taskTag)}`,'/tasks','/logs','/dashboard','/team','/task-tools','/reports']) revalidatePath(path);
  revalidatePath('/team/[employeeId]','page');
+ revalidatePath('/tasks/[taskTag]/checklist','page'); revalidatePath('/tasks/[taskTag]/checklist/[nodeId]','page');
  return {success:true,data};
 }
 export async function startTaskTimer(form: FormData) { return timerCommand(form,'start'); }
+/** Ordinary task timer tagged with a checklist item (migration 34); its stop logs count as task hours. */
+export async function startItemTimer(form: FormData): Promise<TimerActionState> {
+ const actor=await getCurrentProfile(); if (!actor?.isActive) return {success:false,error:'Active sign-in required.',errorCode:'forbidden'};
+ const identity=commandIdentity(form);
+ if (!identity.operationId) return {success:false,error:'Missing operation key. Reload the form.',errorCode:'validation'};
+ const supabase=await createClient();
+ const result=await supabase.rpc('start_checklist_item_timer',{p_node_id:text(form,'nodeId'),p_payload:{notes:text(form,'notes')||null},p_operation_id:identity.operationId});
+ if (result.error) return executionError(result.error);
+ return committed(executionResult(result.data));
+}
 export async function stopTaskTimer(form: FormData) { return timerCommand(form,'stop'); }
 export async function discardTaskTimer(form: FormData) { return timerCommand(form,'discard'); }
 export async function discardTimerAsManager(form: FormData) { return timerCommand(form,'discard'); }

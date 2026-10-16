@@ -606,9 +606,12 @@ needed. Their answers to the follow-up questions:
    manager-only. Edit and removal reasons are still required.
 3. **Links and time per row.** Rows carry up to ten http(s) links and an
    estimated time in whole minutes.
-4. **Item timer: elapsed time comes from a timer on the item.** Whether that
-   time also counts as logged task hours was asked but not yet answered, so
-   the item timer is **not built**. `elapsed_seconds` is displayed when present.
+4. **Item timer: elapsed time comes from a timer on the item.** In a later
+   reply the user decided that "stopping an item timer should save a normal
+   task log for that task, tagged with the item, so task hours, productivity
+   and reports include it." Item time is therefore never a second, separate
+   hours figure: it is the sum of that item's tagged, unreversed task logs,
+   and a page shows its whole subtree.
 5. **Rest of the sheet: audit, then fix gaps.** After the checklist pages, each
    sheet feature is compared with the app and the gaps are listed for the user
    to prioritize.

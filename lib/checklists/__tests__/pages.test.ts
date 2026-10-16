@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ancestry, checklistHref, childrenOf, formatMinutes, isContainer } from '@/lib/checklists/pages';
+import { ancestry, checklistHref, childrenOf, formatMinutes, isContainer, subtreeSeconds } from '@/lib/checklists/pages';
 import type { ChecklistNode } from '@/types/tracker';
 
 const node = (id: string, parentNodeId: string | null, nodeType: ChecklistNode['nodeType'] = 'Item'): ChecklistNode => ({
@@ -39,5 +39,14 @@ describe('nested checklist page helpers', () => {
     expect(formatMinutes(90)).toBe('1 h 30 min');
     expect(checklistHref('A B')).toBe('/tasks/A%20B/checklist');
     expect(checklistHref('T1', 'x')).toBe('/tasks/T1/checklist/x');
+  });
+
+  it('adds logged time for a page and everything inside it', () => {
+    const seconds = new Map([['page', 60], ['sub', 120], ['leaf', 300], ['child', 30]]);
+    expect(subtreeSeconds('leaf', nodes, seconds)).toBe(300);
+    expect(subtreeSeconds('sub', nodes, seconds)).toBe(420);
+    expect(subtreeSeconds('page', nodes, seconds)).toBe(480);
+    expect(subtreeSeconds('item-parent', nodes, seconds)).toBe(30);
+    expect(subtreeSeconds('a', [node('a', 'b'), node('b', 'a')], new Map([['a', 5], ['b', 7]]))).toBe(12);
   });
 });

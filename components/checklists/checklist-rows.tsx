@@ -11,12 +11,17 @@ import {
   FileStackIcon,
   HourglassIcon,
   PencilIcon,
+  PlayIcon,
+  SquareIcon,
+  TimerIcon,
 } from 'lucide-react';
 
+import { RunningClock } from '@/components/checklists/running-clock';
 import { ExecutionForm } from '@/components/tasks/execution-form';
 import { Button } from '@/components/ui/button';
 import { CHECKLIST_SECTIONS, type ChecklistRollup } from '@/lib/checklists/progress';
-import { childrenOf, checklistHref, formatMinutes, isContainer } from '@/lib/checklists/pages';
+import type { ChecklistItemTime } from '@/lib/checklists/item-time';
+import { childrenOf, checklistHref, formatMinutes, isContainer, subtreeSeconds } from '@/lib/checklists/pages';
 import { formatPercent } from '@/lib/tracker/format';
 import { cn } from '@/lib/utils';
 import type { ActionResponse, ChecklistNode, Task } from '@/types/tracker';
@@ -46,6 +51,77 @@ export interface ChecklistContext {
   executor: boolean;
   /** Not archived, Done or Discarded. */
   open: boolean;
+  /** Item timers (migration 34): logged time, running timers and the actions. */
+  time?: {
+    info: ChecklistItemTime;
+    /** The signed-in user may start timers on this task. */
+    canStart: boolean;
+    start: (form: FormData) => Promise<ActionResponse<unknown>>;
+    stop: (form: FormData) => Promise<ActionResponse<unknown>>;
+    discard: (form: FormData) => Promise<ActionResponse<unknown>>;
+  };
+}
+
+/** Logged item time for a node and everything inside it, or null when none. */
+export function loggedTime(ctx: ChecklistContext, nodeId: string): string | null {
+  if (!ctx.time?.info.available) return null;
+  const seconds = subtreeSeconds(nodeId, ctx.nodes, ctx.time.info.secondsByNode);
+  return seconds > 0 ? formatMinutes(Math.max(1, Math.round(seconds / 60))) : null;
+}
+
+/**
+ * Start / stop / discard a timer on one checklist item. Stopping writes an
+ * ordinary task log tagged with the item, so the time counts as task hours.
+ */
+export function ItemTimerControls({ ctx, node, compact }: { ctx: ChecklistContext; node: ChecklistNode; compact?: boolean }) {
+  const time = ctx.time;
+  if (!time?.info.available) return null;
+  const mine = time.info.mine;
+  const mineHere = mine && mine.nodeId === node.id && mine.taskId === ctx.task.id ? mine : null;
+  const someoneElse = !mineHere ? time.info.runningByNode.get(node.id) : undefined;
+  if (mineHere) {
+    return (
+      <div className={cn('grid min-w-0 gap-2', compact && 'justify-items-end')}>
+        <p className="text-recognition-foreground bg-recognition-subtle inline-flex items-center gap-1.5 justify-self-start rounded-full px-2.5 py-1 text-xs font-semibold">
+          <TimerIcon className="size-3.5" aria-hidden="true" />
+          Timer running <RunningClock startedAt={mineHere.startedAt} />
+        </p>
+        <ExecutionForm action={time.stop} scope={`itemTimerStop:${mineHere.timerId}`} className="grid min-w-0 gap-2">
+          <input type="hidden" name="timerId" value={mineHere.timerId} />
+          <input type="hidden" name="expectedVersion" value={mineHere.version} />
+          {compact ? null : <textarea name="notes" placeholder="What did you do? (saved on the task log)" aria-label="Timer notes" className={cn(FIELD, 'min-h-16 py-2')} />}
+          <Button type="submit" size="sm" className="h-9 justify-self-start rounded-xl"><SquareIcon aria-hidden="true" />Stop and log time</Button>
+        </ExecutionForm>
+        {compact ? null : (
+          <ExecutionForm action={time.discard} scope={`itemTimerDiscard:${mineHere.timerId}`} className="grid min-w-0 gap-2">
+            <input type="hidden" name="timerId" value={mineHere.timerId} />
+            <input type="hidden" name="expectedVersion" value={mineHere.version} />
+            <input type="hidden" name="taskTag" value={ctx.task.taskTag} />
+            <input name="reason" required placeholder="Reason for discarding" aria-label="Reason for discarding" className={cn(FIELD, 'h-9')} />
+            <Button type="submit" variant="ghost" size="sm" className="justify-self-start rounded-xl">Discard timer</Button>
+          </ExecutionForm>
+        )}
+      </div>
+    );
+  }
+  if (someoneElse) {
+    return (
+      <p className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+        <TimerIcon className="size-3.5" aria-hidden="true" />A teammate's timer is running here
+      </p>
+    );
+  }
+  if (!time.canStart || !ctx.open) return null;
+  if (mine) {
+    return compact ? null : <p className="text-muted-foreground text-xs">Your timer is already running elsewhere. Stop it before timing this item.</p>;
+  }
+  return (
+    <ExecutionForm action={time.start} scope={`itemTimerStart:${node.id}`} className="grid min-w-0 gap-2">
+      <input type="hidden" name="nodeId" value={node.id} />
+      {compact ? null : <textarea name="notes" placeholder="Optional note for the log" aria-label="Timer notes" className={cn(FIELD, 'min-h-16 py-2')} />}
+      <Button type="submit" variant={compact ? 'outline' : 'default'} size="sm" className="h-9 justify-self-start rounded-xl"><PlayIcon aria-hidden="true" />Start timer</Button>
+    </ExecutionForm>
+  );
 }
 
 export const percentage = (p: number | null | undefined) =>
@@ -293,7 +369,7 @@ export function ChecklistRow({ ctx, node: n, showSection = true }: { ctx: Checkl
   const leaf = !container;
   const linked = ctx.linkedTasksById.get(n.linkedTaskId ?? '');
   const estimate = formatMinutes(n.estimatedMinutes);
-  const elapsed = n.elapsedSeconds > 0 ? formatMinutes(Math.round(n.elapsedSeconds / 60)) : null;
+  const elapsed = loggedTime(ctx, n.id);
   const href = checklistHref(ctx.task.taskTag, n.id);
   return (
     <article
@@ -348,8 +424,11 @@ export function ChecklistRow({ ctx, node: n, showSection = true }: { ctx: Checkl
             <p className="text-attention-foreground mt-1 text-xs">Linked task unavailable; a manager must repair the reference.</p>
           ) : null}
         </div>
-        {leaf && ctx.executor && ctx.open ? (
-          <CompletionForm ctx={ctx} node={n} className="grid min-w-0 gap-1 max-sm:w-full sm:justify-items-end" />
+        {leaf && ((ctx.executor && ctx.open) || ctx.time?.info.runningByNode.has(n.id)) ? (
+          <div className="grid min-w-0 gap-2 max-sm:w-full sm:justify-items-end">
+            {ctx.executor && ctx.open ? <CompletionForm ctx={ctx} node={n} className="grid min-w-0 gap-1 sm:justify-items-end" /> : null}
+            <ItemTimerControls ctx={ctx} node={n} compact />
+          </div>
         ) : null}
       </div>
       {ctx.executor && ctx.open ? (
