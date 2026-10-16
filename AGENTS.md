@@ -1,5 +1,15 @@
 # Task Tracker project instructions
 
+## M14 nested checklist pages — 16 October 2026
+
+The user asked for every feature of their Google Sheets tracker. They approved
+nested checklist pages (pages, not separate tasks), assignee-built checklists,
+and per-row links and estimates. See DECISIONS "M14 nested checklist pages"
+and `docs/plans/M14-evidence.md`. Migration 33 is applied only to disposable
+databases and the M13 test project. Whether item-timer time counts as task
+hours is undecided, so the item timer is not built. Production migrations and
+deployment remain unauthorized.
+
 ## Superseding M13 authorization — 13 October 2026
 
 The user's subsequent pasted M13 request authorizes integrated acceptance,

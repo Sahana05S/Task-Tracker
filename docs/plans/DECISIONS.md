@@ -587,3 +587,28 @@ Plain wording replaces raw reason codes on the dashboard. The codes stay in
 Calculation details, exports and data. No calculation, permission or
 availability safeguard changed otherwise.
 
+
+## M14 nested checklist pages approved by user - 16 October 2026
+
+The user shared screen recordings of their Google Sheets tracker and asked for
+every feature in TaskPulse, with a seamless UI. They highlighted that every
+master-checklist row can be a "page" with its own rows, nesting as deep as
+needed. Their answers to the follow-up questions:
+
+1. **Checklist pages, not separate tasks.** A Page row opens its own checklist
+   page (result, progress, back link, breadcrumb, rows). It stays part of the
+   parent task: no separate task tag, participants or scoring. The approved
+   M05 rollup is unchanged (each parent weights applicable direct children
+   equally; an empty page has no applicable work).
+2. **Assignees and managers build the checklist.** Active task assignees may
+   create the checklist and add, edit and remove rows. Section mapping, section
+   gate confirmation, the progress-owner switch and links to real tasks remain
+   manager-only. Edit and removal reasons are still required.
+3. **Links and time per row.** Rows carry up to ten http(s) links and an
+   estimated time in whole minutes.
+4. **Item timer: elapsed time comes from a timer on the item.** Whether that
+   time also counts as logged task hours was asked but not yet answered, so
+   the item timer is **not built**. `elapsed_seconds` is displayed when present.
+5. **Rest of the sheet: audit, then fix gaps.** After the checklist pages, each
+   sheet feature is compared with the app and the gaps are listed for the user
+   to prioritize.

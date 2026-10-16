@@ -453,6 +453,7 @@ export interface Database {
           completion_state?: 'Yes'|'No'|'N/A';
           sort_order: number;
           estimated_minutes: number | null;
+          links?: string[];
           elapsed_seconds: number;
           completed_by: string | null;
           completed_at: string | null;

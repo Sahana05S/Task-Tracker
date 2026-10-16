@@ -895,3 +895,41 @@ from Mission details).
 - **Known gaps:** The Stitch Yes/No/N/A segmented toggle was not built. The
   native `Completion` select is kept because tests and keyboard users rely on
   it. Stitch's XP, rewards and "Save draft" are not built.
+
+## M14 nested checklist pages - 16 October 2026
+
+On `m13-verification`; not merged or deployed. Details are in
+`docs/plans/M14-evidence.md`, and the user's approvals are in DECISIONS.
+
+- **What the user sees.**
+  - Every master-checklist row opens its own page at
+    `/tasks/[tag]/checklist/[nodeId]`, and pages nest as deep as needed. Each
+    page shows Result OPEN/CLOSED/N/A, rollup progress, a breadcrumb, a back
+    link, its rows, and links and estimated time per row.
+  - The master checklist lists each section's top-level rows. A
+    template-created section root group ("Setup", "Activity", "Closure") is
+    listed as its rows directly.
+  - Assignees can now create the checklist and add, edit and remove rows.
+    Managers keep section mapping, section gates, the progress-owner switch and
+    links to real tasks.
+- **Database.**
+  - Forward migration `33_nested_checklist_pages.sql` adds the `links` column
+    and validated `links`/`estimated_minutes` on add and edit. It also widens
+    `checklist_command` permissions as described above.
+  - Applied only to disposable local databases and the M13 test project.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-33 and upgrade 32->33 on local
+    PG18) passed;
+  - unit tests (500 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project: all 11 core browser phases plus the new `nested`
+    phase passed. `template` first failed because its rows sat inside a
+    section root group; it passed after the section-root fix, together with
+    `checklist`, `batch` and `nested`.
+  - The browser runs used the user's running dev server via
+    `M13_EXISTING_SERVER=http://localhost:3000`, which points at the test
+    project.
+- **Open:**
+  - The item timer is not built. Whether its time counts as task hours is
+    still to be decided by the user.
+  - The feature-parity audit against the sheet tracker comes next.

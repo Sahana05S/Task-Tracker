@@ -476,6 +476,8 @@ export interface ChecklistNode {
   completionState?: 'Yes'|'No'|'N/A';
   sortOrder: number;
   estimatedMinutes: number | null;
+  /** http(s) URLs attached to the checklist row (migration 33). */
+  links: string[];
   elapsedSeconds: number;
   completedBy: string | null;
   completedAt: string | null;

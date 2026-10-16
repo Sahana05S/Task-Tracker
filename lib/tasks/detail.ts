@@ -350,6 +350,7 @@ function mapChecklistNode(row: ChecklistNodeRow): ChecklistNode {
     completionState: row.completion_state ?? (row.is_complete?'Yes':'No'),
     sortOrder: row.sort_order,
     estimatedMinutes: row.estimated_minutes,
+    links: row.links ?? [],
     elapsedSeconds: row.elapsed_seconds,
     completedBy: row.completed_by,
     completedAt: row.completed_at,

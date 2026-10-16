@@ -125,6 +125,98 @@ async function toolsPanel(page) {
 const tagsIn = result => [...result.matchAll(/([A-Z0-9]+-[A-Z0-9-]+): /g)].map(m => m[1]);
 
 const phases = {
+  /**
+   * M14 nested checklist pages: an assignee builds Page > sub-page > items with
+   * links and estimates, completion rolls up through each page, breadcrumbs and
+   * back links work, and a non-assignee gets no structure or completion controls.
+   * Needs an open mission assigned to A: run `task` with M13_UI_TAG set to the
+   * same tag first (default M13-F87E37-UI4).
+   */
+  async nested() {
+    const TAG = process.env.M13_NESTED_TAG ?? 'M13-F87E37-UI4';
+    const member = await signIn('A');
+    const page = member.page;
+    await open(page, `/tasks/${TAG}/checklist`);
+    assert.doesNotMatch(await bodyText(page), /Done is blocked.*\n?.*Reopen|Archived on/, 'Nested mission is not open');
+    async function addRow(title, type, { section, links, minutes } = {}) {
+      if (await page.getByRole('link', { name: title, exact: true }).count()) return console.log(`INFO (rerun) ${title} present`);
+      const add = formWith(page, 'Add item');
+      await add.getByPlaceholder('Item title').fill(title);
+      if (section) await add.locator('select[name="section"]').selectOption({ label: section });
+      await add.locator('select[name="node_type"]').selectOption(type);
+      if (links) await add.getByLabel('Links').fill(links.join('\n'));
+      if (minutes !== undefined) await add.getByLabel('Estimated minutes').fill(String(minutes));
+      await saved(add, 'Add item', `assignee added ${type} ${title}`);
+      await reload(page);
+    }
+    async function openRow(title) {
+      const before = page.url();
+      await page.getByRole('link', { name: title, exact: true }).first().click();
+      await page.waitForURL(url => url.href !== before && /\/checklist\/[0-9a-f-]{36}$/.test(url.pathname));
+      await hydrated(page);
+      assert.match(await page.locator('h1').innerText(), new RegExp(title), `${title} page did not open`);
+    }
+
+    await addRow('Nested Protonite Products', 'Page', { section: 'Activity', links: ['https://example.com/protonite'], minutes: 90 });
+    const homeRow = page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Protonite Products', exact: true }) });
+    assert.match(await homeRow.innerText(), /Est\. 1 h 30 min/, 'Estimate not shown on the master checklist row');
+    assert.equal(await homeRow.locator('a[href="https://example.com/protonite"]').count(), 1, 'Row link not shown');
+    await openRow('Nested Protonite Products');
+    const pageUrl = page.url();
+    assert.match(await bodyText(page), /Checklist page[\s\S]*Result: (OPEN|CLOSED|N\/A)/i, 'Page hero missing result');
+    await addRow('Nested Fridge Magnet', 'Page');
+    await openRow('Nested Fridge Magnet');
+    const subUrl = page.url();
+    await addRow('Nested Magnet 10 mm', 'Item', { minutes: 30 });
+    await addRow('Nested Magnet 12 mm', 'Item');
+    for (const [title, state] of [['Nested Magnet 10 mm', 'Yes'], ['Nested Magnet 12 mm', 'No']]) {
+      const row = page.locator('article').filter({ has: page.getByRole('link', { name: title, exact: true }) });
+      const form = row.locator('form').filter({ has: page.getByRole('button', { name: 'Save state' }) });
+      await form.getByLabel('Completion').selectOption(state);
+      await saved(form, 'Save state', `${title} set to ${state} on its page`);
+    }
+    await reload(page);
+    const hero = await page.locator('section[aria-label="Checklist page summary"]').innerText();
+    assert.match(hero, /50%/, `Sub-page did not roll up to 50%: ${hero}`);
+    assert.match(hero, /Result: OPEN/, 'Half-done page should be OPEN');
+    assert.match(hero, /1 of 2 rows complete/, 'Row count missing');
+    console.log('PASS sub-page rolls up its items to 50% with Result OPEN after reload');
+
+    const edit = page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Magnet 10 mm', exact: true }) });
+    await edit.getByText('Edit item').click();
+    const editForm = edit.locator('form').filter({ has: page.getByRole('button', { name: 'Correct structure' }) });
+    await editForm.getByLabel('Estimated minutes').fill('45');
+    await editForm.getByPlaceholder('Reason for structure/subtree section correction').fill('M14 estimate revised');
+    await saved(editForm, 'Correct structure', 'assignee edited an item estimate');
+    await reload(page);
+    assert.match(await page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Magnet 10 mm', exact: true }) }).innerText(), /Est\. 45 min/, 'Edited estimate not persisted');
+    console.log('PASS edited estimate persists after reload');
+
+    await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Nested Protonite Products', exact: true }).click();
+    await page.waitForURL(pageUrl);
+    await hydrated(page);
+    const parentRow = await page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Fridge Magnet', exact: true }) }).innerText();
+    assert.match(parentRow, /50%/, 'Parent row does not show sub-page rollup');
+    assert.match(parentRow, /2 items inside/, 'Parent row does not count items inside');
+    await page.getByRole('link', { name: 'Back to master checklist' }).click();
+    await page.waitForURL(/\/checklist$/);
+    console.log('PASS breadcrumb and back links walk up the nested pages');
+
+    await page.setViewportSize({ width: 390, height: 900 });
+    await open(page, new URL(subUrl).pathname);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.equal(overflow, 0, `Nested page overflows at 390 px by ${overflow}`);
+    console.log('PASS nested page has no horizontal overflow at 390 px');
+
+    const other = await signIn('B');
+    await open(other.page, new URL(subUrl).pathname);
+    assert.equal(await other.page.getByRole('button', { name: 'Add item', exact: true }).count(), 0, 'Non-assignee sees Add item');
+    assert.equal(await other.page.getByRole('button', { name: 'Save state', exact: true }).count(), 0, 'Non-assignee sees Save state');
+    assert.match(await bodyText(other.page), /Nested Magnet 10 mm/, 'Non-assignee cannot read the page');
+    console.log('PASS non-assignee reads the nested page without edit controls');
+    await Promise.all([member.context.close(), other.context.close()]);
+  },
+
   /** Create (with duplicate-tag recovery), automatic initialization, edit, structured details. */
   async task() {
     const { context, page } = await signIn('DIR');
