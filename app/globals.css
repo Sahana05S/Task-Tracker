@@ -231,6 +231,12 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* A fieldset defaults to min-inline-size: min-content, so one long option
+     label in a select would widen the whole form past a phone screen. */
+  fieldset {
+    min-inline-size: 0;
+  }
+
   :focus-visible {
     @apply outline-primary outline-2 outline-offset-2;
   }
@@ -572,8 +578,8 @@
      selects and textareas; `.field-label` stacks a label over its control.
      ---------------------------------------------------------------------- */
   .field {
-    @apply border-input bg-background text-foreground min-h-10 rounded-xl border px-3
-      py-2 text-sm transition-colors;
+    @apply border-input bg-background text-foreground min-h-10 max-w-full min-w-0
+      rounded-xl border px-3 py-2 text-sm transition-colors;
   }
 
   .field:focus-visible {
