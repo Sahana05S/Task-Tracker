@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { InitialsAvatar } from '@/components/missions/mission-ui';
 import { FreshnessIndicator, StatusBadge } from '@/components/tracker/tracker-badges';
 import type { TaskTimeline, TimelineTaskBar } from '@/lib/timelines/gantt';
 import { formatDate } from '@/lib/tracker/format';
@@ -28,7 +29,7 @@ export function TaskGantt({ timeline }: { timeline: TaskTimeline }) {
     <section className="soft-card-clip">
       <div className="border-border flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div>
-          <h2 className="panel-title text-base">Task timelines</h2>
+          <h2 className="text-foreground text-base font-bold tracking-tight">Mission timelines</h2>
           <p className="text-muted-foreground text-xs">
             {formatDate(timeline.startDate)} – {formatDate(timeline.endDate)} ·{' '}
             {timeline.totalDays} days
@@ -40,7 +41,7 @@ export function TaskGantt({ timeline }: { timeline: TaskTimeline }) {
       <div className="overflow-x-auto">
         <div className="min-w-[68rem]">
           <div className="grid grid-cols-[15rem_minmax(0,1fr)]">
-            <div className="bg-muted/40 border-border border-r px-4 py-3 text-xs font-semibold text-slate-700">
+            <div className="bg-muted/40 border-border text-muted-foreground border-r px-4 py-3 text-xs font-semibold">
               Assignee
             </div>
             <div
@@ -96,12 +97,15 @@ function TimelineGroup({
 
   return (
     <>
-      <div className="border-border bg-card border-t border-r px-4 py-3">
-        <p className="text-foreground text-sm font-semibold">{groupName}</p>
-        <p className="text-muted-foreground mt-1 text-xs">
-          {employeeId ?? 'Unlisted member'} · {tasks.length}{' '}
-          {tasks.length === 1 ? 'task' : 'tasks'}
-        </p>
+      <div className="border-border bg-card flex items-start gap-2.5 border-t border-r px-4 py-3">
+        <InitialsAvatar name={groupName} />
+        <div className="min-w-0">
+          <p className="text-foreground truncate text-sm font-semibold">{groupName}</p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {employeeId ?? 'Unlisted member'} · {tasks.length}{' '}
+            {tasks.length === 1 ? 'mission' : 'missions'}
+          </p>
+        </div>
       </div>
       <div
         className="border-border bg-card relative border-t"
@@ -137,7 +141,7 @@ function TaskBar({ task, index }: { task: TimelineTaskBar; index: number }) {
     <Link
       href={task.href}
       className={cn(
-        'absolute flex h-9 min-w-28 items-center gap-2 overflow-hidden rounded-full border px-3 text-xs shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-soft',
+        'absolute flex h-9 min-w-28 items-center gap-2 overflow-hidden rounded-xl border px-3 text-xs shadow-(--shadow-card) transition-transform hover:-translate-y-0.5',
         statusBarClass(task.status),
         freshnessRingClass(task.freshness),
       )}
@@ -164,7 +168,7 @@ function TimelineLegend() {
       <StatusBadge status="In Progress" />
       <StatusBadge status="Done" />
       <StatusBadge status="Discarded" />
-      <span className="mx-1 hidden h-4 w-px bg-slate-200 sm:inline-block" />
+      <span className="bg-border mx-1 hidden h-4 w-px sm:inline-block" />
       <FreshnessIndicator freshness="Super Fresh" />
       <FreshnessIndicator freshness="Almost Fresh" />
       <FreshnessIndicator freshness="Fresh" />
@@ -178,16 +182,16 @@ function TimelineLegend() {
 function statusBarClass(status: TimelineTaskBar['status']): string {
   switch (status) {
     case 'Done':
-      return 'border-emerald-300 bg-emerald-100 text-emerald-950';
+      return 'border-emerald-300 bg-success-subtle text-success-strong';
     case 'In Progress':
-      return 'border-sky-300 bg-sky-100 text-sky-950';
+      return 'border-amber-300 bg-amber-100 text-amber-900';
     case 'Discarded':
       return 'border-slate-300 bg-slate-100 text-slate-500 line-through';
     case 'Stopped':
     case 'On-Hold':
     case 'Carryover':
     case 'Not Started':
-      return 'border-amber-300 bg-amber-100 text-amber-950';
+      return 'border-[#d9d5ec] bg-white text-foreground';
   }
 }
 
