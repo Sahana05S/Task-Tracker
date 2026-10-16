@@ -61,14 +61,14 @@ export function ReportsModule({
   return (
     <div className="grid gap-4 xl:grid-cols-[24rem_minmax(0,1fr)]">
       {canManage ? (
-        <aside className="soft-card h-fit p-4">
-          <h2 className="text-foreground text-sm font-semibold">Create report</h2>
+        <aside className="soft-card h-fit p-5 sm:p-6">
+          <h2 className="text-foreground text-base font-bold tracking-tight">Create report</h2>
           <ReportForm members={members} />
         </aside>
       ) : null}
-      <section className="soft-card overflow-hidden xl:col-span-1">
+      <section className="soft-card-clip xl:col-span-1">
         {reports.length === 0 ? (
-          <p className="p-6 text-sm text-slate-500">No reports have been saved yet.</p>
+          <p className="text-muted-foreground p-6 text-center text-sm">No reports have been saved yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="sheet-grid min-w-[72rem]">
@@ -108,24 +108,24 @@ function ReportForm({
   return (
     <form action={asFormAction(saveReportSnapshotAction)} className="mt-3 grid gap-3">
       {report ? <input type="hidden" name="id" value={report.id} /> : null}
-      <input name="title" defaultValue={report?.title ?? ''} className="border-input bg-background h-9 rounded-md border px-3 text-sm" placeholder="Report title" required />
-      <input name="reportType" defaultValue={report?.reportType ?? 'General Report'} className="border-input bg-background h-9 rounded-md border px-3 text-sm" placeholder="Report type" required />
-      <select name="status" defaultValue={report?.status ?? 'Draft'} className="border-input bg-background h-9 rounded-md border px-3 text-sm">
+      <input name="title" defaultValue={report?.title ?? ''} className="field" placeholder="Report title" required />
+      <input name="reportType" defaultValue={report?.reportType ?? 'General Report'} className="field" placeholder="Report type" required />
+      <select name="status" defaultValue={report?.status ?? 'Draft'} className="field">
         <option value="Draft">Draft</option>
         <option value="Final">Final</option>
       </select>
-      <select name="employeeId" defaultValue={report?.employeeId ?? ''} className="border-input bg-background h-9 rounded-md border px-3 text-sm">
+      <select name="employeeId" defaultValue={report?.employeeId ?? ''} className="field">
         <option value="">General report</option>
         {members.map((member) => (
           <option key={member.id} value={member.id}>{member.fullName}</option>
         ))}
       </select>
       <div className="grid grid-cols-2 gap-2">
-        <input type="date" name="periodStart" defaultValue={report?.periodStart ?? ''} className="border-input bg-background h-9 rounded-md border px-3 text-sm" />
-        <input type="date" name="periodEnd" defaultValue={report?.periodEnd ?? ''} className="border-input bg-background h-9 rounded-md border px-3 text-sm" />
+        <input type="date" name="periodStart" defaultValue={report?.periodStart ?? ''} className="field" />
+        <input type="date" name="periodEnd" defaultValue={report?.periodEnd ?? ''} className="field" />
       </div>
-      <input name="folderUrl" type="url" defaultValue={payload.folderUrl ?? ''} className="border-input bg-background h-9 rounded-md border px-3 text-sm" placeholder="Folder or asset URL" />
-      <textarea name="summary" defaultValue={payload.summary ?? ''} className="border-input bg-background min-h-20 rounded-md border px-3 py-2 text-sm" placeholder="Summary" />
+      <input name="folderUrl" type="url" defaultValue={payload.folderUrl ?? ''} className="field" placeholder="Folder or asset URL" />
+      <textarea name="summary" defaultValue={payload.summary ?? ''} className="field min-h-20" placeholder="Summary" />
       <Button type="submit" size="sm">{report ? 'Save report' : 'Create report'}</Button>
     </form>
   );
@@ -146,7 +146,7 @@ function ReportRow({
 
   return (
     <tr id={`report-${report.id}`}>
-      <td className="text-xs font-medium text-slate-900">{report.title}</td>
+      <td className="text-foreground text-xs font-semibold">{report.title}</td>
       <td className="text-xs">{report.reportType}</td>
       <td className="text-xs">{report.status}</td>
       <td className="text-xs">{report.employeeId ? memberNames.get(report.employeeId) ?? 'Unknown' : 'General'}</td>
