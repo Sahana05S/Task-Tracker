@@ -50,6 +50,26 @@ Authorized by the user's 16 October 2026 request and answers (see DECISIONS,
     the items inside a page. The Mission details timer panel also shows and
     stops item timers, because they are task timers.
 
+- **Duplicate rows (migration 35, `35_duplicate_checklist_rows.sql`).**
+  This is the sheet's "Duplicate Item". `checklist_command` gains
+  `duplicate` (payload `node_id` only; assignees and managers):
+  - It copies the row, or the page with everything inside it, directly after
+    the original. Later siblings shift down one place, and the copied row's
+    title gets " (copy)".
+  - Copies start as fresh work: completion No, no completer, no item time.
+    Links, estimates, descriptions and types are copied.
+  - Rows linked to real tasks are skipped inside a copied page. A linked row,
+    or an unmapped legacy row, cannot be duplicated.
+  - The rest of the command is copied unchanged from migration 33. These copy
+    defaults follow the sheet's behaviour and change no scoring rule.
+  - UI: a "Duplicate" button in every row's edit panel and on each page's
+    edit panel.
+- **Task owner on the checklist home.** The hero lists the task's assignees,
+  as the sheet's Checklist Home shows "Task Owner".
+- **Tooling.** `tsconfig.json` and `vitest.config.mts` exclude `.claude/`.
+  Session worktrees under `.claude/worktrees` are separate checkouts and must
+  not be type-checked or tested as part of this one.
+
 ## Checks
 
 - `tools/test_m14_database.py` on a disposable local PostgreSQL 18 cluster
@@ -69,7 +89,11 @@ Authorized by the user's 16 October 2026 request and answers (see DECISIONS,
     forged or changed tags on timers and logs, untagged manual logs; stop
     writes tagged `Timer` logs counted once in task hours; discard logs
     nothing; reversal keeps the tag; deleting an item keeps its hours;
-    a closed task refuses item timers.
+    a closed task refuses item timers;
+  - duplicate (fresh install 01-35 and upgrade 34->35): an assignee copies a
+    page with its subtree right after it; copies reset to No; linked rows are
+    skipped; replay is idempotent; linked rows, unmapped legacy rows,
+    non-assignees, data managers and extra fields are refused.
   All passed.
 - Unit tests: `lib/checklists/__tests__/pages.test.ts` plus the full suite.
   Typecheck and the production build passed.

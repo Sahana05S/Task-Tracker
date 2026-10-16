@@ -65,10 +65,12 @@ for db in DBS:
         assert json.loads(value(db,"coalesce(jsonb_agg(to_jsonb(t)-'checklist_node_id' ORDER BY id),'[]') FROM public.task_timers t"))==json.loads(timers_before)
         assert value(db,"count(*) FROM public.daily_task_logs WHERE checklist_node_id IS NOT NULL")=='0'
         print('PASS',db,'upgrade 33->34 preserves existing timers and logs untagged')
+        sql(db,(ROOT/'supabase/migrations/35_duplicate_checklist_rows.sql').read_text(encoding='utf-8'))
+        print('PASS',db,'upgrade 34->35 applies')
     else:
-        migrate(db,34)
+        migrate(db,35)
         sql(db,seed)
-        print('PASS',db,'fresh install 01-34')
+        print('PASS',db,'fresh install 01-35')
     assert value(db,"has_function_privilege('authenticated','taskpulse_private.checklist_links(jsonb)','EXECUTE')")=='f'
 
     # Assignee (user 4 on T1) builds nested pages with links and estimates.
@@ -139,6 +141,36 @@ for db in DBS:
     cl(db,'edit',{'node_id':linked,'title':'Linked renamed','parent_id':page,'linked_task_id':T2,'node_type':'Task','section':'activity','reason':'Rename'},uid='4')
     cl(db,'edit',{'node_id':linked,'title':'Linked renamed','parent_id':page,'linked_task_id':None,'node_type':'Task','section':'activity','reason':'Unlink'},uid='4',success=False)
     print('PASS',db,'manager links real tasks; assignee may rename but not unlink it')
+
+    # Duplicate a page with everything inside it (migration 35).
+    sibling=cl(db,'add',{'title':'After the page','section':'activity','node_type':'Item','parent_id':None,'linked_task_id':None,'description':None})['nodeId']
+    order=lambda i:int(value(db,f"sort_order FROM public.checklist_nodes WHERE id='{i}'"))
+    page_order,sibling_order=order(page),order(sibling)
+    before=int(value(db,"count(*) FROM public.checklist_nodes"))
+    version=int(value(db,f"lifecycle_version FROM public.tasks WHERE id='{T1}'"))
+    key=str(uuid4())
+    q=f"SELECT public.checklist_command('{T1}','duplicate','{{\"node_id\":\"{page}\"}}'::jsonb,{version},'{key}')"
+    copy=first_json(actor(db,'00000000-0000-0000-0000-000000000004',q))['nodeId']
+    assert first_json(actor(db,'00000000-0000-0000-0000-000000000004',q))['nodeId']==copy,'replayed duplicate must return the same copy'
+    got=json.loads(node(db,copy))
+    assert got['title']=='Protonite Products (copy)' and got['node_type']=='Page' and got['parent_node_id'] is None and got['links']==['https://example.test/sheet'] and got['estimated_minutes']==120,got
+    assert order(copy)==page_order+1 and order(sibling)==sibling_order+1,'copy must sit right after the original'
+    assert int(value(db,"count(*) FROM public.checklist_nodes"))==before+5,'page, sub-page, two items and one item copied; linked row skipped'
+    tree=json.loads(value(db,f"""json_agg(json_build_object('t',x.title,'s',x.completion_state,'c',x.is_complete,'by',x.completed_by,'l',x.linked_task_id) ORDER BY x.title) FROM public.checklist_nodes x
+      WHERE x.id IN (WITH RECURSIVE s(id) AS (SELECT '{copy}'::uuid UNION ALL SELECT y.id FROM public.checklist_nodes y JOIN s ON y.parent_node_id=s.id) SELECT id FROM s)"""))
+    assert [r['t'] for r in tree]==['Fridge Magnet','Magnet 10 mm round','Magnet 12 mm','Mini vase','Protonite Products (copy)'],tree
+    assert all(r['s']=='No' and r['c'] is False and r['by'] is None and r['l'] is None for r in tree),tree
+    assert json.loads(node(db,page))['title']=='Protonite Products','original unchanged'
+    rollup=cl(db,'state',{'node_id':c,'state':'Yes'})['rollup']
+    assert float({p['id']:p['progressPercentage'] for p in rollup['nodeProgress']}[copy])==0,'copied work starts at 0%'
+    print('PASS',db,'assignee duplicates a page with its subtree right after it; copies reset to No; linked rows skipped; replay idempotent')
+    for uid,target in (('4',linked),('5',page),('3',page)):
+        version=int(value(db,f"lifecycle_version FROM public.tasks WHERE id='{T1}'"))
+        actor(db,'00000000-0000-0000-0000-'+uid.zfill(12),f"SELECT public.checklist_command('{T1}','duplicate','{{\"node_id\":\"{target}\"}}'::jsonb,{version},'{uuid4()}')",False)
+    version=int(value(db,f"lifecycle_version FROM public.tasks WHERE id='{T1}'"))
+    actor(db,'00000000-0000-0000-0000-000000000001',f"SELECT public.checklist_command('{T1}','duplicate','{{\"node_id\":\"{LEGACY}\"}}'::jsonb,{version},'{uuid4()}')",False)
+    actor(db,'00000000-0000-0000-0000-000000000004',f"SELECT public.checklist_command('{T1}','duplicate','{{\"node_id\":\"{page}\",\"title\":\"x\"}}'::jsonb,{version},'{uuid4()}')",False)
+    print('PASS',db,'linked rows, unmapped legacy rows, non-assignees, data managers and extra fields refused')
 
     # Direct table writes remain closed to members; a failed command leaves no partial rows.
     actor(db,'00000000-0000-0000-0000-000000000004',f"INSERT INTO public.checklist_nodes(checklist_id,node_type,title) SELECT checklist_id,'Item','Direct' FROM public.checklist_nodes WHERE id='{page}'",False)

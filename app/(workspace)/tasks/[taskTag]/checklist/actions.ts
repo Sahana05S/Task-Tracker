@@ -8,7 +8,7 @@ const read=(f:FormData,k:string)=>String(f.get(k)??'').trim();
 export async function checklistCommand(form:FormData):Promise<ActionResponse<Json>> {
  const profile=await getCurrentProfile(); if(!profile?.isActive) return {success:false,error:'Active authentication required.'};
  const command=read(form,'command'); const payload:Record<string,Json>={};
- const fields:Record<string,string[]>={create:['title'],add:['title','description','section','parent_id','linked_task_id','node_type'],state:['node_id','state'],edit:['node_id','title','section','parent_id','linked_task_id','node_type','reason'],map:['node_id','section','reason'],delete:['node_id','reason'],section:['section','intentional_empty','reason'],mode:['enabled','reason','preview_progress']};
+ const fields:Record<string,string[]>={create:['title'],add:['title','description','section','parent_id','linked_task_id','node_type'],state:['node_id','state'],edit:['node_id','title','section','parent_id','linked_task_id','node_type','reason'],map:['node_id','section','reason'],delete:['node_id','reason'],duplicate:['node_id'],section:['section','intentional_empty','reason'],mode:['enabled','reason','preview_progress']};
  if(!fields[command]) return {success:false,error:'Unknown checklist action.'};
  for(const key of fields[command]) {const value=read(form,key);payload[key]=key==='enabled'||key==='intentional_empty'?value==='true':key==='preview_progress'?(value||null):value||null;}
  // Optional row details (migration 33): sent only when the form has the field, so

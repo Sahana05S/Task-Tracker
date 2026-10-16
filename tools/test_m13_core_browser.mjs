@@ -157,6 +157,8 @@ const phases = {
       assert.match(await page.locator('h1').innerText(), new RegExp(title), `${title} page did not open`);
     }
 
+    assert.match(await page.locator('section[aria-label="Master checklist summary"]').innerText(), /Task owner[\s\S]*M13 Synthetic A/, 'Task owner missing on the checklist home');
+    console.log('PASS checklist home shows the task owner');
     await addRow('Nested Protonite Products', 'Page', { section: 'Activity', links: ['https://example.com/protonite'], minutes: 90 });
     const homeRow = page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Protonite Products', exact: true }) });
     assert.match(await homeRow.innerText(), /Est\. 1 h 30 min/, 'Estimate not shown on the master checklist row');
@@ -206,6 +208,7 @@ const phases = {
     } else {
       console.log('INFO (rerun) item timer already running');
     }
+    await timerPanel.getByText(/^\d+:\d{2}:\d{2}$/).waitFor({ timeout: 60000 }); // live clock after hydration
     assert.match(await timerPanel.innerText(), /Timer running\s+\d+:\d{2}:\d{2}/, 'Running item timer not shown after reload');
     await page.waitForTimeout(2500);
     const stop = timerPanel.locator('form').filter({ has: page.getByRole('button', { name: 'Stop and log time', exact: true }) });
@@ -227,6 +230,19 @@ const phases = {
     await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Nested Protonite Products', exact: true }).click();
     await page.waitForURL(pageUrl);
     await hydrated(page);
+    // Duplicate the sub-page with its items (sheet "Duplicate Item"); copies start as fresh work.
+    if (!(await page.getByRole('link', { name: 'Nested Fridge Magnet (copy)', exact: true }).count())) {
+      const source = page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Fridge Magnet', exact: true }) });
+      await source.getByText('Edit item').click();
+      await saved(source.locator('form').filter({ has: page.getByRole('button', { name: 'Duplicate', exact: true }) }), 'Duplicate', 'assignee duplicated a sub-page');
+      await reload(page);
+    } else {
+      console.log('INFO (rerun) duplicated sub-page present');
+    }
+    const copyRow = await page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Fridge Magnet (copy)', exact: true }) }).innerText();
+    assert.match(copyRow, /2 items inside/, `Copy lacks its items: ${copyRow}`);
+    assert.match(copyRow, /0% - Pending/, `Copy should start as fresh work: ${copyRow}`);
+    console.log('PASS duplicated sub-page copies its items as fresh work after reload');
     const parentRow = await page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Fridge Magnet', exact: true }) }).innerText();
     assert.match(parentRow, /50%/, 'Parent row does not show sub-page rollup');
     assert.match(parentRow, /2 items inside/, 'Parent row does not count items inside');

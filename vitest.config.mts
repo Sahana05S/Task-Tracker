@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -9,6 +9,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['**/__tests__/**/*.test.ts'],
+    // Session worktrees live under .claude/worktrees; they are separate checkouts.
+    exclude: [...configDefaults.exclude, '.claude/**'],
     coverage: {
       provider: 'v8',
       include: ['lib/**/*.ts'],

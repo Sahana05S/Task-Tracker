@@ -7,6 +7,7 @@ import {
   CircleIcon,
   CircleMinusIcon,
   ClockIcon,
+  CopyIcon,
   ExternalLinkIcon,
   FileStackIcon,
   HourglassIcon,
@@ -310,6 +311,16 @@ export function EditNodeForms({ ctx, node }: { ctx: ChecklistContext; node: Chec
         <ReasonInput placeholder="Reason for structure/subtree section correction" />
         <Button type="submit" variant="outline" size="sm" className="justify-self-start rounded-xl">Correct structure</Button>
       </ExecutionForm>
+      {!node.linkedTaskId && node.section ? (
+        <ExecutionForm action={ctx.action} scope={`duplicate:${node.id}`}>
+          <CommandFields ctx={ctx} command="duplicate" />
+          <input type="hidden" name="node_id" value={node.id} />
+          <p className="text-muted-foreground text-xs">
+            {hasChildren ? 'Copies this page and everything inside it' : 'Copies this row'}, right after it, as fresh work (No). Rows linked to real tasks are not copied.
+          </p>
+          <Button type="submit" variant="outline" size="sm" className="justify-self-start rounded-xl"><CopyIcon aria-hidden="true" />Duplicate</Button>
+        </ExecutionForm>
+      ) : null}
       {!hasChildren ? (
         <ExecutionForm action={ctx.action} scope={`delete:${node.id}`}>
           <CommandFields ctx={ctx} command="delete" />

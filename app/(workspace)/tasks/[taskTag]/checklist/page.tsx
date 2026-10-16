@@ -30,7 +30,7 @@ import {
   percentage,
   type ChecklistContext,
 } from '@/components/checklists/checklist-rows';
-import { MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
+import { AvatarStack, MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
 import { ExecutionForm } from '@/components/tasks/execution-form';
 import { Button } from '@/components/ui/button';
 import { requireProfile } from '@/lib/auth/profile';
@@ -100,6 +100,8 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
     time: { info: timeInfo, canStart: canStartTimerForTask(user, d.task), start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer },
   };
   const groups = rootsBySection(d.checklistNodes);
+  const memberNames = new Map(d.members.map(m => [m.id, m.fullName]));
+  const owners = d.task.assigneeIds.map(id => memberNames.get(id) ?? 'Unknown');
   const ownerLabel = d.checklist?.syncProgressToTask ? 'Activity checklist' : 'Manual';
   const sideColumn = executor && open;
 
@@ -143,6 +145,10 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
               {d.checklist?.title ?? 'Master checklist'}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm break-words">{d.task.title}</p>
+            <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Task owner</span>
+              <AvatarStack names={owners} />
+            </div>
           </div>
           <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-white/85 p-4 shadow-(--shadow-card) sm:w-72">
             <div className="flex items-center gap-3">

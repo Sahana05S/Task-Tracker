@@ -966,3 +966,33 @@ item. Details are in `docs/plans/M14-evidence.md`.
     and the logged time on the item, its row and the mission.
 - **Open:** reports do not yet break hours down by checklist item; the
   feature-parity audit against the sheet tracker comes next.
+
+## M14 duplicate rows and checklist task owner - 16 October 2026
+
+This is gap 1 of the sheet-parity audit. It is on `m13-verification`, not
+merged or deployed.
+
+- **Duplicate.**
+  - Each row and page has a "Duplicate" action (assignees and managers). It
+    copies the row, or the page with everything inside it, directly after the
+    original, with " (copy)" on the title.
+  - Copies start as fresh work (No). Rows linked to real tasks are skipped.
+  - Uses forward migration `35_duplicate_checklist_rows.sql`, applied only to
+    disposable databases and the M13 test project.
+- **Task owner.** The master checklist home shows the task's assignees as
+  "Task owner".
+- **Tooling.** `tsconfig.json` and `vitest.config.mts` exclude `.claude/`.
+  The redesign slice 4 worktree under `.claude/worktrees` had made root-level
+  vitest runs pick up its in-progress tests.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-35; upgrades through 35) passed;
+  - unit tests (501 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - on the hosted test project, `nested` (now also checking the task owner and
+    duplicating a sub-page with its items) and `checklist`, `template` and
+    `batch` passed;
+  - the user's port-3000 dev server had stopped, so these runs used the
+    harness's own temporary server.
+- **Next gaps:** the Missions headline strip (needs the user's colour
+  cut-offs), hours worked today on Mission details, Team Index holiday marks
+  and report validity (after the slice 4 restyle), and item hours in reports.
