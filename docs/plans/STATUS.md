@@ -845,3 +845,53 @@ terminology.
     XP, star credits, "waiting for help", blockers and "ready to close".
   - The runner `tools/test_m13_hosted_core_browser.py` crashes printing server
     logs on a cp1252 console. Run it with `PYTHONIOENCODING=utf-8`.
+
+## Redesign slice 3 (Master checklist) - 16 October 2026
+
+On `m13-verification` (not merged, pushed or deployed). This slice follows
+Stitch `master_checklist_1` (desktop) and `master_checklist_2` (phone), using
+the slice 1/2 visual system (`MissionPanel`, `MissionProgress`, form styling
+from Mission details).
+
+- **Master checklist (`/tasks/[tag]/checklist`).**
+  - Breadcrumb back to the mission and a gradient hero with the "Mission
+    master checklist" chip, the task tag, the checklist title and an Activity
+    rollup tile. The progress-owner line, "Activity: … Current task progress:
+    …" and the weighting/gate note are unchanged text.
+  - Milestone breakdown: one card each for Setup, Activity and Closure, with
+    the section percentage, a mint bar, the raw state and gate text, and the
+    manager *Confirm section* form.
+  - "Checklist items" is grouped by section (unsectioned nodes go under "Needs
+    mapping"). Within a section, nodes are shown depth-first under their
+    parents, keeping stored sibling order. Each node is still an `<article>`
+    with its title, node-type chip, the unchanged meta line, the linked-task
+    link, the inline *Completion* select with *Save state*, and a collapsed
+    "Structure / legacy correction" panel.
+  - Footer gate card with the Done-gate sentence and *Back to mission*.
+  - The side column (Create checklist, Add item, Change progress owner) is
+    rendered only for managers on open missions. When it is absent, the item
+    list takes the full width.
+- **Unchanged.** No data, permission, server-action or business-rule
+  changes, and no streaks, XP or credits. Every form field, label, placeholder
+  and button text is kept. Reason inputs also get an `aria-label` matching
+  their placeholder. The header link now reads *Back to mission* (it was
+  *Back to task*).
+- **Checks:**
+  - typecheck, unit tests (496 passed; 2 opt-in hosted skipped) and the
+    production build passed;
+  - all 11 browser phases passed against the test project. UI1 was already
+    Done, so `checklist` took its rerun path. `task checklist` were then run
+    with `M13_UI_TAG=M13-F87E37-UI3`, a new synthetic test-project mission,
+    and the full form path passed: add items, confirm sections, Yes/No/N/A,
+    50% rollup, owner switch to 100%, the refused early Done, review and Done;
+  - horizontal overflow is 0 at 390, 768 and 1365 px on 7 missions'
+    checklist pages for the director and member A, with every correction
+    panel opened (up to 20 forms on a page).
+- **Environment note.** A separate `npm run dev` (port 3000, pointed at the
+  non-test project) was running from the repo folder. Next 16 refuses a second
+  dev server in the same directory, so the browser harness was run from an
+  isolated scratch copy of the repo with identical `app`, `components` and
+  `tools`. The other server was left untouched.
+- **Known gaps:** The Stitch Yes/No/N/A segmented toggle was not built. The
+  native `Completion` select is kept because tests and keyboard users rely on
+  it. Stitch's XP, rewards and "Save draft" are not built.
