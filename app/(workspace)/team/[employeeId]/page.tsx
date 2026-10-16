@@ -300,7 +300,7 @@ function Metric({
   unit?: string;
 }) {
   return (
-    <StatTile label={label} value={value} unit={unit} />
+    <StatTile label={label} value={value} unit={value === 'Unavailable' || value === '—' ? undefined : unit} />
   );
 }
 
