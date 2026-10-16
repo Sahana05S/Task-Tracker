@@ -84,6 +84,167 @@ export function AvatarStack({
   );
 }
 
+/**
+ * Centred page column used by Missions, Mission details and the slice 4
+ * pages. `wide` widens it for data-dense pages (dashboard, timelines).
+ */
+export function MissionPage({
+  wide = false,
+  className,
+  children,
+}: {
+  wide?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'mx-auto grid w-full content-start gap-5 px-4 pt-6 pb-10 lg:gap-6 lg:px-6',
+        wide ? 'max-w-[1440px]' : 'max-w-[1200px]',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Page title row matching the Missions list: large title, optional count
+ * chip, a muted description and page actions on the right.
+ */
+export function MissionPageHeader({
+  title,
+  chip,
+  description,
+  eyebrow,
+  actions,
+}: {
+  title: string;
+  chip?: React.ReactNode;
+  description?: React.ReactNode;
+  eyebrow?: string;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <header className="flex flex-wrap items-end gap-x-4 gap-y-3">
+      <div className="flex min-w-0 flex-col gap-1">
+        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">
+            {title}
+          </h1>
+          {chip ? <PageChip>{chip}</PageChip> : null}
+        </div>
+        {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
+      </div>
+      {actions ? <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div> : null}
+    </header>
+  );
+}
+
+/** Violet count chip with a dot, as beside the Missions title. */
+export function PageChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="bg-primary-subtle text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold">
+      <span aria-hidden="true" className="bg-primary size-1.5 rounded-full" />
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Fact tile from Mission details. Renders a `dt`/`dd` pair, so place it in a
+ * `<dl>`. The icon is decorative and hidden on phones.
+ */
+export function StatTile({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  note,
+  tone = 'default',
+  className,
+}: {
+  icon?: LucideIcon;
+  label: string;
+  value: React.ReactNode;
+  unit?: string;
+  note?: React.ReactNode;
+  tone?: 'default' | 'alert' | 'success';
+  className?: string;
+}) {
+  return (
+    <div className={cn('bg-muted/70 flex min-w-0 items-start gap-2.5 rounded-xl px-3 py-3 sm:gap-3 sm:px-3.5', className)}>
+      {Icon ? (
+        <span aria-hidden="true" className="text-primary hidden size-8 shrink-0 items-center justify-center rounded-lg bg-white sm:flex">
+          <Icon className="size-4" />
+        </span>
+      ) : null}
+      <div className="min-w-0">
+        <dt className="text-muted-foreground text-xs font-medium">{label}</dt>
+        <dd
+          className={cn(
+            'text-foreground mt-0.5 text-sm font-semibold break-words tabular-nums',
+            tone === 'alert' && 'text-rose-700',
+            tone === 'success' && 'text-success-strong',
+          )}
+        >
+          {value}
+          {unit ? <span className="text-muted-foreground ml-1 text-xs font-medium">{unit}</span> : null}
+        </dd>
+        {note ? <dd className="text-muted-foreground mt-0.5 text-xs">{note}</dd> : null}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Explanatory or warning callout. `info` is the lavender note used for rules
+ * text; `attention` is the amber surface reserved for real gaps and refusals.
+ */
+export function MissionNotice({
+  tone = 'info',
+  icon: Icon,
+  className,
+  children,
+  ...props
+}: {
+  tone?: 'info' | 'attention';
+  icon?: LucideIcon;
+} & React.ComponentProps<'div'>) {
+  return (
+    <div
+      className={cn(
+        'flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm',
+        tone === 'info'
+          ? 'border-primary/15 bg-primary-subtle/50 text-foreground'
+          : 'border-attention-border bg-attention-subtle text-attention-foreground',
+        className,
+      )}
+      {...props}
+    >
+      {Icon ? (
+        <Icon
+          className={cn('mt-0.5 size-4 shrink-0', tone === 'info' ? 'text-primary' : '')}
+          aria-hidden="true"
+        />
+      ) : null}
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
+/** Muted empty state inside a panel. */
+export function MissionEmpty({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <p className={cn('bg-muted/70 text-muted-foreground rounded-xl px-4 py-6 text-center text-sm', className)}>
+      {children}
+    </p>
+  );
+}
+
 /** White bento card with an icon title row, as used on Mission details. */
 export function MissionPanel({
   icon: Icon,
