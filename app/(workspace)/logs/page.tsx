@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
+import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { LogHistory } from '@/components/logs/log-history';
 import { requireProfile } from '@/lib/auth/profile';
 import { getMyLogHistory } from '@/lib/logs/queries';
@@ -25,9 +25,11 @@ export default async function LogsPage() {
   const totalHours = sumHours(logs);
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage className="max-w-[880px]">
+      <MissionPageHeader
+        eyebrow="My time"
         title="My effort log"
+        chip={`${formatHours(totalHours)} h logged`}
         description={
           logs.length === 0
             ? 'No entries recorded yet'
@@ -35,9 +37,7 @@ export default async function LogsPage() {
         }
       />
 
-      <div className="px-4 py-4 lg:px-6">
-        <LogHistory logs={logs} tasks={tasks} />
-      </div>
-    </>
+      <LogHistory logs={logs} tasks={tasks} />
+    </MissionPage>
   );
 }
