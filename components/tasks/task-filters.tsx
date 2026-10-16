@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { SearchIcon, XIcon } from 'lucide-react';
+import { LayoutGridIcon, SearchIcon, TableIcon, XIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,20 +25,30 @@ import {
   TASK_STATUSES,
 } from '@/lib/tracker/enums';
 import { cn } from '@/lib/utils';
-import type { User } from '@/types/tracker';
+import type { Task, TaskStatus, User } from '@/types/tracker';
+
+export type MissionView = 'cards' | 'table';
 
 export interface TaskFiltersProps {
   filters: TaskFilterState;
   onChange: (next: TaskFilterState) => void;
   /** Directory used to populate the assignee facet. */
   members: readonly User[];
+  /** The full fetched set, used for the status pill counts. */
+  tasks: readonly Task[];
   resultCount: number;
   totalCount: number;
+  view: MissionView;
+  onViewChange: (view: MissionView) => void;
 }
 
+/** Statuses that get a pill; the rarer ones stay in the facet menu. */
+const PILL_STATUSES: readonly TaskStatus[] = ['Not Started', 'In Progress', 'Done'];
+
 /**
- * Dense filter bar: search plus the five facets from the roadmap (assignee,
- * category, priority, status, freshness).
+ * Missions toolbar (Stitch reference missions_list_1): search, status pills
+ * with counts, the remaining facets (assignee, type, priority, freshness, any
+ * status) and the card/table view switch.
  *
  * Filtering runs against the already-fetched set, so every change is immediate
  * and no round trip is involved.
@@ -47,8 +57,11 @@ export function TaskFilters({
   filters,
   onChange,
   members,
+  tasks,
   resultCount,
   totalCount,
+  view,
+  onViewChange,
 }: TaskFiltersProps) {
   const activeCount = activeFilterCount(filters);
 
@@ -59,25 +72,71 @@ export function TaskFilters({
     onChange({ ...filters, [key]: value });
   };
 
+  const statusCounts = React.useMemo(() => {
+    const counts = new Map<TaskStatus, number>();
+    for (const task of tasks) counts.set(task.status, (counts.get(task.status) ?? 0) + 1);
+    return counts;
+  }, [tasks]);
+
   return (
-    <div className="soft-card flex flex-col gap-2.5 p-4">
+    <div className="soft-card flex flex-col gap-3 p-3 sm:p-4">
       <div className="flex flex-wrap items-center gap-2">
         {/* Search */}
-        <div className="relative min-w-52 flex-1">
+        <div className="relative min-w-52 flex-1 lg:max-w-80">
           <SearchIcon
-            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-slate-400"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
             aria-hidden="true"
           />
           <Input
             type="search"
             value={filters.search}
             onChange={(event) => update('search', event.target.value)}
-            placeholder="Search title or tag, e.g. Sep26_T5"
-            aria-label="Search tasks by title or task tag"
-            className="h-8 pl-8 text-xs"
+            placeholder="Search missions by title or tag"
+            aria-label="Search missions by title or task tag"
+            className="bg-muted h-9 rounded-xl border-transparent pl-9 text-sm"
           />
         </div>
 
+        {/* Status pills. Single choice, mirrored by the status facet below. */}
+        <div
+          role="group"
+          aria-label="Filter by status"
+          className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1"
+        >
+          <button
+            type="button"
+            className="filter-pill"
+            aria-pressed={filters.status === ALL}
+            onClick={() => update('status', ALL)}
+          >
+            All <span className="tabular-nums opacity-70">{totalCount}</span>
+          </button>
+          {PILL_STATUSES.map((status) => (
+            <button
+              key={status}
+              type="button"
+              className="filter-pill"
+              aria-pressed={filters.status === status}
+              onClick={() => update('status', filters.status === status ? ALL : status)}
+            >
+              {status}
+              <span className="tabular-nums opacity-70">{statusCounts.get(status) ?? 0}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* View switch. The table needs desktop width, so it is offered from lg. */}
+        <div
+          role="group"
+          aria-label="Mission view"
+          className="bg-muted ml-auto hidden shrink-0 items-center gap-0.5 rounded-xl p-1 lg:flex"
+        >
+          <ViewButton current={view} value="cards" label="Card view" icon={LayoutGridIcon} onSelect={onViewChange} />
+          <ViewButton current={view} value="table" label="Table view" icon={TableIcon} onSelect={onViewChange} />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
         <FacetSelect
           label="Assignee"
           value={filters.assigneeId}
@@ -105,7 +164,7 @@ export function TaskFilters({
             value: category,
             label: `${category} · ${CATEGORY_LABELS[category]}`,
           }))}
-          allLabel="All categories"
+          allLabel="All types"
           className="w-44"
         />
 
@@ -122,7 +181,7 @@ export function TaskFilters({
             value: priority,
             label: priority,
           }))}
-          allLabel="All priorities"
+          allLabel="Any priority"
           className="w-32"
         />
 
@@ -139,7 +198,7 @@ export function TaskFilters({
             value: status,
             label: status,
           }))}
-          allLabel="All statuses"
+          allLabel="Any status"
           className="w-36"
         />
 
@@ -156,8 +215,8 @@ export function TaskFilters({
             value: freshness,
             label: freshness,
           }))}
-          allLabel="All freshness"
-          className="w-32"
+          allLabel="Any freshness"
+          className="w-36"
         />
 
         {activeCount > 0 ? (
@@ -174,15 +233,46 @@ export function TaskFilters({
             </span>
           </Button>
         ) : null}
-      </div>
 
-      {/* Result count doubles as the live region announcing filter effects. */}
-      <p className="text-xs text-slate-500" role="status" aria-live="polite">
-        {resultCount === totalCount
-          ? `${totalCount} ${totalCount === 1 ? 'task' : 'tasks'}`
-          : `${resultCount} of ${totalCount} tasks`}
-      </p>
+        {/* Result count doubles as the live region announcing filter effects. */}
+        <p className="text-muted-foreground ml-auto text-xs" role="status" aria-live="polite">
+          {resultCount === totalCount
+            ? `${totalCount} ${totalCount === 1 ? 'mission' : 'missions'}`
+            : `${resultCount} of ${totalCount} missions`}
+        </p>
+      </div>
     </div>
+  );
+}
+
+function ViewButton({
+  current,
+  value,
+  label,
+  icon: Icon,
+  onSelect,
+}: {
+  current: MissionView;
+  value: MissionView;
+  label: string;
+  icon: typeof TableIcon;
+  onSelect: (view: MissionView) => void;
+}) {
+  const active = current === value;
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
+      title={label}
+      onClick={() => onSelect(value)}
+      className={cn(
+        'flex size-8 items-center justify-center rounded-lg transition-colors',
+        active ? 'text-primary bg-white shadow-(--shadow-card)' : 'text-muted-foreground hover:text-foreground',
+      )}
+    >
+      <Icon className="size-4" aria-hidden="true" />
+    </button>
   );
 }
 
@@ -233,8 +323,9 @@ function FacetSelect({
         size="sm"
         aria-label={`Filter by ${label.toLowerCase()}`}
         className={cn(
+          'rounded-xl',
           className,
-          // Narrowed facets take the forest tint, so active filters read at a
+          // Narrowed facets take the violet tint, so active filters read at a
           // glance without introducing a competing accent hue.
           value !== ALL &&
             'border-primary/25 bg-primary-subtle text-primary font-semibold',

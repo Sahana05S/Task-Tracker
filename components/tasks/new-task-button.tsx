@@ -4,7 +4,7 @@ import { PlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /**
- * Opens the create-task form from the page header.
+ * Opens the create-mission form from the page header.
  *
  * A link to `?new=1` rather than a button wired to shared state. The dialog lives
  * inside `TaskWorkspace`, which is a sibling of the header, and a query parameter
@@ -16,10 +16,10 @@ import { Button } from '@/components/ui/button';
  */
 export function NewTaskButton() {
   return (
-    <Button asChild size="sm">
+    <Button asChild className="h-10 rounded-xl px-4">
       <Link href="/tasks?new=1" scroll={false}>
         <PlusIcon aria-hidden="true" />
-        Add Task
+        New mission
       </Link>
     </Button>
   );

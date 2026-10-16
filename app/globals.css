@@ -539,6 +539,43 @@
     @apply h-full rounded-full bg-linear-to-r from-[#10b981] to-[#34d399];
   }
 
+  /* Initials avatar for Missions; letters come from data-initials so they stay
+     out of the text content beside the name. */
+  .initials-avatar {
+    @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full
+      text-[11px] font-bold;
+  }
+
+  .initials-avatar::before {
+    content: attr(data-initials);
+  }
+
+  .initials-avatar-0 {
+    @apply bg-primary-subtle text-primary-subtle-foreground;
+  }
+
+  .initials-avatar-1 {
+    @apply bg-recognition-subtle text-recognition-foreground;
+  }
+
+  .initials-avatar-2 {
+    @apply bg-success-subtle text-success-strong;
+  }
+
+  /* Status filter pill on the Missions toolbar. */
+  .filter-pill {
+    @apply text-muted-foreground inline-flex items-center gap-1.5 rounded-xl px-3
+      py-1.5 text-sm font-medium whitespace-nowrap transition-colors;
+  }
+
+  .filter-pill:hover {
+    @apply text-foreground bg-muted;
+  }
+
+  .filter-pill[aria-pressed='true'] {
+    @apply bg-primary-subtle text-primary-subtle-foreground font-semibold;
+  }
+
   .icon-button:hover {
     @apply text-foreground bg-muted;
   }

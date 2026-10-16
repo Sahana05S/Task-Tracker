@@ -543,7 +543,8 @@ const phases = {
     const timelineText = await page.locator('main').first().innerText();
     const undatedText = timelineText.slice(timelineText.indexOf('Undated tasks'), timelineText.indexOf('Dependencies and carryover'));
     const undatedTags = new Set([...undatedText.matchAll(/([A-Z0-9]+-[A-Z0-9-]+) · /g)].map(m => m[1]));
-    await open(page, '/tasks');
+    // Cards are the default Missions view; the table view lists every column.
+    await open(page, '/tasks?view=table');
     const tracker = new Map();
     for (const text of await page.locator('table tbody tr').allInnerTexts()) {
       const tag = text.match(/^(\S+)/)?.[1];
@@ -607,7 +608,7 @@ const phases = {
       for (const tag of tags) assert.ok(listed.includes(tag), `${tag} missing from tracker after reload`);
       console.log(`PASS ${mode}: ${tags.join(', ')} persist in tracker after reload`);
     }
-    await open(page, '/tasks');
+    await open(page, '/tasks?view=table');
     const weekly = [];
     for (const n of [1, 2]) {
       const row = page.locator('tr').filter({ hasText: `M13 TIMER acceptance (Copy ${n})` }).first();
@@ -618,7 +619,7 @@ const phases = {
     // Archived tasks are not offered; weekly[1] is archived below on a first run.
     await tools.selectTasks([weekly[0], 'M13-F87E37-TIMER']);
     await tools.commit('refresh metrics on two tasks');
-    await open(page, '/tasks');
+    await open(page, '/tasks?view=table');
     const archived = /Archived/.test(await page.locator('tr').filter({ hasText: weekly[1] }).innerText());
     if (!archived) {
       tools = await toolsPanel(page);
@@ -634,7 +635,7 @@ const phases = {
       await tools.form.locator('input[name="reason"]').fill('M13 UI archive of a synthetic copy');
       await tools.commit('archive');
     }
-    await open(page, '/tasks');
+    await open(page, '/tasks?view=table');
     assert.match(await page.locator('tr').filter({ hasText: weekly[1] }).innerText(), /Archived/, 'Archived copy not read-only after reload');
     console.log(`PASS ${weekly[1]} shows archived/read-only after reload`);
     await open(page, `/tasks/${weekly[0]}/checklist`);
@@ -694,7 +695,7 @@ const phases = {
       await tools.form.locator('input[name="targetMonth"]').fill(TODAY.slice(0, 7));
       await tools.form.locator('input[name="reason"]').fill('M13 UI carryover of unfinished August work');
       const [successor] = tagsIn(await tools.commit('carryover from August into the current month'));
-      await open(page, '/tasks');
+      await open(page, '/tasks?view=table');
       const before = await page.locator('tr').filter({ hasText: predecessor }).innerText();
       assert.match(before, /Archived/, 'Carryover predecessor not archived');
       assert.match(before, /20 Aug 2026/, 'Predecessor is not August-assigned');

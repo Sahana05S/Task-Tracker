@@ -787,3 +787,61 @@ exclusions of "waiting for help", PNG tracing and mascot work.
   - The Notifications bell still has no behaviour (pre-existing).
   - There is still no permanent logo or mascot (deferred).
 
+
+## Redesign slice 2 (Missions list and Mission details) - 16 October 2026
+
+On `m13-verification` (not merged, pushed or deployed). Inputs were Stitch
+`missions_list_1` (the `missions_list_2` screenshot is unusable) and
+`mission_details_1`/`2`, with the slice 1 visual system and "Missions"
+terminology.
+
+- **Missions list (`/tasks`).**
+  - Header: "Missions" with an active count and a *New mission* button.
+  - Toolbar: search, status pills with counts (All, Not Started, In Progress,
+    Done) and the five facets.
+  - Views: a card/table switch from 1024 px; cards are the default at every
+    width. `?view=table` restores the full data grid on desktop.
+  - Mission cards show priority, type, an Archived chip, the tag link, the due
+    date (overdue in red), title, description, the mint progress bar, hours,
+    scaled progress, task productivity, freshness and assignees.
+  - Each card also has the inline status picker, *Log hours* and *Open*, plus
+    an actions menu (Quick summary, Edit details, Delete mission).
+- **Mission details (`/tasks/[tag]`).**
+  - Top: breadcrumb, chips, title and *Log hours*.
+  - Overview card: overall progress and fact tiles (Status, Due, Assigned,
+    Completed, Met deadline, Task freshness, Assignees, Reviewers). Tiles are
+    two-up on phones.
+  - Master-checklist hero with Setup/Activity/Closure state pills.
+  - Restyled Lifecycle and scale forms.
+  - "Mission brief & scope": description, details needed, SMART tiles,
+    reviewer notes, comments, template instructions, the structured-details
+    editor and legacy flags.
+  - "Work files & assets": Inputs/Process/Outputs and references, with the
+    Drive-deferred note.
+  - "Dependency missions".
+  - "Activity & updates": a log timeline that replaces the wide log table.
+  - Side column: Timer, Checklist phases, "Effort & scoring inputs" (including
+    the eligibility and participant-share sentences), Manual time entry and
+    Timer records. The redundant "Quick links" panel was removed.
+- **Wording.** UI nouns say "mission". Domain terms are unchanged: task tag,
+  task productivity, task freshness, Task Tools, and the dialog's Create
+  task / Save changes buttons.
+- **Unchanged.** No data, permission, route, server-action or business-rule
+  changes; every existing form field and button label is kept.
+- **Test change.** In `tools/test_m13_core_browser.mjs`, the row-based checks
+  in the parity, batch and carryover phases now open `/tasks?view=table`,
+  because cards are the default. Their assertions are unchanged.
+- **Checks:**
+  - unit tests (496 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - all 11 browser acceptance phases passed against the test project. `task`
+    and `checklist` were rerun after the final layout tweak;
+  - horizontal overflow is 0 at 390, 768 and 1365 px on `/tasks` and a
+    mission, for both the director and member A.
+  Lint is not configured.
+- **Known gaps:**
+  - The master checklist page itself is not yet restyled.
+  - Stitch extras that would need new rules or data were not built: streaks,
+    XP, star credits, "waiting for help", blockers and "ready to close".
+  - The runner `tools/test_m13_hosted_core_browser.py` crashes printing server
+    logs on a cp1252 console. Run it with `PYTHONIOENCODING=utf-8`.

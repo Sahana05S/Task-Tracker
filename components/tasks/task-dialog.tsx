@@ -91,7 +91,7 @@ export function TaskDialog({
         className="max-h-[92dvh] gap-0 sm:mx-auto sm:max-w-2xl sm:rounded-t-xl"
       >
         <SheetHeader>
-          <SheetTitle>{isEdit ? 'Edit task' : 'New task'}</SheetTitle>
+          <SheetTitle>{isEdit ? 'Edit mission' : 'New mission'}</SheetTitle>
           <SheetDescription>
             {isEdit
               ? `Update the details for ${task.taskTag}.`

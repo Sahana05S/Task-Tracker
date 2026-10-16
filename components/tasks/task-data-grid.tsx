@@ -424,7 +424,7 @@ function RowActions({ task, onEdit, onRequestDelete }: RowActionsProps) {
           onSelect={() => onRequestDelete(task)}
         >
           <Trash2Icon aria-hidden="true" />
-          Delete task
+          Delete mission
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

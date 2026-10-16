@@ -2,18 +2,33 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ClockIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import {
+  ArchiveIcon,
+  ArrowRightIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  InfoIcon,
+  MoreVerticalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from 'lucide-react';
 
 import { QuickLogTrigger } from '@/components/logs/quick-log-trigger';
-import { ProgressInput } from '@/components/tasks/progress-input';
+import { AvatarStack, MissionProgress } from '@/components/missions/mission-ui';
 import { StatusSelect } from '@/components/tasks/status-select';
 import {
   CategoryBadge,
   FreshnessIndicator,
   PriorityBadge,
 } from '@/components/tracker/tracker-badges';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Sheet,
   SheetContent,
@@ -24,8 +39,8 @@ import {
 import { EMPTY_EFFORT, type TaskEffort } from '@/lib/logs/metrics';
 import { canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
 import { CATEGORY_LABELS } from '@/lib/tracker/enums';
-import { formatDate, formatNumeric, formatPercent, isOverdue, toProgressValue, formatHours } from '@/lib/tracker/format';
-import { cn, getInitials } from '@/lib/utils';
+import { formatDate, formatNumeric, formatPercent, isOverdue, formatHours } from '@/lib/tracker/format';
+import { cn } from '@/lib/utils';
 import type { Task, User } from '@/types/tracker';
 
 export interface TaskCardListProps {
@@ -40,15 +55,18 @@ export interface TaskCardListProps {
 }
 
 /**
- * Stacked card view for narrow viewports.
+ * Mission cards (Stitch reference missions_list_1): one column on phones, two
+ * on tablets and three on wide screens.
  *
- * Card anatomy follows the mobile section of `responsive-ui-design.md`:
- *   header  task tag, category badge, freshness indicator
- *   body    title, assignee avatar, progress bar with percentage
- *   footer  status picker, Quick Log button
+ * Card anatomy:
+ *   chips    priority, type, archived; actions menu
+ *   heading  task tag link, due date, title and description
+ *   progress the task's stored 0–100 progress
+ *   effort   hours logged, scaled progress, task productivity, freshness
+ *   footer   assignees, status picker, Log hours, Open mission
  *
- * Tapping the body opens a details drawer, which is where the columns the card
- * cannot fit — scale, scaled progress, reviewer, dates — are shown.
+ * "Quick summary" in the actions menu opens a drawer with the remaining
+ * columns (scale, reviewers, dates, eligibility) without leaving the list.
  */
 export function TaskCardList({
   tasks,
@@ -69,15 +87,18 @@ export function TaskCardList({
 
   return (
     <>
-      <ul className="flex flex-col gap-2">
+      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {tasks.map((task) => (
-          <li key={task.id}>
-            <TaskCard
+          <li key={task.id} className="flex">
+            <MissionCard
               task={task}
               assigneeNames={namesForIds(task.assigneeIds, memberNames)}
               effort={effortByTask.get(task.id) ?? EMPTY_EFFORT}
               canEditOwnFields={canUpdateTaskOwnFields(currentUser, task)}
+              canManage={canManage}
               onOpenDetails={() => setDetailsTask(task)}
+              onEdit={() => onEdit(task)}
+              onRequestDelete={() => onRequestDelete(task)}
             />
           </li>
         ))}
@@ -91,7 +112,7 @@ export function TaskCardList({
       >
         <SheetContent side="bottom" className="pb-8">
           {activeTask ? (
-            <TaskDetails
+            <MissionSummary
               task={activeTask}
               effort={effortByTask.get(activeTask.id) ?? EMPTY_EFFORT}
               assigneeNames={namesForIds(activeTask.assigneeIds, memberNames)}
@@ -117,144 +138,161 @@ export function TaskCardList({
 /* Card                                                                       */
 /* -------------------------------------------------------------------------- */
 
-interface TaskCardProps {
+interface MissionCardProps {
   task: Task;
   assigneeNames: readonly string[];
   effort: TaskEffort;
   canEditOwnFields: boolean;
+  canManage: boolean;
   onOpenDetails: () => void;
+  onEdit: () => void;
+  onRequestDelete: () => void;
 }
 
-function TaskCard({
+function MissionCard({
   task,
   assigneeNames,
   effort,
   canEditOwnFields,
+  canManage,
   onOpenDetails,
-}: TaskCardProps) {
-  const progress = toProgressValue(task.progressPercentage);
-  const overdue =
-    isOverdue(task.dueDate) &&
-    task.status !== 'Done' &&
-    task.status !== 'Discarded';
+  onEdit,
+  onRequestDelete,
+}: MissionCardProps) {
+  const href = `/tasks/${encodeURIComponent(task.taskTag)}`;
+  const archived = Boolean(task.archivedEffectiveDate);
+  const closed = task.status === 'Done' || task.status === 'Discarded';
+  const overdue = isOverdue(task.dueDate) && !closed;
+  const canChange = canManage && !archived;
 
   return (
-    <article className="soft-card-interactive flex flex-col">
-      {/* Header */}
-      <div className="border-border flex items-center gap-2 border-b px-4 py-2.5">
-        <Link
-          href={`/tasks/${encodeURIComponent(task.taskTag)}`}
-          className="task-tag hover:underline"
-        >
-          {task.taskTag}
-        </Link>
-        <CategoryBadge category={task.category} />
-        <FreshnessIndicator freshness={task.freshness} className="ml-auto" />
-      </div>
-
-      {/* Body. A button so the whole region is one keyboard-reachable target. */}
-      <button
-        type="button"
-        onClick={onOpenDetails}
-        aria-label={`Open details for ${task.taskTag}`}
-        className="hover:bg-muted focus-visible:ring-primary/30 flex flex-col gap-2.5 px-4 py-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
-      >
-        <span className="text-foreground text-sm font-semibold">
-          {task.title}
-        </span>
-
-        <span className="flex items-center gap-2">
-          <Avatar className="size-5">
-            <AvatarFallback className="text-[9px]">
-              {getInitials(assigneeNames[0] ?? 'Unassigned')}
-            </AvatarFallback>
-          </Avatar>
-          <span
-            className="truncate text-xs text-slate-500"
-            title={assigneeNames.join(', ')}
-          >
-            {assigneeNames.length > 0
-              ? assigneeNames.join(', ')
-              : 'Unassigned'}
-          </span>
-          {assigneeNames.length > 1 ? (
-            <span className="badge-soft badge-neutral px-1.5 py-0 text-[10px]">
-              +{assigneeNames.length - 1}
+    <article className="soft-card-interactive flex w-full flex-col gap-4 p-5">
+      {/* Chips and actions */}
+      <div className="flex items-start gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+          <PriorityBadge priority={task.priority} />
+          <CategoryBadge category={task.category} />
+          {archived ? (
+            <span className="badge-soft badge-neutral">
+              <ArchiveIcon className="size-3" aria-hidden="true" />
+              Archived
             </span>
           ) : null}
-          <PriorityBadge priority={task.priority} className="ml-auto" />
-        </span>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="-mt-1 -mr-2 size-8 shrink-0"
+              aria-label={`Actions for ${task.taskTag}`}
+            >
+              <MoreVerticalIcon aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={onOpenDetails}>
+              <InfoIcon aria-hidden="true" />
+              Quick summary
+            </DropdownMenuItem>
+            {canChange ? (
+              <>
+                <DropdownMenuItem onSelect={onEdit}>
+                  <PencilIcon aria-hidden="true" />
+                  Edit details
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={onRequestDelete}>
+                  <Trash2Icon aria-hidden="true" />
+                  Delete mission
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-        <span className="flex items-center gap-2">
-          <progress
-            className="task-progress"
-            value={progress}
-            max={100}
-            data-complete={progress >= 100 ? 'true' : 'false'}
-            aria-label={`Progress for ${task.taskTag}`}
-          />
-          <span className="badge-soft badge-neutral shrink-0 tabular">
+      {/* Heading */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Link href={href} className="task-tag text-primary hover:underline">
+            {task.taskTag}
+          </Link>
+          {task.dueDate ? (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 text-xs',
+                overdue ? 'font-semibold text-rose-700' : 'text-muted-foreground',
+              )}
+            >
+              <CalendarDaysIcon className="size-3.5" aria-hidden="true" />
+              Due {formatDate(task.dueDate)}
+              {overdue ? ' · overdue' : ''}
+            </span>
+          ) : null}
+        </div>
+        <h3 className="text-foreground line-clamp-2 text-lg leading-snug font-bold tracking-tight">
+          {task.title}
+        </h3>
+        {task.description ? (
+          <p className="text-muted-foreground line-clamp-2 text-sm">{task.description}</p>
+        ) : null}
+      </div>
+
+      {/* Progress */}
+      <div className="mt-auto flex flex-col gap-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-foreground font-medium">Progress</span>
+          <span className="text-success-strong font-bold tabular-nums">
             {formatPercent(task.progressPercentage)}
           </span>
-        </span>
-
-        {/* Live effort figures. Hours come from the log aggregate; the rate is
-            the stored task_productivity the log actions maintain. */}
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-          <span className="tabular">
-            <ClockIcon
-              className="mr-1 inline size-3 align-[-1px]"
-              aria-hidden="true"
-            />
+        </div>
+        <MissionProgress value={task.progressPercentage} label={`Progress for ${task.taskTag}`} />
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <span className="tabular-nums">
+            <ClockIcon className="mr-1 inline size-3 align-[-1px]" aria-hidden="true" />
             {formatHours(effort.hoursLogged)} h logged
           </span>
-          <span className="tabular">
-            Scaled {formatNumeric(task.scaledProgress)}
-          </span>
-          <span className="tabular">
-            {formatNumeric(task.taskProductivity)} /h
-          </span>
-        </span>
-
-        {task.dueDate ? (
-          <span
-            className={cn(
-              'text-xs',
-              overdue ? 'font-medium text-rose-700' : 'text-slate-500',
-            )}
-          >
-            Due {formatDate(task.dueDate)}
-            {overdue ? ' · overdue' : ''}
-          </span>
-        ) : null}
-      </button>
+          <span className="tabular-nums">Scaled {formatNumeric(task.scaledProgress)}</span>
+          <span className="tabular-nums">{formatNumeric(task.taskProductivity)} /h</span>
+          <FreshnessIndicator freshness={task.freshness} className="ml-auto" />
+        </div>
+      </div>
 
       {/* Footer */}
-      <div className="border-border flex items-center gap-2 border-t px-4 py-2.5">
-        <StatusSelect
-          version={task.lifecycleVersion}
-          taskId={task.id}
-          taskTag={task.taskTag}
-          status={task.status}
-          canEdit={canEditOwnFields}
-        />
-
-        <QuickLogTrigger
-          variant="button"
-          label="Quick Log"
-          presetTaskId={task.id}
-          className="ml-auto"
-        />
+      <div className="border-border flex flex-col gap-3 border-t pt-4">
+        <AvatarStack names={assigneeNames} />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusSelect
+            version={task.lifecycleVersion}
+            taskId={task.id}
+            taskTag={task.taskTag}
+            status={task.status}
+            canEdit={canEditOwnFields}
+          />
+          <div className="ml-auto flex items-center gap-2">
+            {!archived && !closed ? (
+              <QuickLogTrigger variant="button" label="Log hours" presetTaskId={task.id} />
+            ) : null}
+            <Button asChild size="sm">
+              <Link href={href} aria-label={`Open mission ${task.taskTag}`}>
+                Open
+                <ArrowRightIcon aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
+        </div>
       </div>
     </article>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* Details drawer                                                             */
+/* Summary drawer                                                             */
 /* -------------------------------------------------------------------------- */
 
-interface TaskDetailsProps {
+interface MissionSummaryProps {
   task: Task;
   effort: TaskEffort;
   assigneeNames: readonly string[];
@@ -264,7 +302,7 @@ interface TaskDetailsProps {
   onRequestDelete: () => void;
 }
 
-function TaskDetails({
+function MissionSummary({
   task,
   effort,
   assigneeNames,
@@ -272,7 +310,7 @@ function TaskDetails({
   canManage,
   onEdit,
   onRequestDelete,
-}: TaskDetailsProps) {
+}: MissionSummaryProps) {
   return (
     <>
       <SheetHeader>
@@ -292,7 +330,7 @@ function TaskDetails({
 
       <div className="flex flex-col gap-4 overflow-y-auto px-4">
         {task.description ? (
-          <p className="text-sm text-slate-600">{task.description}</p>
+          <p className="text-muted-foreground text-sm">{task.description}</p>
         ) : null}
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
@@ -305,7 +343,7 @@ function TaskDetails({
           <Detail
             label="Reviewers"
             value={
-              reviewerNames.length > 0 ? reviewerNames.join(', ') : '\u2014'
+              reviewerNames.length > 0 ? reviewerNames.join(', ') : '—'
             }
           />
           <Detail label="Priority" value={task.priority} />
@@ -332,7 +370,7 @@ function TaskDetails({
             numeric
           />
           <Detail
-            label="Productivity / h"
+            label="Task productivity / h"
             value={formatNumeric(task.taskProductivity)}
             numeric
           />
@@ -347,37 +385,37 @@ function TaskDetails({
 
         {task.comments ? (
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium tracking-wide text-slate-500 uppercase">
-              Comments
-            </span>
-            <p className="text-sm text-slate-600">{task.comments}</p>
+            <span className="eyebrow text-muted-foreground">Comments</span>
+            <p className="text-muted-foreground text-sm">{task.comments}</p>
           </div>
         ) : null}
 
-        {canManage&&!task.archivedEffectiveDate ? (
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onEdit}
-              className="flex-1"
-            >
-              <PencilIcon aria-hidden="true" />
-              Edit
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onRequestDelete}
-              className="flex-1 border-rose-200 text-rose-700 hover:bg-rose-50"
-            >
-              <Trash2Icon aria-hidden="true" />
-              Delete
-            </Button>
-          </div>
-        ) : null}
+        <div className="flex gap-2 pt-2">
+          <Button asChild size="sm" className="flex-1">
+            <Link href={`/tasks/${encodeURIComponent(task.taskTag)}`}>
+              Open mission
+              <ArrowRightIcon aria-hidden="true" />
+            </Link>
+          </Button>
+          {canManage && !task.archivedEffectiveDate ? (
+            <>
+              <Button type="button" variant="outline" size="sm" onClick={onEdit}>
+                <PencilIcon aria-hidden="true" />
+                Edit
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onRequestDelete}
+                className="border-rose-200 text-rose-700 hover:bg-rose-50"
+              >
+                <Trash2Icon aria-hidden="true" />
+                Delete
+              </Button>
+            </>
+          ) : null}
+        </div>
       </div>
     </>
   );
@@ -401,15 +439,10 @@ function Detail({
 }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+      <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         {label}
       </dt>
-      <dd
-        className={cn(
-          'text-sm text-slate-900',
-          numeric && 'tabular',
-        )}
-      >
+      <dd className={cn('text-foreground text-sm', numeric && 'tabular-nums')}>
         {value}
       </dd>
     </div>

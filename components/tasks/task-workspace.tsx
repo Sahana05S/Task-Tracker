@@ -10,7 +10,7 @@ import { deleteTask } from '@/app/tasks/actions';
 import { TaskCardList } from '@/components/tasks/task-card-list';
 import { TaskDataGrid } from '@/components/tasks/task-data-grid';
 import { TaskDialog } from '@/components/tasks/task-dialog';
-import { TaskFilters } from '@/components/tasks/task-filters';
+import { TaskFilters, type MissionView } from '@/components/tasks/task-filters';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -48,12 +48,13 @@ export interface TaskWorkspaceProps {
 }
 
 /**
- * Client shell for the task module.
+ * Client shell for the Missions list.
  *
  * Owns filter state, sort state and which drawer is open, then hands the
- * resulting list to whichever view the viewport calls for. Both views are
- * mounted and toggled with CSS rather than a media-query hook, so the correct
- * one is present in the server-rendered HTML and nothing shifts on hydration.
+ * resulting list to the chosen view. Cards are the default at every width;
+ * `?view=table` adds the dense grid from 1024px up, with cards still below it.
+ * The view lives in the URL so it survives a refresh and is visible in the
+ * server-rendered HTML, so nothing shifts on hydration.
  */
 export function TaskWorkspace({
   tasks,
@@ -80,12 +81,18 @@ export function TaskWorkspace({
    * state. The parameter is cleared on open so a refresh does not reopen the form.
    */
   const wantsNew = searchParams.get('new') === '1';
+  const view: MissionView = searchParams.get('view') === 'table' ? 'table' : 'cards';
+  const listHref = view === 'table' ? '/tasks?view=table' : '/tasks';
   React.useEffect(() => {
     if (!wantsNew) return;
     setEditingTask(null);
     setDialogOpen(true);
-    router.replace('/tasks', { scroll: false });
-  }, [wantsNew, router]);
+    router.replace(listHref, { scroll: false });
+  }, [wantsNew, router, listHref]);
+
+  const changeView = (next: MissionView) => {
+    router.replace(next === 'table' ? '/tasks?view=table' : '/tasks', { scroll: false });
+  };
 
   const canManage = canManageTasks(currentUser.role);
 
@@ -113,29 +120,32 @@ export function TaskWorkspace({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Title and the Add Task control live in the page header, so this
-          component starts straight into the filter bar. */}
+      {/* Title and the New mission control live in the page header, so this
+          component starts straight into the toolbar. */}
       <TaskFilters
         filters={filters}
         onChange={setFilters}
         members={members}
+        tasks={tasks}
         resultCount={visibleTasks.length}
         totalCount={tasks.length}
+        view={view}
+        onViewChange={changeView}
       />
 
       {tasks.length === 0 ? (
         <EmptyState
-          title="No tasks yet"
+          title="No missions yet"
           description={
             canManage
-              ? 'Create the first task to start tracking effort and progress.'
-              : 'Once a manager assigns you work, it will appear here.'
+              ? 'Create the first mission to start tracking effort and progress.'
+              : 'Once a manager assigns you a mission, it will appear here.'
           }
         />
       ) : visibleTasks.length === 0 ? (
         <EmptyState
-          title="No tasks match these filters"
-          description="Widen or clear the filters to see more of the tracker."
+          title="No missions match these filters"
+          description="Widen or clear the filters to see more missions."
           action={
             hasActiveFilters(filters) ? (
               <Button
@@ -151,23 +161,24 @@ export function TaskWorkspace({
         />
       ) : (
         <>
-          {/* Grid from 1024px up. */}
-          <div className="hidden lg:block">
-            <TaskDataGrid
-              tasks={visibleTasks}
-              memberNames={memberNames}
-              effortByTask={effortByTask}
-              currentUser={currentUser}
-              canManage={canManage}
-              sort={sort}
-              onSortChange={setSort}
-              onEdit={openEdit}
-              onRequestDelete={setPendingDelete}
-            />
-          </div>
+          {view === 'table' ? (
+            /* Table from 1024px up; cards remain below it. */
+            <div className="hidden lg:block">
+              <TaskDataGrid
+                tasks={visibleTasks}
+                memberNames={memberNames}
+                effortByTask={effortByTask}
+                currentUser={currentUser}
+                canManage={canManage}
+                sort={sort}
+                onSortChange={setSort}
+                onEdit={openEdit}
+                onRequestDelete={setPendingDelete}
+              />
+            </div>
+          ) : null}
 
-          {/* Cards below 1024px, covering mobile and tablet. */}
-          <div className="lg:hidden">
+          <div className={view === 'table' ? 'lg:hidden' : undefined}>
             <TaskCardList
               tasks={visibleTasks}
               memberNames={memberNames}
@@ -260,12 +271,12 @@ function DeleteConfirmation({
         // Reported by toast because the drawer that asked the question is gone by
         // the time the answer arrives.
         toast.success(`${taskTag} deleted`, {
-          description: 'The task and its effort logs have been removed.',
+          description: 'The mission and its effort logs have been removed.',
         });
       } else {
         // Kept inline: the drawer is still open and the message belongs next to
         // the action that was refused.
-        setError(result.error ?? 'Could not delete the task.');
+        setError(result.error ?? 'Could not delete the mission.');
       }
     });
   };
@@ -279,7 +290,7 @@ function DeleteConfirmation({
     >
       <SheetContent side="bottom" className="sm:mx-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Delete task</SheetTitle>
+          <SheetTitle>Delete mission</SheetTitle>
           <SheetDescription>
             {task ? (
               <>
