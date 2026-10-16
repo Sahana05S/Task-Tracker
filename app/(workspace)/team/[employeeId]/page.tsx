@@ -7,7 +7,26 @@ import { AwardHistory } from '@/components/team/award-history';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
+import {
+  ArrowLeftIcon,
+  CalendarClockIcon,
+  ClipboardListIcon,
+  HistoryIcon,
+  LinkIcon,
+  ListChecksIcon,
+  StarIcon,
+  type LucideIcon,
+} from 'lucide-react';
+
+import {
+  InitialsAvatar,
+  MissionEmpty,
+  MissionNotice,
+  MissionPage,
+  MissionPageHeader,
+  MissionPanel,
+  StatTile,
+} from '@/components/missions/mission-ui';
 import { EmployeeAnalyticsChartsPanel } from '@/components/team/employee-analytics-charts';
 import {
   CategoryBadge,
@@ -54,21 +73,36 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
   if (!canViewEmployeeProfile(viewer, data.employee)) notFound();
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage>
+      <nav aria-label="Breadcrumb" className="-mb-2 flex min-w-0 items-center gap-2 text-sm">
+        <Link
+          href="/team"
+          aria-label="Back to team"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-(--shadow-card) transition-colors"
+        >
+          <ArrowLeftIcon className="size-4" aria-hidden="true" />
+        </Link>
+        <span className="text-muted-foreground font-medium">Team</span>
+        <span aria-hidden="true" className="text-muted-foreground">/</span>
+        <span className="task-tag bg-primary-subtle text-primary-subtle-foreground rounded-md px-2 py-0.5">
+          {data.employee.employeeId}
+        </span>
+      </nav>
+
+      <MissionPageHeader
         title={data.employee.fullName}
         description={`${data.employee.employeeId} · ${data.period.label}`}
         actions={
           <div className="flex items-center gap-2">
             <Link
               href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?${viewQuery(context)}`}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors"
+              className="button-primary"
             >
               Reports & charts
             </Link>
             <Link
               href="/team"
-              className="border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors"
+              className="button-secondary"
             >
               Team index
             </Link>
@@ -76,92 +110,95 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
         }
       />
 
-      <div className="mx-4 mt-4"><LiveReport model={data.presentation}/></div>
-      {data.performanceUnavailableReason ? <p role="status" className="mx-4 mt-4 text-sm text-amber-800">{data.performanceUnavailableReason} Saved reports and effort history remain available.</p> : null}
-      {data.performance?.calculation?<div className="mx-4 mt-4"><PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/></div>:null}
-      <div className="mx-4 mt-4"><AwardHistory awards={data.awards}/></div>
+      <section className="soft-card grid gap-4 p-5 sm:p-6" aria-label="Profile summary">
+        <div className="flex flex-wrap items-center gap-3">
+          <InitialsAvatar name={data.employee.fullName} className="size-11 text-sm" />
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <RoleBadge role={data.employee.role} />
+            <span className="text-muted-foreground font-mono text-xs break-all">
+              {data.employee.email}
+            </span>
+          </div>
+        </div>
+        <dl className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+          <Metric label="Effective daily wins" value={String(data.awards.monthly.counts[data.employee.id]??0)} />
+          <Metric
+            label="As-of performance score"
+            value={
+              data.performance
+                ? displayPerformance(data.performance.calculation?.compositeExact??null,2)
+                : '—'
+            }
+          />
+          <Metric
+            label="Attendance hours"
+            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.attendanceHours):'Unavailable'}
+            unit="h"
+          />
+          <Metric
+            label="Task hours"
+            value={formatHours(data.taskHourSummary.totalHours)}
+            unit="h"
+          />
+          <Metric
+            label="Payable days"
+            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.payableDays): 'Unavailable'}
+          />
+          <Metric
+            label="Off-hours"
+            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.offHours): 'Unavailable'}
+            unit="h"
+          />
+          <Metric
+            label="Today task hours"
+            value={formatHours(data.taskHourSummary.todayHours)}
+            unit="h"
+          />
+          <Metric
+            label="Yesterday task hours"
+            value={formatHours(data.taskHourSummary.yesterdayHours)}
+            unit="h"
+          />
+          <Metric
+            label="As-of support posts"
+            value={String(
+              data.presentation.contributions.filter(c=>['fact','idea','suggestion'].includes(c.kind)).length,
+            )}
+          />
+          <Metric
+            label="Validated support"
+            value={String(data.presentation.contributions.filter(c=>['fact','idea','suggestion'].includes(c.kind)&&c.source.validation_state==='validated').length)}
+          />
+          <Metric
+            label="Sales logs"
+            value={String(data.presentation.contributions.filter(c=>c.kind==='sale').length)}
+          />
+          <Metric
+            label="Employee reports"
+            value={String(data.supportSummary.reports)}
+          />
+        </dl>
+      </section>
 
-      <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_24rem] lg:px-6">
-        <main className="grid gap-4">
-          <section className="soft-card grid gap-4 p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <RoleBadge role={data.employee.role} />
-              <span className="text-muted-foreground font-mono text-xs">
-                {data.employee.email}
-              </span>
-            </div>
-            <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric label="Effective daily wins" value={String(data.awards.monthly.counts[data.employee.id]??0)} />
-              <Metric
-                label="As-of performance score"
-                value={
-                  data.performance
-                    ? displayPerformance(data.performance.calculation?.compositeExact??null,2)
-                    : '—'
-                }
-              />
-              <Metric
-                label="Attendance hours"
-                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.attendanceHours):'Unavailable'}
-                unit="h"
-              />
-              <Metric
-                label="Task hours"
-                value={formatHours(data.taskHourSummary.totalHours)}
-                unit="h"
-              />
-              <Metric
-                label="Payable days"
-                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.payableDays): 'Unavailable'}
-              />
-              <Metric
-                label="Off-hours"
-                value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.offHours): 'Unavailable'}
-                unit="h"
-              />
-              <Metric
-                label="Today task hours"
-                value={formatHours(data.taskHourSummary.todayHours)}
-                unit="h"
-              />
-              <Metric
-                label="Yesterday task hours"
-                value={formatHours(data.taskHourSummary.yesterdayHours)}
-                unit="h"
-              />
-              <Metric
-                label="As-of support posts"
-                value={String(
-                  data.presentation.contributions.filter(c=>['fact','idea','suggestion'].includes(c.kind)).length,
-                )}
-              />
-              <Metric
-                label="Validated support"
-                value={String(data.presentation.contributions.filter(c=>['fact','idea','suggestion'].includes(c.kind)&&c.source.validation_state==='validated').length)}
-              />
-              <Metric
-                label="Sales logs"
-                value={String(data.presentation.contributions.filter(c=>c.kind==='sale').length)}
-              />
-              <Metric
-                label="Employee reports"
-                value={String(data.supportSummary.reports)}
-              />
-            </dl>
-          </section>
+      <LiveReport model={data.presentation}/>
+      {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}
+      {data.performance?.calculation?<PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/>:null}
+      <AwardHistory awards={data.awards}/>
 
-          <Panel title="Employee task list">
+      <div className="grid gap-5 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <main className="grid min-w-0 content-start gap-5 lg:gap-6">
+          <Panel title="Employee task list" icon={ListChecksIcon}>
             <TaskList tasks={data.tasks} />
           </Panel>
 
-          <p className="text-sm text-muted-foreground">Dated charts use captured scale/shares and recorded as-of inputs. Missing history creates gaps; shared work does not duplicate team credit.</p>
-        <EmployeeAnalyticsChartsPanel charts={data.charts} />
+          <MissionNotice>Dated charts use captured scale/shares and recorded as-of inputs. Missing history creates gaps; shared work does not duplicate team credit.</MissionNotice>
+          <EmployeeAnalyticsChartsPanel charts={data.charts} />
 
           <section className="grid gap-4 xl:grid-cols-2">
-            <Panel title="Today's tasks">
+            <Panel title="Today's missions" icon={CalendarClockIcon}>
               <TaskLogSummary logs={data.todayLogs} tasks={data.todayTasks} />
             </Panel>
-            <Panel title="Yesterday's tasks">
+            <Panel title="Yesterday's missions" icon={HistoryIcon}>
               <TaskLogSummary
                 logs={data.yesterdayLogs}
                 tasks={data.yesterdayTasks}
@@ -169,23 +206,23 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
             </Panel>
           </section>
 
-          <Panel title="Task logs compilation">
+          <Panel title="Task logs compilation" icon={ClipboardListIcon}>
             <TaskLogCompilation logs={data.logs} tasks={data.tasks} />
           </Panel>
         </main>
 
-        <aside className="grid h-fit gap-4">
-          <Panel title="Legacy star records · uncertified">
+        <aside className="grid h-fit gap-5 lg:gap-6">
+          <Panel title="Legacy star records · uncertified" icon={StarIcon}>
             <DailyStarLog stars={data.stars} />
           </Panel>
 
-          <Panel title="Quick links">
+          <Panel title="Quick links" icon={LinkIcon}>
             <div className="grid gap-2 text-sm">
               <Link
                 href="/tasks"
                 className="text-primary font-medium hover:underline"
               >
-                Tasks
+                Missions
               </Link>
               <Link
                 href="/logs"
@@ -233,22 +270,23 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
           </Panel>
         </aside>
       </div>
-    </>
+    </MissionPage>
   );
 }
 
 function Panel({
   title,
+  icon,
   children,
 }: {
   title: string;
+  icon?: LucideIcon;
   children: React.ReactNode;
 }) {
   return (
-    <section className="soft-card p-4">
-      <h2 className="text-foreground text-sm font-semibold">{title}</h2>
-      <div className="mt-3">{children}</div>
-    </section>
+    <MissionPanel title={title} icon={icon}>
+      {children}
+    </MissionPanel>
   );
 }
 
@@ -262,33 +300,19 @@ function Metric({
   unit?: string;
 }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white/70 p-3">
-      <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-        {label}
-      </dt>
-      <dd className="mt-1 flex items-baseline gap-1">
-        <span className="tabular text-sm font-medium text-slate-900">
-          {value}
-        </span>
-        {unit ? (
-          <span className="text-muted-foreground text-xs">{unit}</span>
-        ) : null}
-      </dd>
-    </div>
+    <StatTile label={label} value={value} unit={unit} />
   );
 }
 
 function TaskList({ tasks }: { tasks: readonly Task[] }) {
   if (tasks.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No tasks are assigned to this employee yet.
-      </p>
+      <MissionEmpty>No missions are assigned to this employee yet.</MissionEmpty>
     );
   }
 
   return (
-    <div className="relative overflow-x-auto">
+    <div className="border-border relative -mx-1 overflow-x-auto rounded-xl border">
       <table className="sheet-grid min-w-[56rem]">
         <thead>
           <tr>
@@ -342,7 +366,7 @@ function TaskLogSummary({
   tasks: readonly Task[];
 }) {
   if (logs.length === 0) {
-    return <p className="text-muted-foreground text-sm">No task logs.</p>;
+    return <MissionEmpty>No task logs.</MissionEmpty>;
   }
 
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
@@ -354,18 +378,18 @@ function TaskLogSummary({
         return (
           <div
             key={log.id}
-            className="rounded-md border border-slate-200 bg-white/70 px-3 py-2 text-sm"
+            className="bg-muted/70 rounded-xl px-3.5 py-2.5 text-sm"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-medium text-slate-900">
+                <p className="task-tag">
                   {task?.taskTag ?? 'Unknown task'}
                 </p>
                 <p className="text-muted-foreground text-xs">
                   {log.updateNotes ?? 'No update notes'}
                 </p>
               </div>
-              <span className="tabular text-xs font-medium">
+              <span className="text-success-strong text-xs font-semibold tabular-nums">
                 {formatHours(log.hoursWorked)}h
               </span>
             </div>
@@ -385,16 +409,14 @@ function TaskLogCompilation({
 }) {
   if (logs.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No task logs have been recorded this period.
-      </p>
+      <MissionEmpty>No task logs have been recorded this period.</MissionEmpty>
     );
   }
 
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
 
   return (
-    <div className="relative overflow-x-auto">
+    <div className="border-border relative -mx-1 overflow-x-auto rounded-xl border">
       <table className="sheet-grid min-w-[52rem]">
         <thead>
           <tr>
@@ -430,9 +452,7 @@ function TaskLogCompilation({
 function DailyStarLog({ stars }: { stars: readonly DailyStarRecord[] }) {
   if (stars.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No daily stars have been recorded this period.
-      </p>
+      <MissionEmpty>No daily stars have been recorded this period.</MissionEmpty>
     );
   }
 
@@ -441,18 +461,18 @@ function DailyStarLog({ stars }: { stars: readonly DailyStarRecord[] }) {
       {stars.map((star) => (
         <div
           key={star.id}
-          className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm"
+          className="bg-recognition-subtle rounded-xl px-3.5 py-2.5 text-sm"
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="font-medium text-slate-900">
+            <span className="text-foreground font-medium">
               {formatDate(star.starDate)}
             </span>
-            <span className="tabular font-semibold text-amber-800">
+            <span className="text-recognition-foreground font-semibold tabular-nums">
               {formatNumeric(star.score)}
             </span>
           </div>
           {star.reason ? (
-            <p className="mt-1 text-xs text-slate-700">{star.reason}</p>
+            <p className="text-muted-foreground mt-1 text-xs">{star.reason}</p>
           ) : null}
         </div>
       ))}

@@ -10,7 +10,15 @@ import { AwardHistory } from '@/components/team/award-history';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
+import { ArrowLeftIcon, FileTextIcon, HistoryIcon, StarIcon, type LucideIcon } from 'lucide-react';
+
+import {
+  MissionEmpty,
+  MissionNotice,
+  MissionPage,
+  MissionPageHeader,
+  MissionPanel,
+} from '@/components/missions/mission-ui';
 import { requireProfile } from '@/lib/auth/profile';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
 import { getEmployeeByEmployeeId,getEmployeeReportsData } from '@/lib/team/queries';
@@ -48,7 +56,7 @@ export default async function EmployeeReportsPage({
     const archive=await monthRevision(context.period.startDate,revision,employee.id);
     if(!archive)notFound();
     const previous=revision>1?await monthRevision(context.period.startDate,revision-1,employee.id):null;
-    return <><WorkspaceHeader title={`${employee.fullName} · archived report`} description={`${context.period.label} · revision ${revision}`}/><div className="grid gap-4 px-4 py-4 lg:px-6"><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="underline" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></div></>;
+    return <MissionPage><MissionPageHeader eyebrow="Team · Reports" title={`${employee.fullName} · archived report`} description={`${context.period.label} · revision ${revision}`}/><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="link justify-self-start" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></MissionPage>;
   }
   const routeState = await resolveEmployeeRouteState(
     employeeId,
@@ -62,28 +70,31 @@ export default async function EmployeeReportsPage({
   const archiveHistory=await monthHistory(context.period.startDate);
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage>
+      <MissionPageHeader
+        eyebrow="Team · Reports"
         title={`${data.employee.fullName} reports`}
         description={`${data.period.label} · performance, chart links, stars, and saved reports`}
         actions={
           <Link
             href={`/team/${encodeURIComponent(data.employee.employeeId)}?${viewQuery(context)}`}
-            className="border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors"
+            className="button-secondary gap-2"
           >
+            <ArrowLeftIcon className="size-4" aria-hidden="true" />
             Back to profile
           </Link>
         }
       />
 
-      <div className="grid gap-4 px-4 py-4 lg:px-6">
-        {archiveHistory.revisions.length?<nav aria-label="Employee report revisions" className="flex flex-wrap gap-3">{archiveHistory.revisions.map(r=><Link className="underline" key={r.number} href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}&revision=${r.number}`}>Revision {r.number} · {r.certification==='certified'?'Certified':'Incomplete'}</Link>)}</nav>:null}
+      <div className="grid gap-5 lg:gap-6">
+        {archiveHistory.revisions.length?<nav aria-label="Employee report revisions" className="flex flex-wrap gap-2">{archiveHistory.revisions.map(r=><Link className="section-tab bg-white" key={r.number} href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}&revision=${r.number}`}>Revision {r.number} · {r.certification==='certified'?'Certified':'Incomplete'}</Link>)}</nav>:null}
         <LiveReport model={data.presentation}/>
-        <h2 className="font-semibold">Retained reports · original rules</h2>
-        {data.performanceUnavailableReason ? <p role="status" className="text-sm text-amber-800">{data.performanceUnavailableReason} Saved reports and effort history remain available.</p> : null}
+        <h2 className="panel-title mt-2">Retained reports · original rules</h2>
+        {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}
         {data.performance?.calculation?<PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/>:null}
         <AwardHistory awards={data.awards}/>
-        <section id="charts" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section id="charts" aria-label="Chart summary">
+          <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <ChartCard
             label="Performance score"
             value={
@@ -113,14 +124,15 @@ export default async function EmployeeReportsPage({
             value={String(data.awards.monthly.counts[data.employee.id]??0)}
             detail="Recorded daily star wins"
           />
+          </dl>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-2">
-          <Panel title="Legacy saved score components (pre-M07)">
+          <Panel title="Legacy saved score components (pre-M07)" icon={HistoryIcon}>
             {data.scoreComponents.length === 0 ? (
               <EmptyText>No score component rows yet.</EmptyText>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="border-border overflow-x-auto rounded-xl border">
                 <table className="sheet-grid min-w-[36rem]">
                   <thead>
                     <tr>
@@ -151,7 +163,7 @@ export default async function EmployeeReportsPage({
             )}
           </Panel>
 
-          <Panel title="Daily star log">
+          <Panel title="Daily star log" icon={StarIcon}>
             {data.stars.length === 0 ? (
               <EmptyText>No daily star records yet.</EmptyText>
             ) : (
@@ -159,16 +171,16 @@ export default async function EmployeeReportsPage({
                 {data.stars.map((star) => (
                   <div
                     key={star.id}
-                    className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm"
+                    className="bg-recognition-subtle rounded-xl px-3.5 py-2.5 text-sm"
                   >
                     <div className="flex items-center justify-between">
-                      <span>{formatDate(star.starDate)}</span>
-                      <span className="font-semibold tabular">
+                      <span className="text-foreground font-medium">{formatDate(star.starDate)}</span>
+                      <span className="text-recognition-foreground font-semibold tabular-nums">
                         {formatNumeric(star.score)}
                       </span>
                     </div>
                     {star.reason ? (
-                      <p className="mt-1 text-xs text-slate-700">
+                      <p className="text-muted-foreground mt-1 text-xs">
                         {star.reason}
                       </p>
                     ) : null}
@@ -179,13 +191,13 @@ export default async function EmployeeReportsPage({
           </Panel>
         </section>
 
-        <Panel title="Saved reports">
+        <Panel title="Saved reports" icon={FileTextIcon}>
           {data.reports.length === 0 ? (
             <EmptyText>
               No saved report snapshots exist for this employee yet.
             </EmptyText>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="border-border overflow-x-auto rounded-xl border">
               <table className="sheet-grid min-w-[52rem]">
                 <thead>
                   <tr>
@@ -199,7 +211,7 @@ export default async function EmployeeReportsPage({
                 <tbody>
                   {data.reports.map((report) => (
                     <tr key={report.id}>
-                      <td className="text-xs font-medium text-slate-900">
+                      <td className="text-foreground text-xs font-semibold">
                         {report.title}
                       </td>
                       <td className="text-xs">{report.reportType}</td>
@@ -217,7 +229,7 @@ export default async function EmployeeReportsPage({
           )}
         </Panel>
       </div>
-    </>
+    </MissionPage>
   );
 }
 
@@ -241,19 +253,20 @@ function ChartCard({
 
 function Panel({
   title,
+  icon,
   children,
 }: {
   title: string;
+  icon?: LucideIcon;
   children: React.ReactNode;
 }) {
   return (
-    <section className="soft-card p-4">
-      <h2 className="text-foreground text-sm font-semibold">{title}</h2>
-      <div className="mt-3">{children}</div>
-    </section>
+    <MissionPanel title={title} icon={icon}>
+      {children}
+    </MissionPanel>
   );
 }
 
 function EmptyText({ children }: { children: React.ReactNode }) {
-  return <p className="text-muted-foreground text-sm">{children}</p>;
+  return <MissionEmpty>{children}</MissionEmpty>;
 }

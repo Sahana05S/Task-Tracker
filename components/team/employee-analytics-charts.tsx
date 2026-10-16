@@ -83,32 +83,32 @@ export function EmployeeAnalyticsChartsPanel({
           empty="No priority-bearing tasks are available yet."
         />
         <DistributionChart
-          title="Task types"
-          subtitle="Assigned task categories"
+          title="Mission types"
+          subtitle="Assigned mission categories"
           data={charts.taskTypes}
           empty="No task types to chart yet."
         />
         <DistributionChart
-          title="Task priorities"
-          subtitle="Assigned task priority split"
+          title="Mission priorities"
+          subtitle="Assigned mission priority split"
           data={charts.taskPriorities}
           empty="No priorities to chart yet."
         />
         <DistributionChart
-          title="Task statuses"
-          subtitle="Assigned task status split"
+          title="Mission statuses"
+          subtitle="Assigned mission status split"
           data={charts.taskStatuses}
           empty="No statuses to chart yet."
         />
         <DistributionChart
-          title="Task documentation"
-          subtitle="Task links plus undocumented tasks"
+          title="Mission documentation"
+          subtitle="Mission links plus undocumented missions"
           data={charts.taskDocumentation}
           empty="No task documentation exists yet."
         />
         <DistributionChart
           title="Task freshness"
-          subtitle="Fresh, stale, and rotten task mix"
+          subtitle="Fresh, stale, and rotten mission mix"
           data={charts.taskFreshness}
           empty="No task freshness to chart yet."
         />
@@ -170,7 +170,7 @@ function TrendChart({
           </ResponsiveContainer>
         </div>
       )}
-      <details className="mt-2"><summary>Read chart values</summary><table className="w-full text-sm"><thead><tr><th>Date</th><th>Value</th></tr></thead><tbody>{data.map(p=><tr key={p.date}><td>{p.date}</td><td>{p.display??(p.value===null?'Unavailable':p.value.toFixed(6))}</td></tr>)}</tbody></table></details>
+      <details className="mt-2"><summary className="text-primary cursor-pointer text-sm font-semibold">Read chart values</summary><table className="sheet-grid mt-2 w-full"><thead><tr><th>Date</th><th>Value</th></tr></thead><tbody>{data.map(p=><tr key={p.date}><td>{p.date}</td><td>{p.display??(p.value===null?'Unavailable':p.value.toFixed(6))}</td></tr>)}</tbody></table></details>
     </ChartShell>
   );
 }
@@ -278,9 +278,9 @@ function ChartShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="soft-card flex flex-col gap-4 p-5">
+    <section className="soft-card flex flex-col gap-4 p-5 sm:p-6">
       <header className="flex flex-col gap-0.5">
-        <h3 className="panel-title text-base">{title}</h3>
+        <h3 className="text-foreground text-base font-bold tracking-tight">{title}</h3>
         <p className="text-muted-foreground text-xs">{subtitle}</p>
       </header>
       {children}
