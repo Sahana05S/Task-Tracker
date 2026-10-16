@@ -10,10 +10,10 @@ export function ReportContext({model}:{model:LivePresentation}) {
   <p className="text-muted-foreground text-xs">Metric population: eligible carried tasks and period earnings. Operational counts include recorded tasks. Source watermark: {c.sourceWatermark}.</p>
   <p role="status" className={complete?'bg-success-subtle text-success-strong rounded-xl px-3 py-2 text-sm':'bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm'}>{complete?'Calculation complete; attendance eligibility still applies.':'Final scores and certified rankings are unavailable where required inputs are missing. Available-factor subtotals are partial.'}</p>
   {!model.detailsAvailable?<p role="status" className="bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm">Historical presentation details unavailable before {model.detailsAvailableFrom}; recorded metric evidence remains separate.</p>:null}
-  <form className="mt-1 flex flex-wrap items-end gap-3" method="get">
+  <form className="mt-1 grid gap-3 sm:flex sm:flex-wrap sm:items-end" method="get">
    <label className="field-label">Month<input className="field" type="month" name="period" defaultValue={model.view.period.startDate.slice(0,7)}/></label>
-   <label className="field-label min-w-0 flex-1 sm:max-w-sm">As-of instant (with timezone)<input className="field w-full" name="asOf" defaultValue={model.view.asOf}/></label>
-   <button className="button-secondary" type="submit">View</button>
+   <label className="field-label sm:max-w-sm sm:flex-1">As-of instant (with timezone)<input className="field w-full" name="asOf" defaultValue={model.view.asOf}/></label>
+   <button className="button-secondary justify-self-start" type="submit">View</button>
   </form>
  </section>;
 }
