@@ -1055,9 +1055,13 @@ touched.
     server briefly served a stale 404 for employee reports; after a
     recompile it rendered for both roles.
   - Screenshots were reviewed at 390 and 1365 px.
-- **Not run:** the full 11-phase browser harness. It writes to the shared
-  test project, and another session is using it, so it needs the user's
-  go-ahead first.
+- **Browser harness (run with the user's approval).** All 12 phases passed
+  (59 PASS) against the slice 4 dev server on port 3222, with the default
+  tags: task, checklist, timerlog, attendance, contribution, tools, reports,
+  parity, batch, carryover, template and nested. Records that were already
+  present were reused (rerun paths for UI1, the copy batches, carryover and
+  the nested items), so only bounded synthetic rows were added. Parity
+  includes the 390 px own-profile overflow check.
 - **Known gaps:**
   - The `loading.tsx` skeletons for dashboard, team, logs and attendance
     keep their old padding.
