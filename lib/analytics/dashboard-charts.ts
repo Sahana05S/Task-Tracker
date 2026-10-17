@@ -1,4 +1,4 @@
-import { eligibilityReasons } from '@/lib/tasks/contract';
+import { eligibilityReasons } from '@/modules/tasks/client';
 import {
   isTaskCarriedInPeriod,
   median,
@@ -11,7 +11,7 @@ import {
   TASK_PRIORITIES,
   TASK_STATUSES,
 } from '@/shared/tracker/enums';
-import { PRIORITY_WEIGHTS } from '@/lib/tasks/contract';
+import { PRIORITY_WEIGHTS } from '@/modules/tasks/client';
 import type { Task, TaskCategory, TaskPriority, TaskStatus, User } from '@/types/tracker';
 
 export interface DashboardBucket {

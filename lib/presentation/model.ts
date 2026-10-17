@@ -2,8 +2,8 @@ import { computeTeamAnalytics,type TeamAnalytics } from '@/lib/analytics/engine'
 import { summarizeAttendance,EMPTY_ATTENDANCE_SUMMARY } from '@/modules/attendance/client';
 import { parsePerformanceSources,resolvePerformance,taskProductivity,type PerformanceSources } from '@/lib/performance/sources';
 import { Exact } from '@/lib/performance/exact';
-import { classifyFreshness,eligibilityReasons } from '@/lib/tasks/contract';
-import { mapTask } from '@/lib/tasks/mappers';
+import { classifyFreshness, eligibilityReasons } from '@/modules/tasks/client';
+import { mapTask } from '@/modules/tasks/client';
 import { mapDailyTaskLog } from '@/lib/logs/mappers';
 import type { Database } from '@/types/database';
 import type { Task,User,DailyTaskLog } from '@/types/tracker';

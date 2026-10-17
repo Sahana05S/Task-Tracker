@@ -1,17 +1,17 @@
-import { getNativeTemplates } from '@/lib/tasks/native-details';
+import { getNativeTemplates } from '@/modules/tasks';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { MissionHeadlineStrip } from '@/components/tasks/mission-headline';
-import { NewTaskButton } from '@/components/tasks/new-task-button';
-import { TaskWorkspace } from '@/components/tasks/task-workspace';
+import { MissionHeadlineStrip } from '@/modules/tasks/components/mission-headline';
+import { NewTaskButton } from '@/modules/tasks/components/new-task-button';
+import { TaskWorkspace } from '@/modules/tasks/components/task-workspace';
 import { computeMissionHeadline } from '@/lib/analytics/headline';
 import { requireProfile } from '@/shared/session/profile';
 import { getMilestonesPageData } from '@/modules/milestones';
 import { viewContext } from '@/lib/presentation/context';
 import { getLivePresentation } from '@/lib/presentation/queries';
 import { getTaskEffortTotals } from '@/lib/logs/queries';
-import { getTaskWorkspaceData } from '@/lib/tasks/queries';
+import { getTaskWorkspaceData } from '@/modules/tasks';
 import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 import type { Task, UserRole } from '@/types/tracker';
 
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
  * A Server Component: it authenticates, loads the tasks, the member directory and
  * the per-task hour totals, then hands them to the client shell. Filtering,
  * sorting and inline edits happen there; mutations go back through the Server
- * Actions in `app/tasks/actions.ts` and `app/logs/actions.ts`.
+ * Actions in `modules/tasks/actions.ts` and `app/logs/actions.ts`.
  */
 export default async function TasksPage() {
   const profile = await requireProfile();

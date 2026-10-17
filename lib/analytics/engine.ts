@@ -1,13 +1,13 @@
 import type { CalculationContext,CalculationResult,MemberCalculation } from '@/lib/performance/engine';
 import { Exact } from '@/lib/performance/exact';
-import { eligibilityReasons, FRESHNESS_SCORES } from '@/lib/tasks/contract';
+import { eligibilityReasons, FRESHNESS_SCORES } from '@/modules/tasks/client';
 import { UnmeasuredProgressError } from '@/lib/analytics/availability';
 import { roundToNumericScale } from '@/lib/logs/metrics';
 import {
   summarizeAttendance,
   type AttendanceSummary,
 } from '@/modules/attendance/client';
-import { PRIORITY_WEIGHTS } from '@/lib/tasks/contract';
+import { PRIORITY_WEIGHTS } from '@/modules/tasks/client';
 import type {
   AttendanceRecord,
   DailyTaskLog,

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 import { RunningClock } from '@/components/checklists/running-clock';
-import { ExecutionForm } from '@/components/tasks/execution-form';
+import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { CHECKLIST_SECTIONS, type ChecklistRollup } from '@/lib/checklists/progress';
 import type { ChecklistItemTime } from '@/lib/checklists/item-time';

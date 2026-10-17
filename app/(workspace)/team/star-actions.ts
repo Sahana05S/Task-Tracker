@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { storeDailyStarCalculation } from '@/lib/stars/daily';
 import { commandIdentity } from '@/shared/commands/result';
-import { kolkataDate } from '@/lib/tasks/contract';
+import { kolkataDate } from '@/shared/time/kolkata';
 import type { ActionResponse, User } from '@/types/tracker';
 
 export type DailyStarActionState = ActionResponse<{

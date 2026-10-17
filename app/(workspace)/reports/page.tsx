@@ -5,7 +5,7 @@ import { monthHistory,monthRevision } from '@/lib/month/archive';
 import { randomUUID } from 'node:crypto';
 import { getLivePresentation } from '@/lib/presentation/queries';
 import { liveViewContext } from '@/lib/presentation/clock';
-import { kolkataDate } from '@/lib/tasks/contract';
+import { kolkataDate } from '@/shared/time/kolkata';
 import type { Metadata } from 'next';
 
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
