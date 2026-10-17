@@ -24,21 +24,49 @@ export interface ChecklistItemTime {
 }
 
 const UNDEFINED_COLUMN = '42703';
+/** PostgREST / PostgreSQL "function not found" (database predates migration 36). */
+const MISSING_FUNCTION = new Set(['PGRST202', '42883']);
+
+export interface TaskEffortBreakdown {
+  /** Asia/Kolkata business date the "today" figure covers. */
+  today: string;
+  /** Unreversed hours logged on the task today, by everyone. */
+  todayHours: number;
+  /** Unreversed logged seconds per checklist item, by everyone. */
+  secondsByNode: ReadonlyMap<string, number>;
+}
+
+/**
+ * Team-wide task effort totals (migration 36). Logs are readable only by their
+ * author and managers, so summing visible logs would understate a member's
+ * view; this SECURITY DEFINER aggregate returns totals only. Null when the
+ * database predates migration 36.
+ */
+export async function getTaskEffortBreakdown(taskId: string): Promise<TaskEffortBreakdown | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('task_effort_breakdown', { p_task_id: taskId });
+  if (error) {
+    if (MISSING_FUNCTION.has(error.code)) return null;
+    throw new Error(`Failed to load task effort breakdown: ${error.message}`);
+  }
+  const raw = (data ?? {}) as { today?: string; today_hours?: number | string; by_node?: Record<string, number | string> };
+  return {
+    today: raw.today ?? '',
+    todayHours: Number(raw.today_hours ?? 0),
+    secondsByNode: new Map(Object.entries(raw.by_node ?? {}).map(([id, seconds]) => [id, Number(seconds)])),
+  };
+}
 
 /**
  * Item time for one task's checklist pages. Item timers are ordinary task
  * timers whose stop writes ordinary task logs tagged with the item
- * (migration 34), so these hours are already part of task hours.
+ * (migration 34), so these hours are already part of task hours. Logged time
+ * is the team-wide total; running timers are those the viewer may read.
  */
 export async function getChecklistItemTime(taskId: string, userId: string): Promise<ChecklistItemTime> {
   const supabase = await createClient();
-  const [logs, running, mine] = await Promise.all([
-    supabase
-      .from('daily_task_logs')
-      .select('checklist_node_id, hours_worked')
-      .eq('task_id', taskId)
-      .is('reversed_at', null)
-      .not('checklist_node_id', 'is', null),
+  const [breakdown, running, mine] = await Promise.all([
+    getTaskEffortBreakdown(taskId),
     supabase
       .from('task_timers')
       .select('id, user_id, task_id, checklist_node_id, started_at, execution_version')
@@ -53,17 +81,12 @@ export async function getChecklistItemTime(taskId: string, userId: string): Prom
       .limit(1)
       .maybeSingle(),
   ]);
-  if ([logs.error, running.error, mine.error].some(e => e?.code === UNDEFINED_COLUMN)) {
+  if (!breakdown || [running.error, mine.error].some(e => e?.code === UNDEFINED_COLUMN)) {
     return { available: false, secondsByNode: new Map(), runningByNode: new Map(), mine: null };
   }
-  const failure = logs.error ?? running.error ?? mine.error;
+  const failure = running.error ?? mine.error;
   if (failure) throw new Error(failure.message);
-
-  const secondsByNode = new Map<string, number>();
-  for (const row of logs.data ?? []) {
-    if (!row.checklist_node_id) continue;
-    secondsByNode.set(row.checklist_node_id, (secondsByNode.get(row.checklist_node_id) ?? 0) + Math.round(Number(row.hours_worked) * 3600));
-  }
+  const secondsByNode = breakdown.secondsByNode;
   const toTimer = (row: { id: string; user_id: string; task_id: string; checklist_node_id?: string | null; started_at: string; execution_version?: number | null }): RunningItemTimer => ({
     timerId: row.id,
     version: row.execution_version ?? 0,

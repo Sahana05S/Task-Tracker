@@ -996,3 +996,38 @@ merged or deployed.
 - **Next gaps:** the Missions headline strip (needs the user's colour
   cut-offs), hours worked today on Mission details, Team Index holiday marks
   and report validity (after the slice 4 restyle), and item hours in reports.
+
+## M14 Missions headline and hours worked today - 17 October 2026
+
+These are gaps 2 and 3 of the sheet-parity audit (commits `f0de786` and the
+following one). They are on `m13-verification`, not merged or deployed.
+
+- **Missions headline (gap 2).** The user approved bands, leaders and averages
+  (see DECISIONS). The strip shows critical team member, most productive and
+  most loaded (managers only), allocation spread, team average productivity
+  and team average progress, all coloured, plus open monthly goals and the
+  Vision links. It streams in so the mission list renders first.
+- **Hours worked today (gap 3).**
+  - Mission details shows the task's hours logged today by everyone.
+  - Forward migration `36_task_effort_breakdown.sql` adds a totals-only
+    SECURITY DEFINER aggregate, because members can read only their own logs.
+  - The same aggregate now feeds item "Logged here"/"Elapsed", which had shown
+    a member only their own share.
+  - Applied only to disposable databases and the M13 test project.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-36; upgrades through 36) passed;
+  - unit tests (505 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project: `nested` (now also checking team-wide hours today
+    for a non-assignee and the member headline), `task`, `parity`, `tools`,
+    `batch` and `carryover` passed;
+  - overflow is 0 for the headline at 390, 768 and 1365 px for the director
+    and member A.
+- **Test-run note.** I stopped one regression run partway, because its dev
+  server had grown to about 7 GB. It left M13-F87E37-UI2 reopened with a
+  fresh review approval, so the next `batch` run's rerun branch committed the
+  bulk Done. A further `batch` run then passed the full reopen, refusal,
+  re-approval and Done cycle.
+- **Remaining gaps:** Team Index holiday marks and report validity (waiting
+  for the redesign slice 4 restyle of the Team pages), and item hours in
+  reports.

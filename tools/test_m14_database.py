@@ -67,10 +67,12 @@ for db in DBS:
         print('PASS',db,'upgrade 33->34 preserves existing timers and logs untagged')
         sql(db,(ROOT/'supabase/migrations/35_duplicate_checklist_rows.sql').read_text(encoding='utf-8'))
         print('PASS',db,'upgrade 34->35 applies')
+        sql(db,(ROOT/'supabase/migrations/36_task_effort_breakdown.sql').read_text(encoding='utf-8'))
+        print('PASS',db,'upgrade 35->36 applies')
     else:
-        migrate(db,35)
+        migrate(db,36)
         sql(db,seed)
-        print('PASS',db,'fresh install 01-35')
+        print('PASS',db,'fresh install 01-36')
     assert value(db,"has_function_privilege('authenticated','taskpulse_private.checklist_links(jsonb)','EXECUTE')")=='f'
 
     # Assignee (user 4 on T1) builds nested pages with links and estimates.
@@ -225,6 +227,25 @@ for db in DBS:
     assert value(db,f"sum(hours_worked) {live}")==total
     assert value(db,f"bool_and(checklist_node_id IS NULL) FROM public.daily_task_logs WHERE source_timer_id='{gone['timerId']}'")=='t'
     print('PASS',db,'reversed item logs keep their tag; deleting an item keeps its logged hours and clears the tag')
+
+    # Team-wide effort breakdown (migration 36): totals only, readable by any active member.
+    timed=item_timer(db,b)
+    sql(db,f"UPDATE public.task_timers SET started_at=clock_timestamp()-interval '15 minutes' WHERE id='{timed['timerId']}'")
+    call(db,'stop_task_timer',timed['timerId'],{},version=0)
+    today=value(db,"(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date")
+    expect_today=float(value(db,f"coalesce(sum(hours_worked),0) {live} AND log_date='{today}'"))
+    expect_c=int(value(db,f"coalesce(round(sum(hours_worked)*3600),0) {live} AND checklist_node_id='{c}'"))
+    visible=int(next(x for x in actor(db,'00000000-0000-0000-0000-000000000005',f"SELECT count(*) FROM public.daily_task_logs WHERE task_id='{T1}'") if x.isdigit()))
+    assert visible==0,'member 5 must not read member 4 logs directly'
+    breakdown=first_json(actor(db,'00000000-0000-0000-0000-000000000005',f"SELECT public.task_effort_breakdown('{T1}')"))
+    assert breakdown['today']==today and abs(float(breakdown['today_hours'])-expect_today)<1e-9,breakdown
+    assert int(breakdown['by_node'].get(c,0))==expect_c and expect_c==0,'reversed item log excluded'
+    expect_b=int(value(db,f"round(sum(hours_worked)*3600) {live} AND checklist_node_id='{b}'"))
+    assert int(breakdown['by_node'][b])==expect_b and abs(expect_b-900)<=5,(breakdown,expect_b)
+    assert set(breakdown)=={'today','today_hours','by_node'},'totals only'
+    actor(db,'00000000-0000-0000-0000-000000000007',f"SELECT public.task_effort_breakdown('{T1}')",False)
+    actor(db,'',f"SELECT public.task_effort_breakdown('{T1}')",False,role='anon')
+    print('PASS',db,'effort breakdown gives any active member team totals for today and per item; reversed logs excluded; inactive and anon refused')
 
     # Closed tasks refuse structure edits and item timers from anyone.
     sql(db,f"UPDATE public.tasks SET status='Discarded' WHERE id='{T1}'")

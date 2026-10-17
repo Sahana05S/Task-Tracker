@@ -222,6 +222,8 @@ const phases = {
     assert.ok(await timerPanel.getByRole('button', { name: 'Start timer' }).count(), 'Start timer not offered again after stop');
     await open(page, `/tasks/${TAG}`);
     assert.match(await bodyText(page), /M14 item timer log/, 'Item timer log is not on the mission activity');
+    const todayA = (await page.locator('div').filter({ has: page.getByText('Hours worked today', { exact: true }) }).last().innerText()).replace('Hours worked today', '').trim();
+    assert.match(todayA, /^\d+(\.\d+)?/, `Hours worked today missing: ${todayA}`);
     console.log('PASS item timer time is an ordinary task log, shown on the item and the mission');
     await page.goto(subUrl, { waitUntil: 'domcontentloaded' });
     await hydrated(page);
@@ -257,6 +259,15 @@ const phases = {
     console.log('PASS nested page has no horizontal overflow at 390 px');
 
     const other = await signIn('B');
+    await open(other.page, `/tasks/${TAG}`);
+    const todayB = (await other.page.locator('div').filter({ has: other.page.getByText('Hours worked today', { exact: true }) }).last().innerText()).replace('Hours worked today', '').trim();
+    assert.equal(todayB, todayA, 'A non-assignee must see the same team-wide hours today');
+    console.log(`PASS hours worked today (${todayA}) is team-wide: assignee and non-assignee see the same figure`);
+    await open(other.page, '/tasks');
+    const headline = other.page.locator('section[aria-label="Team headline"]');
+    await headline.waitFor({ timeout: 180000 });
+    assert.match(await headline.innerText(), /Allocation spread[\s\S]*Team avg productivity[\s\S]*Team avg progress[\s\S]*visible to managers/, 'Member headline incomplete');
+    console.log('PASS Missions headline streams in for a member, with leaders kept to managers');
     await open(other.page, new URL(subUrl).pathname);
     assert.equal(await other.page.getByRole('button', { name: 'Add item', exact: true }).count(), 0, 'Non-assignee sees Add item');
     assert.equal(await other.page.getByRole('button', { name: 'Save state', exact: true }).count(), 0, 'Non-assignee sees Save state');

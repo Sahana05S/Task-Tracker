@@ -70,6 +70,27 @@ Authorized by the user's 16 October 2026 request and answers (see DECISIONS,
   Session worktrees under `.claude/worktrees` are separate checkouts and must
   not be type-checked or tested as part of this one.
 
+- **Team-wide effort totals (migration 36, `36_task_effort_breakdown.sql`).**
+  - Logs are readable only by their author and managers (`m01_read`), so a
+    member summing visible logs saw only their own share of item time.
+  - `public.task_effort_breakdown(task)` is a SECURITY DEFINER aggregate like
+    `task_effort_summary`. It returns only the Asia/Kolkata `today`,
+    `today_hours` and `by_node` seconds, from unreversed logs, for any active
+    account.
+  - Item "Logged here"/"Elapsed" now use it. Mission details gains "Hours
+    worked today" (gap 3), the sheet's figure next to total hours.
+  - Running timers still follow the timer read rules, so members see only
+    their own.
+- **Missions headline strip (gap 2; DECISIONS "Missions headline strip").**
+  - `lib/analytics/headline.ts` (pure, unit-tested) and
+    `components/tasks/mission-headline.tsx` show critical team member, most
+    productive and most loaded (managers only), plus allocation spread and
+    team average productivity and progress in the approved red/amber/green
+    bands, open monthly goals and links to Milestones and
+    Vision-Mission-Values.
+  - The strip streams in with Suspense, because the live month presentation
+    takes several seconds; the mission list never waits for it.
+
 ## Checks
 
 - `tools/test_m14_database.py` on a disposable local PostgreSQL 18 cluster
@@ -93,7 +114,10 @@ Authorized by the user's 16 October 2026 request and answers (see DECISIONS,
   - duplicate (fresh install 01-35 and upgrade 34->35): an assignee copies a
     page with its subtree right after it; copies reset to No; linked rows are
     skipped; replay is idempotent; linked rows, unmapped legacy rows,
-    non-assignees, data managers and extra fields are refused.
+    non-assignees, data managers and extra fields are refused;
+  - effort breakdown (fresh 01-36 and upgrade 35->36): a member who cannot
+    read another member's logs gets the same team totals for today and per
+    item; reversed logs are excluded; inactive and anon callers are refused.
   All passed.
 - Unit tests: `lib/checklists/__tests__/pages.test.ts` plus the full suite.
   Typecheck and the production build passed.

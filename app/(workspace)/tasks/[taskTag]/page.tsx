@@ -50,6 +50,7 @@ import {
   StatusBadge,
 } from '@/components/tracker/tracker-badges';
 import { requireProfile } from '@/lib/auth/profile';
+import { getTaskEffortBreakdown } from '@/lib/checklists/item-time';
 import type { ChecklistRollup, ChecklistSection, SectionProgress } from '@/lib/checklists/progress';
 import {
   normalizeTaskTagParam,
@@ -114,7 +115,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
   const archived=!!data.task.archivedEffectiveDate;
   const successor=data.dependencies.find(d=>d.otherTask?.id===data.task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role)&&!archived;
-  const [native,templates,workspace,reports]=await Promise.all([getNativeDetailState(data.task.id),getNativeTemplates(),canManage?getTaskWorkspaceData():Promise.resolve({tasks:[],members:[]}),canManage?getVisibleReportChoices():Promise.resolve([])]);
+  const [native,templates,workspace,reports,effortBreakdown]=await Promise.all([getNativeDetailState(data.task.id),getNativeTemplates(),canManage?getTaskWorkspaceData():Promise.resolve({tasks:[],members:[]}),canManage?getVisibleReportChoices():Promise.resolve([]),getTaskEffortBreakdown(data.task.id)]);
   const canUseTimer = !archived&&canStartTimerForTask(currentUser, data.task);
   const visibleTimers = canManage
     ? data.timers
@@ -412,6 +413,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
               <CompactMetric label="Scaled progress" value={formatNumeric(task.scaledProgress)} />
               <CompactMetric label="Activity checklist progress" value={formatPercent(data.checklistProgressPercentage)} />
               <CompactMetric label="Total hours" value={formatHours(data.effort.hoursLogged)} />
+              <CompactMetric label="Hours worked today" value={effortBreakdown ? formatHours(effortBreakdown.todayHours) : 'Unavailable'} />
               <CompactMetric label="Task productivity" value={formatNumeric(task.taskProductivity)} />
               <CompactMetric label="Log entries" value={String(data.effort.logCount)} />
               <CompactMetric label="Metrics eligible" value={task.validForMetrics ? 'Yes' : 'No'} />
