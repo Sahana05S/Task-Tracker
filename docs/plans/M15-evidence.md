@@ -107,3 +107,102 @@ are stamped by the trigger before row security checks them.
   (M15.3/M15.4).
 - **Production:** migrations 10-39 are still unapplied there and need explicit
   approval (M15.6).
+
+## M15.2 company scope inside commands and workers
+
+### What changed
+
+Forward migration `40_company_scoped_commands.sql`, after 39. The design is
+in the plan's "M15.2 design" section.
+
+- **Why it was needed.** On Supabase `postgres` owns everything and has
+  BYPASSRLS, which was confirmed on the hosted test project. So no SECURITY
+  DEFINER command was subject to row security.
+- **Non-bypass owner.** The NOLOGIN, non-bypass role `taskpulse_definer` now
+  owns all 71 tables and every function in `public` and `taskpulse_private`,
+  except 7 system functions: `current_organization`, `get_user_role`,
+  `handle_new_user`, `m15_organization`, `m15_scope`, `m15_unscoped` and
+  `m15_secure`.
+  - All tables use FORCE ROW LEVEL SECURITY, with one `m15_scope` policy for
+    `taskpulse_definer`.
+  - The role is a member of `service_role` only for privileges such as
+    executing `auth.uid()`, which `postgres` cannot grant on Supabase. Role
+    attributes (BYPASSRLS) are not inherited, and no policy targets
+    `service_role`.
+- **One scope rule.** `taskpulse_private.m15_scope()` returns, in order:
+  - the signed-in caller's company;
+  - else the `taskpulse.organization` setting;
+  - else the `x-taskpulse-organization` header, honoured only for a
+    service-role JWT;
+  - else unscoped, meaning a system context with no signed-in user.
+  A signed-in caller without an active company sees nothing.
+- **Private tables.** 31 company-owned private tables gain `organization_id`,
+  backfilled to company #1.
+  - They are stamped through 97 links (foreign keys plus a column-name map
+    for polymorphic ids) or from the scope.
+  - `audit_write` now records the audited row's company directly; its AFTER
+    trigger sees the stamped row.
+  - A private system row may stay company-less only when its link points at a
+    company-less record, such as an org-less sign-up. Scoped readers never
+    see those rows.
+- **Per-company keys.**
+  - Award slot dates and Task Tools tag reservations are now unique per
+    company.
+  - Month periods and their revisions are keyed per company, with the
+    revision foreign key made composite.
+  - The two `ON CONFLICT` targets that named the old keys
+    (`queue_award`, `month_archive_command`) are patched.
+- **Trusted-caller checks.** `guard_write`, `guard_checklist_owner_signal` and
+  `decay_task_freshness` trusted "caller is the table owner". They now also
+  trust `postgres` and `supabase_admin`, as before the ownership move.
+- **Workers.**
+  - `claim_award_jobs`, `claim_performance_jobs` and `claim_drive_jobs` add
+    each job's `organizationId`.
+  - `queue_due_awards` runs one scoped pass per active company.
+  - The app's award, Drive and performance runners send each job's calls
+    through a per-company client (`lib/supabase/worker.ts`).
+- **Future migrations.** `taskpulse_private.m15_secure()` is idempotent and
+  re-applies ownership, FORCE RLS, policies and the stamp trigger. Every later
+  migration must end with `SELECT taskpulse_private.m15_secure();`.
+- **Hosted deadlock fix.** The migration now takes every table lock up front,
+  in one fixed order. Without that it deadlocked twice on the hosted test
+  project against live PostgREST requests from running dev servers. Both
+  attempts rolled back cleanly.
+
+### Checks
+
+- `tools/test_m15_database.py` (two companies; fresh 01-40 and upgrade
+  38->39->40): all 27 checks passed, including:
+  - 15 read commands (presentation, performance and contribution sources,
+    awards, month archive, effort, holidays, credit summary, attendance
+    context, Drive read model, rollups, reconciliation, team summary), called
+    by both roles of both companies, return none of the other company's IDs;
+  - a worker with the company header sees only that company; an unscoped
+    system read sees all; a signed-in caller sending the header still sees
+    only their own company;
+  - `queue_due_awards` reports one pass per company; `queue_award` creates
+    one slot per company for the same date and stays idempotent within a
+    company; claimed jobs carry `organizationId`;
+  - private records (log revisions, credit events) carry their company;
+  - `m15_secure()` is idempotent and secures a table and function added
+    later; no bypass-owned table or definer command remains;
+  - M15.1 isolation and suspension checks still pass, and another company's
+    task is now invisible inside commands (refused as not found).
+- `tools/test_m14_database.py` with 40 (fresh 01-40; upgrade through 40): all
+  51 checks passed.
+- Unit tests, including the new `__tests__/lib/stars/jobs-company.test.ts`
+  (each award job uses its company's client; the claim stays unscoped), passed.
+- Hosted M13 test project: migration 40 applied after a dry run listing only
+  40. Afterwards 0 unsecured tables, 7 allowlisted postgres functions,
+  `taskpulse_definer` without BYPASSRLS, and no company-less audit rows.
+- Browser regression and build results: see STATUS.
+
+### Remaining risks
+
+- The Task Tools number sequence (`TT-…`) is shared by all companies. Tags
+  stay unique per company, but a new company's first number won't be 1
+  (M15.3).
+- Settings singletons (award, tool and Drive policy, and the contracts) are
+  still shared by all companies (M15.3).
+- Open sign-up still joins the default company (M15.4).
+- Every future migration must call `m15_secure()`.

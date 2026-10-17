@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import { createHash,timingSafeEqual } from 'node:crypto';
 import { runDriveJobs } from '@/lib/integrations/drive/jobs';
 import { GoogleDrive } from '@/lib/integrations/drive/provider';
@@ -7,7 +6,7 @@ import { assertApprovedSandboxPolicy } from '@/lib/integrations/drive/approved-s
 import { verifyApprovedSandboxAccess } from '@/lib/integrations/drive/setup';
 import { DriveFailure } from '@/lib/integrations/drive/contract';
 import { DRIVE_INTEGRATION_DEFERRED,DRIVE_UNAVAILABLE_MESSAGE } from '@/lib/integrations/drive/availability';
-import type { Database } from '@/types/database';
+import { workerClient } from '@/lib/supabase/worker';
 export const runtime='nodejs';
 function authorize(request:Request,mutating:boolean):Response|null{
  if(DRIVE_INTEGRATION_DEFERRED)return Response.json({status:'unavailable',reason:DRIVE_UNAVAILABLE_MESSAGE},{status:503});
@@ -26,7 +25,7 @@ export async function POST(request:Request){
  const denied=authorize(request,true);if(denied)return denied;
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!url||!key)return Response.json({status:'unavailable',reason:'Worker database configuration is missing.'},{status:503});
- const db=createClient<Database>(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
- try{return Response.json({outcomes:await runDriveJobs(db,job=>{assertApprovedSandboxPolicy(job.policy);return new GoogleDrive(googleToken(job.policy));},1)});}
+ const db=workerClient(url,key);
+ try{return Response.json({outcomes:await runDriveJobs(db,job=>{assertApprovedSandboxPolicy(job.policy);return new GoogleDrive(googleToken(job.policy));},1,org=>workerClient(url,key,org))});}
  catch{return Response.json({status:'failed',reason:'Inspect retained Drive jobs.'},{status:503});}
 }

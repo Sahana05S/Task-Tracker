@@ -1236,3 +1236,45 @@ touched.
   and private tables have no company yet. That is M15.2, and it must land
   before a second real company is onboarded. Open sign-up still joins the
   default company until M15.4.
+
+## M15.2 company scope inside commands and workers - 17 October 2026
+
+On `m13-verification`; not deployed. Details: `docs/plans/M15-evidence.md`
+("M15.2"). Design: the plan's "M15.2 design".
+
+- **What changed.** Forward migration `40_company_scoped_commands.sql`:
+  - the non-bypass role `taskpulse_definer` owns all 71 tables and every
+    command function (7 system functions stay with `postgres`);
+  - FORCE row security is scoped by `taskpulse_private.m15_scope()`: the
+    caller's company, a per-company loop setting, or the worker's
+    `x-taskpulse-organization` header (service role only);
+  - `organization_id` is added on 31 private tables;
+  - award slots, month periods/revisions and Task Tools reservations become
+    per-company keys;
+  - each claimed job carries its company, and awards queue once per company;
+  - `m15_secure()` is added, and every later migration must call it.
+  - App: the award, Drive and performance workers send each job's calls with
+    its company (`lib/supabase/worker.ts`).
+- **Checks:**
+  - `tools/test_m15_database.py` (27 checks; fresh 01-40, upgrade 38->40)
+    passed. It covers 15 read commands isolated in both directions, worker
+    header scoping, per-company award slots, private stamping and
+    `m15_secure` coverage.
+  - `tools/test_m14_database.py` with 40 (51 checks) passed.
+  - Unit tests (509 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed.
+  - Hosted test project: migration 40 applied after a dry run listing only
+    40. Two earlier attempts deadlocked against live API requests and rolled
+    back; the migration now takes all table locks up front. Afterwards there
+    are 0 unsecured tables, and `taskpulse_definer` has no BYPASSRLS.
+  - All 12 browser phases passed through the user's port-3000 server (it
+    points at the test project; Next would not start a second dev server in
+    the same folder):
+    - 11 phases in the combined run (64 PASS);
+    - `parity` passed on rerun (17 tasks). It had timed out during dev
+      recompiles; the database calls behind it take 0.14-0.53 s.
+- **Remaining:**
+  - The Task Tools number sequence and the settings singletons are shared
+    across companies (M15.3).
+  - Open sign-up still joins the default company (M15.4).
+  - Production still lacks migrations 10-40.

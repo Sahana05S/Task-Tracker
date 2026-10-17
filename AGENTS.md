@@ -15,6 +15,14 @@ project; see `docs/plans/M15-evidence.md`. Later M15 phases (M15.2 onward) need
 the user's go-ahead. Until M15.2 lands, SECURITY DEFINER commands still read
 across companies, so no second real company may be onboarded.
 
+M15.2 (migration 40) closes that gap: tables and commands are owned by the
+non-bypass role `taskpulse_definer`, with FORCE RLS scoped by
+`taskpulse_private.m15_scope()`. **Every new migration must end with
+`SELECT taskpulse_private.m15_secure();`**, so new tables and functions are
+re-owned and scoped. New company-owned tables need an `organization_id`
+column. Workers must send each job's company in the `x-taskpulse-organization`
+header (`lib/supabase/worker.ts`). See `docs/plans/M15-evidence.md`.
+
 ## M14 nested checklist pages — 16 October 2026
 
 The user asked for every feature of their Google Sheets tracker. They approved

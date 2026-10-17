@@ -19,12 +19,21 @@ def expect_code(db,statement,code):
     r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
                      input=statement,text=True,capture_output=True,encoding='utf-8')
     assert r.returncode and code in r.stderr,(code,r.stderr[:300])
+def refused(db,uid,statement):
+    """A refusal as the given user: permission, contract or (after 40) not visible at all."""
+    r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
+        input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid}',true);\n{statement.rstrip(';')};\nCOMMIT;",
+        text=True,capture_output=True,encoding='utf-8')
+    assert r.returncode and any(c in r.stderr for c in ('42501','23514','P0002','40001','23503')),(statement[:120],r.stderr[:300])
 def migrate(db,upto):
     for m in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
         if int(m.name.split('_')[0])>upto:break
         sql(db,m.read_text(encoding='utf-8'))
 def tables(db):
-    return value(db,"string_agg(table_name,' ' ORDER BY table_name) FROM taskpulse_private.m15_tenant_tables").split()
+    # Public company-owned tables; the column exists from migration 40 onward.
+    has_schema=value(db,"count(*) FROM information_schema.columns WHERE table_schema='taskpulse_private' AND table_name='m15_tenant_tables' AND column_name='table_schema'")=='1'
+    where=" WHERE table_schema='public'" if has_schema else ''
+    return value(db,f"string_agg(table_name,' ' ORDER BY table_name) FROM taskpulse_private.m15_tenant_tables{where}").split()
 
 for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);')
@@ -47,9 +56,11 @@ for db in DBS:
         assert value(db,f"work_revision||'/'||lifecycle_version FROM public.tasks WHERE id='{T1}'")==revisions,'backfill must not count as work'
         assert value(db,f"bool_and(review_approved) FROM public.task_reviewers WHERE task_id='{T1}'")=='t','backfill must not reset reviews'
         print('PASS',db,'upgrade 38->39 assigns every existing row to company #1 without counting it as work or resetting reviews')
+        sql(db,(ROOT/'supabase/migrations/40_company_scoped_commands.sql').read_text(encoding='utf-8'))
+        print('PASS',db,'upgrade 39->40 applies (company-scoped commands)')
     else:
-        migrate(db,39); sql(db,seed)
-        print('PASS',db,'fresh install 01-39')
+        migrate(db,40); sql(db,seed)
+        print('PASS',db,'fresh install 01-40')
     default=value(db,"id FROM public.organizations WHERE is_default")
     assert value(db,"name FROM public.organizations WHERE is_default")=='Saahithyaa Realtors and Builders'
     assert len(tables(db))==30 and 'task_detail_fields' not in tables(db)
@@ -101,7 +112,7 @@ for db in DBS:
     sql(db,f"INSERT INTO public.task_dependencies(predecessor_task_id,successor_task_id,relation_type) VALUES('{T1}','{BT}','Related')",success=False)
     as_user(db,B_DIR,f"INSERT INTO public.task_dependencies(predecessor_task_id,successor_task_id,relation_type) VALUES('{BT}','{T1}','Related')",False)
     version=int(value(db,f"lifecycle_version FROM public.tasks WHERE id='{T1}'"))
-    as_user(db,B_DIR,f"SELECT public.checklist_command('{T1}','add','{{\"title\":\"Intruder\",\"section\":\"activity\",\"node_type\":\"Item\"}}'::jsonb,{version},'{uuid4()}')",False)
+    refused(db,B_DIR,f"SELECT public.checklist_command('{T1}','add','{{\"title\":\"Intruder\",\"section\":\"activity\",\"node_type\":\"Item\"}}'::jsonb,{version},'{uuid4()}')")
     before=value(db,f"title FROM public.tasks WHERE id='{T1}'")
     as_user(db,B_DIR,f"UPDATE public.tasks SET title='Hijacked' WHERE id='{T1}'",False)
     as_user(db,B_DIR,f"DELETE FROM public.tasks WHERE id='{T1}'",False)
@@ -118,6 +129,83 @@ for db in DBS:
     assert value(db,f"organization_id FROM public.checklist_nodes WHERE id='{node}'")==default
     print('PASS',db,'each company\'s commands still work and stamp their own company')
 
+    # ---------------- M15.2: reads inside commands and workers ----------------
+    A_IDS=[f'00000000-0000-0000-0000-00000000000{i}' for i in range(1,9)]+[T1,'10000000-0000-0000-0000-000000000002',
+           '20000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002']
+    B_IDS=[B_DIR,B4,BT]
+    today=value(db,"(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date")
+    month=today[:8]+'01'
+    nxt=value(db,f"('{month}'::date+interval '1 month')::date")
+    asof="clock_timestamp()-interval '5 seconds'"
+    READS=[f"public.award_read_model('{month}','{nxt}')",f"public.checklist_rollups(ARRAY['{T1}','{BT}']::uuid[])",
+           f"public.contribution_input_context('{month}','{nxt}',{asof})",f"public.live_presentation_context('{month}','{nxt}',{asof})",
+           f"public.month_archive_history('{month}')",f"public.month_archive_read('{month}')",'public.participant_reconciliation()',
+           f"public.performance_source_context('{month}','{nxt}',{asof})",'public.task_credit_summary()',
+           f"public.task_effort_breakdown('{T1}')",f"public.team_summary_inputs({today[:4]},{int(today[5:7])})",
+           f"public.team_holiday_dates('{month}','{today}')",f"(SELECT jsonb_agg(x) FROM public.task_effort_summary('{T1}') x)",
+           f"public.attendance_input_context('{A4}','{month}','{nxt}',{asof})",'public.drive_read_model()']
+    def leaks(uid,expr,foreign):
+        r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-At'],
+            input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid}',true);\nSELECT ({expr})::text;\nCOMMIT;",
+            text=True,capture_output=True,encoding='utf-8')
+        if r.returncode:
+            assert any(c in r.stderr for c in ('42501','23514','P0002','40001')),(expr,r.stderr[:300]); return []
+        return [i for i in foreign if i in r.stdout]
+    for uid,foreign in ((B_DIR,A_IDS),(B4,A_IDS),(A_DIR,B_IDS),(A4,B_IDS)):
+        for expr in READS:
+            assert not leaks(uid,expr,foreign),(uid,expr,leaks(uid,expr,foreign))
+    assert first_json(as_user(db,B_DIR,f"SELECT public.task_effort_breakdown('{T1}')"))['by_node']=={}
+    print('PASS',db,'every read command returns only the caller\'s company (15 reads, both roles, both companies)')
+
+    def as_service(expr,org=None,claims_role='service_role'):
+        headers=json.dumps({'x-taskpulse-organization':org}) if org else '{}'
+        r=sql(db,f"BEGIN; SET LOCAL ROLE service_role; SELECT set_config('request.jwt.claims','{{\"role\":\"{claims_role}\"}}',true);"
+                 f" SELECT set_config('request.headers',{literal(headers)},true);\nSELECT ({expr})::text;\nCOMMIT;")
+        return r
+    psc=f"public.performance_source_context('{month}','{nxt}',{asof})"
+    scoped_b=as_service(psc,B); unscoped=as_service(psc)
+    assert B4 in scoped_b and not any(i in scoped_b for i in A_IDS[:8]),'worker header scopes to company B'
+    assert B4 in unscoped and A4 in unscoped,'an unscoped system read sees every company'
+    ignored=sql(db,f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{A_DIR}',true);"
+                   f" SELECT set_config('request.headers',{literal(json.dumps({'x-taskpulse-organization':B}))},true);\nSELECT ({psc})::text;\nCOMMIT;")
+    assert A4 in ignored and B4 not in ignored,'a signed-in caller cannot pick another company with the header'
+    print('PASS',db,'workers are scoped by the company header; unscoped system reads see all; signed-in callers cannot use the header')
+
+    queued=json.loads(next(x for x in as_service(f"public.queue_due_awards('{month}','{today}','{uuid4()}')").splitlines() if x.startswith('{"companies"')))
+    assert sorted(c['organizationId'] for c in queued['companies'])==sorted([default,B]),queued
+    slots=value(db,f"count(DISTINCT organization_id) FROM taskpulse_private.award_slots WHERE business_date BETWEEN '{month}' AND '{today}'")
+    assert slots in ('0','2'),slots
+    if slots=='2':
+        assert value(db,f"count(*) FROM (SELECT business_date FROM taskpulse_private.award_slots GROUP BY business_date HAVING count(*)=2) x")!='0','the same date has a slot per company'
+    per_company=sql(db,f"""BEGIN; SET LOCAL ROLE taskpulse_definer;
+      SELECT set_config('taskpulse.organization','{default}',true);
+      SELECT taskpulse_private.queue_award('2026-10-02',false) IS NOT NULL; SELECT taskpulse_private.queue_award('2026-10-02',false) IS NOT NULL;
+      SELECT set_config('taskpulse.organization','{B}',true); SELECT taskpulse_private.queue_award('2026-10-02',false) IS NOT NULL;
+      RESET ROLE;
+      SELECT 'slots:'||count(*)||'/'||count(DISTINCT organization_id) FROM taskpulse_private.award_slots WHERE business_date='2026-10-02';
+      ROLLBACK;""")
+    assert 'slots:2/2' in per_company,per_company
+    claimed=json.loads(next(x for x in as_service('public.claim_award_jobs(5)').splitlines() if x.startswith('[')))
+    assert all('organizationId' in j for j in claimed if isinstance(j,dict)),claimed
+    print('PASS',db,f'awards queue once per company (slot companies: {slots}); claimed jobs carry their company')
+
+    stamped=value(db,f"string_agg(DISTINCT organization_id::text,',') FROM taskpulse_private.log_revisions WHERE log_id='{log['logId']}'")
+    assert stamped==B,stamped
+    assert value(db,"count(*) FROM taskpulse_private.earned_credit_events WHERE organization_id IS NULL")=='0'
+    print('PASS',db,'private records are stamped with their company from their links')
+
+    assert value(db,"taskpulse_private.m15_secure()")=='0 tables and 0 functions moved to taskpulse_definer'
+    sql(db,"CREATE TABLE taskpulse_private.zz_m15_probe(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid);"
+           "CREATE FUNCTION public.zz_m15_probe_fn() RETURNS int LANGUAGE sql SECURITY DEFINER SET search_path='' AS 'SELECT 1';")
+    assert value(db,"taskpulse_private.m15_secure()")=='1 tables and 1 functions moved to taskpulse_definer'
+    assert value(db,"relforcerowsecurity::text||pg_get_userbyid(relowner) FROM pg_class WHERE oid='taskpulse_private.zz_m15_probe'::regclass")=='truetaskpulse_definer'
+    assert value(db,"count(*) FROM pg_policies WHERE tablename='zz_m15_probe' AND policyname='m15_scope'")=='1'
+    sql(db,"DROP FUNCTION public.zz_m15_probe_fn(); DROP TABLE taskpulse_private.zz_m15_probe;")
+    bad=value(db,"count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','taskpulse_private') AND p.prosecdef AND pg_get_userbyid(p.proowner)<>'taskpulse_definer' AND p.oid::regprocedure::text NOT IN ('current_organization()','get_user_role()','handle_new_user()','taskpulse_private.m15_organization()','taskpulse_private.m15_scope()','taskpulse_private.m15_unscoped()')")
+    assert bad=='0',bad
+    assert value(db,"count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','taskpulse_private') AND c.relkind='r' AND (NOT c.relforcerowsecurity OR pg_get_userbyid(c.relowner)<>'taskpulse_definer')")=='0'
+    print('PASS',db,'m15_secure is idempotent, secures objects a later migration adds, and leaves no bypass-owned table or command')
+
     # A suspended company is locked out.
     sql(db,f"UPDATE public.organizations SET status='suspended' WHERE id='{B}'")
     assert scalar(db,B_DIR,"SELECT public.get_user_role()")=='NULL'
@@ -125,4 +213,4 @@ for db in DBS:
     call(db,'create_task_log',BT,{'log_date':value(db,"(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date"),'hours_worked':'1','requested_delta':'0','notes':'suspended','raw_links':None,'reason':None},uid='b4',success=False)
     sql(db,f"UPDATE public.organizations SET status='active' WHERE id='{B}'")
     print('PASS',db,'a suspended company sees nothing and its commands are refused')
-print('ALL M15.1 DATABASE CHECKS PASSED')
+print('ALL M15.1-M15.2 DATABASE CHECKS PASSED')

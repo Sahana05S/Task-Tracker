@@ -36,6 +36,44 @@ its own people and data. Saahithyaa Realtors and Builders becomes company #1.
 - **Timezone.** "Asia/Kolkata" appears 107 times in SQL and in 16 app files.
   It becomes a company setting (see open questions).
 
+## M15.2 design: company scope inside commands and workers
+
+Finding (17 October 2026): on Supabase the `postgres` role owns every table and
+function and has BYPASSRLS, so row security never applied inside SECURITY
+DEFINER commands. Rewriting about 77 command functions by hand is error-prone.
+Instead:
+
+1. **A non-bypass owner role.** A new NOLOGIN role, `taskpulse_definer` (no
+   BYPASSRLS), owns the tables and every SECURITY DEFINER function, apart from
+   a short "system" allowlist that stays with `postgres`:
+   `current_organization`, `get_user_role`, `handle_new_user`, the company
+   stamp trigger and the scope helpers. Every table uses FORCE ROW LEVEL
+   SECURITY, so the owner is also subject to it.
+2. **One scope rule.** `taskpulse_private.m15_scope()` gives the company a
+   query may see:
+   - a signed-in caller: their company (none if inactive);
+   - an in-database loop: the `taskpulse.organization` setting;
+   - a service-role worker: the `x-taskpulse-organization` request header,
+     honoured only for the service role;
+   - otherwise unscoped. That is a system context such as a migration, a job
+     claim or the freshness decay.
+   Each table has a policy for `taskpulse_definer`: rows of the scoped
+   company, or every row when unscoped. Global settings tables (award, tool,
+   Drive policy and the contract singletons) stay readable by all until
+   M15.3.
+3. **Private tables** gain `organization_id`. It is stamped by the same
+   trigger from task, user, log, run, slot, job, revision or preview links
+   (column-name map for links without foreign keys), otherwise from the
+   scope. Award slot dates, month periods and revisions, and Task Tools tag
+   reservations become unique per company.
+4. **Workers.** The claim functions return each job's company. The app sends
+   it as the header on every call for that job. `queue_due_awards` loops over
+   active companies.
+5. **Future migrations** end with `SELECT taskpulse_private.m15_secure();`.
+   It re-applies ownership, FORCE RLS and policies, and a test fails if any
+   table or definer function outside the allowlist is left with bypass
+   ownership.
+
 ## Phases
 
 Each phase is its own module: forward migrations only, two-company disposable
