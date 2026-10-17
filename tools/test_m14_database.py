@@ -73,10 +73,12 @@ for db in DBS:
         print('PASS',db,'upgrade 36->37 applies')
         sql(db,(ROOT/'supabase/migrations/38_assignee_work_file_links.sql').read_text(encoding='utf-8'))
         print('PASS',db,'upgrade 37->38 applies')
+        sql(db,(ROOT/'supabase/migrations/39_organizations_tenancy_foundation.sql').read_text(encoding='utf-8'))
+        print('PASS',db,'upgrade 38->39 applies (tenancy foundation)')
     else:
-        migrate(db,38)
+        migrate(db,39)
         sql(db,seed)
-        print('PASS',db,'fresh install 01-38')
+        print('PASS',db,'fresh install 01-39')
     assert value(db,"has_function_privilege('authenticated','taskpulse_private.checklist_links(jsonb)','EXECUTE')")=='f'
 
     # Assignee (user 4 on T1) builds nested pages with links and estimates.

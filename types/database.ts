@@ -49,6 +49,19 @@ type OptionalId = {
 export interface Database {
   public: {
     Tables: {
+      /** M15.1: one row per company; every company-owned row carries organization_id. */
+      organizations: TableDefinition<
+        {
+          id: string;
+          name: string;
+          slug: string;
+          status: 'active' | 'suspended';
+          is_default: boolean;
+          created_at: string;
+          updated_at: string;
+        },
+        { name: string; slug: string; id?: string; status?: 'active' | 'suspended'; is_default?: boolean }
+      >;
       users: TableDefinition<
         {
           id: string;
@@ -806,6 +819,7 @@ export interface Database {
       recalculate_task_metrics: { Args: { p_task_id: string; p_progress_delta: number }; Returns: undefined };
       task_effort_summary: { Args: { p_task_id: string }; Returns: { hours_logged: number; log_count: number }[] };
       task_effort_breakdown: { Args: { p_task_id: string }; Returns: Json };
+      current_organization: { Args: Record<never, never>; Returns: string | null };
       team_holiday_dates: { Args: { p_from: string; p_to: string }; Returns: string[] };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };

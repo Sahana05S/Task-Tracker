@@ -1198,3 +1198,35 @@ touched.
     non-assignee B has no panel) and `task` passed;
   - overflow is 0 on Mission details at 390, 768 and 1365 px for the director
     and member A.
+
+## M15.1 tenancy foundation - 17 October 2026 (browser regression pending)
+
+- **Forward migration `39_organizations_tenancy_foundation.sql`:**
+  - adds `organizations` and company #1 (Saahithyaa, the default);
+  - adds `organization_id` on all 30 company-owned public tables, backfilled
+    without counting it as work or resetting reviews;
+  - fills each row's company from its parent references and refuses links
+    between companies;
+  - refuses signed-in writes and deletes of another company's rows, even
+    inside SECURITY DEFINER commands;
+  - adds a RESTRICTIVE company policy per table;
+  - makes task tags, employee IDs, template names, statement keys and daily
+    star dates unique per company;
+  - scopes `get_user_role` and `can_read_employee_details` to the caller's
+    company;
+  - provisions new accounts only from server-set app metadata. With no company
+    named they join the default company; with an unknown company they stay
+    inactive.
+  - Asia/Kolkata stays fixed.
+- **Checks:**
+  - `tools/test_m15_database.py` (two companies; fresh 01-39 and upgrade
+    38->39) passed;
+  - `tools/test_m14_database.py` with 39 included passed (50 checks);
+  - unit tests (507), typecheck passed;
+  - migration 39 applied to the M13 test project after a dry run listing only
+    39: 1 company, 30 tables, no rows without a company.
+- **Not yet done:**
+  - the full 12-phase browser regression on the test project after 39;
+  - the production build;
+  - an M15 evidence file.
+  - Commands still *read* across companies until M15.2.
