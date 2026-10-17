@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { createClient } from '@/shared/supabase/server';
-import { localCheckTime } from '@/lib/attendance/contract';
+import { localCheckTime } from '@/modules/attendance/client';
 import type { ActionResponse } from '@/types/tracker';
 import type { Json } from '@/types/database';
 const read=(f:FormData,k:string)=>String(f.get(k)??'').trim();

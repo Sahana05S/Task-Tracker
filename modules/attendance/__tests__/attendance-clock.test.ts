@@ -4,7 +4,7 @@ const {loadAttendanceContext,from,rpc}=vi.hoisted(()=>({loadAttendanceContext:vi
 vi.mock('@/lib/support/input-context',()=>({loadAttendanceContext}));
 vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn(async()=>({from,rpc}))}));
 vi.mock('@/shared/supabase/mappers',()=>({USER_COLUMNS:'*',mapUser:(row:{id:string})=>row}));
-import { getAttendanceModuleData } from '@/lib/attendance/queries';
+import { getAttendanceModuleData } from '@/modules/attendance/internal/queries';
 
 function chain(data:unknown[]){
  const q={select:()=>q,gte:()=>q,lte:()=>q,order:()=>q,eq:()=>q,

@@ -8,7 +8,7 @@ import { AwardControls } from '@/components/team/award-controls';
 import { AwardStatus } from '@/components/team/award-status';
 import { InitialsAvatar, MissionEmpty, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
-import { getTeamHolidayDates } from '@/lib/attendance/holidays';
+import { getTeamHolidayDates } from '@/modules/attendance';
 import { requireProfile } from '@/shared/session/profile';
 import { canViewTeamModule } from '@/lib/team/permissions';
 import { getTeamIndexData } from '@/lib/team/queries';

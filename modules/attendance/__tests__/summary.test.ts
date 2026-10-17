@@ -4,7 +4,7 @@ import {
   computeHoursFromCheckTimes,
   defaultHoursForStatus,
   summarizeAttendance,
-} from '@/lib/attendance/summary';
+} from '@/modules/attendance/client';
 
 describe('summarizeAttendance', () => {
   it('summarizes daily attendance records into report totals', () => {

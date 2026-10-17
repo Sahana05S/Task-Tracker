@@ -2,8 +2,8 @@ import { loadAttendanceContext, type AttendanceInputContext } from '@/lib/suppor
 import {
   ATTENDANCE_COLUMNS,
   mapAttendanceRecords,
-} from '@/lib/attendance/mappers';
-import { summarizeAttendance } from '@/lib/attendance/summary';
+} from './mappers';
+import { summarizeAttendance } from './summary';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
 import { observationInstant } from '@/lib/presentation/clock';

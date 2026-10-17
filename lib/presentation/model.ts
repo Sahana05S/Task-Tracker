@@ -1,5 +1,5 @@
 import { computeTeamAnalytics,type TeamAnalytics } from '@/lib/analytics/engine';
-import { summarizeAttendance,EMPTY_ATTENDANCE_SUMMARY } from '@/lib/attendance/summary';
+import { summarizeAttendance,EMPTY_ATTENDANCE_SUMMARY } from '@/modules/attendance/client';
 import { parsePerformanceSources,resolvePerformance,taskProductivity,type PerformanceSources } from '@/lib/performance/sources';
 import { Exact } from '@/lib/performance/exact';
 import { classifyFreshness,eligibilityReasons } from '@/lib/tasks/contract';
