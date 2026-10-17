@@ -27,7 +27,7 @@ import {
   summarizeEmployeeSupport,
   type EmployeeSupportSummary,
   type SupportSummary,
-} from '@/lib/support/queries';
+} from '@/modules/support';
 import {
   buildEmployeeAnalyticsCharts,
   type EmployeeAnalyticsCharts,

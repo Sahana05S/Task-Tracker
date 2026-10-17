@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { rawContribution, contributionFromStates } from '@/lib/support/contract';
-import { parseInputContext, loadContributionContext } from '@/lib/support/input-context';
+import { rawContribution, contributionFromStates } from '../internal/contract';
+import { parseInputContext, loadContributionContext } from '../internal/input-context';
 describe('M06 raw contribution arithmetic and availability',()=>{
   it('uses confirmed facts coefficients on explicitly classified counts',()=>expect(rawContribution('fact',2,1)).toBe(1.88));
   it('uses confirmed idea and suggestion coefficients',()=>{

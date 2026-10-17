@@ -1,7 +1,7 @@
 import { kolkataDate } from '@/lib/tasks/contract';
 import { observationInstant } from '@/lib/presentation/clock';
-import { loadContributionContext, type ContributionInputContext } from '@/lib/support/input-context';
-import type { TaskChoice } from '@/components/support/dated-record-module';
+import { loadContributionContext, type ContributionInputContext } from './input-context';
+import type { TaskChoice } from '../components/dated-record-module';
 import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
 import { currentPeriod, type AnalyticsPeriod } from '@/lib/analytics/engine';
 import {
@@ -15,7 +15,7 @@ import {
   REPORT_SNAPSHOT_COLUMNS,
   SALES_LOG_COLUMNS,
   SUGGESTION_COLUMNS,
-} from '@/lib/support/mappers';
+} from './mappers';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
 import type {

@@ -5,7 +5,7 @@ import {
   canValidateSupportRecord,
   canManageReportSnapshots,
   canManageSupportRecords,
-} from '@/lib/support/permissions';
+} from '../internal/permissions';
 import type { UserRole } from '@/types/tracker';
 
 describe('support permissions', () => {

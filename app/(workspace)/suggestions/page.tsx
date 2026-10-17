@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 
 import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
-import { KnowledgeModule } from '@/components/support/support-pages';
+import { KnowledgeModule } from '@/modules/support/components/support-pages';
 import { requireProfile } from '@/shared/session/profile';
-import { canManageSupportRecords } from '@/lib/support/permissions';
-import { getSupportModuleData } from '@/lib/support/queries';
+import { canManageSupportRecords, getSupportModuleData } from '@/modules/support';
 
 export const metadata: Metadata = {
   title: 'Suggestions · TaskPulse',

@@ -1,6 +1,6 @@
-import type { ContributionInputContext } from '@/lib/support/input-context';
-import { DatedRecordModule, type TaskChoice } from '@/components/support/dated-record-module';
-import { canValidateSupportRecord } from '@/lib/support/permissions';
+import type { ContributionInputContext } from '../internal/input-context';
+import { DatedRecordModule, type TaskChoice } from './dated-record-module';
+import { canValidateSupportRecord } from '../internal/permissions';
 import Link from 'next/link';
 
 import {
@@ -11,9 +11,9 @@ import {
   saveReportSnapshotAction,
   saveSalesLogAction,
   toggleKnowledgeValidationAction,
-} from '@/app/(workspace)/support/actions';
+} from '../actions';
 import { Button } from '@/shared/ui/button';
-import type { SupportKnowledgeModule } from '@/lib/support/permissions';
+import type { SupportKnowledgeModule } from '../internal/permissions';
 import { formatDate } from '@/shared/tracker/format';
 import type {
   DailyFact,

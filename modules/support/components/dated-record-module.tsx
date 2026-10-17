@@ -1,4 +1,4 @@
-import type { ContributionInputContext } from '@/lib/support/input-context';
+import type { ContributionInputContext } from '../internal/input-context';
 import Link from 'next/link';
 import { writeDatedRecord } from '@/app/records/actions';
 import { ExecutionForm } from '@/components/tasks/execution-form';
@@ -7,8 +7,8 @@ import { InfoIcon, PlusIcon } from 'lucide-react';
 import { InitialsAvatar, MissionEmpty, MissionNotice, MissionPanel } from '@/components/missions/mission-ui';
 import { cn } from '@/shared/utils';
 import { kolkataDate } from '@/lib/tasks/contract';
-import { canManageSupportRecords, canValidateSupportRecord } from '@/lib/support/permissions';
-import type { RecordKind, DatedRecordMetadata } from '@/lib/support/contract';
+import { canManageSupportRecords, canValidateSupportRecord } from '../internal/permissions';
+import type { RecordKind, DatedRecordMetadata } from '../internal/contract';
 import type { User } from '@/types/tracker';
 
 export interface DatedEntry extends DatedRecordMetadata {

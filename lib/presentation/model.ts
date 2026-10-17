@@ -7,7 +7,7 @@ import { mapTask } from '@/lib/tasks/mappers';
 import { mapDailyTaskLog } from '@/lib/logs/mappers';
 import type { Database } from '@/types/database';
 import type { Task,User,DailyTaskLog } from '@/types/tracker';
-import type { AttendanceInputContext } from '@/lib/support/input-context';
+import type { AttendanceInputContext } from '@/modules/support/client';
 import type { CalculationResult } from '@/lib/performance/engine';
 import { nextDate,previousDate,type ViewContext } from './context';
 import type { AwardReadModel } from '@/lib/stars/read-model';
