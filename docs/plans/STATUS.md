@@ -1168,3 +1168,33 @@ touched.
 - All sheet-parity gaps from the 16 October audit are now built. Drive "Create
   Work Files" stays deferred by the user, and sales scoring still needs the
   user's field mapping.
+
+## Quick "Create work file" and user setup guide - 17 October 2026
+
+- **Create work file.**
+  - Mission details shows assignees and managers a panel on open missions. It
+    opens a new Google Doc, Sheet or Slides file in the person's own account,
+    suggests the name `[Task tag] - [Title]` (with Copy name), and saves the
+    file's link under Inputs, Process or Outputs.
+  - The panel says the link is saved only; TaskPulse does not create, rename
+    or share the file.
+  - Forward migration `38_assignee_work_file_links.sql` lets assignees add
+    ordinary http(s) links to their own tasks. Related employee or report
+    links stay manager-only. It is applied only to disposable databases and
+    the M13 test project.
+- **Guide for the user.** `docs/setup/WHAT-I-NEED-FROM-YOU.md`:
+  - Part 1, about 5 minutes: screenshots of the sales BN/BO/BP headers and
+    formulas.
+  - Part 2, about 1 hour: Google Cloud project, Drive API, service account,
+    Shared Drive, a key stored without showing it (PowerShell step tested
+    with a fake key), and reviewer emails.
+  - Drive stays deferred until the user finishes Part 2 and asks to resume.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-38; upgrades through 38) passed;
+  - unit tests (507 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project: migration 38 applied after a dry run that listed only
+    38; `nested` (now saving a work-file link as assignee A and confirming
+    non-assignee B has no panel) and `task` passed;
+  - overflow is 0 on Mission details at 390, 768 and 1365 px for the director
+    and member A.

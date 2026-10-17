@@ -5,6 +5,7 @@ import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { TaskLifecyclePanel } from '@/components/tasks/task-lifecycle-panel';
 import { ELIGIBILITY_LABELS,kolkataDate } from '@/lib/tasks/contract';
 import { ExecutionForm } from '@/components/tasks/execution-form';
+import { WorkFileCreator } from '@/components/tasks/work-file-creator';
 import { TaskReviewForm } from '@/components/tasks/task-review-form';
 import type { Metadata } from 'next';
 import type * as React from 'react';
@@ -57,7 +58,7 @@ import {
   resolveTaskDetailRouteState,
   type TaskDependencyDetail,
 } from '@/lib/tasks/detail';
-import { canManageTasks } from '@/lib/tasks/permissions';
+import { canManageTasks, canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
 import { CATEGORY_LABELS } from '@/lib/tracker/enums';
 import { formatDate, formatNumeric, formatPercent, formatHours, isOverdue } from '@/lib/tracker/format';
@@ -339,9 +340,12 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
           <MissionPanel
             icon={PaperclipIcon}
             title="Work files & assets"
-            subtitle="Manual work-file links (Drive automation deferred)"
+            subtitle="Create a work file and save its link here (Drive automation deferred)"
           >
             <div className="grid gap-5">
+              {!archived && !closed && canUpdateTaskOwnFields(currentUser, task) ? (
+                <WorkFileCreator taskId={task.id} taskTag={task.taskTag} title={task.title} version={task.lifecycleVersion ?? 0} />
+              ) : null}
               <div className="grid gap-5 xl:grid-cols-3">
                 <AssetGroup
                   title="Inputs"

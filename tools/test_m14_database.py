@@ -71,10 +71,12 @@ for db in DBS:
         print('PASS',db,'upgrade 35->36 applies')
         sql(db,(ROOT/'supabase/migrations/37_team_holiday_dates.sql').read_text(encoding='utf-8'))
         print('PASS',db,'upgrade 36->37 applies')
+        sql(db,(ROOT/'supabase/migrations/38_assignee_work_file_links.sql').read_text(encoding='utf-8'))
+        print('PASS',db,'upgrade 37->38 applies')
     else:
-        migrate(db,37)
+        migrate(db,38)
         sql(db,seed)
-        print('PASS',db,'fresh install 01-37')
+        print('PASS',db,'fresh install 01-38')
     assert value(db,"has_function_privilege('authenticated','taskpulse_private.checklist_links(jsonb)','EXECUTE')")=='f'
 
     # Assignee (user 4 on T1) builds nested pages with links and estimates.
@@ -268,10 +270,40 @@ for db in DBS:
     actor(db,'',"SELECT public.team_holiday_dates('2026-10-01','2026-10-31')",False,role='anon')
     print('PASS',db,'team holiday dates need every active member on an active Holiday record; members see the date without reading others; long ranges, inactive and anon refused')
 
+    # Work-file links (migration 38): assignees add ordinary links; managers keep related records.
+    def detail_link(payload,uid='4',success=True,key=None):
+        version=int(value(db,f"lifecycle_version FROM public.tasks WHERE id='{T1}'"))
+        base={'ipo_role':'output','link_type':'Document','label':'Work file','url':None,'notes':None,'employee_id':None,'report_id':None}
+        q=f"SELECT public.task_details_command('{T1}','link',{literal(json.dumps({**base,**payload}))}::jsonb,{version},'{key or uuid4()}')"
+        rows=actor(db,'00000000-0000-0000-0000-'+uid.zfill(12),q,success)
+        if success:return first_json(rows)
+    sql(db,f"UPDATE public.task_reviewers SET review_approved=true,reviewed_at=now() WHERE task_id='{T1}'")
+    key=str(uuid4())
+    v0=int(value(db,f"lifecycle_version FROM public.tasks WHERE id='{T1}'"))
+    made=detail_link({'label':'Vase render','url':'https://docs.google.com/document/d/abc/edit'},key=key)
+    row=json.loads(value(db,f"row_to_json(l) FROM (SELECT ipo_role,link_type,label,url,created_by,related_employee_id FROM public.task_links WHERE id='{made['id']}') l"))
+    assert row=={'ipo_role':'output','link_type':'Document','label':'Vase render','url':'https://docs.google.com/document/d/abc/edit','created_by':'00000000-0000-0000-0000-000000000004','related_employee_id':None},row
+    assert value(db,f"bool_or(review_approved) FROM public.task_reviewers WHERE task_id='{T1}'") in ('f',''),'link must invalidate reviews'
+    replay=first_json(actor(db,'00000000-0000-0000-0000-000000000004',f"SELECT public.task_details_command('{T1}','link',{literal(json.dumps({'ipo_role':'output','link_type':'Document','label':'Vase render','url':'https://docs.google.com/document/d/abc/edit','notes':None,'employee_id':None,'report_id':None}))}::jsonb,{v0},'{key}')"))
+    assert replay['id']==made['id'],'replay returns the same link'
+    print('PASS',db,'assignee adds a work-file link; reviews reset; replay idempotent')
+    detail_link({'employee_id':'00000000-0000-0000-0000-000000000005','url':None},success=False)
+    for bad in ({'url':'javascript:alert(1)'},{'url':None},{'label':'','url':'https://x.test'},{'ipo_role':'misc','url':'https://x.test'},{'url':'https://x.test','extra':1}):
+        detail_link(bad,success=False)
+    detail_link({'url':'https://x.test'},uid='5',success=False)
+    detail_link({'url':'https://x.test'},uid='3',success=False)
+    detail_link({'url':'https://x.test'},uid='7',success=False)
+    version=int(value(db,f"lifecycle_version FROM public.tasks WHERE id='{T1}'"))
+    actor(db,'00000000-0000-0000-0000-000000000004',f"SELECT public.task_details_command('{T1}','save','{{\"description\":\"x\"}}'::jsonb,{version},'{uuid4()}')",False)
+    related=detail_link({'ipo_role':'reference','link_type':'Account','label':'Profile','employee_id':'00000000-0000-0000-0000-000000000005'},uid='1')
+    assert value(db,f"related_employee_id FROM public.task_links WHERE id='{related['id']}'")=='00000000-0000-0000-0000-000000000005'
+    print('PASS',db,'related records, bad links, non-assignees, data managers, inactive accounts and other detail commands stay refused; managers unchanged')
+
     # Closed tasks refuse structure edits and item timers from anyone.
     sql(db,f"UPDATE public.tasks SET status='Discarded' WHERE id='{T1}'")
     cl(db,'add',{'title':'After close','section':'activity','node_type':'Item','parent_id':page,'linked_task_id':None,'description':None},success=False)
     cl(db,'add',{'title':'After close','section':'activity','node_type':'Item','parent_id':page,'linked_task_id':None,'description':None},uid='1',success=False)
     item_timer(db,c,success=False)
-    print('PASS',db,'closed task refuses checklist edits and item timers')
+    detail_link({'url':'https://x.test'},success=False)
+    print('PASS',db,'closed task refuses checklist edits, item timers and work-file links')
 print('ALL M14 DATABASE CHECKS PASSED')

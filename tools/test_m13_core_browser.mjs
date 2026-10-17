@@ -225,6 +225,21 @@ const phases = {
     const todayA = (await page.locator('div').filter({ has: page.getByText('Hours worked today', { exact: true }) }).last().innerText()).replace('Hours worked today', '').trim();
     assert.match(todayA, /^\d+(\.\d+)?/, `Hours worked today missing: ${todayA}`);
     console.log('PASS item timer time is an ordinary task log, shown on the item and the mission');
+    // Quick "Create work file": the assignee saves the link of a file made in their own Google account.
+    const workFileUrl = 'https://docs.google.com/document/d/m14-work-file-test/edit';
+    if (!(await page.locator(`a[href="${workFileUrl}"]`).count())) {
+      const creator = page.locator('div').filter({ has: page.getByRole('heading', { name: 'Create work file' }) }).filter({ has: page.locator('form') }).last();
+      assert.equal(await creator.locator('a[href="https://docs.new"]').count(), 1, 'New Google Doc shortcut missing');
+      const form = creator.locator('form').filter({ has: page.getByRole('button', { name: 'Save work file link', exact: true }) });
+      await form.getByLabel('Goes under').selectOption('output');
+      await form.getByLabel('File link').fill(workFileUrl);
+      await saved(form, 'Save work file link', 'assignee saved a work-file link');
+      await reload(page);
+    } else {
+      console.log('INFO (rerun) work-file link present');
+    }
+    assert.equal(await page.locator(`a[href="${workFileUrl}"]`).count(), 1, 'Work-file link not shown after reload');
+    console.log('PASS work-file link persists under the mission after reload');
     // Gap 5: the employee report breaks hours down by checklist item.
     await open(page, `/team/${actors.A.employeeId}/reports`);
     const itemPanel = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Hours by checklist item' }) });
@@ -275,6 +290,7 @@ const phases = {
     const todayB = (await other.page.locator('div').filter({ has: other.page.getByText('Hours worked today', { exact: true }) }).last().innerText()).replace('Hours worked today', '').trim();
     assert.equal(todayB, todayA, 'A non-assignee must see the same team-wide hours today');
     console.log(`PASS hours worked today (${todayA}) is team-wide: assignee and non-assignee see the same figure`);
+    assert.equal(await other.page.getByRole('heading', { name: 'Create work file' }).count(), 0, 'Non-assignee sees Create work file');
     await open(other.page, '/tasks');
     const headline = other.page.locator('section[aria-label="Team headline"]');
     await headline.waitFor({ timeout: 180000 });

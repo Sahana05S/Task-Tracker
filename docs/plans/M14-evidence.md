@@ -103,6 +103,19 @@ Authorized by the user's 16 October 2026 request and answers (see DECISIONS,
     item, with links to each item's checklist page
     (`lib/checklists/item-hours.ts`, unit-tested).
 
+- **Quick "Create work file" (migration 38, `38_assignee_work_file_links.sql`).**
+  - `public.task_details_command` keeps migration 26's wrapper. For an active
+    non-manager it routes 'link' to `taskpulse_private.assignee_work_file_link`:
+    assignee only, http(s) URL only (at most 2048 characters), no related
+    employee or report.
+  - It keeps the manager path's validation, version and status checks, review
+    invalidation, audit, outbox notice, metric refresh and receipt.
+  - `components/tasks/work-file-creator.tsx` shows the panel on Mission
+    details.
+  - `docs/setup/WHAT-I-NEED-FROM-YOU.md` is the user's guide. Its PowerShell
+    key step was tested with a fake key: Next.js loads the stored value as
+    valid JSON.
+
 ## Checks
 
 - `tools/test_m14_database.py` on a disposable local PostgreSQL 18 cluster
@@ -135,6 +148,11 @@ Authorized by the user's 16 October 2026 request and answers (see DECISIONS,
     Holiday record (not when one member differs or a record is withdrawn); a
     member who can read only their own attendance gets the date; ranges over
     63 days, inactive and anon callers are refused.
+  - work-file links (fresh 01-38 and upgrade 37->38): an assignee adds a URL
+    link; reviews reset; replay is idempotent; related employees or reports,
+    bad URLs, missing labels, unknown roles, extra fields, non-assignees, data
+    managers, inactive accounts, other detail commands and closed tasks are
+    refused; the manager related-record path is unchanged.
   All passed.
 - Unit tests: `lib/checklists/__tests__/pages.test.ts` plus the full suite.
   Typecheck and the production build passed.

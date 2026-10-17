@@ -664,3 +664,24 @@ rule, and can be revised:
   These are part of task hours, not additional hours. The breakdown uses
   logs the viewer may already read on that report. Report exports are
   unchanged.
+
+## Quick "Create work file" approved by user - 17 October 2026
+
+The user chose the quick option for the sheet's "Create Work Files" ahead of
+the full Google Drive setup. They asked for a plain step-by-step guide for
+anything only they can do: `docs/setup/WHAT-I-NEED-FROM-YOU.md` covers the
+sales BN/BO/BP screenshots and the Drive provisioning steps.
+
+- Each open mission shows assignees and managers a "Create work file" panel:
+  - shortcuts to a new Google Doc, Sheet or Slides file in the person's own
+    account (docs.new, sheets.new, slides.new);
+  - the suggested sheet-style name `[Task tag] - [Title]`;
+  - a form to save the file's link under Inputs, Process or Outputs.
+- The panel says TaskPulse saves the link only. It never claims to create,
+  rename or share the Google file (AGENTS rule on Drive representation).
+- Assignees may now add ordinary http(s) work-file links to their own tasks.
+  In the sheet the task owner fills these columns, so this matches the
+  sheet's practice. Linking a related employee or report, and all other
+  detail commands, stay manager-only (migration 38).
+- The full Drive integration remains deferred until the user completes the
+  guide's Part 2 and asks to resume it.
