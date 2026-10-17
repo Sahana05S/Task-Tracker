@@ -8,6 +8,7 @@ import { AwardControls } from '@/components/team/award-controls';
 import { AwardStatus } from '@/components/team/award-status';
 import { InitialsAvatar, MissionEmpty, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
+import { getTeamHolidayDates } from '@/lib/attendance/holidays';
 import { requireProfile } from '@/lib/auth/profile';
 import { canViewTeamModule } from '@/lib/team/permissions';
 import { getTeamIndexData } from '@/lib/team/queries';
@@ -33,7 +34,10 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
   }
 
   const query=await searchParams;const context=await liveViewContext(query.period,query.asOf);
-  const data = await getTeamIndexData(context.period,context);
+  const [data, holidays] = await Promise.all([
+    getTeamIndexData(context.period,context),
+    getTeamHolidayDates(context.period.startDate, context.period.endDate),
+  ]);
   const canManage = profile.isActive && profile.role === 'managing_director';
 
   return (
@@ -49,7 +53,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
       <h2 className="eyebrow text-muted-foreground -mb-2">Current support index · retained records, separate from as-of scoring</h2>
       <SupportSummaryCards summary={data.supportSummary} />
 
-      <AwardStatus awards={data.awards} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
+      <AwardStatus awards={data.awards} holidays={holidays} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
       {canManage ? <AwardControls awards={data.awards} members={data.members.map(m=>({id:m.user.id,fullName:m.user.fullName}))} /> : null}
 
       {data.members.length === 0 ? (
@@ -60,7 +64,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
       ) : (
         <section className="soft-card-clip" aria-label="Team members">
           <div className="overflow-x-auto">
-            <table className="sheet-grid min-w-[64rem]">
+            <table className="sheet-grid min-w-[70rem]">
               <thead>
                 <tr>
                   <th>Team member</th>
@@ -69,12 +73,13 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                   <th>Charts</th>
                   <th className="text-right">Certified daily wins</th>
                   <th className="text-right">Current perf score</th>
+                  <th>Report validity</th>
                   <th className="text-right">Attendance h</th>
                   <th className="text-right">Task h</th>
                 </tr>
               </thead>
               <tbody>
-                {data.members.map(({ user, performance, dailyStarCount, currentPerformanceScore, reportCount }) => (
+                {data.members.map(({ user, performance, dailyStarCount, currentPerformanceScore, reportCount, performanceUnavailableReason }) => (
                   <tr key={user.id}>
                     <td className="text-xs">
                       <div className="flex items-start gap-2.5">
@@ -110,6 +115,16 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                       {currentPerformanceScore === null
                         ? '—'
                         : formatNumeric(currentPerformanceScore)}
+                    </td>
+                    <td className="text-xs">
+                      {/* The sheet's "Reports validity": is this member's live report for the month complete? */}
+                      {performance?.calculation?.status === 'complete' ? (
+                        <span className="badge-soft badge-status-done">Valid</span>
+                      ) : (
+                        <span title={performanceUnavailableReason ?? 'Required performance inputs are unavailable.'} className="badge-soft badge-neutral">
+                          Incomplete
+                        </span>
+                      )}
                     </td>
                     <td className="sheet-numeric text-xs">
                       {data.presentation.sources.attendance.find(a=>a.userId===user.id)?.available?formatHours(performance?.attendance.attendanceHours??0):'Unavailable'}

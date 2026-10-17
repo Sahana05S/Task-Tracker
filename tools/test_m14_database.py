@@ -69,10 +69,12 @@ for db in DBS:
         print('PASS',db,'upgrade 34->35 applies')
         sql(db,(ROOT/'supabase/migrations/36_task_effort_breakdown.sql').read_text(encoding='utf-8'))
         print('PASS',db,'upgrade 35->36 applies')
+        sql(db,(ROOT/'supabase/migrations/37_team_holiday_dates.sql').read_text(encoding='utf-8'))
+        print('PASS',db,'upgrade 36->37 applies')
     else:
-        migrate(db,36)
+        migrate(db,37)
         sql(db,seed)
-        print('PASS',db,'fresh install 01-36')
+        print('PASS',db,'fresh install 01-37')
     assert value(db,"has_function_privilege('authenticated','taskpulse_private.checklist_links(jsonb)','EXECUTE')")=='f'
 
     # Assignee (user 4 on T1) builds nested pages with links and estimates.
@@ -246,6 +248,25 @@ for db in DBS:
     actor(db,'00000000-0000-0000-0000-000000000007',f"SELECT public.task_effort_breakdown('{T1}')",False)
     actor(db,'',f"SELECT public.task_effort_breakdown('{T1}')",False,role='anon')
     print('PASS',db,'effort breakdown gives any active member team totals for today and per item; reversed logs excluded; inactive and anon refused')
+
+    # Team holiday dates (migration 37): a date counts only when every active member
+    # has an active Holiday record. Checked inside a rolled-back transaction.
+    active=f"SELECT id FROM public.users WHERE is_active"
+    holidays=sql(db,f"""BEGIN;
+      INSERT INTO public.attendance_records(user_id,attendance_date,status) SELECT id,'2026-10-04','Holiday' FROM public.users WHERE is_active;
+      INSERT INTO public.attendance_records(user_id,attendance_date,status) SELECT id,'2026-10-05','Holiday' FROM public.users WHERE is_active AND id<>'00000000-0000-0000-0000-000000000005';
+      INSERT INTO public.attendance_records(user_id,attendance_date,status,record_state) SELECT id,'2026-10-06','Holiday',CASE WHEN id='00000000-0000-0000-0000-000000000004' THEN 'withdrawn' ELSE 'active' END FROM public.users WHERE is_active;
+      INSERT INTO public.attendance_records(user_id,attendance_date,status) SELECT id,'2026-10-07','Holiday' FROM public.users WHERE NOT is_active;
+      SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000005',true);
+      SELECT 'own-visible:'||count(*) FROM public.attendance_records WHERE attendance_date='2026-10-04';
+      SELECT 'dates:'||public.team_holiday_dates('2026-10-01','2026-10-31')::text;
+      ROLLBACK;""")
+    assert 'dates:{2026-10-04}' in holidays and 'own-visible:1' in holidays,holidays
+    assert value(db,"count(*) FROM public.attendance_records WHERE attendance_date BETWEEN '2026-10-04' AND '2026-10-07'")=='0','rolled back'
+    actor(db,'00000000-0000-0000-0000-000000000005',"SELECT public.team_holiday_dates('2026-01-01','2026-06-30')",False)
+    actor(db,'00000000-0000-0000-0000-000000000007',"SELECT public.team_holiday_dates('2026-10-01','2026-10-31')",False)
+    actor(db,'',"SELECT public.team_holiday_dates('2026-10-01','2026-10-31')",False,role='anon')
+    print('PASS',db,'team holiday dates need every active member on an active Holiday record; members see the date without reading others; long ranges, inactive and anon refused')
 
     # Closed tasks refuse structure edits and item timers from anyone.
     sql(db,f"UPDATE public.tasks SET status='Discarded' WHERE id='{T1}'")

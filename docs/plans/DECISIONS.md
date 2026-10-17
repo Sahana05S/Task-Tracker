@@ -643,3 +643,24 @@ scope (15 October entry): leader names and values show only with the manager
 team-detail scope. Members see the aggregate team figures and a note that
 leaders are visible to managers. No calculation, permission or scoring rule
 changed; the strip only presents existing figures.
+
+## Team Index holiday marks, report validity and item hours - 17 October 2026
+
+The user said "Do them yourself" for the remaining sheet-parity gaps 4 and 5.
+These display choices change no attendance, award, scoring or permission
+rule, and can be revised:
+
+- **Holiday "H" in the daily star log.** TaskPulse has no company holiday
+  calendar. Holidays are recorded per member as attendance status Holiday. A
+  date shows "H" (and counts in "Holidays (n)") when every active member has
+  an active Holiday record that day. `team_holiday_dates` (migration 37)
+  returns those dates only, so members see the marker without reading other
+  people's attendance.
+- **Report validity.** The sheet's "Reports Validity" column shows "Valid"
+  when the member's live month calculation is complete. Otherwise it shows
+  "Incomplete", with the existing unavailable-input reason.
+- **Hours by checklist item.** Employee reports list the employee's
+  item-timer hours by task and item for the period, up to the as-of date.
+  These are part of task hours, not additional hours. The breakdown uses
+  logs the viewer may already read on that report. Report exports are
+  unchanged.

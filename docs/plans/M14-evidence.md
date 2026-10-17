@@ -91,6 +91,18 @@ Authorized by the user's 16 October 2026 request and answers (see DECISIONS,
   - The strip streams in with Suspense, because the live month presentation
     takes several seconds; the mission list never waits for it.
 
+- **Team Index and employee reports (gaps 4-5; DECISIONS "Team Index holiday
+  marks, report validity and item hours").**
+  - Migration 37 (`37_team_holiday_dates.sql`) adds `team_holiday_dates(from,
+    to)`. It is a SECURITY DEFINER, dates-only function over at most 63 days:
+    a date counts when every active member has an active Holiday record.
+  - The daily star log shows "Holidays (n)" and an "H" badge on those dates.
+  - Team Index gains a "Report validity" column: Valid or Incomplete, from the
+    member's live calculation status.
+  - Employee reports gain "Hours by checklist item": grouped by task and
+    item, with links to each item's checklist page
+    (`lib/checklists/item-hours.ts`, unit-tested).
+
 ## Checks
 
 - `tools/test_m14_database.py` on a disposable local PostgreSQL 18 cluster
@@ -118,6 +130,11 @@ Authorized by the user's 16 October 2026 request and answers (see DECISIONS,
   - effort breakdown (fresh 01-36 and upgrade 35->36): a member who cannot
     read another member's logs gets the same team totals for today and per
     item; reversed logs are excluded; inactive and anon callers are refused.
+  - team holiday dates (fresh 01-37 and upgrade 36->37), in a rolled-back
+    transaction: a date counts only with every active member on an active
+    Holiday record (not when one member differs or a record is withdrawn); a
+    member who can read only their own attendance gets the date; ranges over
+    63 days, inactive and anon callers are refused.
   All passed.
 - Unit tests: `lib/checklists/__tests__/pages.test.ts` plus the full suite.
   Typecheck and the production build passed.

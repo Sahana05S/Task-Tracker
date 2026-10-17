@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { groupItemHours, type ItemHourTask } from '@/lib/checklists/item-hours';
 import { createClient } from '@/lib/supabase/server';
 
 /** A running timer, as the checklist pages need it. */
@@ -102,4 +103,45 @@ export async function getChecklistItemTime(taskId: string, userId: string): Prom
     if (!runningByNode.has(row.checklist_node_id) || row.user_id === userId) runningByNode.set(row.checklist_node_id, toTimer(row));
   }
   return { available: true, secondsByNode, runningByNode, mine: mine.data ? toTimer(mine.data) : null };
+}
+
+/**
+ * An employee's item-tagged task hours for a period, grouped by task and item
+ * (sheet-parity gap 5). Callers must already have checked report access: logs
+ * are read under the viewer's own permissions. Null before migration 34.
+ */
+export async function getEmployeeItemHours(employeeUserId: string, from: string, to: string): Promise<ItemHourTask[] | null> {
+  const supabase = await createClient();
+  const logs = await supabase
+    .from('daily_task_logs')
+    .select('task_id, checklist_node_id, hours_worked')
+    .eq('user_id', employeeUserId)
+    .gte('log_date', from)
+    .lte('log_date', to)
+    .is('reversed_at', null)
+    .not('checklist_node_id', 'is', null);
+  if (logs.error) {
+    if (logs.error.code === UNDEFINED_COLUMN) return null;
+    throw new Error(`Failed to load item hours: ${logs.error.message}`);
+  }
+  const rows = (logs.data ?? []).filter(r => r.checklist_node_id);
+  if (!rows.length) return [];
+  const nodeIds = [...new Set(rows.map(r => r.checklist_node_id!))];
+  const taskIds = [...new Set(rows.map(r => r.task_id))];
+  const [nodes, tasks] = await Promise.all([
+    supabase.from('checklist_nodes').select('id, title').in('id', nodeIds),
+    supabase.from('tasks').select('id, task_tag, title').in('id', taskIds),
+  ]);
+  const failure = nodes.error ?? tasks.error;
+  if (failure) throw new Error(`Failed to load item hours: ${failure.message}`);
+  const nodeTitle = new Map((nodes.data ?? []).map(n => [n.id, n.title]));
+  const task = new Map((tasks.data ?? []).map(t => [t.id, t]));
+  return groupItemHours(rows.map(r => ({
+    taskId: r.task_id,
+    taskTag: task.get(r.task_id)?.task_tag ?? 'Unknown task',
+    taskTitle: task.get(r.task_id)?.title ?? '',
+    nodeId: r.checklist_node_id!,
+    nodeTitle: nodeTitle.get(r.checklist_node_id!) ?? 'Removed item',
+    hours: Number(r.hours_worked),
+  })));
 }

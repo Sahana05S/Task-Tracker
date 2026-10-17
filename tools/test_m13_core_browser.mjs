@@ -225,6 +225,18 @@ const phases = {
     const todayA = (await page.locator('div').filter({ has: page.getByText('Hours worked today', { exact: true }) }).last().innerText()).replace('Hours worked today', '').trim();
     assert.match(todayA, /^\d+(\.\d+)?/, `Hours worked today missing: ${todayA}`);
     console.log('PASS item timer time is an ordinary task log, shown on the item and the mission');
+    // Gap 5: the employee report breaks hours down by checklist item.
+    await open(page, `/team/${actors.A.employeeId}/reports`);
+    const itemPanel = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Hours by checklist item' }) });
+    const itemText = await itemPanel.innerText();
+    assert.ok(itemText.includes(TAG) && itemText.includes('Nested Magnet 12 mm') && /\d+(\.\d+)? h · \d+ logs?/.test(itemText), `Item hours missing from the employee report: ${itemText}`);
+    console.log('PASS employee report breaks hours down by checklist item');
+    // Gap 4: Team Index shows holiday marks and report validity.
+    await open(page, '/team');
+    const teamText = await bodyText(page);
+    assert.match(teamText, /Holidays \(\d+\)/, 'Holiday summary missing from the daily star log');
+    assert.match(teamText, /Report validity[\s\S]*(Valid|Incomplete)/i, 'Report validity column missing');
+    console.log('PASS Team Index shows holidays and report validity');
     await page.goto(subUrl, { waitUntil: 'domcontentloaded' });
     await hydrated(page);
     assert.match(await page.locator('article').filter({ has: page.getByRole('link', { name: 'Nested Magnet 12 mm', exact: true }) }).innerText(), /Elapsed \d+ (min|h)/, 'Row elapsed time missing');

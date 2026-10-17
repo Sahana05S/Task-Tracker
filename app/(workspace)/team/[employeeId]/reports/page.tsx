@@ -10,7 +10,7 @@ import { AwardHistory } from '@/components/team/award-history';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { ArrowLeftIcon, FileTextIcon, HistoryIcon, StarIcon, type LucideIcon } from 'lucide-react';
+import { ArrowLeftIcon, FileTextIcon, HistoryIcon, ListChecksIcon, StarIcon, type LucideIcon } from 'lucide-react';
 
 import {
   MissionEmpty,
@@ -20,6 +20,8 @@ import {
   MissionPanel,
 } from '@/components/missions/mission-ui';
 import { requireProfile } from '@/lib/auth/profile';
+import { getEmployeeItemHours } from '@/lib/checklists/item-time';
+import type { ItemHourTask } from '@/lib/checklists/item-hours';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
 import { getEmployeeByEmployeeId,getEmployeeReportsData } from '@/lib/team/queries';
 import {
@@ -67,7 +69,11 @@ export default async function EmployeeReportsPage({
 
   const data = routeState.data;
   if (!canViewEmployeeReports(viewer, data.employee)) notFound();
-  const archiveHistory=await monthHistory(context.period.startDate);
+  const itemTo = context.asOfLocalDate < context.period.endDate ? context.asOfLocalDate : context.period.endDate;
+  const [archiveHistory, itemHours] = await Promise.all([
+    monthHistory(context.period.startDate),
+    getEmployeeItemHours(data.employee.id, context.period.startDate, itemTo),
+  ]);
 
   return (
     <MissionPage>
@@ -89,6 +95,7 @@ export default async function EmployeeReportsPage({
       <div className="grid gap-5 lg:gap-6">
         {archiveHistory.revisions.length?<nav aria-label="Employee report revisions" className="flex flex-wrap gap-2">{archiveHistory.revisions.map(r=><Link className="section-tab bg-white" key={r.number} href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}&revision=${r.number}`}>Revision {r.number} · {r.certification==='certified'?'Certified':'Incomplete'}</Link>)}</nav>:null}
         <LiveReport model={data.presentation}/>
+        <ItemHoursPanel tasks={itemHours} />
         <h2 className="panel-title mt-2">Retained reports · original rules</h2>
         {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}
         {data.performance?.calculation?<PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/>:null}
@@ -269,4 +276,47 @@ function Panel({
 
 function EmptyText({ children }: { children: React.ReactNode }) {
   return <MissionEmpty>{children}</MissionEmpty>;
+}
+
+/**
+ * Hours by checklist item (sheet-parity gap 5): this employee's item-timer
+ * logs for the period up to the as-of date. They are part of task hours, not
+ * extra hours.
+ */
+function ItemHoursPanel({ tasks }: { tasks: readonly ItemHourTask[] | null }) {
+  return (
+    <Panel title="Hours by checklist item" icon={ListChecksIcon}>
+      {tasks === null ? (
+        <EmptyText>Checklist item hours are unavailable until the item-timer migration is applied.</EmptyText>
+      ) : tasks.length === 0 ? (
+        <EmptyText>No item-timer hours this period. Time logged with a checklist item's timer appears here.</EmptyText>
+      ) : (
+        <div className="grid gap-3">
+          <p className="text-muted-foreground text-xs">Part of the task hours above, broken down by the checklist item that was timed.</p>
+          {tasks.map(task => (
+            <div key={task.taskId} className="border-border rounded-xl border">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 px-3.5 py-2.5">
+                <Link href={`/tasks/${encodeURIComponent(task.taskTag)}`} className="text-primary min-w-0 font-semibold hover:underline">
+                  {task.taskTag}{task.taskTitle ? ` · ${task.taskTitle}` : ''}
+                </Link>
+                <span className="text-foreground text-sm font-semibold tabular-nums">{formatHours(task.hours)} h</span>
+              </div>
+              <ul className="border-border divide-border divide-y border-t text-sm">
+                {task.items.map(item => (
+                  <li key={item.nodeId} className="flex flex-wrap items-baseline justify-between gap-2 px-3.5 py-2">
+                    <Link href={`/tasks/${encodeURIComponent(task.taskTag)}/checklist/${item.nodeId}`} className="text-foreground min-w-0 break-words hover:underline">
+                      {item.title}
+                    </Link>
+                    <span className="text-muted-foreground text-xs tabular-nums">
+                      {formatHours(item.hours)} h · {item.entries} log{item.entries === 1 ? '' : 's'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
 }

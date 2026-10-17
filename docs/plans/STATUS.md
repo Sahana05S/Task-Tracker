@@ -1031,6 +1031,7 @@ following one). They are on `m13-verification`, not merged or deployed.
 - **Remaining gaps:** Team Index holiday marks and report validity (waiting
   for the redesign slice 4 restyle of the Team pages), and item hours in
   reports.
+
 ## Redesign slice 4 (remaining pages) - 17 October 2026
 
 On branch `claude/redesign-slice-4-a5152e`, cut from `m13-verification` at
@@ -1132,3 +1133,38 @@ touched.
   - `/records/[kind]/[id]/history` still uses `WorkspaceHeader`; it was not in
     this slice.
   - The milestone dialog and statement editor sheets were not restyled.
+
+## Slice 4 merge and M14 gaps 4-5 - 17 October 2026
+
+- **Slice 4 merged.** At the user's request ("Do them yourself"),
+  `claude/redesign-slice-4-a5152e` was merged into `m13-verification`
+  (`447bf95`). The only conflict was both sides appending to this file; both
+  entries are kept.
+  - The merge passed typecheck, unit tests (505), the build, and all 12
+    browser phases (63 PASS) on the test project.
+  - It was then pushed (`c3bca09..447bf95`).
+- **Gap 4: Team Index.**
+  - The daily star log shows "Holidays (n)" and an "H" badge on team holiday
+    dates, from forward migration `37_team_holiday_dates.sql`. A date counts
+    when every active member's attendance is an active Holiday record; only
+    the dates are exposed.
+  - A "Report validity" column shows Valid or Incomplete from each member's
+    live calculation status.
+- **Gap 5: item hours.** Employee reports have a "Hours by checklist item"
+  panel that groups the employee's item-timer hours by task and item, linking
+  to each item page. Exports are unchanged.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-37; upgrades through 37) passed;
+  - unit tests (507 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project: migration 37 applied after a dry run that listed only
+    37; `nested` (now also checking the item-hours panel, holidays and report
+    validity), `parity` and `reports` passed;
+  - overflow is 0 on `/team` and an employee report at 390, 768 and 1365 px
+    for the director and member A.
+- **Display choices for review** (DECISIONS, 17 October): the holiday
+  definition and the report-validity mapping. Neither changes any attendance,
+  award or scoring rule.
+- All sheet-parity gaps from the 16 October audit are now built. Drive "Create
+  Work Files" stays deferred by the user, and sales scoring still needs the
+  user's field mapping.
