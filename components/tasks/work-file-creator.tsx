@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { CheckIcon, CopyIcon, FileSpreadsheetIcon, FileTextIcon, PresentationIcon } from 'lucide-react';
 
 import { ExecutionForm } from '@/components/tasks/execution-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import { addTaskAsset } from '@/app/tasks/detail-actions';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 const FIELD = 'border-input bg-background w-full min-w-0 rounded-xl border px-3 text-sm';
 

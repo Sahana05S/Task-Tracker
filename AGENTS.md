@@ -1,5 +1,15 @@
 # Task Tracker project instructions
 
+## Modular refactor - 17 October 2026
+
+The user asked for a behaviour-preserving refactor into modules (facade per
+module, one short-lived branch per module, merged into `refactor/base`). Follow
+`docs/ARCHITECTURE.md`: new code goes in `modules/<name>/`, other code uses only a
+module's public files, never `internal/`; common code is in `shared/`. The
+boundary test `__tests__/architecture/boundaries.test.ts` must pass. Refactor
+branches move and split code only: no business formula, SQL, migration or
+permission changes.
+
 ## M15 multi-company direction - 17 October 2026
 
 The user wants to sell TaskPulse to other companies. They approved one shared
@@ -21,7 +31,7 @@ non-bypass role `taskpulse_definer`, with FORCE RLS scoped by
 `SELECT taskpulse_private.m15_secure();`**, so new tables and functions are
 re-owned and scoped. New company-owned tables need an `organization_id`
 column. Workers must send each job's company in the `x-taskpulse-organization`
-header (`lib/supabase/worker.ts`). See `docs/plans/M15-evidence.md`.
+header (`shared/supabase/worker.ts`). See `docs/plans/M15-evidence.md`.
 
 ## M14 nested checklist pages — 16 October 2026
 

@@ -1,9 +1,9 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { getCurrentProfile } from '@/lib/auth/profile';
+import { getCurrentProfile } from '@/shared/session/profile';
 import { getLoggableTasksFor } from '@/lib/logs/queries';
-import { createClient } from '@/lib/supabase/server';
-import { commandIdentity, executionError, executionResult, type ExecutionResult } from '@/lib/commands/result';
+import { createClient } from '@/shared/supabase/server';
+import { commandIdentity, executionError, executionResult, type ExecutionResult } from '@/shared/commands/result';
 import type { ActionResponse } from '@/types/tracker';
 export type LogActionState = ActionResponse<ExecutionResult>;
 const MAX_HOURS_PER_ENTRY=24;

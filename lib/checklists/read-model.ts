@@ -1,5 +1,5 @@
 import type { ChecklistRollup } from './progress';
-import type { createClient } from '@/lib/supabase/server';
+import type { createClient } from '@/shared/supabase/server';
 export async function loadChecklistRollups(db: Awaited<ReturnType<typeof createClient>>, ids: readonly string[]): Promise<Map<string,ChecklistRollup>> {
  if(!ids.length) return new Map();
  const {data,error}=await db.rpc('checklist_rollups',{p_task_ids:[...new Set(ids)]});

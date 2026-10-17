@@ -2,13 +2,13 @@ import * as React from 'react';
 import { PlusIcon, FlagIcon } from 'lucide-react';
 import { MissionProgress } from '@/components/missions/mission-ui';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import {
   milestoneCompletion,
   summariseMilestones,
 } from '@/lib/milestones/goals';
-import { formatDate, isOverdue, toProgressValue } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { formatDate, isOverdue, toProgressValue } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 import type { CompanyMilestone, MilestoneStatus } from '@/types/tracker';
 
 export interface MilestoneChecklistProps {

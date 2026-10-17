@@ -1,7 +1,7 @@
 'use client';
 import { NativeTemplateSelect } from './native-details-editor';
 import type { NativeTemplate } from '@/lib/tasks/details-contract';
-import { prepareOperation } from '@/lib/commands/client-operation';
+import { prepareOperation } from '@/shared/commands/client-operation';
 
 import * as React from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
@@ -11,9 +11,9 @@ import {
   updateTask,
   type TaskActionState,
 } from '@/app/tasks/actions';
-import { Button } from '@/components/ui/button';
-import { Field, FormError, LabeledSelect } from '@/components/ui/form-field';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/shared/ui/button';
+import { Field, FormError, LabeledSelect } from '@/shared/ui/form-field';
+import { Input } from '@/shared/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -21,12 +21,12 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@/shared/ui/sheet';
 import {
   CATEGORY_LABELS,
   TASK_CATEGORIES,
   TASK_PRIORITIES,
-} from '@/lib/tracker/enums';
+} from '@/shared/tracker/enums';
 import type { Task, User } from '@/types/tracker';
 
 /** `null` opens the form in create mode; a task opens it in edit mode. */

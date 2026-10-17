@@ -9,10 +9,10 @@ import {
 } from 'lucide-react';
 
 import { login, signup, type AuthActionState } from '@/app/auth/actions';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
+import { Button } from '@/shared/ui/button';
+import { Input } from '@/shared/ui/input';
+import { createClient } from '@/shared/supabase/client';
+import { cn } from '@/shared/utils';
 
 type AuthMode = 'login' | 'signup';
 

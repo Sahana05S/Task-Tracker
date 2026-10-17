@@ -4,14 +4,14 @@ import * as React from 'react';
 import Link from 'next/link';
 import { MenuIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
+} from '@/shared/ui/sheet';
 import { CTA, MARKETING_NAV } from '@/lib/marketing/content';
 
 /**

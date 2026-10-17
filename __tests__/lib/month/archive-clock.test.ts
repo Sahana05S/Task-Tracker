@@ -3,7 +3,7 @@ import { afterEach,describe,expect,it,vi } from 'vitest';
 const {rpc,loadPerformance,getAwards}=vi.hoisted(()=>({
  rpc:vi.fn(),loadPerformance:vi.fn(),getAwards:vi.fn(),
 }));
-vi.mock('@/lib/supabase/server',()=>({createClient:vi.fn(async()=>({rpc}))}));
+vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn(async()=>({rpc}))}));
 vi.mock('@/lib/performance/queries',()=>({loadPerformance}));
 vi.mock('@/lib/stars/read-model',()=>({getAwards}));
 import { captureMonth } from '@/lib/month/archive';

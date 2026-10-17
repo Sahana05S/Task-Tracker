@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { TaskDialog } from '@/components/tasks/task-dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import type { Task, User } from '@/types/tracker';
 
 export function TaskToolsEdit({ tasks, members }: {tasks: readonly Task[]; members: readonly User[]}) {

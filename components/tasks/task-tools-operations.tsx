@@ -2,7 +2,7 @@
 
 import { useState,useTransition } from 'react';
 import { previewTaskTool,commitTaskTool } from '@/app/(workspace)/task-tools/operation-actions';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import type { Task,User } from '@/types/tracker';
 import type { Json } from '@/types/database';
 import type { ToolOperation,ToolsPreview } from '@/lib/task-tools/contract';

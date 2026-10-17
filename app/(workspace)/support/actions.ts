@@ -4,14 +4,14 @@ import { writeDatedRecord } from '@/app/records/actions';
 import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-import { getCurrentProfile } from '@/lib/auth/profile';
+import { getCurrentProfile } from '@/shared/session/profile';
 import {
   canCreateSupportRecord,
   canManageReportSnapshots,
   canManageSupportRecords,
   type SupportKnowledgeModule,
 } from '@/lib/support/permissions';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import type { ActionResponse, ReportStatus, User } from '@/types/tracker';
 
 type SupportActionState = ActionResponse<{ id: string }>;

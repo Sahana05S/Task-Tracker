@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { deleteMilestone } from '@/app/milestones/actions';
 import { MilestoneChecklist } from '@/components/milestones/milestone-checklist';
 import { MilestoneDialog } from '@/components/milestones/milestone-dialog';
-import { Button } from '@/components/ui/button';
-import { FormError } from '@/components/ui/form-field';
+import { Button } from '@/shared/ui/button';
+import { FormError } from '@/shared/ui/form-field';
 import {
   Sheet,
   SheetContent,
@@ -16,7 +16,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@/shared/ui/sheet';
 import { sortMilestones } from '@/lib/milestones/goals';
 import type { CompanyMilestone, User } from '@/types/tracker';
 

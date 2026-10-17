@@ -3,7 +3,7 @@ import {
   FRESHNESS_ORDER,
   PRIORITY_SORT_ORDER,
   STATUS_ORDER,
-} from '@/lib/tracker/enums';
+} from '@/shared/tracker/enums';
 import type {
   Task,
   TaskCategory,

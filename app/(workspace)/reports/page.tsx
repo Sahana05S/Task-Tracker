@@ -10,7 +10,7 @@ import type { Metadata } from 'next';
 
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { ReportsModule } from '@/components/support/support-pages';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { canManageReportSnapshots } from '@/lib/support/permissions';
 import { getSupportModuleData } from '@/lib/support/queries';
 

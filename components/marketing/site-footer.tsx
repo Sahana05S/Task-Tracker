@@ -2,7 +2,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { ArrowRightIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import { CTA, FOOTER_COLUMNS } from '@/lib/marketing/content';
 
 /**

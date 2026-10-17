@@ -8,9 +8,9 @@ import {
   updateMilestone,
   type MilestoneActionState,
 } from '@/app/milestones/actions';
-import { Button } from '@/components/ui/button';
-import { Field, FormError, LabeledSelect } from '@/components/ui/form-field';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/shared/ui/button';
+import { Field, FormError, LabeledSelect } from '@/shared/ui/form-field';
+import { Input } from '@/shared/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -18,9 +18,9 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { Textarea } from '@/components/ui/textarea';
-import { MILESTONE_STATUSES } from '@/lib/tracker/enums';
+} from '@/shared/ui/sheet';
+import { Textarea } from '@/shared/ui/textarea';
+import { MILESTONE_STATUSES } from '@/shared/tracker/enums';
 import type { CompanyMilestone, User } from '@/types/tracker';
 
 /** `null` opens the form in create mode; a milestone opens it in edit mode. */

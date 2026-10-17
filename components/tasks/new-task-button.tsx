@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { PlusIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 
 /**
  * Opens the create-mission form from the page header.

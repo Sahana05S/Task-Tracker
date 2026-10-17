@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-import { getCurrentProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
 import type { ActionResponse } from '@/types/tracker';
 
 /**

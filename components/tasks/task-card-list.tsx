@@ -21,26 +21,26 @@ import {
   FreshnessIndicator,
   PriorityBadge,
 } from '@/components/tracker/tracker-badges';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/shared/ui/dropdown-menu';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@/shared/ui/sheet';
 import { EMPTY_EFFORT, type TaskEffort } from '@/lib/logs/metrics';
 import { canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
-import { CATEGORY_LABELS } from '@/lib/tracker/enums';
-import { formatDate, formatNumeric, formatPercent, isOverdue, formatHours } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { CATEGORY_LABELS } from '@/shared/tracker/enums';
+import { formatDate, formatNumeric, formatPercent, isOverdue, formatHours } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
 
 export interface TaskCardListProps {

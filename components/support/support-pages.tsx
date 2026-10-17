@@ -12,9 +12,9 @@ import {
   saveSalesLogAction,
   toggleKnowledgeValidationAction,
 } from '@/app/(workspace)/support/actions';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import type { SupportKnowledgeModule } from '@/lib/support/permissions';
-import { formatDate } from '@/lib/tracker/format';
+import { formatDate } from '@/shared/tracker/format';
 import type {
   DailyFact,
   Idea,

@@ -1,5 +1,5 @@
 import { currentPeriod } from '@/lib/analytics/engine';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 
 /**
  * Counts shown as badges in the expanded navigation drawer.

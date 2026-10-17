@@ -5,9 +5,9 @@ import { IdCardIcon, UserRoundIcon } from 'lucide-react';
 
 import { InitialsAvatar, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
-import { requireProfile } from '@/lib/auth/profile';
-import { ROLE_LABELS } from '@/lib/tracker/enums';
-import { formatDate } from '@/lib/tracker/format';
+import { requireProfile } from '@/shared/session/profile';
+import { ROLE_LABELS } from '@/shared/tracker/enums';
+import { formatDate } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {
   title: 'Settings · TaskPulse',

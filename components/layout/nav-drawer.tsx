@@ -13,9 +13,9 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@/shared/ui/sheet';
 import type { NavCounts } from '@/lib/layout/nav-counts';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 
 export interface NavDrawerProps {

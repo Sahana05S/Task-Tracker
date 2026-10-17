@@ -14,9 +14,8 @@ export function eligibilityReasons(task: Pick<Task, 'priority' | 'status' | 'tas
   return reasons;
 }
 export const ELIGIBILITY_LABELS: Record<string, string> = { priority_no: 'Priority is No', not_started: 'Not started', discarded: 'Discarded', progress_missing: 'Progress is missing', progress_below_15: 'Progress below 15%', scale_missing: 'Scale is missing', scale_nonpositive: 'Scale is not positive' };
-export function kolkataDate(now = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
-}
+import { kolkataDate } from '@/shared/time/kolkata';
+export { kolkataDate };
 function calendarDay(value: string | null): number | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const parsed = Date.parse(`${value}T00:00:00Z`);

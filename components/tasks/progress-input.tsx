@@ -1,13 +1,13 @@
 'use client';
-import { prepareOperation } from '@/lib/commands/client-operation';
+import { prepareOperation } from '@/shared/commands/client-operation';
 
 import * as React from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { updateTaskProgress } from '@/app/tasks/actions';
-import { toProgressValue } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { toProgressValue } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 
 export interface ProgressInputProps {
   taskId: string;

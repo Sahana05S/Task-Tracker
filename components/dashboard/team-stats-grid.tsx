@@ -2,8 +2,8 @@ import { displayPerformance } from '@/lib/performance/exact';
 import * as React from 'react';
 
 import type { TeamAnalytics } from '@/lib/analytics/engine';
-import { formatNumeric, formatHours } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { formatNumeric, formatHours } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 
 export interface TeamStatsGridProps {
   analytics: TeamAnalytics;

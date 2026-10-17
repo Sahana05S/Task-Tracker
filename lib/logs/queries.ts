@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
 import {
   type TaskEffort,

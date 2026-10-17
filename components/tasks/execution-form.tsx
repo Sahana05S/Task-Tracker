@@ -1,7 +1,7 @@
 'use client';
 import { startTransition, useActionState, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { prepareOperation } from '@/lib/commands/client-operation';
+import { prepareOperation } from '@/shared/commands/client-operation';
 import type { ActionResponse } from '@/types/tracker';
 export function ExecutionForm({action,scope,children,className}: {
  action: (form: FormData)=>Promise<ActionResponse<unknown>>; scope: string;

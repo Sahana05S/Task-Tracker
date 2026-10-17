@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { groupItemHours, type ItemHourTask } from '@/lib/checklists/item-hours';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 
 /** A running timer, as the checklist pages need it. */
 export interface RunningItemTimer {

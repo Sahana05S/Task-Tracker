@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowUpRightIcon, FlagIcon, GaugeIcon, ScaleIcon, TrendingUpIcon, UsersIcon, ZapIcon, type LucideIcon } from 'lucide-react';
 
 import type { Band, HeadlineLeader, MissionHeadline } from '@/lib/analytics/headline';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 import type { CompanyMilestone } from '@/types/tracker';
 
 const BAND_CLASS: Record<Band, string> = {

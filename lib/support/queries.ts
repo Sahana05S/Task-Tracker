@@ -16,8 +16,8 @@ import {
   SALES_LOG_COLUMNS,
   SUGGESTION_COLUMNS,
 } from '@/lib/support/mappers';
-import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
-import { createClient } from '@/lib/supabase/server';
+import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
+import { createClient } from '@/shared/supabase/server';
 import type {
   DailyFact,
   Idea,

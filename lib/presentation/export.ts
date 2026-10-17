@@ -1,7 +1,7 @@
 import { Exact } from '@/lib/performance/exact';
 import { performanceReport } from '@/lib/performance/report';
 import type { LivePresentation } from './model';
-import { formatHours } from '@/lib/tracker/format';
+import { formatHours } from '@/shared/tracker/format';
 export function liveReport(model:LivePresentation){return {label:'Live report; not a frozen month',context:model.view,scope:model.scope,detailsAvailable:model.detailsAvailable,detailsAvailableFrom:model.detailsAvailableFrom,presentationWatermark:model.presentationWatermark,awardAvailability:model.awardAvailabilityReason??'Retained M08 observations',awards:model.awards,performance:performanceReport(model.calculation,model.employeeId),tasks:model.tasks,taskProductivity:model.taskRates,logs:model.logs,today:model.today,yesterday:model.yesterday,attendance:model.attendance,sections:model.checklists,contributions:model.contributions,assets:model.assets,relations:model.relations};}
 export function csvCell(value:unknown):string {let s=value==null?'':String(value);if(/^[\s\u0000-\u001f]*[=+@-]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
 export function reportCsv(model:LivePresentation):string {

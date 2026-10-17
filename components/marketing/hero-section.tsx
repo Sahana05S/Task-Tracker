@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRightIcon } from 'lucide-react';
 
 import { TrackerMockup } from '@/components/marketing/tracker-mockup';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import { CTA, HERO, HERO_ASSURANCES, HERO_STATS } from '@/lib/marketing/content';
 
 /**

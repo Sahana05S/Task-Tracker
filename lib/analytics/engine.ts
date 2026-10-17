@@ -7,7 +7,7 @@ import {
   summarizeAttendance,
   type AttendanceSummary,
 } from '@/lib/attendance/summary';
-import { PRIORITY_WEIGHTS } from '@/lib/tracker/enums';
+import { PRIORITY_WEIGHTS } from '@/lib/tasks/contract';
 import type {
   AttendanceRecord,
   DailyTaskLog,

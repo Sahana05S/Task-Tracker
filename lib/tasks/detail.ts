@@ -2,8 +2,8 @@ import type { ChecklistRollup } from '@/lib/checklists/progress';
 import { loadChecklistRollups } from '@/lib/checklists/read-model';
 import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
 import type { TaskEffort } from '@/lib/logs/metrics';
-import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
-import { createClient } from '@/lib/supabase/server';
+import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
+import { createClient } from '@/shared/supabase/server';
 import {
   mapTask,
   TASK_COLUMNS,

@@ -5,8 +5,8 @@ import { AlertTriangleIcon, ArrowLeftIcon, GaugeIcon } from 'lucide-react';
 
 import { AuthForm } from '@/app/login/auth-form';
 import { logout } from '@/app/auth/actions';
-import { Button } from '@/components/ui/button';
-import { getAuthState } from '@/lib/auth/profile';
+import { Button } from '@/shared/ui/button';
+import { getAuthState } from '@/shared/session/profile';
 import { safeRedirectPath } from '@/lib/auth/redirects';
 
 export const metadata: Metadata = {

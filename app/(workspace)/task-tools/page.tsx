@@ -43,10 +43,10 @@ import {
 } from 'lucide-react';
 
 import { MissionPage, MissionPageHeader, MissionPanel } from '@/components/missions/mission-ui';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import { currentPeriod } from '@/lib/analytics/engine';
-import { requireProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
+import { requireProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { canManageTasks } from '@/lib/tasks/permissions';
 import {
@@ -58,7 +58,7 @@ import {
   TASK_CATEGORIES,
   TASK_PRIORITIES,
   TASK_STATUSES,
-} from '@/lib/tracker/enums';
+} from '@/shared/tracker/enums';
 import type { Task, User } from '@/types/tracker';
 
 export const metadata: Metadata = {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCurrentProfile } from '@/lib/auth/profile';
+import { getCurrentProfile } from '@/shared/session/profile';
 import { liveViewContext } from '@/lib/presentation/clock';
 import { getLivePresentation } from '@/lib/presentation/queries';
 import { liveReport,reportCsv,reportText } from '@/lib/presentation/export';

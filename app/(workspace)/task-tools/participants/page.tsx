@@ -1,5 +1,5 @@
-import { requireRole } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
+import { requireRole } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { equalParticipantShares } from '@/lib/tasks/shares';
 import type { Json } from '@/types/database';

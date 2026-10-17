@@ -10,8 +10,8 @@ import {
 } from '@/components/dashboard/productivity-chart';
 import { seriesColor } from '@/components/dashboard/chart-palette';
 import type { MemberPerformance } from '@/lib/analytics/engine';
-import { formatNumeric } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { formatNumeric } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 
 export interface AllocationChartProps {
   members: readonly MemberPerformance[];

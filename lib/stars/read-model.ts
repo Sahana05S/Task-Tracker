@@ -1,4 +1,4 @@
-import type { createClient } from '@/lib/supabase/server';
+import type { createClient } from '@/shared/supabase/server';
 import type { AnalyticsPeriod } from '@/lib/analytics/engine';
 import type { CalculationResult,CalculationContext,MemberCalculation } from '@/lib/performance/engine';
 import { selectMonthly,awardContext,type AwardPolicy,type EffectiveAwardDay,type MonthlySelection,type AwardGate } from './contract';

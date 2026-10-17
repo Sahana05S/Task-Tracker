@@ -4,8 +4,8 @@ import {
   mapAttendanceRecords,
 } from '@/lib/attendance/mappers';
 import { summarizeAttendance } from '@/lib/attendance/summary';
-import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
-import { createClient } from '@/lib/supabase/server';
+import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
+import { createClient } from '@/shared/supabase/server';
 import { observationInstant } from '@/lib/presentation/clock';
 import type { AttendanceRecord, User } from '@/types/tracker';
 

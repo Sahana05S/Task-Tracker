@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import { LIVE_AS_OF_LAG_MS,viewContext,type ViewContext } from './context';
 
 type ClockClient = { rpc: (name: 'observation_clock') => PromiseLike<{ data: unknown; error: unknown }> };

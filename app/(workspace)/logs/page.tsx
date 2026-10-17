@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 
 import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { LogHistory } from '@/components/logs/log-history';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { getMyLogHistory } from '@/lib/logs/queries';
 import { sumHours } from '@/lib/logs/metrics';
-import { formatHours } from '@/lib/tracker/format';
+import { formatHours } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {
   title: 'Logs · TaskPulse',

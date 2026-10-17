@@ -4,8 +4,8 @@ import * as React from 'react';
 import { PlusIcon } from 'lucide-react';
 
 import { QuickLogDrawer } from '@/components/logs/quick-log-drawer';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils';
 
 export interface QuickLogTriggerProps {
   /** Preselects the drawer's task picker, e.g. from a task card. */

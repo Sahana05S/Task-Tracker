@@ -1,8 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getCurrentProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
 import { parsePreview, type ToolsPreview } from '@/lib/task-tools/contract';
 import type { Json } from '@/types/database';
 

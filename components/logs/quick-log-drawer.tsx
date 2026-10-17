@@ -1,5 +1,5 @@
 'use client';
-import { prepareOperation } from '@/lib/commands/client-operation';
+import { prepareOperation } from '@/shared/commands/client-operation';
 
 import * as React from 'react';
 import {
@@ -18,14 +18,14 @@ import {
   type LoggableTaskOption,
   type LogActionState,
 } from '@/app/logs/actions';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/shared/ui/button';
+import { Input } from '@/shared/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from '@/components/ui/select';
+} from '@/shared/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -33,14 +33,14 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { Textarea } from '@/components/ui/textarea';
+} from '@/shared/ui/sheet';
+import { Textarea } from '@/shared/ui/textarea';
 import {
   applyProgressDelta,
   computeScaledProgress,
 } from '@/lib/logs/metrics';
-import { formatNumeric } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { formatNumeric } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 import type { DailyTaskLog } from '@/types/tracker';
 
 export interface QuickLogDrawerProps {

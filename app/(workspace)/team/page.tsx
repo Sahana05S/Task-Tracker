@@ -9,11 +9,11 @@ import { AwardStatus } from '@/components/team/award-status';
 import { InitialsAvatar, MissionEmpty, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
 import { getTeamHolidayDates } from '@/lib/attendance/holidays';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { canViewTeamModule } from '@/lib/team/permissions';
 import { getTeamIndexData } from '@/lib/team/queries';
 import { employeeHref, employeeReportsHref } from '@/lib/team/routes';
-import { formatNumeric, formatHours } from '@/lib/tracker/format';
+import { formatNumeric, formatHours } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {
   title: 'Team · TaskPulse',

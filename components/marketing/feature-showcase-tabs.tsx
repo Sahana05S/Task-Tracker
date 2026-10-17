@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { CheckCircle2Icon } from 'lucide-react';
 
 import { INTERACTIVE_TABS } from '@/lib/marketing/content';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 /**
  * Interactive Feature Showcase Tabs

@@ -1,7 +1,7 @@
 import * as React from 'react';
 
-import { CATEGORY_LABELS, ROLE_LABELS } from '@/lib/tracker/enums';
-import { cn } from '@/lib/utils';
+import { CATEGORY_LABELS, ROLE_LABELS } from '@/shared/tracker/enums';
+import { cn } from '@/shared/utils';
 import type {
   TaskCategory,
   TaskFreshness,

@@ -1,4 +1,4 @@
-import { MILESTONE_STATUS_ORDER } from '@/lib/tracker/enums';
+import { MILESTONE_STATUS_ORDER } from '@/shared/tracker/enums';
 import type { CompanyMilestone } from '@/types/tracker';
 
 /**

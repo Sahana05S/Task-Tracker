@@ -5,10 +5,10 @@ import { MilestoneBoard } from '@/components/milestones/milestone-board';
 import { OrganizationShowcase } from '@/components/milestones/organization-showcase';
 import { SchemaNotice } from '@/components/milestones/schema-notice';
 import { currentPeriod } from '@/lib/analytics/engine';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { summariseMilestones } from '@/lib/milestones/goals';
 import { getMilestonesPageData } from '@/lib/milestones/queries';
-import { canManageMilestones } from '@/lib/tracker/enums';
+import { canManageMilestones } from '@/shared/tracker/enums';
 
 export const metadata: Metadata = {
   title: 'Milestones · TaskPulse',

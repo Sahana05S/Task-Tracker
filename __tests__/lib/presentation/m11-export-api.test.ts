@@ -1,6 +1,6 @@
 import { describe,it,expect,vi,beforeEach } from 'vitest';
 const mocks=vi.hoisted(()=>({profile:vi.fn(),load:vi.fn(),archive:vi.fn()}));
-vi.mock('@/lib/auth/profile',()=>({getCurrentProfile:mocks.profile}));
+vi.mock('@/shared/session/profile',()=>({getCurrentProfile:mocks.profile}));
 vi.mock('@/lib/presentation/queries',()=>({getLivePresentation:mocks.load}));
 vi.mock('@/lib/month/archive',()=>({monthRevision:mocks.archive,archivedReport:()=>({label:'Retained frozen revision'}),archivedText:()=> 'Retained frozen revision',archivedCsv:()=> 'revision\n2\n'}));
 vi.mock('@/lib/presentation/clock',async()=>{const {viewContext}=await import('@/lib/presentation/context');return {liveViewContext:async(p?:string,a?:string)=>viewContext(p,a)};});

@@ -7,7 +7,7 @@ import { FeatureShowcaseTabs } from '@/components/marketing/feature-showcase-tab
 import { HeroSection } from '@/components/marketing/hero-section';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { SiteHeader } from '@/components/marketing/site-header';
-import { getAuthState } from '@/lib/auth/profile';
+import { getAuthState } from '@/shared/session/profile';
 
 export const metadata: Metadata = {
   title: 'TaskPulse — Multi-Metric Performance Tracker & Capacity Analytics',

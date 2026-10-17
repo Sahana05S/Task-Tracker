@@ -32,15 +32,15 @@ import {
 } from '@/components/checklists/checklist-rows';
 import { AvatarStack, MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
 import { ExecutionForm } from '@/components/tasks/execution-form';
-import { Button } from '@/components/ui/button';
-import { requireProfile } from '@/lib/auth/profile';
+import { Button } from '@/shared/ui/button';
+import { requireProfile } from '@/shared/session/profile';
 import { getChecklistItemTime } from '@/lib/checklists/item-time';
 import { CHECKLIST_SECTIONS, type ChecklistSection, type SectionProgress } from '@/lib/checklists/progress';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/lib/tasks/detail';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 import type { ChecklistNode } from '@/types/tracker';
 
 import { discardTaskTimer, startItemTimer, stopTaskTimer } from '../timer-actions';

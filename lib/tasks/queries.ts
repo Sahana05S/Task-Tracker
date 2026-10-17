@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import {
   mapTasks,
   TASK_COLUMNS,
   withTaskParticipants,
 } from '@/lib/tasks/mappers';
-import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
+import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import type { Task, User } from '@/types/tracker';
 
 /**

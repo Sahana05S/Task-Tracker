@@ -2,13 +2,13 @@ import Link from 'next/link';
 import { CalendarCheckIcon, CalendarPlusIcon, HistoryIcon, InfoIcon } from 'lucide-react';
 import { InitialsAvatar, MissionEmpty, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/components/missions/mission-ui';
 import { AttendanceRecordEditor } from '@/components/support/attendance-record-editor';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { canManageAttendance } from '@/lib/attendance/permissions';
 import { getAttendanceModuleData } from '@/lib/attendance/queries';
 import { kolkataDate } from '@/lib/tasks/contract';
 import { currentPeriod } from '@/lib/analytics/engine';
-import { formatHours } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { formatHours } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 export default async function AttendancePage() {
  const user=await requireProfile(),period=currentPeriod(new Date(kolkataDate()+'T12:00:00Z')),manager=canManageAttendance(user.role);
  const data=await getAttendanceModuleData({startDate:period.startDate,endDate:period.endDate,viewerId:user.id,canManage:manager});

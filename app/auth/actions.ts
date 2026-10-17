@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { DEFAULT_REDIRECT, safeRedirectPath } from '@/lib/auth/redirects';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import type { ActionResponse } from '@/types/tracker';
 
 /**

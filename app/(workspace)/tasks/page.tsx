@@ -6,13 +6,13 @@ import { MissionHeadlineStrip } from '@/components/tasks/mission-headline';
 import { NewTaskButton } from '@/components/tasks/new-task-button';
 import { TaskWorkspace } from '@/components/tasks/task-workspace';
 import { computeMissionHeadline } from '@/lib/analytics/headline';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { getMilestonesPageData } from '@/lib/milestones/queries';
 import { viewContext } from '@/lib/presentation/context';
 import { getLivePresentation } from '@/lib/presentation/queries';
 import { getTaskEffortTotals } from '@/lib/logs/queries';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
-import { TASK_MANAGER_ROLES } from '@/lib/tracker/enums';
+import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 import type { Task, UserRole } from '@/types/tracker';
 
 export const metadata: Metadata = {

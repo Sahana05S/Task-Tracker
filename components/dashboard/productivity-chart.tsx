@@ -23,7 +23,7 @@ import {
   shortName,
 } from '@/components/dashboard/chart-palette';
 import type { MemberPerformance } from '@/lib/analytics/engine';
-import { formatHours } from '@/lib/tracker/format';
+import { formatHours } from '@/shared/tracker/format';
 
 export interface ProductivityChartProps {
   members: readonly MemberPerformance[];

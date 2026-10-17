@@ -2,7 +2,7 @@ import type { AwardReadModel } from '@/lib/stars/read-model';
 import { GAP_SENTENCE, dataGaps } from '@/lib/presentation/plain-language';
 import { TrophyIcon } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 type DayState = 'winner' | 'none' | 'blocked' | 'pending';
 const DAY_STYLE: Record<DayState, string> = {

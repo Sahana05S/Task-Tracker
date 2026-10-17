@@ -14,15 +14,15 @@ import { createTaskLog, type LogActionState } from '@/app/logs/actions';
 import { freezeMonthlySnapshot } from '@/app/dashboard/actions';
 import { getTeamAnalytics } from '@/lib/analytics/queries';
 import { performanceReport } from '@/lib/performance/report';
-import { getCurrentProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
 import type { SupportSplitMode } from '@/lib/task-tools/support-split';
 import { canManageTasks } from '@/lib/tasks/permissions';
 import {
   isTaskPriority,
   isTaskStatus,
   isTaskCategory,
-} from '@/lib/tracker/enums';
+} from '@/shared/tracker/enums';
 import { type AnalyticsPeriod, currentPeriod } from '@/lib/analytics/engine';
 import type { ActionResponse, TaskLinkType, User } from '@/types/tracker';
 

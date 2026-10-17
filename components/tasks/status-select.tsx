@@ -1,5 +1,5 @@
 'use client';
-import { prepareOperation } from '@/lib/commands/client-operation';
+import { prepareOperation } from '@/shared/commands/client-operation';
 
 import * as React from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
@@ -12,9 +12,9 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from '@/components/ui/select';
-import { TASK_STATUSES } from '@/lib/tracker/enums';
-import { cn } from '@/lib/utils';
+} from '@/shared/ui/select';
+import { TASK_STATUSES } from '@/shared/tracker/enums';
+import { cn } from '@/shared/utils';
 import type { TaskStatus } from '@/types/tracker';
 
 export interface StatusSelectProps {

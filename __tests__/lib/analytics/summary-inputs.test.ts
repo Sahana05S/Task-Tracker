@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-vi.mock('@/lib/supabase/server', () => ({createClient: vi.fn()}));
+vi.mock('@/shared/supabase/server', () => ({createClient: vi.fn()}));
 import { parseTeamSummary } from '@/lib/analytics/summary-inputs';
 import { resolvePeriod } from '@/lib/analytics/engine';
 

@@ -18,14 +18,14 @@ import {
   FreshnessIndicator,
   PriorityBadge,
 } from '@/components/tracker/tracker-badges';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
+import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/shared/ui/dropdown-menu';
 import { EMPTY_EFFORT, type TaskEffort } from '@/lib/logs/metrics';
 import {
   nextSortState,
@@ -33,8 +33,8 @@ import {
   type TaskSortState,
 } from '@/lib/tasks/filters';
 import { canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
-import { formatDate, formatNumeric, isOverdue, formatHours } from '@/lib/tracker/format';
-import { cn, getInitials } from '@/lib/utils';
+import { formatDate, formatNumeric, isOverdue, formatHours } from '@/shared/tracker/format';
+import { cn, getInitials } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
 
 export interface TaskDataGridProps {

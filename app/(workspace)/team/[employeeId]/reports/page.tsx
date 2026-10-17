@@ -19,7 +19,7 @@ import {
   MissionPageHeader,
   MissionPanel,
 } from '@/components/missions/mission-ui';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { getEmployeeItemHours } from '@/lib/checklists/item-time';
 import type { ItemHourTask } from '@/lib/checklists/item-hours';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
@@ -28,7 +28,7 @@ import {
   normalizeEmployeeIdParam,
   resolveEmployeeRouteState,
 } from '@/lib/team/routes';
-import { formatDate, formatNumeric, formatHours } from '@/lib/tracker/format';
+import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;

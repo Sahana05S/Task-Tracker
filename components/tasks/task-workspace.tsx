@@ -11,7 +11,7 @@ import { TaskCardList } from '@/components/tasks/task-card-list';
 import { TaskDataGrid } from '@/components/tasks/task-data-grid';
 import { TaskDialog } from '@/components/tasks/task-dialog';
 import { TaskFilters, type MissionView } from '@/components/tasks/task-filters';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import {
   Sheet,
   SheetContent,
@@ -19,7 +19,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@/shared/ui/sheet';
 import type { TaskEffort } from '@/lib/logs/metrics';
 import {
   DEFAULT_SORT,

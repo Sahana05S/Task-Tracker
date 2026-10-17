@@ -6,8 +6,8 @@ import {
   mapCompanyMilestones,
   mapCompanyStatements,
 } from '@/lib/milestones/mappers';
-import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
-import { createClient } from '@/lib/supabase/server';
+import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
+import { createClient } from '@/shared/supabase/server';
 import type { CompanyMilestone, CompanyStatement, User } from '@/types/tracker';
 
 /**

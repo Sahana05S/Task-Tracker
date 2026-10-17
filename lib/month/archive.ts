@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import { loadPerformance } from '@/lib/performance/queries';
 import { getAwards } from '@/lib/stars/read-model';
 import { resolvePeriod } from '@/lib/analytics/engine';

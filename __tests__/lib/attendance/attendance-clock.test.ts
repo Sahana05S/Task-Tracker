@@ -2,8 +2,8 @@ import { afterEach,expect,it,vi } from 'vitest';
 
 const {loadAttendanceContext,from,rpc}=vi.hoisted(()=>({loadAttendanceContext:vi.fn(),from:vi.fn(),rpc:vi.fn()}));
 vi.mock('@/lib/support/input-context',()=>({loadAttendanceContext}));
-vi.mock('@/lib/supabase/server',()=>({createClient:vi.fn(async()=>({from,rpc}))}));
-vi.mock('@/lib/supabase/mappers',()=>({USER_COLUMNS:'*',mapUser:(row:{id:string})=>row}));
+vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn(async()=>({from,rpc}))}));
+vi.mock('@/shared/supabase/mappers',()=>({USER_COLUMNS:'*',mapUser:(row:{id:string})=>row}));
 import { getAttendanceModuleData } from '@/lib/attendance/queries';
 
 function chain(data:unknown[]){

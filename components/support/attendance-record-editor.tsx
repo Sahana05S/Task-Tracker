@@ -1,9 +1,9 @@
 import { writeDatedRecord } from '@/app/records/actions';
 import { ExecutionForm } from '@/components/tasks/execution-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import { canManageAttendance } from '@/lib/attendance/permissions';
 import { kolkataDate } from '@/lib/tasks/contract';
-import { ATTENDANCE_STATUSES } from '@/lib/tracker/enums';
+import { ATTENDANCE_STATUSES } from '@/shared/tracker/enums';
 import type { AttendanceRecord, User } from '@/types/tracker';
 export function AttendanceRecordEditor({record,members,user}:{record?:AttendanceRecord;members:readonly User[];user:User}) {
   const time=(stamp:string|null|undefined)=>stamp?new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(stamp)):'';

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@/shared/ui/sonner';
 import './globals.css';
 
 /**

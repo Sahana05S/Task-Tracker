@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { DEFAULT_REDIRECT, safeRedirectPath } from '@/lib/auth/redirects';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 
 /**
  * Universal Authentication Callback Route

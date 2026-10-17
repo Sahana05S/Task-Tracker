@@ -1,7 +1,7 @@
 import type * as React from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-import { cn, getInitials } from '@/lib/utils';
+import { cn, getInitials } from '@/shared/utils';
 
 /**
  * Shared building blocks for the Missions list and Mission details pages

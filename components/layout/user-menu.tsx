@@ -12,8 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { cn, getInitials } from '@/lib/utils';
+} from '@/shared/ui/dropdown-menu';
+import { cn, getInitials } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 
 export interface UserMenuProps {

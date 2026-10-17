@@ -1,5 +1,5 @@
 'use client';
-import { prepareOperation } from '@/lib/commands/client-operation';
+import { prepareOperation } from '@/shared/commands/client-operation';
 
 import * as React from 'react';
 import {
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { deleteTaskLog } from '@/app/logs/actions';
 import { QuickLogDrawer } from '@/components/logs/quick-log-drawer';
 import { CategoryBadge } from '@/components/tracker/tracker-badges';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import {
   Sheet,
   SheetContent,
@@ -20,10 +20,10 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@/shared/ui/sheet';
 import { groupLogsByDate } from '@/lib/logs/metrics';
-import { formatDate, formatNumeric, formatHours } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 import type { DailyTaskLog, Task } from '@/types/tracker';
 
 export interface LogHistoryProps {

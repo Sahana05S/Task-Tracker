@@ -6,7 +6,7 @@ import { assertApprovedSandboxPolicy } from '@/lib/integrations/drive/approved-s
 import { verifyApprovedSandboxAccess } from '@/lib/integrations/drive/setup';
 import { DriveFailure } from '@/lib/integrations/drive/contract';
 import { DRIVE_INTEGRATION_DEFERRED,DRIVE_UNAVAILABLE_MESSAGE } from '@/lib/integrations/drive/availability';
-import { workerClient } from '@/lib/supabase/worker';
+import { workerClient } from '@/shared/supabase/worker';
 export const runtime='nodejs';
 function authorize(request:Request,mutating:boolean):Response|null{
  if(DRIVE_INTEGRATION_DEFERRED)return Response.json({status:'unavailable',reason:DRIVE_UNAVAILABLE_MESSAGE},{status:503});

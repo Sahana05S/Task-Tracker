@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import type { Json } from '@/types/database';
 export interface AwardCommandResponse {date:string;status:string;runId?:string;winnerId?:string|null;version:number;jobId?:string}
 export async function storeDailyStarCalculation({starDate,operationId,overrideUserId,overrideReason,runId,expectedVersion}:{starDate:string;operationId:string;overrideUserId?:string;overrideReason?:string;runId?:string;expectedVersion?:number}) {

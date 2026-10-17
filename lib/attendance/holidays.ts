@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 
 /**
  * Dates in [from, to] on which every active member has an active Holiday

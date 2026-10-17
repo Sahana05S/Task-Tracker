@@ -1,9 +1,9 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { getCurrentProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
 import { normalizeTaskTagParam } from '@/lib/tasks/detail';
-import { commandIdentity, executionError, executionResult, type ExecutionResult } from '@/lib/commands/result';
+import { commandIdentity, executionError, executionResult, type ExecutionResult } from '@/shared/commands/result';
 import { createTaskLog } from '@/app/logs/actions';
 import type { ActionResponse } from '@/types/tracker';
 export type TimerActionState=ActionResponse<ExecutionResult>;

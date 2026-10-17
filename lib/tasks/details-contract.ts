@@ -1,4 +1,4 @@
-import { isTaskCategory, isTaskPriority } from '@/lib/tracker/enums';
+import { isTaskCategory, isTaskPriority } from '@/shared/tracker/enums';
 import type { TaskDetailSection, TaskLink } from '@/types/tracker';
 
 export const DETAIL_FIELDS = [

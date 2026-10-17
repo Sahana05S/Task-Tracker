@@ -1,5 +1,5 @@
 import { classifyFreshness,eligibilityReasons,FRESHNESS_SCORES } from '@/lib/tasks/contract';
-import { PRIORITY_WEIGHTS } from '@/lib/tracker/enums';
+import { PRIORITY_WEIGHTS } from '@/lib/tasks/contract';
 import type { Task,UserRole } from '@/types/tracker';
 import type { ContributionInputContext } from '@/lib/support/input-context';
 import { Exact } from './exact';

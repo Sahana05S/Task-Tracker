@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 /**
  * The existing TaskPulse "TP" mark, reused unchanged in form for this phase.

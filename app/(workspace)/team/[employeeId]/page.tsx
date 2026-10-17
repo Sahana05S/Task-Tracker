@@ -34,14 +34,14 @@ import {
   PriorityBadge,
   RoleBadge,
 } from '@/components/tracker/tracker-badges';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { canViewEmployeeProfile } from '@/lib/team/permissions';
 import { getEmployeeProfileData } from '@/lib/team/queries';
 import {
   normalizeEmployeeIdParam,
   resolveEmployeeRouteState,
 } from '@/lib/team/routes';
-import { formatDate, formatNumeric, formatPercent, formatHours } from '@/lib/tracker/format';
+import { formatDate, formatNumeric, formatPercent, formatHours } from '@/shared/tracker/format';
 import type { DailyStarRecord, DailyTaskLog, Task } from '@/types/tracker';
 
 interface EmployeePageProps {

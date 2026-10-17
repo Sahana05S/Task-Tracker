@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { isProtectedPath } from '@/lib/auth/protected-routes';
-import { updateSession } from '@/lib/supabase/middleware';
+import { updateSession } from '@/shared/supabase/middleware';
 
 /**
  * Edge request guard.

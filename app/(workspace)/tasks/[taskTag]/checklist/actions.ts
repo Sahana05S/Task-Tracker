@@ -1,7 +1,7 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { getCurrentProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
 import type { Json } from '@/types/database';
 import type { ActionResponse } from '@/types/tracker';
 const read=(f:FormData,k:string)=>String(f.get(k)??'').trim();

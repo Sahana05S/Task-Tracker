@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import type { DetailInstance, NativeTemplate } from './details-contract';
 export async function getNativeTemplates():Promise<NativeTemplate[]> {
  const db=await createClient();

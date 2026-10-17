@@ -1,4 +1,4 @@
-import type { createClient } from '@/lib/supabase/server';
+import type { createClient } from '@/shared/supabase/server';
 import type { Json } from '@/types/database';
 import { loadPerformance } from './queries';
 import { observationInstant } from '@/lib/presentation/clock';

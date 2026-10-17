@@ -14,9 +14,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/shared/ui/dropdown-menu';
 import type { RunningTimer } from '@/lib/layout/running-timers';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 
 /**

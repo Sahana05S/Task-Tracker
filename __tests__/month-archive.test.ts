@@ -1,7 +1,7 @@
 import { describe,expect,it,vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
-vi.mock('@/lib/supabase/server',()=>({createClient:vi.fn()}));
+vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn()}));
 import { archiveDifferences,archivedCsv,archivedReport,archivedText,compareRevisions,type MonthArchive } from '@/lib/month/archive';
 import { ArchivedReport } from '@/components/reports/archived-report';
 import { FACTORS } from '@/lib/performance/engine';

@@ -1,4 +1,4 @@
-import { TASK_MANAGER_ROLES } from '@/lib/tracker/enums';
+import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 import type { User, UserRole } from '@/types/tracker';
 
 export type SupportKnowledgeModule = 'daily-facts' | 'ideas' | 'suggestions';

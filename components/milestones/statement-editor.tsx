@@ -8,9 +8,9 @@ import {
   updateStatement,
   type StatementActionState,
 } from '@/app/milestones/actions';
-import { Button } from '@/components/ui/button';
-import { Field, FormError } from '@/components/ui/form-field';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/shared/ui/button';
+import { Field, FormError } from '@/shared/ui/form-field';
+import { Input } from '@/shared/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -18,8 +18,8 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { Textarea } from '@/components/ui/textarea';
+} from '@/shared/ui/sheet';
+import { Textarea } from '@/shared/ui/textarea';
 import { CORE_VALUES_KEY } from '@/lib/milestones/statements';
 import type { CompanyStatement } from '@/types/tracker';
 

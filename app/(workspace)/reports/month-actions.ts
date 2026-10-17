@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getCurrentProfile } from '@/lib/auth/profile';
+import { getCurrentProfile } from '@/shared/session/profile';
 import { beginMonthCorrection,captureMonth } from '@/lib/month/archive';
 
 export interface MonthActionState {ok:boolean;message:string}

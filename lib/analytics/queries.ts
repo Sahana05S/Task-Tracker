@@ -5,7 +5,7 @@ import {
   buildWorkbookDashboardCharts,
   type WorkbookDashboardCharts,
 } from '@/lib/analytics/dashboard-charts';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 
 /**
  * Server-side reads for the analytics dashboard.

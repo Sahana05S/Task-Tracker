@@ -9,7 +9,7 @@ import {
   TASK_FRESHNESS_STATES,
   TASK_PRIORITIES,
   TASK_STATUSES,
-} from '@/lib/tracker/enums';
+} from '@/shared/tracker/enums';
 import type {
   AnalyticsPeriod,
   MemberPerformance,

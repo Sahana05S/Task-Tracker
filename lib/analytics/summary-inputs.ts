@@ -1,7 +1,7 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import { cache } from 'react';
 import { EMPTY_ATTENDANCE_SUMMARY, summarizeAttendance, type AttendanceSummary } from '@/lib/attendance/summary';
-import { ATTENDANCE_STATUSES } from '@/lib/tracker/enums';
+import { ATTENDANCE_STATUSES } from '@/shared/tracker/enums';
 import type { AttendanceStatus } from '@/types/tracker';
 import type { Json } from '@/types/database';
 import { resolvePeriod, type AnalyticsPeriod } from '@/lib/analytics/engine';

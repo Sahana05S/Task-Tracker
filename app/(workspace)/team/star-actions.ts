@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { getCurrentProfile } from '@/lib/auth/profile';
+import { getCurrentProfile } from '@/shared/session/profile';
 import { storeDailyStarCalculation } from '@/lib/stars/daily';
-import { commandIdentity } from '@/lib/commands/result';
+import { commandIdentity } from '@/shared/commands/result';
 import { kolkataDate } from '@/lib/tasks/contract';
 import type { ActionResponse, User } from '@/types/tracker';
 

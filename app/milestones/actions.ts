@@ -3,9 +3,9 @@
 import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-import { getCurrentProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
-import { canManageMilestones, isMilestoneStatus } from '@/lib/tracker/enums';
+import { getCurrentProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
+import { canManageMilestones, isMilestoneStatus } from '@/shared/tracker/enums';
 import type { ActionResponse, MilestoneStatus, User } from '@/types/tracker';
 
 /**

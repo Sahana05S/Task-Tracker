@@ -1,5 +1,5 @@
 import type { Json } from '@/types/database';
-import type { createClient } from '@/lib/supabase/server';
+import type { createClient } from '@/shared/supabase/server';
 import type { AttendanceStatus } from '@/types/tracker';
 import type { ValidationState } from './contract';
 export interface InputContext { ruleVersion:string; available?:boolean; validityAvailable?:boolean; reasons:string[]; [key:string]:unknown }

@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
 import { WorkspaceHeader } from '@/components/layout/workspace-header';
-import { requireProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
-import { USER_COLUMNS } from '@/lib/supabase/mappers';
+import { requireProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
+import { USER_COLUMNS } from '@/shared/supabase/mappers';
 import type { Json } from '@/types/database';
-import { formatHours } from '@/lib/tracker/format';
+import { formatHours } from '@/shared/tracker/format';
 export default async function RecordHistoryPage({params}:{params:Promise<{kind:string;id:string}>}) {
   await requireProfile();const {kind,id}=await params;
   if(!['attendance','fact','idea','suggestion','sale','meeting'].includes(kind)||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))notFound();

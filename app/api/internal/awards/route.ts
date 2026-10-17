@@ -1,6 +1,6 @@
 import { createHash,timingSafeEqual } from 'node:crypto';
 import { runAwardJobs } from '@/lib/stars/jobs';
-import { workerClient } from '@/lib/supabase/worker';
+import { workerClient } from '@/shared/supabase/worker';
 import { kolkataDate } from '@/lib/tasks/contract';
 export const runtime='nodejs';
 export async function POST(request:Request) {

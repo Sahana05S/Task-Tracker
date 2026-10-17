@@ -7,11 +7,11 @@ import {
 } from '@/lib/analytics/engine';
 import {
   CATEGORY_LABELS,
-  PRIORITY_WEIGHTS,
   TASK_CATEGORIES,
   TASK_PRIORITIES,
   TASK_STATUSES,
-} from '@/lib/tracker/enums';
+} from '@/shared/tracker/enums';
+import { PRIORITY_WEIGHTS } from '@/lib/tasks/contract';
 import type { Task, TaskCategory, TaskPriority, TaskStatus, User } from '@/types/tracker';
 
 export interface DashboardBucket {

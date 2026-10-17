@@ -1,7 +1,7 @@
 import { afterEach,describe,expect,it,vi } from 'vitest';
 
 const {rpc}=vi.hoisted(()=>({rpc:vi.fn()}));
-vi.mock('@/lib/supabase/server',()=>({createClient:vi.fn(async()=>({rpc}))}));
+vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn(async()=>({rpc}))}));
 import { liveViewContext,observationInstant } from '@/lib/presentation/clock';
 
 afterEach(()=>{vi.useRealTimers();vi.clearAllMocks();});

@@ -1,4 +1,4 @@
-import type { createClient } from '@/lib/supabase/server';
+import type { createClient } from '@/shared/supabase/server';
 import { parsePerformanceSources,resolvePerformance } from './sources';
 type Client=Awaited<ReturnType<typeof createClient>>;
 export async function loadPerformance(db:Client,periodStart:string,periodEndExclusive:string,asOf:string) {

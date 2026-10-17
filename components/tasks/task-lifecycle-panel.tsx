@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { changeTaskLifecycle } from '@/app/tasks/actions';
 import { ExecutionForm } from '@/components/tasks/execution-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import type { Task } from '@/types/tracker';
 import { RefreshCwIcon } from 'lucide-react';
 

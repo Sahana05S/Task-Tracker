@@ -28,7 +28,7 @@ import type {
   EmployeeDistributionBucket,
   EmployeeTrendPoint,
 } from '@/lib/team/employee-charts';
-import { formatNumeric } from '@/lib/tracker/format';
+import { formatNumeric } from '@/shared/tracker/format';
 
 export function EmployeeAnalyticsChartsPanel({
   charts,

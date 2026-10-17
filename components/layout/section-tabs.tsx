@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { activeSection, isTabActive } from '@/components/layout/nav-items';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 /**
  * Sub-navigation for grouped destinations (Missions, Records, Team). Hidden for

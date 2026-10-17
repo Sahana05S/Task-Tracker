@@ -5,7 +5,7 @@ import { optionalEmployeePerformance } from '@/lib/team/performance-availability
 import { getAwards,type AwardReadModel } from '@/lib/stars/read-model';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
-import { getCurrentProfile } from '@/lib/auth/profile';
+import { getCurrentProfile } from '@/shared/session/profile';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
 import {
   currentPeriod,
@@ -20,8 +20,8 @@ import {
 import { summarizeAttendance, type AttendanceSummary } from '@/lib/attendance/summary';
 import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
 import { sumHours } from '@/lib/logs/metrics';
-import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
-import { createClient } from '@/lib/supabase/server';
+import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
+import { createClient } from '@/shared/supabase/server';
 import {
   getSupportModuleData,
   summarizeEmployeeSupport,

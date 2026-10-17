@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { TimerIcon } from 'lucide-react';
 
 import type { RunningTimer } from '@/lib/layout/running-timers';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 /**
  * "Timer running" pill: keeps any running timer one tap away from every page.

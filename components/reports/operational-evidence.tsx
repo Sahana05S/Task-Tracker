@@ -2,7 +2,7 @@
 import type * as React from 'react';
 import { CalendarCheckIcon, ClockIcon, LayersIcon, LinkIcon, ListChecksIcon, MessageSquareIcon, type LucideIcon } from 'lucide-react';
 import type { LivePresentation } from '@/lib/presentation/model';
-import { formatHours } from '@/lib/tracker/format';
+import { formatHours } from '@/shared/tracker/format';
 
 /** Panel shell for the evidence sections; the h2 stays a direct child so the
  * harness can find each section from its heading. */

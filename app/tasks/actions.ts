@@ -6,15 +6,15 @@ import { readParticipantShares } from '@/lib/tasks/shares';
 import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-import { getCurrentProfile } from '@/lib/auth/profile';
-import { commandIdentity, executionError } from '@/lib/commands/result';
+import { getCurrentProfile } from '@/shared/session/profile';
+import { commandIdentity, executionError } from '@/shared/commands/result';
 import type { Json } from '@/types/database';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import {
   isTaskCategory,
   isTaskPriority,
   isTaskStatus,
-} from '@/lib/tracker/enums';
+} from '@/shared/tracker/enums';
 import { canManageTasks } from '@/lib/tasks/permissions';
 import type { ActionResponse, TaskStatus, User } from '@/types/tracker';
 

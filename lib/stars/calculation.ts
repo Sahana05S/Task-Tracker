@@ -1,4 +1,4 @@
-import type { createClient } from '@/lib/supabase/server';
+import type { createClient } from '@/shared/supabase/server';
 import { loadPerformance } from '@/lib/performance/queries';
 import { awardContext,selectDaily,APPROVED_AWARD_POLICY,type AwardPolicy,type AwardGate } from './contract';
 import { Exact } from '@/lib/performance/exact';

@@ -19,12 +19,12 @@ import {
 
 import { RunningClock } from '@/components/checklists/running-clock';
 import { ExecutionForm } from '@/components/tasks/execution-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import { CHECKLIST_SECTIONS, type ChecklistRollup } from '@/lib/checklists/progress';
 import type { ChecklistItemTime } from '@/lib/checklists/item-time';
 import { childrenOf, checklistHref, formatMinutes, isContainer, subtreeSeconds } from '@/lib/checklists/pages';
-import { formatPercent } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { formatPercent } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 import type { ActionResponse, ChecklistNode, Task } from '@/types/tracker';
 
 /**

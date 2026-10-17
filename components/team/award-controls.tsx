@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { calculateDailyStarAction,overrideDailyStarAction } from '@/app/(workspace)/team/star-actions';
-import { prepareOperation } from '@/lib/commands/client-operation';
+import { prepareOperation } from '@/shared/commands/client-operation';
 import { kolkataDate } from '@/lib/tasks/contract';
 import type { AwardReadModel } from '@/lib/stars/read-model';
 export function AwardControls({awards,members}:{awards:AwardReadModel;members:{id:string;fullName:string}[]}) {

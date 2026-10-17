@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { getAwards } from '@/lib/stars/read-model';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/shared/supabase/server';
 import { buildPresentation } from './model';
 import { nextDate,type ViewContext } from './context';
 const load=cache(async(start:string,end:string,asOf:string,employee:string|null)=>{

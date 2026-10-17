@@ -24,9 +24,9 @@ describe('native M04 detail contract',()=>{
   for(const patch of [{taskTag:''},{title:' '},{category:'invalid'},{priority:'invalid'},{assigneeIds:[]}])expect(isValidDetailEntry({...task,...patch})).toBe(false);
  });
 });
-vi.mock('@/lib/auth/profile',()=>({getCurrentProfile:vi.fn(async()=>({id:'manager',isActive:true}))}));
+vi.mock('@/shared/session/profile',()=>({getCurrentProfile:vi.fn(async()=>({id:'manager',isActive:true}))}));
 const rpc=vi.fn(async()=>({data:{nativeState:'ready'},error:null}));
-vi.mock('@/lib/supabase/server',()=>({createClient:vi.fn(async()=>({rpc}))}));
+vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn(async()=>({rpc}))}));
 vi.mock('next/cache',()=>({revalidatePath:vi.fn()}));
 import {saveTaskDetails,initializeTaskDetails,addTaskAsset} from '@/app/tasks/detail-actions';
 it('structured actions send every matching canonical field through one command',async()=>{

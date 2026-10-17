@@ -16,8 +16,8 @@ import { WorkbookDashboard } from '@/components/dashboard/workbook-dashboard';
 import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { currentPeriod } from '@/lib/analytics/engine';
 import { getStoredSnapshots, getWorkbookDashboard } from '@/lib/analytics/queries';
-import { requireProfile } from '@/lib/auth/profile';
-import { isMissingSchemaError } from '@/lib/supabase/schema-errors';
+import { requireProfile } from '@/shared/session/profile';
+import { isMissingSchemaError } from '@/shared/supabase/schema-errors';
 
 export const metadata: Metadata = {
   title: 'Dashboard · TaskPulse',

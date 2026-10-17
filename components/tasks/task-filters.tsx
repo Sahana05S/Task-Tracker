@@ -3,14 +3,14 @@
 import * as React from 'react';
 import { LayoutGridIcon, SearchIcon, TableIcon, XIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/shared/ui/button';
+import { Input } from '@/shared/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from '@/components/ui/select';
+} from '@/shared/ui/select';
 import {
   activeFilterCount,
   ALL,
@@ -23,8 +23,8 @@ import {
   TASK_FRESHNESS_STATES,
   TASK_PRIORITIES,
   TASK_STATUSES,
-} from '@/lib/tracker/enums';
-import { cn } from '@/lib/utils';
+} from '@/shared/tracker/enums';
+import { cn } from '@/shared/utils';
 import type { Task, TaskStatus, User } from '@/types/tracker';
 
 export type MissionView = 'cards' | 'table';

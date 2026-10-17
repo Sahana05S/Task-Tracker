@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { CheckCircle2Icon } from 'lucide-react';
 
 import { SHOWCASE_FEATURES, WORKFLOW_STEPS } from '@/lib/marketing/content';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 /**
  * Feature Showcase & Workflow (Zoho-Style Z-Pattern Layout)

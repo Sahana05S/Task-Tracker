@@ -31,13 +31,13 @@ import {
   type ChecklistContext,
 } from '@/components/checklists/checklist-rows';
 import { MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { getChecklistItemTime } from '@/lib/checklists/item-time';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/lib/tasks/detail';
 import { getTaskWorkspaceData } from '@/lib/tasks/queries';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 import { discardTaskTimer, startItemTimer, stopTaskTimer } from '../../timer-actions';
 import { checklistCommand } from '../actions';

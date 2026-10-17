@@ -8,8 +8,8 @@ import type {
   DeadlineOutcomeBucket,
   WorkbookDashboardCharts,
 } from '@/lib/analytics/dashboard-charts';
-import { formatNumeric } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { formatNumeric } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 
 export function WorkbookDashboard({
   charts,

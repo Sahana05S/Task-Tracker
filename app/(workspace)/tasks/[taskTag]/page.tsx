@@ -43,14 +43,14 @@ import {
   MissionPanel,
   MissionProgress,
 } from '@/components/missions/mission-ui';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import {
   CategoryBadge,
   FreshnessIndicator,
   PriorityBadge,
   StatusBadge,
 } from '@/components/tracker/tracker-badges';
-import { requireProfile } from '@/lib/auth/profile';
+import { requireProfile } from '@/shared/session/profile';
 import { getTaskEffortBreakdown } from '@/lib/checklists/item-time';
 import type { ChecklistRollup, ChecklistSection, SectionProgress } from '@/lib/checklists/progress';
 import {
@@ -60,9 +60,9 @@ import {
 } from '@/lib/tasks/detail';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
-import { CATEGORY_LABELS } from '@/lib/tracker/enums';
-import { formatDate, formatNumeric, formatPercent, formatHours, isOverdue } from '@/lib/tracker/format';
-import { cn } from '@/lib/utils';
+import { CATEGORY_LABELS } from '@/shared/tracker/enums';
+import { formatDate, formatNumeric, formatPercent, formatHours, isOverdue } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 import type {
   DailyTaskLog,
   TaskDetailSection,

@@ -1,8 +1,8 @@
 import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { DatedRecordModule } from '@/components/support/dated-record-module';
-import { requireProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
-import { mapUser, USER_COLUMNS } from '@/lib/supabase/mappers';
+import { requireProfile } from '@/shared/session/profile';
+import { createClient } from '@/shared/supabase/server';
+import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { kolkataDate } from '@/lib/tasks/contract';
 import { currentPeriod } from '@/lib/analytics/engine';
 export default async function MeetingPointsPage() {
