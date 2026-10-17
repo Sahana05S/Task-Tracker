@@ -1,4 +1,4 @@
-import type { DatedRecordMetadata } from '@/lib/support/contract';
+import type { DatedRecordMetadata } from '@/modules/support/client';
 /**
  * TaskPulse — Domain Model Type Definitions
  *

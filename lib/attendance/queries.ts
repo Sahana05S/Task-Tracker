@@ -1,4 +1,4 @@
-import { loadAttendanceContext, type AttendanceInputContext } from '@/lib/support/input-context';
+import { loadAttendanceContext, type AttendanceInputContext } from '@/modules/support';
 import {
   ATTENDANCE_COLUMNS,
   mapAttendanceRecords,

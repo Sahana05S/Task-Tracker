@@ -18,9 +18,7 @@ const VIEW_MODULES = new Set(['workspace-views']);
 
 /** Files that still call .from()/.rpc() outside a module. Remove entries as modules absorb them. */
 const LEGACY_DIRECT_DB = new Set([
-  'app/(workspace)/meeting-points/page.tsx',
   'app/(workspace)/records/[kind]/[id]/history/page.tsx',
-  'app/(workspace)/support/actions.ts',
   'app/(workspace)/task-tools/actions.ts',
   'app/(workspace)/task-tools/operation-actions.ts',
   'app/(workspace)/task-tools/page.tsx',

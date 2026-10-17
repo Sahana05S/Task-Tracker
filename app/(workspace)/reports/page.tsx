@@ -9,10 +9,9 @@ import { kolkataDate } from '@/lib/tasks/contract';
 import type { Metadata } from 'next';
 
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
-import { ReportsModule } from '@/components/support/support-pages';
+import { ReportsModule } from '@/modules/support/components/support-pages';
 import { requireProfile } from '@/shared/session/profile';
-import { canManageReportSnapshots } from '@/lib/support/permissions';
-import { getSupportModuleData } from '@/lib/support/queries';
+import { canManageReportSnapshots, getSupportModuleData } from '@/modules/support';
 
 export const metadata: Metadata = {
   title: 'Reports · TaskPulse',

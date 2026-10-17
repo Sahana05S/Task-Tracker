@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   summarizeEmployeeSupport,
   summarizeSupport,
-} from '@/lib/support/queries';
+} from '../internal/queries';
 import type {
   DailyFact,
   Idea,
