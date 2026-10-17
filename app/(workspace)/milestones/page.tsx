@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
+import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { MilestoneBoard } from '@/components/milestones/milestone-board';
 import { OrganizationShowcase } from '@/components/milestones/organization-showcase';
 import { SchemaNotice } from '@/components/milestones/schema-notice';
@@ -36,15 +36,14 @@ export default async function MilestonesPage() {
 
   if (data.status === 'schema-missing') {
     return (
-      <>
-        <WorkspaceHeader
+      <MissionPage>
+        <MissionPageHeader
+          eyebrow="Company"
           title="Vision & milestones"
           description="Setup incomplete"
         />
-        <div className="px-4 py-4 lg:px-6">
-          <SchemaNotice migration={data.migration} />
-        </div>
-      </>
+        <SchemaNotice migration={data.migration} />
+      </MissionPage>
     );
   }
 
@@ -53,24 +52,23 @@ export default async function MilestonesPage() {
   const canManage = canManageMilestones(profile.role);
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage>
+      <MissionPageHeader
+        eyebrow="Company"
         title="Vision & milestones"
         description={`${period.label} · ${summary.achieved} of ${summary.total} milestones achieved`}
       />
 
-      <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
-        <OrganizationShowcase
-          statements={data.statements}
-          canManage={canManage}
-        />
-        <MilestoneBoard
-          milestones={data.milestones}
-          members={data.members}
-          periodLabel={period.label}
-          canManage={canManage}
-        />
-      </div>
-    </>
+      <OrganizationShowcase
+        statements={data.statements}
+        canManage={canManage}
+      />
+      <MilestoneBoard
+        milestones={data.milestones}
+        members={data.members}
+        periodLabel={period.label}
+        canManage={canManage}
+      />
+    </MissionPage>
   );
 }

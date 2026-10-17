@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, FlagIcon } from 'lucide-react';
+import { MissionProgress } from '@/components/missions/mission-ui';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -53,14 +54,15 @@ export function MilestoneChecklist({
   return (
     <section
       aria-labelledby="milestones-heading"
-      className="soft-card flex flex-col gap-3 p-4"
+      className="soft-card flex flex-col gap-4 p-5 sm:p-6"
     >
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <h3
             id="milestones-heading"
-            className="text-foreground text-sm font-semibold"
+            className="text-foreground flex items-center gap-2 text-base font-bold tracking-tight"
           >
+            <FlagIcon className="text-primary size-5 shrink-0" aria-hidden="true" />
             Monthly goals &amp; milestones
           </h3>
           <p className="text-muted-foreground text-xs">
@@ -80,7 +82,7 @@ export function MilestoneChecklist({
       </header>
 
       {milestones.length === 0 ? (
-        <p className="soft-inset text-muted-foreground px-3 py-4 text-sm">
+        <p className="bg-muted/70 text-muted-foreground rounded-xl px-4 py-6 text-center text-sm">
           {canManage
             ? 'No milestones yet. Add the first outcome the team is aiming at this month.'
             : 'No milestones have been set for this period yet.'}
@@ -133,10 +135,10 @@ function MilestoneRow({
     milestone.status !== 'Achieved' && isOverdue(milestone.dueDate);
 
   return (
-    <li className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
+    <li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-foreground text-sm font-medium">
+          <span className="text-foreground text-sm font-semibold">
             {milestone.title}
           </span>
           <span className={cn('badge-soft', STATUS_CLASSES[milestone.status])}>
@@ -177,12 +179,10 @@ function MilestoneRow({
         </div>
 
         {completion !== null ? (
-          <progress
-            className="task-progress mt-0.5 max-w-64"
+          <MissionProgress
+            className="mt-1 max-w-64"
             value={toProgressValue(completion)}
-            max={100}
-            data-complete={completion >= 100 ? 'true' : 'false'}
-            aria-label={`${milestone.title} progress`}
+            label={`${milestone.title} progress`}
           />
         ) : null}
       </div>
