@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { FAQS } from '@/lib/marketing/content';
+import { FAQS } from '@/modules/marketing/internal/content';
 
 /**
  * Customer & Feature FAQ Section

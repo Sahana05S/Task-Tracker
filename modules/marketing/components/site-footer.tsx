@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRightIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
-import { CTA, FOOTER_COLUMNS } from '@/lib/marketing/content';
+import { CTA, FOOTER_COLUMNS } from '@/modules/marketing/internal/content';
 
 /**
  * Closing call to action and footer.

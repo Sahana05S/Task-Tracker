@@ -4,7 +4,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import { CheckCircle2Icon } from 'lucide-react';
 
-import { INTERACTIVE_TABS } from '@/lib/marketing/content';
+import { INTERACTIVE_TABS } from '@/modules/marketing/internal/content';
 import { cn } from '@/shared/utils';
 
 /**

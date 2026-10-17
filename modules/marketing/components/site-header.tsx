@@ -12,7 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/shared/ui/sheet';
-import { CTA, MARKETING_NAV } from '@/lib/marketing/content';
+import { CTA, MARKETING_NAV } from '@/modules/marketing/internal/content';
 
 /**
  * Landing page header.

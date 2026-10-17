@@ -2,7 +2,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import { CheckCircle2Icon } from 'lucide-react';
 
-import { SHOWCASE_FEATURES, WORKFLOW_STEPS } from '@/lib/marketing/content';
+import { SHOWCASE_FEATURES, WORKFLOW_STEPS } from '@/modules/marketing/internal/content';
 import { cn } from '@/shared/utils';
 
 /**

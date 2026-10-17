@@ -2,9 +2,9 @@ import * as React from 'react';
 import Link from 'next/link';
 import { ArrowRightIcon } from 'lucide-react';
 
-import { TrackerMockup } from '@/components/marketing/tracker-mockup';
+import { TrackerMockup } from '@/modules/marketing/components/tracker-mockup';
 import { Button } from '@/shared/ui/button';
-import { CTA, HERO, HERO_ASSURANCES, HERO_STATS } from '@/lib/marketing/content';
+import { CTA, HERO, HERO_ASSURANCES, HERO_STATS } from '@/modules/marketing/internal/content';
 
 /**
  * Hero.

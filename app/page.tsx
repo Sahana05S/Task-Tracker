@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { FeatureBento } from '@/components/marketing/feature-bento';
-import { FeatureFAQ } from '@/components/marketing/feature-faq';
-import { FeatureShowcaseTabs } from '@/components/marketing/feature-showcase-tabs';
-import { HeroSection } from '@/components/marketing/hero-section';
-import { SiteFooter } from '@/components/marketing/site-footer';
-import { SiteHeader } from '@/components/marketing/site-header';
+import {
+  FeatureBento,
+  FeatureFAQ,
+  FeatureShowcaseTabs,
+  HeroSection,
+  SiteFooter,
+  SiteHeader,
+} from '@/modules/marketing';
 import { getAuthState } from '@/shared/session/profile';
 
 export const metadata: Metadata = {
