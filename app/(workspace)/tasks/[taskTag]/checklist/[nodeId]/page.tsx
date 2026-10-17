@@ -33,9 +33,9 @@ import {
 import { MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
 import { requireProfile } from '@/shared/session/profile';
 import { getChecklistItemTime } from '@/lib/checklists/item-time';
-import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/lib/tasks/detail';
-import { getTaskWorkspaceData } from '@/lib/tasks/queries';
-import { canManageTasks, canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
+import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
+import { getTaskWorkspaceData } from '@/modules/tasks';
+import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
 import { cn } from '@/shared/utils';
 

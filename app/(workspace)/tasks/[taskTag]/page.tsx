@@ -1,12 +1,13 @@
-import { DETAIL_FIELDS,ipoLinks,sectionsForRole } from '@/lib/tasks/details-contract';
-import { NativeDetailsEditor,InitializeDetailsForm } from '@/components/tasks/native-details-editor';
-import { getNativeDetailState,getNativeTemplates,getVisibleReportChoices } from '@/lib/tasks/native-details';
-import { getTaskWorkspaceData } from '@/lib/tasks/queries';
-import { TaskLifecyclePanel } from '@/components/tasks/task-lifecycle-panel';
-import { ELIGIBILITY_LABELS,kolkataDate } from '@/lib/tasks/contract';
-import { ExecutionForm } from '@/components/tasks/execution-form';
-import { WorkFileCreator } from '@/components/tasks/work-file-creator';
-import { TaskReviewForm } from '@/components/tasks/task-review-form';
+import { DETAIL_FIELDS, ipoLinks, sectionsForRole } from '@/modules/tasks';
+import { NativeDetailsEditor,InitializeDetailsForm } from '@/modules/tasks/components/native-details-editor';
+import { getNativeDetailState, getNativeTemplates, getVisibleReportChoices } from '@/modules/tasks';
+import { getTaskWorkspaceData } from '@/modules/tasks';
+import { TaskLifecyclePanel } from '@/modules/tasks/components/task-lifecycle-panel';
+import { ELIGIBILITY_LABELS } from '@/modules/tasks';
+import { kolkataDate } from '@/shared/time/kolkata';
+import { ExecutionForm } from '@/shared/ui/execution-form';
+import { WorkFileCreator } from '@/modules/tasks/components/work-file-creator';
+import { TaskReviewForm } from '@/modules/tasks/components/task-review-form';
 import type { Metadata } from 'next';
 import type * as React from 'react';
 import Link from 'next/link';
@@ -53,12 +54,8 @@ import {
 import { requireProfile } from '@/shared/session/profile';
 import { getTaskEffortBreakdown } from '@/lib/checklists/item-time';
 import type { ChecklistRollup, ChecklistSection, SectionProgress } from '@/lib/checklists/progress';
-import {
-  normalizeTaskTagParam,
-  resolveTaskDetailRouteState,
-  type TaskDependencyDetail,
-} from '@/lib/tasks/detail';
-import { canManageTasks, canUpdateTaskOwnFields } from '@/lib/tasks/permissions';
+import { normalizeTaskTagParam, resolveTaskDetailRouteState, type TaskDependencyDetail } from '@/modules/tasks';
+import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
 import { CATEGORY_LABELS } from '@/shared/tracker/enums';
 import { formatDate, formatNumeric, formatPercent, formatHours, isOverdue } from '@/shared/tracker/format';

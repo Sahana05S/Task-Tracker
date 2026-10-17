@@ -1,4 +1,4 @@
-import { eligibilityReasons } from '@/lib/tasks/contract';
+import { eligibilityReasons } from '@/modules/tasks';
 import type { Task } from '@/types/tracker';
 import type { DailyTaskLog, TaskCategory } from '@/types/tracker';
 

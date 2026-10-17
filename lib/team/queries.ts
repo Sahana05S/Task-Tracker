@@ -3,7 +3,7 @@ import { viewContext,type ViewContext } from '@/lib/presentation/context';
 import type { LivePresentation } from '@/lib/presentation/model';
 import { optionalEmployeePerformance } from '@/lib/team/performance-availability';
 import { getAwards,type AwardReadModel } from '@/lib/stars/read-model';
-import { getTaskWorkspaceData } from '@/lib/tasks/queries';
+import { getTaskWorkspaceData } from '@/modules/tasks';
 import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
@@ -32,11 +32,7 @@ import {
   buildEmployeeAnalyticsCharts,
   type EmployeeAnalyticsCharts,
 } from '@/lib/team/employee-charts';
-import {
-  mapTasks,
-  TASK_COLUMNS,
-  withTaskParticipants,
-} from '@/lib/tasks/mappers';
+import { mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks';
 import {
   DAILY_STAR_COLUMNS,
   mapDailyStarRecords,

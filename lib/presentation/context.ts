@@ -1,5 +1,5 @@
 import { currentPeriod,resolvePeriod,type AnalyticsPeriod } from '@/lib/analytics/engine';
-import { kolkataDate } from '@/lib/tasks/contract';
+import { kolkataDate } from '@/shared/time/kolkata';
 export interface ViewContext {period:AnalyticsPeriod;asOf:string;asOfLocalDate:string}
 export const LIVE_AS_OF_LAG_MS=10_000;
 export function viewContext(periodValue?:string,asOfValue?:string,now=new Date(),lagMs=LIVE_AS_OF_LAG_MS):ViewContext {

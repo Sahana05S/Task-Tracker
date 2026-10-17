@@ -1,4 +1,4 @@
-import { kolkataDate } from '@/lib/tasks/contract';
+import { kolkataDate } from '@/shared/time/kolkata';
 import { observationInstant } from '@/lib/presentation/clock';
 import { loadContributionContext, type ContributionInputContext } from './input-context';
 import type { TaskChoice } from '../components/dated-record-module';

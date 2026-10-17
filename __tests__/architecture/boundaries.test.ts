@@ -20,17 +20,12 @@ const VIEW_MODULES = new Set(['workspace-views']);
 const LEGACY_DIRECT_DB = new Set([
   'app/(workspace)/records/[kind]/[id]/history/page.tsx',
   'app/(workspace)/task-tools/actions.ts',
-  'app/(workspace)/task-tools/operation-actions.ts',
-  'app/(workspace)/task-tools/page.tsx',
-  'app/(workspace)/task-tools/participants/page.tsx',
   'app/(workspace)/tasks/[taskTag]/checklist/actions.ts',
   'app/(workspace)/tasks/[taskTag]/timer-actions.ts',
   'app/api/internal/awards/route.ts',
   'app/logs/actions.ts',
   'app/records/actions.ts',
   'app/settings/actions.ts',
-  'app/tasks/actions.ts',
-  'app/tasks/detail-actions.ts',
 ]);
 
 interface SourceFile { path: string; text: string; imports: string[] }

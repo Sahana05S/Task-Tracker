@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { createClient } from '@/shared/supabase/server';
-import { normalizeTaskTagParam } from '@/lib/tasks/detail';
+import { normalizeTaskTagParam } from '@/modules/tasks';
 import { commandIdentity, executionError, executionResult, type ExecutionResult } from '@/shared/commands/result';
 import { createTaskLog } from '@/app/logs/actions';
 import type { ActionResponse } from '@/types/tracker';

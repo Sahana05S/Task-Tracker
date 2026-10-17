@@ -1,4 +1,4 @@
-import { kolkataDate } from '@/lib/tasks/contract';
+import { kolkataDate } from '@/shared/time/kolkata';
 import type { DatedCalculation } from '@/lib/presentation/model';
 import type { CalculationContext,Provenance } from '@/lib/performance/engine';
 import type { AwardHistory } from '@/lib/stars/read-model';

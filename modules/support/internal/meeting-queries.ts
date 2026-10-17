@@ -1,4 +1,4 @@
-import { kolkataDate } from '@/lib/tasks/contract';
+import { kolkataDate } from '@/shared/time/kolkata';
 import { currentPeriod, type AnalyticsPeriod } from '@/lib/analytics/engine';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';

@@ -1,4 +1,4 @@
-import { canManageTasks } from '@/lib/tasks/permissions';
+import { canManageTasks } from '@/modules/tasks';
 import type { AttendanceRecord, User } from '@/types/tracker';
 
 export function canManageAttendance(role: User['role']): boolean {

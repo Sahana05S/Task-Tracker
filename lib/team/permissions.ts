@@ -1,5 +1,5 @@
 import type { User } from '@/types/tracker';
-import { canManageTasks } from '@/lib/tasks/permissions';
+import { canManageTasks } from '@/modules/tasks';
 
 export function canViewTeamModule(user: Pick<User, 'isActive'>): boolean { return user.isActive; }
 export function canViewEmployeeProfile(viewer: Pick<User, 'id' | 'role' | 'isActive'>, employee: Pick<User, 'id'>): boolean {

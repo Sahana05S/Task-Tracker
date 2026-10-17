@@ -1,7 +1,7 @@
 import { createHash,timingSafeEqual } from 'node:crypto';
 import { runAwardJobs } from '@/lib/stars/jobs';
 import { workerClient } from '@/shared/supabase/worker';
-import { kolkataDate } from '@/lib/tasks/contract';
+import { kolkataDate } from '@/shared/time/kolkata';
 export const runtime='nodejs';
 export async function POST(request:Request) {
  const token=process.env.TASKPULSE_AWARD_WORKER_TOKEN;

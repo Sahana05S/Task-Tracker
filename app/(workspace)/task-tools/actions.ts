@@ -2,29 +2,23 @@
 
 import { loadChecklistRollups } from '@/lib/checklists/read-model';
 
-import { initializeTaskDetails,saveTaskDetails,addTaskAsset,renameNativeLink } from '@/app/tasks/detail-actions';
-import { randomUUID } from 'node:crypto';
+import { initializeTaskDetails,saveTaskDetails,addTaskAsset,renameNativeLink } from '@/modules/tasks/detail-actions';
 
 import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-import { createTask, updateTask, updateTaskStatus } from '@/app/tasks/actions';
+import { createTask, updateTask, updateTaskStatus } from '@/modules/tasks/actions';
 import { createTaskLog, type LogActionState } from '@/app/logs/actions';
 
 import { freezeMonthlySnapshot } from '@/app/dashboard/actions';
 import { getTeamAnalytics } from '@/lib/analytics/queries';
 import { performanceReport } from '@/lib/performance/report';
-import { getCurrentProfile } from '@/shared/session/profile';
 import { createClient } from '@/shared/supabase/server';
-import type { SupportSplitMode } from '@/lib/task-tools/support-split';
-import { canManageTasks } from '@/lib/tasks/permissions';
-import {
-  isTaskPriority,
-  isTaskStatus,
-  isTaskCategory,
-} from '@/shared/tracker/enums';
+import { isTaskStatus } from '@/shared/tracker/enums';
+import { readString, UUID_PATTERN } from '@/shared/forms/form-data';
+import { resolveActor } from '@/shared/session/actor';
 import { type AnalyticsPeriod, currentPeriod } from '@/lib/analytics/engine';
-import type { ActionResponse, TaskLinkType, User } from '@/types/tracker';
+import type { ActionResponse } from '@/types/tracker';
 
 export type TaskToolsActionState = ActionResponse<{
   id?: string;
@@ -32,21 +26,6 @@ export type TaskToolsActionState = ActionResponse<{
   taskTag?: string;
   reportId?: string;
 }>;
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-type Actor =
-  | { readonly ok: true; readonly profile: User }
-  | { readonly ok: false; readonly error: string };
-
-async function resolveActor(): Promise<Actor> {
-  const profile = await getCurrentProfile();
-  if (!profile) return { ok: false, error: 'You are not signed in.' };
-  if (!profile.isActive) return { ok: false, error: 'Your account is deactivated.' };
-  return { ok: true, profile };
-}
 
 export async function createTaskFromTools(
   formData: FormData,
@@ -189,60 +168,9 @@ export async function freezeMonthlySnapshotFromTools(
   };
 }
 
-function readString(formData: FormData, key: string): string {
-  const value = formData.get(key);
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function readNullableString(formData: FormData, key: string): string | null {
-  const value = readString(formData, key);
-  return value === '' ? null : value;
-}
-
 function readUuid(formData: FormData, key: string): string | null {
   const value = readString(formData, key);
   return UUID_PATTERN.test(value) ? value : null;
-}
-
-function readNullableDate(formData: FormData, key: string): string | null {
-  const value = readString(formData, key);
-  return value === '' ? null : ISO_DATE_PATTERN.test(value) ? value : null;
-}
-
-function readNullableNumber(formData: FormData, key: string): number | null {
-  const value = readString(formData, key);
-  if (value === '') return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function readTaskLinkType(formData: FormData): TaskLinkType {
-  const value = readString(formData, 'linkType');
-  const allowed: readonly TaskLinkType[] = [
-    'Folder',
-    'Document',
-    'Account',
-    'Flowchart',
-    'Engineering',
-    'Drawing',
-    'Checklist',
-    'Raw Link',
-    'Other',
-  ];
-  return allowed.includes(value as TaskLinkType) ? (value as TaskLinkType) : 'Other';
-}
-
-function readSupportSplitMode(formData: FormData): SupportSplitMode | null {
-  const value = readString(formData, 'splitMode');
-  const allowed: readonly SupportSplitMode[] = [
-    'split-even',
-    'split-uneven',
-    'proportional',
-    'absolute',
-  ];
-  return allowed.includes(value as SupportSplitMode)
-    ? (value as SupportSplitMode)
-    : null;
 }
 
 function readPeriod(formData: FormData): AnalyticsPeriod {
@@ -264,14 +192,6 @@ function readPeriod(formData: FormData): AnalyticsPeriod {
   return currentPeriod();
 }
 
-function slugKey(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 60);
-}
-
 function describeDatabaseError(error: PostgrestError): string {
   if (error.code === '42501') return 'You do not have permission for that workflow.';
   if (error.code === '23505') return 'That record already exists.';
@@ -280,10 +200,3 @@ function describeDatabaseError(error: PostgrestError): string {
   return error.message;
 }
 
-function revalidateTaskToolPaths(taskTag?: string) {
-  revalidatePath('/task-tools');
-  revalidatePath('/tasks');
-  revalidatePath('/dashboard');
-  revalidatePath('/timelines');
-  if (taskTag) revalidatePath(`/tasks/${encodeURIComponent(taskTag)}`);
-}

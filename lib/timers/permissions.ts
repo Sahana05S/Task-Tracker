@@ -1,4 +1,4 @@
-import { canManageTasks, isAssignedToTask } from '@/lib/tasks/permissions';
+import { canManageTasks, isAssignedToTask } from '@/modules/tasks';
 import type { Task, User } from '@/types/tracker';
 
 export function canStartTimerForTask(

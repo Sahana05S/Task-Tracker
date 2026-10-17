@@ -1,13 +1,13 @@
-import { DriveOperations,type DriveReadModel } from '@/components/tasks/drive-operations';
-import { TaskToolsOperations } from '@/components/tasks/task-tools-operations';
+import { DriveOperations } from '@/modules/drive/components/drive-operations';
+import { TaskToolsOperations } from '@/modules/tasks/components/task-tools-operations';
 import Link from 'next/link';
-import { NativeTemplateSelect } from '@/components/tasks/native-details-editor';
-import { NativeTemplateManager } from '@/components/tasks/native-template-manager';
-import { DETAIL_FIELDS,type NativeTemplate } from '@/lib/tasks/details-contract';
-import { getNativeTemplates } from '@/lib/tasks/native-details';
-import { ExecutionForm } from '@/components/tasks/execution-form';
+import { NativeTemplateSelect } from '@/modules/tasks/components/native-details-editor';
+import { NativeTemplateManager } from '@/modules/tasks/components/native-template-manager';
+import { DETAIL_FIELDS, type NativeTemplate } from '@/modules/tasks';
+import { getNativeTemplates } from '@/modules/tasks';
+import { ExecutionForm } from '@/shared/ui/execution-form';
 import { randomUUID } from 'node:crypto';
-import { TaskToolsEdit } from '@/components/tasks/task-tools-edit';
+import { TaskToolsEdit } from '@/modules/tasks/components/task-tools-edit';
 import type { Metadata } from 'next';
 
 import {
@@ -46,13 +46,11 @@ import { MissionPage, MissionPageHeader, MissionPanel } from '@/components/missi
 import { Button } from '@/shared/ui/button';
 import { currentPeriod } from '@/lib/analytics/engine';
 import { requireProfile } from '@/shared/session/profile';
-import { createClient } from '@/shared/supabase/server';
-import { getTaskWorkspaceData } from '@/lib/tasks/queries';
-import { canManageTasks } from '@/lib/tasks/permissions';
-import {
-  canUseWorkbookWorkflow,
-  WORKBOOK_WORKFLOWS,
-} from '@/lib/task-tools/workflows';
+import { getTeamRunningTimers, type TeamRunningTimer } from '@/lib/timers/queries';
+import { getDriveReadModel } from '@/modules/drive';
+import { getTaskWorkspaceData } from '@/modules/tasks';
+import { canManageTasks } from '@/modules/tasks';
+import { canUseWorkbookWorkflow, WORKBOOK_WORKFLOWS } from '@/modules/tasks';
 import {
   CHECKLIST_NODE_TYPES,
   TASK_CATEGORIES,
@@ -65,25 +63,17 @@ export const metadata: Metadata = {
   title: 'Task Tools · TaskPulse',
 };
 
-interface RunningTimer {
-  id: string;
-  taskId: string;
-  userId: string;
-  startedAt: string;
-  executionVersion: number;
-}
+type RunningTimer = TeamRunningTimer;
 
 export default async function TaskToolsPage() {
   const profile = await requireProfile();
   const canManage = canManageTasks(profile.role);
   const [{ tasks, members }, runningTimers, templates] = await Promise.all([
     getTaskWorkspaceData(),
-    getRunningTimers(),
+    getTeamRunningTimers(),
     getNativeTemplates(),
   ]);
-  const driveDb=await createClient();
-  const driveRead=await driveDb.rpc('drive_read_model',{});
-  const driveModel=driveRead.error?null:driveRead.data as unknown as DriveReadModel;
+  const driveModel = await getDriveReadModel();
   const period = currentPeriod();
 
   return (
@@ -387,24 +377,6 @@ function PermissionNote() {
       This workbook workflow is manager-only.
     </p>
   );
-}
-
-async function getRunningTimers(): Promise<RunningTimer[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('task_timers')
-    .select('id, task_id, user_id, started_at, execution_version')
-    .eq('status', 'Running')
-    .order('started_at', { ascending: false });
-
-  if (error) throw new Error(`Failed to load running timers: ${error.message}`);
-  return data.map((row) => ({
-    id: row.id,
-    taskId: row.task_id,
-    userId: row.user_id,
-    startedAt: row.started_at,
-    executionVersion: row.execution_version ?? 0,
-  }));
 }
 
 const inputClass = 'field';

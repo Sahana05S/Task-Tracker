@@ -5,7 +5,7 @@ import type { CompanyMilestone, CompanyStatement } from '@/types/tracker';
  * Row-to-domain conversion for the two tables in
  * `04_milestones_and_vision.sql`.
  *
- * Same boundary as `lib/supabase/mappers.ts` and `lib/tasks/mappers.ts`:
+ * Same boundary as `shared/supabase/mappers.ts` and `modules/tasks/internal/mappers.ts`:
  * components never see a snake_case row, and a column rename surfaces as a
  * compile error here rather than as `undefined` in the UI.
  */
