@@ -7,7 +7,7 @@ import {
   createMilestone,
   updateMilestone,
   type MilestoneActionState,
-} from '@/app/milestones/actions';
+} from '@/modules/milestones/actions';
 import { Button } from '@/shared/ui/button';
 import { Field, FormError, LabeledSelect } from '@/shared/ui/form-field';
 import { Input } from '@/shared/ui/input';

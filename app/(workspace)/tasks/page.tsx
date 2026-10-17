@@ -7,7 +7,7 @@ import { NewTaskButton } from '@/components/tasks/new-task-button';
 import { TaskWorkspace } from '@/components/tasks/task-workspace';
 import { computeMissionHeadline } from '@/lib/analytics/headline';
 import { requireProfile } from '@/shared/session/profile';
-import { getMilestonesPageData } from '@/lib/milestones/queries';
+import { getMilestonesPageData } from '@/modules/milestones';
 import { viewContext } from '@/lib/presentation/context';
 import { getLivePresentation } from '@/lib/presentation/queries';
 import { getTaskEffortTotals } from '@/lib/logs/queries';

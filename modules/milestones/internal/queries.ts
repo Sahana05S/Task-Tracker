@@ -5,7 +5,7 @@ import {
   COMPANY_STATEMENT_COLUMNS,
   mapCompanyMilestones,
   mapCompanyStatements,
-} from '@/lib/milestones/mappers';
+} from '@/modules/milestones/internal/mappers';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
 import type { CompanyMilestone, CompanyStatement, User } from '@/types/tracker';
