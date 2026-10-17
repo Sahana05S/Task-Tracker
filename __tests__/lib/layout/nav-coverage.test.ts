@@ -1,6 +1,6 @@
 import { describe,expect,it } from 'vitest';
 import { MORE_ITEMS,NAV_SECTIONS,activeSection,isMoreActive } from '@/components/layout/nav-items';
-import { PROTECTED_PREFIXES } from '@/lib/auth/protected-routes';
+import { PROTECTED_PREFIXES } from '@/modules/auth';
 import { weekStartOf } from '@/lib/today/queries';
 
 describe('redesigned navigation keeps every workspace route reachable',()=>{

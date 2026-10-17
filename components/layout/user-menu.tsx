@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { LogOutIcon, SettingsIcon, SparklesIcon } from 'lucide-react';
 
-import { logout } from '@/app/auth/actions';
+import { logout } from '@/modules/auth/actions';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
 import {
   DropdownMenu,

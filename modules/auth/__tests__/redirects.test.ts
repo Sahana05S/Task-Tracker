@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { safeRedirectPath, DEFAULT_REDIRECT } from '@/lib/auth/redirects';
+import { safeRedirectPath, DEFAULT_REDIRECT } from '../internal/redirects';
 
 describe('safeRedirectPath', () => {
   it('returns the candidate when it is a safe path', () => {
