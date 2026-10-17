@@ -32,7 +32,7 @@ import {
   buildEmployeeAnalyticsCharts,
   type EmployeeAnalyticsCharts,
 } from '@/lib/team/employee-charts';
-import { mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks';
+import { mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/client';
 import {
   DAILY_STAR_COLUMNS,
   mapDailyStarRecords,

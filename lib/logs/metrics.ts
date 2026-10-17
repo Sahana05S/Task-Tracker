@@ -1,4 +1,4 @@
-import { eligibilityReasons } from '@/modules/tasks';
+import { eligibilityReasons } from '@/modules/tasks/client';
 import type { Task } from '@/types/tracker';
 import type { DailyTaskLog, TaskCategory } from '@/types/tracker';
 

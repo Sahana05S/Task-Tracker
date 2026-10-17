@@ -35,7 +35,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { getChecklistItemTime } from '@/lib/checklists/item-time';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
 import { getTaskWorkspaceData } from '@/modules/tasks';
-import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks';
+import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
 import { cn } from '@/shared/utils';
 

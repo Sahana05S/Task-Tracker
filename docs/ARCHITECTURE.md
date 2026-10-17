@@ -64,8 +64,10 @@ Start from `modules/_template/` when creating a module.
    (`workspace-views`) <- `app`. No cycles between modules.
 5. **The database stays the real permission boundary.** Checks in `permissions.ts`
    give friendly messages; RLS/RPC checks enforce them (see AGENTS.md).
-6. **Client components import only `client.ts` or `components/`** so server code
-   never lands in the browser bundle.
+6. **Client components, and pure helpers they use, import only `client.ts` or
+   `components/`** so server code never lands in the browser bundle. `index.ts`
+   re-exports `client.ts`, but importing it pulls in server reads; `npm run build`
+   fails if that reaches a client component.
 
 ## Shared kernel
 
@@ -86,7 +88,7 @@ Start from `modules/_template/` when creating a module.
 |---|---|---|---|
 | auth | Login, sign-out, redirects, protected routes | lib/auth, app/auth, app/login | Moved |
 | organizations | Companies, per-company settings, onboarding (M15) | migrations 39-40 TS code | To do |
-| tasks | Tasks, participants, shares, details, Task Tools | lib/tasks, lib/task-tools, components/tasks | To do |
+| tasks | Tasks, participants, shares, details, Task Tools | lib/tasks, lib/task-tools, components/tasks | Moved |
 | checklists | Nested checklist pages, item time, progress | lib/checklists, components/checklists | To do |
 | time-tracking | Work logs and timers | lib/logs, lib/timers, components/logs | To do |
 | attendance | Attendance and holidays | lib/attendance | Moved |

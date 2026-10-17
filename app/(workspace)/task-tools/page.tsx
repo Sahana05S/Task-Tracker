@@ -3,7 +3,7 @@ import { TaskToolsOperations } from '@/modules/tasks/components/task-tools-opera
 import Link from 'next/link';
 import { NativeTemplateSelect } from '@/modules/tasks/components/native-details-editor';
 import { NativeTemplateManager } from '@/modules/tasks/components/native-template-manager';
-import { DETAIL_FIELDS, type NativeTemplate } from '@/modules/tasks';
+import { DETAIL_FIELDS, type NativeTemplate } from '@/modules/tasks/client';
 import { getNativeTemplates } from '@/modules/tasks';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { randomUUID } from 'node:crypto';
@@ -49,8 +49,8 @@ import { requireProfile } from '@/shared/session/profile';
 import { getTeamRunningTimers, type TeamRunningTimer } from '@/lib/timers/queries';
 import { getDriveReadModel } from '@/modules/drive';
 import { getTaskWorkspaceData } from '@/modules/tasks';
-import { canManageTasks } from '@/modules/tasks';
-import { canUseWorkbookWorkflow, WORKBOOK_WORKFLOWS } from '@/modules/tasks';
+import { canManageTasks } from '@/modules/tasks/client';
+import { canUseWorkbookWorkflow, WORKBOOK_WORKFLOWS } from '@/modules/tasks/client';
 import {
   CHECKLIST_NODE_TYPES,
   TASK_CATEGORIES,

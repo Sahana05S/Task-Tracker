@@ -38,7 +38,7 @@ import { getChecklistItemTime } from '@/lib/checklists/item-time';
 import { CHECKLIST_SECTIONS, type ChecklistSection, type SectionProgress } from '@/lib/checklists/progress';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
 import { getTaskWorkspaceData } from '@/modules/tasks';
-import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks';
+import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
 import { cn } from '@/shared/utils';
 import type { ChecklistNode } from '@/types/tracker';

@@ -12,5 +12,11 @@ export {
   type TaskDetailData,
   type TaskDetailRouteState,
 } from '@/modules/tasks/internal/detail';
-export { getNativeDetailState, getNativeTemplates, getVisibleReportChoices } from '@/modules/tasks/internal/native-details';
+export {
+  getNativeDetailState,
+  getNativeTemplates,
+  getVisibleReportChoices,
+  type NativeDetailState,
+  type ReportChoice,
+} from '@/modules/tasks/internal/native-details';
 export { getParticipantReconciliation, type ReconciliationTask } from '@/modules/tasks/internal/reconciliation';

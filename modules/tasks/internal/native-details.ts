@@ -17,3 +17,5 @@ export async function getVisibleReportChoices(){
  const db=await createClient();const result=await db.from('report_snapshots').select('id,title,employee_id').order('created_at',{ascending:false});
  if(result.error) throw new Error(result.error.message);return result.data;
 }
+export type NativeDetailState = Awaited<ReturnType<typeof getNativeDetailState>>;
+export type ReportChoice = Awaited<ReturnType<typeof getVisibleReportChoices>>[number];

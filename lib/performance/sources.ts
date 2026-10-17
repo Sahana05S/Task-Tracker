@@ -1,5 +1,5 @@
-import { classifyFreshness, eligibilityReasons, FRESHNESS_SCORES } from '@/modules/tasks';
-import { PRIORITY_WEIGHTS } from '@/modules/tasks';
+import { classifyFreshness, eligibilityReasons, FRESHNESS_SCORES } from '@/modules/tasks/client';
+import { PRIORITY_WEIGHTS } from '@/modules/tasks/client';
 import type { Task,UserRole } from '@/types/tracker';
 import type { ContributionInputContext } from '@/modules/support/client';
 import { Exact } from './exact';
