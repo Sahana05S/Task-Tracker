@@ -34,7 +34,6 @@ const LEGACY_DIRECT_DB = new Set([
   'app/settings/actions.ts',
   'app/tasks/actions.ts',
   'app/tasks/detail-actions.ts',
-  'app/tasks/drive-actions.ts',
 ]);
 
 interface SourceFile { path: string; text: string; imports: string[] }

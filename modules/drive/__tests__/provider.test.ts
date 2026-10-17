@@ -1,7 +1,7 @@
 import { describe,it,expect,vi } from 'vitest';
-import { DRIVE_MIME,DriveFailure,validatePolicy,type DrivePolicy,type DriveStep,type DriveJob,type RemoteFile,type RemotePermission,type StepState } from '@/lib/integrations/drive/contract';
-import { executeStep,GoogleDrive,markerFor,shareReviewer,type DriveProvider } from '@/lib/integrations/drive/provider';
-import { buildPlan } from '@/lib/integrations/drive/plan';
+import { DRIVE_MIME,DriveFailure,validatePolicy,type DrivePolicy,type DriveStep,type DriveJob,type RemoteFile,type RemotePermission,type StepState } from '@/modules/drive/internal/contract';
+import { executeStep,GoogleDrive,markerFor,shareReviewer,type DriveProvider } from '@/modules/drive/internal/provider';
+import { buildPlan } from '@/modules/drive/internal/plan';
 export const policy:DrivePolicy={id:'fixture-only',sandbox:true,accountScope:'synthetic-drive',auth:'organization_oauth',scope:'drive.file',organizationEmail:'worker@example.test',rootId:'synthetic_root',sharedDriveId:null,employeeName:'[Employee ID]',taskName:'[Task Tag] - [Task Title]',roleFolders:{input:['Input'],process:['Process'],output:['Output']},templates:{},initializeTemplates:[],blankKinds:['document','sheet','slides'],autoInitialize:false,checklistAuthority:'native',reviewerSharing:'none',reviewerEmails:{}};
 const empty=():StepState=>({externalId:null,reservedId:null,dispatched:false,verified:null});
 const step:DriveStep={key:'task:synthetic/op1',owner:'synthetic-task',kind:'create',name:'TAG work',mimeType:DRIVE_MIME.document,parent:'parent'};

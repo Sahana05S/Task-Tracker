@@ -1,16 +1,16 @@
 import { afterEach,describe,it,expect,vi } from 'vitest';
 vi.mock('server-only',()=>({}));
 vi.mock('@supabase/supabase-js',()=>({createClient:vi.fn()}));
-vi.mock('@/lib/integrations/drive/setup',()=>({verifyApprovedSandboxAccess:vi.fn()}));
+vi.mock('@/modules/drive/internal/setup',()=>({verifyApprovedSandboxAccess:vi.fn()}));
 vi.mock('@/shared/session/profile',()=>({getCurrentProfile:vi.fn()}));
 vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn()}));
 vi.mock('next/cache',()=>({revalidatePath:vi.fn()}));
 import { GET,POST } from '@/app/api/internal/drive/route';
 import { createClient } from '@supabase/supabase-js';
-import { verifyApprovedSandboxAccess } from '@/lib/integrations/drive/setup';
+import { verifyApprovedSandboxAccess } from '@/modules/drive/internal/setup';
 import { getCurrentProfile } from '@/shared/session/profile';
-import { requestDriveOperation } from '@/app/tasks/drive-actions';
-import { DRIVE_UNAVAILABLE_MESSAGE } from '@/lib/integrations/drive/availability';
+import { requestDriveOperation } from '@/modules/drive/actions';
+import { DRIVE_UNAVAILABLE_MESSAGE } from '@/modules/drive/internal/availability';
 afterEach(()=>{vi.unstubAllEnvs();vi.clearAllMocks();});
 describe('M10 user-deferred provider boundary',()=>{
  it.each([['read-only diagnostic',GET],['mutating worker',POST]] as const)('keeps %s unavailable even with sandbox flags and a valid token',async(_,handler)=>{

@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest';
-import { assertApprovedSandboxPolicy,completeApprovedSandboxPolicy } from '@/lib/integrations/drive/approved-sandbox';
+import { assertApprovedSandboxPolicy,completeApprovedSandboxPolicy } from '@/modules/drive/internal/approved-sandbox';
 import pending from '@/docs/plans/fixtures/m10-approved-sandbox.pending.json';
 const identity={accountScope:'synthetic-project-and-account',organizationEmail:'synthetic@example.test',sharedDriveId:'synthetic_shared_drive',reviewerEmails:{}};
 describe('M10 exact approved sandbox policy',()=>{
