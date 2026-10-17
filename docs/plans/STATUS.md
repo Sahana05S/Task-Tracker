@@ -966,3 +966,101 @@ item. Details are in `docs/plans/M14-evidence.md`.
     and the logged time on the item, its row and the mission.
 - **Open:** reports do not yet break hours down by checklist item; the
   feature-parity audit against the sheet tracker comes next.
+
+## Redesign slice 4 (remaining pages) - 17 October 2026
+
+On branch `claude/redesign-slice-4-a5152e`, cut from `m13-verification` at
+`c3bca09`. Committed locally only; not pushed, merged or deployed. This slice
+applies the slice 1–3 visual system to every page that still had the old
+layout. `/today`, `/tasks`, Mission details and the checklist pages are not
+touched.
+
+- **Shared pieces.**
+  - `components/missions/mission-ui.tsx` now has `MissionPage` (the centred
+    page column), `MissionPageHeader` (Missions-style title, chip,
+    description and actions), `PageChip`, `StatTile` (the Mission details
+    fact tile), `MissionNotice` (an info or attention callout) and
+    `MissionEmpty`.
+  - `app/globals.css` adds:
+    - `.field` and `.field-label`, matching the Mission details FIELD style;
+    - `.link` and `.disclosure`;
+    - `.button-primary` and `.button-secondary` for plain buttons
+      (`.button-primary` was already used by the award controls but was
+      never defined);
+    - two overflow guards:
+      - `body { overflow-wrap: break-word }` wraps long reason codes. It does
+        not change table or grid sizing.
+      - `fieldset { min-inline-size: 0 }` stops one long `<select>` option
+        from widening a form past phone width.
+- **Pages (one commit each).** The five record pages share
+  `dated-record-module.tsx`, so the module has its own commit and each page
+  frame has another. The report components are shared by Reports, Team
+  profiles and Calculation details; they are committed with Reports.
+  - **Dashboard:** the header now has a member chip and a field-style month
+    picker. The data banner uses the attention colour tokens, and daily-star
+    winners are gold.
+  - **Team index, profile and employee reports:**
+    - A breadcrumb back to Team, initials avatars and `StatTile` metrics.
+    - Each section is a `MissionPanel`, and the award controls use field
+      styling.
+    - Legacy star records are gold.
+    - Units are hidden on figures that are unavailable.
+  - **Reports:**
+    - The month archive has field-styled forms, and version links show as
+      tabs.
+    - The live view context, live report, operational evidence and archived
+      report are now icon panels, with pill-shaped download links and
+      bordered, scrolling tables.
+  - **Timeline:** `StatTile` ranges, avatar group rows and Gantt bar colours
+    that match the status badges.
+  - **My effort log:** a narrow column with an hours chip and violet tag
+    chips.
+  - **Attendance:**
+    - The record panel stays in place while the page scrolls (sticky).
+    - Each employee has a validity badge.
+    - Record cards have a correction disclosure.
+  - **Dated records (meeting points, ideas, daily facts, suggestions,
+    sales):**
+    - An add panel and a rules notice.
+    - Record cards with the author's avatar and a review-state badge.
+    - Review and withdrawal forms laid out on a single row.
+  - **Vision & milestones:** a Company header, and milestone progress uses
+    mint `MissionProgress`.
+  - **Task Tools and participant reconciliation:**
+    - Icon panels for each tool, plus coverage tiles.
+    - Field-styled controls, Drive operations and template manager.
+  - **Settings:** an avatar and icon panel headings.
+- **Wording.** Only UI nouns changed to "mission". Examples: the Mission
+  overview and Mission priorities/statuses/types charts, the Mission timeline
+  title, Today's/Yesterday's missions and the "Missions" quick link. The page
+  title "Task tools" is now "Task Tools". Domain terms are unchanged.
+  Headings, labels and text that the browser harness uses are also unchanged:
+  - Employee task list, Recorded effort, Daily attendance validity, Undated
+    tasks, and Dependencies and carryover;
+  - every form label, placeholder, button and aria-label.
+  The review and withdrawal reason inputs also get `aria-label`s matching
+  their placeholders. Fact cards keep their paragraph order (the third `<p>`
+  is still the review state).
+- **Unchanged.** No data, permission, route, server-action, migration or
+  business-rule changes.
+- **Checks:**
+  - typecheck and unit tests passed (501 passed; 2 opt-in hosted skipped);
+  - the production build passed (25 pages);
+  - horizontal overflow is 0 at 390, 768 and 1365 px on all 18 slice 4 URLs
+    for the director and member A. This was measured with every `<details>`
+    opened, by a read-only checker that reuses the harness's session setup
+    against a local dev server (port 3222, M13 test project). Member A's 404
+    on another member's profile is the existing permission rule. The final
+    sweep covered 108 page loads. Right after `next build`, the fresh dev
+    server briefly served a stale 404 for employee reports; after a
+    recompile it rendered for both roles.
+  - Screenshots were reviewed at 390 and 1365 px.
+- **Not run:** the full 11-phase browser harness. It writes to the shared
+  test project, and another session is using it, so it needs the user's
+  go-ahead first.
+- **Known gaps:**
+  - The `loading.tsx` skeletons for dashboard, team, logs and attendance
+    keep their old padding.
+  - `/records/[kind]/[id]/history` still uses `WorkspaceHeader`; it was not in
+    this slice.
+  - The milestone dialog and statement editor sheets were not restyled.
