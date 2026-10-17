@@ -19,10 +19,10 @@ export function WorkbookDashboard({
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="panel-title text-lg">Task overview</h2>
+        <h2 className="panel-title text-lg">Mission overview</h2>
         <p className="text-muted-foreground text-sm">
-          Task progress, allocation, status,
-          deadlines, task mix, and team loading.
+          Mission progress, allocation, status, deadlines, mission mix and team
+          loading.
         </p>
       </div>
 
@@ -41,26 +41,26 @@ export function WorkbookDashboard({
           empty="No task progress is available yet."
         />
         <DistributionCard
-          title="Task priorities"
-          subtitle="Count of tracked tasks by priority"
+          title="Mission priorities"
+          subtitle="Count of tracked missions by priority"
           items={charts.taskPriorities}
           empty="No priorities to chart yet."
         />
         <DistributionCard
-          title="Task statuses"
-          subtitle="Count of tracked tasks by current status"
+          title="Mission statuses"
+          subtitle="Count of tracked missions by current status"
           items={charts.taskStatuses}
           empty="No task statuses to chart yet."
         />
         <DistributionCard
-          title="Task assignees"
-          subtitle="Assignment count, including multi-assignee tasks"
+          title="Mission assignees"
+          subtitle="Assignment count, including multi-assignee missions"
           items={charts.taskAssignees}
           empty="No tasks are assigned yet."
         />
         <DistributionCard
-          title="Task types"
-          subtitle="Task category split from the tracker"
+          title="Mission types"
+          subtitle="Mission category split from the tracker"
           items={charts.taskTypes}
           empty="No task types to chart yet."
         />
@@ -71,8 +71,8 @@ export function WorkbookDashboard({
           empty={charts.priorityLoadingUnavailableReason ?? "No priority loading has been assigned yet."}
         />
         <TimelineCard
-          title="Tasks done by date"
-          subtitle="Completed task count by completion date"
+          title="Missions done by date"
+          subtitle="Completed mission count by completion date"
           items={charts.tasksDoneByDate}
           empty="No tasks were completed in this period."
         />
@@ -98,9 +98,9 @@ function ChartCard({
   children: ReactNode;
 }) {
   return (
-    <section className="soft-card flex min-h-72 flex-col gap-4 p-5">
+    <section className="soft-card flex min-h-72 flex-col gap-4 p-5 sm:p-6">
       <header className="flex flex-col gap-0.5">
-        <h3 className="panel-title text-base">{title}</h3>
+        <h3 className="text-foreground text-base font-bold tracking-tight">{title}</h3>
         <p className="text-muted-foreground text-xs">{subtitle}</p>
       </header>
       {children}
@@ -158,13 +158,13 @@ function SignedBarCard({
                       {formatSigned(item.value)}
                     </span>
                   </div>
-                  <div className="bg-muted relative h-3 overflow-hidden rounded-full">
+                  <div className="relative h-3 overflow-hidden rounded-full bg-[#ebe7f6]">
                     <span className="absolute inset-y-0 left-1/2 w-px bg-slate-300" />
                     <span
                       className={cn(
                         'absolute inset-y-0 rounded-full',
                         item.value >= 0
-                          ? 'left-1/2 bg-emerald-500'
+                          ? 'left-1/2 bg-success'
                           : 'right-1/2 bg-rose-500',
                       )}
                       style={{ width: `${width}%` }}
@@ -217,7 +217,7 @@ function BarListCard({
               detail={
                 item.taskCount === undefined
                   ? undefined
-                  : `${item.taskCount} ${item.taskCount === 1 ? 'task' : 'tasks'}`
+                  : `${item.taskCount} ${item.taskCount === 1 ? 'mission' : 'missions'}`
               }
             />
           ))}
@@ -325,23 +325,23 @@ function SummaryCard({ charts }: { charts: WorkbookDashboardCharts }) {
   return (
     <ChartCard
       title="Dashboard coverage"
-      subtitle="The live task set behind these workbook charts"
+      subtitle="The live mission set behind these workbook charts"
     >
       <dl className="grid flex-1 gap-3 sm:grid-cols-3 xl:grid-cols-1">
         <SummaryMetric
-          label="Tracked tasks"
+          label="Tracked missions"
           value={charts.summary.trackedTaskCount}
           detail="Carried in this month"
         />
         <SummaryMetric
-          label="Completed tasks"
+          label="Completed missions"
           value={charts.summary.completedTaskCount}
           detail="Done inside the period"
         />
         <SummaryMetric
           label="Open overdue"
           value={charts.summary.overdueOpenTaskCount}
-          detail="Active tasks past due"
+          detail="Active missions past due"
         />
       </dl>
     </ChartCard>
@@ -376,7 +376,7 @@ function MetricBar({
           </span>
         </span>
       </div>
-      <div className="bg-muted h-2.5 overflow-hidden rounded-full">
+      <div className="h-2.5 overflow-hidden rounded-full bg-[#ebe7f6]">
         <span
           className="block h-full rounded-full"
           style={{ width: `${width}%`, backgroundColor: color }}

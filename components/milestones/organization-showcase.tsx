@@ -36,8 +36,8 @@ export function OrganizationShowcase({
   const coreValues = findStatement(statements, CORE_VALUES_KEY);
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid gap-3 lg:grid-cols-2">
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         <StatementCard
           statement={vision}
           fallbackTitle="Vision"
@@ -80,7 +80,7 @@ function StatementCard({
   return (
     <section
       aria-labelledby={headingId}
-      className="soft-card flex flex-col gap-2 p-4"
+      className="soft-card flex flex-col gap-2 p-5 sm:p-6"
     >
       <div className="flex items-start justify-between gap-2">
         <h3 id={headingId} className="eyebrow">
@@ -89,7 +89,7 @@ function StatementCard({
         {canManage ? <StatementEditor statement={statement} /> : null}
       </div>
 
-      <p className="text-foreground text-[15px] leading-snug font-medium">
+      <p className="text-foreground text-lg leading-snug font-semibold tracking-tight">
         {statement.statement}
       </p>
       {statement.subtext ? (
@@ -119,7 +119,7 @@ function CoreValuesCard({
   const values = parseCoreValues(statement.statement);
 
   return (
-    <section aria-labelledby="core-values-heading" className="soft-card p-4">
+    <section aria-labelledby="core-values-heading" className="soft-card p-5 sm:p-6">
       <div className="flex items-start justify-between gap-2">
         <h3 id="core-values-heading" className="eyebrow">
           {statement.title}
@@ -146,7 +146,7 @@ function CoreValuesCard({
               */}
               <span
                 aria-hidden="true"
-                className="text-primary bg-primary-subtle mt-0.5 flex size-5 shrink-0 items-center justify-center rounded font-mono text-[10px] font-semibold"
+                className="text-primary bg-primary-subtle mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg font-mono text-[10px] font-semibold"
               >
                 {index + 1}
               </span>
@@ -189,7 +189,7 @@ function MissingStatement({
   return (
     <section
       aria-labelledby={headingId}
-      className="soft-card flex flex-col gap-1.5 p-4"
+      className="soft-card flex flex-col gap-1.5 p-5 sm:p-6"
     >
       <h3 id={headingId} className="eyebrow">
         {title}

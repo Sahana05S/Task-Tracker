@@ -1,13 +1,15 @@
 import type { AwardReadModel } from '@/lib/stars/read-model';
 import { GAP_SENTENCE, dataGaps } from '@/lib/presentation/plain-language';
+import { TrophyIcon } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 type DayState = 'winner' | 'none' | 'blocked' | 'pending';
 const DAY_STYLE: Record<DayState, string> = {
-  winner: 'bg-primary border-primary',
-  none: 'bg-white border-slate-400',
-  blocked: 'bg-amber-200 border-amber-400',
-  pending: 'bg-slate-100 border-slate-300 border-dashed',
+  winner: 'bg-recognition border-recognition',
+  none: 'bg-white border-[#c9c4e3]',
+  blocked: 'bg-attention-border border-[#f5c58a]',
+  pending: 'bg-muted border-[#d9d5ec] border-dashed',
 };
 const DAY_LABEL: Record<DayState, string> = {
   winner: 'daily star decided',
@@ -44,9 +46,12 @@ export function AwardSummary({awards,names,availabilityReason}:{
     : 'not available yet';
   const gaps = dataGaps([...monthly.reasons, ...awards.days.flatMap(d => d.reasons ?? [])]);
   return (
-    <section className="soft-card grid gap-3 p-4" aria-label="Awards">
+    <section className="soft-card grid gap-3 p-5 sm:p-6" aria-label="Awards">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="panel-title text-base">Awards</h2>
+        <h2 className="text-foreground flex items-center gap-2 text-base font-bold tracking-tight">
+          <TrophyIcon className="text-recognition size-5 shrink-0" aria-hidden="true" />
+          Awards
+        </h2>
         <p className="text-muted-foreground text-xs">Monthly award: <span className="text-foreground font-medium">{monthlyText}</span></p>
       </div>
       <p className="text-sm">
@@ -59,7 +64,7 @@ export function AwardSummary({awards,names,availabilityReason}:{
           {required.map(date => {
             const s = state(date);
             return (
-              <li key={date} title={`${date}: ${DAY_LABEL[s]}`} className={cn('size-4 rounded-sm border', DAY_STYLE[s])}>
+              <li key={date} title={`${date}: ${DAY_LABEL[s]}`} className={cn('size-4 rounded-[5px] border', DAY_STYLE[s])}>
                 <span className="sr-only">{date}: {DAY_LABEL[s]}</span>
               </li>
             );

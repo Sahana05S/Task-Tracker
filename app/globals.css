@@ -189,6 +189,10 @@
 
   body {
     @apply bg-background text-foreground font-sans;
+    /* Long reason codes and URLs wrap instead of pushing the page sideways.
+       Unlike `anywhere`, this does not shrink min-content, so table and grid
+       sizing are unchanged. */
+    overflow-wrap: break-word;
   }
 
   /*
@@ -225,6 +229,12 @@
   th,
   td {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* A fieldset defaults to min-inline-size: min-content, so one long option
+     label in a select would widen the whole form past a phone screen. */
+  fieldset {
+    min-inline-size: 0;
   }
 
   :focus-visible {
@@ -560,6 +570,67 @@
 
   .initials-avatar-2 {
     @apply bg-success-subtle text-success-strong;
+  }
+
+  /* ------------------------------------------------------------------------
+     Slice 4 form and content primitives. `.field` is the Mission details
+     FIELD look (rounded-xl, input border, canvas fill) for native inputs,
+     selects and textareas; `.field-label` stacks a label over its control.
+     ---------------------------------------------------------------------- */
+  .field {
+    @apply border-input bg-background text-foreground min-h-10 max-w-full min-w-0
+      rounded-xl border px-3 py-2 text-sm transition-colors;
+  }
+
+  .field:focus-visible {
+    @apply border-primary outline-primary/30 outline-2 outline-offset-0;
+  }
+
+  .field:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  select.field[multiple] {
+    @apply py-1.5;
+  }
+
+  .field-label {
+    @apply text-foreground grid min-w-0 gap-1.5 text-sm font-medium;
+  }
+
+  /* Text link inside content: violet, underlined on hover only. */
+  .link {
+    @apply text-primary font-medium underline-offset-2 hover:underline;
+  }
+
+  /* Collapsible panel matching Mission details' Disclosure. */
+  .disclosure {
+    @apply border-border rounded-xl border bg-white;
+  }
+
+  .disclosure > summary {
+    @apply text-primary cursor-pointer px-4 py-3 text-sm font-semibold select-none;
+  }
+
+  .disclosure[open] > summary {
+    @apply border-border border-b;
+  }
+
+  .disclosure > :not(summary) {
+    @apply mx-4 my-3;
+  }
+
+  /* Plain <button>s that do not use the Button component. */
+  .button-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary-hover inline-flex h-10
+      items-center justify-center rounded-xl px-4 text-sm font-semibold whitespace-nowrap
+      transition-colors disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .button-secondary {
+    @apply border-border text-foreground hover:bg-muted inline-flex h-10 items-center
+      justify-center rounded-xl border bg-white px-4 text-sm font-semibold
+      whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50;
   }
 
   /* Status filter pill on the Missions toolbar. */

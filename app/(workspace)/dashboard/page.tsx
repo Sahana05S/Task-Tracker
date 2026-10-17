@@ -13,7 +13,7 @@ import { StarPerformerCard } from '@/components/dashboard/star-performer-card';
 import { TeamStatsGrid } from '@/components/dashboard/team-stats-grid';
 import { TrackerSchemaNotice } from '@/components/dashboard/tracker-schema-notice';
 import { WorkbookDashboard } from '@/components/dashboard/workbook-dashboard';
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
+import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { currentPeriod } from '@/lib/analytics/engine';
 import { getStoredSnapshots, getWorkbookDashboard } from '@/lib/analytics/queries';
 import { requireProfile } from '@/lib/auth/profile';
@@ -48,15 +48,14 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   if (dashboardResult.status === 'rejected') {
     if (isMissingSchemaError(dashboardResult.reason)) {
       return (
-        <>
-          <WorkspaceHeader
+        <MissionPage wide>
+          <MissionPageHeader
+            eyebrow="Team · Analytics"
             title="Team performance"
             description={`${period.label} · setup required`}
           />
-          <div className="px-4 py-4 lg:px-6">
-            <TrackerSchemaNotice />
-          </div>
-        </>
+          <TrackerSchemaNotice />
+        </MissionPage>
       );
     }
     throw dashboardResult.reason;
@@ -65,15 +64,14 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   if (snapshotsResult.status === 'rejected') {
     if (isMissingSchemaError(snapshotsResult.reason)) {
       return (
-        <>
-          <WorkspaceHeader
+        <MissionPage wide>
+          <MissionPageHeader
+            eyebrow="Team · Analytics"
             title="Team performance"
             description={`${period.label} · setup required`}
           />
-          <div className="px-4 py-4 lg:px-6">
-            <TrackerSchemaNotice />
-          </div>
-        </>
+          <TrackerSchemaNotice />
+        </MissionPage>
       );
     }
     throw snapshotsResult.reason;
@@ -94,9 +92,13 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   if(attendanceMissing.missing>0&&!gaps.includes('attendance'))gaps.unshift('attendance');
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage wide>
+      <MissionPageHeader
+        eyebrow="Team · Analytics"
         title="Team performance"
+        chip={`${analytics.totals.activeMemberCount} active ${
+          analytics.totals.activeMemberCount === 1 ? 'member' : 'members'
+        }`}
         description={`${analytics.period.label} · ${analytics.totals.activeMemberCount} active ${
           analytics.totals.activeMemberCount === 1 ? 'member' : 'members'
         } · compared against the team median`}
@@ -104,59 +106,57 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
           <form method="get" className="flex items-center gap-2">
             <label htmlFor="dashboard-month" className="sr-only">Month</label>
             <input id="dashboard-month" type="month" name="period" defaultValue={period.startDate.slice(0,7)}
-              className="border-input bg-background h-8 w-36 rounded-md border px-2 text-sm" />
-            <button type="submit" className="border-input h-8 rounded-md border px-3 text-sm">View</button>
+              className="field h-10 w-40 bg-white" />
+            <button type="submit" className="button-secondary">View</button>
           </form>
         }
       />
 
-      <div className="flex flex-col gap-5 px-4 py-5 lg:px-6">
-        {incomplete ? (
-          <DataStatusBanner
-            periodLabel={analytics.period.label}
-            gaps={gaps}
-            attendanceMissing={attendanceMissing}
-            canRecordAttendance={profile.isActive&&canManageAttendance(profile.role)}
-            historyFrom={presentation.detailsAvailable?null:presentation.detailsAvailableFrom}
-          />
-        ) : null}
+      {incomplete ? (
+        <DataStatusBanner
+          periodLabel={analytics.period.label}
+          gaps={gaps}
+          attendanceMissing={attendanceMissing}
+          canRecordAttendance={profile.isActive&&canManageAttendance(profile.role)}
+          historyFrom={presentation.detailsAvailable?null:presentation.detailsAvailableFrom}
+        />
+      ) : null}
 
-        <TeamStatsGrid analytics={analytics} attendanceComplete={attendanceMissing.missing===0} attendanceMissing={attendanceMissing} />
+      <TeamStatsGrid analytics={analytics} attendanceComplete={attendanceMissing.missing===0} attendanceMissing={attendanceMissing} />
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <ProductivityChart
-            members={analytics.members}
-            medianProductivity={analytics.medians.productivity}
-          />
-          <AllocationChart
-            members={analytics.members}
-            medianAllocation={analytics.medians.allocationPercent}
-            medianCriticality={analytics.medians.criticalityScore}
-          />
-        </div>
-
-        {awards ? (
-          <AwardSummary awards={awards} names={names} availabilityReason={presentation.awardAvailabilityReason} />
-        ) : (
-          <StarPerformerCard
-            unavailableReason="Awards are not available for this view."
-            performer={analytics.starPerformer}
-            periodLabel={analytics.period.label}
-            medianProductivity={analytics.medians.productivity}
-          />
-        )}
-
-        <WorkbookDashboard charts={charts} />
-
-        <CalculationDetails
-          presentation={presentation}
-          calculation={analytics.calculation}
-          awards={awards}
-          names={names}
-          viewerId={profile.id}
-          snapshotCount={snapshots.length}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ProductivityChart
+          members={analytics.members}
+          medianProductivity={analytics.medians.productivity}
+        />
+        <AllocationChart
+          members={analytics.members}
+          medianAllocation={analytics.medians.allocationPercent}
+          medianCriticality={analytics.medians.criticalityScore}
         />
       </div>
-    </>
+
+      {awards ? (
+        <AwardSummary awards={awards} names={names} availabilityReason={presentation.awardAvailabilityReason} />
+      ) : (
+        <StarPerformerCard
+          unavailableReason="Awards are not available for this view."
+          performer={analytics.starPerformer}
+          periodLabel={analytics.period.label}
+          medianProductivity={analytics.medians.productivity}
+        />
+      )}
+
+      <WorkbookDashboard charts={charts} />
+
+      <CalculationDetails
+        presentation={presentation}
+        calculation={analytics.calculation}
+        awards={awards}
+        names={names}
+        viewerId={profile.id}
+        snapshotCount={snapshots.length}
+      />
+    </MissionPage>
   );
 }

@@ -20,30 +20,30 @@ export function SchemaNotice({ migration }: SchemaNoticeProps) {
   return (
     <section
       aria-labelledby="schema-notice-heading"
-      className="rounded-lg border border-amber-300 bg-amber-50 p-5"
+      className="border-attention-border bg-attention-subtle text-attention-foreground rounded-2xl border p-5"
     >
       <h2
         id="schema-notice-heading"
-        className="text-sm font-semibold text-amber-900"
+        className="text-sm font-bold"
       >
         Migration not applied
       </h2>
 
-      <p className="mt-1.5 max-w-2xl text-sm text-amber-900/90">
+      <p className="mt-1.5 max-w-2xl text-sm opacity-90">
         This page reads{' '}
-        <code className="rounded border border-amber-300 bg-white px-1 py-0.5 font-mono text-xs">
+        <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
           company_statements
         </code>{' '}
         and{' '}
-        <code className="rounded border border-amber-300 bg-white px-1 py-0.5 font-mono text-xs">
+        <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
           company_milestones
         </code>
         , and neither table exists in the connected Supabase project yet.
       </p>
 
-      <ol className="mt-4 flex max-w-2xl flex-col gap-2 text-sm text-amber-900/90">
+      <ol className="mt-4 flex max-w-2xl flex-col gap-2 text-sm opacity-90">
         <li className="flex gap-2">
-          <span className="font-mono text-xs font-semibold text-amber-900">
+          <span className="font-mono text-xs font-semibold">
             1.
           </span>
           <span>
@@ -52,30 +52,30 @@ export function SchemaNotice({ migration }: SchemaNoticeProps) {
           </span>
         </li>
         <li className="flex gap-2">
-          <span className="font-mono text-xs font-semibold text-amber-900">
+          <span className="font-mono text-xs font-semibold">
             2.
           </span>
           <span>
             Paste the whole of{' '}
-            <code className="rounded border border-amber-300 bg-white px-1 py-0.5 font-mono text-xs">
+            <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
               {migration}
             </code>{' '}
             and run it once. It is safe to re-run: the seed statements use{' '}
-            <code className="rounded border border-amber-300 bg-white px-1 py-0.5 font-mono text-xs">
+            <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
               ON CONFLICT DO NOTHING
             </code>{' '}
             and the milestones only seed into an empty table.
           </span>
         </li>
         <li className="flex gap-2">
-          <span className="font-mono text-xs font-semibold text-amber-900">
+          <span className="font-mono text-xs font-semibold">
             3.
           </span>
           <span>Reload this page.</span>
         </li>
       </ol>
 
-      <p className="mt-4 max-w-2xl text-xs text-amber-900/75">
+      <p className="mt-4 max-w-2xl text-xs opacity-75">
         Migrations <span className="font-mono">01</span>,{' '}
         <span className="font-mono">02</span> and{' '}
         <span className="font-mono">03</span> are already applied — the rest of the

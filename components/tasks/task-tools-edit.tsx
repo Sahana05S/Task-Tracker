@@ -9,11 +9,11 @@ export function TaskToolsEdit({ tasks, members }: {tasks: readonly Task[]; membe
   const [open,setOpen] = useState(false);
   const task = tasks.find((entry) => entry.id === id) ?? null;
   return <div className="grid gap-2">
-    <select aria-label="Task to edit" value={id} onChange={(event) => setId(event.target.value)} className="rounded-md border p-2 text-sm">
+    <select aria-label="Task to edit" value={id} onChange={(event) => setId(event.target.value)} className="field">
       <option value="">Select task</option>
       {tasks.map((entry) => <option key={entry.id} value={entry.id}>{entry.taskTag}: {entry.title}</option>)}
     </select>
-    <Button disabled={!task} onClick={() => setOpen(true)} size="sm">Edit task details and shares</Button>
+    <Button disabled={!task} onClick={() => setOpen(true)} size="sm" className="justify-self-start">Edit task details and shares</Button>
     {task ? <TaskDialog key={task.id} open={open} onOpenChange={setOpen} task={task} members={members} defaultAssigneeId={task.assigneeId} /> : null}
   </div>;
 }

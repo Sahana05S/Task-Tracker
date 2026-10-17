@@ -63,13 +63,13 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
     <div className="flex flex-col gap-3">
       {/* Title, totals and the Log Hours action live in the page header. */}
       {groups.length === 0 ? (
-        <div className="soft-card px-4 py-6">
-          <p className="text-foreground text-sm font-semibold">
+        <div className="soft-card p-6 text-center">
+          <p className="text-foreground text-base font-bold">
             No effort logged yet
           </p>
-          <p className="text-muted-foreground mt-1 max-w-xl text-xs">
-            Record hours against a task and the progress and productivity figures
-            will follow automatically.
+          <p className="text-muted-foreground mx-auto mt-1 max-w-xl text-sm">
+            Record hours against a mission and the progress and productivity
+            figures will follow automatically.
           </p>
         </div>
       ) : (
@@ -85,7 +85,7 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
                 <h3 className="text-foreground text-sm font-bold">
                   {formatDate(group.logDate)}
                 </h3>
-                <span className="text-muted-foreground font-mono text-[11px] font-semibold tabular">
+                <span className="bg-success-subtle text-success-strong rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold tabular">
                   {formatHours(group.totalHours)} h
                 </span>
                 {group.totalProgressDelta !== 0 ? (
@@ -155,9 +155,9 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
   const delta = log.progressDelta ?? 0;
 
   return (
-    <article className="soft-card flex flex-col gap-2 px-4 py-3.5">
+    <article className="soft-card flex flex-col gap-2 px-4 py-3.5 sm:px-5">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="task-tag">{task?.taskTag ?? 'Unknown task'}</span>
+        <span className="task-tag bg-primary-subtle text-primary-subtle-foreground rounded-md px-2 py-0.5">{task?.taskTag ?? 'Unknown task'}</span>
         {task ? <CategoryBadge category={task.category} /> : null}
 
         {/* Figures, not chips with glyphs: the unit suffix already says what the
@@ -180,12 +180,12 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
         </span>
       </div>
 
-      <p className="text-foreground text-[13px] font-medium">
+      <p className="text-foreground text-sm font-semibold">
         {task?.title ?? 'This task has been removed.'}
       </p>
 
       {log.updateNotes ? (
-        <p className="text-sm whitespace-pre-line text-slate-600">
+        <p className="text-muted-foreground text-sm whitespace-pre-line">
           {log.updateNotes}
         </p>
       ) : null}
@@ -310,11 +310,11 @@ function DeleteLogConfirmation({
           </SheetDescription>
         </SheetHeader>
 
-        <label className="mx-4 text-sm">Reason<input className="block w-full rounded border p-2" value={reason} onChange={event=>setReason(event.target.value)} required /></label>
+        <label className="field-label mx-4">Reason<input className="field block w-full" value={reason} onChange={event=>setReason(event.target.value)} required /></label>
         {error ? (
           <div
             role="alert"
-            className="mx-4 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+            className="mx-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
           >
             <AlertCircleIcon
               className="mt-0.5 size-4 shrink-0"

@@ -8,7 +8,7 @@ import { liveViewContext } from '@/lib/presentation/clock';
 import { kolkataDate } from '@/lib/tasks/contract';
 import type { Metadata } from 'next';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
+import { MissionNotice, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { ReportsModule } from '@/components/support/support-pages';
 import { requireProfile } from '@/lib/auth/profile';
 import { canManageReportSnapshots } from '@/lib/support/permissions';
@@ -31,20 +31,18 @@ export default async function ReportsPage({searchParams}:{searchParams:Promise<{
   const data = revision===null?await getSupportModuleData(context.period,context.asOf):null;
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage>
+      <MissionPageHeader
         title="Reports"
         description={data?`${data.period.label} · ${data.summary.reports.total} reports · ${data.summary.reports.final} final`:`${context.period.label} · retained revision ${revision}`}
       />
-      <div className="grid gap-4 px-4 py-4 lg:px-6">
-        <MonthArchiveControls period={context.period.startDate} history={history} canClose={profile.role==='managing_director'} completeMonth={context.period.endDate<kolkataDate(new Date())} operation={randomUUID()}/>
-        {archive?<ArchivedReport archive={archive} previous={previous} employee={null}/>:revision!==null?<p role="status">That revision is unavailable.</p>:presentation?<LiveReport model={presentation}/>:null}
-        {data?<><h2 className="font-semibold">Retained saved reports · original rules</h2><ReportsModule
-          reports={data.reports}
-          members={data.members}
-          canManage={canManageReportSnapshots(profile.role)}
-        /></>:null}
-      </div>
-    </>
+      <MonthArchiveControls period={context.period.startDate} history={history} canClose={profile.role==='managing_director'} completeMonth={context.period.endDate<kolkataDate(new Date())} operation={randomUUID()}/>
+      {archive?<ArchivedReport archive={archive} previous={previous} employee={null}/>:revision!==null?<MissionNotice tone="attention" role="status">That revision is unavailable.</MissionNotice>:presentation?<LiveReport model={presentation}/>:null}
+      {data?<><h2 className="panel-title mt-2">Retained saved reports · original rules</h2><ReportsModule
+        reports={data.reports}
+        members={data.members}
+        canManage={canManageReportSnapshots(profile.role)}
+      /></>:null}
+    </MissionPage>
   );
 }
