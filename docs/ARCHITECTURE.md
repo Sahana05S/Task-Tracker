@@ -82,22 +82,22 @@ Start from `modules/_template/` when creating a module.
 
 ## Module map
 
-| Module | What it owns | Was in |
-|---|---|---|
-| auth | Login, sign-out, redirects, protected routes | lib/auth, app/auth, app/login |
-| organizations | Companies, per-company settings, onboarding (M15) | migrations 39-40 TS code |
-| tasks | Tasks, participants, shares, details, Task Tools | lib/tasks, lib/task-tools, components/tasks |
-| checklists | Nested checklist pages, item time, progress | lib/checklists, components/checklists |
-| time-tracking | Work logs and timers | lib/logs, lib/timers, components/logs |
-| attendance | Attendance and holidays | lib/attendance |
-| support | Knowledge, sales logs, dated records | lib/support, components/support |
-| milestones | Milestones, statements, goals | lib/milestones, components/milestones |
-| team | Employees and profiles | lib/team, components/team |
-| scoring | Ten-factor performance engine, analytics, stars/awards | lib/performance, lib/analytics, lib/stars |
-| reports | Live reports, exports, month close | lib/presentation, lib/month, components/reports |
-| drive | Google Drive integration (deferred by user) | lib/integrations/drive |
-| workspace-views | Dashboard, Today, Timelines, nav counts | lib/today, lib/timelines, components/dashboard |
-| marketing | Public landing page | lib/marketing, components/marketing |
+| Module | What it owns | Was in | Status |
+|---|---|---|---|
+| auth | Login, sign-out, redirects, protected routes | lib/auth, app/auth, app/login | Moved |
+| organizations | Companies, per-company settings, onboarding (M15) | migrations 39-40 TS code | To do |
+| tasks | Tasks, participants, shares, details, Task Tools | lib/tasks, lib/task-tools, components/tasks | To do |
+| checklists | Nested checklist pages, item time, progress | lib/checklists, components/checklists | To do |
+| time-tracking | Work logs and timers | lib/logs, lib/timers, components/logs | To do |
+| attendance | Attendance and holidays | lib/attendance | Moved |
+| support | Knowledge, sales logs, dated records | lib/support, components/support | Moved |
+| milestones | Milestones, statements, goals | lib/milestones, components/milestones | Moved |
+| team | Employees and profiles | lib/team, components/team | To do |
+| scoring | Ten-factor performance engine, analytics, stars/awards | lib/performance, lib/analytics, lib/stars | To do |
+| reports | Live reports, exports, month close | lib/presentation, lib/month, components/reports | To do |
+| drive | Google Drive integration (deferred by user) | lib/integrations/drive | Moved |
+| workspace-views | Dashboard, Today, Timelines, nav counts | lib/today, lib/timelines, components/dashboard | To do |
+| marketing | Public landing page | lib/marketing, components/marketing | Moved |
 
 ## Git workflow
 
