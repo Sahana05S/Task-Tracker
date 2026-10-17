@@ -1,5 +1,14 @@
 # Task Tracker project instructions
 
+## M15 multi-company direction - 17 October 2026
+
+The user wants to sell TaskPulse to other companies. They approved one shared
+database with enforced company separation, the same rules with per-company
+settings, platform-owner onboarding, and Saahithyaa as company #1. See
+`docs/plans/M15-multi-company.md` and DECISIONS. This is a plan only: no M15
+phase is authorized until the user gives the go-ahead. Production work now
+goes through M15.6.
+
 ## M14 nested checklist pages — 16 October 2026
 
 The user asked for every feature of their Google Sheets tracker. They approved

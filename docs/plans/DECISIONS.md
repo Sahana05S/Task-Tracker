@@ -685,3 +685,24 @@ sales BN/BO/BP screenshots and the Drive provisioning steps.
   detail commands, stay manager-only (migration 38).
 - The full Drive integration remains deferred until the user completes the
   guide's Part 2 and asks to resume it.
+
+## Multi-company TaskPulse approved by user - 17 October 2026
+
+The user said selling TaskPulse to other companies is a real goal, and chose
+the recommended answer to each of four questions:
+
+1. **Separation:** one shared database. Every company-owned row carries its
+   company, and PostgreSQL enforces separation.
+2. **Rules:** the same engine and formulas for every company; per-company
+   settings may vary.
+3. **Onboarding:** the platform owner creates each company and its first
+   director. Self-serve sign-up and billing come later.
+4. **Existing data:** Saahithyaa becomes company #1 and its data is migrated
+   in.
+
+`docs/plans/M15-multi-company.md` holds the phased plan (M15.1-M15.6) and the
+open questions (timezones, one person in several companies, per-company
+wording). Production launch now happens through M15.6. Drive moves to a
+per-company "Connect Google Drive" (OAuth, `drive.file`) in M15.5, replacing
+the single-company service-account setup. Implementation has not started and
+awaits the user's go-ahead.

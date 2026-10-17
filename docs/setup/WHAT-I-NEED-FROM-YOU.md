@@ -8,6 +8,10 @@ chat.** Nothing here asks you to.
   everyone's score.
 - **Part 2: Google Drive automation** (about 1 hour, plus admin access). This
   lets TaskPulse create and file the work files itself.
+  **Hold off on Part 2 for now.** You plan to sell TaskPulse to other
+  companies, so Drive will instead get a simple "Connect Google Drive" button
+  that each company's admin clicks (plan M15.5). Part 2 stays here in case
+  you ever want the single-company setup.
 
 You can do them in either order, and Part 2 can wait. The quick "Create work
 file" panel on each mission already works without it.
