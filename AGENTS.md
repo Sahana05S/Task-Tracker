@@ -5,9 +5,15 @@
 The user wants to sell TaskPulse to other companies. They approved one shared
 database with enforced company separation, the same rules with per-company
 settings, platform-owner onboarding, and Saahithyaa as company #1. See
-`docs/plans/M15-multi-company.md` and DECISIONS. This is a plan only: no M15
-phase is authorized until the user gives the go-ahead. Production work now
-goes through M15.6.
+`docs/plans/M15-multi-company.md` and DECISIONS. Production work now goes
+through M15.6.
+
+On 17 October 2026 the user authorized M15.1 (tenancy foundation) and said
+early customers will be in India, so Asia/Kolkata stays fixed for launch.
+Forward migration 39 is applied only to disposable databases and the M13 test
+project; see `docs/plans/M15-evidence.md`. Later M15 phases (M15.2 onward) need
+the user's go-ahead. Until M15.2 lands, SECURITY DEFINER commands still read
+across companies, so no second real company may be onboarded.
 
 ## M14 nested checklist pages — 16 October 2026
 

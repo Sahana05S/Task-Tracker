@@ -1199,7 +1199,7 @@ touched.
   - overflow is 0 on Mission details at 390, 768 and 1365 px for the director
     and member A.
 
-## M15.1 tenancy foundation - 17 October 2026 (browser regression pending)
+## M15.1 tenancy foundation - 17 October 2026
 
 - **Forward migration `39_organizations_tenancy_foundation.sql`:**
   - adds `organizations` and company #1 (Saahithyaa, the default);
@@ -1225,8 +1225,14 @@ touched.
   - unit tests (507), typecheck passed;
   - migration 39 applied to the M13 test project after a dry run listing only
     39: 1 company, 30 tables, no rows without a company.
-- **Not yet done:**
-  - the full 12-phase browser regression on the test project after 39;
-  - the production build;
-  - an M15 evidence file.
-  - Commands still *read* across companies until M15.2.
+- **Browser regression after 39** (hosted test project, harness server):
+  - 11 of 12 phases passed in the combined run (65 PASS).
+  - `parity` failed once because Supabase dropped the live-presentation
+    request (`ECONNRESET`). It passed when rerun alone: 17 tasks matched
+    across tracker, timeline and the 390 px own profile.
+- **Production build** passed.
+- **Evidence:** `docs/plans/M15-evidence.md`.
+- **Remaining risk:** SECURITY DEFINER commands still *read* across companies,
+  and private tables have no company yet. That is M15.2, and it must land
+  before a second real company is onboarded. Open sign-up still joins the
+  default company until M15.4.
