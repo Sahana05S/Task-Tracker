@@ -4,13 +4,13 @@ import {
   isShowcaseStatementKey,
   parseCoreValues,
   SHOWCASE_STATEMENT_KEYS,
-} from '@/lib/milestones/statements';
+} from '@/modules/milestones/internal/statements';
 import {
   milestoneCompletion,
   openMilestoneCount,
   sortMilestones,
   summariseMilestones,
-} from '@/lib/milestones/goals';
+} from '@/modules/milestones/internal/goals';
 import type { CompanyMilestone, CompanyStatement } from '@/types/tracker';
 
 

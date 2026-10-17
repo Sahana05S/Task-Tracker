@@ -4,9 +4,9 @@ import * as React from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { deleteMilestone } from '@/app/milestones/actions';
-import { MilestoneChecklist } from '@/components/milestones/milestone-checklist';
-import { MilestoneDialog } from '@/components/milestones/milestone-dialog';
+import { deleteMilestone } from '@/modules/milestones/actions';
+import { MilestoneChecklist } from '@/modules/milestones/components/milestone-checklist';
+import { MilestoneDialog } from '@/modules/milestones/components/milestone-dialog';
 import { Button } from '@/shared/ui/button';
 import { FormError } from '@/shared/ui/form-field';
 import {
@@ -17,7 +17,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/shared/ui/sheet';
-import { sortMilestones } from '@/lib/milestones/goals';
+import { sortMilestones } from '@/modules/milestones/client';
 import type { CompanyMilestone, User } from '@/types/tracker';
 
 export interface MilestoneBoardProps {
@@ -55,7 +55,7 @@ export function MilestoneBoard({
   );
 
   // Resolving an owner from a map keeps the query flat — see the note in
-  // lib/milestones/queries.ts about not embedding the user row per milestone.
+  // modules/milestones/internal/queries.ts about not embedding the user row per milestone.
   const ownerNames = React.useMemo(
     () => new Map(members.map((member) => [member.id, member.fullName])),
     [members],

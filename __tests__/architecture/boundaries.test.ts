@@ -27,7 +27,6 @@ const LEGACY_DIRECT_DB = new Set([
   'app/(workspace)/tasks/[taskTag]/timer-actions.ts',
   'app/api/internal/awards/route.ts',
   'app/logs/actions.ts',
-  'app/milestones/actions.ts',
   'app/records/actions.ts',
   'app/settings/actions.ts',
   'app/tasks/actions.ts',

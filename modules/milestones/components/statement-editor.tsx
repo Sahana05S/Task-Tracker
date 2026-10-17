@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import {
   updateStatement,
   type StatementActionState,
-} from '@/app/milestones/actions';
+} from '@/modules/milestones/actions';
 import { Button } from '@/shared/ui/button';
 import { Field, FormError } from '@/shared/ui/form-field';
 import { Input } from '@/shared/ui/input';
@@ -20,7 +20,7 @@ import {
   SheetTitle,
 } from '@/shared/ui/sheet';
 import { Textarea } from '@/shared/ui/textarea';
-import { CORE_VALUES_KEY } from '@/lib/milestones/statements';
+import { CORE_VALUES_KEY } from '@/modules/milestones/client';
 import type { CompanyStatement } from '@/types/tracker';
 
 export interface StatementEditorProps {

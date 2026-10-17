@@ -1,13 +1,13 @@
 import * as React from 'react';
 
-import { StatementEditor } from '@/components/milestones/statement-editor';
+import { StatementEditor } from '@/modules/milestones/components/statement-editor';
 import {
   CORE_VALUES_KEY,
   findStatement,
   MISSION_KEY,
   parseCoreValues,
   VISION_KEY,
-} from '@/lib/milestones/statements';
+} from '@/modules/milestones/client';
 import type { CompanyStatement } from '@/types/tracker';
 
 export interface OrganizationShowcaseProps {
