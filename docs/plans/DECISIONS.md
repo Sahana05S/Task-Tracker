@@ -615,3 +615,31 @@ needed. Their answers to the follow-up questions:
 5. **Rest of the sheet: audit, then fix gaps.** After the checklist pages, each
    sheet feature is compared with the app and the gaps are listed for the user
    to prioritize.
+
+## Missions headline strip approved by user - 16 October 2026
+
+The sheet tracker's Tasks header shows team leaders and three coloured team
+figures. The user approved the recommended answers to three questions:
+
+1. **Colours.** Red/amber/green bands from the sheet's cut-offs:
+   - allocation spread: green up to 5%, amber above 5% up to 7%, red above
+     7% (lower is better);
+   - team average productivity: red below 4, amber 4 to below 7, green 7 and
+     up;
+   - team average progress: red below 50%, amber 50% to below 75%, green 75%
+     and up.
+2. **Leaders reuse the dashboard's shared-engine figures.** "Critical team
+   member" is the highest criticality score, "Most productive" the highest
+   productivity, and "Most loaded" the largest loading difference above the
+   team median. Missing values show "Unavailable", and a tie names nobody.
+   Allocation spread is the dashboard's spread.
+3. **Averages run over the month's tracked tasks.** These are tasks carried in
+   the period that are not archived or Discarded. Team average progress is
+   their mean progress %. Team average productivity is their mean task
+   productivity over tasks with logged hours.
+
+Implementation choice, consistent with the dashboard's per-member presentation
+scope (15 October entry): leader names and values show only with the manager
+team-detail scope. Members see the aggregate team figures and a note that
+leaders are visible to managers. No calculation, permission or scoring rule
+changed; the strip only presents existing figures.
