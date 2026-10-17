@@ -5,7 +5,7 @@ from pathlib import Path
 source=Path(__file__).with_name('test_m10_database.py').read_text(encoding='utf-8')
 exec(compile(source.split('\nfor db in DBS:')[0],str(Path(__file__).with_name('test_m10_database.py')),'exec'))
 DBS=('taskpulse_m10_approved_fresh_test','taskpulse_m10_approved_upgrade_test')
-approved=json.loads((ROOT/'lib/integrations/drive/approved-sandbox.json').read_text(encoding='utf-8'))
+approved=json.loads((ROOT/'modules/drive/internal/approved-sandbox.json').read_text(encoding='utf-8'))
 policy={**approved,'accountScope':'synthetic-only','organizationEmail':'synthetic@example.test','sharedDriveId':'synthetic_shared_drive','reviewerEmails':{'00000000-0000-0000-0000-000000000006':'reviewer@example.test'}}
 for db in DBS:
     assert db in ('taskpulse_m10_approved_fresh_test','taskpulse_m10_approved_upgrade_test')

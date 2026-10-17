@@ -1,7 +1,7 @@
 import { describe,it,expect,vi } from 'vitest';
-import { runDriveJobs } from '@/lib/integrations/drive/jobs';
-import { DRIVE_MIME,DriveFailure,type DriveJob,type DrivePolicy,type RemoteFile,type StepState } from '@/lib/integrations/drive/contract';
-import type { DriveProvider } from '@/lib/integrations/drive/provider';
+import { runDriveJobs } from '@/modules/drive/internal/jobs';
+import { DRIVE_MIME,DriveFailure,type DriveJob,type DrivePolicy,type RemoteFile,type StepState } from '@/modules/drive/internal/contract';
+import type { DriveProvider } from '@/modules/drive/internal/provider';
 const p:DrivePolicy={id:'fixture',sandbox:true,accountScope:'fixture',auth:'organization_oauth',scope:'drive.file',organizationEmail:'worker@example.test',rootId:'fixture_root',sharedDriveId:null,employeeName:'[Employee ID]',taskName:'[Task Tag]',roleFolders:{input:['Input'],process:['Process'],output:['Output']},templates:{},initializeTemplates:[],blankKinds:['document'],autoInitialize:false,checklistAuthority:'native',reviewerSharing:'none',reviewerEmails:{}};
 function setup(){
  const job={id:'job',leaseToken:'lease',taskId:'task',policy:p,command:'blank',request:{},steps:[{key:'task:task/file',owner:'task',kind:'create',name:'Report',mimeType:DRIVE_MIME.document,parent:p.rootId}]} as DriveJob;

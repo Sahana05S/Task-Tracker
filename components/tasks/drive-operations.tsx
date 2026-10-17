@@ -1,10 +1,10 @@
 'use client';
 import { useRef,useState,useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { requestDriveOperation } from '@/app/tasks/drive-actions';
-import { FAILURE_HELP,type FailureCode } from '@/lib/integrations/drive/contract';
+import { requestDriveOperation } from '@/modules/drive/actions';
+import { FAILURE_HELP,type FailureCode } from '@/modules/drive/client';
 import type { Task } from '@/types/tracker';
-import { DRIVE_INTEGRATION_DEFERRED,DRIVE_UNAVAILABLE_MESSAGE } from '@/lib/integrations/drive/availability';
+import { DRIVE_INTEGRATION_DEFERRED,DRIVE_UNAVAILABLE_MESSAGE } from '@/modules/drive/client';
 
 export interface DriveReadModel {
  configured:boolean;configuration?:{blankKinds:string[];templates:{key:string;label:string}[]};

@@ -2,10 +2,10 @@ import { afterEach,describe,it,expect,vi } from 'vitest';
 vi.mock('server-only',()=>({}));
 // Preserve authorization coverage for a future explicit resume. Current deferral
 // is tested with the real gate in deferred.test.ts; this does not enable workers.
-vi.mock('@/lib/integrations/drive/availability',()=>({DRIVE_INTEGRATION_DEFERRED:false,DRIVE_UNAVAILABLE_MESSAGE:'Fixture only'}));
-import { googleToken } from '@/lib/integrations/drive/auth';
+vi.mock('@/modules/drive/internal/availability',()=>({DRIVE_INTEGRATION_DEFERRED:false,DRIVE_UNAVAILABLE_MESSAGE:'Fixture only'}));
+import { googleToken } from '@/modules/drive/internal/auth';
 import { POST,GET } from '@/app/api/internal/drive/route';
-import type { DrivePolicy } from '@/lib/integrations/drive/contract';
+import type { DrivePolicy } from '@/modules/drive/internal/contract';
 const policy={auth:'organization_oauth',organizationEmail:'worker@example.test',scope:'drive.file'} as DrivePolicy;
 afterEach(()=>vi.unstubAllEnvs());
 describe('M10 server credential boundary',()=>{

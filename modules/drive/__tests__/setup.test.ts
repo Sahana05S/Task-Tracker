@@ -1,8 +1,8 @@
 import { describe,it,expect,vi } from 'vitest';
 vi.mock('server-only',()=>({}));
-import { verifyApprovedSandboxAccess } from '@/lib/integrations/drive/setup';
-import { DRIVE_MIME,type RemoteFile } from '@/lib/integrations/drive/contract';
-import type { DriveProvider } from '@/lib/integrations/drive/provider';
+import { verifyApprovedSandboxAccess } from '@/modules/drive/internal/setup';
+import { DRIVE_MIME,type RemoteFile } from '@/modules/drive/internal/contract';
+import type { DriveProvider } from '@/modules/drive/internal/provider';
 const rootId='13G0w_T5i6cKUMiREETYlpH9Z_3G-RyGH',email='synthetic@example.test';
 const env={TASKPULSE_DRIVE_SERVICE_ACCOUNT_EMAIL:email,TASKPULSE_DRIVE_SERVICE_ACCOUNT_JSON:JSON.stringify({client_email:email,project_id:'synthetic-project'})};
 function provider(changes:Partial<RemoteFile>={}){
