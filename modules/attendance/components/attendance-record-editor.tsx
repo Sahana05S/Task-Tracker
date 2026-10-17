@@ -1,8 +1,8 @@
 import { writeDatedRecord } from '@/app/records/actions';
 import { ExecutionForm } from '@/components/tasks/execution-form';
 import { Button } from '@/shared/ui/button';
-import { canManageAttendance } from '@/lib/attendance/permissions';
-import { kolkataDate } from '@/lib/tasks/contract';
+import { canManageAttendance } from '@/modules/attendance/client';
+import { kolkataDate } from '@/shared/time/kolkata';
 import { ATTENDANCE_STATUSES } from '@/shared/tracker/enums';
 import type { AttendanceRecord, User } from '@/types/tracker';
 export function AttendanceRecordEditor({record,members,user}:{record?:AttendanceRecord;members:readonly User[];user:User}) {

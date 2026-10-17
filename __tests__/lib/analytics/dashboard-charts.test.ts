@@ -6,7 +6,7 @@ import {
   type MemberPerformance,
   type TeamAnalytics,
 } from '@/lib/analytics/engine';
-import { EMPTY_ATTENDANCE_SUMMARY } from '@/lib/attendance/summary';
+import { EMPTY_ATTENDANCE_SUMMARY } from '@/modules/attendance/client';
 import type { Task, User } from '@/types/tracker';
 
 const SEP_2026 = resolvePeriod(2026, 9);

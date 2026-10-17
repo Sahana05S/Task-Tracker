@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { resolvePeriod, type MemberPerformance } from '@/lib/analytics/engine';
-import { EMPTY_ATTENDANCE_SUMMARY } from '@/lib/attendance/summary';
+import { EMPTY_ATTENDANCE_SUMMARY } from '@/modules/attendance/client';
 import { buildEmployeeAnalyticsCharts } from '@/lib/team/employee-charts';
 import type { DailyTaskLog, Task, TaskLink } from '@/types/tracker';
 

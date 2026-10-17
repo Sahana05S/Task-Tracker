@@ -6,7 +6,7 @@ import { roundToNumericScale } from '@/lib/logs/metrics';
 import {
   summarizeAttendance,
   type AttendanceSummary,
-} from '@/lib/attendance/summary';
+} from '@/modules/attendance/client';
 import { PRIORITY_WEIGHTS } from '@/lib/tasks/contract';
 import type {
   AttendanceRecord,

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canEditAttendanceRecord,
   canManageAttendance,
-} from '@/lib/attendance/permissions';
+} from '@/modules/attendance/client';
 
 describe('attendance permissions', () => {
   it('allows only task manager roles to manage team attendance', () => {

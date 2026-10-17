@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { AwardSummary } from '@/components/dashboard/award-summary';
 import { CalculationDetails } from '@/components/dashboard/calculation-details';
 import { DataStatusBanner } from '@/components/dashboard/data-status-banner';
-import { canManageAttendance } from '@/lib/attendance/permissions';
+import { canManageAttendance } from '@/modules/attendance';
 import { calculationReasons, dataGaps } from '@/lib/presentation/plain-language';
 
 import { AllocationChart } from '@/components/dashboard/allocation-chart';

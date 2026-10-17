@@ -16,8 +16,8 @@ import { getTeamAnalytics } from '@/lib/analytics/queries';
 import {
   ATTENDANCE_COLUMNS,
   mapAttendanceRecords,
-} from '@/lib/attendance/mappers';
-import { summarizeAttendance, type AttendanceSummary } from '@/lib/attendance/summary';
+} from '@/modules/attendance/client';
+import { summarizeAttendance, type AttendanceSummary } from '@/modules/attendance/client';
 import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
 import { sumHours } from '@/lib/logs/metrics';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';

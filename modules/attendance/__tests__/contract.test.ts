@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareRecordedHours, localCheckTime, dailyAttendanceValidity } from '@/lib/attendance/contract';
+import { compareRecordedHours, localCheckTime, dailyAttendanceValidity } from '@/modules/attendance/client';
 describe('M06 measured attendance inputs',()=>{
   it('compares 8h and 8.01h independently of the unresolved window policy',()=>{
     expect(compareRecordedHours('8','8').valid).toBe(true);
