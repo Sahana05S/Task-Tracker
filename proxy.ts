@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { isProtectedPath } from '@/lib/auth/protected-routes';
+import { isProtectedPath } from '@/modules/auth';
 import { updateSession } from '@/shared/supabase/middleware';
 
 /**

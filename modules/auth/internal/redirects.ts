@@ -1,7 +1,7 @@
 /**
  * Post-authentication redirect validation.
  *
- * Lives in its own module because `app/auth/actions.ts` is marked
+ * Lives in its own file because `modules/auth/actions.ts` is marked
  * `'use server'`, and every export from such a file must be an async Server
  * Action. A synchronous helper cannot be exported from there, and both the
  * login action and the login page need this exact check — duplicating it is how

@@ -8,13 +8,12 @@ import {
   MailCheckIcon,
 } from 'lucide-react';
 
-import { login, signup, type AuthActionState } from '@/app/auth/actions';
+import { login, signup } from '../actions';
+import type { AuthActionState, AuthMode } from '../client';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { createClient } from '@/shared/supabase/client';
 import { cn } from '@/shared/utils';
-
-type AuthMode = 'login' | 'signup';
 
 const INITIAL_STATE: AuthActionState | null = null;
 

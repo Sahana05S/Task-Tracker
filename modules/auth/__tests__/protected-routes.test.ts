@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { isProtectedPath, PROTECTED_PREFIXES } from '@/lib/auth/protected-routes';
+import { isProtectedPath, PROTECTED_PREFIXES } from '../internal/protected-routes';
 
 describe('protected workspace routes', () => {
   it('guards every workspace route at the edge', () => {
