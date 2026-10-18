@@ -8,7 +8,7 @@ import { revalidatePath } from 'next/cache';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 import { createTask, updateTask, updateTaskStatus } from '@/modules/tasks/actions';
-import { createTaskLog, type LogActionState } from '@/app/logs/actions';
+import { createTaskLog, type LogActionState } from '@/modules/time-tracking/actions';
 
 import { freezeMonthlySnapshot } from '@/app/dashboard/actions';
 import { getTeamAnalytics } from '@/lib/analytics/queries';

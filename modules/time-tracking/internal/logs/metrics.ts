@@ -1,4 +1,4 @@
-import { eligibilityReasons } from '@/modules/tasks/client';
+import { eligibilityReasons, EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/client';
 import type { Task } from '@/types/tracker';
 import type { DailyTaskLog, TaskCategory } from '@/types/tracker';
 
@@ -131,14 +131,6 @@ export function sumProgressDelta(
 /* Per-task aggregates                                                        */
 /* -------------------------------------------------------------------------- */
 
-export interface TaskEffort {
-  /** Sum of `hours_worked` across every log on the task. */
-  hoursLogged: number;
-  /** Number of log entries. */
-  logCount: number;
-}
-
-export const EMPTY_EFFORT: TaskEffort = { hoursLogged: 0, logCount: 0 };
 
 /**
  * Aggregates logs into per-task effort totals.

@@ -8,14 +8,14 @@ import { BrandMark } from '@/components/layout/brand-mark';
 import { MORE_ITEMS, NAV_SECTIONS, activeSection, isMoreActive } from '@/components/layout/nav-items';
 import { TimerPill } from '@/components/layout/timer-pill';
 import { UserMenu } from '@/components/layout/user-menu';
-import { QuickLogTrigger } from '@/components/logs/quick-log-trigger';
+import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import type { RunningTimer } from '@/lib/layout/running-timers';
+import type { RunningTimer } from '@/modules/time-tracking/client';
 import { cn } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 

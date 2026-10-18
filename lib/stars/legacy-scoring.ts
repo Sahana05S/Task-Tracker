@@ -1,6 +1,6 @@
 /** Historical comparison only. No live consumer uses this retired formula. */
 export const LEGACY_DAILY_STAR_RULE_VERSION='legacy-five-factor-before-m07';
-import { roundToNumericScale } from '@/lib/logs/metrics';
+import { roundToNumericScale } from '@/modules/time-tracking/client';
 
 export interface DailyStarCandidateInput {
   readonly userId: string;

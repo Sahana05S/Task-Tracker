@@ -9,12 +9,9 @@ import {
   enterManualTaskTime,
   startTaskTimer,
   stopTaskTimer,
-} from './timer-actions';
+} from '@/modules/time-tracking/timer-actions';
 
-/**
- * Timer, timer records and manual time entry for one mission. These move into
- * the time-tracking module together with ./timer-actions.
- */
+/** Timer, timer records and manual time entry for one mission. */
 
 /** Shared form-control look for the native forms on this page. */
 const FIELD = 'border-input bg-background rounded-xl border px-3 text-sm';

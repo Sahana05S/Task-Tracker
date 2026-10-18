@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createTimerLogDraft } from '@/lib/timers/logging';
+import { createTimerLogDraft } from '@/modules/time-tracking/internal/timers/logging';
 
 describe('createTimerLogDraft', () => {
   it('creates a daily log draft from stopped timer timestamps', () => {

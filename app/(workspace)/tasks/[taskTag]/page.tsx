@@ -12,7 +12,7 @@ import {
   TimerIcon,
 } from 'lucide-react';
 
-import { QuickLogTrigger } from '@/components/logs/quick-log-trigger';
+import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
 import { MissionPanel } from '@/components/missions/mission-ui';
 import {
   CategoryBadge,
@@ -21,7 +21,7 @@ import {
   StatusBadge,
 } from '@/components/tracker/tracker-badges';
 import { getTaskEffortBreakdown } from '@/modules/checklists';
-import { canStartTimerForTask } from '@/lib/timers/permissions';
+import { canStartTimerForTask, getTaskExecution } from '@/modules/time-tracking';
 import {
   canManageTasks,
   canUpdateTaskOwnFields,
@@ -44,7 +44,7 @@ import { TaskReviewForm } from '@/modules/tasks/components/task-review-form';
 import { requireProfile } from '@/shared/session/profile';
 import { formatHours, isOverdue } from '@/shared/tracker/format';
 
-import { ManualTimeForm, TimerControl, TimerRecords } from './timer-panels';
+import { ManualTimeForm, TimerControl, TimerRecords } from '@/modules/time-tracking/components/timer-panels';
 
 interface TaskDetailPageProps {
   params: Promise<{
@@ -86,7 +86,8 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
   const archived = !!task.archivedEffectiveDate;
   const successor = data.dependencies.find((d) => d.otherTask?.id === task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role) && !archived;
-  const [native, templates, workspace, reports, effortBreakdown] = await Promise.all([
+  const [execution, native, templates, workspace, reports, effortBreakdown] = await Promise.all([
+    getTaskExecution(task.id),
     getNativeDetailState(task.id),
     getNativeTemplates(),
     canManage ? getTaskWorkspaceData() : Promise.resolve({ tasks: [], members: [] }),
@@ -95,10 +96,10 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
   ]);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
-    ? data.timers
-    : data.timers.filter((timer) => timer.userId === currentUser.id);
+    ? execution.timers
+    : execution.timers.filter((timer) => timer.userId === currentUser.id);
   const activeCurrentTimer =
-    data.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running') ?? null;
+    execution.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running') ?? null;
 
   const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
   const assigneeNames = task.assigneeIds.map((id) => memberNames.get(id) ?? 'Unknown');
@@ -218,7 +219,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
             title="Activity & updates"
             subtitle={`${data.effort.logCount} log ${data.effort.logCount === 1 ? 'entry' : 'entries'} · ${formatHours(data.effort.hoursLogged)} h`}
           >
-            <TaskLogTimeline logs={data.logs} memberNames={memberNames} />
+            <TaskLogTimeline logs={execution.logs} memberNames={memberNames} />
           </MissionPanel>
         </main>
 

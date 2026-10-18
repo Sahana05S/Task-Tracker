@@ -23,8 +23,9 @@ operations that are previewed first and committed atomically).
 | `commands.ts` | Task writes: save with participants, lifecycle command, delete, tag lookup |
 | `details-commands.ts` | Native-details and template RPCs |
 | `cache.ts` | Which pages to revalidate after each kind of change |
-| `queries.ts` | `/tasks` workspace data (tasks, members, effort) |
-| `detail.ts` | Mission details page data (also reads logs, timers and checklist rollups) |
+| `queries.ts` | `/tasks` workspace data (tasks and members) |
+| `effort.ts` | `TaskEffort` totals type and `EMPTY_EFFORT` |
+| `detail.ts` | Mission details page data (task, people, sections, links, dependencies, checklist rollup, effort totals) |
 | `native-details.ts` | Templates, detail instances, review flags, report choices |
 | `reconciliation.ts` | Legacy participant reconciliation preview |
 | `contract.ts` | Task rules: weights, freshness, eligibility, scale |
@@ -52,10 +53,9 @@ All of these are company-scoped by migrations 39-40 (M15).
 
 ## Depends on
 `shared/*`, the public API of `checklists` (rollups and checklist types), and
-these areas that are not modules yet: `lib/logs`, `lib/timers`,
-`lib/analytics/headline` (mission headline), `components/logs` (quick log),
-`components/missions`, `components/tracker`.
+these areas that are not modules yet: `lib/analytics/headline` (mission
+headline), `components/missions`, `components/tracker`.
 
-When time-tracking becomes a module, `detail.ts` and the logs quick-log trigger
-would make an import cycle (logs also read task mappers). Move the
-mission-details composition to `workspace-views` at that point.
+Tasks does not import time-tracking (time-tracking depends on tasks). The task
+cards take a `LogHoursAction` slot that the `/tasks` page fills, and the mission
+page loads logs and timers from time-tracking itself.

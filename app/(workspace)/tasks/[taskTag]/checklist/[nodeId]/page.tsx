@@ -36,10 +36,10 @@ import { getChecklistItemTime } from '@/modules/checklists';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
-import { canStartTimerForTask } from '@/lib/timers/permissions';
+import { canStartTimerForTask } from '@/modules/time-tracking/client';
 import { cn } from '@/shared/utils';
 
-import { discardTaskTimer, startItemTimer, stopTaskTimer } from '../../timer-actions';
+import { discardTaskTimer, startItemTimer, stopTaskTimer } from '@/modules/time-tracking/timer-actions';
 import { checklistCommand } from '@/modules/checklists/actions';
 
 type Params = Promise<{ taskTag: string; nodeId: string }>;

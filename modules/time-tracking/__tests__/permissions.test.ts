@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canManageTimerRecord,
   canStartTimerForTask,
-} from '@/lib/timers/permissions';
+} from '@/modules/time-tracking/internal/timers/permissions';
 
 const task = {
   assigneeId: 'primary-user',

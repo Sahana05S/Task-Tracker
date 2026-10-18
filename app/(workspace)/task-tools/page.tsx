@@ -25,7 +25,7 @@ import {
   enterManualTaskTime,
   startTaskTimer,
   stopTaskTimer,
-} from '@/app/(workspace)/tasks/[taskTag]/timer-actions';
+} from '@/modules/time-tracking/timer-actions';
 import {
   ClipboardEditIcon,
   FileBarChartIcon,
@@ -46,7 +46,7 @@ import { MissionPage, MissionPageHeader, MissionPanel } from '@/components/missi
 import { Button } from '@/shared/ui/button';
 import { currentPeriod } from '@/lib/analytics/engine';
 import { requireProfile } from '@/shared/session/profile';
-import { getTeamRunningTimers, type TeamRunningTimer } from '@/lib/timers/queries';
+import { getTeamRunningTimers, type TeamRunningTimer } from '@/modules/time-tracking';
 import { getDriveReadModel } from '@/modules/drive';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { canManageTasks } from '@/modules/tasks/client';

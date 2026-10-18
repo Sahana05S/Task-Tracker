@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { deleteTaskLog } from '@/app/logs/actions';
-import { QuickLogDrawer } from '@/components/logs/quick-log-drawer';
+import { deleteTaskLog } from '@/modules/time-tracking/actions';
+import { QuickLogDrawer } from '@/modules/time-tracking/components/quick-log-drawer';
 import { CategoryBadge } from '@/components/tracker/tracker-badges';
 import { Button } from '@/shared/ui/button';
 import {
@@ -21,7 +21,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/shared/ui/sheet';
-import { groupLogsByDate } from '@/lib/logs/metrics';
+import { groupLogsByDate } from '@/modules/time-tracking/internal/logs/metrics';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { DailyTaskLog, Task } from '@/types/tracker';

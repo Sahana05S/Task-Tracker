@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { PlusIcon } from 'lucide-react';
 
-import { QuickLogDrawer } from '@/components/logs/quick-log-drawer';
+import { QuickLogDrawer } from '@/modules/time-tracking/components/quick-log-drawer';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 

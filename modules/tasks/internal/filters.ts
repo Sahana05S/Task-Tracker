@@ -1,4 +1,4 @@
-import type { TaskEffort } from '@/lib/logs/metrics';
+import type { TaskEffort } from '@/modules/tasks/internal/effort';
 import {
   FRESHNESS_ORDER,
   PRIORITY_SORT_ORDER,

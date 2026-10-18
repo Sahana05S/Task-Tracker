@@ -7,7 +7,7 @@ import * as React from 'react';
 
 import { useNavDrawer } from '@/components/layout/nav-drawer-context';
 import { NAV_SECTIONS, activeSection } from '@/components/layout/nav-items';
-import { QuickLogDrawer } from '@/components/logs/quick-log-drawer';
+import { QuickLogDrawer } from '@/modules/time-tracking/components/quick-log-drawer';
 import { cn } from '@/shared/utils';
 
 /**

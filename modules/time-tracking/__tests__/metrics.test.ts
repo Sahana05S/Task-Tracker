@@ -10,7 +10,7 @@ import {
   roundToNumericScale,
   sumHours,
   sumProgressDelta,
-} from '@/lib/logs/metrics';
+} from '@/modules/time-tracking/internal/logs/metrics';
 import type { DailyTaskLog } from '@/types/tracker';
 
 /* -------------------------------------------------------------------------- */

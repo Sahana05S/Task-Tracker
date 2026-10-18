@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { TimerIcon } from 'lucide-react';
 
-import type { RunningTimer } from '@/lib/layout/running-timers';
+import type { RunningTimer } from '@/modules/time-tracking/client';
 import { cn } from '@/shared/utils';
 
 /**
