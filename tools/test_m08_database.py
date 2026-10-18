@@ -301,7 +301,7 @@ for db in DBS:
         assert not read_awards(db,day,end)['days'][0]['certified']
     # Approved-context actual sources are exported for independent TS expectations.
     actual=source(db,day[:8]+'01',end,uid='',role='service_role')
-    (ROOT/'docs/plans/fixtures'/('m08-approved-source-'+('fresh' if db==DBS[0] else 'upgrade')+'.json')).write_text(json.dumps(actual,indent=2)+'\n')
+    (ROOT/'__tests__/fixtures'/('m08-approved-source-'+('fresh' if db==DBS[0] else 'upgrade')+'.json')).write_text(json.dumps(actual,indent=2)+'\n')
     # Reaffirmation/closed protection under the upgraded command/read model.
     # Positive complete vectors remain explicit owner-only sales fixtures.
     sql(db,'UPDATE taskpulse_private.award_policy SET config='+literal(json.dumps(policy))+'::jsonb;')

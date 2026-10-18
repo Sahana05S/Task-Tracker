@@ -5,7 +5,7 @@
   "head": "7764489ac6bcc13f0062e67b401c7c9738f5848b",
   "businessChoicesApproved": true,
   "approvedPolicy": "lib/integrations/drive/approved-sandbox.json",
-  "pendingConfiguration": "docs/plans/fixtures/m10-approved-sandbox.pending.json",
+  "pendingConfiguration": "__tests__/fixtures/m10-approved-sandbox.pending.json",
   "rootVerified": false,
   "livePolicyInstalled": false,
   "workerEnabled": false,

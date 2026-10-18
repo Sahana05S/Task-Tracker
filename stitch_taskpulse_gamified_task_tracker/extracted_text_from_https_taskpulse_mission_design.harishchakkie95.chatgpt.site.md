@@ -1,1 +1,0 @@
-✦TaskPulseDESIGN LABS×

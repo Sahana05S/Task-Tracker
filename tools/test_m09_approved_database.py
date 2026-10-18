@@ -99,5 +99,5 @@ for db in DBS:
     actor(db,'','SELECT public.decay_task_freshness();',role='service_role')
     assert frozen==value(db,"(SELECT jsonb_agg(to_jsonb(s)) FROM public.monthly_performance_snapshots s)")
     evidence={'contract':'m09-approved-verification','policyId':'m09-approved-2026-10-13','carryTaskId':carry,'successorTaskId':successor,'beforePeriod':before_period,'afterPeriod':after_period,'beforeCurrent':before_current,'afterCurrent':after_current}
-    (ROOT/'docs/plans/fixtures'/('m09-approved-'+('fresh' if db==DBS[0] else 'upgrade')+'.json')).write_text(json.dumps(evidence,indent=2)+'\n',encoding='utf-8')
+    (ROOT/'__tests__/fixtures'/('m09-approved-'+('fresh' if db==DBS[0] else 'upgrade')+'.json')).write_text(json.dumps(evidence,indent=2)+'\n',encoding='utf-8')
     print('PASS',db,'approved all8; fractional proportional; retained credit; rollback; retries; races; copies/batches; carryover6/0 with old4; archived read-only; histories/frozen snapshots; freshness worker',flush=True)

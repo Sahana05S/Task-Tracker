@@ -267,6 +267,6 @@ for db in DBS:
     assert not p['ready'] and float(p['items'][0]['scale'])==6;commit(db,p,success=False)
     assert not preview(db,'archive',{'taskIds':[carry],'reason':'Redundant task'})['ready']
     evidence={'contract':'m09-independent-draft-verification','database':db,'businessPolicyApproved':False,'copyItems':p['items'],'preservedFrozenSnapshot':True,'checks':['fresh_or_upgrade','policy_guard','authorization','single_done_review_gates','single_reopen_reason','all8_draft_splits','rollback_all_writes','idempotency','stale_preview','concurrent_conflict','proportional_future_scale_retained_credit','cycle_denial','draft_batch_tags','draft_reset_structure_reviews','atomic_bulk_failure','carryover_archive_execution_guard']}
-    (ROOT/'docs/plans/fixtures'/('m09-independent-'+('fresh' if db==DBS[0] else 'upgrade')+'.json')).write_text(json.dumps(evidence,indent=2)+'\n')
+    (ROOT/'__tests__/fixtures'/('m09-independent-'+('fresh' if db==DBS[0] else 'upgrade')+'.json')).write_text(json.dumps(evidence,indent=2)+'\n')
     sql(db,'UPDATE taskpulse_private.tool_policy SET config=NULL;')
     print('PASS',db,'fresh/upgrade; policy denial; all8 draft splits; rollback; retry; races; versions; linked credit; cycles; draft batches; history preserved',flush=True)

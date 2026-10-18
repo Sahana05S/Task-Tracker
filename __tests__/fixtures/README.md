@@ -6,7 +6,7 @@ are committed. Expected values were not obtained from application functions.
 `m00-blocked.json` lists decision-dependent examples with **null expected**
 values. They are pending acceptance, never successful skips.
 
-Run `python docs/plans/tools/verify_fixtures.py` from the repository root.
+Run `python tools/fixtures/verify_fixtures.py` from the repository root.
 It checks fixed formula arithmetic, all ten coefficients/median deltas,
 freshness thresholds, and checklist weighting with Decimal. It imports no
 application code and tests no SQL. Passing means the draft fixture expectations

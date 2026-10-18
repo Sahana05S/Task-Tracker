@@ -4,7 +4,7 @@ import { parsePerformanceSources,resolvePerformance } from '@/modules/scoring/in
 import { selectDaily } from '@/modules/scoring/internal/stars/contract';
 describe.each(['fresh','upgrade'])('M08 approved PostgreSQL source safeguards (%s)',kind=>{
  it('keeps actual missing MTD attendance/sales unavailable and never certifies a daily winner',()=>{
-  const sources=parsePerformanceSources(JSON.parse(readFileSync(`docs/plans/fixtures/m08-approved-source-${kind}.json`,'utf8'))),calculation=resolvePerformance(sources);
+  const sources=parsePerformanceSources(JSON.parse(readFileSync(`__tests__/fixtures/m08-approved-source-${kind}.json`,'utf8'))),calculation=resolvePerformance(sources);
   expect(calculation.context.periodStart.endsWith('-01')).toBe(true);expect(calculation.context.windows.progress).toBe('period_earned');expect(calculation.members.length).toBe(7);
   const employee=calculation.members.find(m=>m.userId==='00000000-0000-0000-0000-000000000004')!;
   expect(employee.factors.sales.rawValue).toBeNull();expect(employee.factors.productivity.rawValue).toBeNull();expect(employee.factors.criticality.rawValue).toBe(0);expect(employee.factors.loading.rawValue).toBeNull();

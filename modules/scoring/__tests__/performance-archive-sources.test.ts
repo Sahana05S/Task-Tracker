@@ -11,7 +11,7 @@ describe('approved dated archive boundary',()=>{
   ['2026-10-01','2026-10-01','2026-10-13',false],
  ] as const)('respects period end and as-of date',(date,end,asof,expected)=>expect(archiveAffectsCarriedWindow(date,end,asof)).toBe(expected));
  it('retains captured period credit when prospective transfer leaves source scale zero',()=>{
-  const input=parsePerformanceSources(JSON.parse(readFileSync('docs/plans/fixtures/m07-source-fresh.json','utf8')));
+  const input=parsePerformanceSources(JSON.parse(readFileSync('__tests__/fixtures/m07-source-fresh.json','utf8')));
   const t=input.tasks.find(t=>t.id==='10000000-0000-0000-0000-000000000001')!;
   t.scale='0';
   const m=resolvePerformance(input).members.find(m=>m.userId===employee)!;
@@ -19,7 +19,7 @@ describe('approved dated archive boundary',()=>{
   expect(m.factors.criticality.rawValue).toBe(0);expect(m.factors.freshness.rawValue).toBe(0);
  });
  it('retains completion and period earnings after archiving Done work',()=>{
-  const input=parsePerformanceSources(JSON.parse(readFileSync('docs/plans/fixtures/m07-source-fresh.json','utf8')));
+  const input=parsePerformanceSources(JSON.parse(readFileSync('__tests__/fixtures/m07-source-fresh.json','utf8')));
   const t=input.tasks.find(t=>t.id==='10000000-0000-0000-0000-000000000001')!;
   t.status='Done';t.progress='100';t.completedDate=input.asOfLocalDate;t.completionShares={[employee]:1000000};
   t.archivedEffectiveDate=input.asOfLocalDate;
@@ -29,7 +29,7 @@ describe('approved dated archive boundary',()=>{
  });
 });
 describe.each(['fresh','upgrade'])('M09 approved PostgreSQL source fixture (%s)',kind=>{
- const fixture=()=>JSON.parse(readFileSync(`docs/plans/fixtures/m09-approved-${kind}.json`,'utf8'));
+ const fixture=()=>JSON.parse(readFileSync(`__tests__/fixtures/m09-approved-${kind}.json`,'utf8'));
  const relevant=(f:ReturnType<typeof fixture>,key:string)=>{
   const s=parsePerformanceSources(f[key]);
   s.tasks=s.tasks.filter(t=>[f.carryTaskId,f.successorTaskId].includes(t.id));

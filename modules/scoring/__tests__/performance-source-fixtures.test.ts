@@ -8,7 +8,7 @@ import type { User } from '@/types/tracker';
 const policy:PerformancePolicy={id:'independent-fixture-policy',taskPopulation:'eligible_carried_asof',progressWindow:'period_earned',completion:'done_in_period',nonadditiveAttribution:'normalized_shares',observedZeroInMedian:true,missingPolicy:'exclude_unavailable',precisionPolicy:'fixture-exact',displayPlaces:2};
 const employee='00000000-0000-0000-0000-000000000004',other='00000000-0000-0000-0000-000000000008';
 describe.each(['fresh','upgrade'])('M07 PostgreSQL source conformance (%s)',kind=>{
- const sources=()=>parsePerformanceSources(JSON.parse(readFileSync(`docs/plans/fixtures/m07-source-${kind}.json`,'utf8')));
+ const sources=()=>parsePerformanceSources(JSON.parse(readFileSync(`__tests__/fixtures/m07-source-${kind}.json`,'utf8')));
  it('preserves literal original-scale/share correction results and actual manual credit without extra effort',()=>{
   const input=sources(),result=resolvePerformance(input,policy),a=result.members.find(m=>m.userId===employee)!,b=result.members.find(m=>m.userId===other)!;
   expect(a.factors.progress.rawValue).toBe(3.6);expect(b.factors.progress.rawValue).toBe(1.2);

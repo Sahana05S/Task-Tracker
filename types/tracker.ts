@@ -639,7 +639,7 @@ export interface ReportSnapshot {
 
 /**
  * Standardized envelope returned by every Next.js Server Action.
- * Mandated by `steering/tech-stack.md`.
+ * Mandated by `reference/steering/tech-stack.md`.
  */
 export type ActionResponse<T> = {
   success: boolean;

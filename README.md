@@ -467,7 +467,8 @@ not installed, so nothing would run. `npm run typecheck` is the static check for
 
 ## QA checklist
 
-Final workbook-replacement QA is tracked in `docs/final-qa-checklist.md`. Run
+Final workbook-replacement QA is tracked in `docs/plans/final-qa-checklist.md`
+(a local planning file, not in the repository). Run
 `npm test`, `npm run typecheck`, and `npm run build` before deployment. The
 checklist also records the anonymous auth smoke test and the manual
 manager/member smoke checks that require real Supabase QA accounts.
@@ -535,7 +536,8 @@ policy change, not a UI change.
 labelled but has nothing behind it. There is no notifications table and no
 producer.
 
-**Steering files are not in `.kiro/steering/`.** They live in `steering/`, so Kiro
+**Steering files are not in `.kiro/steering/`.** They live in `reference/steering/`
+(local reference material, not in the repository), so Kiro
 does not auto-load them. Their UI sections are now **two redesigns behind**:
 `tech-stack.md` rule 2 and `responsive-ui-design.md` still describe the original
 "sheet-faithful" look (`border-slate-200` panels, sky-tinted in-progress badges,

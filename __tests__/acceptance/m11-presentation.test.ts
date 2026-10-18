@@ -9,7 +9,7 @@ import { buildEmployeeAnalyticsCharts } from '@/modules/team/client';
 import { LiveReport } from '@/modules/reports/components/live-report';
 import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
 import { TeamStatsGrid } from '@/modules/workspace-views/components/dashboard/team-stats-grid';
-const response=JSON.parse(readFileSync('docs/plans/fixtures/m11-fresh-context.json','utf-8'));
+const response=JSON.parse(readFileSync('__tests__/fixtures/m11-fresh-context.json','utf-8'));
 const view=viewContext(response.sources.periodStart.slice(0,7),response.sources.asOf,new Date(response.sources.asOf));
 const employee='00000000-0000-0000-0000-000000000004';
 const model=()=>buildPresentation(response,view,employee);

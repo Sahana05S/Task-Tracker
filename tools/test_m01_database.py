@@ -116,7 +116,7 @@ for db in DBS:
         artifact = {'source':'Disposable synthetic upgrade fixture, not deployed records',
                     'migration':'10_permissions_and_participant_contract.sql',
                     'rows':json.loads(next(line for line in dry_run if line.startswith('[')))}
-        (ROOT/'docs/plans/fixtures/m01-synthetic-reconciliation.json').write_text(json.dumps(artifact,indent=2)+'\n',encoding='utf-8')
+        (ROOT/'__tests__/fixtures/m01-synthetic-reconciliation.json').write_text(json.dumps(artifact,indent=2)+'\n',encoding='utf-8')
 
     for column, value in [('task_scale','90'),('priority',"'Focus'"),('assignee_id',U5),
                           ('task_productivity','99'),('valid_for_metrics','false'),('freshness',"'Rotten'"),

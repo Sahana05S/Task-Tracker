@@ -128,7 +128,7 @@ def compare(actual, expected):
 
 
 if __name__ == "__main__":
-    root = Path(__file__).resolve().parents[1] / "fixtures"
+    root = Path(__file__).resolve().parents[2] / "__tests__" / "fixtures"
     confirmed = json.loads((root / "m00-confirmed.json").read_text(encoding="utf-8"))
     blocked = json.loads((root / "m00-blocked.json").read_text(encoding="utf-8"))
     ids = set()

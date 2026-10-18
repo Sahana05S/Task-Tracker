@@ -1,7 +1,7 @@
 """Read-only XLSX structure/anchor inspection using Python's standard library.
 
 Does not evaluate formulas, open Excel, alter sources or print business rows.
-Usage: python docs/plans/tools/inspect_sources.py PATH [--sheet NAME --cells A1 B2]
+Usage: python tools/fixtures/inspect_sources.py PATH [--sheet NAME --cells A1 B2]
 """
 import argparse
 import hashlib

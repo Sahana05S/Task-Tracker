@@ -17,6 +17,11 @@ change). The refactor is complete on `refactor/base` (not yet merged into
 - New work: put it in the owning module (start from `modules/_template/`), on a
   short branch named after the module. `__tests__/architecture/boundaries.test.ts`
   must pass.
+- Planning docs (`docs/plans/`, including PLAN.md, IMPLEMENTATION.md, RULES,
+  DECISIONS, STATUS and module evidence) and reference material (`reference/`:
+  steering specs, Stitch designs, the original Apps Scripts) are kept locally and
+  gitignored (18 October 2026, user request). Read and update them locally; they
+  are not in the repository. Test fixtures live in `__tests__/fixtures/`.
 
 ## M15 multi-company direction - 17 October 2026
 
@@ -106,7 +111,7 @@ are approved in the subsequent 13 October reply. Forward23 activates them after2
 sales/history completeness and native verification retain safeguards. No production
 apply/deploy/scheduling, M09, Drive operations or M12 workflow.
 
-Read `PLAN.md`, `IMPLEMENTATION.md`, `docs/plans/RULES.md`, `docs/plans/DECISIONS.md`, `docs/plans/STATUS.md`, and the active module plan. Apply any narrower AGENTS.md instructions in directories you change. User instructions take precedence.
+Read `docs/plans/PLAN.md`, `docs/plans/IMPLEMENTATION.md`, `docs/plans/RULES.md`, `docs/plans/DECISIONS.md`, `docs/plans/STATUS.md`, and the active module plan. Apply any narrower AGENTS.md instructions in directories you change. User instructions take precedence.
 
 This is an existing Next.js/Supabase app. Improve it incrementally. Complete the module the user has selected; do not silently expand a single-module task into the entire roadmap.
 
