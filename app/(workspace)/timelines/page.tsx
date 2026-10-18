@@ -1,16 +1,18 @@
-import { TaskRelations } from '@/components/timelines/task-relations';
+import { TaskRelations } from '@/modules/workspace-views/components/timelines/task-relations';
 import Link from 'next/link';
-import { getLivePresentation } from '@/lib/presentation/queries';
-import { viewContext } from '@/lib/presentation/context';
-import { ReportContext } from '@/components/reports/view-context';
+import { getLivePresentation } from '@/modules/reports';
+import { liveViewContext } from '@/modules/reports';
+import { ReportContext } from '@/modules/reports/components/view-context';
 import type { Metadata } from 'next';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
-import { TaskGantt } from '@/components/timelines/task-gantt';
-import { currentPeriod } from '@/lib/analytics/engine';
-import { requireProfile } from '@/lib/auth/profile';
-import { getTaskWorkspaceData } from '@/lib/tasks/queries';
-import { buildTaskTimeline } from '@/lib/timelines/gantt';
+import { CalendarClockIcon, CalendarRangeIcon, FlagIcon, ListChecksIcon } from 'lucide-react';
+
+import { MissionPage, MissionPageHeader, StatTile } from '@/shared/ui/mission-ui';
+import { TaskGantt } from '@/modules/workspace-views/components/timelines/task-gantt';
+import { currentPeriod } from '@/shared/time/period';
+import { requireProfile } from '@/shared/session/profile';
+import { getTaskWorkspaceData } from '@/modules/tasks';
+import { buildTaskTimeline } from '@/modules/workspace-views/client';
 
 export const metadata: Metadata = {
   title: 'Timelines · TaskPulse',
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 export default async function TimelinesPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {
   await requireProfile();
 
-  const query=await searchParams;const context=viewContext(query.period,query.asOf);
+  const query=await searchParams;const context=await liveViewContext(query.period,query.asOf);
   const period=context.period;const presentation=await getLivePresentation(context);
   const {tasks,members}=presentation;
   const timeline = buildTaskTimeline({
@@ -34,37 +36,23 @@ export default async function TimelinesPage({searchParams}:{searchParams:Promise
   );
 
   return (
-    <>
-      <WorkspaceHeader
-        title="Task timelines"
-        description={`${timeline.groups.length} assignees · ${assignedTaskCount} assignment bars (shared tasks repeat by assignee) · ${timeline.totalDays} day range`}
+    <MissionPage wide>
+      <MissionPageHeader
+        eyebrow="Missions"
+        title="Mission timeline"
+        description={`${timeline.groups.length} assignees · ${assignedTaskCount} assignment bars (shared missions repeat by assignee) · ${timeline.totalDays} day range`}
       />
 
-      <div className="grid gap-4 px-4 py-4 lg:px-6">
-        <section className="soft-card grid gap-3 p-4 sm:grid-cols-3">
-          <Metric label="Timeline start" value={timeline.startDate} />
-          <Metric label="Timeline end" value={timeline.endDate} />
-          <Metric label="Visible task bars" value={String(assignedTaskCount)} />
-        </section>
+      <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+        <StatTile icon={CalendarClockIcon} label="Timeline start" value={timeline.startDate} />
+        <StatTile icon={FlagIcon} label="Timeline end" value={timeline.endDate} />
+        <StatTile icon={CalendarRangeIcon} label="Visible mission bars" value={String(assignedTaskCount)} />
+      </dl>
 
-        <ReportContext model={presentation}/>
-        <TaskGantt timeline={timeline} />
-        <section className="soft-card p-4"><h2 className="font-semibold">Undated tasks</h2>{timeline.undated.map(({task,reason})=><p key={task.id}><Link className="underline" href={'/tasks/'+encodeURIComponent(task.taskTag)}>{task.taskTag} · {task.title}</Link> — {reason}</p>)}</section>
-        <TaskRelations model={presentation}/>
-      </div>
-    </>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-slate-200 bg-white/70 p-3">
-      <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-        {label}
-      </dt>
-      <dd className="mt-1 text-sm font-medium text-slate-900 tabular">
-        {value}
-      </dd>
-    </div>
+      <ReportContext model={presentation}/>
+      <TaskGantt timeline={timeline} />
+      <section className="soft-card grid gap-2 p-5 text-sm sm:p-6"><h2 className="text-foreground mb-1 flex items-center gap-2 text-base font-bold tracking-tight"><ListChecksIcon className="text-primary size-5 shrink-0" aria-hidden="true"/>Undated tasks</h2>{timeline.undated.length===0?<p className="bg-muted/70 text-muted-foreground rounded-xl px-4 py-3">Every mission in this view has dates.</p>:null}{timeline.undated.map(({task,reason})=><p key={task.id} className="bg-muted/70 rounded-xl px-3.5 py-2.5"><Link className="link" href={'/tasks/'+encodeURIComponent(task.taskTag)}>{task.taskTag} · {task.title}</Link> <span className="text-muted-foreground">— {reason}</span></p>)}</section>
+      <TaskRelations model={presentation}/>
+    </MissionPage>
   );
 }

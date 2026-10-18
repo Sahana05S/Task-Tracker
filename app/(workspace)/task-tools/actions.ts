@@ -1,30 +1,15 @@
 'use server';
 
-import { loadChecklistRollups } from '@/lib/checklists/read-model';
+import { initializeTaskDetails,saveTaskDetails,addTaskAsset,renameNativeLink } from '@/modules/tasks/detail-actions';
 
-import { initializeTaskDetails,saveTaskDetails,addTaskAsset,renameNativeLink } from '@/app/tasks/detail-actions';
-import { randomUUID } from 'node:crypto';
+import { createTask, updateTask, updateTaskStatus } from '@/modules/tasks/actions';
+import { createTaskLog, type LogActionState } from '@/modules/time-tracking/actions';
 
-import { revalidatePath } from 'next/cache';
-import type { PostgrestError } from '@supabase/supabase-js';
-
-import { createTask, updateTask, updateTaskStatus } from '@/app/tasks/actions';
-import { createTaskLog, type LogActionState } from '@/app/logs/actions';
-
-import { freezeMonthlySnapshot } from '@/app/dashboard/actions';
-import { getTeamAnalytics } from '@/lib/analytics/queries';
-import { performanceReport } from '@/lib/performance/report';
-import { getCurrentProfile } from '@/lib/auth/profile';
-import { createClient } from '@/lib/supabase/server';
-import type { SupportSplitMode } from '@/lib/task-tools/support-split';
-import { canManageTasks } from '@/lib/tasks/permissions';
-import {
-  isTaskPriority,
-  isTaskStatus,
-  isTaskCategory,
-} from '@/lib/tracker/enums';
-import { type AnalyticsPeriod, currentPeriod } from '@/lib/analytics/engine';
-import type { ActionResponse, TaskLinkType, User } from '@/types/tracker';
+import { freezeMonthlySnapshot } from '@/modules/reports/month-actions';
+import { generateReportSnapshotAction } from '@/modules/reports/report-actions';
+import { isTaskStatus } from '@/shared/tracker/enums';
+import { readString, UUID_PATTERN } from '@/shared/forms/form-data';
+import type { ActionResponse } from '@/types/tracker';
 
 export type TaskToolsActionState = ActionResponse<{
   id?: string;
@@ -32,21 +17,6 @@ export type TaskToolsActionState = ActionResponse<{
   taskTag?: string;
   reportId?: string;
 }>;
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-type Actor =
-  | { readonly ok: true; readonly profile: User }
-  | { readonly ok: false; readonly error: string };
-
-async function resolveActor(): Promise<Actor> {
-  const profile = await getCurrentProfile();
-  if (!profile) return { ok: false, error: 'You are not signed in.' };
-  if (!profile.isActive) return { ok: false, error: 'Your account is deactivated.' };
-  return { ok: true, profile };
-}
 
 export async function createTaskFromTools(
   formData: FormData,
@@ -95,79 +65,7 @@ export async function renameTaskFolderLinkAction(form:FormData){return renameNat
 export async function generateReportFromToolsAction(
   formData: FormData,
 ): Promise<TaskToolsActionState> {
-  const actor = await resolveActor();
-  if (!actor.ok) return { success: false, error: actor.error };
-  if (actor.profile.role !== 'managing_director') {
-    return { success: false, error: 'Only the managing director can create report snapshots.' };
-  }
-
-  const period = readPeriod(formData);
-  const analytics = await getTeamAnalytics(period);
-  const title = readString(formData, 'title') || `${period.label} Task Report`;
-  const reportType = readString(formData, 'reportType') || 'Task Tools Report';
-  const employeeId = readUuid(formData, 'employeeId');
-  const targetMember = employeeId
-    ? analytics.members.find((member) => member.userId === employeeId)
-    : null;
-  const supabase = await createClient();
-  const {data:taskRows,error:taskError}=await supabase.from('tasks').select('id, assignee_id');
-  if(taskError)return {success:false,error:taskError.message};
-  let taskIds=taskRows.map(t=>t.id);
-  if(employeeId) {
-    const {data:assigned,error:assignmentError}=await supabase.from('task_assignees').select('task_id').eq('user_id',employeeId);
-    if(assignmentError)return {success:false,error:assignmentError.message};
-    const ids=new Set(assigned.map(a=>a.task_id));
-    taskIds=taskRows.filter(t=>t.assignee_id===employeeId || ids.has(t.id)).map(t=>t.id);
-  }
-  const checklistObservations=await loadChecklistRollups(supabase,taskIds);
-  const payload = {
-    performanceRuleVersion:analytics.calculation?.context.ruleVersion??'m07-unavailable',
-    calculationContext:analytics.calculation?.context??null,
-    calculationStatus:analytics.calculation?.status??'incomplete',
-    performance:analytics.calculation?performanceReport(analytics.calculation,employeeId):null,
-    checklistContract:'m05-checklist-v1',
-    checklistAsOf:new Date().toISOString(),
-    currentChecklists:Object.fromEntries(checklistObservations),
-    period,
-    generatedBy: actor.profile.id,
-    reportKind: targetMember ? 'employee' : 'general',
-    summary: targetMember
-      ? {
-          employee: targetMember.fullName,
-          starScore: targetMember.starScore,
-          hoursLogged: targetMember.hoursLogged,
-          scaledProgress: targetMember.scaledProgress,
-          taskCount: targetMember.taskCount,
-        }
-      : {
-          averageProductivity: analytics.totals.averageProductivity,
-          hoursLogged: analytics.totals.hoursLogged,
-          scaledProgress: analytics.totals.scaledProgress,
-          activeMemberCount: analytics.totals.activeMemberCount,
-          starPerformer: analytics.starPerformer?.fullName ?? null,
-        },
-  };
-
-  const { data, error } = await supabase
-    .from('report_snapshots')
-    .insert({
-      report_type: reportType,
-      title,
-      status: analytics.calculation?.status==='complete'?'Final':'Draft',
-      calculation_rule_version:analytics.calculation?.context.ruleVersion??'m07-unavailable',
-      period_start: period.startDate,
-      period_end: period.endDate,
-      employee_id: employeeId,
-      payload: payload as never,
-      created_by: actor.profile.id,
-    })
-    .select('id')
-    .single();
-
-  if (error) return { success: false, error: describeDatabaseError(error) };
-  revalidatePath('/reports');
-  revalidatePath('/team');
-  return { success: true, data: { reportId: data.id } };
+  return generateReportSnapshotAction(formData);
 }
 
 export async function freezeMonthlySnapshotFromTools(
@@ -187,103 +85,4 @@ export async function freezeMonthlySnapshotFromTools(
     success: true,
     data: { insertedCount: result.data?.memberCount ?? 0 },
   };
-}
-
-function readString(formData: FormData, key: string): string {
-  const value = formData.get(key);
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function readNullableString(formData: FormData, key: string): string | null {
-  const value = readString(formData, key);
-  return value === '' ? null : value;
-}
-
-function readUuid(formData: FormData, key: string): string | null {
-  const value = readString(formData, key);
-  return UUID_PATTERN.test(value) ? value : null;
-}
-
-function readNullableDate(formData: FormData, key: string): string | null {
-  const value = readString(formData, key);
-  return value === '' ? null : ISO_DATE_PATTERN.test(value) ? value : null;
-}
-
-function readNullableNumber(formData: FormData, key: string): number | null {
-  const value = readString(formData, key);
-  if (value === '') return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function readTaskLinkType(formData: FormData): TaskLinkType {
-  const value = readString(formData, 'linkType');
-  const allowed: readonly TaskLinkType[] = [
-    'Folder',
-    'Document',
-    'Account',
-    'Flowchart',
-    'Engineering',
-    'Drawing',
-    'Checklist',
-    'Raw Link',
-    'Other',
-  ];
-  return allowed.includes(value as TaskLinkType) ? (value as TaskLinkType) : 'Other';
-}
-
-function readSupportSplitMode(formData: FormData): SupportSplitMode | null {
-  const value = readString(formData, 'splitMode');
-  const allowed: readonly SupportSplitMode[] = [
-    'split-even',
-    'split-uneven',
-    'proportional',
-    'absolute',
-  ];
-  return allowed.includes(value as SupportSplitMode)
-    ? (value as SupportSplitMode)
-    : null;
-}
-
-function readPeriod(formData: FormData): AnalyticsPeriod {
-  const year = Number(readString(formData, 'year'));
-  const month = Number(readString(formData, 'month'));
-  if (
-    Number.isInteger(year) &&
-    Number.isInteger(month) &&
-    year >= 2026 &&
-    month >= 1 &&
-    month <= 12
-  ) {
-    return {
-      ...currentPeriod(new Date(Date.UTC(year, month - 1, 1))),
-      year,
-      month,
-    };
-  }
-  return currentPeriod();
-}
-
-function slugKey(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 60);
-}
-
-function describeDatabaseError(error: PostgrestError): string {
-  if (error.code === '42501') return 'You do not have permission for that workflow.';
-  if (error.code === '23505') return 'That record already exists.';
-  if (error.code === '23503') return 'A linked task or employee no longer exists.';
-  if (error.code === '23514') return 'A submitted value is outside its permitted range.';
-  return error.message;
-}
-
-function revalidateTaskToolPaths(taskTag?: string) {
-  revalidatePath('/task-tools');
-  revalidatePath('/tasks');
-  revalidatePath('/dashboard');
-  revalidatePath('/timelines');
-  if (taskTag) revalidatePath(`/tasks/${encodeURIComponent(taskTag)}`);
 }

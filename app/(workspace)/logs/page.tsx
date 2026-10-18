@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
-import { LogHistory } from '@/components/logs/log-history';
-import { requireProfile } from '@/lib/auth/profile';
-import { getMyLogHistory } from '@/lib/logs/queries';
-import { sumHours } from '@/lib/logs/metrics';
-import { formatNumeric } from '@/lib/tracker/format';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { LogHistory } from '@/modules/time-tracking/components/log-history';
+import { requireProfile } from '@/shared/session/profile';
+import { getMyLogHistory } from '@/modules/time-tracking';
+import { sumHours } from '@/modules/time-tracking/client';
+import { formatHours } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {
   title: 'Logs · TaskPulse',
@@ -25,19 +25,19 @@ export default async function LogsPage() {
   const totalHours = sumHours(logs);
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage className="max-w-[880px]">
+      <MissionPageHeader
+        eyebrow="My time"
         title="My effort log"
+        chip={`${formatHours(totalHours)} h logged`}
         description={
           logs.length === 0
             ? 'No entries recorded yet'
-            : `${logs.length} ${logs.length === 1 ? 'entry' : 'entries'} · ${formatNumeric(totalHours)} hours logged`
+            : `${logs.length} ${logs.length === 1 ? 'entry' : 'entries'} · ${formatHours(totalHours)} hours logged`
         }
       />
 
-      <div className="px-4 py-4 lg:px-6">
-        <LogHistory logs={logs} tasks={tasks} />
-      </div>
-    </>
+      <LogHistory logs={logs} tasks={tasks} />
+    </MissionPage>
   );
 }

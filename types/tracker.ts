@@ -1,4 +1,4 @@
-import type { DatedRecordMetadata } from '@/lib/support/contract';
+import type { DatedRecordMetadata } from '@/modules/support/client';
 /**
  * TaskPulse — Domain Model Type Definitions
  *
@@ -317,7 +317,7 @@ export interface CompanyStatement {
   /**
    * `key_name` — stable lookup handle, unique. `'vision'`, `'mission'` and
    * `'core_values'` are the three the showcase renders; see
-   * `lib/milestones/statements.ts`.
+   * `modules/milestones/internal/statements.ts`.
    */
   keyName: string;
   /** `title` — the heading shown on the card. */
@@ -364,7 +364,7 @@ export interface CompanyMilestone {
   createdAt: string;
 }
 
-/** Row of `public.task_assignees` â€” multi-assignee task membership. */
+/** Row of `public.task_assignees` — multi-assignee task membership. */
 export interface TaskAssignee {
   id: string;
   taskId: string;
@@ -376,7 +376,7 @@ export interface TaskAssignee {
   createdAt: string;
 }
 
-/** Row of `public.task_reviewers` â€” multi-reviewer task membership. */
+/** Row of `public.task_reviewers` — multi-reviewer task membership. */
 export interface TaskReviewer {
   id: string;
   taskId: string;
@@ -389,7 +389,7 @@ export interface TaskReviewer {
   createdAt: string;
 }
 
-/** Row of `public.task_dependencies` â€” reusable task/subtask relations. */
+/** Row of `public.task_dependencies` — reusable task/subtask relations. */
 export interface TaskDependency {
   id: string;
   predecessorTaskId: string;
@@ -400,7 +400,7 @@ export interface TaskDependency {
   createdAt: string;
 }
 
-/** Row of `public.task_detail_sections` â€” structured task page sections. */
+/** Row of `public.task_detail_sections` — structured task page sections. */
 export interface TaskDetailSection {
   id: string;
   taskId: string;
@@ -412,7 +412,7 @@ export interface TaskDetailSection {
   createdAt: string;
 }
 
-/** Row of `public.task_links` â€” task folders, documents, drawings and assets. */
+/** Row of `public.task_links` — task folders, documents, drawings and assets. */
 export interface TaskLink {
   ipoRole?: 'input'|'process'|'output'|'reference'|null;
   relatedEmployeeId?: string|null;
@@ -450,7 +450,7 @@ export interface ChecklistTemplateNode {
   createdAt: string;
 }
 
-/** Row of `public.task_checklists` â€” one master checklist per task. */
+/** Row of `public.task_checklists` — one master checklist per task. */
 export interface TaskChecklist {
   id: string;
   taskId: string;
@@ -462,7 +462,7 @@ export interface TaskChecklist {
   updatedAt: string;
 }
 
-/** Row of `public.checklist_nodes` â€” hierarchical equal-weight checklist item. */
+/** Row of `public.checklist_nodes` — hierarchical equal-weight checklist item. */
 export interface ChecklistNode {
   id: string;
   checklistId: string;
@@ -476,6 +476,8 @@ export interface ChecklistNode {
   completionState?: 'Yes'|'No'|'N/A';
   sortOrder: number;
   estimatedMinutes: number | null;
+  /** http(s) URLs attached to the checklist row (migration 33). */
+  links: string[];
   elapsedSeconds: number;
   completedBy: string | null;
   completedAt: string | null;
@@ -483,7 +485,7 @@ export interface ChecklistNode {
   updatedAt: string;
 }
 
-/** Row of `public.task_timers` â€” server-backed task timer sessions. */
+/** Row of `public.task_timers` — server-backed task timer sessions. */
 export interface TaskTimer {
   id: string;
   taskId: string;

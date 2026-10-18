@@ -2,8 +2,10 @@
 
 This is a constrained application-table logical rehearsal, not pg_dump/PITR:
 Supabase managed Auth configuration, roles, Storage and secrets are excluded.
-PG18's timer numeric division differs from hosted PG17, so the clone alone
-uses a tolerance check before importing existing timer segments.
+Superseded diagnosis: the clone's timer CHECK tolerance was attributed to
+PG17/PG18 division, but the cause is this procedure. The Supabase CLI prints
+numbers nested in jsonb as float64, rounding numerics. See
+test_m13_hosted_restore_exact.py for the exact-text, unmodified-schema restore.
 No current hosted rows are changed. Private row JSON stays in the named temp
 recovery directory and is never printed or copied into the repository.
 """
@@ -22,6 +24,22 @@ REF = "ngpmwzksekkpvrgoqngk"
 DATABASE = "taskpulse_m13_hosted_clone"
 ROOT = Path(__file__).resolve().parents[1]
 PORT = "15433"
+BOOTSTRAP = """
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN BYPASSRLS; END IF;
+END $$;
+CREATE SCHEMA auth;
+CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb DEFAULT '{}',raw_app_meta_data jsonb DEFAULT '{}');
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
+ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;
+$$;
+GRANT USAGE ON SCHEMA public,auth TO anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION auth.uid() TO anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon,authenticated,service_role;
+"""
 
 
 def quoted(value):
@@ -80,23 +98,7 @@ def main(workdir, recovery, bin_dir):
     digest = hashlib.sha256(backup.read_bytes()).hexdigest()
     print(f"PASS hosted synthetic table capture: {len(names)} app tables, seven Auth IDs, SHA-256 {digest}", flush=True)
     psql("postgres", f"CREATE DATABASE {DATABASE} WITH ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0")
-    bootstrap = """
-DO $$ BEGIN
- IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF;
- IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
- IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN BYPASSRLS; END IF;
-END $$;
-CREATE SCHEMA auth;
-CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb DEFAULT '{}',raw_app_meta_data jsonb DEFAULT '{}');
-CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
- SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;
-$$;
-GRANT USAGE ON SCHEMA public,auth TO anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION auth.uid() TO anon,authenticated,service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon,authenticated,service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon,authenticated,service_role;
-"""
-    psql(DATABASE, bootstrap)
+    psql(DATABASE, BOOTSTRAP)
     migrations = sorted((ROOT / "supabase" / "migrations").glob("*.sql"))
     if len(migrations) != 29:
         raise RuntimeError("Expected local migrations 01–29 only")

@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
-import { MilestoneBoard } from '@/components/milestones/milestone-board';
-import { OrganizationShowcase } from '@/components/milestones/organization-showcase';
-import { SchemaNotice } from '@/components/milestones/schema-notice';
-import { currentPeriod } from '@/lib/analytics/engine';
-import { requireProfile } from '@/lib/auth/profile';
-import { summariseMilestones } from '@/lib/milestones/goals';
-import { getMilestonesPageData } from '@/lib/milestones/queries';
-import { canManageMilestones } from '@/lib/tracker/enums';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { MilestoneBoard } from '@/modules/milestones/components/milestone-board';
+import { OrganizationShowcase } from '@/modules/milestones/components/organization-showcase';
+import { SchemaNotice } from '@/modules/milestones/components/schema-notice';
+import { currentPeriod } from '@/shared/time/period';
+import { requireProfile } from '@/shared/session/profile';
+import { getMilestonesPageData, summariseMilestones } from '@/modules/milestones';
+import { canManageMilestones } from '@/shared/tracker/enums';
 
 export const metadata: Metadata = {
   title: 'Milestones · TaskPulse',
@@ -36,15 +35,14 @@ export default async function MilestonesPage() {
 
   if (data.status === 'schema-missing') {
     return (
-      <>
-        <WorkspaceHeader
+      <MissionPage>
+        <MissionPageHeader
+          eyebrow="Company"
           title="Vision & milestones"
           description="Setup incomplete"
         />
-        <div className="px-4 py-4 lg:px-6">
-          <SchemaNotice migration={data.migration} />
-        </div>
-      </>
+        <SchemaNotice migration={data.migration} />
+      </MissionPage>
     );
   }
 
@@ -53,24 +51,23 @@ export default async function MilestonesPage() {
   const canManage = canManageMilestones(profile.role);
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage>
+      <MissionPageHeader
+        eyebrow="Company"
         title="Vision & milestones"
         description={`${period.label} · ${summary.achieved} of ${summary.total} milestones achieved`}
       />
 
-      <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
-        <OrganizationShowcase
-          statements={data.statements}
-          canManage={canManage}
-        />
-        <MilestoneBoard
-          milestones={data.milestones}
-          members={data.members}
-          periodLabel={period.label}
-          canManage={canManage}
-        />
-      </div>
-    </>
+      <OrganizationShowcase
+        statements={data.statements}
+        canManage={canManage}
+      />
+      <MilestoneBoard
+        milestones={data.milestones}
+        members={data.members}
+        periodLabel={period.label}
+        canManage={canManage}
+      />
+    </MissionPage>
   );
 }

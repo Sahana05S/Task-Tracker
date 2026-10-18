@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
-import { SalesLogModule } from '@/components/support/support-pages';
-import { requireProfile } from '@/lib/auth/profile';
-import { canManageSupportRecords } from '@/lib/support/permissions';
-import { getSupportModuleData } from '@/lib/support/queries';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { SalesLogModule } from '@/modules/support/components/support-pages';
+import { requireProfile } from '@/shared/session/profile';
+import { canManageSupportRecords, getSupportModuleData } from '@/modules/support';
 
 export const metadata: Metadata = {
-  title: 'Sales Log Â· TaskPulse',
+  title: 'Sales Log · TaskPulse',
 };
 
 export default async function SalesPage() {
@@ -15,21 +14,20 @@ export default async function SalesPage() {
   const data = await getSupportModuleData();
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage>
+      <MissionPageHeader
+        eyebrow="Records"
         title="Sales log"
-        description={`${data.period.label} Â· ${data.summary.sales.total} sales entries Â· ${data.summary.sales.newProjects} new projects`}
+        description={`${data.period.label} · ${data.summary.sales.total} sales entries · ${data.summary.sales.newProjects} new projects`}
       />
-      <div className="px-4 py-4 lg:px-6">
-        <SalesLogModule
-          salesLogs={data.salesLogs}
-          tasks={data.tasks}
-          inputContext={data.inputContext}
-          members={data.members}
-          currentUser={profile}
-          canManage={canManageSupportRecords(profile.role)}
-        />
-      </div>
-    </>
+      <SalesLogModule
+        salesLogs={data.salesLogs}
+        tasks={data.tasks}
+        inputContext={data.inputContext}
+        members={data.members}
+        currentUser={profile}
+        canManage={canManageSupportRecords(profile.role)}
+      />
+    </MissionPage>
   );
 }

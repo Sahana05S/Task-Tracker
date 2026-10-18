@@ -1,5 +1,56 @@
 # Task Tracker project instructions
 
+## Code layout - modules (refactor completed 18 October 2026)
+
+The user asked for a modular codebase (facade per module, one short branch per
+change). The refactor is complete on `refactor/base` (not yet merged into
+`main`). Follow `docs/ARCHITECTURE.md`:
+
+- Code lives in `app/` (routing only), `modules/<name>/` and `shared/`. There is
+  no `lib/` or `components/` any more; do not recreate them.
+- Other code uses only a module's public files (`index.ts`, `client.ts`,
+  `*actions.ts`, `components/`), never `internal/`. Client components and pure
+  helpers import `client.ts`. Each module's README lists its public API and the
+  tables/RPCs it owns; update it when either changes.
+- Pages, routes and components never call `.from()`/`.rpc()`; data access
+  belongs in a module's `internal/`.
+- New work: put it in the owning module (start from `modules/_template/`), on a
+  short branch named after the module. `__tests__/architecture/boundaries.test.ts`
+  must pass.
+
+## M15 multi-company direction - 17 October 2026
+
+The user wants to sell TaskPulse to other companies. They approved one shared
+database with enforced company separation, the same rules with per-company
+settings, platform-owner onboarding, and Saahithyaa as company #1. See
+`docs/plans/M15-multi-company.md` and DECISIONS. Production work now goes
+through M15.6.
+
+On 17 October 2026 the user authorized M15.1 (tenancy foundation) and said
+early customers will be in India, so Asia/Kolkata stays fixed for launch.
+Forward migration 39 is applied only to disposable databases and the M13 test
+project; see `docs/plans/M15-evidence.md`. Later M15 phases (M15.2 onward) need
+the user's go-ahead. Until M15.2 lands, SECURITY DEFINER commands still read
+across companies, so no second real company may be onboarded.
+
+M15.2 (migration 40) closes that gap: tables and commands are owned by the
+non-bypass role `taskpulse_definer`, with FORCE RLS scoped by
+`taskpulse_private.m15_scope()`. **Every new migration must end with
+`SELECT taskpulse_private.m15_secure();`**, so new tables and functions are
+re-owned and scoped. New company-owned tables need an `organization_id`
+column. Workers must send each job's company in the `x-taskpulse-organization`
+header (`shared/supabase/worker.ts`). See `docs/plans/M15-evidence.md`.
+
+## M14 nested checklist pages — 16 October 2026
+
+The user asked for every feature of their Google Sheets tracker. They approved
+nested checklist pages (pages, not separate tasks), assignee-built checklists,
+and per-row links and estimates. See DECISIONS "M14 nested checklist pages"
+and `docs/plans/M14-evidence.md`. Item timers save ordinary task logs tagged
+with the item (user decision). Migrations 33-34 are applied only to disposable
+databases and the M13 test project. Production migrations and deployment
+remain unauthorized.
+
 ## Superseding M13 authorization — 13 October 2026
 
 The user's subsequent pasted M13 request authorizes integrated acceptance,

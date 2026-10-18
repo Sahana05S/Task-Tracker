@@ -49,6 +49,19 @@ type OptionalId = {
 export interface Database {
   public: {
     Tables: {
+      /** M15.1: one row per company; every company-owned row carries organization_id. */
+      organizations: TableDefinition<
+        {
+          id: string;
+          name: string;
+          slug: string;
+          status: 'active' | 'suspended';
+          is_default: boolean;
+          created_at: string;
+          updated_at: string;
+        },
+        { name: string; slug: string; id?: string; status?: 'active' | 'suspended'; is_default?: boolean }
+      >;
       users: TableDefinition<
         {
           id: string;
@@ -160,6 +173,7 @@ export interface Database {
           raw_links: string[] | null;
           log_source: TaskLogSource;
           source_timer_id: string | null;
+          checklist_node_id?: string | null;
           created_at: string;
         },
         {
@@ -453,6 +467,7 @@ export interface Database {
           completion_state?: 'Yes'|'No'|'N/A';
           sort_order: number;
           estimated_minutes: number | null;
+          links?: string[];
           elapsed_seconds: number;
           completed_by: string | null;
           completed_at: string | null;
@@ -486,6 +501,7 @@ export interface Database {
           elapsed_seconds: number;
           generated_log_id: string | null;
           notes: string | null;
+          checklist_node_id?: string | null;
         } & TimestampColumns,
         OptionalId & {
           task_id: string;
@@ -774,6 +790,7 @@ export interface Database {
       claim_award_jobs:{Args:{p_limit?:number};Returns:Json};
       queue_due_awards:{Args:{p_from:string;p_through:string;p_operation:string};Returns:Json};
       award_policy_context:{Args:Record<string,never>;Returns:Json};
+      observation_clock:{Args:Record<string,never>;Returns:string};
       award_read_model:{Args:{p_from:string;p_to_exclusive:string;p_employee?:string|null};Returns:Json};
       performance_source_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
       claim_performance_jobs:{Args:{p_limit?:number};Returns:Json};
@@ -792,6 +809,7 @@ export interface Database {
       correct_task_log: { Args: { p_log_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       reverse_task_log: { Args: { p_log_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       start_task_timer: { Args: { p_task_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
+      start_checklist_item_timer: { Args: { p_node_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
       stop_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       discard_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       set_task_participants: { Args: { p_task_id: string; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number; p_accept_legacy?: boolean }; Returns: number };
@@ -800,6 +818,9 @@ export interface Database {
       record_task_review: { Args: { p_task_id: string; p_approved: boolean }; Returns: undefined };
       recalculate_task_metrics: { Args: { p_task_id: string; p_progress_delta: number }; Returns: undefined };
       task_effort_summary: { Args: { p_task_id: string }; Returns: { hours_logged: number; log_count: number }[] };
+      task_effort_breakdown: { Args: { p_task_id: string }; Returns: Json };
+      current_organization: { Args: Record<never, never>; Returns: string | null };
+      team_holiday_dates: { Args: { p_from: string; p_to: string }; Returns: string[] };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
       can_read_employee_details: { Args: { p_user_id: string | null }; Returns: boolean };

@@ -22,10 +22,24 @@ immutable candidate commit and record its hash only after focused, full,
 typecheck and build checks pass; a local build alone is not a deployment.
 
 **Stop line:** this is preparation, not authorization to deploy, run migrations
-on production, seed production data or enable workers. The exact app artifact
-cannot be named yet: current `main` is `7764489ac6bcc13f0062e67b401c7c9738f5848b`
-with uncommitted M01–M13 work. Create and verify an immutable release commit
-before any staging/prod comparison. The latest local migration is
+on production, seed production data or enable workers. The tested candidate
+commit is `2c1d08438c890ab1a8dc95bab74bf3d8046f2688` (branch
+`m13-verification`; the earlier `7764489`-plus-uncommitted reference is
+historical). It is a verified source commit, not a built or deployed artifact;
+record the artifact/build ID separately before any staging/prod comparison.
+**Update (later 15 October):** the candidate now includes forward migration
+`30_observation_clock.sql` (SHA-256
+`B56A319B85BC8060A87951EDBC121FEC2BB34DAC3AF6372678AB0894370EAE7B`), the
+database-authoritative as-of. The app falls back to the 10-second margin
+until 30 is applied, so deploying the app before or after the migration is
+safe. The hosted test project ledger is now 30. The candidate also includes
+`31_task_tools_closed_period_preview.sql` (SHA-256
+`BEB6A9B6443DDBE82AFFC7AFC59AB719F51E6DE0CAD27CBD6A9498B1285BF418`) and
+`32_task_tools_frozen_period_preview.sql` (SHA-256
+`D7D30C3BFD51F20FCB40B79A124DE35E52F34C41431FE0F9D24F9D05E93A7750`); both only
+replace `task_tools_preview`. The hosted test ledger is 32. The final
+candidate commit is `ca788f6bd2c34ed3bb1df8c92e5962ba7ec65c02` (see STATUS); it supersedes the hash above. The 29-migration statements
+below remain historical. The latest local migration is
 `29_month_archive_and_revisions.sql` (SHA-256
 `59B9CA142E0FB3C480090C2E623F7E7EC5EB6557FC4B63F82E704BF5064C58D8`).
 Never replay an already-applied migration merely because it exists locally.

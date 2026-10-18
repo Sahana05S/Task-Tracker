@@ -1,23 +1,31 @@
-import { LiveReport } from '@/components/reports/live-report';
-import { ArchivedReport } from '@/components/reports/archived-report';
-import { monthHistory,monthRevision } from '@/lib/month/archive';
-import { viewContext,viewQuery } from '@/lib/presentation/context';
-import { displayPerformance } from '@/lib/performance/exact';
+import { LiveReport } from '@/modules/reports/components/live-report';
+import { ArchivedReport } from '@/modules/reports/components/archived-report';
+import { monthHistory, monthRevision } from '@/modules/reports';
+import { viewQuery } from '@/modules/reports/client';
+import { liveViewContext } from '@/modules/reports';
+import { displayPerformance } from '@/shared/math/exact';
 import type { Metadata } from 'next';
-import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
-import { AwardHistory } from '@/components/team/award-history';
+import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
+import { AwardHistory } from '@/modules/scoring/components/award-history';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
-import { requireProfile } from '@/lib/auth/profile';
-import { canViewEmployeeReports } from '@/lib/team/permissions';
-import { getEmployeeByEmployeeId,getEmployeeReportsData } from '@/lib/team/queries';
+import { ArrowLeftIcon, FileTextIcon, HistoryIcon, ListChecksIcon, StarIcon, type LucideIcon } from 'lucide-react';
+
 import {
-  normalizeEmployeeIdParam,
-  resolveEmployeeRouteState,
-} from '@/lib/team/routes';
-import { formatDate, formatNumeric } from '@/lib/tracker/format';
+  MissionEmpty,
+  MissionNotice,
+  MissionPage,
+  MissionPageHeader,
+  MissionPanel,
+} from '@/shared/ui/mission-ui';
+import { requireProfile } from '@/shared/session/profile';
+import { getEmployeeItemHours } from '@/modules/checklists';
+import type { ItemHourTask } from '@/modules/checklists/client';
+import { canViewEmployeeReports } from '@/modules/team/client';
+import { getEmployeeByEmployeeId, getEmployeeReportsData } from '@/modules/team';
+import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
+import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;
@@ -37,7 +45,7 @@ export default async function EmployeeReportsPage({
 }: EmployeeReportsPageProps) {
   const viewer = await requireProfile();
   const query=await searchParams;
-  const context=viewContext(query.period,query.asOf);
+  const context=await liveViewContext(query.period,query.asOf);
   const { employeeId } = await params;
   if(query.revision){
     const normalized=normalizeEmployeeIdParam(employeeId),revision=Number(query.revision);
@@ -47,7 +55,7 @@ export default async function EmployeeReportsPage({
     const archive=await monthRevision(context.period.startDate,revision,employee.id);
     if(!archive)notFound();
     const previous=revision>1?await monthRevision(context.period.startDate,revision-1,employee.id):null;
-    return <><WorkspaceHeader title={`${employee.fullName} · archived report`} description={`${context.period.label} · revision ${revision}`}/><div className="grid gap-4 px-4 py-4 lg:px-6"><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="underline" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></div></>;
+    return <MissionPage><MissionPageHeader eyebrow="Team · Reports" title={`${employee.fullName} · archived report`} description={`${context.period.label} · revision ${revision}`}/><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="link justify-self-start" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></MissionPage>;
   }
   const routeState = await resolveEmployeeRouteState(
     employeeId,
@@ -58,31 +66,39 @@ export default async function EmployeeReportsPage({
 
   const data = routeState.data;
   if (!canViewEmployeeReports(viewer, data.employee)) notFound();
-  const archiveHistory=await monthHistory(context.period.startDate);
+  const itemTo = context.asOfLocalDate < context.period.endDate ? context.asOfLocalDate : context.period.endDate;
+  const [archiveHistory, itemHours] = await Promise.all([
+    monthHistory(context.period.startDate),
+    getEmployeeItemHours(data.employee.id, context.period.startDate, itemTo),
+  ]);
 
   return (
-    <>
-      <WorkspaceHeader
+    <MissionPage>
+      <MissionPageHeader
+        eyebrow="Team · Reports"
         title={`${data.employee.fullName} reports`}
         description={`${data.period.label} · performance, chart links, stars, and saved reports`}
         actions={
           <Link
             href={`/team/${encodeURIComponent(data.employee.employeeId)}?${viewQuery(context)}`}
-            className="border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors"
+            className="button-secondary gap-2"
           >
+            <ArrowLeftIcon className="size-4" aria-hidden="true" />
             Back to profile
           </Link>
         }
       />
 
-      <div className="grid gap-4 px-4 py-4 lg:px-6">
-        {archiveHistory.revisions.length?<nav aria-label="Employee report revisions" className="flex flex-wrap gap-3">{archiveHistory.revisions.map(r=><Link className="underline" key={r.number} href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}&revision=${r.number}`}>Revision {r.number} · {r.certification==='certified'?'Certified':'Incomplete'}</Link>)}</nav>:null}
+      <div className="grid gap-5 lg:gap-6">
+        {archiveHistory.revisions.length?<nav aria-label="Employee report revisions" className="flex flex-wrap gap-2">{archiveHistory.revisions.map(r=><Link className="section-tab bg-white" key={r.number} href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}&revision=${r.number}`}>Revision {r.number} · {r.certification==='certified'?'Certified':'Incomplete'}</Link>)}</nav>:null}
         <LiveReport model={data.presentation}/>
-        <h2 className="font-semibold">Retained reports · original rules</h2>
-        {data.performanceUnavailableReason ? <p role="status" className="text-sm text-amber-800">{data.performanceUnavailableReason} Saved reports and effort history remain available.</p> : null}
+        <ItemHoursPanel tasks={itemHours} />
+        <h2 className="panel-title mt-2">Retained reports · original rules</h2>
+        {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}
         {data.performance?.calculation?<PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/>:null}
         <AwardHistory awards={data.awards}/>
-        <section id="charts" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section id="charts" aria-label="Chart summary">
+          <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <ChartCard
             label="Performance score"
             value={
@@ -104,7 +120,7 @@ export default async function EmployeeReportsPage({
           />
           <ChartCard
             label="Attendance"
-            value={`${formatNumeric(data.attendanceSummary.attendanceHours)}h`}
+            value={`${formatHours(data.attendanceSummary.attendanceHours)}h`}
             detail={`${formatNumeric(data.attendanceSummary.payableDays)} payable days`}
           />
           <ChartCard
@@ -112,14 +128,15 @@ export default async function EmployeeReportsPage({
             value={String(data.awards.monthly.counts[data.employee.id]??0)}
             detail="Recorded daily star wins"
           />
+          </dl>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-2">
-          <Panel title="Legacy saved score components (pre-M07)">
+          <Panel title="Legacy saved score components (pre-M07)" icon={HistoryIcon}>
             {data.scoreComponents.length === 0 ? (
               <EmptyText>No score component rows yet.</EmptyText>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="border-border overflow-x-auto rounded-xl border">
                 <table className="sheet-grid min-w-[36rem]">
                   <thead>
                     <tr>
@@ -150,7 +167,7 @@ export default async function EmployeeReportsPage({
             )}
           </Panel>
 
-          <Panel title="Daily star log">
+          <Panel title="Daily star log" icon={StarIcon}>
             {data.stars.length === 0 ? (
               <EmptyText>No daily star records yet.</EmptyText>
             ) : (
@@ -158,16 +175,16 @@ export default async function EmployeeReportsPage({
                 {data.stars.map((star) => (
                   <div
                     key={star.id}
-                    className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm"
+                    className="bg-recognition-subtle rounded-xl px-3.5 py-2.5 text-sm"
                   >
                     <div className="flex items-center justify-between">
-                      <span>{formatDate(star.starDate)}</span>
-                      <span className="font-semibold tabular">
+                      <span className="text-foreground font-medium">{formatDate(star.starDate)}</span>
+                      <span className="text-recognition-foreground font-semibold tabular-nums">
                         {formatNumeric(star.score)}
                       </span>
                     </div>
                     {star.reason ? (
-                      <p className="mt-1 text-xs text-slate-700">
+                      <p className="text-muted-foreground mt-1 text-xs">
                         {star.reason}
                       </p>
                     ) : null}
@@ -178,13 +195,13 @@ export default async function EmployeeReportsPage({
           </Panel>
         </section>
 
-        <Panel title="Saved reports">
+        <Panel title="Saved reports" icon={FileTextIcon}>
           {data.reports.length === 0 ? (
             <EmptyText>
               No saved report snapshots exist for this employee yet.
             </EmptyText>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="border-border overflow-x-auto rounded-xl border">
               <table className="sheet-grid min-w-[52rem]">
                 <thead>
                   <tr>
@@ -198,7 +215,7 @@ export default async function EmployeeReportsPage({
                 <tbody>
                   {data.reports.map((report) => (
                     <tr key={report.id}>
-                      <td className="text-xs font-medium text-slate-900">
+                      <td className="text-foreground text-xs font-semibold">
                         {report.title}
                       </td>
                       <td className="text-xs">{report.reportType}</td>
@@ -216,7 +233,7 @@ export default async function EmployeeReportsPage({
           )}
         </Panel>
       </div>
-    </>
+    </MissionPage>
   );
 }
 
@@ -240,19 +257,63 @@ function ChartCard({
 
 function Panel({
   title,
+  icon,
   children,
 }: {
   title: string;
+  icon?: LucideIcon;
   children: React.ReactNode;
 }) {
   return (
-    <section className="soft-card p-4">
-      <h2 className="text-foreground text-sm font-semibold">{title}</h2>
-      <div className="mt-3">{children}</div>
-    </section>
+    <MissionPanel title={title} icon={icon}>
+      {children}
+    </MissionPanel>
   );
 }
 
 function EmptyText({ children }: { children: React.ReactNode }) {
-  return <p className="text-muted-foreground text-sm">{children}</p>;
+  return <MissionEmpty>{children}</MissionEmpty>;
+}
+
+/**
+ * Hours by checklist item (sheet-parity gap 5): this employee's item-timer
+ * logs for the period up to the as-of date. They are part of task hours, not
+ * extra hours.
+ */
+function ItemHoursPanel({ tasks }: { tasks: readonly ItemHourTask[] | null }) {
+  return (
+    <Panel title="Hours by checklist item" icon={ListChecksIcon}>
+      {tasks === null ? (
+        <EmptyText>Checklist item hours are unavailable until the item-timer migration is applied.</EmptyText>
+      ) : tasks.length === 0 ? (
+        <EmptyText>No item-timer hours this period. Time logged with a checklist item's timer appears here.</EmptyText>
+      ) : (
+        <div className="grid gap-3">
+          <p className="text-muted-foreground text-xs">Part of the task hours above, broken down by the checklist item that was timed.</p>
+          {tasks.map(task => (
+            <div key={task.taskId} className="border-border rounded-xl border">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 px-3.5 py-2.5">
+                <Link href={`/tasks/${encodeURIComponent(task.taskTag)}`} className="text-primary min-w-0 font-semibold hover:underline">
+                  {task.taskTag}{task.taskTitle ? ` · ${task.taskTitle}` : ''}
+                </Link>
+                <span className="text-foreground text-sm font-semibold tabular-nums">{formatHours(task.hours)} h</span>
+              </div>
+              <ul className="border-border divide-border divide-y border-t text-sm">
+                {task.items.map(item => (
+                  <li key={item.nodeId} className="flex flex-wrap items-baseline justify-between gap-2 px-3.5 py-2">
+                    <Link href={`/tasks/${encodeURIComponent(task.taskTag)}/checklist/${item.nodeId}`} className="text-foreground min-w-0 break-words hover:underline">
+                      {item.title}
+                    </Link>
+                    <span className="text-muted-foreground text-xs tabular-nums">
+                      {formatHours(item.hours)} h · {item.entries} log{item.entries === 1 ? '' : 's'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
 }

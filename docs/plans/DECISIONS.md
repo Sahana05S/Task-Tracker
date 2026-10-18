@@ -550,3 +550,159 @@ Approved sandbox/ownership/layout/authority/sharing choices remain recorded for
 an explicit future resume. No credentials, schedules, real Drive changes,
 production apply/deploy or migration rewriting occurred. M11 is the next planned
 module; this handoff does not implement it, and Drive is not a prerequisite.
+
+
+## M13 hours display format approved by user - 15 October 2026
+
+The user selected "2 decimals + \"<0.01 h\" (Recommended)". It settles only the
+display part of D04's precision question for hours:
+
+- Every on-screen hours value shows two decimals, keeping each surface's
+  existing unit convention.
+- A non-zero value that would round to 0.00 shows as `<0.01` (or `>-0.01`).
+- The Logs seconds special case is removed.
+- The text report export uses the same format.
+- CSV/JSON exports keep exact stored values for reconciliation.
+
+Stored precision (unbounded `numeric`), every calculation, and the approved
+six-decimal factor and two-decimal score displays are unchanged. Implemented by
+`formatHours` in `lib/tracker/format.ts`.
+
+## Dashboard cleanup approved by user - 15 October 2026
+
+The user approved the proposed dashboard structure ("ok do it") together with
+the recommended answers to its three open points:
+
+1. **Open overdue.** The figure counts open, unarchived work due before the
+   live as-of date. Previously it counted everything due before month end,
+   which showed 14 mid-month when 0 tasks were actually past due. Past months
+   keep the period-end boundary. A carryover-archived predecessor is no longer
+   counted as open.
+2. **Scaled-credit tile.** It shows two decimals. Six-decimal factor values
+   (D04) remain in Calculation details.
+3. **Per-member inputs.** They follow the existing presentation scope: a
+   member sees only their own breakdown, and managers see the team.
+
+Plain wording replaces raw reason codes on the dashboard. The codes stay in
+Calculation details, exports and data. No calculation, permission or
+availability safeguard changed otherwise.
+
+
+## M14 nested checklist pages approved by user - 16 October 2026
+
+The user shared screen recordings of their Google Sheets tracker and asked for
+every feature in TaskPulse, with a seamless UI. They highlighted that every
+master-checklist row can be a "page" with its own rows, nesting as deep as
+needed. Their answers to the follow-up questions:
+
+1. **Checklist pages, not separate tasks.** A Page row opens its own checklist
+   page (result, progress, back link, breadcrumb, rows). It stays part of the
+   parent task: no separate task tag, participants or scoring. The approved
+   M05 rollup is unchanged (each parent weights applicable direct children
+   equally; an empty page has no applicable work).
+2. **Assignees and managers build the checklist.** Active task assignees may
+   create the checklist and add, edit and remove rows. Section mapping, section
+   gate confirmation, the progress-owner switch and links to real tasks remain
+   manager-only. Edit and removal reasons are still required.
+3. **Links and time per row.** Rows carry up to ten http(s) links and an
+   estimated time in whole minutes.
+4. **Item timer: elapsed time comes from a timer on the item.** In a later
+   reply the user decided that "stopping an item timer should save a normal
+   task log for that task, tagged with the item, so task hours, productivity
+   and reports include it." Item time is therefore never a second, separate
+   hours figure: it is the sum of that item's tagged, unreversed task logs,
+   and a page shows its whole subtree.
+5. **Rest of the sheet: audit, then fix gaps.** After the checklist pages, each
+   sheet feature is compared with the app and the gaps are listed for the user
+   to prioritize.
+
+## Missions headline strip approved by user - 16 October 2026
+
+The sheet tracker's Tasks header shows team leaders and three coloured team
+figures. The user approved the recommended answers to three questions:
+
+1. **Colours.** Red/amber/green bands from the sheet's cut-offs:
+   - allocation spread: green up to 5%, amber above 5% up to 7%, red above
+     7% (lower is better);
+   - team average productivity: red below 4, amber 4 to below 7, green 7 and
+     up;
+   - team average progress: red below 50%, amber 50% to below 75%, green 75%
+     and up.
+2. **Leaders reuse the dashboard's shared-engine figures.** "Critical team
+   member" is the highest criticality score, "Most productive" the highest
+   productivity, and "Most loaded" the largest loading difference above the
+   team median. Missing values show "Unavailable", and a tie names nobody.
+   Allocation spread is the dashboard's spread.
+3. **Averages run over the month's tracked tasks.** These are tasks carried in
+   the period that are not archived or Discarded. Team average progress is
+   their mean progress %. Team average productivity is their mean task
+   productivity over tasks with logged hours.
+
+Implementation choice, consistent with the dashboard's per-member presentation
+scope (15 October entry): leader names and values show only with the manager
+team-detail scope. Members see the aggregate team figures and a note that
+leaders are visible to managers. No calculation, permission or scoring rule
+changed; the strip only presents existing figures.
+
+## Team Index holiday marks, report validity and item hours - 17 October 2026
+
+The user said "Do them yourself" for the remaining sheet-parity gaps 4 and 5.
+These display choices change no attendance, award, scoring or permission
+rule, and can be revised:
+
+- **Holiday "H" in the daily star log.** TaskPulse has no company holiday
+  calendar. Holidays are recorded per member as attendance status Holiday. A
+  date shows "H" (and counts in "Holidays (n)") when every active member has
+  an active Holiday record that day. `team_holiday_dates` (migration 37)
+  returns those dates only, so members see the marker without reading other
+  people's attendance.
+- **Report validity.** The sheet's "Reports Validity" column shows "Valid"
+  when the member's live month calculation is complete. Otherwise it shows
+  "Incomplete", with the existing unavailable-input reason.
+- **Hours by checklist item.** Employee reports list the employee's
+  item-timer hours by task and item for the period, up to the as-of date.
+  These are part of task hours, not additional hours. The breakdown uses
+  logs the viewer may already read on that report. Report exports are
+  unchanged.
+
+## Quick "Create work file" approved by user - 17 October 2026
+
+The user chose the quick option for the sheet's "Create Work Files" ahead of
+the full Google Drive setup. They asked for a plain step-by-step guide for
+anything only they can do: `docs/setup/WHAT-I-NEED-FROM-YOU.md` covers the
+sales BN/BO/BP screenshots and the Drive provisioning steps.
+
+- Each open mission shows assignees and managers a "Create work file" panel:
+  - shortcuts to a new Google Doc, Sheet or Slides file in the person's own
+    account (docs.new, sheets.new, slides.new);
+  - the suggested sheet-style name `[Task tag] - [Title]`;
+  - a form to save the file's link under Inputs, Process or Outputs.
+- The panel says TaskPulse saves the link only. It never claims to create,
+  rename or share the Google file (AGENTS rule on Drive representation).
+- Assignees may now add ordinary http(s) work-file links to their own tasks.
+  In the sheet the task owner fills these columns, so this matches the
+  sheet's practice. Linking a related employee or report, and all other
+  detail commands, stay manager-only (migration 38).
+- The full Drive integration remains deferred until the user completes the
+  guide's Part 2 and asks to resume it.
+
+## Multi-company TaskPulse approved by user - 17 October 2026
+
+The user said selling TaskPulse to other companies is a real goal, and chose
+the recommended answer to each of four questions:
+
+1. **Separation:** one shared database. Every company-owned row carries its
+   company, and PostgreSQL enforces separation.
+2. **Rules:** the same engine and formulas for every company; per-company
+   settings may vary.
+3. **Onboarding:** the platform owner creates each company and its first
+   director. Self-serve sign-up and billing come later.
+4. **Existing data:** Saahithyaa becomes company #1 and its data is migrated
+   in.
+
+`docs/plans/M15-multi-company.md` holds the phased plan (M15.1-M15.6) and the
+open questions (timezones, one person in several companies, per-company
+wording). Production launch now happens through M15.6. Drive moves to a
+per-company "Connect Google Drive" (OAuth, `drive.file`) in M15.5, replacing
+the single-company service-account setup. Implementation has not started and
+awaits the user's go-ahead.

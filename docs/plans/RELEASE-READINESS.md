@@ -24,9 +24,44 @@ readiness remains **No**; the certified scoring/award scope remains **Blocked**
 by BN/BO/BP and legacy provenance. Drive remains user-deferred.
 
 The previously documented `7764489` plus uncommitted tree is historical: this
-continuation began from clean `7e6d914`. Its own release-candidate identity is
-recorded in the final M13 handoff; neither an uncommitted diff nor a local build
-is a deployed revision.
+continuation began from clean `7e6d914`. Neither an uncommitted diff nor a local
+build is a deployed revision.
+
+**Tested candidate (15 October final):** `2c1d08438c890ab1a8dc95bab74bf3d8046f2688`
+on branch `m13-verification`. Unit (476), focused clock regressions, typecheck,
+build and the hosted read-only archive/mobile/export verification passed. Lint
+is not configured, so it is not tested. Readiness is unchanged: core release
+**No**; certified scoring/awards **Blocked**. See the final section of
+[M13 evidence](M13-evidence.md).
+
+## Release requirements by scope — 15 October 2026 (final)
+
+Tested revision `ca788f6bd2c34ed3bb1df8c92e5962ba7ec65c02`; it supersedes `28efe3d`. Details: M13-evidence (top
+sections).
+
+**Core operations.** **Application acceptance complete on the test project;
+release not ready.**
+- Passed in the browser with reload persistence and representative refusals:
+  task create/edit/initialize, templates, checklists, review/Done gates
+  including bulk Done, timers/logs, attendance, contributions, every Task
+  Tools mode (support, duplicate, weekly, day-count, suffix, all-team,
+  carryover, section, refresh, archive, reopen, bulk Done), archive
+  close/correction/export, and profile/timeline parity. Mobile overflow is 0.
+- No known open application defect.
+- Release gates still open (deployment/recovery):
+  1. A hosted predecessor→candidate upgrade (01–29→32). It needs a separately
+     approved hosted project or branch; the test project must not be reset.
+  2. A real Supabase backup/PITR restore drill, using Docker or a database
+     credential for `pg_dump`. Only logical table rehearsals exist.
+  3. An approved staging/production target, release artifact/build ID and
+     deployment.
+  4. Lint is not configured.
+
+**Certified scoring and awards.** **Blocked** by the BN/BO/BP sales mapping
+and older-record provenance; this is unchanged. Workers and engine deliver
+`blocked`/`incomplete` with no winner.
+
+**Drive integration.** **Deferred by the user.** Manual asset links only.
 
 ## Signed-in hosted-test smoke — 14 October 2026
 

@@ -658,3 +658,669 @@ older provenance still block certified scoring/awards only. Core browser
 form/error recovery and exact production-target parity remain outstanding.
 No original-project/production/Drive mutation, deployment or historical import
 occurred. See RELEASE-READINESS for the updated matrix and exact test results.
+
+## M13 final verification — 15 October 2026
+
+Candidate `2c1d08438c890ab1a8dc95bab74bf3d8046f2688` (branch `m13-verification`)
+adds the nonfuture observation margin to the attendance input context. That is
+the same clock defect class as the archive and worker fixes, and it ships with a
+regression test. On this tree, 476 unit tests, typecheck and the production
+build passed. Lint is not configured. The hosted read-only archive `verify`
+phase passed, including the 390 px member task-detail/checklist observation and
+the 200/403 export scoping. Direct reads confirmed the retained award and M07
+outcomes. Lint configuration, hosted 01–28→29 upgrade, full Supabase
+backup/PITR, unmodified cross-version restore, full browser form/error-recovery
+coverage and BN/BO/BP certification remain open. Details: M13-evidence (final
+verification section). Not merged, deployed or applied to production.
+
+## M13 clock/restore/browser follow-up — 15 October 2026 (later)
+
+Tested revision `28efe3deadc3b111f14917ea505ad392c3d1cb23` (branch `m13-verification`; parent `33cbd93`). Not merged,
+pushed, deployed or applied to production. Evidence: the top section of
+M13-evidence.
+
+- Checks: full `vitest run` (59 files, 484 passed; 2 opt-in hosted tests
+  skipped there and run separately, both passed); `npm run typecheck`; and
+  `npm run build` (Next 16.3.6, 24 pages). Lint is not configured. All eight
+  browser phases passed on this tree, plus a fresh full create/checklist/review/
+  Done run (`M13-F87E37-UI2`). Overflow at 390 px and 1365 px is 0 on 20
+  workspace pages.
+- Migration 30 (`observation_clock`) is in the repository and was applied by
+  `supabase db push` **only** to `ngpmwzksekkpvrgoqngk`, whose ledger is now 30.
+  Local PG18 checks passed: upgrade from the exact hosted-data clone, fresh
+  01–30 install, grants, and a refused re-apply.
+- Restore: the PG17→PG18 failure came from the capture procedure's float
+  round trip. An exact-text rehearsal into the unmodified schema, plus a PG18
+  pg_dump/pg_restore round trip, matched all 68 tables and 7 Auth rows by
+  digest. Full Supabase backup/PITR, a PG17→PG17 restore and the hosted
+  01–28→29 upgrade remain not done.
+- Hosted writes this follow-up (test project only):
+  - migration 30;
+  - tasks `M13-F87E37-UI1`/`UI2` and `TT-000007`, plus their
+    checklists/reviews;
+  - timers and logs on `M13-F87E37-TIMER`;
+  - attendance for A on 11 and 12 October;
+  - one fact and its validation;
+  - one M07 lease from the opt-in worker test;
+  - one-time magic-link tokens.
+
+  No passwords were reset in this follow-up. The refused attempts consumed
+  `TT-000004`–`000006` and `TT-000008`.
+
+## M13 remaining application items — 15 October 2026 (final)
+
+**Tested revision `ca788f6bd2c34ed3bb1df8c92e5962ba7ec65c02`** on `m13-verification` (not merged, pushed or
+deployed). Evidence: the top section of M13-evidence.
+
+- Checks:
+  - `vitest run`: 60 files, 487 passed. The 2 opt-in hosted tests were last
+    passed on `28efe3d`; the worker code is unchanged since.
+  - `npm run typecheck` and `npm run build` (24 pages) passed.
+  - `tools/test_m13_task_tools_closed_period.py` passed.
+  - All 11 browser phases passed on the test project.
+  - Lint is not configured.
+- Migrations 31/32 (Task Tools preview eligibility) were applied only to the
+  test project, whose ledger is now 32.
+- Hosted writes (test project only): migrations 31/32, tasks `TT-000009`–`22`,
+  `M13-F87E37-TPL`, the "M13 UI template" v1, the reopen/re-approval/Done of
+  `M13-F87E37-UI2`, a section confirmation, an archive, refresh jobs, and
+  timer/log entries from rerun phases.
+- Closed September and retained evidence are untouched.
+
+## Dashboard cleanup - 15 October 2026
+
+Revision `ae31726` on `m13-verification` (not merged, pushed or deployed).
+- New layout, top to bottom: header with a compact month picker; a
+  plain-language status banner when the month is incomplete; KPI tiles;
+  productivity and workload charts; an award summary (days decided, a
+  per-day strip, monthly status); the unchanged task-overview charts; and a
+  collapsed "Calculation details" (report context and as-of picker, snapshot
+  count, the full award table with reason codes, per-member inputs scoped by
+  presentation scope).
+- Desktop page height went from 3351 px to 2757 px.
+- Checks:
+  - `vitest run`: 61 files, 492 passed. The M11 attendance-tile assertion was
+    updated to the new wording; it still requires "Incomplete" rather than
+    zero.
+  - typecheck and build passed.
+  - On the running local app against the test project:
+    - Director details list all six members; employee A sees only their own.
+    - "Open overdue" is 0 and matches the database.
+    - Horizontal overflow is 0 at 1365 px and 390 px, with details open or
+      closed.
+- The full browser acceptance suites were not rerun, per instruction.
+
+## Redesign slice 1 (visual system, navigation, Today) - 15 October 2026
+
+Revision `090ee34` on `m13-verification` (not merged, pushed or deployed). The
+inputs were the user-approved Stitch DESIGN.md, Today layout
+`today_dashboard_2` (its HTML rendered locally, because the screenshot is
+unusable), "Missions" terminology, the approved navigation, and the
+exclusions of "waiting for help", PNG tracing and mascot work.
+
+- **Visual system.** Plus Jakarta Sans, a lavender canvas, violet for
+  interaction, gold for recognition only, and mint for progress and success,
+  on bento cards. The landing CTA and login were restyled.
+- **Navigation.** A top bar with Today, Missions, Records, Team, Reports and
+  More, plus section tabs. Phones get Today, Missions, Team and More tabs, a
+  separate *Log hours* action and a More sheet. A "Timer running" pill shows
+  on every page. Routes, role visibility and permissions are unchanged.
+  `/today` is the signed-in home; `/dashboard` is Team › Analytics.
+- **Today.** Real data with explicit empty and unavailable states. The
+  "team appreciation" slot shows recently validated contributions; there are
+  no peer stars or new rules.
+- **Checks:**
+  - unit tests (496 passed; 2 opt-in hosted skipped) and typecheck passed;
+  - production build passed (25 pages);
+  - all 11 browser acceptance phases passed against the local test-project
+    server;
+  - the timer pill, the phone *Log hours* action and every More-sheet
+    destination were verified;
+  - overflow is 0 at 390, 768 and 1365 px on the pages checked.
+  The Today rendering was compared with the Stitch HTML rendered at the same
+  three widths. Lint is not configured.
+- **Known gaps for later slices:**
+  - Page bodies other than Today keep their old layouts and "task" wording.
+  - Missions tags wrap in the grid (pre-existing).
+  - Landing-page product screenshots are images of the old green UI and need
+    recapturing.
+  - The Notifications bell still has no behaviour (pre-existing).
+  - There is still no permanent logo or mascot (deferred).
+
+
+## Redesign slice 2 (Missions list and Mission details) - 16 October 2026
+
+On `m13-verification` (not merged, pushed or deployed). Inputs were Stitch
+`missions_list_1` (the `missions_list_2` screenshot is unusable) and
+`mission_details_1`/`2`, with the slice 1 visual system and "Missions"
+terminology.
+
+- **Missions list (`/tasks`).**
+  - Header: "Missions" with an active count and a *New mission* button.
+  - Toolbar: search, status pills with counts (All, Not Started, In Progress,
+    Done) and the five facets.
+  - Views: a card/table switch from 1024 px; cards are the default at every
+    width. `?view=table` restores the full data grid on desktop.
+  - Mission cards show priority, type, an Archived chip, the tag link, the due
+    date (overdue in red), title, description, the mint progress bar, hours,
+    scaled progress, task productivity, freshness and assignees.
+  - Each card also has the inline status picker, *Log hours* and *Open*, plus
+    an actions menu (Quick summary, Edit details, Delete mission).
+- **Mission details (`/tasks/[tag]`).**
+  - Top: breadcrumb, chips, title and *Log hours*.
+  - Overview card: overall progress and fact tiles (Status, Due, Assigned,
+    Completed, Met deadline, Task freshness, Assignees, Reviewers). Tiles are
+    two-up on phones.
+  - Master-checklist hero with Setup/Activity/Closure state pills.
+  - Restyled Lifecycle and scale forms.
+  - "Mission brief & scope": description, details needed, SMART tiles,
+    reviewer notes, comments, template instructions, the structured-details
+    editor and legacy flags.
+  - "Work files & assets": Inputs/Process/Outputs and references, with the
+    Drive-deferred note.
+  - "Dependency missions".
+  - "Activity & updates": a log timeline that replaces the wide log table.
+  - Side column: Timer, Checklist phases, "Effort & scoring inputs" (including
+    the eligibility and participant-share sentences), Manual time entry and
+    Timer records. The redundant "Quick links" panel was removed.
+- **Wording.** UI nouns say "mission". Domain terms are unchanged: task tag,
+  task productivity, task freshness, Task Tools, and the dialog's Create
+  task / Save changes buttons.
+- **Unchanged.** No data, permission, route, server-action or business-rule
+  changes; every existing form field and button label is kept.
+- **Test change.** In `tools/test_m13_core_browser.mjs`, the row-based checks
+  in the parity, batch and carryover phases now open `/tasks?view=table`,
+  because cards are the default. Their assertions are unchanged.
+- **Checks:**
+  - unit tests (496 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - all 11 browser acceptance phases passed against the test project. `task`
+    and `checklist` were rerun after the final layout tweak;
+  - horizontal overflow is 0 at 390, 768 and 1365 px on `/tasks` and a
+    mission, for both the director and member A.
+  Lint is not configured.
+- **Known gaps:**
+  - The master checklist page itself is not yet restyled.
+  - Stitch extras that would need new rules or data were not built: streaks,
+    XP, star credits, "waiting for help", blockers and "ready to close".
+  - The runner `tools/test_m13_hosted_core_browser.py` crashes printing server
+    logs on a cp1252 console. Run it with `PYTHONIOENCODING=utf-8`.
+
+## Redesign slice 3 (Master checklist) - 16 October 2026
+
+On `m13-verification` (not merged, pushed or deployed). This slice follows
+Stitch `master_checklist_1` (desktop) and `master_checklist_2` (phone), using
+the slice 1/2 visual system (`MissionPanel`, `MissionProgress`, form styling
+from Mission details).
+
+- **Master checklist (`/tasks/[tag]/checklist`).**
+  - Breadcrumb back to the mission and a gradient hero with the "Mission
+    master checklist" chip, the task tag, the checklist title and an Activity
+    rollup tile. The progress-owner line, "Activity: … Current task progress:
+    …" and the weighting/gate note are unchanged text.
+  - Milestone breakdown: one card each for Setup, Activity and Closure, with
+    the section percentage, a mint bar, the raw state and gate text, and the
+    manager *Confirm section* form.
+  - "Checklist items" is grouped by section (unsectioned nodes go under "Needs
+    mapping"). Within a section, nodes are shown depth-first under their
+    parents, keeping stored sibling order. Each node is still an `<article>`
+    with its title, node-type chip, the unchanged meta line, the linked-task
+    link, the inline *Completion* select with *Save state*, and a collapsed
+    "Structure / legacy correction" panel.
+  - Footer gate card with the Done-gate sentence and *Back to mission*.
+  - The side column (Create checklist, Add item, Change progress owner) is
+    rendered only for managers on open missions. When it is absent, the item
+    list takes the full width.
+- **Unchanged.** No data, permission, server-action or business-rule
+  changes, and no streaks, XP or credits. Every form field, label, placeholder
+  and button text is kept. Reason inputs also get an `aria-label` matching
+  their placeholder. The header link now reads *Back to mission* (it was
+  *Back to task*).
+- **Checks:**
+  - typecheck, unit tests (496 passed; 2 opt-in hosted skipped) and the
+    production build passed;
+  - all 11 browser phases passed against the test project. UI1 was already
+    Done, so `checklist` took its rerun path. `task checklist` were then run
+    with `M13_UI_TAG=M13-F87E37-UI3`, a new synthetic test-project mission,
+    and the full form path passed: add items, confirm sections, Yes/No/N/A,
+    50% rollup, owner switch to 100%, the refused early Done, review and Done;
+  - horizontal overflow is 0 at 390, 768 and 1365 px on 7 missions'
+    checklist pages for the director and member A, with every correction
+    panel opened (up to 20 forms on a page).
+- **Environment note.** A separate `npm run dev` (port 3000, pointed at the
+  non-test project) was running from the repo folder. Next 16 refuses a second
+  dev server in the same directory, so the browser harness was run from an
+  isolated scratch copy of the repo with identical `app`, `components` and
+  `tools`. The other server was left untouched.
+- **Known gaps:** The Stitch Yes/No/N/A segmented toggle was not built. The
+  native `Completion` select is kept because tests and keyboard users rely on
+  it. Stitch's XP, rewards and "Save draft" are not built.
+
+## M14 nested checklist pages - 16 October 2026
+
+On `m13-verification`; not merged or deployed. Details are in
+`docs/plans/M14-evidence.md`, and the user's approvals are in DECISIONS.
+
+- **What the user sees.**
+  - Every master-checklist row opens its own page at
+    `/tasks/[tag]/checklist/[nodeId]`, and pages nest as deep as needed. Each
+    page shows Result OPEN/CLOSED/N/A, rollup progress, a breadcrumb, a back
+    link, its rows, and links and estimated time per row.
+  - The master checklist lists each section's top-level rows. A
+    template-created section root group ("Setup", "Activity", "Closure") is
+    listed as its rows directly.
+  - Assignees can now create the checklist and add, edit and remove rows.
+    Managers keep section mapping, section gates, the progress-owner switch and
+    links to real tasks.
+- **Database.**
+  - Forward migration `33_nested_checklist_pages.sql` adds the `links` column
+    and validated `links`/`estimated_minutes` on add and edit. It also widens
+    `checklist_command` permissions as described above.
+  - Applied only to disposable local databases and the M13 test project.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-33 and upgrade 32->33 on local
+    PG18) passed;
+  - unit tests (500 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project: all 11 core browser phases plus the new `nested`
+    phase passed. `template` first failed because its rows sat inside a
+    section root group; it passed after the section-root fix, together with
+    `checklist`, `batch` and `nested`.
+  - The browser runs used the user's running dev server via
+    `M13_EXISTING_SERVER=http://localhost:3000`, which points at the test
+    project.
+- **Open:**
+  - The item timer is not built. Whether its time counts as task hours is
+    still to be decided by the user.
+  - The feature-parity audit against the sheet tracker comes next.
+
+## M14 checklist item timers - 16 October 2026
+
+On `m13-verification`; not merged or deployed. This follows the user's
+decision that stopping an item timer saves a normal task log tagged with the
+item. Details are in `docs/plans/M14-evidence.md`.
+
+- **What the user sees.**
+  - Every checklist item or page page has an "Item timer" panel: Start (with
+    an optional note), a live clock, "Stop and log time" and "Discard timer".
+  - Leaf rows have compact Start/Stop controls.
+  - "Logged here" and row "Elapsed" totals show the item's time; a page's
+    total includes the items inside it.
+  - The time is an ordinary task log, so it appears in task hours,
+    productivity, reports and the mission's activity once.
+- **Database.**
+  - Forward migration `34_checklist_item_timers.sql` adds item tags on timers
+    and logs, `start_checklist_item_timer` (built on the unchanged atomic timer
+    command), and triggers that copy the tag onto the stop's logs and block
+    forged or changed tags.
+  - Applied only to disposable local databases and the M13 test project.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-34; upgrades 32->33->34 with
+    existing data preserved) passed;
+  - unit tests (501 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project, all 12 browser phases: 11 passed in the combined
+    run. `task` timed out once waiting for a Missions card action (the dev
+    server was recompiling after the build) and passed when rerun alone. The
+    `nested` phase covers start, a reload while running, stop with a note,
+    and the logged time on the item, its row and the mission.
+- **Open:** reports do not yet break hours down by checklist item; the
+  feature-parity audit against the sheet tracker comes next.
+
+## M14 duplicate rows and checklist task owner - 16 October 2026
+
+This is gap 1 of the sheet-parity audit. It is on `m13-verification`, not
+merged or deployed.
+
+- **Duplicate.**
+  - Each row and page has a "Duplicate" action (assignees and managers). It
+    copies the row, or the page with everything inside it, directly after the
+    original, with " (copy)" on the title.
+  - Copies start as fresh work (No). Rows linked to real tasks are skipped.
+  - Uses forward migration `35_duplicate_checklist_rows.sql`, applied only to
+    disposable databases and the M13 test project.
+- **Task owner.** The master checklist home shows the task's assignees as
+  "Task owner".
+- **Tooling.** `tsconfig.json` and `vitest.config.mts` exclude `.claude/`.
+  The redesign slice 4 worktree under `.claude/worktrees` had made root-level
+  vitest runs pick up its in-progress tests.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-35; upgrades through 35) passed;
+  - unit tests (501 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - on the hosted test project, `nested` (now also checking the task owner and
+    duplicating a sub-page with its items) and `checklist`, `template` and
+    `batch` passed;
+  - the user's port-3000 dev server had stopped, so these runs used the
+    harness's own temporary server.
+- **Next gaps:** the Missions headline strip (needs the user's colour
+  cut-offs), hours worked today on Mission details, Team Index holiday marks
+  and report validity (after the slice 4 restyle), and item hours in reports.
+
+## M14 Missions headline and hours worked today - 17 October 2026
+
+These are gaps 2 and 3 of the sheet-parity audit (commits `f0de786` and the
+following one). They are on `m13-verification`, not merged or deployed.
+
+- **Missions headline (gap 2).** The user approved bands, leaders and averages
+  (see DECISIONS). The strip shows critical team member, most productive and
+  most loaded (managers only), allocation spread, team average productivity
+  and team average progress, all coloured, plus open monthly goals and the
+  Vision links. It streams in so the mission list renders first.
+- **Hours worked today (gap 3).**
+  - Mission details shows the task's hours logged today by everyone.
+  - Forward migration `36_task_effort_breakdown.sql` adds a totals-only
+    SECURITY DEFINER aggregate, because members can read only their own logs.
+  - The same aggregate now feeds item "Logged here"/"Elapsed", which had shown
+    a member only their own share.
+  - Applied only to disposable databases and the M13 test project.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-36; upgrades through 36) passed;
+  - unit tests (505 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project: `nested` (now also checking team-wide hours today
+    for a non-assignee and the member headline), `task`, `parity`, `tools`,
+    `batch` and `carryover` passed;
+  - overflow is 0 for the headline at 390, 768 and 1365 px for the director
+    and member A.
+- **Test-run note.** I stopped one regression run partway, because its dev
+  server had grown to about 7 GB. It left M13-F87E37-UI2 reopened with a
+  fresh review approval, so the next `batch` run's rerun branch committed the
+  bulk Done. A further `batch` run then passed the full reopen, refusal,
+  re-approval and Done cycle.
+- **Remaining gaps:** Team Index holiday marks and report validity (waiting
+  for the redesign slice 4 restyle of the Team pages), and item hours in
+  reports.
+
+## Redesign slice 4 (remaining pages) - 17 October 2026
+
+On branch `claude/redesign-slice-4-a5152e`, cut from `m13-verification` at
+`c3bca09`. Committed locally only; not pushed, merged or deployed. This slice
+applies the slice 1–3 visual system to every page that still had the old
+layout. `/today`, `/tasks`, Mission details and the checklist pages are not
+touched.
+
+- **Shared pieces.**
+  - `components/missions/mission-ui.tsx` now has `MissionPage` (the centred
+    page column), `MissionPageHeader` (Missions-style title, chip,
+    description and actions), `PageChip`, `StatTile` (the Mission details
+    fact tile), `MissionNotice` (an info or attention callout) and
+    `MissionEmpty`.
+  - `app/globals.css` adds:
+    - `.field` and `.field-label`, matching the Mission details FIELD style;
+    - `.link` and `.disclosure`;
+    - `.button-primary` and `.button-secondary` for plain buttons
+      (`.button-primary` was already used by the award controls but was
+      never defined);
+    - two overflow guards:
+      - `body { overflow-wrap: break-word }` wraps long reason codes. It does
+        not change table or grid sizing.
+      - `fieldset { min-inline-size: 0 }` stops one long `<select>` option
+        from widening a form past phone width.
+- **Pages (one commit each).** The five record pages share
+  `dated-record-module.tsx`, so the module has its own commit and each page
+  frame has another. The report components are shared by Reports, Team
+  profiles and Calculation details; they are committed with Reports.
+  - **Dashboard:** the header now has a member chip and a field-style month
+    picker. The data banner uses the attention colour tokens, and daily-star
+    winners are gold.
+  - **Team index, profile and employee reports:**
+    - A breadcrumb back to Team, initials avatars and `StatTile` metrics.
+    - Each section is a `MissionPanel`, and the award controls use field
+      styling.
+    - Legacy star records are gold.
+    - Units are hidden on figures that are unavailable.
+  - **Reports:**
+    - The month archive has field-styled forms, and version links show as
+      tabs.
+    - The live view context, live report, operational evidence and archived
+      report are now icon panels, with pill-shaped download links and
+      bordered, scrolling tables.
+  - **Timeline:** `StatTile` ranges, avatar group rows and Gantt bar colours
+    that match the status badges.
+  - **My effort log:** a narrow column with an hours chip and violet tag
+    chips.
+  - **Attendance:**
+    - The record panel stays in place while the page scrolls (sticky).
+    - Each employee has a validity badge.
+    - Record cards have a correction disclosure.
+  - **Dated records (meeting points, ideas, daily facts, suggestions,
+    sales):**
+    - An add panel and a rules notice.
+    - Record cards with the author's avatar and a review-state badge.
+    - Review and withdrawal forms laid out on a single row.
+  - **Vision & milestones:** a Company header, and milestone progress uses
+    mint `MissionProgress`.
+  - **Task Tools and participant reconciliation:**
+    - Icon panels for each tool, plus coverage tiles.
+    - Field-styled controls, Drive operations and template manager.
+  - **Settings:** an avatar and icon panel headings.
+- **Wording.** Only UI nouns changed to "mission". Examples: the Mission
+  overview and Mission priorities/statuses/types charts, the Mission timeline
+  title, Today's/Yesterday's missions and the "Missions" quick link. The page
+  title "Task tools" is now "Task Tools". Domain terms are unchanged.
+  Headings, labels and text that the browser harness uses are also unchanged:
+  - Employee task list, Recorded effort, Daily attendance validity, Undated
+    tasks, and Dependencies and carryover;
+  - every form label, placeholder, button and aria-label.
+  The review and withdrawal reason inputs also get `aria-label`s matching
+  their placeholders. Fact cards keep their paragraph order (the third `<p>`
+  is still the review state).
+- **Unchanged.** No data, permission, route, server-action, migration or
+  business-rule changes.
+- **Checks:**
+  - typecheck and unit tests passed (501 passed; 2 opt-in hosted skipped);
+  - the production build passed (25 pages);
+  - horizontal overflow is 0 at 390, 768 and 1365 px on all 18 slice 4 URLs
+    for the director and member A. This was measured with every `<details>`
+    opened, by a read-only checker that reuses the harness's session setup
+    against a local dev server (port 3222, M13 test project). Member A's 404
+    on another member's profile is the existing permission rule. The final
+    sweep covered 108 page loads. Right after `next build`, the fresh dev
+    server briefly served a stale 404 for employee reports; after a
+    recompile it rendered for both roles.
+  - Screenshots were reviewed at 390 and 1365 px.
+- **Browser harness (run with the user's approval).** All 12 phases passed
+  (59 PASS) against the slice 4 dev server on port 3222, with the default
+  tags: task, checklist, timerlog, attendance, contribution, tools, reports,
+  parity, batch, carryover, template and nested. Records that were already
+  present were reused (rerun paths for UI1, the copy batches, carryover and
+  the nested items), so only bounded synthetic rows were added. Parity
+  includes the 390 px own-profile overflow check.
+- **Known gaps:**
+  - The `loading.tsx` skeletons for dashboard, team, logs and attendance
+    keep their old padding.
+  - `/records/[kind]/[id]/history` still uses `WorkspaceHeader`; it was not in
+    this slice.
+  - The milestone dialog and statement editor sheets were not restyled.
+
+## Slice 4 merge and M14 gaps 4-5 - 17 October 2026
+
+- **Slice 4 merged.** At the user's request ("Do them yourself"),
+  `claude/redesign-slice-4-a5152e` was merged into `m13-verification`
+  (`447bf95`). The only conflict was both sides appending to this file; both
+  entries are kept.
+  - The merge passed typecheck, unit tests (505), the build, and all 12
+    browser phases (63 PASS) on the test project.
+  - It was then pushed (`c3bca09..447bf95`).
+- **Gap 4: Team Index.**
+  - The daily star log shows "Holidays (n)" and an "H" badge on team holiday
+    dates, from forward migration `37_team_holiday_dates.sql`. A date counts
+    when every active member's attendance is an active Holiday record; only
+    the dates are exposed.
+  - A "Report validity" column shows Valid or Incomplete from each member's
+    live calculation status.
+- **Gap 5: item hours.** Employee reports have a "Hours by checklist item"
+  panel that groups the employee's item-timer hours by task and item, linking
+  to each item page. Exports are unchanged.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-37; upgrades through 37) passed;
+  - unit tests (507 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project: migration 37 applied after a dry run that listed only
+    37; `nested` (now also checking the item-hours panel, holidays and report
+    validity), `parity` and `reports` passed;
+  - overflow is 0 on `/team` and an employee report at 390, 768 and 1365 px
+    for the director and member A.
+- **Display choices for review** (DECISIONS, 17 October): the holiday
+  definition and the report-validity mapping. Neither changes any attendance,
+  award or scoring rule.
+- All sheet-parity gaps from the 16 October audit are now built. Drive "Create
+  Work Files" stays deferred by the user, and sales scoring still needs the
+  user's field mapping.
+
+## Quick "Create work file" and user setup guide - 17 October 2026
+
+- **Create work file.**
+  - Mission details shows assignees and managers a panel on open missions. It
+    opens a new Google Doc, Sheet or Slides file in the person's own account,
+    suggests the name `[Task tag] - [Title]` (with Copy name), and saves the
+    file's link under Inputs, Process or Outputs.
+  - The panel says the link is saved only; TaskPulse does not create, rename
+    or share the file.
+  - Forward migration `38_assignee_work_file_links.sql` lets assignees add
+    ordinary http(s) links to their own tasks. Related employee or report
+    links stay manager-only. It is applied only to disposable databases and
+    the M13 test project.
+- **Guide for the user.** `docs/setup/WHAT-I-NEED-FROM-YOU.md`:
+  - Part 1, about 5 minutes: screenshots of the sales BN/BO/BP headers and
+    formulas.
+  - Part 2, about 1 hour: Google Cloud project, Drive API, service account,
+    Shared Drive, a key stored without showing it (PowerShell step tested
+    with a fake key), and reviewer emails.
+  - Drive stays deferred until the user finishes Part 2 and asks to resume.
+- **Checks:**
+  - `tools/test_m14_database.py` (fresh 01-38; upgrades through 38) passed;
+  - unit tests (507 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed;
+  - hosted test project: migration 38 applied after a dry run that listed only
+    38; `nested` (now saving a work-file link as assignee A and confirming
+    non-assignee B has no panel) and `task` passed;
+  - overflow is 0 on Mission details at 390, 768 and 1365 px for the director
+    and member A.
+
+## M15.1 tenancy foundation - 17 October 2026
+
+- **Forward migration `39_organizations_tenancy_foundation.sql`:**
+  - adds `organizations` and company #1 (Saahithyaa, the default);
+  - adds `organization_id` on all 30 company-owned public tables, backfilled
+    without counting it as work or resetting reviews;
+  - fills each row's company from its parent references and refuses links
+    between companies;
+  - refuses signed-in writes and deletes of another company's rows, even
+    inside SECURITY DEFINER commands;
+  - adds a RESTRICTIVE company policy per table;
+  - makes task tags, employee IDs, template names, statement keys and daily
+    star dates unique per company;
+  - scopes `get_user_role` and `can_read_employee_details` to the caller's
+    company;
+  - provisions new accounts only from server-set app metadata. With no company
+    named they join the default company; with an unknown company they stay
+    inactive.
+  - Asia/Kolkata stays fixed.
+- **Checks:**
+  - `tools/test_m15_database.py` (two companies; fresh 01-39 and upgrade
+    38->39) passed;
+  - `tools/test_m14_database.py` with 39 included passed (50 checks);
+  - unit tests (507), typecheck passed;
+  - migration 39 applied to the M13 test project after a dry run listing only
+    39: 1 company, 30 tables, no rows without a company.
+- **Browser regression after 39** (hosted test project, harness server):
+  - 11 of 12 phases passed in the combined run (65 PASS).
+  - `parity` failed once because Supabase dropped the live-presentation
+    request (`ECONNRESET`). It passed when rerun alone: 17 tasks matched
+    across tracker, timeline and the 390 px own profile.
+- **Production build** passed.
+- **Evidence:** `docs/plans/M15-evidence.md`.
+- **Remaining risk:** SECURITY DEFINER commands still *read* across companies,
+  and private tables have no company yet. That is M15.2, and it must land
+  before a second real company is onboarded. Open sign-up still joins the
+  default company until M15.4.
+
+## M15.2 company scope inside commands and workers - 17 October 2026
+
+On `m13-verification`; not deployed. Details: `docs/plans/M15-evidence.md`
+("M15.2"). Design: the plan's "M15.2 design".
+
+- **What changed.** Forward migration `40_company_scoped_commands.sql`:
+  - the non-bypass role `taskpulse_definer` owns all 71 tables and every
+    command function (7 system functions stay with `postgres`);
+  - FORCE row security is scoped by `taskpulse_private.m15_scope()`: the
+    caller's company, a per-company loop setting, or the worker's
+    `x-taskpulse-organization` header (service role only);
+  - `organization_id` is added on 31 private tables;
+  - award slots, month periods/revisions and Task Tools reservations become
+    per-company keys;
+  - each claimed job carries its company, and awards queue once per company;
+  - `m15_secure()` is added, and every later migration must call it.
+  - App: the award, Drive and performance workers send each job's calls with
+    its company (`lib/supabase/worker.ts`, now `shared/supabase/worker.ts`).
+- **Checks:**
+  - `tools/test_m15_database.py` (27 checks; fresh 01-40, upgrade 38->40)
+    passed. It covers 15 read commands isolated in both directions, worker
+    header scoping, per-company award slots, private stamping and
+    `m15_secure` coverage.
+  - `tools/test_m14_database.py` with 40 (51 checks) passed.
+  - Unit tests (509 passed; 2 opt-in hosted skipped), typecheck and the
+    production build passed.
+  - Hosted test project: migration 40 applied after a dry run listing only
+    40. Two earlier attempts deadlocked against live API requests and rolled
+    back; the migration now takes all table locks up front. Afterwards there
+    are 0 unsecured tables, and `taskpulse_definer` has no BYPASSRLS.
+  - All 12 browser phases passed through the user's port-3000 server (it
+    points at the test project; Next would not start a second dev server in
+    the same folder):
+    - 11 phases in the combined run (64 PASS);
+    - `parity` passed on rerun (17 tasks). It had timed out during dev
+      recompiles; the database calls behind it take 0.14-0.53 s.
+- **Remaining:**
+  - The Task Tools number sequence and the settings singletons are shared
+    across companies (M15.3).
+  - Open sign-up still joins the default company (M15.4).
+  - Production still lacks migrations 10-40.
+
+## Modular refactor - 18 October 2026
+
+- **Request:** the user asked to restructure the codebase into modules, each
+  with public files that call private ones, and one git branch per module
+  (17 October 2026). Behaviour, formulas, SQL, migrations and permissions were
+  not to change.
+- **Branches:** `refactor/base` (cut from `m13-verification` at 4a1c684) holds
+  everything. One short branch per step was merged into it: foundation,
+  marketing, auth, attendance, support, milestones, drive (six in parallel
+  sessions), then tasks, checklists, time-tracking, scoring, reports + records,
+  team, workspace-views and cleanup. Nothing is merged into `main` or pushed.
+- **Result:**
+  - `lib/` and `components/` are gone. Code lives in `app/` (routing only),
+    `modules/<name>/` (14 modules) and `shared/`. See `docs/ARCHITECTURE.md`
+    and each module's README.
+  - Each module exposes `index.ts` (server reads), `client.ts` (pure helpers
+    for client components), `*actions.ts` (server actions) and `components/`.
+    Everything in `internal/` is private.
+  - `__tests__/architecture/boundaries.test.ts` fails on a private import from
+    outside a module, on `shared/` importing a module, on a domain module
+    importing `workspace-views`, on module import cycles, and on any page,
+    route or component calling `.from()`/`.rpc()`. That list is now empty.
+  - Cycles that existed were removed without behaviour change: tasks no longer
+    imports time-tracking (Log hours is a slot filled by the page); support
+    reads its report counts from the shared `team_summary_inputs` fetch instead
+    of importing scoring; `Exact`, calendar periods, the observation clock and
+    `localCheckTime` moved to `shared/`.
+  - Removed dead code: `recalculateTaskMetrics`, `SnapshotButton`, unused
+    form helpers. The retired `freezeMonthlySnapshot` stub is kept (reports).
+  - The source-encoding check now scans `app`, `modules`, `shared` and
+    `types`; it found and this work repaired pre-existing garbled dashes in
+    `types/tracker.ts` comments (present since 8ab3981).
+- **Checks (every step and at the end):** `npm run typecheck`, `npm test`
+  (522 passed, 2 opt-in hosted skipped) and `npm run build` passed. Public
+  pages, login and signed-out redirects for every workspace route, the export
+  endpoint (403 signed out) and the award worker (503 unconfigured) behave as
+  before on the port-3000 dev server.
+- **Not verified:** signed-in pages were not exercised in a browser after the
+  refactor (no test login was used). Re-run the M13 browser phases before
+  merging into `main`.
+- **Remaining:** `modules/workspace-views/internal/today.ts` still reads
+  tables owned by tasks, time-tracking, support and scoring directly; move
+  those reads behind the owning modules' public APIs when Today next changes.
+  No `organizations` module yet: M15 tenancy is database-side plus
+  `shared/supabase/worker.ts`.
