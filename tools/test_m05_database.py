@@ -310,7 +310,7 @@ for db in DBS:
     actor(db,'00000000-0000-0000-0000-000000000002',f"SELECT public.task_details_command('{leaf}','save','{{\"smart_specific\":\"Relevant reviewed content change\"}}',{ver},'{uuid4()}');")
     assert value(db,f"review_approved FROM public.task_reviewers WHERE task_id='{reviewing}'")=='f'
     # Shared pure fixtures are evaluated independently in PostgreSQL with fixed expected results.
-    for fixture in json.loads((ROOT/'docs/plans/fixtures/m05-rollups.json').read_text(encoding='utf-8')):
+    for fixture in json.loads((ROOT/'__tests__/fixtures/m05-rollups.json').read_text(encoding='utf-8')):
         if 'expectedError' in fixture or fixture['name'].startswith('Linked'):continue
         fid=create(db,'FX'+str(uuid4())[:8],auto=False)
         checklist(db,fid,'create',{'title':'Independent parity fixture'})

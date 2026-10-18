@@ -189,7 +189,7 @@ for db in DBS:
     assert next(x for x in source(db,day,end,before_review)['contributions']['sources'] if x['id']==fact['id'])['state']=='pending'
     assert next(x for x in source(db,day,end)['contributions']['sources'] if x['id']==fact['id'])['state']=='validated'
     output=source(db,day,end)
-    (ROOT/'docs/plans/fixtures'/('m07-source-'+('fresh' if db==DBS[0] else 'upgrade')+'.json')).write_text(json.dumps(output,indent=2)+'\n')
+    (ROOT/'__tests__/fixtures'/('m07-source-'+('fresh' if db==DBS[0] else 'upgrade')+'.json')).write_text(json.dumps(output,indent=2)+'\n')
     print('PASS',db,'as-of scale/share states; original captured scale correction; applied period log/manual credit; no extra manual effort; contribution history')
     # Synthetic terminal observations verify completion captures; M05 separately owns real Done gates.
     sql(db,f"UPDATE public.tasks SET status='Done',completed_date='{day}',progress_percentage=100 WHERE id='{task}';")

@@ -25,14 +25,13 @@ module may import it (the boundary test enforces this).
 | File | Job |
 |---|---|
 | `nav-counts.ts` | Combines `countOpenTasks`, `countMyLogsInPeriod` and `countOpenMilestones` for the drawer badges |
-| `today.ts` | Loads the Today page sections, each one ready or unavailable on its own |
+| `today.ts` | Combines the owning modules' Today reads into page sections, each one ready or unavailable on its own |
 | `timelines/gantt.ts` | Builds the Gantt rows, bars and ticks from tasks |
 
 ## Database it owns
-None. Today still reads a few tables owned by other modules directly
-(`today.ts`); move those reads behind their modules' public APIs when Today
-changes next.
+None. Today reads through the public APIs of tasks, time-tracking, support,
+scoring and team; nothing here queries the database directly.
 
 ## Depends on
 `shared/*` and the public APIs of `auth`, `tasks`, `time-tracking`,
-`milestones`, `scoring`, `reports` and `team`'s neighbours as each screen needs.
+`milestones`, `scoring`, `support`, `reports` and `team` as each screen needs.

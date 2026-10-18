@@ -12,7 +12,7 @@ import { failure, type AuthActionState } from './internal/types';
  * PUBLIC authentication Server Actions.
  *
  * All three follow the `ActionResponse<T>` contract from
- * `steering/tech-stack.md`. On success the login and signup actions redirect,
+ * `reference/steering/tech-stack.md`. On success the login and signup actions redirect,
  * so they only ever *return* on failure or when a confirmation step is pending.
  */
 

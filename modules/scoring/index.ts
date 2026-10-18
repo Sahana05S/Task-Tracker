@@ -10,3 +10,4 @@ export { calculateAward } from '@/modules/scoring/internal/stars/calculation';
 export { runAwardJobs } from '@/modules/scoring/internal/stars/jobs';
 export { handleAwardWorkerRun } from '@/modules/scoring/internal/stars/worker';
 export { getTeamSummaryInputs, parseTeamSummary } from '@/modules/scoring/internal/analytics/summary-inputs';
+export { readTeamAwardModel } from '@/modules/scoring/internal/stars/team-read-model';

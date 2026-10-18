@@ -8,7 +8,7 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `getSupportModuleData()`, `getMeetingPointsData()`, `summarizeSupport()`, `summarizeEmployeeSupport()`, `loadContributionContext()`, `loadAttendanceContext()`, `parseInputContext()`, summary types, and everything in `client.ts` |
+| `index.ts` | `getSupportModuleData()`, `getMeetingPointsData()`, `summarizeSupport()`, `summarizeEmployeeSupport()`, `loadContributionContext()`, `loadAttendanceContext()`, `parseInputContext()`, the Today reads `getMemberContributionStates()` and `getRecentValidatedContributions()`, summary types, and everything in `client.ts` |
 | `actions.ts` | `'use server'` commands: `saveReportSnapshotAction`, `deleteReportSnapshotAction`, and the knowledge/sales wrappers (`saveKnowledgeEntryAction`, `deleteKnowledgeEntryAction`, `toggleKnowledgeValidationAction`, `saveSalesLogAction`, `deleteSalesLogAction`) that forward to `writeDatedRecord` |
 | `client.ts` | Contribution contract (`rawContribution`, `contributionFromStates`, coefficients, `RecordKind`, `ValidationState`, `DatedRecordMetadata`), input-context types, permission helpers, `DatedEntry`/`TaskChoice` |
 | `components/` | `support-pages.tsx` (`KnowledgeModule`, `SalesLogModule`, `ReportsModule`) and `dated-record-module.tsx` (`DatedRecordModule`, `DatedRecordEditor`) |
@@ -19,6 +19,7 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 | `report-summary.ts` | Team report-snapshot counts from the shared team summary |
 | `queries.ts` | Period reads of facts, ideas, suggestions, sales, reports, members and tasks; summaries |
 | `meeting-queries.ts` | Meeting points page read (meeting points, members, tasks) |
+| `today-queries.ts` | Today reads: a member's contribution states in a range, the latest validated facts/ideas/suggestions (throw on error) |
 | `input-context.ts` | Calls and validates the contribution/attendance input-context RPCs |
 | `commands.ts` | Report snapshot insert/update/delete and database error messages |
 | `input.ts` | Parse and validate the report snapshot form |

@@ -7,7 +7,7 @@ team page, and the signed-in member's own Settings (display name).
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `getTeamIndexData`, `getEmployeeProfileData`, `getEmployeeReportsData`, `getEmployeeByEmployeeId`, `resolveEmployeeRouteState`, and their types. Also re-exports everything in `client.ts`. |
+| `index.ts` | Server reads: `getTeamIndexData`, `getEmployeeProfileData`, `getEmployeeReportsData`, `getEmployeeByEmployeeId`, `resolveEmployeeRouteState`, `getMemberNames` (id -> display name; empty on error), and their types. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure: `canViewTeamModule`, `canViewEmployeeProfile`, `canViewEmployeeReports`, `employeeHref`, `employeeReportsHref`, `normalizeEmployeeIdParam`, `buildEmployeeAnalyticsCharts`, `optionalEmployeePerformance` |
 | `profile-actions.ts` | `'use server'` `updateDisplayName` |
 | `components/` | `EmployeeAnalyticsCharts`, `AwardControls`, `SettingsForm` |
@@ -22,6 +22,7 @@ team page, and the signed-in member's own Settings (display name).
 | `routes.ts` | Employee id URL parameters and links |
 | `mappers.ts` | Daily star, score component and report snapshot rows |
 | `profile.ts` | Display-name validation and the own-row update |
+| `member-names.ts` | Member display names keyed by id (used by Today) |
 
 ## Database it owns
 | Object | Defined in |

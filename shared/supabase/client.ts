@@ -9,7 +9,7 @@ import type { Database } from '@/types/database';
  * server-side clients in `./server.ts` and the session refresh in
  * `./middleware.ts`.
  *
- * Per `steering/tech-stack.md`, this client is for reads and realtime
+ * Per `reference/steering/tech-stack.md`, this client is for reads and realtime
  * subscriptions only. Client components must never write to the database
  * directly — route all mutations through Server Actions.
  */

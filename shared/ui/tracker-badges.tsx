@@ -14,7 +14,7 @@ import type {
  * Soft-tint badges for the tracker taxonomies.
  *
  * The tint values themselves live once, as utility classes in
- * `app/globals.css`, transcribed from `steering/responsive-ui-design.md`. These
+ * `app/globals.css`, transcribed from `reference/steering/responsive-ui-design.md`. These
  * components only select the right class for a given enum value.
  *
  * Each lookup is `satisfies Record<Enum, string>`, so adding a member to any

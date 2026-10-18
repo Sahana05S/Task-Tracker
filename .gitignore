@@ -31,3 +31,12 @@ __pycache__/
 # supabase local dev
 /supabase/.branches
 /supabase/.temp
+
+# local tooling (Claude sessions, worktrees, launch config) and editor workspaces
+/.claude/
+*.code-workspace
+
+# reference material and planning docs: kept locally, not in the repository
+/reference/
+/docs/plans/
+/.kiro/

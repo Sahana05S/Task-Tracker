@@ -56,6 +56,6 @@ for db in DBS:
     sql(db,"SET ROLE anon; SELECT public.live_presentation_context(current_date,current_date+1,clock_timestamp(),NULL)",False)
     actor(db,user4,'SELECT * FROM taskpulse_private.presentation_history',False)
     sql(db,"UPDATE taskpulse_private.presentation_history SET source='{}'",False)
-    path=ROOT/'docs/plans/fixtures'/('m11-'+('fresh' if db==DBS[0] else 'upgrade')+'-context.json')
+    path=ROOT/'__tests__/fixtures'/('m11-'+('fresh' if db==DBS[0] else 'upgrade')+'-context.json')
     path.write_text(json.dumps(model,indent=2),encoding='utf-8')
     print('PASS',db,'fresh/upgrade, retained report equality, own/manager access, inactive/anonymous/DM/cross-employee denial, immutable history, dated series, unavailable history',flush=True)

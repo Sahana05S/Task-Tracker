@@ -130,7 +130,7 @@ for db in DBS:
             identities_before=sql(db,'SELECT jsonb_agg(jsonb_build_array(id,task_tag) ORDER BY id) FROM public.tasks;')
         if db==DBS[1] and m.name.startswith('16_'):
             preview=json.loads(sql(db,(ROOT/'supabase/reconcile_m02_m03.sql').read_text(encoding='utf-8')).splitlines()[-1])
-            (ROOT/'docs/plans/fixtures/m03-pre16-upgrade-preview.json').write_text(json.dumps(preview,indent=2)+'\n',encoding='utf-8')
+            (ROOT/'__tests__/fixtures/m03-pre16-upgrade-preview.json').write_text(json.dumps(preview,indent=2)+'\n',encoding='utf-8')
         sql(db,m.read_text(encoding='utf-8'))
     if db==DBS[0]: sql(db,seed)
     else:
@@ -140,7 +140,7 @@ for db in DBS:
         assert joins_before==json.loads(sql(db,"SELECT jsonb_build_object('assignees',(SELECT jsonb_agg(to_jsonb(a) ORDER BY id) FROM public.task_assignees a),'reviewers',(SELECT jsonb_agg(to_jsonb(r)-'reviewed_revision' ORDER BY id) FROM public.task_reviewers r));"))
         assert identities_before==sql(db,'SELECT jsonb_agg(jsonb_build_array(id,task_tag) ORDER BY id) FROM public.tasks;')
     report=json.loads(sql(db,(ROOT/'supabase/reconcile_m02_m03.sql').read_text(encoding='utf-8')).splitlines()[-1])
-    (ROOT/'docs/plans/fixtures'/('m03-'+('fresh' if db==DBS[0] else 'upgrade')+'-reconciliation.json')).write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+    (ROOT/'__tests__/fixtures'/('m03-'+('fresh' if db==DBS[0] else 'upgrade')+'-reconciliation.json')).write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
     assert value(db,"task_productivity IS NULL FROM public.tasks WHERE task_tag='T2'")=='t'
     print('PASS',db,'migrations and retained upgrade identity/history')
     assert json.loads(value(db,"(SELECT jsonb_object_agg(p,taskpulse_private.priority_weight(p)) FROM unnest(enum_range(NULL::public.task_priority)) p)"))=={'No':0.25,'Low':0.5,'Medium':0.75,'High':1,'Focus':1.2}
@@ -333,6 +333,6 @@ sql(db,f"INSERT INTO public.task_timers(id,task_id,user_id,status) VALUES ('5000
 report=json.loads(sql(db,(ROOT/'supabase/reconcile_m02_m03.sql').read_text(encoding='utf-8')).splitlines()[-1])
 assert len(report['duplicate_timer_links'])==1 and report['duplicate_timer_links'][0]['link_count']==2
 assert report['legacy_unknown_effect_count']==2
-(ROOT/'docs/plans/fixtures/m03-duplicate-timer-reconciliation.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+(ROOT/'__tests__/fixtures/m03-duplicate-timer-reconciliation.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 assert value(db,'count(*) FROM public.daily_task_logs')=='2'
 print('PASS',db,'dry-run duplicate/unknown-effect report preserves all uncertain history')

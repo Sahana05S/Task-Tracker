@@ -21,3 +21,9 @@ export {
 } from '@/modules/tasks/internal/native-details';
 export { getParticipantReconciliation, type ReconciliationTask } from '@/modules/tasks/internal/reconciliation';
 export { countOpenTasks } from '@/modules/tasks/internal/counts';
+export {
+  countTasksCompletedBetween,
+  getMemberTaskIds,
+  getOpenTasksByIds,
+  type MemberOpenTask,
+} from '@/modules/tasks/internal/member-tasks';

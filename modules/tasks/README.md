@@ -9,7 +9,7 @@ operations that are previewed first and committed atomically).
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `getTaskWorkspaceData`, `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`. Also re-exports everything in `client.ts`. |
+| `index.ts` | Server reads: `getTaskWorkspaceData`, `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`, and the Today reads `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools workflows and types |
 | `actions.ts` | `'use server'` task commands: `createTask`, `updateTask`, `updateTaskStatus`, `updateTaskProgress`, `changeTaskLifecycle`, `recordTaskReview`, `deleteTask` |
 | `detail-actions.ts` | `'use server'` native-details commands: `initializeTaskDetails`, `saveTaskDetails`, `addTaskAsset`, `addTaskRelation`, `renameNativeLink`, `publishNativeTemplate` |
@@ -28,6 +28,7 @@ operations that are previewed first and committed atomically).
 | `detail.ts` | Mission details page data (task, people, sections, links, dependencies, checklist rollup, effort totals) |
 | `native-details.ts` | Templates, detail instances, review flags, report choices |
 | `reconciliation.ts` | Legacy participant reconciliation preview |
+| `member-tasks.ts` | A member's task ids, open tasks and completions for Today (throws on error) |
 | `contract.ts` | Task rules: weights, freshness, eligibility, scale |
 | `details-contract.ts` | Native detail fields and IPO roles |
 | `permissions.ts` | Role/assignment checks (UI messages; RLS and RPCs are the real boundary) |
