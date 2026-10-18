@@ -3,7 +3,7 @@ import type { ChecklistNode } from '@/types/tracker';
 /**
  * Pure helpers for nested checklist pages (/tasks/[tag]/checklist/[nodeId]).
  * A node is a container when it is a Page or Group or already has children;
- * containers roll up their direct children in lib/checklists/progress.
+ * containers roll up their direct children in ./progress.
  */
 
 export const checklistHref = (taskTag: string, nodeId?: string) =>

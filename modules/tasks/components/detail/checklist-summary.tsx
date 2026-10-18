@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 import { MissionProgress } from '@/components/missions/mission-ui';
-import type { ChecklistRollup, ChecklistSection, SectionProgress } from '@/lib/checklists/progress';
+import type { ChecklistRollup, ChecklistSection, SectionProgress } from '@/modules/checklists/client';
 import { formatPercent } from '@/shared/tracker/format';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';

@@ -25,6 +25,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': __dirname,
+      // Next.js provides 'server-only' at build time; tests run outside Next.
+      'server-only': `${__dirname}/__tests__/stubs/server-only.ts`,
     },
   },
 });

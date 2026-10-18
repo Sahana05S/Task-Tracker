@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { groupItemHours, type ItemHourLog } from '@/lib/checklists/item-hours';
+import { groupItemHours, type ItemHourLog } from '@/modules/checklists/internal/item-hours';
 
 const log = (taskId: string, nodeId: string, hours: number, nodeTitle = nodeId): ItemHourLog =>
   ({ taskId, taskTag: taskId.toUpperCase(), taskTitle: `Task ${taskId}`, nodeId, nodeTitle, hours });

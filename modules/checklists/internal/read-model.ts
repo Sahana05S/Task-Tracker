@@ -1,5 +1,12 @@
 import type { ChecklistRollup } from './progress';
 import type { createClient } from '@/shared/supabase/server';
+
+/**
+ * Reads checklist rollups (contract m05-checklist-v1) for a set of tasks.
+ *
+ * M05 synchronization commits within the database checklist, lifecycle and
+ * execution commands. There is no post-commit application progress writer.
+ */
 export async function loadChecklistRollups(db: Awaited<ReturnType<typeof createClient>>, ids: readonly string[]): Promise<Map<string,ChecklistRollup>> {
  if(!ids.length) return new Map();
  const {data,error}=await db.rpc('checklist_rollups',{p_task_ids:[...new Set(ids)]});

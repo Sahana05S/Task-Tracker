@@ -1,5 +1,5 @@
-import type { ChecklistRollup } from '@/lib/checklists/progress';
-import { loadChecklistRollups } from '@/lib/checklists/read-model';
+import type { ChecklistRollup } from '@/modules/checklists/client';
+import { loadChecklistRollups } from '@/modules/checklists';
 import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
 import type { TaskEffort } from '@/lib/logs/metrics';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';

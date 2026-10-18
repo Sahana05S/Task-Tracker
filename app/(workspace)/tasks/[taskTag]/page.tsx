@@ -20,7 +20,7 @@ import {
   PriorityBadge,
   StatusBadge,
 } from '@/components/tracker/tracker-badges';
-import { getTaskEffortBreakdown } from '@/lib/checklists/item-time';
+import { getTaskEffortBreakdown } from '@/modules/checklists';
 import { canStartTimerForTask } from '@/lib/timers/permissions';
 import {
   canManageTasks,

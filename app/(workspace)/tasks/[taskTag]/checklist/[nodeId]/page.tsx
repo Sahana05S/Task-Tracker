@@ -29,10 +29,10 @@ import {
   isContainer,
   percentage,
   type ChecklistContext,
-} from '@/components/checklists/checklist-rows';
+} from '@/modules/checklists/components/checklist-rows';
 import { MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
 import { requireProfile } from '@/shared/session/profile';
-import { getChecklistItemTime } from '@/lib/checklists/item-time';
+import { getChecklistItemTime } from '@/modules/checklists';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
@@ -40,7 +40,7 @@ import { canStartTimerForTask } from '@/lib/timers/permissions';
 import { cn } from '@/shared/utils';
 
 import { discardTaskTimer, startItemTimer, stopTaskTimer } from '../../timer-actions';
-import { checklistCommand } from '../actions';
+import { checklistCommand } from '@/modules/checklists/actions';
 
 type Params = Promise<{ taskTag: string; nodeId: string }>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

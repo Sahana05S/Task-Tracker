@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ancestry, checklistHref, childrenOf, formatMinutes, isContainer, subtreeSeconds } from '@/lib/checklists/pages';
+import { ancestry, checklistHref, childrenOf, formatMinutes, isContainer, subtreeSeconds } from '@/modules/checklists/internal/pages';
 import type { ChecklistNode } from '@/types/tracker';
 
 const node = (id: string, parentNodeId: string | null, nodeType: ChecklistNode['nodeType'] = 'Item'): ChecklistNode => ({
