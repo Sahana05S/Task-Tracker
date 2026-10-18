@@ -20,9 +20,7 @@ const VIEW_MODULES = new Set(['workspace-views']);
 const LEGACY_DIRECT_DB = new Set([
   'app/(workspace)/records/[kind]/[id]/history/page.tsx',
   'app/(workspace)/task-tools/actions.ts',
-  'app/(workspace)/tasks/[taskTag]/timer-actions.ts',
   'app/api/internal/awards/route.ts',
-  'app/logs/actions.ts',
   'app/records/actions.ts',
   'app/settings/actions.ts',
 ]);

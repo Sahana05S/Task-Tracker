@@ -5,7 +5,7 @@ import {
   resolveTaskDetailRouteState,
   type TaskDetailData,
 } from '@/modules/tasks/internal/detail';
-import { EMPTY_EFFORT } from '@/lib/logs/metrics';
+import { EMPTY_EFFORT } from '@/modules/tasks/internal/effort';
 import { withTaskParticipants } from '@/modules/tasks/internal/mappers';
 
 it('retains legacy primaries when join rows are missing or disagree', () => {
@@ -104,8 +104,6 @@ function createTaskDetailData(taskTag: string): TaskDetailData {
     sections: [],
     links: [],
     dependencies: [],
-    logs: [],
-    timers: [],
     checklist: null,
     checklistNodes: [],
     linkedTasksById: new Map(),

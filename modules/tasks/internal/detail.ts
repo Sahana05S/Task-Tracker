@@ -1,7 +1,6 @@
 import type { ChecklistRollup } from '@/modules/checklists/client';
 import { loadChecklistRollups } from '@/modules/checklists';
-import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
-import type { TaskEffort } from '@/lib/logs/metrics';
+import type { TaskEffort } from '@/modules/tasks/internal/effort';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
 import {
@@ -9,7 +8,6 @@ import {
   TASK_COLUMNS,
   withTaskParticipants,
 } from '@/modules/tasks/internal/mappers';
-import { mapTaskTimers, TIMER_COLUMNS } from '@/lib/timers/mappers';
 import type {
   ChecklistNodeRow,
   TaskChecklistRow,
@@ -19,13 +17,11 @@ import type {
 } from '@/types/database';
 import type {
   ChecklistNode,
-  DailyTaskLog,
   Task,
   TaskChecklist,
   TaskDependency,
   TaskDetailSection,
   TaskLink,
-  TaskTimer,
   User,
 } from '@/types/tracker';
 
@@ -40,8 +36,6 @@ export interface TaskDetailData {
   readonly sections: readonly TaskDetailSection[];
   readonly links: readonly TaskLink[];
   readonly dependencies: readonly TaskDependencyDetail[];
-  readonly logs: readonly DailyTaskLog[];
-  readonly timers: readonly TaskTimer[];
   readonly checklist: TaskChecklist | null;
   readonly checklistNodes: readonly ChecklistNode[];
   readonly linkedTasksById: ReadonlyMap<string, Task>;
@@ -110,8 +104,6 @@ export async function getTaskDetailData(
     sectionRows,
     linkRows,
     dependencyRows,
-    logRows,
-    timerRows,
     checklistRow,
     effortResult,
   ] = await Promise.all([
@@ -126,21 +118,6 @@ export async function getTaskDetailData(
         .select('*')
         .or(`predecessor_task_id.eq.${task.id},successor_task_id.eq.${task.id}`)
         .order('created_at', { ascending: false }),
-    ),
-    selectOrEmpty(
-      supabase
-        .from('daily_task_logs')
-        .select(LOG_COLUMNS).is('reversed_at', null)
-        .eq('task_id', task.id)
-        .order('log_date', { ascending: false })
-        .order('created_at', { ascending: false }),
-    ),
-    selectOrEmpty(
-      supabase
-        .from('task_timers')
-        .select(TIMER_COLUMNS)
-        .eq('task_id', task.id)
-        .order('started_at', { ascending: false }),
     ),
     selectOneOrNull(
       supabase.from('task_checklists').select('*').eq('task_id', task.id).maybeSingle(),
@@ -208,7 +185,6 @@ export async function getTaskDetailData(
     dependencyTasks.map((row) => [row.id, mapTask(row)]),
   );
 
-  const logs = mapDailyTaskLogs(logRows);
   if (effortResult.error) throw new Error(`Failed to load task effort: ${effortResult.error.message}`);
   const effort: TaskEffort = {
     hoursLogged: effortResult.data?.[0]?.hours_logged ?? 0,
@@ -231,8 +207,6 @@ export async function getTaskDetailData(
         otherTask: dependencyTaskById.get(otherTaskId) ?? null,
       };
     }),
-    logs,
-    timers: mapTaskTimers(timerRows),
     checklist,
     checklistNodes,
     linkedTasksById,

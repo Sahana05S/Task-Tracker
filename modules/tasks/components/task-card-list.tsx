@@ -13,7 +13,6 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 
-import { QuickLogTrigger } from '@/components/logs/quick-log-trigger';
 import { AvatarStack, MissionProgress } from '@/components/missions/mission-ui';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import {
@@ -36,7 +35,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/shared/ui/sheet';
-import { EMPTY_EFFORT, type TaskEffort } from '@/lib/logs/metrics';
+import { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
 import { canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
 import { CATEGORY_LABELS } from '@/shared/tracker/enums';
 import { formatDate, formatNumeric, formatPercent, isOverdue, formatHours } from '@/shared/tracker/format';
@@ -52,7 +51,15 @@ export interface TaskCardListProps {
   canManage: boolean;
   onEdit: (task: Task) => void;
   onRequestDelete: (task: Task) => void;
+  /**
+   * The "Log hours" button for an open mission. Supplied by the page that
+   * composes this list with time tracking, so tasks does not depend on it.
+   */
+  LogHoursAction?: LogHoursActionComponent;
 }
+
+/** A button that logs hours against one task. */
+export type LogHoursActionComponent = React.ComponentType<{ taskId: string }>;
 
 /**
  * Mission cards (Stitch reference missions_list_1): one column on phones, two
@@ -76,6 +83,7 @@ export function TaskCardList({
   canManage,
   onEdit,
   onRequestDelete,
+  LogHoursAction,
 }: TaskCardListProps) {
   const [detailsTask, setDetailsTask] = React.useState<Task | null>(null);
 
@@ -99,6 +107,7 @@ export function TaskCardList({
               onOpenDetails={() => setDetailsTask(task)}
               onEdit={() => onEdit(task)}
               onRequestDelete={() => onRequestDelete(task)}
+              LogHoursAction={LogHoursAction}
             />
           </li>
         ))}
@@ -147,6 +156,7 @@ interface MissionCardProps {
   onOpenDetails: () => void;
   onEdit: () => void;
   onRequestDelete: () => void;
+  LogHoursAction?: LogHoursActionComponent;
 }
 
 function MissionCard({
@@ -158,6 +168,7 @@ function MissionCard({
   onOpenDetails,
   onEdit,
   onRequestDelete,
+  LogHoursAction,
 }: MissionCardProps) {
   const href = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const archived = Boolean(task.archivedEffectiveDate);
@@ -272,9 +283,7 @@ function MissionCard({
             canEdit={canEditOwnFields}
           />
           <div className="ml-auto flex items-center gap-2">
-            {!archived && !closed ? (
-              <QuickLogTrigger variant="button" label="Log hours" presetTaskId={task.id} />
-            ) : null}
+            {!archived && !closed && LogHoursAction ? <LogHoursAction taskId={task.id} /> : null}
             <Button asChild size="sm">
               <Link href={href} aria-label={`Open mission ${task.taskTag}`}>
                 Open

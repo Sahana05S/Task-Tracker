@@ -7,7 +7,7 @@ import { AlertCircleIcon, LoaderCircleIcon, SearchXIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { deleteTask } from '@/modules/tasks/actions';
-import { TaskCardList } from '@/modules/tasks/components/task-card-list';
+import { TaskCardList, type LogHoursActionComponent } from '@/modules/tasks/components/task-card-list';
 import { TaskDataGrid } from '@/modules/tasks/components/task-data-grid';
 import { TaskDialog } from '@/modules/tasks/components/task-dialog';
 import { TaskFilters, type MissionView } from '@/modules/tasks/components/task-filters';
@@ -20,7 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/shared/ui/sheet';
-import type { TaskEffort } from '@/lib/logs/metrics';
+import type { TaskEffort } from '@/modules/tasks/internal/effort';
 import {
   DEFAULT_SORT,
   EMPTY_FILTERS,
@@ -45,6 +45,8 @@ export interface TaskWorkspaceProps {
   effortEntries: readonly (readonly [string, TaskEffort])[];
   currentUser: User;
   templates?: readonly NativeTemplate[];
+  /** The "Log hours" button on each open mission card, supplied by the composing page. */
+  LogHoursAction?: LogHoursActionComponent;
 }
 
 /**
@@ -62,6 +64,7 @@ export function TaskWorkspace({
   effortEntries,
   currentUser,
   templates=[],
+  LogHoursAction,
 }: TaskWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -187,6 +190,7 @@ export function TaskWorkspace({
               canManage={canManage}
               onEdit={openEdit}
               onRequestDelete={setPendingDelete}
+              LogHoursAction={LogHoursAction}
             />
           </div>
         </>

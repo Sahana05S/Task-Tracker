@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 
 import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
-import { LogHistory } from '@/components/logs/log-history';
+import { LogHistory } from '@/modules/time-tracking/components/log-history';
 import { requireProfile } from '@/shared/session/profile';
-import { getMyLogHistory } from '@/lib/logs/queries';
-import { sumHours } from '@/lib/logs/metrics';
+import { getMyLogHistory } from '@/modules/time-tracking';
+import { sumHours } from '@/modules/time-tracking/client';
 import { formatHours } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {

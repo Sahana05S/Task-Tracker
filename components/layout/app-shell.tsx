@@ -6,7 +6,7 @@ import { NavDrawerProvider } from '@/components/layout/nav-drawer-context';
 import { SectionTabs } from '@/components/layout/section-tabs';
 import { TopBar } from '@/components/layout/top-bar';
 import type { NavCounts } from '@/lib/layout/nav-counts';
-import type { RunningTimer } from '@/lib/layout/running-timers';
+import type { RunningTimer } from '@/modules/time-tracking/client';
 import type { User } from '@/types/tracker';
 
 export interface AppShellProps {

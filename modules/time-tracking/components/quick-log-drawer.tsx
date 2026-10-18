@@ -17,7 +17,7 @@ import {
   updateTaskLog,
   type LoggableTaskOption,
   type LogActionState,
-} from '@/app/logs/actions';
+} from '@/modules/time-tracking/actions';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import {
@@ -38,7 +38,7 @@ import { Textarea } from '@/shared/ui/textarea';
 import {
   applyProgressDelta,
   computeScaledProgress,
-} from '@/lib/logs/metrics';
+} from '@/modules/time-tracking/internal/logs/metrics';
 import { formatNumeric } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { DailyTaskLog } from '@/types/tracker';

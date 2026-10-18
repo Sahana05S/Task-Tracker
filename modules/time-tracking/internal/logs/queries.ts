@@ -1,9 +1,6 @@
 import { createClient } from '@/shared/supabase/server';
-import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
-import {
-  type TaskEffort,
-} from '@/lib/logs/metrics';
-import { mapTasks, TASK_COLUMNS } from '@/modules/tasks/client';
+import { LOG_COLUMNS, mapDailyTaskLogs } from '@/modules/time-tracking/internal/logs/mappers';
+import { mapTasks, TASK_COLUMNS, type TaskEffort } from '@/modules/tasks/client';
 import type { DailyTaskLog, Task } from '@/types/tracker';
 
 /**

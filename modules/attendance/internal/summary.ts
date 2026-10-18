@@ -1,4 +1,4 @@
-import { roundToNumericScale } from '@/lib/logs/metrics';
+import { roundToNumericScale } from '@/modules/time-tracking/client';
 import type { AttendanceRecord, AttendanceStatus } from '@/types/tracker';
 
 export interface AttendanceSummary {

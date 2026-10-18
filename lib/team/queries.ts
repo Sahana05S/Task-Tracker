@@ -18,8 +18,8 @@ import {
   mapAttendanceRecords,
 } from '@/modules/attendance/client';
 import { summarizeAttendance, type AttendanceSummary } from '@/modules/attendance/client';
-import { LOG_COLUMNS, mapDailyTaskLogs } from '@/lib/logs/mappers';
-import { sumHours } from '@/lib/logs/metrics';
+import { LOG_COLUMNS, mapDailyTaskLogs } from '@/modules/time-tracking/client';
+import { sumHours } from '@/modules/time-tracking/client';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
 import {

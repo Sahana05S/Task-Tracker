@@ -4,7 +4,7 @@ import { parsePerformanceSources,resolvePerformance,taskProductivity,type Perfor
 import { Exact } from '@/lib/performance/exact';
 import { classifyFreshness, eligibilityReasons } from '@/modules/tasks/client';
 import { mapTask } from '@/modules/tasks/client';
-import { mapDailyTaskLog } from '@/lib/logs/mappers';
+import { mapDailyTaskLog } from '@/modules/time-tracking/client';
 import type { Database } from '@/types/database';
 import type { Task,User,DailyTaskLog } from '@/types/tracker';
 import type { AttendanceInputContext } from '@/modules/support/client';

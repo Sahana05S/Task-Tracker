@@ -26,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import { EMPTY_EFFORT, type TaskEffort } from '@/lib/logs/metrics';
+import { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
 import {
   nextSortState,
   type TaskSortKey,

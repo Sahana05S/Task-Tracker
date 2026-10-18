@@ -4,7 +4,7 @@ import {
   computeElapsedSeconds,
   computeTimerStopSummary,
   secondsToRoundedHours,
-} from '@/lib/timers/elapsed';
+} from '@/modules/time-tracking/internal/timers/elapsed';
 
 describe('computeElapsedSeconds', () => {
   it('returns whole elapsed seconds between start and stop times', () => {

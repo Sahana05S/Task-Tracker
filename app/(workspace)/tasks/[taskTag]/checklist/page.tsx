@@ -39,11 +39,11 @@ import { CHECKLIST_SECTIONS, type ChecklistSection, type SectionProgress } from 
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
-import { canStartTimerForTask } from '@/lib/timers/permissions';
+import { canStartTimerForTask } from '@/modules/time-tracking/client';
 import { cn } from '@/shared/utils';
 import type { ChecklistNode } from '@/types/tracker';
 
-import { discardTaskTimer, startItemTimer, stopTaskTimer } from '../timer-actions';
+import { discardTaskTimer, startItemTimer, stopTaskTimer } from '@/modules/time-tracking/timer-actions';
 import { checklistCommand } from '@/modules/checklists/actions';
 
 export async function generateMetadata({ params }: { params: Promise<{ taskTag: string }> }): Promise<Metadata> {

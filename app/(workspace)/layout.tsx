@@ -3,7 +3,7 @@ import * as React from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { requireProfile } from '@/shared/session/profile';
 import { getNavCounts } from '@/lib/layout/nav-counts';
-import { getRunningTimers } from '@/lib/layout/running-timers';
+import { getRunningTimers } from '@/modules/time-tracking';
 
 /**
  * Guarded layout for every workspace route.

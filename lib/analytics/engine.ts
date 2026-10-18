@@ -2,7 +2,7 @@ import type { CalculationContext,CalculationResult,MemberCalculation } from '@/l
 import { Exact } from '@/lib/performance/exact';
 import { eligibilityReasons, FRESHNESS_SCORES } from '@/modules/tasks/client';
 import { UnmeasuredProgressError } from '@/lib/analytics/availability';
-import { roundToNumericScale } from '@/lib/logs/metrics';
+import { roundToNumericScale } from '@/modules/time-tracking/client';
 import {
   summarizeAttendance,
   type AttendanceSummary,
