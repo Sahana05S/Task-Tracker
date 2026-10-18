@@ -2,16 +2,13 @@ import { getLivePresentation } from '@/lib/presentation/queries';
 import { viewContext,type ViewContext } from '@/lib/presentation/context';
 import type { LivePresentation } from '@/lib/presentation/model';
 import { optionalEmployeePerformance } from '@/lib/team/performance-availability';
-import { getAwards,type AwardReadModel } from '@/lib/stars/read-model';
+import { getAwards, type AwardReadModel } from '@/modules/scoring';
 import { getTaskWorkspaceData } from '@/modules/tasks';
-import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
+import { getTeamSummaryInputs } from '@/modules/scoring';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
-import {
-  currentPeriod,
-  type AnalyticsPeriod,
-  type MemberPerformance,
-} from '@/lib/analytics/engine';
+import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
+import { type MemberPerformance } from '@/modules/scoring/client';
 import { getTeamAnalytics } from '@/lib/analytics/queries';
 import {
   ATTENDANCE_COLUMNS,

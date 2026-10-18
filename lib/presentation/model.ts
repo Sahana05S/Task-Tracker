@@ -1,16 +1,16 @@
-import { computeTeamAnalytics,type TeamAnalytics } from '@/lib/analytics/engine';
+import { computeTeamAnalytics, type TeamAnalytics } from '@/modules/scoring/client';
 import { summarizeAttendance,EMPTY_ATTENDANCE_SUMMARY } from '@/modules/attendance/client';
-import { parsePerformanceSources,resolvePerformance,taskProductivity,type PerformanceSources } from '@/lib/performance/sources';
-import { Exact } from '@/lib/performance/exact';
+import { parsePerformanceSources, resolvePerformance, taskProductivity, type PerformanceSources } from '@/modules/scoring/client';
+import { Exact } from '@/shared/math/exact';
 import { classifyFreshness, eligibilityReasons } from '@/modules/tasks/client';
 import { mapTask } from '@/modules/tasks/client';
 import { mapDailyTaskLog } from '@/modules/time-tracking/client';
 import type { Database } from '@/types/database';
 import type { Task,User,DailyTaskLog } from '@/types/tracker';
 import type { AttendanceInputContext } from '@/modules/support/client';
-import type { CalculationResult } from '@/lib/performance/engine';
+import type { CalculationResult } from '@/modules/scoring/client';
 import { nextDate,previousDate,type ViewContext } from './context';
-import type { AwardReadModel } from '@/lib/stars/read-model';
+import type { AwardReadModel } from '@/modules/scoring/client';
 type Row=Record<string,unknown>;
 export interface PresentationResponse {
  contract:'m11-live-presentation-v1';sources:PerformanceSources;presentationAvailable:boolean;presentationAvailableFrom:string;presentationWatermark:string;

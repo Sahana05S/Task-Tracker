@@ -1,7 +1,7 @@
-import { displayPerformance } from '@/lib/performance/exact';
+import { displayPerformance } from '@/shared/math/exact';
 import * as React from 'react';
 
-import type { TeamAnalytics } from '@/lib/analytics/engine';
+import type { TeamAnalytics } from '@/modules/scoring/client';
 import { formatNumeric, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 

@@ -12,12 +12,12 @@ import { createTaskLog, type LogActionState } from '@/modules/time-tracking/acti
 
 import { freezeMonthlySnapshot } from '@/app/dashboard/actions';
 import { getTeamAnalytics } from '@/lib/analytics/queries';
-import { performanceReport } from '@/lib/performance/report';
+import { performanceReport } from '@/modules/scoring/client';
 import { createClient } from '@/shared/supabase/server';
 import { isTaskStatus } from '@/shared/tracker/enums';
 import { readString, UUID_PATTERN } from '@/shared/forms/form-data';
 import { resolveActor } from '@/shared/session/actor';
-import { type AnalyticsPeriod, currentPeriod } from '@/lib/analytics/engine';
+import { type AnalyticsPeriod, currentPeriod } from '@/shared/time/period';
 import type { ActionResponse } from '@/types/tracker';
 
 export type TaskToolsActionState = ActionResponse<{

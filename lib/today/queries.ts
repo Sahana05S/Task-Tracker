@@ -1,7 +1,7 @@
 import { createClient } from '@/shared/supabase/server';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { PRIORITY_SORT_ORDER } from '@/shared/tracker/enums';
-import type { AwardReadModel } from '@/lib/stars/read-model';
+import type { AwardReadModel } from '@/modules/scoring/client';
 import type { TaskPriority, TaskStatus } from '@/types/tracker';
 
 /**

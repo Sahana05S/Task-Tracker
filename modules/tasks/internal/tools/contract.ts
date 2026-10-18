@@ -1,4 +1,4 @@
-import { Exact } from '@/lib/performance/exact';
+import { Exact } from '@/shared/math/exact';
 export type ToolOperation='support'|'duplicate'|'weekly'|'day_count'|'all_team'|'number_suffix'|'carryover'|'bulk_done'|'bulk_reopen'|'section'|'refresh'|'archive';
 export interface ToolPolicy {id:string;unevenMaximum:'whole'|'half';copies:'reset_snapshot';phases:'independent_repeats';batch:'atomic';carryover:'remaining_handoff';archive:boolean;historicalImport:false}
 /** D09/D12 expressly approved by the user on 13 October 2026. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolvePeriod } from '@/lib/analytics/engine';
+import { resolvePeriod } from '@/shared/time/period';
 import { buildTaskTimeline } from '@/lib/timelines/gantt';
 import type { Task, User } from '@/types/tracker';
 

@@ -77,6 +77,10 @@ Start from `modules/_template/` when creating a module.
 | `shared/session/` | `getCurrentProfile`, `requireProfile`, `requireRole`, `resolveActor` |
 | `shared/forms/form-data.ts` | `readString`, `readNullableString`, `UUID_PATTERN`, `ISO_DATE_PATTERN` |
 | `shared/time/kolkata.ts` | `kolkataDate()`, the business time zone |
+| `shared/time/period.ts` | `currentPeriod`, `resolvePeriod`, `AnalyticsPeriod` (calendar months) |
+| `shared/time/observation-clock.ts` | `observationInstant()`, the database as-of clock |
+| `shared/math/exact.ts` | `Exact` decimal/rational arithmetic |
+| `shared/read-models/team-summary.ts` | Cached raw `team_summary_inputs` fetch shared by scoring and support |
 | `shared/commands/` | Command results and idempotent operation ids |
 | `shared/tracker/` | Common enums and display formatters |
 | `shared/ui/` | Buttons, inputs, dialogs (shadcn components) |
@@ -95,7 +99,7 @@ Start from `modules/_template/` when creating a module.
 | support | Knowledge, sales logs, dated records | lib/support, components/support | Moved |
 | milestones | Milestones, statements, goals | lib/milestones, components/milestones | Moved |
 | team | Employees and profiles | lib/team, components/team | To do |
-| scoring | Ten-factor performance engine, analytics, stars/awards | lib/performance, lib/analytics, lib/stars | To do |
+| scoring | Ten-factor performance engine, analytics, stars/awards | lib/performance, lib/analytics, lib/stars | Moved |
 | reports | Live reports, exports, month close | lib/presentation, lib/month, components/reports | To do |
 | drive | Google Drive integration (deferred by user) | lib/integrations/drive | Moved |
 | workspace-views | Dashboard, Today, Timelines, nav counts | lib/today, lib/timelines, components/dashboard | To do |

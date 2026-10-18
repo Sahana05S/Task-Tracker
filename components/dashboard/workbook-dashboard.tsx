@@ -1,13 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { seriesColor } from '@/components/dashboard/chart-palette';
-import type {
-  DashboardBucket,
-  DashboardMemberMetric,
-  DateBucket,
-  DeadlineOutcomeBucket,
-  WorkbookDashboardCharts,
-} from '@/lib/analytics/dashboard-charts';
+import type { DashboardBucket, DashboardMemberMetric, DateBucket, DeadlineOutcomeBucket, WorkbookDashboardCharts } from '@/modules/scoring/client';
 import { formatNumeric } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 

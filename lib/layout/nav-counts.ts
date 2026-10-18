@@ -1,4 +1,4 @@
-import { currentPeriod } from '@/lib/analytics/engine';
+import { currentPeriod } from '@/shared/time/period';
 import { createClient } from '@/shared/supabase/server';
 
 /**

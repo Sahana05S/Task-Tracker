@@ -1,5 +1,5 @@
-import type { AwardReadModel } from '@/lib/stars/read-model';
-import { displayPerformance } from '@/lib/performance/exact';
+import type { AwardReadModel } from '@/modules/scoring/client';
+import { displayPerformance } from '@/shared/math/exact';
 import { PerformanceBreakdown } from './performance-breakdown';
 export function AwardHistory({awards}:{awards:AwardReadModel}) {
  return <section className="soft-card grid gap-2 p-5 sm:p-6"><h2 className="text-foreground text-base font-bold tracking-tight">Calculated daily score history</h2><p className="text-muted-foreground text-xs">All retained candidate observations, including non-winners. {awards.legacy.length} legacy winner records remain separate and uncertified.</p>

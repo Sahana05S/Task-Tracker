@@ -1,14 +1,14 @@
 import { createClient } from '@/shared/supabase/server';
-import { loadPerformance } from '@/lib/performance/queries';
-import { getAwards } from '@/lib/stars/read-model';
-import { resolvePeriod } from '@/lib/analytics/engine';
+import { loadPerformance } from '@/modules/scoring';
+import { getAwards } from '@/modules/scoring';
+import { resolvePeriod } from '@/shared/time/period';
 import { nextDate } from '@/lib/presentation/context';
-import { observationInstant } from '@/lib/presentation/clock';
+import { observationInstant } from '@/shared/time/observation-clock';
 import type { Json } from '@/types/database';
-import type { CalculationResult,MemberCalculation } from '@/lib/performance/engine';
-import type { MonthlySelection } from '@/lib/stars/contract';
-import { FACTORS } from '@/lib/performance/engine';
-import { displayPerformance } from '@/lib/performance/exact';
+import type { CalculationResult, MemberCalculation } from '@/modules/scoring/client';
+import type { MonthlySelection } from '@/modules/scoring/client';
+import { FACTORS } from '@/modules/scoring/client';
+import { displayPerformance } from '@/shared/math/exact';
 import { csvCell } from '@/lib/presentation/export';
 
 export interface MonthHistory { state:'live'|'correction'|'closed';version:number;revisions:{number:number;disposition:'draft'|'closed';certification:'certified'|'incomplete_uncertified';recordedAt:string;asOf:string;reason:string|null}[] }

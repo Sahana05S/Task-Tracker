@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { calculateDailyStarAction,overrideDailyStarAction } from '@/app/(workspace)/team/star-actions';
+import { calculateDailyStarAction,overrideDailyStarAction } from '@/modules/scoring/award-actions';
 import { prepareOperation } from '@/shared/commands/client-operation';
 import { kolkataDate } from '@/shared/time/kolkata';
-import type { AwardReadModel } from '@/lib/stars/read-model';
+import type { AwardReadModel } from '@/modules/scoring/client';
 export function AwardControls({awards,members}:{awards:AwardReadModel;members:{id:string;fullName:string}[]}) {
  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false);
  const completed=awards.days.filter(d=>d.runId&&(d.reaffirmationRequired||d.certified&&['completed_winner','completed_none'].includes(d.status)));

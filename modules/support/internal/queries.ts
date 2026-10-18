@@ -1,9 +1,9 @@
 import { kolkataDate } from '@/shared/time/kolkata';
-import { observationInstant } from '@/lib/presentation/clock';
+import { observationInstant } from '@/shared/time/observation-clock';
 import { loadContributionContext, type ContributionInputContext } from './input-context';
 import type { TaskChoice } from '../components/dated-record-module';
-import { getTeamSummaryInputs } from '@/lib/analytics/summary-inputs';
-import { currentPeriod, type AnalyticsPeriod } from '@/lib/analytics/engine';
+import { getReportSummary } from '@/modules/support/internal/report-summary';
+import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
 import {
   DAILY_FACT_COLUMNS,
   IDEA_COLUMNS,
@@ -78,7 +78,7 @@ export async function getSupportModuleData(
   asOf?: string,
 ): Promise<SupportModuleData> {
   const supabase = await createClient();
-  const [memberResult, factRows, ideaRows, suggestionRows, salesRows, reportRows, summaryInputs, taskChoices] =
+  const [memberResult, factRows, ideaRows, suggestionRows, salesRows, reportRows, reportSummary, taskChoices] =
     await Promise.all([
       supabase.from('users').select(USER_COLUMNS).order('full_name'),
       selectOrEmpty(
@@ -121,7 +121,7 @@ export async function getSupportModuleData(
           .or(`period_end.is.null,period_end.gte.${period.startDate}`)
           .order('created_at', { ascending: false }),
       ),
-      getTeamSummaryInputs(period),
+      getReportSummary(period),
       supabase.from('tasks').select('id, task_tag, title'),
     ]);
 
@@ -149,7 +149,7 @@ export async function getSupportModuleData(
     suggestions,
     salesLogs,
     reports,
-    summary: { ...summarizeSupport({ facts, ideas, suggestions, salesLogs, reports }), reports: summaryInputs.reportSummary },
+    summary: { ...summarizeSupport({ facts, ideas, suggestions, salesLogs, reports }), reports: reportSummary },
   };
 }
 

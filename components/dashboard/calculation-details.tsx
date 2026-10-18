@@ -1,6 +1,6 @@
-import type { CalculationResult } from '@/lib/performance/engine';
+import type { CalculationResult } from '@/modules/scoring/client';
 import type { LivePresentation } from '@/lib/presentation/model';
-import type { AwardReadModel } from '@/lib/stars/read-model';
+import type { AwardReadModel } from '@/modules/scoring/client';
 import { ReportContext } from '@/components/reports/view-context';
 import { AwardStatus } from '@/components/team/award-status';
 import { PerformanceBreakdown } from '@/components/team/performance-breakdown';

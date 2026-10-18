@@ -1,0 +1,40 @@
+import { describe,it,expect } from 'vitest';
+import { calculatePerformance,FACTORS,measuredRaw,unavailableRaw,PERFORMANCE_RULE_VERSION,type CalculationContext,type MemberRawInputs } from '@/modules/scoring/internal/performance/engine';
+import { selectDaily,selectMonthly,awardContext,APPROVED_AWARD_POLICY,type AwardPolicy,type AwardGate,type EffectiveAwardDay } from '@/modules/scoring/internal/stars/contract';
+import { performanceReport } from '@/modules/scoring/internal/performance/report';
+import { buildEmployeeAnalyticsCharts } from '@/lib/team/employee-charts';
+import type { AwardHistory } from '@/modules/scoring/internal/stars/read-model';
+import { resolvePeriod } from '@/modules/scoring/internal/analytics/engine';
+// Independent selection policy fixture; not authority for live D10 activation.
+export const policy:AwardPolicy={id:'fixture-only',window:'month_to_date',cutoffHour:0,cutoffMinute:0,cutoffDayOffset:1,requirePositiveDayAttendance:true,exactTie:'no_winner',override:'eligible_complete_replace'};
+const ctx=(ids:string[]):CalculationContext=>({ruleVersion:PERFORMANCE_RULE_VERSION,periodStart:'2026-10-01',periodEndExclusive:'2026-10-13',asOf:'2026-10-13T00:00:00+05:30',asOfLocalDate:'2026-10-13',timezone:'Asia/Kolkata',attributionPolicy:'normalized_shares',sourceWatermark:'fixture',precisionPolicy:'exact',displayPlaces:2,factorDisplayPlaces:6,
+ windows:Object.fromEntries(FACTORS.map(f=>[f,'fixture'])) as CalculationContext['windows'],cohorts:Object.fromEntries(FACTORS.map(f=>[f,{id:'fixture-'+f,memberIds:ids,missingPolicy:'exclude_unavailable',includeObservedZero:true}])) as CalculationContext['cohorts']});
+const member=(id:string,progress='0'):MemberRawInputs=>({userId:id,eligibilityReasons:[],factors:Object.fromEntries(FACTORS.map(f=>[f,measuredRaw(f==='progress'?progress:'0')])) as MemberRawInputs['factors']});
+const complete=()=>calculatePerformance(ctx(['a','b','c']),[member('a','80'),member('b','0'),member('c','160')]);
+const gates:AwardGate[]=['a','b','c'].map(userId=>({userId,state:'eligible',reasons:[]}));
+const days=(a=4,b=3):EffectiveAwardDay[]=>Array.from({length:a+b},(_,i)=>({date:`2026-10-${String(i+1).padStart(2,'0')}`,status:'completed_winner',winnerId:i<a?'a':'b',certified:true}));
+describe('M08 independent complete-score award fixtures',()=>{
+ it('selects the highest exact shared score without attendance bonuses',()=>{const r=selectDaily(complete(),gates,policy);expect(r.status).toBe('completed_winner');expect(r.winnerId).toBe('c');expect(r.candidates[2].calculation.compositeExact).toEqual({numerator:'1',denominator:'1'});});
+ it('cannot award the highest score when attendance is confirmed invalid',()=>{const c=complete();c.members[2].eligibleForRanking=false;const r=selectDaily(c,gates.map(g=>g.userId==='c'?{...g,state:'ineligible',reasons:['attendance_invalid']}:g),policy);expect(r.winnerId).toBe('a');});
+ it('records completed no-winner only for a complete confirmed ineligible population',()=>{const r=selectDaily(complete(),gates.map(g=>({...g,state:'ineligible',reasons:['attendance_invalid']})),policy);expect(r.status).toBe('completed_none');expect(r.reasons).toEqual(['no_eligible_candidates']);});
+ it('blocks missing sales even when a nine-factor subtotal is high',()=>{const inputs=[member('a','80'),member('b'),member('c','160')];inputs[1].factors.sales=unavailableRaw('sales_field_mapping_missing');const r=selectDaily(calculatePerformance(ctx(['a','b','c']),inputs),gates,policy);expect(r.status).toBe('blocked');expect(r.winnerId).toBeNull();});
+ it('does not silently exclude competitors with missing gates',()=>{expect(selectDaily(complete(),gates.slice(0,2),policy).status).toBe('blocked');});
+ it('rejects extra and duplicate gate populations',()=>{expect(selectDaily(complete(),[...gates,gates[0]],policy).reasons).toContain('candidate_population_mismatch');expect(selectDaily(complete(),[...gates,{userId:'other',state:'eligible',reasons:[]}],policy).status).toBe('blocked');});
+ it('keeps exact ties unresolved until policy, then records no winner without alphabetical selection',()=>{const c=calculatePerformance(ctx(['a','b']),[member('a'),member('b')]),g=gates.slice(0,2);expect(selectDaily(c,g,{...policy,exactTie:'unresolved'}).status).toBe('blocked');expect(selectDaily(c,g,policy)).toMatchObject({status:'completed_none',winnerId:null,tiedIds:['a','b']});});
+ it('does not use rounded two-decimal scores for selection',()=>{const c=calculatePerformance(ctx(['a','b']),[member('a','0.01'),member('b','0.02')]);expect(selectDaily(c,gates.slice(0,2),policy).winnerId).toBe('b');});
+ it('keeps an explicitly unavailable policy guarded',()=>{expect(selectDaily(complete(),gates,null).reasons).toEqual(['award_policy_unapproved']);});
+ it('activates the approved MTD policy with the precise Kolkata end-of-day cutoff',()=>{expect(awardContext('2026-10-12','2026-10-13T00:05:00+05:30',APPROVED_AWARD_POLICY)).toMatchObject({policyId:'m08-approved-2026-10-13',periodStart:'2026-10-01',periodEndExclusive:'2026-10-13',cutoff:'2026-10-12T18:29:59.999Z'});expect(selectDaily(complete(),gates).winnerId).toBe('c');});
+ it('retains the same calculation context and all nonwinner results used by reports',()=>{const c=complete(),r=selectDaily(c,gates,policy);expect(r.calculation).toEqual(c);expect(r.candidates.map(x=>x.calculation)).toEqual(performanceReport(c).members);expect(r.candidates.length).toBe(3);});
+ it('uses Kolkata midnight and the explicit month-to-date window',()=>{expect(awardContext('2026-10-12','2026-10-13T00:00:00+05:30',policy)).toMatchObject({periodStart:'2026-10-01',periodEndExclusive:'2026-10-13',cutoff:'2026-10-12T18:30:00.000Z'});expect(awardContext('2026-10-12','2026-10-13T00:00:00+05:30',{...policy,window:'one_day'}).periodStart).toBe('2026-10-12');});
+ it('four wins beats three despite the lower current score',()=>{const ds=days();expect(selectMonthly(ds,ds.map(d=>d.date),complete(),policy).winnerId).toBe('a');});
+ it('equal counts use the current complete shared score',()=>{const ds=days(2,2);expect(selectMonthly(ds,ds.map(d=>d.date),complete(),policy)).toMatchObject({winnerId:'a',counts:{a:2,b:2}});});
+ it('leaves final exact monthly ties explicit',()=>{const ds=days(2,2),c=calculatePerformance(ctx(['a','b']),[member('a'),member('b')]);expect(selectMonthly(ds,ds.map(d=>d.date),c,policy)).toMatchObject({winnerId:null,reasons:['exact_monthly_tie'],tiedIds:['a','b']});});
+ it('missing or blocked coverage never masquerades as complete',()=>{const ds=days(1,1);expect(selectMonthly(ds,[...ds.map(d=>d.date),'2026-10-03'],complete(),policy).status).toBe('incomplete');ds[1].status='blocked';expect(selectMonthly(ds,ds.map(d=>d.date),complete(),policy).winnerId).toBeNull();});
+ it('never counts uncertified legacy records',()=>{const ds=days(1,1);ds[0].certified=false;expect(selectMonthly(ds,ds.map(d=>d.date),complete(),policy)).toMatchObject({status:'incomplete',missingDates:['2026-10-01']});});
+ it('missing tie-break scores stay unavailable',()=>{const ds=days(1,1),c=complete();c.members[0].status='incomplete';c.members[0].compositeExact=null;expect(selectMonthly(ds,ds.map(d=>d.date),c,policy).reasons).toContain('monthly_tie_break_unavailable');});
+ it('shows real nonwinner score history and measured zero without winner-record fallback',()=>{
+  const c=complete(),rows:AwardHistory[]=[{date:'2026-10-12',runId:'fixture',status:'completed_winner',recordedStatus:'completed_winner',calculation:c.members[0],gate:gates[0],context:{},certified:true,createdAt:'fixture'}];
+  expect(buildEmployeeAnalyticsCharts({period:resolvePeriod(2026,10),performance:null,tasks:[],logs:[],stars:[],links:[],scoreHistory:rows}).performanceScoreTrend).toEqual([{date:'2026-10-12',label:'Oct 12',value:0}]);
+  rows[0].status='stale';expect(buildEmployeeAnalyticsCharts({period:resolvePeriod(2026,10),performance:null,tasks:[],logs:[],stars:[],links:[],scoreHistory:rows}).performanceScoreTrend).toEqual([]);
+ });
+});

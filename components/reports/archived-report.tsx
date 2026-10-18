@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { displayPerformance } from '@/lib/performance/exact';
+import { displayPerformance } from '@/shared/math/exact';
 import { archiveDifferences,type MonthArchive } from '@/lib/month/archive';
-import { FACTORS } from '@/lib/performance/engine';
+import { FACTORS } from '@/modules/scoring/client';
 
 export function ArchivedReport({archive,previous,employee}:{archive:MonthArchive;previous:MonthArchive|null;employee:string|null}){
  const selected=employee?archive.members.filter(m=>m.userId===employee):archive.members;

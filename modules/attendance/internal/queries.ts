@@ -6,7 +6,7 @@ import {
 import { summarizeAttendance } from './summary';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
-import { observationInstant } from '@/lib/presentation/clock';
+import { observationInstant } from '@/shared/time/observation-clock';
 import type { AttendanceRecord, User } from '@/types/tracker';
 
 export interface AttendanceModuleData {
