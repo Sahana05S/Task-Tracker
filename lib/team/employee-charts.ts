@@ -1,5 +1,5 @@
 import { kolkataDate } from '@/shared/time/kolkata';
-import type { DatedCalculation } from '@/lib/presentation/model';
+import type { DatedCalculation } from '@/modules/reports/client';
 import type { CalculationContext, Provenance } from '@/modules/scoring/client';
 import type { AwardHistory } from '@/modules/scoring/client';
 import { Exact } from '@/shared/math/exact';

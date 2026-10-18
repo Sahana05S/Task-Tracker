@@ -1,4 +1,4 @@
-import { writeDatedRecord } from '@/app/records/actions';
+import { writeDatedRecord } from '@/modules/records/actions';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { canManageAttendance } from '@/modules/attendance/client';

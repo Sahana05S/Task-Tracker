@@ -4,8 +4,8 @@ import { useActionState,useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArchiveIcon } from 'lucide-react';
-import { monthArchiveAction,type MonthActionState } from '@/app/(workspace)/reports/month-actions';
-import type { MonthHistory } from '@/lib/month/archive';
+import { monthArchiveAction,type MonthActionState } from '@/modules/reports/month-actions';
+import type { MonthHistory } from '@/modules/reports/internal/month/archive';
 
 export function MonthArchiveControls({period,history,canClose,completeMonth,operation}:{period:string;history:MonthHistory;canClose:boolean;completeMonth:boolean;operation:string}){
  const [result,action,pending]=useActionState(monthArchiveAction,{ok:false,message:''} as MonthActionState);

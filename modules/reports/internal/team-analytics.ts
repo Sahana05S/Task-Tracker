@@ -1,5 +1,5 @@
-import { getLivePresentation } from '@/lib/presentation/queries';
-import { viewContext,type ViewContext } from '@/lib/presentation/context';
+import { getLivePresentation } from '@/modules/reports/internal/presentation/queries';
+import { viewContext,type ViewContext } from '@/modules/reports/internal/presentation/context';
 import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
 import { type TeamAnalytics } from '@/modules/scoring/client';
 import { buildWorkbookDashboardCharts, type WorkbookDashboardCharts } from '@/modules/scoring/client';

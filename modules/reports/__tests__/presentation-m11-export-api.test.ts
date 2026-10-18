@@ -1,9 +1,9 @@
 import { describe,it,expect,vi,beforeEach } from 'vitest';
 const mocks=vi.hoisted(()=>({profile:vi.fn(),load:vi.fn(),archive:vi.fn()}));
 vi.mock('@/shared/session/profile',()=>({getCurrentProfile:mocks.profile}));
-vi.mock('@/lib/presentation/queries',()=>({getLivePresentation:mocks.load}));
-vi.mock('@/lib/month/archive',()=>({monthRevision:mocks.archive,archivedReport:()=>({label:'Retained frozen revision'}),archivedText:()=> 'Retained frozen revision',archivedCsv:()=> 'revision\n2\n'}));
-vi.mock('@/lib/presentation/clock',async()=>{const {viewContext}=await import('@/lib/presentation/context');return {liveViewContext:async(p?:string,a?:string)=>viewContext(p,a)};});
+vi.mock('@/modules/reports/internal/presentation/queries',()=>({getLivePresentation:mocks.load}));
+vi.mock('@/modules/reports/internal/month/archive',()=>({monthRevision:mocks.archive,archivedReport:()=>({label:'Retained frozen revision'}),archivedText:()=> 'Retained frozen revision',archivedCsv:()=> 'revision\n2\n'}));
+vi.mock('@/modules/reports/internal/presentation/clock',async()=>{const {viewContext}=await import('@/modules/reports/internal/presentation/context');return {liveViewContext:async(p?:string,a?:string)=>viewContext(p,a)};});
 import { GET } from '@/app/api/reports/export/route';
 beforeEach(()=>{vi.clearAllMocks();mocks.profile.mockResolvedValue({id:'own',role:'team_member',isActive:true});});
 describe('M11 export API authorization and failure boundaries',()=>{

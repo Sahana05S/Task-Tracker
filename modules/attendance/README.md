@@ -17,7 +17,7 @@ on which the whole active team is on holiday.
 | `client.ts` | Pure helpers and types: `summarizeAttendance`, `EMPTY_ATTENDANCE_SUMMARY`, `AttendanceSummary`, `defaultHoursForStatus`, `computeHoursFromCheckTimes`, `compareRecordedHours`, `dailyAttendanceValidity`, `localCheckTime`, `ATTENDANCE_INPUT_VERSION`, `canManageAttendance`, `canEditAttendanceRecord`, `ATTENDANCE_COLUMNS`, `mapAttendanceRecord(s)` |
 | `components/` | `AttendanceWorkspace` (the `/attendance` page body), `AttendanceRecordEditor` (record/correct form) |
 
-Code that may end up in a client bundle (for example `lib/analytics/engine`)
+Code that may end up in a client bundle (for example the scoring engine)
 imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
 
 ## Private (`internal/`)
@@ -46,4 +46,4 @@ which is shared with the support module's dated records. Reads also call
 `shared/*` (including `shared/time/observation-clock` and
 `shared/ui/execution-form`), the public APIs of `support` (`loadAttendanceContext`),
 `tasks` and `time-tracking`, and, until those areas become modules,
-`components/missions/mission-ui` and `app/records/actions` (`writeDatedRecord`).
+`components/missions/mission-ui`. Record writes use the `records` module (`writeDatedRecord`).

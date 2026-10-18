@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { getCurrentProfile } from '@/shared/session/profile';
-import { beginMonthCorrection,captureMonth } from '@/lib/month/archive';
+import type { ActionResponse } from '@/types/tracker';
+import { beginMonthCorrection,captureMonth } from '@/modules/reports/internal/month/archive';
 
 export interface MonthActionState {ok:boolean;message:string}
 export async function monthArchiveAction(_previous:MonthActionState,form:FormData):Promise<MonthActionState>{
@@ -23,4 +24,11 @@ export async function monthArchiveAction(_previous:MonthActionState,form:FormDat
   revalidatePath('/reports');
   return {ok:true,message:`${command.replaceAll('_',' ')} committed. Reload to see the retained revision.`};
  }catch(error){return {ok:false,message:error instanceof Error?error.message:'Month command failed.'};}
+}
+
+export interface SnapshotSummary {periodLabel:string;memberCount:number;starPerformer:string|null}
+
+/** Retained only so old clients cannot reach the former overwriteable upsert. */
+export async function freezeMonthlySnapshot(_year?:number,_month?:number): Promise<ActionResponse<SnapshotSummary>> {
+  return { success: false, error: 'The old Freeze action is retired. Use the versioned month archive controls in Reports.' };
 }

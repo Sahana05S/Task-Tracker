@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { displayPerformance } from '@/shared/math/exact';
-import { archiveDifferences,type MonthArchive } from '@/lib/month/archive';
+import { archiveDifferences,type MonthArchive } from '@/modules/reports/internal/month/archive';
 import { FACTORS } from '@/modules/scoring/client';
 
 export function ArchivedReport({archive,previous,employee}:{archive:MonthArchive;previous:MonthArchive|null;employee:string|null}){

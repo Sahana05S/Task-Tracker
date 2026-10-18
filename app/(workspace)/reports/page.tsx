@@ -1,10 +1,10 @@
-import { LiveReport } from '@/components/reports/live-report';
-import { ArchivedReport } from '@/components/reports/archived-report';
-import { MonthArchiveControls } from '@/components/reports/month-archive-controls';
-import { monthHistory,monthRevision } from '@/lib/month/archive';
+import { LiveReport } from '@/modules/reports/components/live-report';
+import { ArchivedReport } from '@/modules/reports/components/archived-report';
+import { MonthArchiveControls } from '@/modules/reports/components/month-archive-controls';
+import { monthHistory, monthRevision } from '@/modules/reports';
 import { randomUUID } from 'node:crypto';
-import { getLivePresentation } from '@/lib/presentation/queries';
-import { liveViewContext } from '@/lib/presentation/clock';
+import { getLivePresentation } from '@/modules/reports';
+import { liveViewContext } from '@/modules/reports';
 import { kolkataDate } from '@/shared/time/kolkata';
 import type { Metadata } from 'next';
 

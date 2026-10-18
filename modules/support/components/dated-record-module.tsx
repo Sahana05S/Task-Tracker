@@ -1,6 +1,6 @@
 import type { ContributionInputContext } from '../internal/input-context';
 import Link from 'next/link';
-import { writeDatedRecord } from '@/app/records/actions';
+import { writeDatedRecord } from '@/modules/records/actions';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { InfoIcon, PlusIcon } from 'lucide-react';

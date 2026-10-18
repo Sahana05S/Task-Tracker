@@ -1,9 +1,9 @@
-import { LiveReport } from '@/components/reports/live-report';
-import { viewContext,viewQuery } from '@/lib/presentation/context';
+import { LiveReport } from '@/modules/reports/components/live-report';
+import { viewContext, viewQuery } from '@/modules/reports/client';
 import { displayPerformance } from '@/shared/math/exact';
 import type { Metadata } from 'next';
-import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
-import { AwardHistory } from '@/components/team/award-history';
+import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
+import { AwardHistory } from '@/modules/scoring/components/award-history';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 

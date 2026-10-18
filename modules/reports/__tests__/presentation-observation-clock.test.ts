@@ -2,7 +2,7 @@ import { afterEach,describe,expect,it,vi } from 'vitest';
 
 const {rpc}=vi.hoisted(()=>({rpc:vi.fn()}));
 vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn(async()=>({rpc}))}));
-import { liveViewContext,observationInstant } from '@/lib/presentation/clock';
+import { liveViewContext,observationInstant } from '@/modules/reports/internal/presentation/clock';
 
 afterEach(()=>{vi.useRealTimers();vi.clearAllMocks();});
 describe('database-authoritative observation instant',()=>{

@@ -1,8 +1,8 @@
 import { TaskRelations } from '@/components/timelines/task-relations';
 import Link from 'next/link';
-import { getLivePresentation } from '@/lib/presentation/queries';
-import { liveViewContext } from '@/lib/presentation/clock';
-import { ReportContext } from '@/components/reports/view-context';
+import { getLivePresentation } from '@/modules/reports';
+import { liveViewContext } from '@/modules/reports';
+import { ReportContext } from '@/modules/reports/components/view-context';
 import type { Metadata } from 'next';
 
 import { CalendarClockIcon, CalendarRangeIcon, FlagIcon, ListChecksIcon } from 'lucide-react';

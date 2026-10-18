@@ -53,8 +53,8 @@ All of these are company-scoped by migrations 39-40 (M15).
 
 ## Depends on
 `shared/*`, the public API of `checklists` (rollups and checklist types), and
-these areas that are not modules yet: `lib/analytics/headline` (mission
-headline), `components/missions`, `components/tracker`.
+these areas that are not modules yet: `components/missions`,
+`components/tracker`. The `/tasks` mission headline lives in scoring.
 
 Tasks does not import time-tracking (time-tracking depends on tasks). The task
 cards take a `LogHoursAction` slot that the `/tasks` page fills, and the mission

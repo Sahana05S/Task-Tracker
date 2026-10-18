@@ -4,9 +4,8 @@ const {rpc,loadPerformance,getAwards}=vi.hoisted(()=>({
  rpc:vi.fn(),loadPerformance:vi.fn(),getAwards:vi.fn(),
 }));
 vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn(async()=>({rpc}))}));
-vi.mock('@/modules/scoring/internal/performance/queries',()=>({loadPerformance}));
-vi.mock('@/modules/scoring/internal/stars/read-model',()=>({getAwards}));
-import { captureMonth } from '@/lib/month/archive';
+vi.mock('@/modules/scoring',async(importOriginal)=>({...await importOriginal<typeof import('@/modules/scoring')>(),loadPerformance,getAwards}));
+import { captureMonth } from '@/modules/reports/internal/month/archive';
 
 afterEach(()=>{vi.useRealTimers();vi.clearAllMocks();});
 describe('month capture observation clock',()=>{

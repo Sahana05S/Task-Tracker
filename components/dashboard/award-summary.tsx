@@ -1,5 +1,5 @@
 import type { AwardReadModel } from '@/modules/scoring/client';
-import { GAP_SENTENCE, dataGaps } from '@/lib/presentation/plain-language';
+import { GAP_SENTENCE, dataGaps } from '@/modules/reports/client';
 import { TrophyIcon } from 'lucide-react';
 
 import { cn } from '@/shared/utils';

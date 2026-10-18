@@ -36,11 +36,11 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 
 Reads only (owned elsewhere): `users`, `tasks`. Record writes for facts, ideas,
 suggestions, sales and meetings go through `dated_record_command` (migration
-19/20), still called from `app/records/actions.ts` (`writeDatedRecord`).
+19/20), through the `records` module (`writeDatedRecord`).
 
 ## Depends on
 `shared/*` (Kolkata dates, calendar periods, the observation clock, the shared
 `team_summary_inputs` fetch for report counts, `shared/ui/execution-form`),
 `types/*`, and legacy code not yet in modules: `components/missions/mission-ui`,
-`app/records/actions` (`writeDatedRecord`). Support does not import scoring;
+the `records` module (`writeDatedRecord`). Support does not import scoring;
 scoring reads support's contribution inputs.

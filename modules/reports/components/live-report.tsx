@@ -1,14 +1,14 @@
 import { DownloadIcon, ListChecksIcon } from 'lucide-react';
 import { OperationalEvidence } from './operational-evidence';
-import { AwardHistory } from '@/components/team/award-history';
+import { AwardHistory } from '@/modules/scoring/components/award-history';
 import { CopyReport } from './copy-report';
 import Link from 'next/link';
-import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
+import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
 import { ReportContext } from './view-context';
 import { MissionNotice } from '@/components/missions/mission-ui';
-import { viewQuery } from '@/lib/presentation/context';
-import { liveReport,reportText } from '@/lib/presentation/export';
-import type { LivePresentation } from '@/lib/presentation/model';
+import { viewQuery } from '@/modules/reports/internal/presentation/context';
+import { liveReport,reportText } from '@/modules/reports/internal/presentation/export';
+import type { LivePresentation } from '@/modules/reports/internal/presentation/model';
 export function LiveReport({model}:{model:LivePresentation}){
  const query=viewQuery(model.view)+(model.employeeId?'&employee='+encodeURIComponent(model.employeeId):'');
  return <section className="grid gap-5 lg:gap-6">

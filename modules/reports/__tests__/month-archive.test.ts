@@ -2,8 +2,8 @@ import { describe,expect,it,vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn()}));
-import { archiveDifferences,archivedCsv,archivedReport,archivedText,compareRevisions,type MonthArchive } from '@/lib/month/archive';
-import { ArchivedReport } from '@/components/reports/archived-report';
+import { archiveDifferences,archivedCsv,archivedReport,archivedText,compareRevisions,type MonthArchive } from '@/modules/reports/internal/month/archive';
+import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { FACTORS } from '@/modules/scoring/client';
 
 function fixture(score:string|null,change=false):MonthArchive {

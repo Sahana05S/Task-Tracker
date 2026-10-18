@@ -76,7 +76,7 @@ Start from `modules/_template/` when creating a module.
 | `shared/supabase/` | `server.ts`, `client.ts`, `worker.ts` Supabase clients, session middleware |
 | `shared/session/` | `getCurrentProfile`, `requireProfile`, `requireRole`, `resolveActor` |
 | `shared/forms/form-data.ts` | `readString`, `readNullableString`, `UUID_PATTERN`, `ISO_DATE_PATTERN` |
-| `shared/time/kolkata.ts` | `kolkataDate()`, the business time zone |
+| `shared/time/kolkata.ts` | `kolkataDate()`, `localCheckTime()`, the business time zone |
 | `shared/time/period.ts` | `currentPeriod`, `resolvePeriod`, `AnalyticsPeriod` (calendar months) |
 | `shared/time/observation-clock.ts` | `observationInstant()`, the database as-of clock |
 | `shared/math/exact.ts` | `Exact` decimal/rational arithmetic |
@@ -100,7 +100,8 @@ Start from `modules/_template/` when creating a module.
 | milestones | Milestones, statements, goals | lib/milestones, components/milestones | Moved |
 | team | Employees and profiles | lib/team, components/team | To do |
 | scoring | Ten-factor performance engine, analytics, stars/awards | lib/performance, lib/analytics, lib/stars | Moved |
-| reports | Live reports, exports, month close | lib/presentation, lib/month, components/reports | To do |
+| reports | Live reports, exports, month close, report snapshots, dashboard read | lib/presentation, lib/month, lib/analytics/queries, components/reports | Moved |
+| records | Dated records (attendance, facts, ideas, suggestions, sales, meetings): save/validate command and history | app/records | Moved |
 | drive | Google Drive integration (deferred by user) | lib/integrations/drive | Moved |
 | workspace-views | Dashboard, Today, Timelines, nav counts | lib/today, lib/timelines, components/dashboard | To do |
 | marketing | Public landing page | lib/marketing, components/marketing | Moved |
