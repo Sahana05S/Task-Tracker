@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { WorkspaceHeader } from '@/components/layout/workspace-header';
+import { WorkspaceHeader } from '@/modules/workspace-views/components/shell/workspace-header';
 import { requireProfile } from '@/shared/session/profile';
 import { getRecordHistory, isRecordReference } from '@/modules/records';
 import type { Json } from '@/types/database';

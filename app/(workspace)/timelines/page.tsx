@@ -1,4 +1,4 @@
-import { TaskRelations } from '@/components/timelines/task-relations';
+import { TaskRelations } from '@/modules/workspace-views/components/timelines/task-relations';
 import Link from 'next/link';
 import { getLivePresentation } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
@@ -7,12 +7,12 @@ import type { Metadata } from 'next';
 
 import { CalendarClockIcon, CalendarRangeIcon, FlagIcon, ListChecksIcon } from 'lucide-react';
 
-import { MissionPage, MissionPageHeader, StatTile } from '@/components/missions/mission-ui';
-import { TaskGantt } from '@/components/timelines/task-gantt';
+import { MissionPage, MissionPageHeader, StatTile } from '@/shared/ui/mission-ui';
+import { TaskGantt } from '@/modules/workspace-views/components/timelines/task-gantt';
 import { currentPeriod } from '@/shared/time/period';
 import { requireProfile } from '@/shared/session/profile';
 import { getTaskWorkspaceData } from '@/modules/tasks';
-import { buildTaskTimeline } from '@/lib/timelines/gantt';
+import { buildTaskTimeline } from '@/modules/workspace-views/client';
 
 export const metadata: Metadata = {
   title: 'Timelines · TaskPulse',

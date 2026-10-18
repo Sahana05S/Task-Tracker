@@ -1,5 +1,7 @@
 import { currentPeriod } from '@/shared/time/period';
-import { createClient } from '@/shared/supabase/server';
+import { countOpenMilestones } from '@/modules/milestones';
+import { countOpenTasks } from '@/modules/tasks';
+import { countMyLogsInPeriod } from '@/modules/time-tracking';
 
 /**
  * Counts shown as badges in the expanded navigation drawer.
@@ -19,8 +21,8 @@ export interface NavCounts {
 /**
  * Loads the drawer badge counts.
  *
- * Every query uses `head: true` with an exact count, so PostgREST returns the
- * tally in the `Content-Range` header and no rows cross the wire. That keeps this
+ * Each owning module counts with `head: true` and an exact count, so PostgREST
+ * returns the tally in the `Content-Range` header and no rows cross the wire. That keeps this
  * cheap enough to run on every workspace navigation.
  *
  * Failures degrade to zero rather than throwing: a badge is decoration, and it
@@ -29,29 +31,10 @@ export interface NavCounts {
  * simply reads zero until the table exists.
  */
 export async function getNavCounts(userId: string): Promise<NavCounts> {
-  const supabase = await createClient();
-  const period = currentPeriod();
-
-  const [taskResult, logResult, milestoneResult] = await Promise.all([
-    supabase
-      .from('tasks')
-      .select('id', { count: 'exact', head: true })
-      .not('status', 'in', '("Done","Discarded")'),
-    supabase
-      .from('daily_task_logs')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('log_date', period.startDate)
-      .lte('log_date', period.endDate),
-    supabase
-      .from('company_milestones')
-      .select('id', { count: 'exact', head: true })
-      .neq('status', 'Achieved'),
+  const [openTasks, myLogsThisMonth, openMilestones] = await Promise.all([
+    countOpenTasks(),
+    countMyLogsInPeriod(userId, currentPeriod()),
+    countOpenMilestones(),
   ]);
-
-  return {
-    openTasks: taskResult.count ?? 0,
-    myLogsThisMonth: logResult.count ?? 0,
-    openMilestones: milestoneResult.count ?? 0,
-  };
+  return { openTasks, myLogsThisMonth, openMilestones };
 }

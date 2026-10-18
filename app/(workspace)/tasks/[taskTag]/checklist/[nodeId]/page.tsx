@@ -30,7 +30,7 @@ import {
   percentage,
   type ChecklistContext,
 } from '@/modules/checklists/components/checklist-rows';
-import { MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
+import { MissionPanel, MissionProgress } from '@/shared/ui/mission-ui';
 import { requireProfile } from '@/shared/session/profile';
 import { getChecklistItemTime } from '@/modules/checklists';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';

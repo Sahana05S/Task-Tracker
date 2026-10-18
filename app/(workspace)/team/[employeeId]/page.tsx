@@ -26,14 +26,14 @@ import {
   MissionPageHeader,
   MissionPanel,
   StatTile,
-} from '@/components/missions/mission-ui';
+} from '@/shared/ui/mission-ui';
 import { EmployeeAnalyticsChartsPanel } from '@/modules/team/components/employee-analytics-charts';
 import {
   CategoryBadge,
   FreshnessIndicator,
   PriorityBadge,
   RoleBadge,
-} from '@/components/tracker/tracker-badges';
+} from '@/shared/ui/tracker-badges';
 import { requireProfile } from '@/shared/session/profile';
 import { canViewEmployeeProfile } from '@/modules/team/client';
 import { getEmployeeProfileData } from '@/modules/team';

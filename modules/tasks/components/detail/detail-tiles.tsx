@@ -1,7 +1,7 @@
 import type * as React from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-import { InitialsAvatar } from '@/components/missions/mission-ui';
+import { InitialsAvatar } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 
 /** Small presentational building blocks of the mission details page. */

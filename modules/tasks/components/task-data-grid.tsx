@@ -17,7 +17,7 @@ import {
   CategoryBadge,
   FreshnessIndicator,
   PriorityBadge,
-} from '@/components/tracker/tracker-badges';
+} from '@/shared/ui/tracker-badges';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import {

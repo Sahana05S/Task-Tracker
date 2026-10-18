@@ -13,13 +13,13 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 
-import { AvatarStack, MissionProgress } from '@/components/missions/mission-ui';
+import { AvatarStack, MissionProgress } from '@/shared/ui/mission-ui';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import {
   CategoryBadge,
   FreshnessIndicator,
   PriorityBadge,
-} from '@/components/tracker/tracker-badges';
+} from '@/shared/ui/tracker-badges';
 import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,

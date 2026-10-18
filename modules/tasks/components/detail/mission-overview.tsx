@@ -1,6 +1,6 @@
 import { CalendarDaysIcon, CheckCircle2Icon, CircleDotIcon, GaugeIcon } from 'lucide-react';
 
-import { MissionProgress } from '@/components/missions/mission-ui';
+import { MissionProgress } from '@/shared/ui/mission-ui';
 import { FactTile, PeopleTile } from '@/modules/tasks/components/detail/detail-tiles';
 import type { TaskDetailData } from '@/modules/tasks/internal/detail';
 import { CATEGORY_LABELS } from '@/shared/tracker/enums';

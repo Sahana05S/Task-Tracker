@@ -36,5 +36,4 @@ company-scoped by migrations 39-40 (M15).
 ## Depends on
 `shared/*` and the public APIs of `reports`, `scoring`, `tasks`,
 `time-tracking`, `attendance` and `support`. No module imports team; it is a
-top-level view of the others. `components/dashboard/chart-palette` and
-`components/missions` are still outside modules.
+top-level view of the others.

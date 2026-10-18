@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { MilestoneBoard } from '@/modules/milestones/components/milestone-board';
 import { OrganizationShowcase } from '@/modules/milestones/components/organization-showcase';
 import { SchemaNotice } from '@/modules/milestones/components/schema-notice';

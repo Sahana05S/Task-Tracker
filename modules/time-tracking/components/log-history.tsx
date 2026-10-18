@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 import { deleteTaskLog } from '@/modules/time-tracking/actions';
 import { QuickLogDrawer } from '@/modules/time-tracking/components/quick-log-drawer';
-import { CategoryBadge } from '@/components/tracker/tracker-badges';
+import { CategoryBadge } from '@/shared/ui/tracker-badges';
 import { Button } from '@/shared/ui/button';
 import {
   Sheet,

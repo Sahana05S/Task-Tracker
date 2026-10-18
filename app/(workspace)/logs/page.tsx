@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { LogHistory } from '@/modules/time-tracking/components/log-history';
 import { requireProfile } from '@/shared/session/profile';
 import { getMyLogHistory } from '@/modules/time-tracking';

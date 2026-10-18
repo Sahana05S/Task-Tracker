@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 import type * as React from 'react';
 
-import { PriorityBadge } from '@/components/tracker/tracker-badges';
+import { PriorityBadge } from '@/shared/ui/tracker-badges';
 import { GAP_SENTENCE, dataGaps } from '@/modules/reports/client';
-import type { AwardSnapshot, FocusMission, Section, ValidatedContribution, WeekSummary } from '@/lib/today/queries';
+import type { AwardSnapshot, FocusMission, Section, ValidatedContribution, WeekSummary } from '@/modules/workspace-views/internal/today';
 import { cn } from '@/shared/utils';
 
 const KIND_LABEL: Record<ValidatedContribution['kind'], string> = { fact: 'Daily fact', idea: 'Idea', suggestion: 'Suggestion' };

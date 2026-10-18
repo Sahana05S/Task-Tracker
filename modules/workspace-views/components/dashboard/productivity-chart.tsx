@@ -21,7 +21,7 @@ import {
   CHART_POSITIVE,
   CHART_REFERENCE,
   shortName,
-} from '@/components/dashboard/chart-palette';
+} from '@/shared/ui/chart-palette';
 import type { MemberPerformance } from '@/modules/scoring/client';
 import { formatHours } from '@/shared/tracker/format';
 

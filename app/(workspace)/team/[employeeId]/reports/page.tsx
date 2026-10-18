@@ -18,7 +18,7 @@ import {
   MissionPage,
   MissionPageHeader,
   MissionPanel,
-} from '@/components/missions/mission-ui';
+} from '@/shared/ui/mission-ui';
 import { requireProfile } from '@/shared/session/profile';
 import { getEmployeeItemHours } from '@/modules/checklists';
 import type { ItemHourTask } from '@/modules/checklists/client';

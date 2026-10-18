@@ -1,4 +1,4 @@
-import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { getMeetingPointsData } from '@/modules/support';
 import { DatedRecordModule } from '@/modules/support/components/dated-record-module';
 import { requireProfile } from '@/shared/session/profile';

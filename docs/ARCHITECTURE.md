@@ -55,7 +55,7 @@ Start from `modules/_template/` when creating a module.
 1. **Never import another module's `internal/`.** Use its `index.ts`,
    `actions.ts`, `client.ts` or `components/`. Need something that isn't public?
    Add it to that module's public file deliberately.
-2. **`shared/` depends on nothing in `modules/`, `lib/`, `components/` or `app/`.**
+2. **`shared/` depends on nothing in `modules/` or `app/`.**
    If code needs a module, it isn't shared.
 3. **Pages, route handlers and components don't call `.from()` or `.rpc()`.** Data
    access lives in a module's `internal/`. The test keeps a shrinking list of
@@ -83,7 +83,7 @@ Start from `modules/_template/` when creating a module.
 | `shared/read-models/team-summary.ts` | Cached raw `team_summary_inputs` fetch shared by scoring and support |
 | `shared/commands/` | Command results and idempotent operation ids |
 | `shared/tracker/` | Common enums and display formatters |
-| `shared/ui/` | Buttons, inputs, dialogs (shadcn components) |
+| `shared/ui/` | Buttons, inputs, dialogs (shadcn), `mission-ui` page/panel blocks, `tracker-badges`, `execution-form`, `chart-palette` |
 | `shared/utils.ts` | `cn()` class-name helper |
 
 ## Module map
@@ -91,7 +91,7 @@ Start from `modules/_template/` when creating a module.
 | Module | What it owns | Was in | Status |
 |---|---|---|---|
 | auth | Login, sign-out, redirects, protected routes | lib/auth, app/auth, app/login | Moved |
-| organizations | Companies, per-company settings, onboarding (M15) | migrations 39-40 TS code | To do |
+| organizations | Companies, per-company settings, onboarding (M15) | — | Not needed yet: tenancy is in migrations 39-40 and `shared/supabase/worker.ts`; create this module with the onboarding UI |
 | tasks | Tasks, participants, shares, details, Task Tools | lib/tasks, lib/task-tools, components/tasks | Moved |
 | checklists | Nested checklist pages, item time, progress | lib/checklists, components/checklists | Moved |
 | time-tracking | Work logs and timers | lib/logs, lib/timers, components/logs | Moved |
@@ -103,7 +103,7 @@ Start from `modules/_template/` when creating a module.
 | reports | Live reports, exports, month close, report snapshots, dashboard read | lib/presentation, lib/month, lib/analytics/queries, components/reports | Moved |
 | records | Dated records (attendance, facts, ideas, suggestions, sales, meetings): save/validate command and history | app/records | Moved |
 | drive | Google Drive integration (deferred by user) | lib/integrations/drive | Moved |
-| workspace-views | Dashboard, Today, Timelines, nav counts | lib/today, lib/timelines, components/dashboard | To do |
+| workspace-views | App shell, Dashboard, Today, Timelines, nav counts, missions list | components/layout, components/dashboard, lib/today, lib/timelines, lib/layout | Moved |
 | marketing | Public landing page | lib/marketing, components/marketing | Moved |
 
 ## Git workflow

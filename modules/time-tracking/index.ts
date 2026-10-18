@@ -7,3 +7,4 @@ export { getLoggableTasksFor, getMyLogHistory, getTaskEffortTotals } from '@/mod
 export { getRunningTimers } from '@/modules/time-tracking/internal/timers/running-timers';
 export { getTeamRunningTimers } from '@/modules/time-tracking/internal/timers/queries';
 export { getTaskExecution } from '@/modules/time-tracking/internal/execution';
+export { countMyLogsInPeriod } from '@/modules/time-tracking/internal/logs/counts';

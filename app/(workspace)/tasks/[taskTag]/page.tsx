@@ -13,13 +13,13 @@ import {
 } from 'lucide-react';
 
 import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
-import { MissionPanel } from '@/components/missions/mission-ui';
+import { MissionPanel } from '@/shared/ui/mission-ui';
 import {
   CategoryBadge,
   FreshnessIndicator,
   PriorityBadge,
   StatusBadge,
-} from '@/components/tracker/tracker-badges';
+} from '@/shared/ui/tracker-badges';
 import { getTaskEffortBreakdown } from '@/modules/checklists';
 import { canStartTimerForTask, getTaskExecution } from '@/modules/time-tracking';
 import {

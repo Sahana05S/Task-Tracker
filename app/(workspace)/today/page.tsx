@@ -7,9 +7,9 @@ import {
   StarCalendar,
   StarStatusCard,
   WeekSummaryCard,
-} from '@/components/today/today-sections';
+} from '@/modules/workspace-views/components/today/today-sections';
 import { requireProfile } from '@/shared/session/profile';
-import { getTodayData } from '@/lib/today/queries';
+import { getTodayData } from '@/modules/workspace-views';
 
 export const metadata: Metadata = { title: 'Today · TaskPulse' };
 

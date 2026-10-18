@@ -1,6 +1,6 @@
 import { FileTextIcon, PencilIcon, TriangleAlertIcon } from 'lucide-react';
 
-import { MissionPanel } from '@/components/missions/mission-ui';
+import { MissionPanel } from '@/shared/ui/mission-ui';
 import { Disclosure, SmartGoalTile, TextBlock } from '@/modules/tasks/components/detail/detail-tiles';
 import { InitializeDetailsForm, NativeDetailsEditor } from '@/modules/tasks/components/native-details-editor';
 import { DETAIL_FIELDS, type NativeTemplate } from '@/modules/tasks/internal/details-contract';

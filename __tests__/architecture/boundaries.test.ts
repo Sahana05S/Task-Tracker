@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
  */
 
 const ROOT = process.cwd();
-const SOURCE_DIRS = ['app', 'components', 'lib', 'modules', 'shared'];
+const SOURCE_DIRS = ['app', 'modules', 'shared'];
 const VIEW_MODULES = new Set(['workspace-views']);
 
 /**
@@ -84,7 +84,7 @@ describe('module boundaries', () => {
         file.imports
           .filter((spec) => {
             const target = resolveImport(file.path, spec);
-            return target !== null && /^(modules|lib|components|app)\//.test(target);
+            return target !== null && /^(modules|app)\//.test(target);
           })
           .map((spec) => `${file.path} -> ${spec}`),
       );
@@ -135,7 +135,7 @@ describe('module boundaries', () => {
 
   it('keeps direct database calls out of pages, routes and components', () => {
     const direct = sources
-      .filter((file) => /^(app|components)\//.test(file.path) || /^modules\/[^/]+\/components\//.test(file.path))
+      .filter((file) => /^app\//.test(file.path) || /^shared\/ui\//.test(file.path) || /^modules\/[^/]+\/components\//.test(file.path))
       .filter((file) => !isTest(file.path) && /\.from\(['"]|\.rpc\(/.test(file.text))
       .map((file) => file.path);
     const unexpected = direct.filter((path) => !LEGACY_DIRECT_DB.has(path));
