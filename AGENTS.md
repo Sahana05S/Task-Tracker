@@ -1,14 +1,22 @@
 # Task Tracker project instructions
 
-## Modular refactor - 17 October 2026
+## Code layout - modules (refactor completed 18 October 2026)
 
-The user asked for a behaviour-preserving refactor into modules (facade per
-module, one short-lived branch per module, merged into `refactor/base`). Follow
-`docs/ARCHITECTURE.md`: new code goes in `modules/<name>/`, other code uses only a
-module's public files, never `internal/`; common code is in `shared/`. The
-boundary test `__tests__/architecture/boundaries.test.ts` must pass. Refactor
-branches move and split code only: no business formula, SQL, migration or
-permission changes.
+The user asked for a modular codebase (facade per module, one short branch per
+change). The refactor is complete on `refactor/base` (not yet merged into
+`main`). Follow `docs/ARCHITECTURE.md`:
+
+- Code lives in `app/` (routing only), `modules/<name>/` and `shared/`. There is
+  no `lib/` or `components/` any more; do not recreate them.
+- Other code uses only a module's public files (`index.ts`, `client.ts`,
+  `*actions.ts`, `components/`), never `internal/`. Client components and pure
+  helpers import `client.ts`. Each module's README lists its public API and the
+  tables/RPCs it owns; update it when either changes.
+- Pages, routes and components never call `.from()`/`.rpc()`; data access
+  belongs in a module's `internal/`.
+- New work: put it in the owning module (start from `modules/_template/`), on a
+  short branch named after the module. `__tests__/architecture/boundaries.test.ts`
+  must pass.
 
 ## M15 multi-company direction - 17 October 2026
 

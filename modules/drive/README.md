@@ -16,10 +16,10 @@ the server environment. Manual asset links remain available elsewhere.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `handleDriveSetupCheck(request)`, `handleDriveWorkerRun(request)` for `app/api/internal/drive/route.ts` (GET = read-only setup check, POST = run one job) |
+| `index.ts` | `handleDriveSetupCheck(request)`, `handleDriveWorkerRun(request)` for `app/api/internal/drive/route.ts` (GET = read-only setup check, POST = run one job); `getDriveReadModel()` for Task Tools |
 | `actions.ts` | `requestDriveOperation(form)` — queues a Drive job via `drive_command` (blocked while deferred) |
 | `client.ts` | `FAILURE_HELP`, `FailureCode`, `DRIVE_INTEGRATION_DEFERRED`, `DRIVE_UNAVAILABLE_MESSAGE` |
-| `components/` | None yet; the UI is still `components/tasks/drive-operations.tsx` |
+| `components/` | `DriveOperations` (Task Tools Drive jobs panel; live Drive deferred) |
 
 ## Private (`internal/`)
 | File | Job |

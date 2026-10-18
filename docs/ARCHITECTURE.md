@@ -24,7 +24,8 @@ supabase/       Migrations (one numbered sequence; never rewritten).
 modules/tasks/
   README.md      What it does, public API, tables/RPCs it owns
   index.ts       PUBLIC  server-side reads + types
-  actions.ts     PUBLIC  'use server' commands
+  actions.ts     PUBLIC  'use server' commands (a module may split them, e.g.
+                         detail-actions.ts, tool-actions.ts; all end in actions.ts)
   client.ts      PUBLIC  types and pure helpers for 'use client' components
   components/    PUBLIC  the module's UI
   internal/      PRIVATE queries, commands, rules, permissions, input, mappers
@@ -58,8 +59,8 @@ Start from `modules/_template/` when creating a module.
 2. **`shared/` depends on nothing in `modules/` or `app/`.**
    If code needs a module, it isn't shared.
 3. **Pages, route handlers and components don't call `.from()` or `.rpc()`.** Data
-   access lives in a module's `internal/`. The test keeps a shrinking list of
-   files that still do (`LEGACY_DIRECT_DB`); remove a file from it once it is clean.
+   access lives in a module's `internal/`. The test's exception list
+   (`LEGACY_DIRECT_DB`) is empty and must stay that way.
 4. **Dependencies point one way:** `shared` <- domain modules <- view modules
    (`workspace-views`) <- `app`. No cycles between modules.
 5. **The database stays the real permission boundary.** Checks in `permissions.ts`
@@ -108,10 +109,10 @@ Start from `modules/_template/` when creating a module.
 
 ## Git workflow
 
-- `refactor/base` is the integration branch for this refactor (cut from
-  `m13-verification`, which is ahead of `main`).
-- One short-lived branch per module (`refactor/<module>`), cut from
-  `refactor/base` and merged back once typecheck, tests and build pass.
-- After the refactor, feature work follows the same pattern: one short branch per
-  change, named after the module it touches (`tasks/...`, `scoring/...`).
+- The refactor into modules was done on `refactor/base` (cut from
+  `m13-verification`), one short branch per module merged back after
+  typecheck, tests and build passed. It is complete; see STATUS.md.
+- Feature work follows the same pattern: one short branch per change, named
+  after the module it touches (`tasks/...`, `scoring/...`), merged once the
+  checks pass.
 - Nothing is merged into `main` or deployed without the owner's go-ahead.

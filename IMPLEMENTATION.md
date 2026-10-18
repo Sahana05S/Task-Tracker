@@ -19,6 +19,9 @@ Do not use a single long chat as the only specification. At the start of each mo
 
 ## Proposed architecture
 
+> Superseded for code layout by `docs/ARCHITECTURE.md` (18 October 2026): the
+> `lib/...` paths below are historical; code now lives in `modules/` and `shared/`.
+
 Keep Next.js App Router, Supabase/PostgreSQL, the existing design system and Recharts. The paths below are proposed ownership boundaries, not a mandate to move working files just for aesthetics.
 
 | Layer | Responsibilities |
