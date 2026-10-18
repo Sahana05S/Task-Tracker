@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { resolvePeriod } from '@/shared/time/period';
 import { type MemberPerformance } from '@/modules/scoring/client';
 import { EMPTY_ATTENDANCE_SUMMARY } from '@/modules/attendance/client';
-import { buildEmployeeAnalyticsCharts } from '@/lib/team/employee-charts';
+import { buildEmployeeAnalyticsCharts } from '@/modules/team/internal/employee-charts';
 import type { DailyTaskLog, Task, TaskLink } from '@/types/tracker';
 
 const SEP_2026 = resolvePeriod(2026, 9);

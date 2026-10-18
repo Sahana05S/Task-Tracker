@@ -5,7 +5,7 @@ import {
   employeeReportsHref,
   normalizeEmployeeIdParam,
   resolveEmployeeRouteState,
-} from '@/lib/team/routes';
+} from '@/modules/team/internal/routes';
 
 describe('team route helpers', () => {
   it('normalizes employee id route params', () => {

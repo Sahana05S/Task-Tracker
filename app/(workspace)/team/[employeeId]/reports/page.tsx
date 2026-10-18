@@ -22,12 +22,9 @@ import {
 import { requireProfile } from '@/shared/session/profile';
 import { getEmployeeItemHours } from '@/modules/checklists';
 import type { ItemHourTask } from '@/modules/checklists/client';
-import { canViewEmployeeReports } from '@/lib/team/permissions';
-import { getEmployeeByEmployeeId,getEmployeeReportsData } from '@/lib/team/queries';
-import {
-  normalizeEmployeeIdParam,
-  resolveEmployeeRouteState,
-} from '@/lib/team/routes';
+import { canViewEmployeeReports } from '@/modules/team/client';
+import { getEmployeeByEmployeeId, getEmployeeReportsData } from '@/modules/team';
+import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
 
 interface EmployeeReportsPageProps {

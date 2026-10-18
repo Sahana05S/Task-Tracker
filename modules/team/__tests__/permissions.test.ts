@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canViewEmployeeProfile, canViewEmployeeReports, canViewTeamModule } from '@/lib/team/permissions';
+import { canViewEmployeeProfile, canViewEmployeeReports, canViewTeamModule } from '@/modules/team/internal/permissions';
 import type { UserRole } from '@/types/tracker';
 describe('approved employee report visibility', () => {
   it('allows active team summaries and rejects inactive viewers', () => {

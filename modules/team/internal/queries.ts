@@ -1,12 +1,12 @@
 import { getLivePresentation } from '@/modules/reports';
 import { viewContext, type ViewContext } from '@/modules/reports/client';
 import type { LivePresentation } from '@/modules/reports/client';
-import { optionalEmployeePerformance } from '@/lib/team/performance-availability';
+import { optionalEmployeePerformance } from '@/modules/team/internal/performance-availability';
 import { getAwards, type AwardReadModel } from '@/modules/scoring';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { getTeamSummaryInputs } from '@/modules/scoring';
 import { getCurrentProfile } from '@/shared/session/profile';
-import { canViewEmployeeReports } from '@/lib/team/permissions';
+import { canViewEmployeeReports } from '@/modules/team/internal/permissions';
 import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
 import { type MemberPerformance } from '@/modules/scoring/client';
 import { getTeamAnalytics } from '@/modules/reports';
@@ -28,7 +28,7 @@ import {
 import {
   buildEmployeeAnalyticsCharts,
   type EmployeeAnalyticsCharts,
-} from '@/lib/team/employee-charts';
+} from '@/modules/team/internal/employee-charts';
 import { mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/client';
 import {
   DAILY_STAR_COLUMNS,
@@ -37,7 +37,7 @@ import {
   mapReportSnapshots,
   PERFORMANCE_COMPONENT_COLUMNS,
   REPORT_SNAPSHOT_COLUMNS,
-} from '@/lib/team/mappers';
+} from '@/modules/team/internal/mappers';
 import type {
   AttendanceRecord,
   DailyStarRecord,

@@ -2,7 +2,7 @@ import { describe,it,expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { parsePerformanceSources,resolvePerformance,type PerformancePolicy } from '@/modules/scoring/internal/performance/sources';
 import { computeTeamAnalytics } from '@/modules/scoring/internal/analytics/engine';
-import { optionalEmployeePerformance } from '@/lib/team/performance-availability';
+import { optionalEmployeePerformance } from '@/modules/team/client';
 import { performanceReport } from '@/modules/scoring/internal/performance/report';
 import type { User } from '@/types/tracker';
 const policy:PerformancePolicy={id:'independent-fixture-policy',taskPopulation:'eligible_carried_asof',progressWindow:'period_earned',completion:'done_in_period',nonadditiveAttribution:'normalized_shares',observedZeroInMedian:true,missingPolicy:'exclude_unavailable',precisionPolicy:'fixture-exact',displayPlaces:2};

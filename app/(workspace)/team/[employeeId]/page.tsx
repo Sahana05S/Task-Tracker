@@ -27,7 +27,7 @@ import {
   MissionPanel,
   StatTile,
 } from '@/components/missions/mission-ui';
-import { EmployeeAnalyticsChartsPanel } from '@/components/team/employee-analytics-charts';
+import { EmployeeAnalyticsChartsPanel } from '@/modules/team/components/employee-analytics-charts';
 import {
   CategoryBadge,
   FreshnessIndicator,
@@ -35,12 +35,9 @@ import {
   RoleBadge,
 } from '@/components/tracker/tracker-badges';
 import { requireProfile } from '@/shared/session/profile';
-import { canViewEmployeeProfile } from '@/lib/team/permissions';
-import { getEmployeeProfileData } from '@/lib/team/queries';
-import {
-  normalizeEmployeeIdParam,
-  resolveEmployeeRouteState,
-} from '@/lib/team/routes';
+import { canViewEmployeeProfile } from '@/modules/team/client';
+import { getEmployeeProfileData } from '@/modules/team';
+import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatPercent, formatHours } from '@/shared/tracker/format';
 import type { DailyStarRecord, DailyTaskLog, Task } from '@/types/tracker';
 

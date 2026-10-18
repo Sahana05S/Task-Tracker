@@ -4,15 +4,15 @@ import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { AwardControls } from '@/components/team/award-controls';
+import { AwardControls } from '@/modules/team/components/award-controls';
 import { AwardStatus } from '@/modules/scoring/components/award-status';
 import { InitialsAvatar, MissionEmpty, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
 import { getTeamHolidayDates } from '@/modules/attendance';
 import { requireProfile } from '@/shared/session/profile';
-import { canViewTeamModule } from '@/lib/team/permissions';
-import { getTeamIndexData } from '@/lib/team/queries';
-import { employeeHref, employeeReportsHref } from '@/lib/team/routes';
+import { canViewTeamModule } from '@/modules/team/client';
+import { getTeamIndexData } from '@/modules/team';
+import { employeeHref, employeeReportsHref } from '@/modules/team/client';
 import { formatNumeric, formatHours } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {

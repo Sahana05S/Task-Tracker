@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import {
   updateDisplayName,
   type SettingsActionState,
-} from '@/app/settings/actions';
+} from '@/modules/team/profile-actions';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import type { User } from '@/types/tracker';
