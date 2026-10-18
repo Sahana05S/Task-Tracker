@@ -30,7 +30,7 @@ import {
   percentage,
   type ChecklistContext,
 } from '@/modules/checklists/components/checklist-rows';
-import { AvatarStack, MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
+import { AvatarStack, MissionPanel, MissionProgress } from '@/shared/ui/mission-ui';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { requireProfile } from '@/shared/session/profile';

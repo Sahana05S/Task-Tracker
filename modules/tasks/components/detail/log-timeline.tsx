@@ -1,6 +1,6 @@
 import { LinkIcon } from 'lucide-react';
 
-import { InitialsAvatar } from '@/components/missions/mission-ui';
+import { InitialsAvatar } from '@/shared/ui/mission-ui';
 import { formatDate, formatHours } from '@/shared/tracker/format';
 import type { DailyTaskLog } from '@/types/tracker';
 

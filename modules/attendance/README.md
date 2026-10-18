@@ -45,5 +45,4 @@ which is shared with the support module's dated records. Reads also call
 ## Depends on
 `shared/*` (including `shared/time/observation-clock` and
 `shared/ui/execution-form`), the public APIs of `support` (`loadAttendanceContext`),
-`tasks` and `time-tracking`, and, until those areas become modules,
-`components/missions/mission-ui`. Record writes use the `records` module (`writeDatedRecord`).
+`tasks` and `time-tracking`. Record writes use the `records` module (`writeDatedRecord`).

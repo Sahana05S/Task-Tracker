@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { activeSection, isTabActive } from '@/components/layout/nav-items';
+import { activeSection, isTabActive } from '@/modules/workspace-views/components/shell/nav-items';
 import { cn } from '@/shared/utils';
 
 /**

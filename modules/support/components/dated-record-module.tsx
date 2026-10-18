@@ -4,7 +4,7 @@ import { writeDatedRecord } from '@/modules/records/actions';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { InfoIcon, PlusIcon } from 'lucide-react';
-import { InitialsAvatar, MissionEmpty, MissionNotice, MissionPanel } from '@/components/missions/mission-ui';
+import { InitialsAvatar, MissionEmpty, MissionNotice, MissionPanel } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { canManageSupportRecords, canValidateSupportRecord } from '../internal/permissions';

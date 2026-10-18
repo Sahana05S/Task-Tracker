@@ -20,3 +20,4 @@ export {
   type ReportChoice,
 } from '@/modules/tasks/internal/native-details';
 export { getParticipantReconciliation, type ReconciliationTask } from '@/modules/tasks/internal/reconciliation';
+export { countOpenTasks } from '@/modules/tasks/internal/counts';

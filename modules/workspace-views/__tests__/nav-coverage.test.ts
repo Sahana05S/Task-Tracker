@@ -1,7 +1,7 @@
 import { describe,expect,it } from 'vitest';
-import { MORE_ITEMS,NAV_SECTIONS,activeSection,isMoreActive } from '@/components/layout/nav-items';
+import { MORE_ITEMS,NAV_SECTIONS,activeSection,isMoreActive } from '@/modules/workspace-views/components/shell/nav-items';
 import { PROTECTED_PREFIXES } from '@/modules/auth';
-import { weekStartOf } from '@/lib/today/queries';
+import { weekStartOf } from '@/modules/workspace-views/internal/today';
 
 describe('redesigned navigation keeps every workspace route reachable',()=>{
  it('maps every protected route to a section tab or a More item',()=>{

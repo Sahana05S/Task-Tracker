@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import { AppShell } from '@/components/layout/app-shell';
+import { AppShell } from '@/modules/workspace-views/components/shell/app-shell';
 import { requireProfile } from '@/shared/session/profile';
-import { getNavCounts } from '@/lib/layout/nav-counts';
+import { getNavCounts } from '@/modules/workspace-views';
 import { getRunningTimers } from '@/modules/time-tracking';
 
 /**

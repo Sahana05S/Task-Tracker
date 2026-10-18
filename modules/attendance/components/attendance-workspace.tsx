@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CalendarCheckIcon, CalendarPlusIcon, HistoryIcon, InfoIcon } from 'lucide-react';
-import { InitialsAvatar, MissionEmpty, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/components/missions/mission-ui';
+import { InitialsAvatar, MissionEmpty, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
 import { AttendanceRecordEditor } from '@/modules/attendance/components/attendance-record-editor';
 import type { AttendanceModuleData } from '@/modules/attendance/internal/queries';
 import { formatHours } from '@/shared/tracker/format';

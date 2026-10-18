@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { LogOutIcon, SettingsIcon, SparklesIcon } from 'lucide-react';
 
 import { logout } from '@/modules/auth/actions';
-import { RoleBadge } from '@/components/tracker/tracker-badges';
+import { RoleBadge } from '@/shared/ui/tracker-badges';
 import {
   DropdownMenu,
   DropdownMenuContent,

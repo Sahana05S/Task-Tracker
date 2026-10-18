@@ -1,11 +1,11 @@
 import * as React from 'react';
 
-import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
-import { NavDrawer } from '@/components/layout/nav-drawer';
-import { NavDrawerProvider } from '@/components/layout/nav-drawer-context';
-import { SectionTabs } from '@/components/layout/section-tabs';
-import { TopBar } from '@/components/layout/top-bar';
-import type { NavCounts } from '@/lib/layout/nav-counts';
+import { MobileBottomNav } from '@/modules/workspace-views/components/shell/mobile-bottom-nav';
+import { NavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer';
+import { NavDrawerProvider } from '@/modules/workspace-views/components/shell/nav-drawer-context';
+import { SectionTabs } from '@/modules/workspace-views/components/shell/section-tabs';
+import { TopBar } from '@/modules/workspace-views/components/shell/top-bar';
+import type { NavCounts } from '@/modules/workspace-views/internal/nav-counts';
 import type { RunningTimer } from '@/modules/time-tracking/client';
 import type { User } from '@/types/tracker';
 

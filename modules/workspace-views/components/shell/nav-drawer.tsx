@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { useNavDrawer } from '@/components/layout/nav-drawer-context';
-import { MORE_ITEMS, NAV_SECTIONS, isTabActive, type NavTab } from '@/components/layout/nav-items';
-import { UserMenu } from '@/components/layout/user-menu';
+import { useNavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer-context';
+import { MORE_ITEMS, NAV_SECTIONS, isTabActive, type NavTab } from '@/modules/workspace-views/components/shell/nav-items';
+import { UserMenu } from '@/modules/workspace-views/components/shell/user-menu';
 import {
   Sheet,
   SheetContent,
@@ -14,7 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/shared/ui/sheet';
-import type { NavCounts } from '@/lib/layout/nav-counts';
+import type { NavCounts } from '@/modules/workspace-views/internal/nav-counts';
 import { cn } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 

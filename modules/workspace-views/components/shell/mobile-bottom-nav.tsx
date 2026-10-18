@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { MoreHorizontalIcon, PlusIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { useNavDrawer } from '@/components/layout/nav-drawer-context';
-import { NAV_SECTIONS, activeSection } from '@/components/layout/nav-items';
+import { useNavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer-context';
+import { NAV_SECTIONS, activeSection } from '@/modules/workspace-views/components/shell/nav-items';
 import { QuickLogDrawer } from '@/modules/time-tracking/components/quick-log-drawer';
 import { cn } from '@/shared/utils';
 

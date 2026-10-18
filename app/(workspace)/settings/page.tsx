@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { SettingsForm } from '@/modules/team/components/settings-form';
 import { IdCardIcon, UserRoundIcon } from 'lucide-react';
 
-import { InitialsAvatar, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
-import { RoleBadge } from '@/components/tracker/tracker-badges';
+import { InitialsAvatar, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { requireProfile } from '@/shared/session/profile';
 import { ROLE_LABELS } from '@/shared/tracker/enums';
 import { formatDate } from '@/shared/tracker/format';

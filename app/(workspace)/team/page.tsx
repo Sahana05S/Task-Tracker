@@ -6,8 +6,8 @@ import Link from 'next/link';
 
 import { AwardControls } from '@/modules/team/components/award-controls';
 import { AwardStatus } from '@/modules/scoring/components/award-status';
-import { InitialsAvatar, MissionEmpty, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
-import { RoleBadge } from '@/components/tracker/tracker-badges';
+import { InitialsAvatar, MissionEmpty, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { getTeamHolidayDates } from '@/modules/attendance';
 import { requireProfile } from '@/shared/session/profile';
 import { canViewTeamModule } from '@/modules/team/client';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { resolvePeriod } from '@/shared/time/period';
-import { buildTaskTimeline } from '@/lib/timelines/gantt';
+import { buildTaskTimeline } from '@/modules/workspace-views/internal/timelines/gantt';
 import type { Task, User } from '@/types/tracker';
 
 const SEP_2026 = resolvePeriod(2026, 9);

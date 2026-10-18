@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BellIcon, ChevronDownIcon } from 'lucide-react';
 
-import { BrandMark } from '@/components/layout/brand-mark';
-import { MORE_ITEMS, NAV_SECTIONS, activeSection, isMoreActive } from '@/components/layout/nav-items';
-import { TimerPill } from '@/components/layout/timer-pill';
-import { UserMenu } from '@/components/layout/user-menu';
+import { BrandMark } from '@/modules/workspace-views/components/shell/brand-mark';
+import { MORE_ITEMS, NAV_SECTIONS, activeSection, isMoreActive } from '@/modules/workspace-views/components/shell/nav-items';
+import { TimerPill } from '@/modules/workspace-views/components/shell/timer-pill';
+import { UserMenu } from '@/modules/workspace-views/components/shell/user-menu';
 import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
 import {
   DropdownMenu,

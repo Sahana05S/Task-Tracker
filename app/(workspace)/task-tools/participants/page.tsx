@@ -1,6 +1,6 @@
 import { requireRole } from '@/shared/session/profile';
 import { equalParticipantShares, getParticipantReconciliation, getTaskWorkspaceData } from '@/modules/tasks';
-import { MissionNotice, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
+import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 
 export default async function ParticipantReconciliationPage() {
   await requireRole(['managing_director','project_engineer']);

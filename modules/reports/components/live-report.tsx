@@ -5,7 +5,7 @@ import { CopyReport } from './copy-report';
 import Link from 'next/link';
 import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
 import { ReportContext } from './view-context';
-import { MissionNotice } from '@/components/missions/mission-ui';
+import { MissionNotice } from '@/shared/ui/mission-ui';
 import { viewQuery } from '@/modules/reports/internal/presentation/context';
 import { liveReport,reportText } from '@/modules/reports/internal/presentation/export';
 import type { LivePresentation } from '@/modules/reports/internal/presentation/model';

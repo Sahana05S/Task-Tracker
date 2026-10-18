@@ -11,3 +11,4 @@ export {
   summariseMilestones,
   type MilestoneSummary,
 } from '@/modules/milestones/internal/goals';
+export { countOpenMilestones } from '@/modules/milestones/internal/counts';

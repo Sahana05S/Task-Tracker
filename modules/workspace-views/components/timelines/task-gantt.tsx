@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
-import { InitialsAvatar } from '@/components/missions/mission-ui';
-import { FreshnessIndicator, StatusBadge } from '@/components/tracker/tracker-badges';
-import type { TaskTimeline, TimelineTaskBar } from '@/lib/timelines/gantt';
+import { InitialsAvatar } from '@/shared/ui/mission-ui';
+import { FreshnessIndicator, StatusBadge } from '@/shared/ui/tracker-badges';
+import type { TaskTimeline, TimelineTaskBar } from '@/modules/workspace-views/internal/timelines/gantt';
 import { formatDate } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 

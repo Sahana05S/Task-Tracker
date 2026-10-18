@@ -1,6 +1,6 @@
 import { PaperclipIcon } from 'lucide-react';
 
-import { MissionPanel } from '@/components/missions/mission-ui';
+import { MissionPanel } from '@/shared/ui/mission-ui';
 import { AssetGroup, AssetLink } from '@/modules/tasks/components/detail/asset-links';
 import { WorkFileCreator } from '@/modules/tasks/components/work-file-creator';
 import { ipoLinks, sectionsForRole } from '@/modules/tasks/internal/details-contract';

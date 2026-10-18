@@ -8,7 +8,7 @@ import { liveViewContext } from '@/modules/reports';
 import { kolkataDate } from '@/shared/time/kolkata';
 import type { Metadata } from 'next';
 
-import { MissionNotice, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
+import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { ReportsModule } from '@/modules/support/components/support-pages';
 import { requireProfile } from '@/shared/session/profile';
 import { canManageReportSnapshots, getSupportModuleData } from '@/modules/support';

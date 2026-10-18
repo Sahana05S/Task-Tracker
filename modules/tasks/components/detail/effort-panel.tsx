@@ -1,6 +1,6 @@
 import { GaugeIcon } from 'lucide-react';
 
-import { MissionPanel } from '@/components/missions/mission-ui';
+import { MissionPanel } from '@/shared/ui/mission-ui';
 import { CompactMetric } from '@/modules/tasks/components/detail/detail-tiles';
 import { ELIGIBILITY_LABELS } from '@/modules/tasks/internal/contract';
 import type { TaskDetailData } from '@/modules/tasks/internal/detail';

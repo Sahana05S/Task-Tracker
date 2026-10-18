@@ -42,7 +42,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import { MissionPage, MissionPageHeader, MissionPanel } from '@/components/missions/mission-ui';
+import { MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
 import { Button } from '@/shared/ui/button';
 import { currentPeriod } from '@/shared/time/period';
 import { requireProfile } from '@/shared/session/profile';

@@ -31,10 +31,9 @@ member reads it; managing directors and project engineers edit it.
 | `company_milestones` (table) | `04_milestones_and_vision.sql`; policies rebuilt in `10_permissions_and_participant_contract.sql` | read, insert, update, delete |
 
 No RPCs. The module also reads `users` (owner picker), which the team area owns.
-`lib/layout/nav-counts.ts` still reads `company_milestones` directly for the
-navigation badge; that belongs to the workspace-views refactor.
+`countOpenMilestones()` (`internal/counts.ts`) feeds the navigation badge in
+workspace-views.
 
 ## Depends on
 `shared/*` (Supabase server client and user mappers, session actor, form
-readers, tracker enums/format, UI) and `components/missions/mission-ui`
-(not yet a module).
+readers, tracker enums/format, UI including `shared/ui/mission-ui`).

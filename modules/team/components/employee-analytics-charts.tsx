@@ -22,7 +22,7 @@ import {
   CHART_GRID,
   CHART_POSITIVE,
   seriesColor,
-} from '@/components/dashboard/chart-palette';
+} from '@/shared/ui/chart-palette';
 import type {
   EmployeeAnalyticsCharts,
   EmployeeDistributionBucket,

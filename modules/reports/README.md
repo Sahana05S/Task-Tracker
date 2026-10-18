@@ -41,4 +41,3 @@ All objects are company-scoped by migrations 39-40 (M15).
 ## Depends on
 `shared/*` and the public APIs of `scoring`, `tasks`, `time-tracking`,
 `checklists`, `attendance` and `support`. None of them import reports.
-`LiveReport` still uses `components/missions/mission-ui` (not yet a module).

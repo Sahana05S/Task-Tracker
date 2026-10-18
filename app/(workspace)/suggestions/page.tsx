@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { KnowledgeModule } from '@/modules/support/components/support-pages';
 import { requireProfile } from '@/shared/session/profile';
 import { canManageSupportRecords, getSupportModuleData } from '@/modules/support';

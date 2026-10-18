@@ -6,7 +6,7 @@ import { LoaderCircleIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { updateTaskStatus } from '@/modules/tasks/actions';
-import { StatusBadge } from '@/components/tracker/tracker-badges';
+import { StatusBadge } from '@/shared/ui/tracker-badges';
 import {
   Select,
   SelectContent,
