@@ -15,3 +15,5 @@ export {
 export { ancestry, checklistHref, childrenOf, formatMinutes, isContainer, subtreeSeconds } from '@/modules/checklists/internal/pages';
 export { groupItemHours, type ItemHourLog, type ItemHourRow, type ItemHourTask } from '@/modules/checklists/internal/item-hours';
 export type { ChecklistItemTime, RunningItemTimer, TaskEffortBreakdown } from '@/modules/checklists/internal/item-time';
+
+export type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow, ChecklistAncestor } from './internal/branch-types';
