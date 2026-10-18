@@ -1319,8 +1319,19 @@ On `m13-verification`; not deployed. Details: `docs/plans/M15-evidence.md`
 - **Not verified:** signed-in pages were not exercised in a browser after the
   refactor (no test login was used). Re-run the M13 browser phases before
   merging into `main`.
-- **Remaining:** `modules/workspace-views/internal/today.ts` still reads
-  tables owned by tasks, time-tracking, support and scoring directly; move
-  those reads behind the owning modules' public APIs when Today next changes.
-  No `organizations` module yet: M15 tenancy is database-side plus
+- **Remaining:** No `organizations` module yet: M15 tenancy is database-side plus
   `shared/supabase/worker.ts`.
+
+## Today reads moved behind module APIs - 18 October 2026
+
+- `modules/workspace-views/internal/today.ts` no longer queries the database.
+  Its reads moved, with the same queries, filters and ordering, to
+  `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`
+  (tasks), `getMemberLogDates` (time-tracking), `getMemberContributionStates`,
+  `getRecentValidatedContributions` (support), `readTeamAwardModel` (scoring)
+  and `getMemberNames` (team). Each throws on a query error (names excepted,
+  as before), so every Today section is still ready or unavailable on its own.
+  No SQL or migration changes.
+- **Checks:** `npm run typecheck`, `npm test` and `npm run build`; signed-out
+  `/today` redirects to sign-in on the dev server.
+- **Not verified:** signed-in Today in a browser (no test login used).

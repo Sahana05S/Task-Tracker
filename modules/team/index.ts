@@ -15,3 +15,4 @@ export {
   type TeamIndexData,
   type TeamIndexMember,
 } from '@/modules/team/internal/queries';
+export { getMemberNames } from '@/modules/team/internal/member-names';

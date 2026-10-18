@@ -13,7 +13,7 @@ The one shared scoring contract (AGENTS.md: no second formula):
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads and jobs: `loadPerformance`, `runPerformanceJobs`, `getAwards`, `calculateAward`, `runAwardJobs`, `handleAwardWorkerRun`, `getTeamSummaryInputs`, `parseTeamSummary`. Also re-exports everything in `client.ts`. |
+| `index.ts` | Server reads and jobs: `loadPerformance`, `runPerformanceJobs`, `getAwards`, `calculateAward`, `runAwardJobs`, `handleAwardWorkerRun`, `getTeamSummaryInputs`, `parseTeamSummary`, `readTeamAwardModel` (raw team-wide award payload for Today). Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure engine and rules, safe for `'use client'`: `calculatePerformance`, `FACTORS`, `COEFFICIENTS`, source parse/resolve, `performanceReport`, award `selectDaily`/`selectMonthly`/`awardContext`, legacy scorer, `computeTeamAnalytics`, dashboard chart and headline builders, and all their types |
 | `award-actions.ts` | `'use server'` `calculateDailyStarAction`, `overrideDailyStarAction` |
 | `components/` | `MissionHeadlineStrip` (the `/tasks` headline), `PerformanceBreakdown`, `AwardHistory`, `AwardStatus` |
@@ -25,7 +25,7 @@ Calendar periods (`currentPeriod`, `resolvePeriod`, `AnalyticsPeriod`) live in
 | Folder | Files |
 |---|---|
 | `performance/` | `engine.ts` (ten factors, coefficients, cohorts), `sources.ts`, `queries.ts`, `jobs.ts`, `report.ts` |
-| `stars/` | `contract.ts` (award policy and selection), `calculation.ts`, `daily.ts` (`award_command`), `jobs.ts`, `read-model.ts`, `scoring.ts`, `legacy-scoring.ts`, `worker.ts` |
+| `stars/` | `contract.ts` (award policy and selection), `calculation.ts`, `daily.ts` (`award_command`), `jobs.ts`, `read-model.ts`, `team-read-model.ts`, `scoring.ts`, `legacy-scoring.ts`, `worker.ts` |
 | `analytics/` | `engine.ts`, `dashboard-charts.ts`, `headline.ts`, `summary-inputs.ts`, `availability.ts` |
 | `cache.ts` | Revalidation after daily star changes |
 

@@ -14,4 +14,9 @@ export {
   loadContributionContext,
   parseInputContext,
 } from './internal/input-context';
+export {
+  getMemberContributionStates,
+  getRecentValidatedContributions,
+  type RecentValidatedContribution,
+} from './internal/today-queries';
 export * from './client';
