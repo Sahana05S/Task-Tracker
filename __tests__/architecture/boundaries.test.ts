@@ -16,9 +16,11 @@ const ROOT = process.cwd();
 const SOURCE_DIRS = ['app', 'components', 'lib', 'modules', 'shared'];
 const VIEW_MODULES = new Set(['workspace-views']);
 
-/** Files that still call .from()/.rpc() outside a module. Remove entries as modules absorb them. */
-const LEGACY_DIRECT_DB = new Set([
-  'app/settings/actions.ts',
+/**
+ * Files that still call .from()/.rpc() outside a module. Every page and route
+ * now goes through a module, so this stays empty; do not add to it.
+ */
+const LEGACY_DIRECT_DB = new Set<string>([
 ]);
 
 interface SourceFile { path: string; text: string; imports: string[] }

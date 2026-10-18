@@ -2,7 +2,7 @@ import { describe,it,expect } from 'vitest';
 import { calculatePerformance,FACTORS,measuredRaw,unavailableRaw,PERFORMANCE_RULE_VERSION,type CalculationContext,type MemberRawInputs } from '@/modules/scoring/internal/performance/engine';
 import { selectDaily,selectMonthly,awardContext,APPROVED_AWARD_POLICY,type AwardPolicy,type AwardGate,type EffectiveAwardDay } from '@/modules/scoring/internal/stars/contract';
 import { performanceReport } from '@/modules/scoring/internal/performance/report';
-import { buildEmployeeAnalyticsCharts } from '@/lib/team/employee-charts';
+import { buildEmployeeAnalyticsCharts } from '@/modules/team/client';
 import type { AwardHistory } from '@/modules/scoring/internal/stars/read-model';
 import { resolvePeriod } from '@/modules/scoring/internal/analytics/engine';
 // Independent selection policy fixture; not authority for live D10 activation.

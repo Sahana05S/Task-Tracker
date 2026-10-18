@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { SettingsForm } from '@/components/layout/settings-form';
+import { SettingsForm } from '@/modules/team/components/settings-form';
 import { IdCardIcon, UserRoundIcon } from 'lucide-react';
 
 import { InitialsAvatar, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';

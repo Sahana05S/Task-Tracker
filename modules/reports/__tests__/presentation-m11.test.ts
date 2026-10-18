@@ -7,7 +7,7 @@ import { viewContext } from '@/modules/reports/internal/presentation/context';
 import { liveReport,reportCsv,csvCell } from '@/modules/reports/internal/presentation/export';
 import { resolvePerformance } from '@/modules/scoring/client';
 import { FACTORS } from '@/modules/scoring/client';
-import { buildEmployeeAnalyticsCharts } from '@/lib/team/employee-charts';
+import { buildEmployeeAnalyticsCharts } from '@/modules/team/client';
 import { LiveReport } from '@/modules/reports/components/live-report';
 import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
 import { TeamStatsGrid } from '@/components/dashboard/team-stats-grid';
