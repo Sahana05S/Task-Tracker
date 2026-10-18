@@ -29,13 +29,7 @@ export function compareRecordedHours(effort: string | null, capacity: string | n
   } catch {return {available:false,valid:null,reasons:['invalid_hours']};}
 }
 
-export function localCheckTime(date:string,time:string):string|null {
-  if(!time) return null;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('Valid local date and time required.');
-  const value=new Date(`${date}T${time}:00+05:30`);
-  if(!Number.isFinite(value.getTime())) throw new Error('Invalid check time.');
-  return value.toISOString();
-}
+export { localCheckTime } from '@/shared/time/kolkata';
 
 export function dailyAttendanceValidity(status:AttendanceStatus|null,regular:string|null,offHours:string|null,effort:string|null):AttendanceValidity {
   if(status===null||regular===null||offHours===null||effort===null)return {available:false,valid:null,reasons:['missing_hours']};

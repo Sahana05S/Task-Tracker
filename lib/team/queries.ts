@@ -1,6 +1,6 @@
-import { getLivePresentation } from '@/lib/presentation/queries';
-import { viewContext,type ViewContext } from '@/lib/presentation/context';
-import type { LivePresentation } from '@/lib/presentation/model';
+import { getLivePresentation } from '@/modules/reports';
+import { viewContext, type ViewContext } from '@/modules/reports/client';
+import type { LivePresentation } from '@/modules/reports/client';
 import { optionalEmployeePerformance } from '@/lib/team/performance-availability';
 import { getAwards, type AwardReadModel } from '@/modules/scoring';
 import { getTaskWorkspaceData } from '@/modules/tasks';
@@ -9,7 +9,7 @@ import { getCurrentProfile } from '@/shared/session/profile';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
 import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
 import { type MemberPerformance } from '@/modules/scoring/client';
-import { getTeamAnalytics } from '@/lib/analytics/queries';
+import { getTeamAnalytics } from '@/modules/reports';
 import {
   ATTENDANCE_COLUMNS,
   mapAttendanceRecords,

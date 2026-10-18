@@ -1,5 +1,5 @@
 'use server';
-import { writeDatedRecord } from '@/app/records/actions';
+import { writeDatedRecord } from '@/modules/records/actions';
 
 import { resolveActor } from '@/shared/session/actor';
 import type { ActionResponse } from '@/types/tracker';

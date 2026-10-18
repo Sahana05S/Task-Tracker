@@ -1,11 +1,11 @@
-import { ReportContext } from '@/components/reports/view-context';
-import { viewQuery } from '@/lib/presentation/context';
-import { liveViewContext } from '@/lib/presentation/clock';
+import { ReportContext } from '@/modules/reports/components/view-context';
+import { viewQuery } from '@/modules/reports/client';
+import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { AwardControls } from '@/components/team/award-controls';
-import { AwardStatus } from '@/components/team/award-status';
+import { AwardStatus } from '@/modules/scoring/components/award-status';
 import { InitialsAvatar, MissionEmpty, MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { RoleBadge } from '@/components/tracker/tracker-badges';
 import { getTeamHolidayDates } from '@/modules/attendance';

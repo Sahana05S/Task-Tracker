@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { TriangleAlertIcon } from 'lucide-react';
-import { GAP_SENTENCE, type DataGap } from '@/lib/presentation/plain-language';
+import { GAP_SENTENCE, type DataGap } from '@/modules/reports/client';
 
 /**
  * One plain-language notice for an incomplete month. It replaces the raw reason

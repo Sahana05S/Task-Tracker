@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { GitBranchIcon } from 'lucide-react';
-import type { LivePresentation } from '@/lib/presentation/model';
+import type { LivePresentation } from '@/modules/reports/client';
 export function TaskRelations({model}:{model:LivePresentation}){
  const ref=(id:unknown)=>{const t=model.tasks.find(t=>t.id===id);return t?<Link className="link" href={'/tasks/'+encodeURIComponent(t.taskTag)}>{t.taskTag} · {t.title}</Link>:<span>Referenced task {String(id)} (details unavailable in this context)</span>;};
  return <section className="soft-card grid gap-2 p-5 text-sm sm:p-6"><h2 className="text-foreground mb-1 flex items-center gap-2 text-base font-bold tracking-tight"><GitBranchIcon className="text-primary size-5 shrink-0" aria-hidden="true"/>Dependencies and carryover</h2>{model.relations.length===0&&!model.tasks.some(t=>t.handoffSuccessorId)?<p className="bg-muted/70 text-muted-foreground rounded-xl px-4 py-3">No dependencies or carryover in this view.</p>:null}{model.relations.map((r,i)=><p key={i} className="bg-muted/70 rounded-xl px-3.5 py-2.5">{ref(r.predecessor_task_id)} → {ref(r.successor_task_id)} · {String(r.relation_type)}</p>)}{model.tasks.filter(t=>t.handoffSuccessorId).map(t=><p key={t.id} className="bg-muted/70 rounded-xl px-3.5 py-2.5">{ref(t.id)} handed off to {ref(t.handoffSuccessorId)} · predecessor history retained</p>)}{!model.detailsAvailable?<p className="text-muted-foreground">Historical relationships unavailable before {model.detailsAvailableFrom}.</p>:null}</section>;

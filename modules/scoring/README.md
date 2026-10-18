@@ -16,7 +16,7 @@ The one shared scoring contract (AGENTS.md: no second formula):
 | `index.ts` | Server reads and jobs: `loadPerformance`, `runPerformanceJobs`, `getAwards`, `calculateAward`, `runAwardJobs`, `handleAwardWorkerRun`, `getTeamSummaryInputs`, `parseTeamSummary`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure engine and rules, safe for `'use client'`: `calculatePerformance`, `FACTORS`, `COEFFICIENTS`, source parse/resolve, `performanceReport`, award `selectDaily`/`selectMonthly`/`awardContext`, legacy scorer, `computeTeamAnalytics`, dashboard chart and headline builders, and all their types |
 | `award-actions.ts` | `'use server'` `calculateDailyStarAction`, `overrideDailyStarAction` |
-| `components/` | `MissionHeadlineStrip` (the `/tasks` headline) |
+| `components/` | `MissionHeadlineStrip` (the `/tasks` headline), `PerformanceBreakdown`, `AwardHistory`, `AwardStatus` |
 
 Calendar periods (`currentPeriod`, `resolvePeriod`, `AnalyticsPeriod`) live in
 `shared/time/period`; exact decimal arithmetic (`Exact`) in `shared/math/exact`.
@@ -43,6 +43,6 @@ each job's company in `x-taskpulse-organization` (`shared/supabase/worker.ts`).
 `shared/*` and the public APIs of `tasks`, `time-tracking`, `attendance` and
 `support` (its inputs). None of those import scoring.
 
-`lib/analytics/queries.ts` (`getTeamAnalytics`, the dashboard read) stays
-outside this module because it composes the live presentation; it moves with
-the reports / workspace-views refactor.
+The dashboard read (`getTeamAnalytics`, `getWorkbookDashboard`) composes the
+live presentation, so it lives in the reports module. `components/` also holds
+`PerformanceBreakdown`, `AwardHistory` and `AwardStatus`.

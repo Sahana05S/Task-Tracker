@@ -1,5 +1,5 @@
 import { describe,expect,it } from 'vitest';
-import { calculationReasons,dataGaps,plainReason } from '@/lib/presentation/plain-language';
+import { calculationReasons,dataGaps,plainReason } from '@/modules/reports/internal/presentation/plain-language';
 
 describe('plain reason wording',()=>{
  it('translates known codes, including factor-prefixed ones',()=>{

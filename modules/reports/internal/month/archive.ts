@@ -1,15 +1,14 @@
 import { createClient } from '@/shared/supabase/server';
-import { loadPerformance } from '@/modules/scoring';
-import { getAwards } from '@/modules/scoring';
+import { getAwards, loadPerformance } from '@/modules/scoring';
 import { resolvePeriod } from '@/shared/time/period';
-import { nextDate } from '@/lib/presentation/context';
+import { nextDate } from '@/modules/reports/internal/presentation/context';
 import { observationInstant } from '@/shared/time/observation-clock';
 import type { Json } from '@/types/database';
 import type { CalculationResult, MemberCalculation } from '@/modules/scoring/client';
 import type { MonthlySelection } from '@/modules/scoring/client';
 import { FACTORS } from '@/modules/scoring/client';
 import { displayPerformance } from '@/shared/math/exact';
-import { csvCell } from '@/lib/presentation/export';
+import { csvCell } from '@/modules/reports/internal/presentation/export';
 
 export interface MonthHistory { state:'live'|'correction'|'closed';version:number;revisions:{number:number;disposition:'draft'|'closed';certification:'certified'|'incomplete_uncertified';recordedAt:string;asOf:string;reason:string|null}[] }
 export interface MonthArchive {

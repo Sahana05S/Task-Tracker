@@ -12,7 +12,7 @@ import {
 import type * as React from 'react';
 
 import { PriorityBadge } from '@/components/tracker/tracker-badges';
-import { GAP_SENTENCE, dataGaps } from '@/lib/presentation/plain-language';
+import { GAP_SENTENCE, dataGaps } from '@/modules/reports/client';
 import type { AwardSnapshot, FocusMission, Section, ValidatedContribution, WeekSummary } from '@/lib/today/queries';
 import { cn } from '@/shared/utils';
 

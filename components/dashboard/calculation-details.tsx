@@ -1,9 +1,9 @@
 import type { CalculationResult } from '@/modules/scoring/client';
-import type { LivePresentation } from '@/lib/presentation/model';
+import type { LivePresentation } from '@/modules/reports/client';
 import type { AwardReadModel } from '@/modules/scoring/client';
-import { ReportContext } from '@/components/reports/view-context';
-import { AwardStatus } from '@/components/team/award-status';
-import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
+import { ReportContext } from '@/modules/reports/components/view-context';
+import { AwardStatus } from '@/modules/scoring/components/award-status';
+import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
 
 /**
  * Optional diagnostics, collapsed by default: calculation context, award runs

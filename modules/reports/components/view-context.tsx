@@ -1,6 +1,6 @@
 import { CalendarClockIcon } from 'lucide-react';
 
-import type { LivePresentation } from '@/lib/presentation/model';
+import type { LivePresentation } from '@/modules/reports/internal/presentation/model';
 export function ReportContext({model}:{model:LivePresentation}) {
  const c=model.calculation.context;
  const complete=model.calculation.status==='complete';

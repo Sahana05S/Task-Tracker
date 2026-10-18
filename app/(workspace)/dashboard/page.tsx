@@ -1,11 +1,11 @@
-import { getLivePresentation } from '@/lib/presentation/queries';
-import { liveViewContext } from '@/lib/presentation/clock';
+import { getLivePresentation } from '@/modules/reports';
+import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
 import { AwardSummary } from '@/components/dashboard/award-summary';
 import { CalculationDetails } from '@/components/dashboard/calculation-details';
 import { DataStatusBanner } from '@/components/dashboard/data-status-banner';
 import { canManageAttendance } from '@/modules/attendance';
-import { calculationReasons, dataGaps } from '@/lib/presentation/plain-language';
+import { calculationReasons, dataGaps } from '@/modules/reports/client';
 
 import { AllocationChart } from '@/components/dashboard/allocation-chart';
 import { ProductivityChart } from '@/components/dashboard/productivity-chart';
@@ -15,7 +15,7 @@ import { TrackerSchemaNotice } from '@/components/dashboard/tracker-schema-notic
 import { WorkbookDashboard } from '@/components/dashboard/workbook-dashboard';
 import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
 import { currentPeriod } from '@/shared/time/period';
-import { getStoredSnapshots, getWorkbookDashboard } from '@/lib/analytics/queries';
+import { getStoredSnapshots, getWorkbookDashboard } from '@/modules/reports';
 import { requireProfile } from '@/shared/session/profile';
 import { isMissingSchemaError } from '@/shared/supabase/schema-errors';
 
