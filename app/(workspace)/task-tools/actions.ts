@@ -1,6 +1,6 @@
 'use server';
 
-import { loadChecklistRollups } from '@/lib/checklists/read-model';
+import { loadChecklistRollups } from '@/modules/checklists';
 
 import { initializeTaskDetails,saveTaskDetails,addTaskAsset,renameNativeLink } from '@/modules/tasks/detail-actions';
 

@@ -89,7 +89,7 @@ Start from `modules/_template/` when creating a module.
 | auth | Login, sign-out, redirects, protected routes | lib/auth, app/auth, app/login | Moved |
 | organizations | Companies, per-company settings, onboarding (M15) | migrations 39-40 TS code | To do |
 | tasks | Tasks, participants, shares, details, Task Tools | lib/tasks, lib/task-tools, components/tasks | Moved |
-| checklists | Nested checklist pages, item time, progress | lib/checklists, components/checklists | To do |
+| checklists | Nested checklist pages, item time, progress | lib/checklists, components/checklists | Moved |
 | time-tracking | Work logs and timers | lib/logs, lib/timers, components/logs | To do |
 | attendance | Attendance and holidays | lib/attendance | Moved |
 | support | Knowledge, sales logs, dated records | lib/support, components/support | Moved |

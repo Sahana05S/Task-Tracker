@@ -51,11 +51,11 @@ operations that are previewed first and committed atomically).
 All of these are company-scoped by migrations 39-40 (M15).
 
 ## Depends on
-`shared/*`, and these areas that are not modules yet: `lib/logs`, `lib/timers`,
-`lib/checklists` (read by `detail.ts` and the workspace), `lib/analytics/headline`
-(mission headline), `components/logs` (quick log), `components/missions`,
-`components/tracker`.
+`shared/*`, the public API of `checklists` (rollups and checklist types), and
+these areas that are not modules yet: `lib/logs`, `lib/timers`,
+`lib/analytics/headline` (mission headline), `components/logs` (quick log),
+`components/missions`, `components/tracker`.
 
-When time-tracking and checklists become modules, `detail.ts` and the logs
-quick-log trigger would make an import cycle (they also read task mappers). Move
-the mission-details composition to `workspace-views` at that point.
+When time-tracking becomes a module, `detail.ts` and the logs quick-log trigger
+would make an import cycle (logs also read task mappers). Move the
+mission-details composition to `workspace-views` at that point.

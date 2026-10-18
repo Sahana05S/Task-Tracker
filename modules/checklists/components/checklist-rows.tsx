@@ -17,12 +17,12 @@ import {
   TimerIcon,
 } from 'lucide-react';
 
-import { RunningClock } from '@/components/checklists/running-clock';
+import { RunningClock } from '@/modules/checklists/components/running-clock';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
-import { CHECKLIST_SECTIONS, type ChecklistRollup } from '@/lib/checklists/progress';
-import type { ChecklistItemTime } from '@/lib/checklists/item-time';
-import { childrenOf, checklistHref, formatMinutes, isContainer, subtreeSeconds } from '@/lib/checklists/pages';
+import { CHECKLIST_SECTIONS, type ChecklistRollup } from '@/modules/checklists/internal/progress';
+import type { ChecklistItemTime } from '@/modules/checklists/internal/item-time';
+import { childrenOf, checklistHref, formatMinutes, isContainer, subtreeSeconds } from '@/modules/checklists/internal/pages';
 import { formatPercent } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { ActionResponse, ChecklistNode, Task } from '@/types/tracker';
@@ -128,7 +128,7 @@ export function ItemTimerControls({ ctx, node, compact }: { ctx: ChecklistContex
 export const percentage = (p: number | null | undefined) =>
   p === null || p === undefined ? 'Unavailable' : formatPercent(p);
 
-export { ancestry, checklistHref, childrenOf, formatMinutes, isContainer } from '@/lib/checklists/pages';
+export { ancestry, checklistHref, childrenOf, formatMinutes, isContainer } from '@/modules/checklists/internal/pages';
 
 /** Hidden identity fields every checklist command needs. */
 export function CommandFields({ ctx, command }: { ctx: ChecklistContext; command: string }) {

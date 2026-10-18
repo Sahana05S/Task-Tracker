@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeChecklistProgress, type ChecklistProgressNode, type ChecklistSection, type SectionInitialization } from '@/lib/checklists/progress';
+import { computeChecklistProgress, type ChecklistProgressNode, type ChecklistSection, type SectionInitialization } from '@/modules/checklists/internal/progress';
 import fixtures from '@/docs/plans/fixtures/m05-rollups.json';
 describe('M05 independent section rollups',()=>{
  for(const fixture of fixtures) it(fixture.name,()=>{

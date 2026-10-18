@@ -29,13 +29,13 @@ import {
   ReasonInput,
   percentage,
   type ChecklistContext,
-} from '@/components/checklists/checklist-rows';
+} from '@/modules/checklists/components/checklist-rows';
 import { AvatarStack, MissionPanel, MissionProgress } from '@/components/missions/mission-ui';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { requireProfile } from '@/shared/session/profile';
-import { getChecklistItemTime } from '@/lib/checklists/item-time';
-import { CHECKLIST_SECTIONS, type ChecklistSection, type SectionProgress } from '@/lib/checklists/progress';
+import { getChecklistItemTime } from '@/modules/checklists';
+import { CHECKLIST_SECTIONS, type ChecklistSection, type SectionProgress } from '@/modules/checklists/client';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
@@ -44,7 +44,7 @@ import { cn } from '@/shared/utils';
 import type { ChecklistNode } from '@/types/tracker';
 
 import { discardTaskTimer, startItemTimer, stopTaskTimer } from '../timer-actions';
-import { checklistCommand } from './actions';
+import { checklistCommand } from '@/modules/checklists/actions';
 
 export async function generateMetadata({ params }: { params: Promise<{ taskTag: string }> }): Promise<Metadata> {
   const tag = normalizeTaskTagParam((await params).taskTag);

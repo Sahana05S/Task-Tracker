@@ -20,8 +20,8 @@ import {
   MissionPanel,
 } from '@/components/missions/mission-ui';
 import { requireProfile } from '@/shared/session/profile';
-import { getEmployeeItemHours } from '@/lib/checklists/item-time';
-import type { ItemHourTask } from '@/lib/checklists/item-hours';
+import { getEmployeeItemHours } from '@/modules/checklists';
+import type { ItemHourTask } from '@/modules/checklists/client';
 import { canViewEmployeeReports } from '@/lib/team/permissions';
 import { getEmployeeByEmployeeId,getEmployeeReportsData } from '@/lib/team/queries';
 import {
