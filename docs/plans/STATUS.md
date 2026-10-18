@@ -1254,7 +1254,7 @@ On `m13-verification`; not deployed. Details: `docs/plans/M15-evidence.md`
   - each claimed job carries its company, and awards queue once per company;
   - `m15_secure()` is added, and every later migration must call it.
   - App: the award, Drive and performance workers send each job's calls with
-    its company (`lib/supabase/worker.ts`).
+    its company (`lib/supabase/worker.ts`, now `shared/supabase/worker.ts`).
 - **Checks:**
   - `tools/test_m15_database.py` (27 checks; fresh 01-40, upgrade 38->40)
     passed. It covers 15 read commands isolated in both directions, worker
@@ -1278,3 +1278,49 @@ On `m13-verification`; not deployed. Details: `docs/plans/M15-evidence.md`
     across companies (M15.3).
   - Open sign-up still joins the default company (M15.4).
   - Production still lacks migrations 10-40.
+
+## Modular refactor - 18 October 2026
+
+- **Request:** the user asked to restructure the codebase into modules, each
+  with public files that call private ones, and one git branch per module
+  (17 October 2026). Behaviour, formulas, SQL, migrations and permissions were
+  not to change.
+- **Branches:** `refactor/base` (cut from `m13-verification` at 4a1c684) holds
+  everything. One short branch per step was merged into it: foundation,
+  marketing, auth, attendance, support, milestones, drive (six in parallel
+  sessions), then tasks, checklists, time-tracking, scoring, reports + records,
+  team, workspace-views and cleanup. Nothing is merged into `main` or pushed.
+- **Result:**
+  - `lib/` and `components/` are gone. Code lives in `app/` (routing only),
+    `modules/<name>/` (14 modules) and `shared/`. See `docs/ARCHITECTURE.md`
+    and each module's README.
+  - Each module exposes `index.ts` (server reads), `client.ts` (pure helpers
+    for client components), `*actions.ts` (server actions) and `components/`.
+    Everything in `internal/` is private.
+  - `__tests__/architecture/boundaries.test.ts` fails on a private import from
+    outside a module, on `shared/` importing a module, on a domain module
+    importing `workspace-views`, on module import cycles, and on any page,
+    route or component calling `.from()`/`.rpc()`. That list is now empty.
+  - Cycles that existed were removed without behaviour change: tasks no longer
+    imports time-tracking (Log hours is a slot filled by the page); support
+    reads its report counts from the shared `team_summary_inputs` fetch instead
+    of importing scoring; `Exact`, calendar periods, the observation clock and
+    `localCheckTime` moved to `shared/`.
+  - Removed dead code: `recalculateTaskMetrics`, `SnapshotButton`, unused
+    form helpers. The retired `freezeMonthlySnapshot` stub is kept (reports).
+  - The source-encoding check now scans `app`, `modules`, `shared` and
+    `types`; it found and this work repaired pre-existing garbled dashes in
+    `types/tracker.ts` comments (present since 8ab3981).
+- **Checks (every step and at the end):** `npm run typecheck`, `npm test`
+  (522 passed, 2 opt-in hosted skipped) and `npm run build` passed. Public
+  pages, login and signed-out redirects for every workspace route, the export
+  endpoint (403 signed out) and the award worker (503 unconfigured) behave as
+  before on the port-3000 dev server.
+- **Not verified:** signed-in pages were not exercised in a browser after the
+  refactor (no test login was used). Re-run the M13 browser phases before
+  merging into `main`.
+- **Remaining:** `modules/workspace-views/internal/today.ts` still reads
+  tables owned by tasks, time-tracking, support and scoring directly; move
+  those reads behind the owning modules' public APIs when Today next changes.
+  No `organizations` module yet: M15 tenancy is database-side plus
+  `shared/supabase/worker.ts`.

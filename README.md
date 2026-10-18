@@ -63,8 +63,8 @@ Browser
   ├─ app/(workspace)/layout ... second gate: requires a public.users profile
   │                            and supplies it to the shell
   │
-  ├─ Server Components ........ read through lib/*/queries.ts
-  └─ Server Actions ........... write through app/*/actions.ts
+  ├─ Server Components ........ read through modules/<name>/index.ts
+  └─ Server Actions ........... write through modules/<name>/actions.ts
                                      │
                                      └─ Row-Level Security (final boundary)
 ```
@@ -268,7 +268,7 @@ Two representations, converted at an explicit boundary:
 - `types/database.ts` — snake_case wire format, and the `Database` generic that
   keeps every Supabase query result off `any`
 - `types/tracker.ts` — camelCase domain models the application works with
-- `lib/*/mappers.ts` — the conversion between them
+- `modules/*/internal/mappers.ts` (and `shared/supabase/mappers.ts`) — the conversion between them
 
 Nullability mirrors the DDL exactly. A column without `NOT NULL` is typed
 `| null` even when it carries a default, because the database can still return
@@ -278,8 +278,8 @@ NULL.
 
 ## Business formulas
 
-Implemented in `lib/logs/metrics.ts` and `lib/analytics/engine.ts`, both pure and
-free of React and Supabase.
+Implemented in `modules/time-tracking/internal/logs/metrics.ts` and the scoring
+module (`modules/scoring/internal/`), both pure and free of React and Supabase.
 
 ### Scaled progress
 
@@ -413,46 +413,39 @@ Additional guarantees:
 
 ## Project layout
 
+The code is split into feature modules with one public front door each. The
+rules (what may import what, and the boundary test that enforces them) are in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); each module's README lists its
+public API and the tables and RPCs it owns.
+
 ```
-app/
+app/                       routing only: pages, layouts and route handlers
   (workspace)/             guarded routes, wrapped in the app shell
-    dashboard/  tasks/  logs/  milestones/    each with a loading.tsx skeleton
-    settings/              account details
-  auth/actions.ts          login, signup, logout
-  tasks/actions.ts         task CRUD + inline status/progress
-  logs/actions.ts          effort logs + metric recalculation
-  dashboard/actions.ts     monthly snapshot freeze
-  milestones/actions.ts    statement + milestone CRUD (leadership only)
-  settings/actions.ts      display-name update
-  login/                   auth views
+  login/  auth/callback/   sign-in views and the OAuth callback
+  api/                     report export and internal worker endpoints
   page.tsx                 marketing page / member redirect
   globals.css              Tailwind v4 theme and component classes
 
-components/
-  ui/                      Shadcn primitives
-  layout/                  app shell, icon rail, sheet drawer, header, bottom
-                           nav, account menu, settings form
-  tasks/                   grid, cards, filters, dialog, inline editors
-  logs/                    quick-log drawer, history timeline
-  dashboard/               star performer, metric cards, Recharts widgets
-  milestones/              showcase, checklist, board, editor drawers
-  marketing/               hero, mockup, feature grid, capabilities, chrome
-  tracker/                 shared soft-pill badges
+modules/                   one folder per feature
+  auth/  tasks/  checklists/  time-tracking/  attendance/  support/
+  records/  milestones/  scoring/  reports/  team/  drive/  marketing/
+  workspace-views/         app shell, dashboard, Today, Timelines (the view layer)
+  _template/               starting point for a new module
 
-lib/
-  supabase/                browser, server and session-refresh clients
-  auth/                    profile resolution, role guards, redirect validation
-  layout/                  navigation badge counts
-  tasks/                   mappers, queries, pure filter and sort
-  logs/                    mappers, queries, pure metric formulas
-  analytics/               team performance engine
-  milestones/              mappers, queries, statement parsing, goal sorting
-  tracker/                 enums, labels, formatters
-  marketing/               static typed landing-page content
+  <module>/index.ts        PUBLIC server reads
+  <module>/client.ts       PUBLIC pure helpers and types for client components
+  <module>/*actions.ts     PUBLIC 'use server' commands
+  <module>/components/     PUBLIC UI
+  <module>/internal/       PRIVATE queries, commands, rules, input, mappers
 
-supabase/migrations/       01 through 09 — apply in order
+shared/                    kernel every module may use: Supabase clients,
+                           session, form readers, time and periods, exact
+                           arithmetic, enums/formatters, UI primitives
+
+supabase/migrations/       numbered SQL migrations — apply in order
 types/                     database.ts (wire), tracker.ts (domain)
 proxy.ts                   edge session refresh and route guard
+__tests__/                 architecture checks, acceptance tests, test stubs
 ```
 
 ---
@@ -522,7 +515,7 @@ column would be the fix if naming a team matters.
 single `statement` with one value per line in `Name: description` form, which keeps
 the card to one Edit control. The trade is that ordering and per-value metadata are
 not addressable. Splitting them into a `company_values` table would only require
-changing `parseCoreValues` in `lib/milestones/statements.ts`.
+changing `parseCoreValues` in `modules/milestones/internal/statements.ts`.
 
 **Milestone edits are not timestamped.** `company_milestones` carries `created_at`
 only, so there is no record of who last changed a goal or when.

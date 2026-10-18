@@ -317,7 +317,7 @@ export interface CompanyStatement {
   /**
    * `key_name` — stable lookup handle, unique. `'vision'`, `'mission'` and
    * `'core_values'` are the three the showcase renders; see
-   * `lib/milestones/statements.ts`.
+   * `modules/milestones/internal/statements.ts`.
    */
   keyName: string;
   /** `title` — the heading shown on the card. */

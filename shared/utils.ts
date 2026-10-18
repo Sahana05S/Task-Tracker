@@ -3,7 +3,7 @@ import { twMerge } from 'tailwind-merge';
 
 /**
  * Merges conditional class names and resolves Tailwind conflicts so that the
- * last competing utility wins. Used by every component in `components/ui`.
+ * last competing utility wins. Used by every component in `shared/ui`.
  */
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
