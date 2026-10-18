@@ -7,6 +7,7 @@ configured Supabase project or reads application secrets.
 
 import argparse
 import hashlib
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -27,8 +28,13 @@ TABLES = (
 )
 
 
+# libpq settings that could silently redirect the hard-coded loopback endpoint.
+LIBPQ_REDIRECTS = ("PGHOST", "PGHOSTADDR", "PGPORT", "PGDATABASE", "PGSERVICE", "PGSERVICEFILE", "PGUSER")
+CLIENT_ENV = {key: value for key, value in os.environ.items() if key not in LIBPQ_REDIRECTS}
+
+
 def run(command, *, input_text=None):
-    result = subprocess.run(command, input=input_text, text=True, capture_output=True, check=False)
+    result = subprocess.run(command, input=input_text, text=True, capture_output=True, check=False, env=CLIENT_ENV)
     if result.returncode:
         raise RuntimeError(f"{Path(command[0]).name} failed: {result.stderr.strip()}")
     return result.stdout.strip()
@@ -48,8 +54,12 @@ def main():
             "-U", "postgres", "-d", database, "-v", "ON_ERROR_STOP=1", "-At", "-c", statement,
         ])
 
-    identity = psql(SOURCE, "SELECT current_database() || '|' || inet_server_addr() || '|' || inet_server_port()")
-    if identity not in (f"{SOURCE}|127.0.0.1|15432", f"{SOURCE}|127.0.0.1/32|15432"):
+    # Verify the client-side endpoint libpq actually connected to. The server's own
+    # inet_server_addr()/inet_server_port() cannot be used: behind a published
+    # container port (CI maps 127.0.0.1:15432 to the container's 5432) they report
+    # the container address and port, not the loopback endpoint used here.
+    identity = psql(SOURCE, r"\echo :HOST|:PORT|:DBNAME") + "|" + psql(SOURCE, "SELECT current_database()")
+    if identity != f"127.0.0.1|15432|{SOURCE}|{SOURCE}":
         raise RuntimeError(f"Refusing unexpected database endpoint: {identity}")
 
     def digest(database, table):
