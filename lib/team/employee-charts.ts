@@ -1,8 +1,8 @@
 import { kolkataDate } from '@/shared/time/kolkata';
 import type { DatedCalculation } from '@/lib/presentation/model';
-import type { CalculationContext,Provenance } from '@/lib/performance/engine';
-import type { AwardHistory } from '@/lib/stars/read-model';
-import { Exact } from '@/lib/performance/exact';
+import type { CalculationContext, Provenance } from '@/modules/scoring/client';
+import type { AwardHistory } from '@/modules/scoring/client';
+import { Exact } from '@/shared/math/exact';
 import {
   CATEGORY_LABELS,
   TASK_CATEGORIES,
@@ -10,10 +10,8 @@ import {
   TASK_PRIORITIES,
   TASK_STATUSES,
 } from '@/shared/tracker/enums';
-import type {
-  AnalyticsPeriod,
-  MemberPerformance,
-} from '@/lib/analytics/engine';
+import type { AnalyticsPeriod } from '@/shared/time/period';
+import type { MemberPerformance } from '@/modules/scoring/client';
 import type {
   DailyStarRecord,
   DailyTaskLog,

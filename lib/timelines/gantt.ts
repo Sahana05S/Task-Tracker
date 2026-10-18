@@ -1,4 +1,4 @@
-import type { AnalyticsPeriod } from '@/lib/analytics/engine';
+import type { AnalyticsPeriod } from '@/shared/time/period';
 import type { Task, TaskFreshness, TaskStatus, User } from '@/types/tracker';
 
 export interface TimelineTaskBar {

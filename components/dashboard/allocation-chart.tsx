@@ -1,5 +1,5 @@
 'use client';
-import { displayPerformance } from '@/lib/performance/exact';
+import { displayPerformance } from '@/shared/math/exact';
 
 import * as React from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
@@ -9,7 +9,7 @@ import {
   EmptyNote,
 } from '@/components/dashboard/productivity-chart';
 import { seriesColor } from '@/components/dashboard/chart-palette';
-import type { MemberPerformance } from '@/lib/analytics/engine';
+import type { MemberPerformance } from '@/modules/scoring/client';
 import { formatNumeric } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 

@@ -3,7 +3,7 @@ import { ArchivedReport } from '@/components/reports/archived-report';
 import { monthHistory,monthRevision } from '@/lib/month/archive';
 import { viewQuery } from '@/lib/presentation/context';
 import { liveViewContext } from '@/lib/presentation/clock';
-import { displayPerformance } from '@/lib/performance/exact';
+import { displayPerformance } from '@/shared/math/exact';
 import type { Metadata } from 'next';
 import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
 import { AwardHistory } from '@/components/team/award-history';

@@ -16,6 +16,7 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 ## Private (`internal/`)
 | File | Job |
 |---|---|
+| `report-summary.ts` | Team report-snapshot counts from the shared team summary |
 | `queries.ts` | Period reads of facts, ideas, suggestions, sales, reports, members and tasks; summaries |
 | `meeting-queries.ts` | Meeting points page read (meeting points, members, tasks) |
 | `input-context.ts` | Calls and validates the contribution/attendance input-context RPCs |
@@ -38,7 +39,8 @@ suggestions, sales and meetings go through `dated_record_command` (migration
 19/20), still called from `app/records/actions.ts` (`writeDatedRecord`).
 
 ## Depends on
-`shared/*`, `types/*`, and legacy code not yet in modules: `lib/tasks/contract`
-(`kolkataDate`), `lib/analytics` (periods, report summary inputs),
-`lib/presentation/clock`, `components/missions/mission-ui`,
-`components/tasks/execution-form`, `app/records/actions` (`writeDatedRecord`).
+`shared/*` (Kolkata dates, calendar periods, the observation clock, the shared
+`team_summary_inputs` fetch for report counts, `shared/ui/execution-form`),
+`types/*`, and legacy code not yet in modules: `components/missions/mission-ui`,
+`app/records/actions` (`writeDatedRecord`). Support does not import scoring;
+scoring reads support's contribution inputs.

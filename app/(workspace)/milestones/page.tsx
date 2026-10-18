@@ -4,7 +4,7 @@ import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui
 import { MilestoneBoard } from '@/modules/milestones/components/milestone-board';
 import { OrganizationShowcase } from '@/modules/milestones/components/organization-showcase';
 import { SchemaNotice } from '@/modules/milestones/components/schema-notice';
-import { currentPeriod } from '@/lib/analytics/engine';
+import { currentPeriod } from '@/shared/time/period';
 import { requireProfile } from '@/shared/session/profile';
 import { getMilestonesPageData, summariseMilestones } from '@/modules/milestones';
 import { canManageMilestones } from '@/shared/tracker/enums';

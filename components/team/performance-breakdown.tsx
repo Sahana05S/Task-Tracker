@@ -1,5 +1,5 @@
-import { FACTORS,type MemberCalculation,type CalculationContext } from '@/lib/performance/engine';
-import { Exact } from '@/lib/performance/exact';
+import { FACTORS, type MemberCalculation, type CalculationContext } from '@/modules/scoring/client';
+import { Exact } from '@/shared/math/exact';
 const labels:Record<string,string>={productivity:'Productivity',criticality:'Criticality',loading:'Loading',completion:'Completion',progress:'Progress',sales:'Sales',facts:'Facts',ideas:'Ideas',suggestions:'Suggestions',freshness:'Freshness'};
 export function PerformanceBreakdown({result,context}:{result:MemberCalculation;context?:CalculationContext}) {
  const show=(v:ReturnType<Exact['json']>|null,score=false)=>{const places=score?context?.displayPlaces:context?.factorDisplayPlaces;return v===null?'Unavailable':places===null||places===undefined?`${v.numerator}/${v.denominator}`:Exact.from(v).display(places);};

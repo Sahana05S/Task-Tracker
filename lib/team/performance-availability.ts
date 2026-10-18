@@ -1,5 +1,5 @@
-import { UnmeasuredProgressError } from '@/lib/analytics/availability';
-import type { TeamAnalytics } from '@/lib/analytics/engine';
+import { UnmeasuredProgressError } from '@/modules/scoring/client';
+import type { TeamAnalytics } from '@/modules/scoring/client';
 export async function optionalEmployeePerformance(load: ()=>Promise<TeamAnalytics>,userId: string) {
  try {
   const analytics=await load();

@@ -44,7 +44,7 @@ import {
 
 import { MissionPage, MissionPageHeader, MissionPanel } from '@/components/missions/mission-ui';
 import { Button } from '@/shared/ui/button';
-import { currentPeriod } from '@/lib/analytics/engine';
+import { currentPeriod } from '@/shared/time/period';
 import { requireProfile } from '@/shared/session/profile';
 import { getTeamRunningTimers, type TeamRunningTimer } from '@/modules/time-tracking';
 import { getDriveReadModel } from '@/modules/drive';

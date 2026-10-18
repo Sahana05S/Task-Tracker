@@ -9,7 +9,7 @@ import { CalendarClockIcon, CalendarRangeIcon, FlagIcon, ListChecksIcon } from '
 
 import { MissionPage, MissionPageHeader, StatTile } from '@/components/missions/mission-ui';
 import { TaskGantt } from '@/components/timelines/task-gantt';
-import { currentPeriod } from '@/lib/analytics/engine';
+import { currentPeriod } from '@/shared/time/period';
 import { requireProfile } from '@/shared/session/profile';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { buildTaskTimeline } from '@/lib/timelines/gantt';

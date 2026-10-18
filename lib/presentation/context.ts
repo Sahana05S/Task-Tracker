@@ -1,7 +1,8 @@
-import { currentPeriod,resolvePeriod,type AnalyticsPeriod } from '@/lib/analytics/engine';
+import { currentPeriod, resolvePeriod, type AnalyticsPeriod } from '@/shared/time/period';
 import { kolkataDate } from '@/shared/time/kolkata';
 export interface ViewContext {period:AnalyticsPeriod;asOf:string;asOfLocalDate:string}
-export const LIVE_AS_OF_LAG_MS=10_000;
+import { LIVE_AS_OF_LAG_MS } from '@/shared/time/observation-clock';
+export { LIVE_AS_OF_LAG_MS };
 export function viewContext(periodValue?:string,asOfValue?:string,now=new Date(),lagMs=LIVE_AS_OF_LAG_MS):ViewContext {
  // Hosted PostgreSQL may be a few seconds behind the app server. A small
  // observation lag keeps the default live request within the DB's nonfuture

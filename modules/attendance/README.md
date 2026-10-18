@@ -40,10 +40,10 @@ imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
 
 Writes go through `dated_record_command` (migration 19, company-scoped in 40),
 which is shared with the support module's dated records. Reads also call
-`observation_clock` (migration 30) via `lib/presentation/clock`.
+`observation_clock` (migration 30) via `shared/time/observation-clock`.
 
 ## Depends on
-`shared/*` and, until those areas become modules: `lib/support/input-context`
-(`loadAttendanceContext`), `lib/presentation/clock`, `lib/tasks/permissions`,
-`lib/logs/metrics`, `components/missions/mission-ui`,
-`components/tasks/execution-form`, and `app/records/actions` (`writeDatedRecord`).
+`shared/*` (including `shared/time/observation-clock` and
+`shared/ui/execution-form`), the public APIs of `support` (`loadAttendanceContext`),
+`tasks` and `time-tracking`, and, until those areas become modules,
+`components/missions/mission-ui` and `app/records/actions` (`writeDatedRecord`).

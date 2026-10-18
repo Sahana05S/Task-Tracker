@@ -1,4 +1,4 @@
-import type { AwardReadModel } from '@/lib/stars/read-model';
+import type { AwardReadModel } from '@/modules/scoring/client';
 import { GAP_SENTENCE, dataGaps } from '@/lib/presentation/plain-language';
 import { TrophyIcon } from 'lucide-react';
 

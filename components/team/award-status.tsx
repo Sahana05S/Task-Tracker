@@ -1,6 +1,6 @@
-import type { AwardReadModel } from '@/lib/stars/read-model';
+import type { AwardReadModel } from '@/modules/scoring/client';
 import { TrophyIcon } from 'lucide-react';
-import { displayPerformance } from '@/lib/performance/exact';
+import { displayPerformance } from '@/shared/math/exact';
 /** `holidays`: team holiday dates (every active member on Holiday, migration 37), marked "H" as in the sheet's daily star log. */
 export function AwardStatus({awards,names={},holidays}:{awards:AwardReadModel;names?:Record<string,string>;holidays?:ReadonlySet<string>|null}) {
  const name=(id:string|null)=>id?names[id]??id:'None';

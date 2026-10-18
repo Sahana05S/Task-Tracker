@@ -1,5 +1,5 @@
 import { kolkataDate } from '@/shared/time/kolkata';
-import { currentPeriod, type AnalyticsPeriod } from '@/lib/analytics/engine';
+import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
 import type { User } from '@/types/tracker';

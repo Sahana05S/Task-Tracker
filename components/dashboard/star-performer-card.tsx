@@ -1,5 +1,5 @@
-import type { MemberPerformance } from '@/lib/analytics/engine';
-import type { AwardReadModel } from '@/lib/stars/read-model';
+import type { MemberPerformance } from '@/modules/scoring/client';
+import type { AwardReadModel } from '@/modules/scoring/client';
 import { AwardStatus } from '@/components/team/award-status';
 export interface StarPerformerCardProps {awards?:AwardReadModel;performer:MemberPerformance|null;unavailableReason?:string;periodLabel:string;medianProductivity:number|null}
 export function StarPerformerCard({awards,unavailableReason,periodLabel}:StarPerformerCardProps) {

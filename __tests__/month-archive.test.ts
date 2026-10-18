@@ -4,7 +4,7 @@ import { createElement } from 'react';
 vi.mock('@/shared/supabase/server',()=>({createClient:vi.fn()}));
 import { archiveDifferences,archivedCsv,archivedReport,archivedText,compareRevisions,type MonthArchive } from '@/lib/month/archive';
 import { ArchivedReport } from '@/components/reports/archived-report';
-import { FACTORS } from '@/lib/performance/engine';
+import { FACTORS } from '@/modules/scoring/client';
 
 function fixture(score:string|null,change=false):MonthArchive {
  const factors=Object.fromEntries(FACTORS.map(f=>[f,{unit:'source unit',rawExact:{numerator:f==='productivity'?'1':'0',denominator:f==='productivity'?'160':'1'},medianExact:{numerator:'0',denominator:'1'},deltaExact:{numerator:'1',denominator:'160'},contributionExact:change&&f==='facts'?{numerator:'2',denominator:'1'}:{numerator:'1',denominator:'160'},coefficient:'1',cohortId:'cohort',population:['u1'],reasons:f==='sales'?['sales_field_mapping_missing']:[]}])) as MonthArchive['members'][number]['result']['factors'];

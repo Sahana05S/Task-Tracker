@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { getAwards } from '@/lib/stars/read-model';
+import { getAwards } from '@/modules/scoring';
 import { createClient } from '@/shared/supabase/server';
 import { buildPresentation } from './model';
 import { nextDate,type ViewContext } from './context';

@@ -1,6 +1,6 @@
 import { LiveReport } from '@/components/reports/live-report';
 import { viewContext,viewQuery } from '@/lib/presentation/context';
-import { displayPerformance } from '@/lib/performance/exact';
+import { displayPerformance } from '@/shared/math/exact';
 import type { Metadata } from 'next';
 import { PerformanceBreakdown } from '@/components/team/performance-breakdown';
 import { AwardHistory } from '@/components/team/award-history';

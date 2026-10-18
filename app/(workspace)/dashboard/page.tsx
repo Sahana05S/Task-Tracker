@@ -14,7 +14,7 @@ import { TeamStatsGrid } from '@/components/dashboard/team-stats-grid';
 import { TrackerSchemaNotice } from '@/components/dashboard/tracker-schema-notice';
 import { WorkbookDashboard } from '@/components/dashboard/workbook-dashboard';
 import { MissionPage, MissionPageHeader } from '@/components/missions/mission-ui';
-import { currentPeriod } from '@/lib/analytics/engine';
+import { currentPeriod } from '@/shared/time/period';
 import { getStoredSnapshots, getWorkbookDashboard } from '@/lib/analytics/queries';
 import { requireProfile } from '@/shared/session/profile';
 import { isMissingSchemaError } from '@/shared/supabase/schema-errors';

@@ -2,10 +2,10 @@ import { getNativeTemplates } from '@/modules/tasks';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { MissionHeadlineStrip } from '@/modules/tasks/components/mission-headline';
+import { MissionHeadlineStrip } from '@/modules/scoring/components/mission-headline';
 import { NewTaskButton } from '@/modules/tasks/components/new-task-button';
 import { MissionsWorkspace } from './missions-workspace';
-import { computeMissionHeadline } from '@/lib/analytics/headline';
+import { computeMissionHeadline } from '@/modules/scoring/client';
 import { requireProfile } from '@/shared/session/profile';
 import { getMilestonesPageData } from '@/modules/milestones';
 import { viewContext } from '@/lib/presentation/context';

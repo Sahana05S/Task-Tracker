@@ -1,5 +1,5 @@
 'use client';
-import { displayPerformance } from '@/lib/performance/exact';
+import { displayPerformance } from '@/shared/math/exact';
 
 import * as React from 'react';
 import {
@@ -22,7 +22,7 @@ import {
   CHART_REFERENCE,
   shortName,
 } from '@/components/dashboard/chart-palette';
-import type { MemberPerformance } from '@/lib/analytics/engine';
+import type { MemberPerformance } from '@/modules/scoring/client';
 import { formatHours } from '@/shared/tracker/format';
 
 export interface ProductivityChartProps {
