@@ -800,6 +800,7 @@ export interface Database {
       attendance_input_context:{Args:{p_user:string;p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
       contribution_input_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
       checklist_command: {Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
+      checklist_branch: {Args:{p_task:string;p_checklist:string|null;p_parent:string|null;p_section:string;p_offset:number;p_limit:number};Returns:Json};
       checklist_rollups: {Args:{p_task_ids:string[]};Returns:Json};
       task_details_command: {Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
       publish_task_detail_template: {Args:{p_template:string|null;p_name:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
