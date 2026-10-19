@@ -15,7 +15,7 @@ save ordinary task logs tagged with the item).
 
 ## Private (`internal/`)
 
-Client helpers `checklistWorkHref`, `parseChecklistLocation` and `openChecklistRow` preserve section, page, batch and item addresses for `/checklist/work`. This workspace uses authoritative branch rollups and keeps Sub-mission ownership distinct from ordinary Pages.
+Daily work happens at `/tasks/[tag]/checklist` (`ChecklistWorkspace`, rows with a contextual Manage for edit/duplicate/remove); `/checklist/manage` and `/checklist/[nodeId]` are the structure pages (progress owner, mapping, linked missions) and `/checklist/work` redirects. Server read `getOwnedChecklists` maps Sub-mission rows to their checklists. Client helpers `checklistWorkHref`, `parseChecklistLocation` and `openChecklistRow` preserve section, page, batch and item addresses. This workspace uses authoritative branch rollups and keeps Sub-mission ownership distinct from ordinary Pages.
 | File | Job |
 |---|---|
 | `input.ts` | Parses a checklist command form into the RPC payload |

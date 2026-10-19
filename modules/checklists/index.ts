@@ -6,6 +6,6 @@ export * from '@/modules/checklists/client';
 export { getChecklistItemTime, getEmployeeItemHours, getTaskEffortBreakdown } from '@/modules/checklists/internal/item-time';
 export { loadChecklistRollups } from '@/modules/checklists/internal/read-model';
 
-export { getChecklistBranch } from './internal/branch';
+export { getChecklistBranch, getOwnedChecklists } from './internal/branch';
 
 export { getFocusedChecklistItemTime } from './internal/focused-time';

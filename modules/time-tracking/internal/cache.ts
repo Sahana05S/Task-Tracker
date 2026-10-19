@@ -15,5 +15,6 @@ export function revalidateAfterTimer(taskTag: string): void {
   }
   revalidatePath('/team/[employeeId]', 'page');
   revalidatePath('/tasks/[taskTag]/checklist', 'page');
+  revalidatePath('/tasks/[taskTag]/checklist/manage', 'page');
   revalidatePath('/tasks/[taskTag]/checklist/[nodeId]', 'page');
 }

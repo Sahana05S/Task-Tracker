@@ -32,7 +32,7 @@ import {
 } from '@/modules/checklists/components/checklist-rows';
 import { MissionPanel, MissionProgress } from '@/shared/ui/mission-ui';
 import { requireProfile } from '@/shared/session/profile';
-import { getChecklistItemTime } from '@/modules/checklists';
+import { getChecklistItemTime, getOwnedChecklists } from '@/modules/checklists';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
@@ -70,9 +70,10 @@ export default async function ChecklistNodePage({ params }: { params: Params }) 
   const manager = canManageTasks(user.role);
   const executor = canUpdateTaskOwnFields(user, d.task);
   const open = !d.task.archivedEffectiveDate && !['Done', 'Discarded'].includes(d.task.status);
-  const [choices, timeInfo] = await Promise.all([
+  const [choices, timeInfo, ownedChecklists] = await Promise.all([
     manager ? getTaskWorkspaceData().then(w => w.tasks.filter(t => t.id !== d.task.id)) : Promise.resolve([]),
     getChecklistItemTime(d.task.id, user.id),
+    getOwnedChecklists(d.task.id),
   ]);
   const canStart = canStartTimerForTask(user, d.task);
   const ctx: ChecklistContext = {
@@ -86,6 +87,7 @@ export default async function ChecklistNodePage({ params }: { params: Params }) 
     executor,
     open,
     time: { info: timeInfo, canStart, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer },
+    ownedChecklists,
   };
 
   const chain = ancestry(node.id, d.checklistNodes);

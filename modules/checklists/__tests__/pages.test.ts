@@ -37,7 +37,7 @@ describe('nested checklist page helpers', () => {
     expect(formatMinutes(45)).toBe('45 min');
     expect(formatMinutes(60)).toBe('1 h');
     expect(formatMinutes(90)).toBe('1 h 30 min');
-    expect(checklistHref('A B')).toBe('/tasks/A%20B/checklist');
+    expect(checklistHref('A B')).toBe('/tasks/A%20B/checklist/manage');
     expect(checklistHref('T1', 'x')).toBe('/tasks/T1/checklist/x');
   });
 

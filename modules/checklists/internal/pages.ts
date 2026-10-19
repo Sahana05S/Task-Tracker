@@ -1,13 +1,14 @@
 import type { ChecklistNode } from '@/types/tracker';
 
 /**
- * Pure helpers for nested checklist pages (/tasks/[tag]/checklist/[nodeId]).
+ * Pure helpers for the structure pages (/tasks/[tag]/checklist/manage and
+ * /tasks/[tag]/checklist/[nodeId]); daily work uses /tasks/[tag]/checklist.
  * A node is a container when it is a Page or Group or already has children;
  * containers roll up their direct children in ./progress.
  */
 
 export const checklistHref = (taskTag: string, nodeId?: string) =>
-  `/tasks/${encodeURIComponent(taskTag)}/checklist${nodeId ? `/${nodeId}` : ''}`;
+  `/tasks/${encodeURIComponent(taskTag)}/checklist/${nodeId ?? 'manage'}`;
 
 export function formatMinutes(minutes: number | null | undefined): string | null {
   if (minutes === null || minutes === undefined) return null;

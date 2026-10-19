@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { CHECKLIST_SECTIONS, checklistWorkHref, formatMinutes, openChecklistRow, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistItemTime } from '../client';
-import { CommandFields, CompletionForm, ItemTimerControls, ReasonInput, FIELD, LABEL, percentage } from './checklist-rows';
+import { CommandFields, CompletionForm, ItemTimerControls, ReasonInput, RowDetailFields, FIELD, LABEL, percentage } from './checklist-rows';
+import { checklistHref } from '../client';
 import { ChecklistCreateForm } from './checklist-create-form';
 import type { ActionResponse, Task } from '@/types/tracker';
 
@@ -56,6 +57,7 @@ export function ChecklistWorkspace({ task, branch, location, manager, executor, 
                   <p className="text-muted-foreground mt-1 text-xs">{row.isSubMission ? 'Sub-mission' : container ? 'Page' : 'Item'} · {percentage(row.progressPercentage)} · {row.isComplete ? 'Complete' : 'Pending'}{row.priority ? ` · Priority ${row.priority}` : ''}</p>
                 </div>
                 {!container && executor && open ? <CompletionForm ctx={ctx} node={row} className="min-w-0" /> : null}
+                {executor && open && !row.linkedTaskId ? <RowManage ctx={ctx} row={row} /> : null}
               </li>;
             })}
           </ul>
@@ -75,8 +77,9 @@ export function ChecklistWorkspace({ task, branch, location, manager, executor, 
         </section>
         <aside className="grid gap-5">
           {executor && open ? <section className="grid gap-3"><h2 className="font-semibold">Add work</h2>
-            <ChecklistCreateForm key={`${checklist.id}:${branch.parentNodeId}:${branch.section}`} task={ctx.task} checklistId={checklist.id} parentId={branch.parentNodeId} section={branch.section} action={actions.checklist} />
+            <ChecklistCreateForm key={`${checklist.id}:${branch.parentNodeId}:${branch.section}:${branch.rows.length}`} task={ctx.task} checklistId={checklist.id} parentId={branch.parentNodeId} section={branch.section} action={actions.checklist} />
           </section> : null}
+          {manager && !checklist.ownerNodeId ? <Link className="text-primary text-sm font-semibold underline-offset-4 hover:underline" href={branch.parentNodeId ? checklistHref(task.taskTag, branch.parentNodeId) : checklistHref(task.taskTag)}>Progress owner, mapping and linked missions</Link> : null}
           {manager && open ? <details className="border-border border-t pt-4"><summary className="cursor-pointer font-semibold">Manage section</summary>
             <ExecutionForm action={actions.checklist} scope={`section:${checklist.id}:${branch.section}`} className="mt-3">
               <CommandFields ctx={ctx} command="section" /><input type="hidden" name="section" value={branch.section} />
@@ -90,4 +93,37 @@ export function ChecklistWorkspace({ task, branch, location, manager, executor, 
       <CommandFields ctx={ctx} command="create" /><label className={LABEL}>Checklist title<input name="title" defaultValue="Master checklist" required className={`${FIELD} h-10`} /></label><Button type="submit">Create checklist</Button>
     </ExecutionForm> : <p>This mission has no checklist yet.</p>}
   </div>;
+}
+
+/** Contextual row changes: same edit/duplicate/remove commands as the structure page, without moving the row. */
+function RowManage({ ctx, row }: { ctx: { task: Pick<Task, 'id' | 'taskTag' | 'lifecycleVersion'>; checklistId?: string; action: Command }; row: ChecklistBranch['rows'][number] }) {
+  return <details className="text-sm sm:col-span-2">
+    <summary className="text-muted-foreground hover:text-foreground w-fit cursor-pointer text-xs font-semibold">Manage</summary>
+    <div className="mt-3 grid gap-4 border-l-2 pl-4">
+      <ExecutionForm action={ctx.action} scope={`edit:${row.id}`}>
+        <CommandFields ctx={{ ...ctx, checklistId: row.checklistId }} command="edit" />
+        <input type="hidden" name="node_id" value={row.id} />
+        <input type="hidden" name="section" value={row.section ?? ''} />
+        <input type="hidden" name="parent_id" value={row.parentNodeId ?? ''} />
+        <input type="hidden" name="linked_task_id" value="" />
+        <input type="hidden" name="node_type" value={row.nodeType} />
+        <label className={LABEL}>Title<input name="title" defaultValue={row.title} required maxLength={500} className={`${FIELD} h-10`} /></label>
+        <RowDetailFields node={row} />
+        <ReasonInput placeholder="Reason for this change" />
+        <Button type="submit" variant="outline" size="sm" className="justify-self-start">Save changes</Button>
+      </ExecutionForm>
+      {!row.isSubMission ? <ExecutionForm action={ctx.action} scope={`duplicate:${row.id}`}>
+        <CommandFields ctx={{ ...ctx, checklistId: row.checklistId }} command="duplicate" />
+        <input type="hidden" name="node_id" value={row.id} />
+        <Button type="submit" variant="outline" size="sm" className="justify-self-start">Duplicate{row.childCount ? ' with its items' : ''}</Button>
+      </ExecutionForm> : null}
+      {row.isSubMission ? <p className="text-muted-foreground text-xs">Sub-missions cannot be removed yet; mark their items N/A instead.</p>
+        : row.childCount === 0 ? <ExecutionForm action={ctx.action} scope={`delete:${row.id}`}>
+        <CommandFields ctx={{ ...ctx, checklistId: row.checklistId }} command="delete" />
+        <input type="hidden" name="node_id" value={row.id} />
+        <ReasonInput placeholder="Reason for removal" />
+        <Button type="submit" variant="ghost" size="sm" className="justify-self-start text-rose-700 hover:text-rose-800">Remove item</Button>
+      </ExecutionForm> : <p className="text-muted-foreground text-xs">Remove the items inside before removing this row.</p>}
+    </div>
+  </details>;
 }

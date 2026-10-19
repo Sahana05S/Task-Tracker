@@ -9,7 +9,7 @@ export function checklistWorkHref(taskTag: string, options: ChecklistBranchOptio
   if (options.section) query.set('section', options.section);
   if (options.cursor) query.set('cursor', String(options.cursor));
   if (item) query.set('item', item);
-  return `/tasks/${encodeURIComponent(taskTag)}/checklist/work${query.size ? `?${query}` : ''}`;
+  return `/tasks/${encodeURIComponent(taskTag)}/checklist${query.size ? `?${query}` : ''}`;
 }
 
 export function parseChecklistLocation(query: Record<string, string | string[] | undefined>): ChecklistBranchOptions & { item?: string } {

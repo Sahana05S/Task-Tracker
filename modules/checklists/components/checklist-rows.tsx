@@ -23,6 +23,7 @@ import { Button } from '@/shared/ui/button';
 import { CHECKLIST_SECTIONS, type ChecklistRollup } from '@/modules/checklists/internal/progress';
 import type { ChecklistItemTime } from '@/modules/checklists/internal/item-time';
 import { childrenOf, checklistHref, formatMinutes, isContainer, subtreeSeconds } from '@/modules/checklists/internal/pages';
+import { checklistWorkHref } from '@/modules/checklists/internal/location';
 import { formatPercent } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { ActionResponse, ChecklistNode, Task } from '@/types/tracker';
@@ -52,6 +53,8 @@ export interface ChecklistContext {
   executor: boolean;
   /** Not archived, Done or Discarded. */
   open: boolean;
+  /** Sub-mission node id → owned checklist id (migration 41). */
+  ownedChecklists?: ReadonlyMap<string, string>;
   /** Item timers (migration 34): logged time, running timers and the actions. */
   time?: {
     info: ChecklistItemTime;
@@ -383,7 +386,8 @@ export function ChecklistRow({ ctx, node: n, showSection = true }: { ctx: Checkl
   const linked = ctx.linkedTasksById.get(n.linkedTaskId ?? '');
   const estimate = formatMinutes(n.estimatedMinutes);
   const elapsed = loggedTime(ctx, n.id);
-  const href = checklistHref(ctx.task.taskTag, n.id);
+  const owned = ctx.ownedChecklists?.get(n.id);
+  const href = owned ? checklistWorkHref(ctx.task.taskTag, { checklistId: owned, section: 'activity' }) : checklistHref(ctx.task.taskTag, n.id);
   return (
     <article
       className={cn(
@@ -398,7 +402,7 @@ export function ChecklistRow({ ctx, node: n, showSection = true }: { ctx: Checkl
             <Link href={href} className={cn('text-foreground decoration-primary/40 break-words underline-offset-4 hover:underline', container ? 'font-bold' : 'font-medium')}>
               {n.title}
             </Link>
-            <span className="badge-soft badge-category">{n.nodeType}</span>
+            <span className="badge-soft badge-category">{owned ? 'Sub-mission' : n.nodeType}</span>
           </div>
           <p className="text-muted-foreground mt-0.5 text-xs break-words">
             {showSection ? (n.section ?? 'Unsectioned - manager review needed') : null}
@@ -410,7 +414,7 @@ export function ChecklistRow({ ctx, node: n, showSection = true }: { ctx: Checkl
             <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
               {container ? (
                 <Link href={href} className="text-primary inline-flex items-center gap-1 font-semibold hover:underline">
-                  {inside} item{inside === 1 ? '' : 's'} inside
+                  {owned ? 'Open its checklist' : `${inside} item${inside === 1 ? '' : 's'} inside`}
                   <ChevronRightIcon className="size-3.5" aria-hidden="true" />
                 </Link>
               ) : null}

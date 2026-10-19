@@ -25,6 +25,7 @@ export function revalidateAfterDetails(): void {
   revalidatePath('/task-tools');
   revalidatePath('/tasks/[taskTag]', 'page');
   revalidatePath('/tasks/[taskTag]/checklist', 'page');
+  revalidatePath('/tasks/[taskTag]/checklist/manage', 'page');
 }
 
 export function revalidateAfterTemplate(): void {
