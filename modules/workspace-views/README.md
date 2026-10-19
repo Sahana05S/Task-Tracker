@@ -35,3 +35,5 @@ scoring and team; nothing here queries the database directly.
 ## Depends on
 `shared/*` and the public APIs of `auth`, `tasks`, `time-tracking`,
 `milestones`, `scoring`, `support`, `reports` and `team` as each screen needs.
+
+The shell renders a compact `BeaverCompanion` with request-provided timer context. Its Hide/Show preference is local to the browser; it never blocks work. Raster poses live in public/mascot and pure presentation in shared/ui/taskpulse-beaver. No new database ownership or formula.

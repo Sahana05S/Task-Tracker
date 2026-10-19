@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+import { BeaverCompanion } from '@/modules/workspace-views/components/shell/beaver-companion';
 import { MobileBottomNav } from '@/modules/workspace-views/components/shell/mobile-bottom-nav';
 import { NavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer';
 import { NavDrawerProvider } from '@/modules/workspace-views/components/shell/nav-drawer-context';
@@ -31,7 +32,10 @@ export function AppShell({ profile, counts, timers, children }: AppShellProps) {
       <div className="bg-background min-h-dvh">
         <TopBar profile={profile} timers={timers} />
         <SectionTabs />
-        <main className="pb-36 md:pb-0">{children}</main>
+        <main>{children}</main>
+        <footer className="mx-auto flex min-h-24 w-full max-w-[1200px] justify-end px-4 pb-36 pt-3 md:pb-6 lg:px-6">
+          <BeaverCompanion state={timers.length ? 'focused' : 'neutral'} message={timers.length ? 'Your timer is running. One step at a time.' : 'One small step moves your mission forward.'} />
+        </footer>
         <MobileBottomNav />
         <NavDrawer counts={counts} profile={profile} />
       </div>
