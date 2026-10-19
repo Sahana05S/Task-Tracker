@@ -99,3 +99,33 @@ export function withTaskParticipants(
           : [],
   };
 }
+
+/** Join participant projections in linear time, preserving legacy primary owners. */
+export function attachTaskParticipants(
+  tasks: readonly Task[],
+  assignees: readonly { task_id: string; user_id: string; is_primary: boolean; share_units: number | null }[],
+  reviewers: readonly { task_id: string; user_id: string; is_primary: boolean }[],
+): Task[] {
+  const owners = new Map<string, string[]>();
+  const shares = new Map<string, Record<string, number>>();
+  const reviews = new Map<string, string[]>();
+  for (const row of assignees) {
+    const ids = owners.get(row.task_id) ?? [];
+    if (row.is_primary) ids.unshift(row.user_id);
+    else ids.push(row.user_id);
+    owners.set(row.task_id, ids);
+    const units = shares.get(row.task_id) ?? {};
+    units[row.user_id] = row.share_units ?? 0;
+    shares.set(row.task_id, units);
+  }
+  for (const row of reviewers) {
+    const ids = reviews.get(row.task_id) ?? [];
+    if (row.is_primary) ids.unshift(row.user_id);
+    else ids.push(row.user_id);
+    reviews.set(row.task_id, ids);
+  }
+  return tasks.map(task => withTaskParticipants({
+    ...task,
+    participantShares: task.participantCreditMode === 'configured' ? shares.get(task.id) ?? {} : null,
+  }, { assigneeIds: owners.get(task.id), reviewerIds: reviews.get(task.id) }));
+}

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 
 import { createClient } from '@/shared/supabase/server';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
@@ -29,7 +30,8 @@ export interface AuthState {
  * Uses `auth.getUser()`, which validates the token against the Auth server,
  * rather than trusting a session decoded from cookies.
  */
-export async function getAuthState(): Promise<AuthState> {
+// Request-local only: never share an authenticated profile between requests.
+export const getAuthState = cache(async (): Promise<AuthState> => {
   const supabase = await createClient();
 
   const {
@@ -50,7 +52,7 @@ export async function getAuthState(): Promise<AuthState> {
     authUserId: user.id,
     profile: error || !data ? null : mapUser(data),
   };
-}
+});
 
 /** The signed-in user's profile, or `null` when unavailable. */
 export async function getCurrentProfile(): Promise<User | null> {

@@ -34,7 +34,7 @@ operations that are previewed first and committed atomically).
 | `permissions.ts` | Role/assignment checks (UI messages; RLS and RPCs are the real boundary) |
 | `filters.ts` | Workspace filtering and sorting |
 | `shares.ts` | Participant share units |
-| `mappers.ts`, `credit-summary.ts` | Database row -> domain model |
+| `mappers.ts`, `credit-summary.ts` | Database row -> domain model, linear participant projection |
 | `tools/` | Task Tools contract, support split, workbook workflow list, preview/commit RPCs |
 
 ## Database it owns
