@@ -6,6 +6,7 @@ export * from '@/modules/tasks/client';
 export { getTaskWorkspaceData, type TaskWorkspaceData } from '@/modules/tasks/internal/queries';
 export {
   getTaskDetailData,
+  getTaskForChecklist,
   normalizeTaskTagParam,
   resolveTaskDetailRouteState,
   type TaskDependencyDetail,

@@ -14,6 +14,7 @@ import type {
   TaskDependencyRow,
   TaskDetailSectionRow,
   TaskLinkRow,
+  TaskRow,
 } from '@/types/database';
 import type {
   ChecklistNode,
@@ -77,6 +78,28 @@ export async function resolveTaskDetailRouteState(
   return { status: 'ready', data };
 }
 
+/**
+ * Narrow read for the checklist workspace: the task and its assignees in one
+ * request, instead of the full detail (members, links, sections, dependencies,
+ * every checklist node and rollups) that page never shows.
+ */
+export async function getTaskForChecklist(rawTaskTag: string): Promise<Task | null> {
+  const taskTag = normalizeTaskTagParam(rawTaskTag);
+  if (!taskTag) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(`${TASK_COLUMNS}, task_assignees(user_id, is_primary)`)
+    .eq('task_tag', taskTag)
+    .maybeSingle();
+  if (error) throw new Error(`Failed to load task: ${error.message}`);
+  if (!data) return null;
+  const { task_assignees: assignees, ...row } = data as unknown as TaskRow & {
+    task_assignees: { user_id: string; is_primary: boolean }[] | null;
+  };
+  return withTaskParticipants(mapTask(row), { assigneeIds: uniquePrimaryFirst(assignees ?? []) });
+}
+
 export async function getTaskDetailData(
   taskTag: string,
 ): Promise<TaskDetailData | null> {
@@ -106,6 +129,7 @@ export async function getTaskDetailData(
     dependencyRows,
     checklistRow,
     effortResult,
+    rollups,
   ] = await Promise.all([
     supabase.from('users').select(USER_COLUMNS).order('full_name'),
     selectOrEmpty(supabase.from('task_assignees').select('task_id, user_id, is_primary').eq('task_id', task.id)),
@@ -123,6 +147,8 @@ export async function getTaskDetailData(
       readRootChecklist(supabase, task.id),
     ),
     supabase.rpc('task_effort_summary', {p_task_id: task.id}),
+    // Needs only the task id, so it joins this wave instead of waiting for the nodes.
+    loadChecklistRollups(supabase, [task.id]),
   ]);
 
   if (memberResult.error) {
@@ -164,7 +190,7 @@ export async function getTaskDetailData(
   const linkedTasksById = new Map(
     linkedTaskRows.map((row) => [row.id, mapTask(row)]),
   );
-  const checklistProgress = (await loadChecklistRollups(supabase,[task.id])).get(task.id)!;
+  const checklistProgress = rollups.get(task.id)!;
 
   const dependencyTaskIds = [
     ...new Set(

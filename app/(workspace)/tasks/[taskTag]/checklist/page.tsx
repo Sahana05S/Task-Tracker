@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireProfile } from '@/shared/session/profile';
-import { resolveTaskDetailRouteState } from '@/modules/tasks';
+import { getTaskForChecklist } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
 import { getChecklistBranch, getFocusedChecklistItemTime } from '@/modules/checklists';
 import { checklistWorkHref, parseChecklistLocation } from '@/modules/checklists/client';
@@ -15,9 +15,8 @@ export default async function ChecklistWorkPage({ params, searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireProfile();
-  const route = await resolveTaskDetailRouteState((await params).taskTag);
-  if (route.status !== 'ready') notFound();
-  const task = route.data.task;
+  const task = await getTaskForChecklist((await params).taskTag);
+  if (!task) notFound();
   const location = parseChecklistLocation(await searchParams);
   let branch;
   try { branch = await getChecklistBranch(task.id, location); }
