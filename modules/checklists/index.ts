@@ -7,3 +7,5 @@ export { getChecklistItemTime, getEmployeeItemHours, getTaskEffortBreakdown } fr
 export { loadChecklistRollups } from '@/modules/checklists/internal/read-model';
 
 export { getChecklistBranch } from './internal/branch';
+
+export { getFocusedChecklistItemTime } from './internal/focused-time';

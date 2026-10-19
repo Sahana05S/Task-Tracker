@@ -10,6 +10,7 @@ const read = (form: FormData, key: string) => String(form.get(key) ?? '').trim()
 const COMMAND_FIELDS: Record<string, string[]> = {
   create: ['title'],
   add: ['title', 'description', 'section', 'parent_id', 'linked_task_id', 'node_type'],
+  submission: ['title', 'description', 'section', 'parent_id'],
   state: ['node_id', 'state'],
   edit: ['node_id', 'title', 'section', 'parent_id', 'linked_task_id', 'node_type', 'reason'],
   map: ['node_id', 'section', 'reason'],
@@ -45,7 +46,13 @@ export function parseChecklistCommand(form: FormData): Parsed<ChecklistCommandIn
 
   // Optional row details (migration 33): sent only when the form has the field, so
   // an edit without them keeps the stored links and estimate.
-  const editsRow = command === 'add' || command === 'edit';
+  if (form.has('checklist_id')) payload.checklist_id = fieldValue('checklist_id', read(form, 'checklist_id'));
+  const editsRow = command === 'add' || command === 'edit' || command === 'submission';
+  if (editsRow && form.has('priority')) {
+    const priority = read(form, 'priority');
+    if (!/^[0-3]$/.test(priority)) return { ok: false, error: 'Choose a priority from 0 to 3.' };
+    payload.priority = Number(priority);
+  }
   if (editsRow && form.has('links')) payload.links = read(form, 'links').split(/\s+/).filter(Boolean);
   if (editsRow && form.has('estimated_minutes')) {
     const minutes = read(form, 'estimated_minutes');

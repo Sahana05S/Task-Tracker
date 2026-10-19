@@ -77,10 +77,13 @@ for db in DBS:
         print('PASS',db,'upgrade 38->39 applies (tenancy foundation)')
         sql(db,(ROOT/'supabase/migrations/40_company_scoped_commands.sql').read_text(encoding='utf-8'))
         print('PASS',db,'upgrade 39->40 applies (company-scoped commands)')
+        for migration in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
+            if 41<=int(migration.name.split('_')[0])<=42:sql(db,migration.read_text(encoding='utf-8'))
+        print('PASS',db,'upgrade through42 applies (recursive checklist/read contracts)')
     else:
-        migrate(db,40)
+        migrate(db,42)
         sql(db,seed)
-        print('PASS',db,'fresh install 01-40')
+        print('PASS',db,'fresh install 01-42')
     assert value(db,"has_function_privilege('authenticated','taskpulse_private.checklist_links(jsonb)','EXECUTE')")=='f'
 
     # Assignee (user 4 on T1) builds nested pages with links and estimates.

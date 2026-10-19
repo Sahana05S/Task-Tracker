@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache';
 
 /** Checklist progress feeds tasks, Task Tools, the dashboard and team views. PRIVATE. */
 export function revalidateAfterChecklistChange(): void {
+  revalidatePath('/today');
   revalidatePath('/tasks');
   revalidatePath('/task-tools');
   revalidatePath('/tasks/[taskTag]', 'page');

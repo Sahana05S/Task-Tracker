@@ -453,6 +453,7 @@ export interface ChecklistTemplateNode {
 /** Row of `public.task_checklists` — one master checklist per task. */
 export interface TaskChecklist {
   id: string;
+  ownerNodeId?: string | null;
   taskId: string;
   templateId: string | null;
   title: string;
@@ -465,6 +466,9 @@ export interface TaskChecklist {
 /** Row of `public.checklist_nodes` — hierarchical equal-weight checklist item. */
 export interface ChecklistNode {
   id: string;
+  ownedChecklistId?: string | null;
+  isSubMission?: boolean;
+  priority?: number;
   checklistId: string;
   parentNodeId: string | null;
   linkedTaskId: string | null;
