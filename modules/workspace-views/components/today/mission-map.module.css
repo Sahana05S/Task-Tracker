@@ -1,0 +1,73 @@
+/* Mission map: one camera-controlled world (layout from the TaskPulse bidirectional roadmap reference). */
+.frame {
+  --hue-0: #6b56cf; --hue-1: #bb537e; --hue-2: #138b79; --hue-3: #986711; --hue-4: #347caf;
+  --map-line: #c2cbe0;
+  position: relative; isolation: isolate; overflow: hidden; touch-action: none; cursor: grab;
+  height: min(565px, 70vh); min-height: 440px; border: 1px solid var(--border); border-radius: 18px;
+  background: radial-gradient(ellipse at 40% 25%, #6355e614, transparent 50%), radial-gradient(ellipse at 72% 79%, #10b9810d, transparent 55%), var(--card);
+}
+.frame::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .45;
+  background-image: radial-gradient(var(--map-line) 1px, transparent 1px); background-size: 24px 24px;
+}
+.dragging { cursor: grabbing; }
+.world {
+  position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; pointer-events: none;
+  transition: transform 850ms cubic-bezier(.22,.82,.18,1);
+}
+.free { transition: none; }
+.paths { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.road { stroke: var(--map-line); stroke-width: 6; stroke-dasharray: 9 14; fill: none; stroke-linecap: round; opacity: .8; }
+.link { fill: none; stroke-width: 3.5; stroke-linecap: round; opacity: .86; transition: opacity .45s; animation: draw .85s ease-out both; stroke-dasharray: 600; }
+.muted { opacity: .18; }
+@keyframes draw { from { stroke-dashoffset: 600; opacity: 0; } to { stroke-dashoffset: 0; } }
+
+.node {
+  position: absolute; z-index: 3; pointer-events: auto; width: 172px; padding: 4px; border: 0; background: transparent;
+  color: var(--foreground); display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center;
+  transform: translate(-50%, -38.5px); font: inherit; cursor: pointer;
+  transition: opacity .42s, filter .4s; animation: born .65s cubic-bezier(.2,.9,.2,1) both;
+}
+@keyframes born { from { opacity: 0; scale: .3; } }
+.node:focus-visible { outline: none; }
+.node:focus-visible .coin { outline: 3px solid var(--ring); outline-offset: 4px; }
+.dim { opacity: .2; filter: grayscale(.6); }
+.coin {
+  width: 77px; height: 77px; border: 3px solid var(--node); border-radius: 25px; position: relative;
+  background: color-mix(in srgb, var(--node) 12%, var(--card)); color: var(--node);
+  box-shadow: 0 8px 0 #00000014, 0 11px 36px color-mix(in srgb, var(--node) 15%, transparent);
+  display: grid; place-items: center; transform: rotate(-6deg); transition: transform .2s, box-shadow .2s;
+}
+.small .coin { width: 58px; height: 58px; border-radius: 19px; }
+.node:hover .coin, .current .coin { transform: rotate(0) scale(1.09); box-shadow: 0 10px 0 #00000012, 0 0 35px color-mix(in srgb, var(--node) 37%, transparent); }
+.current .coin { outline: 6px solid color-mix(in srgb, var(--node) 15%, transparent); }
+.name {
+  font-weight: 700; font-size: 12px; line-height: 1.25; max-width: 172px; overflow-wrap: anywhere;
+  background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 6px 9px; box-shadow: 0 3px 18px #00000010;
+}
+.sub { font-size: 10px; color: var(--muted-foreground); background: var(--card); border-radius: 8px; padding: 2px 5px; white-space: nowrap; }
+.check {
+  position: absolute; top: -7px; right: -8px; width: 25px; height: 25px; border-radius: 50%; display: grid; place-items: center;
+  background: #79ddbd; border: 3px solid var(--card); color: #104332;
+}
+.flag { position: absolute; bottom: -10px; right: -24px; border-radius: 7px; background: #f5c980; color: #533716; padding: 3px 5px; font-size: 9px; font-weight: 800; transform: rotate(9deg); }
+
+.card {
+  position: absolute; z-index: 7; pointer-events: auto; width: 250px; padding: 16px; cursor: auto;
+  background: var(--card); border: 1px solid var(--border); border-radius: 15px; box-shadow: 0 18px 50px #2b245a2e;
+  transform: translateY(-50%); animation: fade .3s ease-out both;
+}
+@keyframes fade { from { opacity: 0; } }
+
+.float {
+  position: absolute; z-index: 12; pointer-events: none; font-size: 11px; font-weight: 600; color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--border); padding: 6px 11px; border-radius: 20px;
+}
+.left { left: 13px; top: 13px; } .right { right: 13px; top: 13px; }
+.bottom { left: 50%; bottom: 11px; transform: translateX(-50%); white-space: nowrap; max-width: calc(100% - 25px); overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 760px) { .frame { height: 520px; min-height: 420px; } }
+@media (max-width: 490px) { .frame { height: 490px; } }
+@media (prefers-reduced-motion: reduce) {
+  .world, .node, .link, .card { transition-duration: .01ms !important; animation: none !important; }
+}

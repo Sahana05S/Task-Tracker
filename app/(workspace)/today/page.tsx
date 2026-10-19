@@ -4,7 +4,7 @@ import { MissionRoadmap } from '@/modules/workspace-views/components/today/missi
 import { getAssignedMissionBatch } from '@/modules/tasks';
 import { missionDueFilter } from '@/modules/tasks/client';
 import { kolkataDate } from '@/shared/time/kolkata';
-import { parseRoadmapLocation, roadmapZoom } from '@/modules/workspace-views/client';
+import { parseRoadmapLocation } from '@/modules/workspace-views/client';
 
 import {
   AnalyticsTeaser,
@@ -32,7 +32,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const initial = await getAssignedMissionBatch(profile.id, { due }).catch(() => null);
   return <div className="mx-auto w-full max-w-[1200px] px-4 pt-6 pb-10 lg:px-6">
     <header className="mb-6"><h1 className="text-foreground text-3xl font-bold tracking-tight">Today</h1><p className="text-muted-foreground mt-1 text-sm">A clear path through your work.</p></header>
-    <MissionRoadmap key={due} initial={initial} due={due} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialZoom={roadmapZoom(query.zoom)} />
+    <MissionRoadmap key={due} initial={initial} due={due} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-10 text-sm">Loading your week and team updates…</p>}>
       <TodayOverview profile={profile} />
     </Suspense>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, XIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
 import { cn } from '@/shared/utils';
@@ -11,6 +11,7 @@ import { missionDueLabel, type MissionDueFilter, type RoadmapMission, type Roadm
 import type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow } from '@/modules/checklists/client';
 import { branchForRow, roadmapSearch, type RoadmapLocation } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch, loadRoadmapMissions } from '@/modules/workspace-views/roadmap-actions';
+import { MissionMap } from './mission-map';
 
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
   loading: () => <p role="status" className="text-muted-foreground py-4 text-sm">Preparing work controls…</p>,
@@ -25,10 +26,9 @@ interface Props {
   today: string;
   initialView?: View;
   initialLocation?: RoadmapLocation | null;
-  initialZoom?: number;
 }
-function remember(location: RoadmapLocation | null, due: string, view: View, zoom: number) {
-  window.history.replaceState(null, '', roadmapSearch(location, due, view, zoom));
+function remember(location: RoadmapLocation | null, due: string, view: View) {
+  window.history.replaceState(null, '', roadmapSearch(location, due, view));
 }
 function Progress({ value }: { value: number | null }) {
   return <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{value === null ? 'Progress unavailable' : `${Math.round(value)}%`}</span>;
@@ -37,11 +37,10 @@ function LoadingBranch() {
   return <div role="status" className="space-y-3 py-5"><span className="sr-only">Loading checklist…</span>{[1, 2, 3].map(n => <div key={n} className="bg-muted h-16 rounded-xl motion-safe:animate-pulse" />)}</div>;
 }
 
-/** A bounded, keyboard-operable journey. The ordinary list uses the same data and actions. */
-export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', initialLocation = null, initialZoom = 100 }: Props) {
+/** The map view and a keyboard-first list over the same bounded data, actions and URL location. */
+export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', initialLocation = null }: Props) {
   const [batch, setBatch] = useState(initial);
   const [view, setView] = useState<View>(initialView);
-  const [zoom, setZoom] = useState(initialZoom);
   const [location, setLocation] = useState<RoadmapLocation | null>(initialLocation);
   const [mission, setMission] = useState<RoadmapMission | null>(null);
   const [branch, setBranch] = useState<ChecklistBranch | null>(null);
@@ -59,7 +58,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
     setLocation(path);
     setError(null);
     if (!append) { setBranch(null); setSelected(null); }
-    remember(path, due, view, zoom);
+    remember(path, due, view);
     startTransition(async () => {
       const result = await loadRoadmapBranch(path.missionId, { checklistId: path.checklistId, parentNodeId: path.parentNodeId, section: path.section ?? 'activity', cursor: append ? branch?.nextCursor ?? 0 : path.cursor ?? 0, limit: 20 });
       if (sequence !== request.current) return;
@@ -72,13 +71,13 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
     });
   }
   // A URL is a restorable location, including a focused branch, rather than a pixel position.
-  useEffect(() => { if (initialLocation) open(initialLocation); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (initialLocation && initialView === 'list') open(initialLocation); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (selected) panelHeading.current?.focus(); }, [selected?.id]);
 
   function overview() {
     request.current++;
     setLocation(null); setMission(null); setBranch(null); setSelected(null); setError(null);
-    remember(null, due, view, zoom);
+    remember(null, due, view);
   }
   function select(row: ChecklistBranchRow, _trigger: HTMLButtonElement, offset: number) {
     if (!location) return;
@@ -88,7 +87,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
   }
   function closePanel() {
     setSelected(null);
-    if (location) remember({ ...location, nodeId: undefined }, due, view, zoom);
+    if (location) remember({ ...location, nodeId: undefined }, due, view);
     if (selected) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`button[data-roadmap-node="${selected.id}"]`)?.focus());
   }
   function refreshBranch() {
@@ -111,13 +110,21 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><h2 id="mission-path-title" className="text-foreground text-xl font-bold tracking-tight">Your mission path</h2><p className="text-muted-foreground mt-1 max-w-prose text-sm">Choose a mission. Open its next item. Keep your work in focus.</p></div>
       <div className="border-border flex rounded-full border p-1" role="group" aria-label="Mission view">
-        <Button size="sm" variant={view === 'roadmap' ? 'default' : 'ghost'} aria-pressed={view === 'roadmap'} onClick={() => { setView('roadmap'); remember(location, due, 'roadmap', zoom); }}><OrbitIcon aria-hidden="true" />Roadmap</Button>
-        <Button size="sm" variant={view === 'list' ? 'default' : 'ghost'} aria-pressed={view === 'list'} onClick={() => { setView('list'); remember(location, due, 'list', zoom); }}><ListIcon aria-hidden="true" />List</Button>
+        <Button size="sm" variant={view === 'roadmap' ? 'default' : 'ghost'} aria-pressed={view === 'roadmap'} onClick={() => { setView('roadmap'); remember(location, due, 'roadmap'); }}><OrbitIcon aria-hidden="true" />Roadmap</Button>
+        <Button size="sm" variant={view === 'list' ? 'default' : 'ghost'} aria-pressed={view === 'list'} onClick={() => { setView('list'); remember(location, due, 'list'); if (location) open(location); }}><ListIcon aria-hidden="true" />List</Button>
       </div>
     </div>
     <nav aria-label="Mission deadline filters" className="mt-5 flex flex-wrap gap-2">
-      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view, zoom)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
+      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
     </nav>
+    {view === 'roadmap' ? <>
+      {error ? <div role="alert" className="border-attention-border bg-attention-subtle text-attention-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
+      {batch?.missions.length || location ? <MissionMap missions={batch?.missions ?? []} today={today} initialLocation={location}
+        onLocation={next => { setLocation(next); remember(next, due, 'roadmap'); }} />
+        : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="text-primary font-semibold hover:underline">Browse missions</Link></p> : null}
+      {batch?.hasMore ? <Button className="mt-4" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : `Load more missions (${batch.missions.length} shown)`}</Button> : null}
+      {batchError ? <p role="alert" className="text-destructive mt-3 text-sm">{batchError} <button type="button" className={cn('rounded font-semibold underline', FOCUS)} disabled={loadingMore} onClick={() => loadMoreMissions()}>Retry batch</button></p> : null}
+    </> : <>
     {location ? <nav aria-label="Roadmap breadcrumb" className="border-border mt-5 border-t pt-4">
       <ol className="text-muted-foreground flex flex-wrap items-center gap-x-1 gap-y-2 text-xs">
         <li><button type="button" onClick={overview} className={cn('hover:text-primary rounded px-1 py-1 font-medium', FOCUS)}>My missions</button></li>
@@ -136,22 +143,16 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
           {location ? <div role="group" aria-label="Checklist sections" className="bg-muted flex rounded-full p-1">
             {SECTIONS.map(section => <Button key={section} size="sm" variant={(location.section ?? 'activity') === section ? 'default' : 'ghost'} aria-pressed={(location.section ?? 'activity') === section} disabled={pending} onClick={() => open({ ...location, parentNodeId: undefined, nodeId: undefined, section })}>{section[0].toUpperCase() + section.slice(1)}</Button>)}
           </div> : <p className="text-muted-foreground text-xs">{batch ? `${batch.missions.length} open ${batch.missions.length === 1 ? 'mission' : 'missions'} loaded${batch.hasMore ? ' · more below' : ''}` : 'Your open assigned missions'}</p>}
-          {view === 'roadmap' ? <div className="text-muted-foreground flex items-center gap-1" role="group" aria-label="Roadmap zoom">
-            <Button size="icon" variant="ghost" className="size-8" aria-label="Zoom out" disabled={zoom <= 80} onClick={() => { const n = zoom - 10; setZoom(n); remember(location, due, view, n); }}><MinusIcon className="size-3.5" aria-hidden="true" /></Button>
-            <span className="w-10 text-center text-xs tabular-nums" aria-live="polite">{zoom}%</span>
-            <Button size="icon" variant="ghost" className="size-8" aria-label="Zoom in" disabled={zoom >= 130} onClick={() => { const n = zoom + 10; setZoom(n); remember(location, due, view, n); }}><PlusIcon className="size-3.5" aria-hidden="true" /></Button>
-          </div> : null}
         </div>
         <div className="min-w-0 overflow-x-auto px-4 pb-5 sm:px-5" aria-busy={pending || loadingMore}>
           {error ? <div role="alert" className="border-attention-border bg-attention-subtle text-attention-foreground my-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => location ? open(location) : loadMoreMissions(true)} disabled={pending || loadingMore}><RotateCcwIcon aria-hidden="true" />Retry {location ? 'branch' : 'roadmap'}</Button></div> : null}
-          {location ? pending && !branch ? <LoadingBranch /> : branch?.checklist ? <div style={view === 'roadmap' ? { zoom: zoom / 100 } : undefined} className="pt-4">
+          {location ? pending && !branch ? <LoadingBranch /> : branch?.checklist ? <div className="pt-4">
             {branch.rows.length ? <RoadmapRows baseCursor={location.cursor ?? 0} key={`${location.missionId}:${branch.checklist.id}:${branch.parentNodeId}:${branch.section}:${revision}`} rows={branch.rows} missionId={location.missionId} view={view} selectedId={selected?.id} onSelect={select} onZoom={options => open({ missionId: location.missionId, ...options })} /> : <p className="text-muted-foreground py-8 text-sm">No items in this {branch.section} branch. Add items from the mission checklist.</p>}
             {branch.hasMore ? <Button variant="outline" size="sm" disabled={pending} onClick={() => open(location, true)} className="mt-4">{pending ? 'Loading…' : 'Load more items'}</Button> : null}
           </div> : !pending && !error ? <p className="text-muted-foreground py-8 text-sm">This mission does not have a checklist yet. <Link href={`/tasks/${encodeURIComponent(mission?.taskTag ?? '')}`} className="text-primary font-semibold hover:underline">Open mission details</Link> to set one up.</p> : null
-            : <div style={view === 'roadmap' ? { zoom: zoom / 100 } : undefined} className="pt-4">
-              {batch?.missions.length ? <ol className={cn(view === 'list' ? 'divide-border divide-y' : 'space-y-1')} aria-label="Your open assigned missions">{batch.missions.map((item, index) => <li key={item.id} className={cn('relative min-w-0', view === 'roadmap' && 'pb-4 pl-10 last:pb-0', view === 'roadmap' && index % 2 === 1 && 'sm:ml-7')} style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 106px' }}>
-                {view === 'roadmap' ? <><span aria-hidden="true" className="border-border absolute top-7 bottom-0 left-3.5 border-l border-dashed" /><span className="bg-primary-subtle text-primary-subtle-foreground absolute top-3 left-0 flex size-7 items-center justify-center rounded-full" aria-hidden="true"><OrbitIcon className="size-4" /></span></> : null}
-                <button type="button" onClick={() => { setMission(item); open({ missionId: item.id }); }} className={cn('group text-left w-full min-w-0 py-3', FOCUS, view === 'roadmap' ? 'border-border hover:border-primary/40 hover:bg-primary-subtle/30 rounded-xl border px-4 transition-colors' : 'hover:bg-muted rounded-lg px-2 transition-colors')}>
+            : <div className="pt-4">
+              {batch?.missions.length ? <ol className="divide-border divide-y" aria-label="Your open assigned missions">{batch.missions.map(item => <li key={item.id} className="relative min-w-0" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 106px' }}>
+                <button type="button" onClick={() => { setMission(item); open({ missionId: item.id }); }} className={cn('group text-left w-full min-w-0 py-3 hover:bg-muted rounded-lg px-2 transition-colors', FOCUS)}>
                   <span className="flex items-start justify-between gap-3"><span className="text-foreground min-w-0 break-words text-sm font-semibold">{item.title}</span><ArrowRightIcon className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" /></span>
                   <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><PriorityBadge priority={item.priority} /><span className={cn('text-xs', item.dueDate && item.dueDate < today ? 'text-destructive' : 'text-muted-foreground')}>{missionDueLabel(item.dueDate, today)}</span><Progress value={item.progress} /><span className="text-muted-foreground text-xs">{item.taskTag}</span></span>
                 </button>
@@ -167,6 +168,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
       </aside> : null}
     </div>
     {location ? <Button variant="ghost" size="sm" onClick={overview} className="mt-4"><ArrowLeftIcon aria-hidden="true" />All my missions</Button> : null}
+    </>}
   </section>;
 }
 

@@ -19,3 +19,4 @@ export type {
 } from '@/modules/workspace-views/internal/today';
 
 export { roadmapSearch, branchForRow, parseRoadmapLocation, roadmapZoom, type RoadmapLocation } from '@/modules/workspace-views/internal/roadmap';
+export { layoutMissionMap, mapCamera, type Camera, type MapEntity, type MapLevel, type MapNode, type MissionMapLayout } from '@/modules/workspace-views/internal/mission-map';
