@@ -1,3 +1,4 @@
+import { settle } from '@/shared/async/settle';
 import { kolkataDate } from '@/shared/time/kolkata';
 
 import { readTeamAwardModel } from '@/modules/scoring';
@@ -13,7 +14,9 @@ import type { TaskPriority, TaskStatus } from '@/types/tracker';
  * RPCs under the caller's own permissions. Each section loads independently: a
  * failed query yields an explicit "unavailable" section, never a zero.
  */
-export type Section<T> = { status: 'ready'; data: T } | { status: 'unavailable' };
+import type { Section } from '@/shared/async/settle';
+
+export type { Section };
 
 export interface FocusMission {
   id: string;
@@ -68,14 +71,6 @@ function addDays(date: string, days: number): string {
 export function weekStartOf(date: string): string {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
   return addDays(date, -((day + 6) % 7));
-}
-
-async function settle<T>(load: () => Promise<T>): Promise<Section<T>> {
-  try {
-    return { status: 'ready', data: await load() };
-  } catch {
-    return { status: 'unavailable' };
-  }
 }
 
 export async function getTodayData(userId: string, now = new Date(), includeFocus = true): Promise<TodayData> {

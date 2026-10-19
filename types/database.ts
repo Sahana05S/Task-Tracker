@@ -826,6 +826,7 @@ export interface Database {
       task_effort_breakdown: { Args: { p_task_id: string }; Returns: Json };
       current_organization: { Args: Record<never, never>; Returns: string | null };
       team_holiday_dates: { Args: { p_from: string; p_to: string }; Returns: string[] };
+      recognition_activity_days: { Args: { p_as_of?: string | null; p_employee?: string | null }; Returns: Json };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
       can_read_employee_details: { Args: { p_user_id: string | null }; Returns: boolean };

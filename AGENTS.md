@@ -23,6 +23,19 @@ change). The refactor is complete on `refactor/base` (not yet merged into
   gitignored (18 October 2026, user request). Read and update them locally; they
   are not in the repository. Test fixtures live in `__tests__/fixtures/`.
 
+## M16 recognition (gamification) - 19 October 2026
+
+The user asked for a gamification layer (streaks, per-metric monthly award
+ceremony, leaderboard, daily star highlight, monthly star worth most) and
+approved the plan with four decisions recorded in DECISIONS "M16 recognition".
+It adds no scoring rule: points are a separate currency and never feed a
+performance score; everything ranks on the shared engine and M08/M12 evidence.
+Sales stays locked (composite-based features show a locked state) until the
+BN/BO/BP mapping exists. The module is `modules/recognition/`
+(`docs/plans/M16-recognition.md`). Migrations 43-44 belong to the F3
+follow-up, so recognition uses 45 (streaks, done) and 46 (ceremony, pending).
+Disposable databases only; no production apply or deployment.
+
 ## M15 multi-company direction - 17 October 2026
 
 The user wants to sell TaskPulse to other companies. They approved one shared

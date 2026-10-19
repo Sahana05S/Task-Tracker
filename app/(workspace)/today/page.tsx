@@ -15,14 +15,18 @@ import {
 } from '@/modules/workspace-views/components/today/today-sections';
 import { requireProfile } from '@/shared/session/profile';
 import { getTodayData } from '@/modules/workspace-views';
+import { getStreak } from '@/modules/recognition';
+import { StreakCard } from '@/modules/recognition/components/streak-card';
+import { settle } from '@/shared/async/settle';
 
 export const metadata: Metadata = { title: 'Today · TaskPulse' };
 
 /**
  * Personal Today page (layout reference: Stitch today_dashboard_2). Every
  * figure comes from existing data under the caller's permissions; sections show
- * explicit empty or unavailable states. No new gamification rules: the star
- * content presents existing daily awards and validated contributions only.
+ * explicit empty or unavailable states. The star content presents existing
+ * daily awards and validated contributions; the streak tile is the approved
+ * active-day streak (M16), read independently so it never delays the rest.
  */
 export default async function TodayPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const profile = await requireProfile();
@@ -40,7 +44,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
 }
 
 async function TodayOverview({ profile }: { profile: { id: string; employeeId: string } }) {
-  const data = await getTodayData(profile.id, new Date(), false);
+  const [data, streak] = await Promise.all([getTodayData(profile.id, new Date(), false), settle(() => getStreak(profile.id))]);
   const date = new Date(`${data.today}T00:00:00Z`);
   const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(date);
 
@@ -52,6 +56,7 @@ async function TodayOverview({ profile }: { profile: { id: string; employeeId: s
             profileHref={`/team/${encodeURIComponent(profile.employeeId)}`} />
         </div>
         <div className="grid content-start gap-4 md:grid-cols-2 lg:col-span-4 lg:grid-cols-1 lg:gap-6">
+          <StreakCard streak={streak} />
           <WeekSummaryCard week={data.week} />
           <StarCalendar awards={data.awards} today={data.today} monthStart={data.monthStart} userId={profile.id} />
           <div className="md:col-span-2 lg:col-span-1">
