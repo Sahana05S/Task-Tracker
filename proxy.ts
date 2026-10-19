@@ -26,11 +26,11 @@ import { updateSession } from '@/shared/supabase/middleware';
  */
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
-  const { response, user } = await updateSession(request);
+  const { response, claims } = await updateSession(request);
 
   const { pathname, search } = request.nextUrl;
 
-  if (!user && isProtectedPath(pathname)) {
+  if (!claims && isProtectedPath(pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
     loginUrl.search = '';

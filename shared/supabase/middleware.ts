@@ -1,15 +1,15 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import type { User } from '@supabase/supabase-js';
+import type { JwtPayload } from '@supabase/supabase-js';
 
 import type { Database } from '@/types/database';
 
 /**
  * Result of a session refresh pass.
  *
- * `user` is returned alongside the response so that role guards added in
+ * `claims` is returned alongside the response so that role guards added in
  * Phase 2 can authorize the request without issuing a second `getUser()`
- * network call.
+ * Auth server call.
  */
 export interface SessionRefreshResult {
   /**
@@ -17,8 +17,8 @@ export interface SessionRefreshResult {
    * object, or copy its cookies onto any replacement response.
    */
   response: NextResponse;
-  /** The authenticated Supabase auth user, or `null` when signed out. */
-  user: User | null;
+  /** Verified token claims (`sub` is the auth user id), or `null` when signed out. */
+  claims: JwtPayload | null;
 }
 
 /**
@@ -71,12 +71,14 @@ export async function updateSession(
     },
   );
 
-  // Do not insert code between createServerClient and getUser(). Anything that
+  // Do not insert code between createServerClient and getClaims(). Anything that
   // touches cookies in between is a common cause of users being logged out at
-  // random. getUser() is what actually performs the refresh, so it must stay.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // random. getClaims() refreshes an expired session, then verifies the token
+  // signature locally against the project's published signing keys (cached),
+  // instead of an Auth server round trip on each of the ~20 prefetches per page.
+  // Projects on legacy symmetric keys fall back to the Auth server. The
+  // workspace layout (getUser) and RLS remain the authorization checks.
+  const { data } = await supabase.auth.getClaims();
 
-  return { response: supabaseResponse, user };
+  return { response: supabaseResponse, claims: data?.claims ?? null };
 }
