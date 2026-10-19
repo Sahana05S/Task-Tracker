@@ -8,7 +8,7 @@ save ordinary task logs tagged with the item).
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`. Also re-exports everything in `client.ts`. |
+| `index.ts` | Server reads: `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`, `getChecklistBranch`, `getFocusedChecklistItemTime`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, page-tree helpers (`childrenOf`, `ancestry`, `checklistHref`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours` |
 | `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, section, mode) |
 | `components/` | `checklist-rows.tsx` (checklist tables, row editors, page links), `RunningClock` |
@@ -40,3 +40,5 @@ All objects are company-scoped by migrations 39-40 (M15).
 `shared/*` only. The tasks module depends on this one, not the other way round.
 The checklist pages themselves stay in `app/(workspace)/tasks/[taskTag]/checklist`
 and use the tasks public API to load the mission.
+
+Recursive Sub-missions own separate `task_checklists.owner_node_id` checklists (41); ordinary Pages stay unchanged. `checklist_branch` returns a bounded branch with authoritative progress and ancestry. `checklist_item_seconds` (42) returns a selected item aggregate only; `focused-time.ts` combines it with at most two timer rows. These APIs preserve root mission time/scoring and inherit its owner/deadline.

@@ -120,7 +120,7 @@ export async function getTaskDetailData(
         .order('created_at', { ascending: false }),
     ),
     selectOneOrNull(
-      supabase.from('task_checklists').select('*').eq('task_id', task.id).maybeSingle(),
+      supabase.from('task_checklists').select('*').eq('task_id', task.id).is('owner_node_id', null).maybeSingle(),
     ),
     supabase.rpc('task_effort_summary', {p_task_id: task.id}),
   ]);
@@ -302,6 +302,7 @@ function mapTaskChecklist(row: TaskChecklistRow): TaskChecklist {
     id: row.id,
     taskId: row.task_id,
     templateId: row.template_id,
+    ownerNodeId: row.owner_node_id,
     title: row.title,
     syncProgressToTask: row.sync_progress_to_task,
     createdBy: row.created_by,

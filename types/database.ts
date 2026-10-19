@@ -438,6 +438,7 @@ export interface Database {
         {
           id: string;
           task_id: string;
+          owner_node_id: string | null;
           template_id: string | null;
           title: string;
           sync_progress_to_task: boolean;
@@ -448,6 +449,7 @@ export interface Database {
           template_id?: string | null;
           title: string;
           sync_progress_to_task?: boolean;
+          owner_node_id?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -463,6 +465,7 @@ export interface Database {
           title: string;
           description: string | null;
           is_complete: boolean;
+          priority?: number;
           detail_section?: 'setup'|'activity'|'closure'|null;
           completion_state?: 'Yes'|'No'|'N/A';
           sort_order: number;
@@ -800,6 +803,7 @@ export interface Database {
       attendance_input_context:{Args:{p_user:string;p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
       contribution_input_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
       checklist_command: {Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
+      checklist_item_seconds: { Args: { p_task: string; p_node: string }; Returns: number };
       checklist_branch: {Args:{p_task:string;p_checklist:string|null;p_parent:string|null;p_section:string;p_offset:number;p_limit:number};Returns:Json};
       checklist_rollups: {Args:{p_task_ids:string[]};Returns:Json};
       task_details_command: {Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
