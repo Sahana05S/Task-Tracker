@@ -2,4 +2,5 @@
 // Pages read through here; components render what the page hands them.
 
 export { getStreak } from '@/modules/recognition/internal/streaks';
+export { getDailyStarHighlight } from '@/modules/recognition/internal/daily-star';
 export * from '@/modules/recognition/client';

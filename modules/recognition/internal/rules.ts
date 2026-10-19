@@ -127,3 +127,58 @@ export function computeStreak(
 export function milestonesReached(previous: number, current: number, milestones: readonly number[] = DEFAULT_MILESTONES): number[] {
   return [...milestones].filter((m) => m > previous && m <= current).sort((a, b) => a - b);
 }
+
+// ---------------------------------------------------------------------------
+// Daily star spotlight: yesterday's M08 award day, as a highlight.
+// Selection is the scoring module's; this only reads its certified outcome.
+// ---------------------------------------------------------------------------
+
+export type DailyStarStatus = 'winner' | 'none' | 'blocked' | 'pending';
+
+export interface DailyStarHighlight {
+  /** The business date the highlight describes (yesterday in Asia/Kolkata). */
+  date: string;
+  /**
+   * `winner`: certified `completed_winner`. `none`: certified `completed_none`.
+   * `blocked`: a run exists but is not a certified outcome (blocked, failed,
+   * stale, missing or uncertified). `pending`: no award slot for the date yet.
+   */
+  status: DailyStarStatus;
+  winnerId?: string;
+  /** The viewer is the winner. */
+  isViewer: boolean;
+  /** The run's own reason codes (empty for a winner); never invented here. */
+  reasons: string[];
+  /** The approved policy cutoff, or null when no policy is approved. */
+  cutoff: { hour: number; minute: number } | null;
+  policyApproved: boolean;
+}
+
+/** The slice of `award_read_model` the highlight needs. */
+export interface DailyStarSource {
+  days: readonly { date: string; status: string; certified: boolean; winnerId: string | null; reasons?: readonly string[] | null }[];
+  policyApproved: boolean;
+  policy: { cutoffHour?: unknown; cutoffMinute?: unknown } | null;
+}
+
+/** Pure: the highlight for `date` from the award read model, as seen by `viewerId`. */
+export function dailyStarHighlight(source: DailyStarSource, date: string, viewerId: string): DailyStarHighlight {
+  const policy = source.policy;
+  const cutoff = policy && typeof policy.cutoffHour === 'number'
+    ? { hour: policy.cutoffHour, minute: typeof policy.cutoffMinute === 'number' ? policy.cutoffMinute : 0 }
+    : null;
+  const base = { date, cutoff, policyApproved: source.policyApproved === true };
+  const day = source.days.find((d) => d.date === date);
+  if (!day) return { ...base, status: 'pending', isViewer: false, reasons: [] };
+  const reasons = [...(day.reasons ?? [])];
+  if (day.certified && day.status === 'completed_winner' && day.winnerId) {
+    return { ...base, status: 'winner', winnerId: day.winnerId, isViewer: day.winnerId === viewerId, reasons };
+  }
+  if (day.certified && day.status === 'completed_none') {
+    return { ...base, status: 'none', isViewer: false, reasons };
+  }
+  // Anything else is a run that did not reach a certified outcome. A run
+  // without its own reasons is still named by its state, never shown as empty.
+  if (reasons.length === 0) reasons.push(day.certified ? `award_run_${day.status}` : 'award_run_uncertified');
+  return { ...base, status: 'blocked', isViewer: false, reasons };
+}

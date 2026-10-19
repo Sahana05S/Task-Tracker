@@ -3,8 +3,12 @@
 
 export {
   computeStreak,
+  dailyStarHighlight,
   DEFAULT_MILESTONES,
   milestonesReached,
+  type DailyStarHighlight,
+  type DailyStarSource,
+  type DailyStarStatus,
   type DayCode,
   type DayState,
   type StreakDay,

@@ -12,7 +12,6 @@ import {
 import type * as React from 'react';
 
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
-import { GAP_SENTENCE, dataGaps } from '@/modules/reports/client';
 import type { AwardSnapshot, FocusMission, Section, ValidatedContribution, WeekSummary } from '@/modules/workspace-views/internal/today';
 import { cn } from '@/shared/utils';
 
@@ -54,70 +53,6 @@ export function Unavailable({ what }: { what: string }) {
     <p role="status" className="border-attention-border bg-attention-subtle text-attention-foreground rounded-xl border px-4 py-3 text-sm">
       {what} couldn&apos;t be loaded right now. Refresh to try again.
     </p>
-  );
-}
-
-function cutoffLabel(cutoff: AwardSnapshot['cutoff']): string {
-  if (!cutoff) return 'the end of the day';
-  const h = cutoff.hour % 12 === 0 ? 12 : cutoff.hour % 12;
-  return `${h}:${String(cutoff.minute).padStart(2, '0')} ${cutoff.hour < 12 ? 'am' : 'pm'}`;
-}
-
-/** Daily star status: today's state plus yesterday's real outcome. */
-export function StarStatusCard({ awards, today, userId, names, profileHref }: {
-  awards: Section<AwardSnapshot>; today: string; userId: string; names: Record<string, string>; profileHref: string;
-}) {
-  let title = 'Recognition in progress';
-  let body = '';
-  let yesterdayLine: { text: string; earned: boolean } | null = null;
-  if (awards.status === 'unavailable') {
-    title = 'Daily star status unavailable';
-    body = "Award data couldn't be loaded right now. Refresh to try again.";
-  } else if (!awards.data.policyApproved) {
-    title = 'Daily stars are not active yet';
-    body = 'Daily star rules are awaiting approval, so no stars are awarded.';
-  } else {
-    body = `Today's daily star is decided after ${cutoffLabel(awards.data.cutoff)} (Asia/Kolkata).`;
-    const yesterday = new Date(`${today}T00:00:00Z`);
-    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-    const date = yesterday.toISOString().slice(0, 10);
-    const day = awards.data.days.find((d) => d.date === date);
-    if (!day) yesterdayLine = { text: "Yesterday's daily star hasn't been calculated yet.", earned: false };
-    else if (day.status === 'completed_winner' && day.certified && day.winnerId === userId) yesterdayLine = { text: "You earned yesterday's daily star.", earned: true };
-    else if (day.status === 'completed_winner' && day.certified && day.winnerId) yesterdayLine = { text: `Yesterday's daily star went to ${names[day.winnerId] ?? 'a team member'}.`, earned: false };
-    else if (day.status === 'completed_none' && day.certified) yesterdayLine = { text: 'No daily star was awarded yesterday.', earned: false };
-    else {
-      const gaps = dataGaps(day.reasons ?? []);
-      yesterdayLine = { text: `Yesterday's daily star is waiting for data.${gaps.length ? ' ' + gaps.map((g) => GAP_SENTENCE[g]).join(' ') : ''}`, earned: false };
-    }
-  }
-  return (
-    <section className="soft-card relative overflow-hidden p-5 sm:p-6" aria-label="Daily star status">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-135 from-[#dce5ff] via-[#eae4fc] to-[#fff3df] opacity-70" />
-      <div className="relative flex items-start gap-4">
-        <div className="min-w-0 flex-1">
-          <span className="bg-recognition-subtle text-recognition-foreground inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
-            <StarIcon className="text-recognition size-3.5 fill-current" aria-hidden="true" />
-            Daily star status
-          </span>
-          <h2 className="text-foreground mt-3 text-xl font-bold tracking-tight">{title}</h2>
-          <p className="text-muted-foreground mt-1 text-sm">{body}</p>
-          {yesterdayLine ? (
-            <p className={cn('mt-2 text-sm font-medium', yesterdayLine.earned ? 'text-recognition-foreground' : 'text-foreground')}>
-              {yesterdayLine.earned ? <StarIcon className="text-recognition mr-1 inline size-4 fill-current align-[-3px]" aria-hidden="true" /> : null}
-              {yesterdayLine.text}
-            </p>
-          ) : null}
-          <Link href={profileHref} className="text-primary mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2 text-sm font-semibold shadow-(--shadow-card) hover:bg-white/80">
-            View performance
-            <ArrowRightIcon className="size-3.5" aria-hidden="true" />
-          </Link>
-        </div>
-        <div aria-hidden="true" className="bg-recognition-subtle hidden size-20 shrink-0 items-center justify-center rounded-2xl sm:flex">
-          <StarIcon className="text-recognition size-10 fill-current" />
-        </div>
-      </div>
-    </section>
   );
 }
 
