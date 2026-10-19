@@ -50,7 +50,11 @@ interface TaskDetailPageProps {
   params: Promise<{
     taskTag: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
+
+const TABS = [['work', 'Work'], ['details', 'Details'], ['history', 'History']] as const;
+type Tab = (typeof TABS)[number][0];
 
 export async function generateMetadata({
   params,
@@ -70,8 +74,9 @@ export async function generateMetadata({
  *
  * This page only loads data and arranges the panels; each panel lives in
  * modules/tasks/components/detail (timer panels in ./timer-panels).
+ * Work / Details / History tabs keep daily actions first; each tab loads only its own data.
  */
-export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
+export default async function TaskDetailPage({ params, searchParams }: TaskDetailPageProps) {
   const currentUser = await requireProfile();
 
   const { taskTag } = await params;
@@ -86,13 +91,16 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
   const archived = !!task.archivedEffectiveDate;
   const successor = data.dependencies.find((d) => d.otherTask?.id === task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role) && !archived;
+  const requested = (await searchParams).tab;
+  const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
+  const details = tab === 'details';
   const [execution, native, templates, workspace, reports, effortBreakdown] = await Promise.all([
-    getTaskExecution(task.id),
-    getNativeDetailState(task.id),
-    getNativeTemplates(),
-    canManage ? getTaskWorkspaceData() : Promise.resolve({ tasks: [], members: [] }),
-    canManage ? getVisibleReportChoices() : Promise.resolve([]),
-    getTaskEffortBreakdown(task.id),
+    tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
+    details ? getNativeDetailState(task.id) : Promise.resolve(null),
+    details ? getNativeTemplates() : Promise.resolve([]),
+    details && canManage ? getTaskWorkspaceData() : Promise.resolve({ tasks: [], members: [] }),
+    details && canManage ? getVisibleReportChoices() : Promise.resolve([]),
+    details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
   ]);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
@@ -177,43 +185,76 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
         </section>
       ) : null}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <main className="grid min-w-0 content-start gap-6">
-          <MissionOverview data={data} assigneeNames={assigneeNames} reviewerNames={reviewerNames} overdue={overdue} />
+      <nav aria-label="Mission sections" className="border-border mt-6 flex gap-1 border-b">
+        {TABS.map(([key, label]) => (
+          <Link
+            key={key}
+            href={key === 'work' ? '?' : `?tab=${key}`}
+            aria-current={tab === key ? 'page' : undefined}
+            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${tab === key ? 'border-primary text-primary' : 'text-muted-foreground hover:text-foreground border-transparent'}`}
+          >
+            {label}{key === 'history' ? <span className="text-muted-foreground ml-1.5 text-xs font-medium">{data.effort.logCount}</span> : null}
+          </Link>
+        ))}
+      </nav>
 
-          <ChecklistHero
-            href={checklistHref}
-            title={data.checklist?.title ?? null}
-            itemCount={data.checklistNodes.length}
-            rollup={data.checklistRollup}
-          />
-
-          {canManage ? <TaskLifecyclePanel task={task} /> : null}
-
-          <MissionBrief
-            task={task}
-            sections={data.sections}
-            native={native}
-            templates={templates}
-            canManage={canManage}
-            tasks={workspace.tasks}
-            members={data.members}
-            reports={reports}
-          />
-
-          <WorkFilesPanel
-            task={task}
-            links={data.links}
-            sections={data.sections}
-            checklistHref={checklistHref}
-            canCreateWorkFile={!archived && !closed && canUpdateTaskOwnFields(currentUser, task)}
-            providerState={native.instance?.providerState ?? 'not_requested'}
-          />
-
-          <MissionPanel icon={GitBranchIcon} title="Dependency missions">
-            <DependencyList dependencies={data.dependencies} taskId={task.id} />
-          </MissionPanel>
-
+      {tab === 'work' ? (
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <main className="grid min-w-0 content-start gap-6">
+            <ChecklistHero
+              href={checklistHref}
+              title={data.checklist?.title ?? null}
+              itemCount={data.checklistNodes.length}
+              rollup={data.checklistRollup}
+            />
+            <MissionOverview data={data} assigneeNames={assigneeNames} reviewerNames={reviewerNames} overdue={overdue} />
+            {canManage ? <TaskLifecyclePanel task={task} /> : null}
+          </main>
+          <aside className="grid h-fit min-w-0 gap-6">
+            <MissionPanel icon={TimerIcon} title="Timer">
+              <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
+            </MissionPanel>
+            <MissionPanel icon={ListChecksIcon} title="Checklist phases" action={
+              <Link href={checklistHref} className="text-primary text-xs font-semibold hover:underline">Open</Link>
+            }>
+              <PhaseProgress rollup={data.checklistRollup} />
+            </MissionPanel>
+            <MissionPanel icon={PencilIcon} title="Manual time entry">
+              <ManualTimeForm taskTag={task.taskTag} canUseTimer={canUseTimer} />
+            </MissionPanel>
+          </aside>
+        </div>
+      ) : details && native ? (
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <main className="grid min-w-0 content-start gap-6">
+            <MissionBrief
+              task={task}
+              sections={data.sections}
+              native={native}
+              templates={templates}
+              canManage={canManage}
+              tasks={workspace.tasks}
+              members={data.members}
+              reports={reports}
+            />
+            <WorkFilesPanel
+              task={task}
+              links={data.links}
+              sections={data.sections}
+              checklistHref={checklistHref}
+              canCreateWorkFile={!archived && !closed && canUpdateTaskOwnFields(currentUser, task)}
+              providerState={native.instance?.providerState ?? 'not_requested'}
+            />
+            <MissionPanel icon={GitBranchIcon} title="Dependency missions">
+              <DependencyList dependencies={data.dependencies} taskId={task.id} />
+            </MissionPanel>
+          </main>
+          <aside className="grid h-fit min-w-0 gap-6">
+            <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
+          </aside>
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <MissionPanel
             icon={HistoryIcon}
             title="Activity & updates"
@@ -221,26 +262,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
           >
             <TaskLogTimeline logs={execution.logs} memberNames={memberNames} />
           </MissionPanel>
-        </main>
-
-        <aside className="grid h-fit min-w-0 gap-6">
-          <MissionPanel icon={TimerIcon} title="Timer">
-            <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
-          </MissionPanel>
-
-          <MissionPanel icon={ListChecksIcon} title="Checklist phases" action={
-            <Link href={checklistHref} className="text-primary text-xs font-semibold hover:underline">Open</Link>
-          }>
-            <PhaseProgress rollup={data.checklistRollup} />
-          </MissionPanel>
-
-          <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
-
-          <MissionPanel icon={PencilIcon} title="Manual time entry">
-            <ManualTimeForm taskTag={task.taskTag} canUseTimer={canUseTimer} />
-          </MissionPanel>
-
-          <MissionPanel icon={HistoryIcon} title={canManage ? 'Timer records' : 'My timer records'}>
+          <MissionPanel icon={HistoryIcon} title={canManage ? 'Timer records' : 'My timer records'} className="h-fit">
             <TimerRecords
               timers={visibleTimers}
               memberNames={memberNames}
@@ -249,8 +271,8 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
               currentUserId={currentUser.id}
             />
           </MissionPanel>
-        </aside>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
