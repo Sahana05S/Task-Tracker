@@ -35,3 +35,5 @@ scoring and team; nothing here queries the database directly.
 ## Depends on
 `shared/*` and the public APIs of `auth`, `tasks`, `time-tracking`,
 `milestones`, `scoring`, `support`, `reports` and `team` as each screen needs.
+
+Today now puts `MissionRoadmap` first and streams the weekly/award panels below it. `roadmap-actions.ts` authenticates and checks active own assignment before loading bounded branches/item time. `loadRoadmapMissions` uses keyset batches, due filters and dual primary/participant sources; `loadRoadmapBranch`/`loadRoadmapItemTime` reuse checklist public reads. Roadmap/list, recursive expand, branch focus, zoom, section tabs and URL restoration share one model. Missing backend migrations surface unavailable states.

@@ -17,3 +17,5 @@ export type {
   ValidatedContribution,
   WeekSummary,
 } from '@/modules/workspace-views/internal/today';
+
+export { roadmapSearch, branchForRow, parseRoadmapLocation, roadmapZoom, type RoadmapLocation } from '@/modules/workspace-views/internal/roadmap';

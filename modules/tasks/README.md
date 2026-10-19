@@ -60,3 +60,5 @@ scoring; `countOpenTasks` feeds the navigation badge.
 Tasks does not import time-tracking (time-tracking depends on tasks). The task
 cards take a `LogHoursAction` slot that the `/tasks` page fills, and the mission
 page loads logs and timers from time-tracking itself.
+
+Roadmap public reads: `getAssignedMissionBatch`, `getAssignedRoadmapMission`, `countAssignedMissionsCompletedBetween` (internal/roadmap.ts). Client contract/filter/order helpers live in roadmap-contract.ts and are exported through client.ts. Batches keyset by due date/UUID to agree with PostgreSQL ordering, preserve legacy primary and participant assignments, and fetch no whole-company task list.
