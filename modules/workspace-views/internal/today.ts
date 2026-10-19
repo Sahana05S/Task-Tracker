@@ -1,9 +1,9 @@
 import { kolkataDate } from '@/shared/time/kolkata';
-import { PRIORITY_SORT_ORDER } from '@/shared/tracker/enums';
+
 import { readTeamAwardModel } from '@/modules/scoring';
 import type { AwardReadModel } from '@/modules/scoring/client';
 import { getMemberContributionStates, getRecentValidatedContributions } from '@/modules/support';
-import { countTasksCompletedBetween, getMemberTaskIds, getOpenTasksByIds } from '@/modules/tasks';
+import { countAssignedMissionsCompletedBetween, getAssignedMissionBatch } from '@/modules/tasks';
 import { getMemberNames } from '@/modules/team';
 import { getMemberLogDates } from '@/modules/time-tracking';
 import type { TaskPriority, TaskStatus } from '@/types/tracker';
@@ -78,7 +78,7 @@ async function settle<T>(load: () => Promise<T>): Promise<Section<T>> {
   }
 }
 
-export async function getTodayData(userId: string, now = new Date()): Promise<TodayData> {
+export async function getTodayData(userId: string, now = new Date(), includeFocus = true): Promise<TodayData> {
   const today = kolkataDate(now);
   const weekStart = weekStartOf(today);
   const monthStart = `${today.slice(0, 8)}01`;
@@ -86,25 +86,21 @@ export async function getTodayData(userId: string, now = new Date()): Promise<To
   nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
   const monthEndExclusive = nextMonth.toISOString().slice(0, 10);
 
-  const idsPromise = getMemberTaskIds(userId);
+  const namesPromise = getMemberNames();
 
-  const names = await getMemberNames();
+
 
   const [focus, week, awards, validated] = await Promise.all([
     settle(async () => {
-      const ids = await idsPromise;
-      if (ids.length === 0) return { missions: [], openCount: 0 };
-      const missions: FocusMission[] = (await getOpenTasksByIds(ids))
-        .sort((a, b) => (a.dueDate ?? '9999-12-31').localeCompare(b.dueDate ?? '9999-12-31')
-          || PRIORITY_SORT_ORDER[b.priority] - PRIORITY_SORT_ORDER[a.priority]
-          || a.taskTag.localeCompare(b.taskTag));
-      return { missions: missions.slice(0, 3), openCount: missions.length };
+      if (!includeFocus) throw new Error('Focus is streamed separately by the roadmap');
+      const batch = await getAssignedMissionBatch(userId, {}, now);
+      return { missions: batch.missions, openCount: batch.missions.length };
     }),
     settle(async () => {
-      const ids = await idsPromise;
+
       const [logDates, completed, contributions, awardDays] = await Promise.all([
         getMemberLogDates(userId, weekStart, today),
-        countTasksCompletedBetween(ids, weekStart, today),
+        countAssignedMissionsCompletedBetween(userId, weekStart, today),
         getMemberContributionStates(userId, weekStart, today),
         readTeamAwardModel(weekStart, addDays(today, 1)),
       ]);
@@ -132,12 +128,13 @@ export async function getTodayData(userId: string, now = new Date()): Promise<To
       };
     }),
     settle(async () => {
-      const entries: ValidatedContribution[] = (await getRecentValidatedContributions())
+      const [recent, names] = await Promise.all([getRecentValidatedContributions(), namesPromise]);
+      const entries: ValidatedContribution[] = recent
         .filter((r) => r.at).map((r) => ({ id: r.id, kind: r.kind, authorName: r.author ? names[r.author] ?? 'Team member' : 'Attribution needs review',
           content: r.content, validatedAt: r.at! }));
       return entries.sort((a, b) => b.validatedAt.localeCompare(a.validatedAt)).slice(0, 3);
     }),
   ]);
 
-  return { today, weekStart, monthStart, focus, week, awards, validated, names };
+  return { today, weekStart, monthStart, focus, week, awards, validated, names: await namesPromise };
 }

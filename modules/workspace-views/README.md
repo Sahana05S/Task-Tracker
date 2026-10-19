@@ -37,3 +37,5 @@ scoring and team; nothing here queries the database directly.
 `milestones`, `scoring`, `support`, `reports` and `team` as each screen needs.
 
 The shell renders a compact `BeaverCompanion` with request-provided timer context. Its Hide/Show preference is local to the browser; it never blocks work. Raster poses live in public/mascot and pure presentation in shared/ui/taskpulse-beaver. No new database ownership or formula.
+
+Today now puts `MissionRoadmap` first and streams the weekly/award panels below it. `roadmap-actions.ts` authenticates and checks active own assignment before loading bounded branches/item time. `loadRoadmapMissions` uses keyset batches, due filters and dual primary/participant sources; `loadRoadmapBranch`/`loadRoadmapItemTime` reuse checklist public reads. Roadmap/list, recursive expand, branch focus, zoom, section tabs and URL restoration share one model. Missing backend migrations surface unavailable states.

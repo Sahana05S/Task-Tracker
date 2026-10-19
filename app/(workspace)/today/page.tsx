@@ -1,8 +1,13 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { MissionRoadmap } from '@/modules/workspace-views/components/today/mission-roadmap';
+import { getAssignedMissionBatch } from '@/modules/tasks';
+import { missionDueFilter } from '@/modules/tasks/client';
+import { kolkataDate } from '@/shared/time/kolkata';
+import { parseRoadmapLocation, roadmapZoom } from '@/modules/workspace-views/client';
 
 import {
   AnalyticsTeaser,
-  FocusMissions,
   RecognisedContributions,
   StarCalendar,
   StarStatusCard,
@@ -19,24 +24,32 @@ export const metadata: Metadata = { title: 'Today · TaskPulse' };
  * explicit empty or unavailable states. No new gamification rules: the star
  * content presents existing daily awards and validated contributions only.
  */
-export default async function TodayPage() {
+export default async function TodayPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const profile = await requireProfile();
-  const data = await getTodayData(profile.id);
+  const query = await searchParams;
+  const due = missionDueFilter(query.due);
+  const today = kolkataDate();
+  const initial = await getAssignedMissionBatch(profile.id, { due }).catch(() => null);
+  return <div className="mx-auto w-full max-w-[1200px] px-4 pt-6 pb-10 lg:px-6">
+    <header className="mb-6"><h1 className="text-foreground text-3xl font-bold tracking-tight">Today</h1><p className="text-muted-foreground mt-1 text-sm">A clear path through your work.</p></header>
+    <MissionRoadmap key={due} initial={initial} due={due} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialZoom={roadmapZoom(query.zoom)} />
+    <Suspense fallback={<p role="status" className="text-muted-foreground mt-10 text-sm">Loading your week and team updates…</p>}>
+      <TodayOverview profile={profile} />
+    </Suspense>
+  </div>;
+}
+
+async function TodayOverview({ profile }: { profile: { id: string; employeeId: string } }) {
+  const data = await getTodayData(profile.id, new Date(), false);
   const date = new Date(`${data.today}T00:00:00Z`);
-  const dateLabel = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(date);
   const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(date);
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] px-4 pt-6 pb-10 lg:px-6">
-      <header className="mb-5">
-        <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight lg:text-[2rem]">Today</h1>
-        <p className="text-muted-foreground mt-1 text-sm">{dateLabel} · Make room for meaningful progress.</p>
-      </header>
+    <div className="mt-10 border-t border-border pt-8">
       <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
         <div className="grid content-start gap-4 lg:col-span-8 lg:gap-6">
           <StarStatusCard awards={data.awards} today={data.today} userId={profile.id} names={data.names}
             profileHref={`/team/${encodeURIComponent(profile.employeeId)}`} />
-          <FocusMissions focus={data.focus} today={data.today} />
         </div>
         <div className="grid content-start gap-4 md:grid-cols-2 lg:col-span-4 lg:grid-cols-1 lg:gap-6">
           <WeekSummaryCard week={data.week} />

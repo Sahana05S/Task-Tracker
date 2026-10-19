@@ -120,7 +120,7 @@ export async function getTaskDetailData(
         .order('created_at', { ascending: false }),
     ),
     selectOneOrNull(
-      supabase.from('task_checklists').select('*').eq('task_id', task.id).maybeSingle(),
+      readRootChecklist(supabase, task.id),
     ),
     supabase.rpc('task_effort_summary', {p_task_id: task.id}),
   ]);
@@ -302,6 +302,7 @@ function mapTaskChecklist(row: TaskChecklistRow): TaskChecklist {
     id: row.id,
     taskId: row.task_id,
     templateId: row.template_id,
+    ownerNodeId: row.owner_node_id ?? null,
     title: row.title,
     syncProgressToTask: row.sync_progress_to_task,
     createdBy: row.created_by,
@@ -331,4 +332,11 @@ function mapChecklistNode(row: ChecklistNodeRow): ChecklistNode {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/** Existing test/deployment databases may still precede the Sub-mission migration. */
+async function readRootChecklist(db: Awaited<ReturnType<typeof createClient>>, taskId: string) {
+  const result = await db.from('task_checklists').select('*').eq('task_id', taskId).is('owner_node_id', null).maybeSingle();
+  if (result.error?.code === '42703') return db.from('task_checklists').select('*').eq('task_id', taskId).maybeSingle();
+  return result;
 }

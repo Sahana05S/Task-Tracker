@@ -27,3 +27,5 @@ export {
   getOpenTasksByIds,
   type MemberOpenTask,
 } from '@/modules/tasks/internal/member-tasks';
+
+export { getAssignedMissionBatch, getAssignedRoadmapMission, countAssignedMissionsCompletedBetween } from '@/modules/tasks/internal/roadmap';

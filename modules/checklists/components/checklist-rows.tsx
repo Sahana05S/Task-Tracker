@@ -74,7 +74,7 @@ export function loggedTime(ctx: ChecklistContext, nodeId: string): string | null
  * Start / stop / discard a timer on one checklist item. Stopping writes an
  * ordinary task log tagged with the item, so the time counts as task hours.
  */
-export function ItemTimerControls({ ctx, node, compact }: { ctx: ChecklistContext; node: ChecklistNode; compact?: boolean }) {
+export function ItemTimerControls({ ctx, node, compact }: { ctx: Pick<ChecklistContext, 'time' | 'task' | 'open'>; node: ChecklistNode; compact?: boolean }) {
   const time = ctx.time;
   if (!time?.info.available) return null;
   const mine = time.info.mine;
@@ -131,10 +131,11 @@ export const percentage = (p: number | null | undefined) =>
 export { ancestry, checklistHref, childrenOf, formatMinutes, isContainer } from '@/modules/checklists/internal/pages';
 
 /** Hidden identity fields every checklist command needs. */
-export function CommandFields({ ctx, command }: { ctx: ChecklistContext; command: string }) {
+export function CommandFields({ ctx, command }: { ctx: Pick<ChecklistContext, 'task'> & { checklistId?: string }; command: string }) {
   return (
     <>
       <input type="hidden" name="command" value={command} />
+      {ctx.checklistId ? <input type="hidden" name="checklist_id" value={ctx.checklistId} /> : null}
       <input type="hidden" name="taskId" value={ctx.task.id} />
       <input type="hidden" name="expectedVersion" value={ctx.task.lifecycleVersion ?? 0} />
     </>
@@ -336,7 +337,7 @@ export function EditNodeForms({ ctx, node }: { ctx: ChecklistContext; node: Chec
 }
 
 /** Yes / No / N/A for a leaf; linked real tasks only toggle applicability. */
-export function CompletionForm({ ctx, node, className }: { ctx: ChecklistContext; node: ChecklistNode; className?: string }) {
+export function CompletionForm({ ctx, node, className }: { ctx: Pick<ChecklistContext, 'task' | 'action'> & { checklistId?: string }; node: ChecklistNode; className?: string }) {
   return (
     <ExecutionForm action={ctx.action} scope={`state:${node.id}`} className={className}>
       <CommandFields ctx={ctx} command="state" />
