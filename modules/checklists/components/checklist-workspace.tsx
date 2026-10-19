@@ -117,13 +117,13 @@ function RowManage({ ctx, row }: { ctx: { task: Pick<Task, 'id' | 'taskTag' | 'l
         <input type="hidden" name="node_id" value={row.id} />
         <Button type="submit" variant="outline" size="sm" className="justify-self-start">Duplicate{row.childCount ? ' with its items' : ''}</Button>
       </ExecutionForm> : null}
-      {row.isSubMission ? <p className="text-muted-foreground text-xs">Sub-missions cannot be removed yet; mark their items N/A instead.</p>
-        : row.childCount === 0 ? <ExecutionForm action={ctx.action} scope={`delete:${row.id}`}>
+      {/* childCount covers a Sub-mission's top-level Activity rows only; the database refuses one with Setup/Closure rows. */}
+      {row.childCount === 0 ? <ExecutionForm action={ctx.action} scope={`delete:${row.id}`}>
         <CommandFields ctx={{ ...ctx, checklistId: row.checklistId }} command="delete" />
         <input type="hidden" name="node_id" value={row.id} />
         <ReasonInput placeholder="Reason for removal" />
-        <Button type="submit" variant="ghost" size="sm" className="justify-self-start text-rose-700 hover:text-rose-800">Remove item</Button>
-      </ExecutionForm> : <p className="text-muted-foreground text-xs">Remove the items inside before removing this row.</p>}
+        <Button type="submit" variant="ghost" size="sm" className="justify-self-start text-rose-700 hover:text-rose-800">{row.isSubMission ? 'Remove Sub-mission' : 'Remove item'}</Button>
+      </ExecutionForm> : <p className="text-muted-foreground text-xs">Remove the items inside before removing this {row.isSubMission ? 'Sub-mission' : 'row'}.</p>}
     </div>
   </details>;
 }
