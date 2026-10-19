@@ -47,8 +47,8 @@ export function parseChecklistCommand(form: FormData): Parsed<ChecklistCommandIn
   // Optional row details (migration 33): sent only when the form has the field, so
   // an edit without them keeps the stored links and estimate.
   if (form.has('checklist_id')) payload.checklist_id = fieldValue('checklist_id', read(form, 'checklist_id'));
-  const editsRow = command === 'add' || command === 'edit' || command === 'submission';
-  if (editsRow && form.has('priority')) {
+  const editsRow = command === 'add' || command === 'edit';
+  if ((editsRow || command === 'submission') && form.has('priority')) {
     const priority = read(form, 'priority');
     if (!/^[0-3]$/.test(priority)) return { ok: false, error: 'Choose a priority from 0 to 3.' };
     payload.priority = Number(priority);

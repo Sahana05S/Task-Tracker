@@ -128,6 +128,9 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
       </nav>
 
       {/* Hero */}
+      <Button asChild variant="outline" className="mt-4 justify-self-start">
+        <Link href={`/tasks/${encodeURIComponent(d.task.taskTag)}/checklist/work`}>Open Sub-missions and checklist workspace</Link>
+      </Button>
       <section
         aria-label="Master checklist summary"
         className="border-primary/15 mt-5 overflow-hidden rounded-2xl border bg-linear-135 from-[#ece9ff] via-[#f3f0ff] to-[#fff4e2] p-5 sm:p-6"

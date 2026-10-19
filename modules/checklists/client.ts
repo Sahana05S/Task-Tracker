@@ -17,3 +17,4 @@ export { groupItemHours, type ItemHourLog, type ItemHourRow, type ItemHourTask }
 export type { ChecklistItemTime, RunningItemTimer, TaskEffortBreakdown } from '@/modules/checklists/internal/item-time';
 
 export type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow, ChecklistAncestor } from './internal/branch-types';
+export { checklistWorkHref, parseChecklistLocation, openChecklistRow } from './internal/location';

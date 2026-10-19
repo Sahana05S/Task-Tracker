@@ -345,7 +345,8 @@ export function CompletionForm({ ctx, node, className }: { ctx: Pick<ChecklistCo
       <div className="flex min-w-0 flex-wrap items-end gap-2">
         <label className="grid min-w-0 flex-1 gap-1 text-xs sm:flex-none">
           <span className="text-muted-foreground font-medium">Completion</span>
-          <select name="state" defaultValue={node.completionState ?? 'No'} className={cn(FIELD, 'h-9 sm:w-28')}>
+          {/* Keyed on the saved state so the post-save form reset shows the new value. */}
+          <select key={node.completionState ?? 'No'} name="state" defaultValue={node.completionState ?? 'No'} className={cn(FIELD, 'h-9 sm:w-28')}>
             {(node.linkedTaskId ? ['No', 'N/A'] : ['Yes', 'No', 'N/A']).map(s => <option key={s}>{s}</option>)}
           </select>
         </label>
