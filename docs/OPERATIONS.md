@@ -64,8 +64,32 @@ positive regular attendance that day plus valid daily/month-to-date evidence.
 Exact top ties record no winner. A director may override a complete run only
 to another eligible candidate, with a reason; a later recalculation needs
 reaffirmation. Failed or blocked worker runs need investigation and replay in
-an approved environment. Production award scheduling is not enabled by this
-guide.
+an approved environment.
+
+### Nightly award run
+
+`.github/workflows/award-worker.yml` calls `POST /api/internal/awards` every
+night at 00:15 Asia/Kolkata (and on demand from the Actions tab). Each call
+queues due award days of the current month through yesterday and runs up to 10
+jobs; the workflow repeats until a batch is empty, writes a status table to the
+run summary, and fails (GitHub emails the owner) on an HTTP error or any
+`failed` job. `blocked` days mean required inputs are missing (for example no
+attendance); the app shows them as waiting for data, so they do not fail the run.
+
+Switching it on takes four settings, each done by the owner:
+
+1. GitHub repository secrets: `APP_URL` (the deployed origin) and
+   `TASKPULSE_AWARD_WORKER_TOKEN` (a long random value).
+2. Vercel environment variables: `TASKPULSE_AWARD_WORKER_ENABLED=production`,
+   the same `TASKPULSE_AWARD_WORKER_TOKEN`, and `SUPABASE_SERVICE_ROLE_KEY`;
+   redeploy afterwards.
+3. The database schedule switch, once per project (owner SQL, no app command):
+   `UPDATE taskpulse_private.award_policy SET schedule_enabled = true;`
+   Until then the run reports "The database award schedule is off".
+4. Run the workflow once by hand and read its summary.
+
+`TASKPULSE_AWARD_WORKER_ENABLED=sandbox` remains for test environments; any
+other value keeps the endpoint off.
 
 ## Reports and closed months
 
