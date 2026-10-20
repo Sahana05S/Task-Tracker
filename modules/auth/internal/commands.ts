@@ -25,11 +25,9 @@ export type SignupOutcome =
   | { ok: true; hasSession: boolean };
 
 /**
- * Registers a new account.
- *
- * `full_name` and `employee_id` travel as auth metadata; the
- * `handle_new_user` trigger from `02_auth_provisioning.sql` reads them to
- * create the matching `public.users` row.
+ * Creates the auth account for an invited email. The `handle_new_user`
+ * trigger (migration 49) applies the matching invitation; an address without
+ * one gets an inactive profile with no company.
  */
 export async function signUpAccount(input: SignupInput): Promise<SignupOutcome> {
   const siteUrl = await readSiteUrl();
@@ -40,10 +38,6 @@ export async function signUpAccount(input: SignupInput): Promise<SignupOutcome> 
     password: input.password,
     options: {
       emailRedirectTo: siteUrl ? `${siteUrl}/auth/callback` : undefined,
-      data: {
-        full_name: input.fullName,
-        employee_id: input.employeeId,
-      },
     },
   });
 

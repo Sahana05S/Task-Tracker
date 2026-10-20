@@ -39,10 +39,12 @@ which opens the recovery session and sends the person back to
 | `types.ts` | `AuthActionState`, `AuthMode`, `Parsed`, `failure()`, `RESET_REQUEST_MESSAGE` |
 
 ## Database it owns
-None directly. It uses Supabase Auth; the `handle_new_user` trigger
-(`02_auth_provisioning.sql`) creates the `public.users` row from the
-`full_name` / `employee_id` signup metadata. New accounts get the database
-default role `team_member`; the form never sends a role.
+None directly. It uses Supabase Auth. Sign-up is invite-only (migration 49):
+the "Accept invitation" form sends just email and password, and the
+`handle_new_user` trigger applies the director's invitation (company, role,
+name, employee ID). An address without an invitation gets an inactive profile
+with no company; if it is invited later, its next sign-in attaches it.
+Invitations and member changes belong to the team module.
 
 ## Depends on
 `shared/supabase`, `shared/session` (`getAuthState`), `shared/forms`,

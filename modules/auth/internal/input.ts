@@ -13,8 +13,6 @@ export interface LoginInput {
 }
 
 export interface SignupInput {
-  fullName: string;
-  employeeId: string;
   email: string;
   password: string;
 }
@@ -31,29 +29,20 @@ export function parseLoginInput(formData: FormData): Parsed<LoginInput> {
 }
 
 /**
- * Role is intentionally not read from the form. Every signup lands on the
- * database default of `team_member`, and elevation is a deliberate act by a
- * managing director. Trusting a client-supplied role here would be a privilege
- * escalation hole.
+ * Accepting an invitation needs only the invited email and a password. Name,
+ * employee ID, role and company come from the director's invitation in the
+ * database (migration 49); nothing the visitor types can grant access.
  */
 export function parseSignupInput(formData: FormData): Parsed<SignupInput> {
-  const fullName = readString(formData, 'fullName');
-  const employeeId = readString(formData, 'employeeId');
   const email = readString(formData, 'email');
   const password = readString(formData, 'password');
 
-  if (!fullName) {
-    return { ok: false, error: 'Enter your full name.' };
-  }
-  if (!employeeId) {
-    return { ok: false, error: 'Enter your employee ID.' };
-  }
   if (!isPlausibleEmail(email)) {
     return { ok: false, error: 'Enter a valid email address.' };
   }
   const passwordError = passwordProblem(password);
   if (passwordError) return { ok: false, error: passwordError };
-  return { ok: true, value: { fullName, employeeId, email, password } };
+  return { ok: true, value: { email, password } };
 }
 
 export function parseResetRequestInput(formData: FormData): Parsed<{ email: string }> {

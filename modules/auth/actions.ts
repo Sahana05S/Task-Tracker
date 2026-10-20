@@ -47,7 +47,7 @@ export async function login(
   redirect(input.value.redirectTo);
 }
 
-/** Registers a new account as a `team_member`. */
+/** Creates the account for an invited email (invite-only, migration 49). */
 export async function signup(
   _prevState: AuthActionState | null,
   formData: FormData,
@@ -66,7 +66,7 @@ export async function signup(
       success: true,
       data: {
         message:
-          'Verification email sent! Check your inbox and click the confirmation link to activate your account.',
+          'Check your inbox and click the confirmation link, then sign in. Only invited addresses get access.',
       },
     };
   }

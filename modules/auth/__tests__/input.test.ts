@@ -25,15 +25,15 @@ describe('parseLoginInput', () => {
 });
 
 describe('parseSignupInput', () => {
-  const valid = { fullName: 'Ada', employeeId: 'EMP-1', email: 'a@b.co', password: '12345678' };
+  const valid = { email: 'a@b.co', password: '12345678' };
 
-  it('accepts a complete form and ignores a role field', () => {
-    expect(parseSignupInput(form({ ...valid, role: 'managing_director' }))).toEqual({ ok: true, value: valid });
+  it('reads only the invited email and password; name, ID and role come from the invitation', () => {
+    expect(
+      parseSignupInput(form({ ...valid, role: 'managing_director', fullName: 'Ada', employeeId: 'EMP-1' })),
+    ).toEqual({ ok: true, value: valid });
   });
 
   it('reports the first problem in field order', () => {
-    expect(parseSignupInput(form({ ...valid, fullName: '' }))).toEqual({ ok: false, error: 'Enter your full name.' });
-    expect(parseSignupInput(form({ ...valid, employeeId: '' }))).toEqual({ ok: false, error: 'Enter your employee ID.' });
     expect(parseSignupInput(form({ ...valid, email: 'nope' }))).toEqual({ ok: false, error: 'Enter a valid email address.' });
     expect(parseSignupInput(form({ ...valid, password: '1234567' }))).toEqual({
       ok: false,

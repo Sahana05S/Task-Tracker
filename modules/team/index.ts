@@ -1,6 +1,7 @@
 // PUBLIC server-side API of the team module (team index, employee profiles and
 // reports). Server code imports from here; 'use client' code imports
-// '@/modules/team/client'. Settings commands are in '@/modules/team/profile-actions'.
+// '@/modules/team/client'. Settings commands are in '@/modules/team/profile-actions'; the director's
+// People commands are in '@/modules/team/people-actions'.
 
 export * from '@/modules/team/client';
 
@@ -16,3 +17,8 @@ export {
   type TeamIndexMember,
 } from '@/modules/team/internal/queries';
 export { getMemberNames } from '@/modules/team/internal/member-names';
+export {
+  readPeopleAdminData as getPeopleAdminData,
+  type Invitation,
+  type PeopleAdminData,
+} from '@/modules/team/internal/people';
