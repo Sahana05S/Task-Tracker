@@ -193,7 +193,8 @@ class HostedBackend(Backend):
         if result.returncode:
             raise RuntimeError(f"Supabase CLI {arguments[0]} {arguments[1] if len(arguments) > 1 else ''} failed "
                                f"(exit {result.returncode}): {redact(result.stderr.strip())[-1500:]}")
-        output = result.stdout
+        # In an interactive console the CLI may colour its output; strip terminal escapes first.
+        output = re.sub(r"\[[0-9;?]*[A-Za-z]", "", result.stdout)
         first = min((p for p in (output.find("{"), output.find("[")) if p >= 0), default=-1)
         if first < 0:
             raise RuntimeError(f"Supabase CLI returned no JSON for {arguments[0]}")
@@ -201,8 +202,9 @@ class HostedBackend(Backend):
 
     def query(self, name, sql):
         path = self._file(name, sql)
+        # --output json explicitly: in a console the CLI otherwise defaults to text output.
         data = self.cli("db", "query", "--linked", "--project-ref", self.ref, "--workdir", str(self.workdir),
-                        "--file", str(path))
+                        "--output", "json", "--file", str(path))
         rows = data.get("rows") if isinstance(data, dict) else data
         if not rows or "result" not in rows[-1]:
             raise RuntimeError(f"{name}: query returned no result row")
