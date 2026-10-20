@@ -1,9 +1,9 @@
 import type { Json } from '@/types/database';
 import type { createClient } from '@/shared/supabase/server';
 import type { AttendanceStatus } from '@/types/tracker';
-import type { ValidationState } from './contract';
+import { SUPPORT_INPUT_VERSIONS, type ValidationState } from './contract';
 export interface InputContext { ruleVersion:string; available?:boolean; validityAvailable?:boolean; reasons:string[]; [key:string]:unknown }
-export interface FactorInput {available:boolean;rawValue:number|null;reasons:string[];validatedCount:number;eligibleUnvalidatedCount:number}
+export interface FactorInput {available:boolean;rawValue:number|null;reasons:string[];validatedCount:number;eligibleUnvalidatedCount:number;salesCounts?:{BN:number;BO:number;BP:number}}
 export interface ContributionObservation {
   id:string;kind:'fact'|'idea'|'suggestion'|'sale';version:number;attributedTo:string|null;
   businessDate:string;state:ValidationState;validator:string|null;validatedAt:string|null;
@@ -16,6 +16,7 @@ export interface ContributionInputContext extends InputContext {
   populations:{kind:string;author:string|null;state:ValidationState;count:number}[];
   factors:Record<'fact'|'idea'|'suggestion'|'sale',FactorInput>;
   employeeFactors:{userId:string;factors:Record<'fact'|'idea'|'suggestion'|'sale',FactorInput>}[];
+  salesMapping?:{approved:string;decision:string;BN:string;BO:string;BP:string;businessDate:string};
 }
 export interface AttendanceDayInput {
   businessDate:string;attendanceId:string|null;attendanceVersion:number|null;status:AttendanceStatus|null;
@@ -35,7 +36,7 @@ export async function loadContributionContext(db:Awaited<ReturnType<typeof creat
   const {data,error}=await db.rpc('contribution_input_context',{p_from:from,p_to_exclusive:toExclusive,p_as_of:asOf});
   if(error)throw new Error(`Contribution source query failed: ${error.message}`);
   const parsed=parseInputContext(data);
-  if(parsed.ruleVersion!=='m06-support-inputs-v2'||!Array.isArray(parsed.sources)||!Array.isArray(parsed.populations)||!Array.isArray(parsed.employeeFactors)||!parsed.factors)throw new Error('Contribution inputs unavailable: incomplete source context.');
+  if(!(SUPPORT_INPUT_VERSIONS as readonly string[]).includes(parsed.ruleVersion)||!Array.isArray(parsed.sources)||!Array.isArray(parsed.populations)||!Array.isArray(parsed.employeeFactors)||!parsed.factors)throw new Error('Contribution inputs unavailable: incomplete source context.');
   return parsed as ContributionInputContext;
 }
 export async function loadAttendanceContext(db:Awaited<ReturnType<typeof createClient>>,userId:string,from:string,toExclusive:string,asOf:string) {

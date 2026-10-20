@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rawContribution, contributionFromStates } from '../internal/contract';
+import { rawContribution, contributionFromStates, rawSales, salesFromStates } from '../internal/contract';
 import { parseInputContext, loadContributionContext } from '../internal/input-context';
 describe('M06 raw contribution arithmetic and availability',()=>{
   it('uses confirmed facts coefficients on explicitly classified counts',()=>expect(rawContribution('fact',2,1)).toBe(1.88));
@@ -11,7 +11,7 @@ describe('M06 raw contribution arithmetic and availability',()=>{
     expect(()=>rawContribution('fact',-1,1)).toThrow();expect(()=>rawContribution('idea',NaN,2)).toThrow();
   });
   it('preserves explicit unavailable inputs',()=>{
-    const result=parseInputContext({ruleVersion:'m06-support-inputs-v1',available:false,reasons:['sales_field_mapping_missing'],raw:{sale:null}});
+    const result=parseInputContext({ruleVersion:'m06-support-inputs-v1',available:false,reasons:['history_before_input_baseline'],raw:{sale:null}});
     expect(result.available).toBe(false);expect(result.raw).toEqual({sale:null});
   });
   it('rejects missing context',()=>expect(()=>parseInputContext(null)).toThrow('unavailable'));
@@ -32,5 +32,21 @@ describe('M06 raw contribution arithmetic and availability',()=>{
     expect(contributionFromStates('fact',[{...unknown,state:'validated',validatorId:'employee',validatedAt:'2026-10-12T00:00:00Z'}],true)).toMatchObject({available:false,rawValue:null});
     expect(contributionFromStates('fact',[],false)).toMatchObject({available:false,rawValue:null});
     expect(contributionFromStates('fact',[],true)).toMatchObject({available:true,rawValue:0});
+  });
+  it('maps sales as flag counts (D05): (1.5*BO + BN + 0.75*BP)/50, exact',()=>{
+    expect(rawSales(3,1,2)).toBe(0.12);expect(rawSales(1,0,0)).toBe(0.02);expect(rawSales(0,0,0)).toBe(0);
+    expect(rawSales(300,200,100)).toBe(13.5);expect(rawSales(2,1,2)).toBe(0.1);
+    expect(()=>rawSales(1,2,0)).toThrow();expect(()=>rawSales(1,0,2)).toThrow();expect(()=>rawSales(-1,0,0)).toThrow();expect(()=>rawSales(NaN,0,0)).toThrow();
+  });
+  it('counts pending and validated sales once, excludes rejected/withdrawn, keeps provenance gaps unavailable',()=>{
+    const reviewed={state:'validated' as const,authorId:'seller',validatorId:'reviewer',validatedAt:'2026-10-12T00:00:00Z',isNewProject:true,basementPaymentReceived:true};
+    const pending={state:'pending' as const,authorId:'seller',validatorId:null,validatedAt:null,isNewProject:false,basementPaymentReceived:true};
+    const plain={...pending,basementPaymentReceived:false};
+    expect(salesFromStates([reviewed,pending,plain,{...reviewed,state:'rejected'},{...reviewed,state:'withdrawn'}],true)).toMatchObject({available:true,rawValue:0.12,salesCounts:{BN:3,BO:1,BP:2},validatedCount:1,eligibleUnvalidatedCount:2,reasons:[]});
+    expect(salesFromStates([],true)).toMatchObject({available:true,rawValue:0,salesCounts:{BN:0,BO:0,BP:0}});
+    expect(salesFromStates([{...pending,state:'legacy_unvalidated'}],true)).toMatchObject({available:false,rawValue:null,reasons:['legacy_population_or_validation_provenance_missing']});
+    expect(salesFromStates([{...reviewed,validatorId:'seller'}],true)).toMatchObject({available:false,rawValue:null});
+    expect(salesFromStates([{...pending,isNewProject:null}],true)).toMatchObject({available:false,reasons:['sales_flags_missing']});
+    expect(salesFromStates([],false)).toMatchObject({available:false,reasons:['history_before_input_baseline']});
   });
 });

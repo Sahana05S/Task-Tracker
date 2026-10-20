@@ -10,7 +10,7 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 |---|---|
 | `index.ts` | `getSupportModuleData()`, `getMeetingPointsData()`, `summarizeSupport()`, `summarizeEmployeeSupport()`, `loadContributionContext()`, `loadAttendanceContext()`, `parseInputContext()`, the Today reads `getMemberContributionStates()` and `getRecentValidatedContributions()`, summary types, and everything in `client.ts` |
 | `actions.ts` | `'use server'` commands: `saveReportSnapshotAction`, `deleteReportSnapshotAction`, and the knowledge/sales wrappers (`saveKnowledgeEntryAction`, `deleteKnowledgeEntryAction`, `toggleKnowledgeValidationAction`, `saveSalesLogAction`, `deleteSalesLogAction`) that forward to `writeDatedRecord` |
-| `client.ts` | Contribution contract (`rawContribution`, `contributionFromStates`, coefficients, `RecordKind`, `ValidationState`, `DatedRecordMetadata`), input-context types, permission helpers, `DatedEntry`/`TaskChoice` |
+| `client.ts` | Contribution contract (`rawContribution`, `contributionFromStates`, sales `rawSales`/`salesFromStates`/`SALES_COEFFICIENTS`, coefficients, `RecordKind`, `ValidationState`, `DatedRecordMetadata`), input-context types, permission helpers, `DatedEntry`/`TaskChoice` |
 | `components/` | `support-pages.tsx` (`KnowledgeModule`, `SalesLogModule`, `ReportsModule`) and `dated-record-module.tsx` (`DatedRecordModule`, `DatedRecordEditor`) |
 
 ## Private (`internal/`)
@@ -32,7 +32,7 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 | Object | Kind | Defined in |
 |---|---|---|
 | `daily_facts`, `ideas`, `suggestions`, `sales_logs`, `meeting_points`, `report_snapshots` | tables | `07_tracker_replacement_foundation.sql` (validation/history columns from 19-20) |
-| `contribution_input_context(p_from, p_to_exclusive, p_as_of)` | RPC | 19, replaced in 20 and 21 |
+| `contribution_input_context(p_from, p_to_exclusive, p_as_of)` | RPC | 19, replaced in 20 and 21; sales mapped in 46 (`m06-support-inputs-v3`) |
 | `attendance_input_context(p_user, p_from, p_to_exclusive, p_as_of)` | RPC (called here for the attendance module) | 20, replaced in 21 |
 
 Reads only (owned elsewhere): `users`, `tasks`. Record writes for facts, ideas,

@@ -36,8 +36,9 @@ Source-row fixture families:
   assignment/due/completion calendar dates and optional participant IDs/shares.
 - Attendance: memberId, local date, attendanceHours, status and logged hours;
   missing differs from observed zero. Special states/gates remain D10.
-- Contribution/sales: memberId, event/validation dates, state, weighted-count
-  classification or unresolved sale subtotal fields. D05 cases have no output.
+- Contribution/sales: memberId, event/validation dates, state and weighted-count
+  classification. Sales (D05, approved 20 October 2026) are flag counts over the
+  member's eligible entries: A25–A27. A24 keeps the workbook arithmetic on symbolic subtotals.
 - Checklist: section role, direct children, Yes/No/N/A state; nested children
   retain local equal weights. Empty/all-N/A and linked Done behavior stay D07.
 
@@ -45,7 +46,7 @@ Source-row fixture families:
 
 | Cases | Contract | Later conformance owner |
 | --- | --- | --- |
-| A01–A13, A14–A24, P01, RAW01/RAW02 | R01 units, coefficients, medians and contributions | M07 (task rate M02/M03) |
+| A01–A13, A14–A27, P01, RAW01/RAW02 | R01 units, coefficients, medians and contributions | M07 (task rate M02/M03) |
 | B01–B02 | R02 confirmed exclusions/threshold | M03 |
 | B03–B05, FBOUND | R03 calendar boundaries/frozen completion | M03/M11 |
 | B06–B08 | R04 N/A, direct-child weighting, section separation | M05 |
