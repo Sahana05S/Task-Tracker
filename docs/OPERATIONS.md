@@ -82,3 +82,62 @@ After the correction and recomputation, publishing creates a new retained
 revision; the earlier revision remains selectable and visibly superseded.
 Ordinary edits to unrelated closed records remain blocked. A database backup
 and operational release procedure are in [the release runbook](plans/RELEASE-RUNBOOK.md).
+
+## Database backups (Supabase Free plan)
+
+The Free plan has no automatic Supabase backups. The GitHub Actions workflow
+`.github/workflows/db-backup.yml` takes a nightly logical backup at 20:30 UTC
+(02:00 Asia/Kolkata) and can be run by hand from the Actions tab (**Run
+workflow**). It runs `pg_dump -Fc` with PostgreSQL 17 client tools, encrypts the
+file with GPG (AES-256, symmetric), checks that it decrypts back to the same
+bytes, and uploads only the encrypted file as an artifact kept for 90 days. The
+job summary shows the encrypted size, the number of tables with data and the
+plaintext SHA-256. Any failure (missing secret, connection, empty dump,
+encryption) fails the run, so GitHub's failed-workflow email is the alert.
+
+Repository secrets (Settings → Secrets and variables → Actions):
+
+- `SUPABASE_DB_URL`: a Postgres connection string for the `postgres` user.
+  On the Free plan the direct connection (`db.<project>.supabase.co:5432`) is
+  IPv6-only, which GitHub-hosted runners cannot reach, so use the **session
+  pooler** string from Project Settings → Database → Connect
+  (`postgresql://postgres.<project>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres`).
+  Do not use the transaction pooler (port 6543); `pg_dump` needs a session.
+- `BACKUP_PASSPHRASE`: a long random passphrase. Store it in a password manager
+  as well; without it the backups cannot be decrypted.
+
+Download and decrypt a backup:
+
+1. Actions → *Nightly encrypted database backup* → pick a run → download the
+   `taskpulse-db-<stamp>` artifact and unzip it.
+2. Decrypt (asks for the passphrase):
+   `gpg --decrypt --output taskpulse-<stamp>.dump taskpulse-<stamp>.dump.gpg`
+3. Inspect: `pg_restore -l taskpulse-<stamp>.dump | less`. Restore only into a
+   disposable database first (see the drill below); delete the plaintext file
+   when finished.
+
+Restore drill: with a disposable local PostgreSQL 17 or newer on loopback port
+15432, run
+`python tools/restore_backup_drill.py --dump taskpulse-<stamp>.dump --bin-dir <postgres bin> --port 15432`.
+It recreates the database `taskpulse_backup_drill`, restores the dump, and prints
+the migration ledger's latest version and a row count per table in `public`,
+`taskpulse_private` and `auth`. Errors for Supabase-only extensions and roles are
+counted as expected; any other restore error fails the drill.
+
+Monthly: download the latest successful backup and keep one encrypted copy
+offline (an external drive or other storage outside GitHub), because artifacts
+expire after 90 days and live in the same account as the code. Note the date and
+SHA-256 from the run summary next to the copy. Artifacts count toward the
+repository's Actions storage quota; check usage under Settings → Billing if the
+database grows.
+
+## Health check
+
+`GET /api/internal/health` reports background-job health for monitoring. It
+needs `Authorization: Bearer <TASKPULSE_AWARD_WORKER_TOKEN>` (the same token as
+the award worker) and `SUPABASE_SERVICE_ROLE_KEY` on the server. It returns 200
+when nothing is wrong and 503 with the counts otherwise: failed or blocked
+outbox jobs, jobs leased for more than 30 minutes, award days stale for more
+than 2 days, and the time of the latest successful award job. A 503 with
+`status: "unavailable"` means the endpoint or its database read is not set up,
+not that the jobs are healthy.

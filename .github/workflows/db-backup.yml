@@ -1,0 +1,95 @@
+name: Nightly encrypted database backup
+
+# Logical pg_dump of the Supabase database (Free plan has no automatic backups).
+# The plaintext dump never leaves the runner; only the GPG-encrypted file is
+# uploaded. See docs/OPERATIONS.md "Database backups" for secrets and restore.
+
+on:
+  schedule:
+    - cron: '30 20 * * *' # 20:30 UTC = 02:00 Asia/Kolkata
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check secrets
+        run: |
+          set -euo pipefail
+          missing=0
+          [ -n "$SUPABASE_DB_URL" ] || { echo "::error::Secret SUPABASE_DB_URL is not set"; missing=1; }
+          [ -n "$BACKUP_PASSPHRASE" ] || { echo "::error::Secret BACKUP_PASSPHRASE is not set"; missing=1; }
+          exit "$missing"
+
+      - name: Install PostgreSQL 17 client
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common gnupg
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Dump, encrypt and verify
+        id: dump
+        run: |
+          set -euo pipefail
+          umask 077
+          stamp="$(date -u +%Y-%m-%dT%H%MZ)"
+          name="taskpulse-${stamp}.dump"
+          work="$RUNNER_TEMP/backup"
+          mkdir -p "$work"
+          pg_dump --version
+          pg_dump -Fc --file "$work/$name" --dbname "$SUPABASE_DB_URL"
+          [ -s "$work/$name" ] || { echo "::error::pg_dump produced an empty file"; exit 1; }
+
+          toc_entries="$(pg_restore -l "$work/$name" | grep -vc '^;')"
+          tables="$(pg_restore -l "$work/$name" | grep -c ' TABLE DATA ' || true)"
+          [ "$tables" -gt 0 ] || { echo "::error::Dump has no table data"; exit 1; }
+
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            --output "$work/$name.gpg" "$work/$name"
+
+          # Round trip: the encrypted file must decrypt to an identical, readable archive.
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --quiet --pinentry-mode loopback \
+            --passphrase-fd 0 --decrypt --output "$work/check.dump" "$work/$name.gpg"
+          cmp "$work/$name" "$work/check.dump"
+          sha="$(sha256sum "$work/$name" | cut -d' ' -f1)"
+          shred -u "$work/$name" "$work/check.dump"
+
+          size="$(du -h "$work/$name.gpg" | cut -f1)"
+          {
+            echo "## Database backup ${stamp}"
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| Encrypted file | \`${name}.gpg\` |"
+            echo "| Encrypted size | ${size} |"
+            echo "| Tables with data | ${tables} |"
+            echo "| Archive TOC entries | ${toc_entries} |"
+            echo "| Plaintext SHA-256 | \`${sha}\` |"
+            echo "| Retention | 90 days (artifact) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "file=$work/$name.gpg" >> "$GITHUB_OUTPUT"
+          echo "artifact=taskpulse-db-${stamp}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload encrypted backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.dump.outputs.artifact }}
+          path: ${{ steps.dump.outputs.file }}
+          retention-days: 90
+          if-no-files-found: error
+          compression-level: 0
