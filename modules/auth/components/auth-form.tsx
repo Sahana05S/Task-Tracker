@@ -146,19 +146,19 @@ export function AuthForm({
 
       {/* Signup verification notice banner if awaiting email confirmation */}
       {successMessage && !isLogin ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/70 p-5 text-center">
-          <span className="flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-success/30 bg-success-subtle/70 p-5 text-center">
+          <span className="flex size-10 items-center justify-center rounded-full bg-success-subtle text-success-strong">
             <MailCheckIcon className="size-5" />
           </span>
           <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-semibold text-emerald-900">
+            <h3 className="text-sm font-semibold text-success-strong">
               Confirm your email address
             </h3>
-            <p className="text-xs leading-relaxed text-emerald-800">
+            <p className="text-xs leading-relaxed text-success-strong">
               {successMessage}
             </p>
           </div>
-          <p className="text-[11px] text-emerald-700">
+          <p className="text-[11px] text-success-strong">
             Once verified, click{' '}
             <button
               type="button"
@@ -353,8 +353,8 @@ export function FormFeedback({ error, success }: FormFeedbackProps) {
       className={cn(
         'flex items-start gap-2 rounded-md border px-3 py-2 text-sm',
         isError
-          ? 'border-rose-200 bg-rose-50 text-rose-700'
-          : 'border-emerald-200 bg-emerald-50 text-emerald-700',
+          ? 'border-danger-border bg-danger-subtle text-danger'
+          : 'border-success/30 bg-success-subtle text-success-strong',
       )}
     >
       {isError ? (

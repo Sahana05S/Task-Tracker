@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 import { AwardControls } from '@/modules/team/components/award-controls';
 import { AwardStatus } from '@/modules/scoring/components/award-status';
-import { InitialsAvatar, MissionEmpty, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { InitialsAvatar, EmptyState, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { getTeamHolidayDates } from '@/modules/attendance';
 import { requireProfile } from '@/shared/session/profile';
@@ -14,6 +14,7 @@ import { canViewTeamModule } from '@/modules/team/client';
 import { getTeamIndexData } from '@/modules/team';
 import { employeeHref, employeeReportsHref } from '@/modules/team/client';
 import { formatNumeric, formatHours } from '@/shared/tracker/format';
+import { UnavailableValue } from '@/shared/ui/unavailable-value';
 
 export const metadata: Metadata = {
   title: 'Team · TaskPulse',
@@ -55,7 +56,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
       />
 
       <ReportContext model={data.presentation}/>
-      <h2 className="eyebrow text-muted-foreground -mb-2">Current support index · retained records, separate from as-of scoring</h2>
+      <h2 className="text-foreground text-base font-bold tracking-tight">Contributions this period</h2>
       <SupportSummaryCards summary={data.supportSummary} />
 
       <AwardStatus awards={data.awards} holidays={holidays} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
@@ -63,7 +64,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
 
       {data.members.length === 0 ? (
         <EmptyShell
-          title="No active employees"
+          title="No active members"
           description="Active employees will appear here once profiles are provisioned."
         />
       ) : (
@@ -88,7 +89,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                   <tr key={user.id}>
                     <td className="text-xs">
                       <div className="flex items-start gap-2.5">
-                        <InitialsAvatar name={user.fullName} tone={0} className="mt-0.5" />
+                        <InitialsAvatar name={user.fullName} className="mt-0.5" />
                         <div className="flex min-w-0 flex-col gap-1">
                           <span className="text-foreground text-sm font-semibold">
                             {user.fullName}
@@ -101,17 +102,17 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                       </div>
                     </td>
                     <td className="text-xs">
-                      <Link className="text-primary font-medium hover:underline" href={employeeHref(user)+'?'+viewQuery(context)}>
+                      <Link className="link" href={employeeHref(user)+'?'+viewQuery(context)}>
                         Open profile
                       </Link>
                     </td>
                     <td className="text-xs">
-                      <Link className="text-primary font-medium hover:underline" href={employeeReportsHref(user)+'?'+viewQuery(context)}>
+                      <Link className="link" href={employeeReportsHref(user)+'?'+viewQuery(context)}>
                         {reportCount} report{reportCount === 1 ? '' : 's'}
                       </Link>
                     </td>
                     <td className="text-xs">
-                      <Link className="text-primary font-medium hover:underline" href={`/team/${encodeURIComponent(user.employeeId)}/reports?${viewQuery(context)}#charts`}>
+                      <Link className="link" href={`/team/${encodeURIComponent(user.employeeId)}/reports?${viewQuery(context)}#charts`}>
                         Charts
                       </Link>
                     </td>
@@ -132,10 +133,10 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                       )}
                     </td>
                     <td className="sheet-numeric text-xs">
-                      {data.presentation.sources.attendance.find(a=>a.userId===user.id)?.available?formatHours(performance?.attendance.attendanceHours??0):'Unavailable'}
+                      {data.presentation.sources.attendance.find(a=>a.userId===user.id)?.available?formatHours(performance?.attendance.attendanceHours??0):<UnavailableValue reason="attendance is not recorded for every day" />}
                     </td>
                     <td className="sheet-numeric text-xs">
-                      {data.presentation.scope==='manager_team_detail'||user.id===profile.id?formatHours(performance?.hoursLogged??0):'Detail scope unavailable'}
+                      {data.presentation.scope==='manager_team_detail'||user.id===profile.id?formatHours(performance?.hoursLogged??0):<UnavailableValue reason="only managers see other members' hours" />}
                     </td>
                   </tr>
                 ))}
@@ -217,9 +218,8 @@ function EmptyShell({
   description: string;
 }) {
   return (
-    <section className="soft-card p-6 text-center">
-      <h2 className="text-foreground text-base font-bold">{title}</h2>
-      <MissionEmpty className="mt-3">{description}</MissionEmpty>
+    <section className="soft-card p-6">
+      <EmptyState title={title}>{description}</EmptyState>
     </section>
   );
 }

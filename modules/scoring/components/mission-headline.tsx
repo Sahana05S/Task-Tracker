@@ -4,11 +4,12 @@ import { ArrowUpRightIcon, FlagIcon, GaugeIcon, ScaleIcon, TrendingUpIcon, Users
 import type { Band, HeadlineLeader, MissionHeadline } from '@/modules/scoring/internal/analytics/headline';
 import { cn } from '@/shared/utils';
 import type { CompanyMilestone } from '@/types/tracker';
+import { UnavailableValue } from '@/shared/ui/unavailable-value';
 
 const BAND_CLASS: Record<Band, string> = {
-  green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  amber: 'border-amber-200 bg-amber-50 text-amber-800',
-  red: 'border-rose-200 bg-rose-50 text-rose-800',
+  green: 'border-success/30 bg-success-subtle text-success-strong',
+  amber: 'border-attention-border bg-attention-subtle text-attention-foreground',
+  red: 'border-danger-border bg-danger-subtle text-danger-foreground',
 };
 const BAND_LABEL: Record<Band, string> = { green: 'On track', amber: 'Watch', red: 'Needs attention' };
 
@@ -27,7 +28,7 @@ function Leader({ icon: Icon, label, leader, unit }: { icon: LucideIcon; label: 
           <p className="text-muted-foreground text-xs tabular-nums">{unit(leader.value!)}</p>
         </>
       ) : (
-        <p className="text-muted-foreground text-sm">{leader.reason === 'tie' ? `Tied at ${unit(leader.value!)}` : 'Unavailable'}</p>
+        <p className="text-muted-foreground text-sm">{leader.reason === 'tie' ? `Tied at ${unit(leader.value!)}` : <UnavailableValue reason="not enough data this month" />}</p>
       )}
     </div>
   );
@@ -40,7 +41,7 @@ function Figure({ icon: Icon, label, value, band, note, className }: { icon: Luc
         <Icon className="size-3.5 shrink-0" aria-hidden="true" />
         {label}
       </p>
-      <p className="stat-figure">{value ?? 'Unavailable'}</p>
+      <p className="stat-figure">{value ?? <UnavailableValue reason="not enough data this month" className="text-current opacity-70" />}</p>
       <p className="text-xs opacity-80">{band ? `${BAND_LABEL[band]} · ` : ''}{note}</p>
     </div>
   );
@@ -64,7 +65,7 @@ export function MissionHeadlineStrip({
 }) {
   const { allocationSpread: spread, averageProductivity: prod, averageProgress: prog } = headline;
   return (
-    <section aria-label="Team headline" className="mb-5 grid gap-3">
+    <section aria-label="Team headline" className="grid gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-foreground text-sm font-bold">Team headline · {monthLabel}</h2>
         <p className="text-muted-foreground text-xs">Live month to date; figures change as work is logged.</p>

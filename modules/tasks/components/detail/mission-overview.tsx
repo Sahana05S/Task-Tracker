@@ -1,10 +1,11 @@
 import { CalendarDaysIcon, CheckCircle2Icon, CircleDotIcon, GaugeIcon } from 'lucide-react';
 
-import { MissionProgress } from '@/shared/ui/mission-ui';
-import { FactTile, PeopleTile } from '@/modules/tasks/components/detail/detail-tiles';
+import { MissionProgress, StatTile } from '@/shared/ui/mission-ui';
+import { PeopleTile } from '@/modules/tasks/components/detail/detail-tiles';
 import type { TaskDetailData } from '@/modules/tasks/internal/detail';
 import { CATEGORY_LABELS } from '@/shared/tracker/enums';
 import { formatDate, formatHours, formatPercent } from '@/shared/tracker/format';
+import { codeLabel } from '@/shared/tracker/labels';
 
 /**
  * The mission's core facts: progress, status, dates and people. This is the
@@ -38,25 +39,26 @@ export function MissionOverview({
       </p>
 
       <dl className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-3">
-        <FactTile icon={CircleDotIcon} label="Status" value={task.status} />
-        <FactTile
+        <StatTile icon={CircleDotIcon} label="Status" value={task.status} />
+        <StatTile
           icon={CalendarDaysIcon}
           label="Due"
           value={formatDate(task.dueDate)}
           note={overdue ? 'Overdue' : undefined}
-          alert={overdue}
+          tone={overdue ? 'alert' : 'default'}
         />
-        <FactTile icon={CalendarDaysIcon} label="Assigned" value={formatDate(task.assignedDate)} />
-        <FactTile icon={CheckCircle2Icon} label="Completed" value={formatDate(task.completedDate)} />
-        <FactTile
+        <StatTile icon={CalendarDaysIcon} label="Assigned" value={formatDate(task.assignedDate)} />
+        <StatTile icon={CheckCircle2Icon} label="Completed" value={formatDate(task.completedDate)} />
+        <StatTile
           icon={CheckCircle2Icon}
           label="Met deadline"
           value={task.metDeadline === null ? '—' : task.metDeadline ? 'Yes' : 'No'}
         />
-        <FactTile
+        <StatTile
           icon={GaugeIcon}
           label="Task freshness"
-          value={task.freshness ?? `Unavailable: ${task.freshnessReason ?? "date evidence missing"}`}
+          value={task.freshness ?? '—'}
+          note={task.freshness ? undefined : codeLabel(task.freshnessReason, 'Dates needed to work it out are missing')}
         />
         <PeopleTile label="Assignees" names={assigneeNames} fallback="Unassigned" />
         <PeopleTile label="Reviewers" names={reviewerNames} fallback="No reviewer" />

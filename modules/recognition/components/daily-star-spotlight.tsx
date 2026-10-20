@@ -106,7 +106,7 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
             {h?.status === 'winner' && winnerName ? (
               <InitialsAvatar
                 name={winnerName}
-                tone={1}
+               
                 className={cn('size-12 text-base ring-[3px] ring-recognition ring-offset-2 ring-offset-[#f3f0fb]', celebrate && 'anim-pop')}
               />
             ) : null}

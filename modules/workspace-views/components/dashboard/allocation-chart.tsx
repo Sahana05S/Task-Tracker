@@ -164,8 +164,8 @@ export function AllocationChart({
                     datum.loadingDiff === null
                       ? 'text-slate-400'
                       : datum.loadingDiff >= 0
-                        ? 'text-emerald-700'
-                        : 'text-rose-700',
+                        ? 'text-success-strong'
+                        : 'text-danger',
                   )}
                 >
                   {datum.loadingDiff === null

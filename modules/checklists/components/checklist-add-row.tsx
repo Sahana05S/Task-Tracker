@@ -75,7 +75,7 @@ export function ChecklistAddRow({
             </button>
           ))}
         </div>
-        <Button type="submit" size="sm" className="h-9 rounded-xl">
+        <Button type="submit" size="sm" className="h-9">
           <PlusIcon aria-hidden="true" />Add {kind === 'Sub-mission' ? 'Sub-mission' : kind.toLowerCase()}
         </Button>
       </div>

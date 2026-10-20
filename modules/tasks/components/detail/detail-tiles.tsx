@@ -6,34 +6,6 @@ import { cn } from '@/shared/utils';
 
 /** Small presentational building blocks of the mission details page. */
 
-export function FactTile({
-  icon: Icon,
-  label,
-  value,
-  note,
-  alert = false,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  note?: string;
-  alert?: boolean;
-}) {
-  return (
-    <div className="bg-muted/70 flex min-w-0 items-start gap-2.5 rounded-xl px-3 py-3 sm:gap-3 sm:px-3.5">
-      <span aria-hidden="true" className="text-primary hidden size-8 shrink-0 items-center justify-center rounded-lg bg-white sm:flex">
-        <Icon className="size-4" />
-      </span>
-      <div className="min-w-0">
-        <dt className="text-muted-foreground text-xs font-medium">{label}</dt>
-        <dd className={cn('text-foreground mt-0.5 text-sm font-semibold break-words', alert && 'text-rose-700')}>
-          {value}
-          {note ? <span className="ml-1.5 text-xs font-semibold text-rose-700">· {note}</span> : null}
-        </dd>
-      </div>
-    </div>
-  );
-}
 
 /** People with initials avatars; the avatar letters are not part of the text. */
 export function PeopleTile({
@@ -54,7 +26,7 @@ export function PeopleTile({
         ) : (
           names.map((name, index) => (
             <span key={`${name}-${index}`} className="flex items-center gap-2 rounded-full bg-white py-1 pr-3 pl-1 text-sm font-medium shadow-(--shadow-card)">
-              <InitialsAvatar name={name} tone={index} className="size-7 text-[10px]" />
+              <InitialsAvatar name={name} className="size-7 text-[10px]" />
               {name}
             </span>
           ))
@@ -67,7 +39,7 @@ export function PeopleTile({
 export function TextBlock({ title, body }: { title: string; body: string }) {
   return (
     <div>
-      <p className="eyebrow text-muted-foreground">{title}</p>
+      <p className="eyebrow">{title}</p>
       <p className="text-foreground mt-1 text-sm whitespace-pre-wrap">{body}</p>
     </div>
   );

@@ -7,6 +7,7 @@ import { NewTaskButton } from '@/modules/tasks/components/new-task-button';
 import { MissionsWorkspace } from '@/modules/workspace-views/components/missions-workspace';
 import { computeMissionHeadline } from '@/modules/scoring/client';
 import { requireProfile } from '@/shared/session/profile';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { getMilestonesPageData } from '@/modules/milestones';
 import { viewContext } from '@/modules/reports/client';
 import { getLivePresentation } from '@/modules/reports';
@@ -46,29 +47,13 @@ export default async function TasksPage() {
   ).length;
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] px-4 pt-6 pb-10 lg:px-6">
-      <header className="mb-5 flex flex-wrap items-end gap-x-4 gap-y-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight lg:text-[2rem]">
-              Missions
-            </h1>
-            <span className="bg-primary-subtle text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold">
-              <span aria-hidden="true" className="bg-primary size-1.5 rounded-full" />
-              {openCount} active
-            </span>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            {tasks.length} tracked ·{' '}
-            {canManage
-              ? 'you can create and edit missions'
-              : 'update status and progress on your own missions'}
-          </p>
-        </div>
-        {/* New mission belongs in the header rather than inside the list: it is
-            a page action, and putting it here keeps it beside the title. */}
-        {canManage ? <div className="ml-auto"><NewTaskButton /></div> : null}
-      </header>
+    <MissionPage>
+      <MissionPageHeader
+        title="Missions"
+        chip={`${openCount} active`}
+        description={`${tasks.length} tracked · ${canManage ? 'you can create and edit missions' : 'update status and progress on your own missions'}`}
+        actions={canManage ? <NewTaskButton /> : null}
+      />
 
       {/* The headline needs the live month presentation, which is slow; it
           streams in so the mission list is never held up by it. */}
@@ -85,7 +70,7 @@ export default async function TasksPage() {
         effortEntries={[...effortTotals]}
         currentUser={profile}
       />
-    </div>
+    </MissionPage>
   );
 }
 
@@ -111,7 +96,7 @@ async function TeamHeadline({ tasks, hoursByTask }: { tasks: Task[]; hoursByTask
 
 function HeadlineSkeleton() {
   return (
-    <section aria-label="Team headline loading" aria-busy="true" className="mb-5 grid gap-3">
+    <section aria-label="Team headline loading" aria-busy="true" className="grid gap-3">
       <p className="text-muted-foreground text-sm">Loading team headline…</p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {Array.from({ length: 6 }, (_, i) => <div key={i} className="soft-inset h-20 animate-pulse rounded-2xl" />)}

@@ -153,7 +153,7 @@ describe('checklist page', () => {
     })));
     expect(html.match(/<table/g)).toHaveLength(1);
     expect(html).toContain('OPEN');
-    expect(html).toContain('aria-current="page">Structural review');
+    expect(html).toMatch(/aria-current="page"[^>]*>Structural review</);
     expect(html).toContain('name="parent_id" value="page-1"');
   });
 });

@@ -61,7 +61,7 @@ export function MissionBrief({
         ) : null}
 
         <div className="bg-muted/70 rounded-xl px-4 py-3">
-          <p className="eyebrow text-muted-foreground">Details needed</p>
+          <p className="eyebrow">Details needed</p>
           <p className="text-foreground mt-1 text-sm">
             {sectionValue(sectionsByKey, 'task_details_needed') ?? '[Direct Task]'}
           </p>

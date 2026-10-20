@@ -43,7 +43,7 @@ import {
 } from 'lucide-react';
 
 import { MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
-import { Button } from '@/shared/ui/button';
+import { Button, buttonVariants } from '@/shared/ui/button';
 import { currentPeriod } from '@/shared/time/period';
 import { requireProfile } from '@/shared/session/profile';
 import { getTeamRunningTimers, type TeamRunningTimer } from '@/modules/time-tracking';
@@ -58,6 +58,7 @@ import {
   TASK_STATUSES,
 } from '@/shared/tracker/enums';
 import type { Task, User } from '@/types/tracker';
+import { cn } from '@/shared/utils';
 
 export const metadata: Metadata = {
   title: 'Task Tools · TaskPulse',
@@ -82,7 +83,7 @@ export default async function TaskToolsPage() {
         eyebrow="Missions"
         title="Task Tools"
         description="Web replacements for the workbook Tasks Tools, Create Work Files, and Report menus"
-        actions={canManage ? <a href="/task-tools/participants" className="button-secondary gap-2"><UsersIcon className="size-4" aria-hidden="true" />Review participant reconciliation</a> : null}
+        actions={canManage ? <a href="/task-tools/participants" className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}><UsersIcon className="size-4" aria-hidden="true" />Review participant reconciliation</a> : null}
       />
 
       <MissionPanel icon={ListTodoIcon} title="Workbook menu coverage">

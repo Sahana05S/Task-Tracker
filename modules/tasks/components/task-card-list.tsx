@@ -234,7 +234,7 @@ function MissionCard({
             <span
               className={cn(
                 'inline-flex items-center gap-1 text-xs',
-                overdue ? 'font-semibold text-rose-700' : 'text-muted-foreground',
+                overdue ? 'text-overdue font-semibold' : 'text-muted-foreground',
               )}
             >
               <CalendarDaysIcon className="size-3.5" aria-hidden="true" />
@@ -394,7 +394,7 @@ function MissionSummary({
 
         {task.comments ? (
           <div className="flex flex-col gap-1">
-            <span className="eyebrow text-muted-foreground">Comments</span>
+            <span className="eyebrow">Comments</span>
             <p className="text-muted-foreground text-sm">{task.comments}</p>
           </div>
         ) : null}
@@ -417,7 +417,7 @@ function MissionSummary({
                 variant="outline"
                 size="sm"
                 onClick={onRequestDelete}
-                className="border-rose-200 text-rose-700 hover:bg-rose-50"
+                className="border-danger-border text-danger hover:bg-danger-subtle"
               >
                 <Trash2Icon aria-hidden="true" />
                 Delete

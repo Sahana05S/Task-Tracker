@@ -12,7 +12,7 @@ import {
   type PeopleActionState,
 } from '@/modules/team/people-actions';
 import { Button } from '@/shared/ui/button';
-import { InitialsAvatar, MissionEmpty, MissionPanel } from '@/shared/ui/mission-ui';
+import { InitialsAvatar, EmptyState, MissionPanel } from '@/shared/ui/mission-ui';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { ROLE_LABELS, USER_ROLES } from '@/shared/tracker/enums';
 import type { User } from '@/types/tracker';
@@ -88,7 +88,7 @@ export function InvitationList({ invitations }: { invitations: Invitation[] }) {
       subtitle="Open invitations. Withdraw one to stop that email from getting access."
     >
       {invitations.length === 0 ? (
-        <MissionEmpty>No open invitations.</MissionEmpty>
+        <EmptyState>No open invitations.</EmptyState>
       ) : (
         <ul className="divide-border divide-y">
           {invitations.map((invite) => (
@@ -138,7 +138,7 @@ export function MemberList({ members, viewerId }: { members: User[]; viewerId: s
       </ul>
       {inactive.length > 0 ? (
         <>
-          <h3 className="eyebrow text-muted-foreground mt-6 mb-1">No access</h3>
+          <h3 className="eyebrow mt-6 mb-1">No access</h3>
           <ul className="divide-border divide-y">
             {inactive.map((m) => (
               <MemberRow key={m.id} member={m} self={false} />
@@ -157,7 +157,7 @@ function MemberRow({ member, self }: { member: User; self: boolean }) {
   return (
     <li className="py-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <InitialsAvatar name={member.fullName} tone={0} />
+        <InitialsAvatar name={member.fullName} />
         <div className="min-w-0 flex-1">
           <p className="text-foreground text-sm font-semibold">
             {member.fullName}

@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
   ArchiveIcon,
-  ArrowLeftIcon,
   ClipboardCheckIcon,
   GitBranchIcon,
   HistoryIcon,
@@ -13,7 +12,8 @@ import {
 } from 'lucide-react';
 
 import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
-import { MissionPanel } from '@/shared/ui/mission-ui';
+import { MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
+import { Breadcrumb, PageTabs } from '@/shared/ui/page-nav';
 import {
   CategoryBadge,
   FreshnessIndicator,
@@ -118,33 +118,20 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const overdue = isOverdue(task.dueDate) && !closed;
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] px-4 pt-5 pb-10 lg:px-6">
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
-        <Link
-          href="/tasks"
-          aria-label="Back to missions"
-          className="text-muted-foreground hover:text-foreground hover:bg-muted flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-(--shadow-card) transition-colors"
-        >
-          <ArrowLeftIcon className="size-4" aria-hidden="true" />
-        </Link>
-        <Link href="/tasks" className="text-muted-foreground hover:text-foreground shrink-0 font-medium">
-          Missions
-        </Link>
-        <span aria-hidden="true" className="text-muted-foreground">/</span>
-        <span className="task-tag bg-primary-subtle text-primary-subtle-foreground shrink-0 rounded-md px-2 py-0.5">
-          {task.taskTag}
-        </span>
-        <span aria-hidden="true" className="text-muted-foreground hidden sm:inline">/</span>
-        <span className="text-foreground hidden truncate font-medium sm:inline" aria-current="page">
-          {task.title}
-        </span>
-      </nav>
-
-      {/* Title row */}
-      <header className="mt-5 flex flex-wrap items-end gap-x-6 gap-y-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-1.5">
+    <MissionPage>
+      <MissionPageHeader
+        breadcrumb={
+          <Breadcrumb
+            back={{ href: '/tasks', label: 'Back to missions' }}
+            items={[
+              { label: 'Missions', href: '/tasks' },
+              { label: task.taskTag, tag: true },
+              { label: task.title },
+            ]}
+          />
+        }
+        meta={
+          <>
             <CategoryBadge category={task.category} />
             <StatusBadge status={task.status} />
             <PriorityBadge priority={task.priority} />
@@ -155,29 +142,27 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
                 Archived
               </span>
             ) : null}
-          </div>
-          <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">
-            {task.title}
-          </h1>
-        </div>
-        {canUseTimer && !closed ? (
-          <QuickLogTrigger variant="button" label="Log hours" presetTaskId={task.id} className="h-10 rounded-xl px-4" />
+          </>
+        }
+        title={task.title}
+        actions={canUseTimer && !closed ? (
+          <QuickLogTrigger variant="button" label="Log hours" presetTaskId={task.id} className="h-10 px-4" />
         ) : null}
-      </header>
+      />
 
       {archived ? (
-        <p role="status" className="border-attention-border bg-attention-subtle text-attention-foreground mt-5 flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm">
+        <p role="status" className="border-attention-border bg-attention-subtle text-attention-foreground flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm">
           <ArchiveIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
             Archived on {task.archivedEffectiveDate}. This mission and its retained history are read-only. {task.archiveReason}
-            {successor?<Link className="ml-2 font-semibold underline" href={`/tasks/${encodeURIComponent(successor.taskTag)}`}>Continue on {successor.taskTag} - {successor.title}</Link>:null}
+            {successor?<Link className="link ml-2 font-semibold" href={`/tasks/${encodeURIComponent(successor.taskTag)}`}>Continue on {successor.taskTag} - {successor.title}</Link>:null}
           </span>
         </p>
       ) : null}
 
       {!archived&&task.reviewerIds.includes(currentUser.id) ? (
-        <section className="border-primary/20 bg-primary-subtle/60 mt-5 rounded-2xl border p-4 sm:p-5" aria-label="Your review">
-          <h2 className="text-foreground mb-2 flex items-center gap-2 text-sm font-bold">
+        <section className="border-primary/20 bg-primary-subtle/60 rounded-2xl border p-4 sm:p-5" aria-label="Your review">
+          <h2 className="text-foreground mb-2 flex items-center gap-2 text-base font-bold tracking-tight">
             <ClipboardCheckIcon className="text-primary size-4" aria-hidden="true" />
             Your review is requested
           </h2>
@@ -185,21 +170,18 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         </section>
       ) : null}
 
-      <nav aria-label="Mission sections" className="border-border mt-6 flex gap-1 border-b">
-        {TABS.map(([key, label]) => (
-          <Link
-            key={key}
-            href={key === 'work' ? '?' : `?tab=${key}`}
-            aria-current={tab === key ? 'page' : undefined}
-            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${tab === key ? 'border-primary text-primary' : 'text-muted-foreground hover:text-foreground border-transparent'}`}
-          >
-            {label}{key === 'history' ? <span className="text-muted-foreground ml-1.5 text-xs font-medium">{data.effort.logCount}</span> : null}
-          </Link>
-        ))}
-      </nav>
+      <PageTabs
+        label="Mission sections"
+        tabs={TABS.map(([key, label]) => ({
+          href: key === 'work' ? '?' : `?tab=${key}`,
+          label,
+          current: tab === key,
+          count: key === 'history' ? data.effort.logCount : undefined,
+        }))}
+      />
 
       {tab === 'work' ? (
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <main className="grid min-w-0 content-start gap-6">
             <ChecklistHero
               href={checklistHref}
@@ -215,7 +197,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
             </MissionPanel>
             <MissionPanel icon={ListChecksIcon} title="Checklist phases" action={
-              <Link href={checklistHref} className="text-primary text-xs font-semibold hover:underline">Open</Link>
+              <Link href={checklistHref} className="link text-xs font-semibold">Open</Link>
             }>
               <PhaseProgress rollup={data.checklistRollup} href={checklistHref} />
             </MissionPanel>
@@ -225,7 +207,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           </aside>
         </div>
       ) : details && native ? (
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <main className="grid min-w-0 content-start gap-6">
             <MissionBrief
               task={task}
@@ -254,7 +236,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           </aside>
         </div>
       ) : (
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <MissionPanel
             icon={HistoryIcon}
             title="Activity & updates"
@@ -273,6 +255,6 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           </MissionPanel>
         </div>
       )}
-    </div>
+    </MissionPage>
   );
 }

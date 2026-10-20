@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/shared/ui/button';
 import { LiveReport } from '@/modules/reports/components/live-report';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { monthHistory, monthRevision } from '@/modules/reports';
@@ -13,7 +14,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeftIcon, FileTextIcon, HistoryIcon, ListChecksIcon, StarIcon, type LucideIcon } from 'lucide-react';
 
 import {
-  MissionEmpty,
+  EmptyState,
   MissionNotice,
   MissionPage,
   MissionPageHeader,
@@ -26,6 +27,7 @@ import { canViewEmployeeReports } from '@/modules/team/client';
 import { getEmployeeByEmployeeId, getEmployeeReportsData } from '@/modules/team';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;
@@ -81,7 +83,7 @@ export default async function EmployeeReportsPage({
         actions={
           <Link
             href={`/team/${encodeURIComponent(data.employee.employeeId)}?${viewQuery(context)}`}
-            className="button-secondary gap-2"
+            className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}
           >
             <ArrowLeftIcon className="size-4" aria-hidden="true" />
             Back to profile
@@ -134,7 +136,7 @@ export default async function EmployeeReportsPage({
         <section className="grid gap-4 xl:grid-cols-2">
           <Panel title="Legacy saved score components (pre-M07)" icon={HistoryIcon}>
             {data.scoreComponents.length === 0 ? (
-              <EmptyText>No score component rows yet.</EmptyText>
+              <EmptyState>No score component rows yet.</EmptyState>
             ) : (
               <div className="border-border overflow-x-auto rounded-xl border">
                 <table className="sheet-grid min-w-[36rem]">
@@ -169,7 +171,7 @@ export default async function EmployeeReportsPage({
 
           <Panel title="Daily star log" icon={StarIcon}>
             {data.stars.length === 0 ? (
-              <EmptyText>No daily star records yet.</EmptyText>
+              <EmptyState>No daily star records yet.</EmptyState>
             ) : (
               <div className="grid gap-2">
                 {data.stars.map((star) => (
@@ -197,9 +199,9 @@ export default async function EmployeeReportsPage({
 
         <Panel title="Saved reports" icon={FileTextIcon}>
           {data.reports.length === 0 ? (
-            <EmptyText>
+            <EmptyState>
               No saved report snapshots exist for this employee yet.
-            </EmptyText>
+            </EmptyState>
           ) : (
             <div className="border-border overflow-x-auto rounded-xl border">
               <table className="sheet-grid min-w-[52rem]">
@@ -271,9 +273,6 @@ function Panel({
   );
 }
 
-function EmptyText({ children }: { children: React.ReactNode }) {
-  return <MissionEmpty>{children}</MissionEmpty>;
-}
 
 /**
  * Hours by checklist item (sheet-parity gap 5): this employee's item-timer
@@ -284,9 +283,9 @@ function ItemHoursPanel({ tasks }: { tasks: readonly ItemHourTask[] | null }) {
   return (
     <Panel title="Hours by checklist item" icon={ListChecksIcon}>
       {tasks === null ? (
-        <EmptyText>Checklist item hours are unavailable until the item-timer migration is applied.</EmptyText>
+        <EmptyState>Checklist item hours are unavailable until the item-timer migration is applied.</EmptyState>
       ) : tasks.length === 0 ? (
-        <EmptyText>No item-timer hours this period. Time logged with a checklist item's timer appears here.</EmptyText>
+        <EmptyState>No item-timer hours this period. Time logged with a checklist item's timer appears here.</EmptyState>
       ) : (
         <div className="grid gap-3">
           <p className="text-muted-foreground text-xs">Part of the task hours above, broken down by the checklist item that was timed.</p>

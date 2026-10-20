@@ -13,7 +13,10 @@ it('task dialog keeps input after refusal and blocks pre-hydration native submit
 });
 it('execution form keeps input after refusal, resets on success and blocks pre-hydration submit',()=>{
  const source=readFileSync('shared/ui/execution-form.tsx','utf8');
- expect(source).toMatch(/<form ref=\{formRef\} action=\{submit\}[\s\S]*?onSubmit=/);
- expect(source).toMatch(/new FormData\(event\.currentTarget,\(event\.nativeEvent as SubmitEvent\)\.submitter\)/);
- expect(source).toMatch(/if \(result\.success\) \{ confirmed\(\); formRef\.current\?\.reset\(\);/);
+ // Whitespace-tolerant: the guarantees matter, not the formatting.
+ expect(source).toMatch(/<form\s+ref=\{formRef\}\s+action=\{submit\}[\s\S]*?onSubmit=/);
+ expect(source).toMatch(/new FormData\(event\.currentTarget,\s*\(event\.nativeEvent as SubmitEvent\)\.submitter\)/);
+ expect(source).toMatch(/if \(result\.success\) \{\s*settle\(\);\s*formRef\.current\?\.reset\(\);/);
+ // A refusal keeps what the user typed: only success resets the form.
+ expect(source).not.toMatch(/catch[\s\S]{0,80}reset\(\)/);
 });

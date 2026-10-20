@@ -6,7 +6,7 @@ import { Button } from '@/shared/ui/button';
 import type { Task } from '@/types/tracker';
 import { RefreshCwIcon } from 'lucide-react';
 
-const control='mt-1 block h-10 w-full rounded-xl border border-input bg-background px-3 text-sm';
+const control='field mt-1 block w-full';
 
 export function TaskLifecyclePanel({ task }: { task: Task }) {
  const [mode,setMode]=useState(task.scaleMode ?? 'manual');
@@ -20,7 +20,7 @@ export function TaskLifecyclePanel({ task }: { task: Task }) {
    {identity}<input type="hidden" name="command" value="transition" />
    <label className="text-sm font-medium">Status<select name="status" className={control} defaultValue="In Progress"><option>In Progress</option><option>Done</option><option>Not Started</option><option>Discarded</option><option>Stopped</option><option>On-Hold</option><option>Carryover</option></select></label>
    <label className="text-sm font-medium">Reason<input name="reason" className={control} required maxLength={1000} /></label>
-   <Button type="submit" size="sm" className="justify-self-start rounded-xl">Save lifecycle change</Button>
+   <Button type="submit" size="sm" className="justify-self-start">Save lifecycle change</Button>
    <p className="text-muted-foreground text-xs">Done requires initialized Setup, Activity and Closure, consistent progress and current assigned-reviewer approvals.</p>
   </ExecutionForm>
   <ExecutionForm action={form=>changeTaskLifecycle(null,form)} scope="scale" className="bg-muted/70 grid content-start gap-3 rounded-xl p-4">
@@ -33,7 +33,7 @@ export function TaskLifecyclePanel({ task }: { task: Task }) {
    <label className="text-sm font-medium">Override (blank uses formula; zero is valid)<input type="number" name="override" min="0" step="any" defaultValue={task.scaleOverride ?? ''} className={control} /></label>
    <label className="text-sm font-medium">Source/provenance<input name="provenance" required maxLength={1000} className={control} /></label>
    <label className="text-sm font-medium">Reason<input name="reason" required maxLength={1000} className={control} /></label>
-   <Button type="submit" size="sm" className="justify-self-start rounded-xl">Save prospective scale</Button>
+   <Button type="submit" size="sm" className="justify-self-start">Save prospective scale</Button>
   </ExecutionForm>
   </div>
  </section>;

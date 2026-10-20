@@ -69,6 +69,17 @@ export function formatDate(value: string | null): string {
   return `${day} ${month} ${parsed.getUTCFullYear()}`;
 }
 
+/**
+ * A timestamp as a medium date and short time in Asia/Kolkata, the business
+ * timezone, so server and browser render the same moment the same way.
+ */
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return EM_DASH;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return EM_DASH;
+  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }).format(parsed);
+}
+
 /** `true` when the date is strictly before today, for overdue highlighting. */
 export function isOverdue(dueDate: string | null, today = new Date()): boolean {
   if (!dueDate) return false;

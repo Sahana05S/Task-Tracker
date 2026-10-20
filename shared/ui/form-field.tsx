@@ -42,7 +42,7 @@ export function Field({
       <label htmlFor={id} className="text-foreground text-sm font-medium">
         {label}
         {required ? (
-          <span className="ml-0.5 text-rose-600" aria-hidden="true">
+          <span className="text-danger ml-0.5" aria-hidden="true">
             *
           </span>
         ) : null}
@@ -148,7 +148,7 @@ export function FormError({ message, className }: FormErrorProps) {
       role="alert"
       aria-live="polite"
       className={cn(
-        'flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700',
+        'border-danger-border bg-danger-subtle text-danger-foreground flex items-start gap-2 rounded-xl border px-3 py-2 text-sm',
         className,
       )}
     >

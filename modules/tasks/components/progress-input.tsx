@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { updateTaskProgress } from '@/modules/tasks/actions';
 import { toProgressValue } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
+import { UnavailableValue } from '@/shared/ui/unavailable-value';
 
 export interface ProgressInputProps {
   taskId: string;
@@ -71,14 +72,13 @@ export function ProgressInput({
   if (!canEdit) {
     return (
       <div className={cn('flex flex-col gap-1', className)}>
-        <span className="sheet-numeric text-xs text-slate-900">
-          {committed === null ? 'Unavailable' : `${committed}%`}{progressOwner==='checklist'?' · Activity':''}
+        <span className="sheet-numeric text-foreground text-xs">
+          {committed === null ? <UnavailableValue reason="no progress recorded" /> : `${committed}%`}{progressOwner==='checklist'?' · Activity':''}
         </span>
         <progress
           className="task-progress"
           value={barValue}
           max={100}
-          data-complete={barValue >= 100 ? 'true' : 'false'}
           aria-label={`Progress for ${taskTag}`}
         />
       </div>
@@ -171,7 +171,7 @@ export function ProgressInput({
             'disabled:text-slate-400',
             // Spin buttons steal width the dense grid cannot spare.
             '[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
-            invalid && 'border-rose-300',
+            invalid && 'border-danger',
           )}
         />
         <span className="text-xs text-slate-400" aria-hidden="true">
@@ -180,7 +180,7 @@ export function ProgressInput({
 
         {pending ? (
           <LoaderCircleIcon
-            className="size-3.5 shrink-0 animate-spin text-slate-400"
+            className="text-muted-foreground size-3.5 shrink-0 animate-spin"
             aria-label="Saving"
           />
         ) : null}
@@ -190,7 +190,6 @@ export function ProgressInput({
         className="task-progress"
         value={barValue}
         max={100}
-        data-complete={barValue >= 100 ? 'true' : 'false'}
         aria-hidden="true"
       />
     </div>

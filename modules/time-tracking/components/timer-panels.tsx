@@ -1,4 +1,5 @@
 import { Button } from '@/shared/ui/button';
+import { formatDateTime } from '@/shared/tracker/format';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { cn } from '@/shared/utils';
@@ -14,7 +15,7 @@ import {
 /** Timer, timer records and manual time entry for one mission. */
 
 /** Shared form-control look for the native forms on this page. */
-const FIELD = 'border-input bg-background rounded-xl border px-3 text-sm';
+const FIELD = 'field';
 
 export function TimerControl({
   taskTag,
@@ -55,7 +56,7 @@ export function TimerControl({
               placeholder="What did this timer session cover?"
             />
           </label>
-          <Button type="submit" className="rounded-xl">
+          <Button type="submit">
             Stop and log
           </Button>
         </ExecutionForm>
@@ -81,7 +82,7 @@ export function TimerControl({
           placeholder="Optional timer note"
         />
       </label>
-      <Button type="submit" className="rounded-xl">
+      <Button type="submit">
         Start timer
       </Button>
     </ExecutionForm>
@@ -222,18 +223,11 @@ export function ManualTimeForm({
           placeholder="What work was done?"
         />
       </label>
-      <Button type="submit" variant="outline" className="rounded-xl">
+      <Button type="submit" variant="outline">
         Save manual time
       </Button>
     </ExecutionForm>
   );
-}
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
 }
 
 function formatElapsed(seconds: number): string {

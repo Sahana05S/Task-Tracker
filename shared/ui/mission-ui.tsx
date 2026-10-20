@@ -35,26 +35,25 @@ export function MissionProgress({
 }
 
 /**
- * A person's initials in a tinted circle. The letters come from a CSS
+ * A person's initials in a tinted circle; the tint is derived from the name. The letters come from a CSS
  * `attr()` so they stay out of the element's text content: screen readers and
  * text assertions read only the name beside it.
  */
-export function InitialsAvatar({
-  name,
-  tone = 0,
-  className,
-}: {
-  name: string;
-  tone?: number;
-  className?: string;
-}) {
+export function InitialsAvatar({ name, className }: { name: string; className?: string }) {
   return (
     <span
       aria-hidden="true"
       data-initials={getInitials(name)}
-      className={cn('initials-avatar', `initials-avatar-${tone % 3}`, className)}
+      className={cn('initials-avatar', `initials-avatar-${avatarTone(name)}`, className)}
     />
   );
+}
+
+/** A stable tint per person, so the same name has the same colour everywhere. */
+function avatarTone(name: string): number {
+  let hash = 0;
+  for (const char of name) hash = (hash * 31 + char.codePointAt(0)!) >>> 0;
+  return hash % 3;
 }
 
 /** Overlapping avatars for a card footer, with the names as accessible text. */
@@ -73,7 +72,7 @@ export function AvatarStack({
     <span className="flex min-w-0 items-center gap-2" title={names.join(', ')}>
       <span className="flex shrink-0 -space-x-2">
         {shown.map((name, index) => (
-          <InitialsAvatar key={`${name}-${index}`} name={name} tone={index} className="ring-2 ring-white" />
+          <InitialsAvatar key={`${name}-${index}`} name={name} className="ring-2 ring-white" />
         ))}
       </span>
       <span className="text-muted-foreground truncate text-sm">
@@ -99,6 +98,7 @@ export function MissionPage({
 }) {
   return (
     <div
+      data-page-width={wide ? 'wide' : undefined}
       className={cn(
         'mx-auto grid w-full content-start gap-5 px-4 pt-6 pb-10 lg:gap-6 lg:px-6',
         wide ? 'max-w-[1440px]' : 'max-w-[1200px]',
@@ -111,8 +111,9 @@ export function MissionPage({
 }
 
 /**
- * Page title row matching the Missions list: large title, optional count
- * chip, a muted description and page actions on the right.
+ * The page title row every workspace page uses: optional breadcrumb, an
+ * optional meta row (badges), the title with a count chip, a muted
+ * description, page actions on the right and optional tabs underneath.
  */
 export function MissionPageHeader({
   title,
@@ -120,26 +121,37 @@ export function MissionPageHeader({
   description,
   eyebrow,
   actions,
+  breadcrumb,
+  meta,
+  tabs,
 }: {
   title: string;
   chip?: React.ReactNode;
   description?: React.ReactNode;
   eyebrow?: string;
   actions?: React.ReactNode;
+  breadcrumb?: React.ReactNode;
+  meta?: React.ReactNode;
+  tabs?: React.ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end gap-x-4 gap-y-3">
-      <div className="flex min-w-0 flex-col gap-1">
-        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">
-            {title}
-          </h1>
-          {chip ? <PageChip>{chip}</PageChip> : null}
+    <header className="grid gap-4">
+      {breadcrumb}
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
+          {meta ? <div className="mb-2 flex flex-wrap items-center gap-1.5">{meta}</div> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight text-balance break-words lg:text-[2rem]">
+              {title}
+            </h1>
+            {chip ? <PageChip>{chip}</PageChip> : null}
+          </div>
+          {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
         </div>
-        {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
+        {actions ? <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
-      {actions ? <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {tabs}
     </header>
   );
 }
@@ -187,7 +199,7 @@ export function StatTile({
         <dd
           className={cn(
             'text-foreground mt-0.5 text-sm font-semibold break-words tabular-nums',
-            tone === 'alert' && 'text-rose-700',
+            tone === 'alert' && 'text-danger',
             tone === 'success' && 'text-success-strong',
           )}
         >
@@ -200,9 +212,15 @@ export function StatTile({
   );
 }
 
+const NOTICE_TONES = {
+  info: 'border-primary/15 bg-primary-subtle/50 text-foreground',
+  attention: 'border-attention-border bg-attention-subtle text-attention-foreground',
+  danger: 'border-danger-border bg-danger-subtle text-danger-foreground',
+} as const;
+
 /**
- * Explanatory or warning callout. `info` is the lavender note used for rules
- * text; `attention` is the amber surface reserved for real gaps and refusals.
+ * Callout. `info` is the lavender note for rules text; `attention` is the
+ * amber surface for missing data; `danger` is for failures and refusals.
  */
 export function MissionNotice({
   tone = 'info',
@@ -211,16 +229,14 @@ export function MissionNotice({
   children,
   ...props
 }: {
-  tone?: 'info' | 'attention';
+  tone?: 'info' | 'attention' | 'danger';
   icon?: LucideIcon;
 } & React.ComponentProps<'div'>) {
   return (
     <div
       className={cn(
         'flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm',
-        tone === 'info'
-          ? 'border-primary/15 bg-primary-subtle/50 text-foreground'
-          : 'border-attention-border bg-attention-subtle text-attention-foreground',
+        NOTICE_TONES[tone],
         className,
       )}
       {...props}
@@ -236,12 +252,38 @@ export function MissionNotice({
   );
 }
 
-/** Muted empty state inside a panel. */
-export function MissionEmpty({ children, className }: { children: React.ReactNode; className?: string }) {
+/**
+ * Empty state: what this place is, optionally a title and one next action.
+ * `chart` keeps an empty chart area at the chart's height.
+ */
+export function EmptyState({
+  title,
+  children,
+  icon: Icon,
+  action,
+  variant = 'inline',
+  className,
+}: {
+  title?: string;
+  children?: React.ReactNode;
+  icon?: LucideIcon;
+  action?: React.ReactNode;
+  variant?: 'inline' | 'chart';
+  className?: string;
+}) {
   return (
-    <p className={cn('bg-muted/70 text-muted-foreground rounded-xl px-4 py-6 text-center text-sm', className)}>
-      {children}
-    </p>
+    <div
+      className={cn(
+        'bg-muted/70 text-muted-foreground grid justify-items-center gap-1.5 rounded-xl px-6 py-6 text-center text-sm',
+        variant === 'chart' && 'h-64 content-center',
+        className,
+      )}
+    >
+      {Icon ? <Icon className="size-5" aria-hidden="true" /> : null}
+      {title ? <p className="text-foreground font-semibold">{title}</p> : null}
+      {children ? <p className="max-w-md text-pretty">{children}</p> : null}
+      {action}
+    </div>
   );
 }
 

@@ -30,9 +30,9 @@ const STATUS_CLASSES = {
   Done: 'badge-status-done',
   'In Progress': 'badge-status-in-progress',
   'Not Started': 'badge-status-not-started',
-  Stopped: 'status-not-started',
-  'On-Hold': 'status-not-started',
-  Carryover: 'status-in-progress',
+  Stopped: 'badge-status-not-started',
+  'On-Hold': 'badge-status-not-started',
+  Carryover: 'badge-status-in-progress',
   Discarded: 'badge-status-discarded',
 } satisfies Record<TaskStatus, string>;
 
@@ -104,7 +104,7 @@ export function FreshnessIndicator({
     <span
       className={cn(
         'freshness-indicator',
-        freshness === null ? "text-slate-500" : FRESHNESS_CLASSES[freshness],
+        freshness === null ? "text-muted-foreground" : FRESHNESS_CLASSES[freshness],
         className,
       )}
       {...props}

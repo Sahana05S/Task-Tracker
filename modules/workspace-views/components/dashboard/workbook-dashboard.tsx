@@ -4,6 +4,7 @@ import { seriesColor } from '@/shared/ui/chart-palette';
 import type { DashboardBucket, DashboardMemberMetric, DateBucket, DeadlineOutcomeBucket, WorkbookDashboardCharts } from '@/modules/scoring/client';
 import { formatNumeric } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
+import { EmptyState } from '@/shared/ui/mission-ui';
 
 export function WorkbookDashboard({
   charts,
@@ -103,11 +104,7 @@ function ChartCard({
 }
 
 function EmptyChart({ children }: { children: ReactNode }) {
-  return (
-    <p className="soft-inset text-muted-foreground flex min-h-48 flex-1 items-center justify-center px-6 text-center text-sm">
-      {children}
-    </p>
-  );
+  return <EmptyState variant="chart" className="min-h-48 h-auto flex-1">{children}</EmptyState>;
 }
 
 function SignedBarCard({
@@ -159,7 +156,7 @@ function SignedBarCard({
                         'absolute inset-y-0 rounded-full',
                         item.value >= 0
                           ? 'left-1/2 bg-success'
-                          : 'right-1/2 bg-rose-500',
+                          : 'right-1/2 bg-chart-negative',
                       )}
                       style={{ width: `${width}%` }}
                     />

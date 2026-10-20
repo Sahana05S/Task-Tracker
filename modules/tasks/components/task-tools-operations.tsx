@@ -3,6 +3,7 @@
 import { useState,useTransition } from 'react';
 import { previewTaskTool,commitTaskTool } from '@/modules/tasks/tool-actions';
 import { Button } from '@/shared/ui/button';
+import { codeLabel } from '@/shared/tracker/labels';
 import type { Task,User } from '@/types/tracker';
 import type { Json } from '@/types/database';
 import type { ToolOperation,ToolsPreview } from '@/modules/tasks/internal/tools/contract';
@@ -42,10 +43,10 @@ export function TaskToolsOperations({tasks,members,canManage}:{tasks:readonly Ta
    <Button type="submit" disabled={pending}>{pending?'Working…':'Prepare preview'}</Button>
   </fieldset></form>
   {preview?<div className="border-border bg-muted/40 grid gap-3 rounded-xl border p-4 text-sm"><p>{preview.items.length} item(s). Preview expires {new Date(preview.expiresAt).toLocaleTimeString()}.</p>{preview.sourceScaleBefore!==null?<p>Source scale: {preview.sourceScaleBefore} → {preview.sourceScaleAfter??'unchanged'}</p>:null}
-   {!preview.ready?<p role="status">Cannot commit: {preview.reasons.map(r=>r.replaceAll('_',' ')).join('; ')}.</p>:null}
+   {!preview.ready?<p role="status">Cannot commit: {preview.reasons.map(r=>codeLabel(r)).join('; ')}.</p>:null}
    <div className="border-border overflow-x-auto rounded-xl border bg-white"><table className="sheet-grid w-full"><thead><tr>{['Tag / title','Dates','Scale','Assignees / shares','Reviewers'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{preview.items.map((t,i)=><tr key={t.taskTag??`planned-${i}`}><td>{t.taskTag??'No number allocated'} · {t.title}</td><td>{t.assignedDate} → {t.dueDate??'No deadline'}</td><td>{t.scale??'Unavailable'} ({t.scaleMode})</td><td>{t.assignees?.map((id,i)=>`${names.get(id)??'Unknown member'} (${t.shares?.[i]===undefined?'unavailable':t.shares[i]/10000+'%'})`).join(', ')??'Unchanged'}</td><td>{t.reviewers?.map(id=>names.get(id)??'Unknown member').join(', ')??'Unchanged'}</td></tr>)}</tbody></table></div>
    {copies?<ul className="list-disc pl-5">{Object.entries(preview.inheritance).map(([name,value])=><li key={name}><strong>{name}:</strong> {value}</li>)}</ul>:null}
-   <Button disabled={pending||!preview.ready} onClick={()=>start(async()=>{try{const result=await commitTaskTool(preview.id,key);if(result.success){setMessage(result.data.items.map(i=>`${i.taskTag}: ${i.status.replaceAll('_',' ')}`).join('; '));setPreview(null);}else setMessage(result.error);}catch{setMessage('Response unavailable. Retry this same preview; its operation key is retained.');}})}>Commit reviewed preview</Button>
+   <Button disabled={pending||!preview.ready} onClick={()=>start(async()=>{try{const result=await commitTaskTool(preview.id,key);if(result.success){setMessage(result.data.items.map(i=>`${i.taskTag}: ${codeLabel(i.status)}`).join('; '));setPreview(null);}else setMessage(result.error);}catch{setMessage('Response unavailable. Retry this same preview; its operation key is retained.');}})}>Commit reviewed preview</Button>
   </div>:null}
   {message?<p role="status" className="bg-muted/70 rounded-xl px-3 py-2 text-sm">{message}</p>:null}
   <Button variant="outline" onClick={()=>{const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),tasks:tasks.map(t=>({id:t.id,tag:t.taskTag,title:t.title,archivedEffectiveDate:t.archivedEffectiveDate??null,handoffSuccessorId:t.handoffSuccessorId??null}))},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='task-tags.json';a.click();URL.revokeObjectURL(url);}}>Export visible task tags (JSON)</Button>

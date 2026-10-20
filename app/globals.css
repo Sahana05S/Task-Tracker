@@ -22,11 +22,14 @@
   --popover-foreground: #1a172e;
 
   --border: #eae7f6; /* lavender border tint */
-  --input: #dcd8ee;
+  /* Field edges: 3.29:1 on white, the 3:1 a form control boundary needs. */
+  --input: #8f88b8;
 
   /* ---- Text hierarchy -------------------------------------------------- */
   --muted: #f3f1fa;
   --muted-foreground: #5c5776;
+  /* Placeholder text: 4.91:1 on white, still lighter than typed values. */
+  --placeholder: #726d8b;
 
   /* ---- Violet interaction ---------------------------------------------- */
   --primary: #6355e6;
@@ -43,6 +46,23 @@
 
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
+
+  /* ---- Danger and overdue -----------------------------------------------
+     Errors, refusals and destructive outcomes. Amber attention surfaces stay
+     for missing data only, so an error never reads as a gap and vice versa.
+     ------------------------------------------------------------------- */
+  --danger: #be123c;
+  --danger-subtle: #fff1f2;
+  --danger-border: #fecdd3;
+  --danger-foreground: #9f1239;
+  --overdue: #be123c;
+
+  /* ---- Progress ---------------------------------------------------------
+     One progress bar everywhere: mint fill on a lavender track.
+     ------------------------------------------------------------------- */
+  --progress-track: #ebe7f6;
+  --progress-from: #10b981;
+  --progress-to: #34d399;
 
   /* ---- Recognition (gold) and progress (mint) ---------------------------
      Gold is only for stars, awards and recognised contributions. Mint is for
@@ -104,6 +124,7 @@
   --color-input: var(--input);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-placeholder: var(--placeholder);
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
@@ -118,6 +139,12 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-border: var(--danger-border);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-overdue: var(--overdue);
+  --color-progress-track: var(--progress-track);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -364,7 +391,7 @@
 
   /* Page or panel title. */
   .panel-title {
-    @apply text-foreground text-lg font-bold tracking-tight;
+    @apply text-foreground text-base font-bold tracking-tight;
   }
 }
 
@@ -387,7 +414,7 @@
 
   /* --- Task status ------------------------------------------------------ */
   .badge-status-done {
-    @apply bg-emerald-100 text-emerald-800;
+    @apply bg-success-subtle text-success-strong;
   }
 
   .badge-status-in-progress {
@@ -576,11 +603,11 @@
 
   /* Mint progress bar (DESIGN.md): 8px rounded track, mint fill. */
   .progress-track {
-    @apply h-2 w-full overflow-hidden rounded-full bg-[#ebe7f6];
+    @apply bg-progress-track h-2 w-full overflow-hidden rounded-full;
   }
 
   .progress-fill {
-    @apply h-full rounded-full bg-linear-to-r from-[#10b981] to-[#34d399];
+    @apply h-full rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
   }
 
   /* Initials avatar for Missions; letters come from data-initials so they stay
@@ -612,8 +639,31 @@
      selects and textareas; `.field-label` stacks a label over its control.
      ---------------------------------------------------------------------- */
   .field {
-    @apply border-input bg-background text-foreground min-h-10 max-w-full min-w-0
-      rounded-xl border px-3 py-2 text-sm transition-colors;
+    @apply border-input bg-card text-foreground max-w-full min-w-0 rounded-xl border
+      px-3.5 py-1.5 text-base outline-none transition-[color,background-color,border-color,box-shadow]
+      placeholder:text-placeholder selection:bg-primary-subtle selection:text-primary
+      focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:ring-2
+      disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed
+      aria-invalid:border-danger aria-invalid:ring-danger/20 aria-invalid:ring-2 sm:text-sm;
+  }
+
+  /* Single-line controls are one height; utilities such as h-9 still win. */
+  :where(input, select:not([multiple])).field {
+    @apply h-10;
+  }
+
+  textarea.field {
+    @apply min-h-10 py-2;
+  }
+
+  /* Native selects share the control and draw their own chevron. */
+  select.field {
+    @apply appearance-none bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c5776' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  select.field[multiple] {
+    @apply bg-none pr-3.5;
   }
 
   .field:focus-visible {
@@ -655,17 +705,7 @@
   }
 
   /* Plain <button>s that do not use the Button component. */
-  .button-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary-hover inline-flex h-10
-      items-center justify-center rounded-xl px-4 text-sm font-semibold whitespace-nowrap
-      transition-colors disabled:pointer-events-none disabled:opacity-50;
-  }
 
-  .button-secondary {
-    @apply border-border text-foreground hover:bg-muted inline-flex h-10 items-center
-      justify-center rounded-xl border bg-white px-4 text-sm font-semibold
-      whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50;
-  }
 
   /* Status filter pill on the Missions toolbar. */
   .filter-pill {
@@ -770,30 +810,22 @@
    ========================================================================== */
 
 @layer components {
+  /* The same mint-on-lavender bar as .progress-track / .progress-fill, on the
+     native element so inline grid cells keep its built-in semantics. */
   .task-progress {
-    @apply h-1.5 w-full appearance-none overflow-hidden rounded-full border-0
-      bg-slate-200;
+    @apply bg-progress-track h-1.5 w-full appearance-none overflow-hidden rounded-full border-0;
   }
 
   .task-progress::-webkit-progress-bar {
-    @apply rounded-full bg-slate-100;
+    @apply bg-progress-track rounded-full;
   }
 
   .task-progress::-webkit-progress-value {
-    @apply bg-primary rounded-full;
+    @apply rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
   }
 
   .task-progress::-moz-progress-bar {
-    @apply bg-primary rounded-full;
-  }
-
-  /* Complete work reads emerald, matching the Done status pill. */
-  .task-progress[data-complete='true']::-webkit-progress-value {
-    @apply bg-emerald-500;
-  }
-
-  .task-progress[data-complete='true']::-moz-progress-bar {
-    @apply bg-emerald-500;
+    @apply rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
   }
 }
 

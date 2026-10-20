@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/shared/ui/button';
 import { getLivePresentation } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
@@ -107,7 +108,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
             <label htmlFor="dashboard-month" className="sr-only">Month</label>
             <input id="dashboard-month" type="month" name="period" defaultValue={period.startDate.slice(0,7)}
               className="field h-10 w-40 bg-white" />
-            <button type="submit" className="button-secondary">View</button>
+            <button type="submit" className={buttonVariants({ variant: 'outline' })}>View</button>
           </form>
         }
       />

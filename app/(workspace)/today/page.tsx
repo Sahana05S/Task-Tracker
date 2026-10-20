@@ -18,6 +18,7 @@ import { getDailyStarHighlight, getStreak } from '@/modules/recognition';
 import { DailyStarSpotlight } from '@/modules/recognition/components/daily-star-spotlight';
 import { StreakCard } from '@/modules/recognition/components/streak-card';
 import { settle } from '@/shared/async/settle';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 
 export const metadata: Metadata = { title: 'Today · TaskPulse' };
 
@@ -35,13 +36,13 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const due = missionDueFilter(query.due);
   const today = kolkataDate();
   const initial = await getAssignedMissionBatch(profile.id, { due }).catch(() => null);
-  return <div className="mx-auto w-full max-w-[1200px] px-4 pt-6 pb-10 lg:px-6">
-    <header className="mb-6"><h1 className="text-foreground text-3xl font-bold tracking-tight">Today</h1><p className="text-muted-foreground mt-1 text-sm">A clear path through your work.</p></header>
+  return <MissionPage>
+    <MissionPageHeader title="Today" description="A clear path through your work." />
     <MissionRoadmap key={due} initial={initial} due={due} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} />
-    <Suspense fallback={<p role="status" className="text-muted-foreground mt-10 text-sm">Loading your week and team updates…</p>}>
+    <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>
       <TodayOverview profile={profile} />
     </Suspense>
-  </div>;
+  </MissionPage>;
 }
 
 async function TodayOverview({ profile }: { profile: { id: string; employeeId: string } }) {
@@ -54,7 +55,7 @@ async function TodayOverview({ profile }: { profile: { id: string; employeeId: s
   const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(date);
 
   return (
-    <div className="mt-10 border-t border-border pt-8">
+    <div className="border-border mt-5 border-t pt-8">
       <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
         <div className="grid content-start gap-4 lg:col-span-8 lg:gap-6">
           <DailyStarSpotlight highlight={star} names={data.names} profileHref={`/team/${encodeURIComponent(profile.employeeId)}`} />

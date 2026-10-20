@@ -43,7 +43,7 @@ export function QuickLogTrigger({
           onClick={() => setOpen(true)}
           aria-label="Log hours"
           className={cn(
-            '-mt-6 flex size-14 items-center justify-center rounded-full bg-slate-900 text-slate-50 shadow-lg transition-colors hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:ring-offset-2 focus-visible:outline-none',
+            'bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-ring -mt-6 flex size-14 items-center justify-center rounded-full shadow-(--shadow-soft-lg) transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
             className,
           )}
         >

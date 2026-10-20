@@ -1,3 +1,4 @@
+import { MissionPage } from '@/shared/ui/mission-ui';
 import { Skeleton } from '@/shared/ui/skeleton';
 
 /**
@@ -8,13 +9,13 @@ import { Skeleton } from '@/shared/ui/skeleton';
  */
 export default function LogsLoading() {
   return (
-    <div className="flex flex-col gap-4">
+    <MissionPage className="max-w-[880px]">
       <span role="status" className="sr-only">
         Loading effort log
       </span>
 
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-3" aria-hidden="true">
         <div className="flex flex-col gap-2">
           <Skeleton className="h-7 w-44" />
           <Skeleton className="h-4 w-72" />
@@ -62,6 +63,6 @@ export default function LogsLoading() {
           </ul>
         </div>
       ))}
-    </div>
+    </MissionPage>
   );
 }

@@ -74,7 +74,7 @@ export function SettingsForm({ profile }: SettingsFormProps) {
         <p
           role="alert"
           aria-live="polite"
-          className="flex max-w-sm items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+          className="flex max-w-sm items-start gap-2 rounded-md border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger"
         >
           <AlertCircleIcon
             className="mt-0.5 size-4 shrink-0"

@@ -1,10 +1,6 @@
-import { Skeleton } from '@/shared/ui/skeleton';
+import { PageSkeleton } from '@/shared/ui/page-skeleton';
 
+/** Attendance: the record form and the per-member day tables. */
 export default function AttendanceLoading() {
-  return (
-    <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
-      <Skeleton className="h-28 w-full" />
-      <Skeleton className="h-80 w-full" />
-    </div>
-  );
+  return <PageSkeleton label="Loading attendance" panels={['h-28', 'h-96']} />;
 }

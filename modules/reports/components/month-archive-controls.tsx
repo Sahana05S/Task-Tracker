@@ -1,11 +1,13 @@
 'use client';
 
+import { buttonVariants } from '@/shared/ui/button';
 import { useActionState,useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArchiveIcon } from 'lucide-react';
 import { monthArchiveAction,type MonthActionState } from '@/modules/reports/month-actions';
 import type { MonthHistory } from '@/modules/reports/internal/month/archive';
+import { cn } from '@/shared/utils';
 
 export function MonthArchiveControls({period,history,canClose,completeMonth,operation}:{period:string;history:MonthHistory;canClose:boolean;completeMonth:boolean;operation:string}){
  const [result,action,pending]=useActionState(monthArchiveAction,{ok:false,message:''} as MonthActionState);
@@ -24,8 +26,8 @@ export function MonthArchiveControls({period,history,canClose,completeMonth,oper
     <label className="field-label">Source record UUID<input required name="recordId" className="field block w-full"/></label>
     <label className="field-label">From date<input required type="date" name="from" className="field block w-full"/></label>
     <label className="field-label">Through date<input required type="date" name="through" className="field block w-full"/></label>
-    <button className="button-primary justify-self-start" disabled={pending} name="command" value="begin_correction">Authorize correction</button></>:
-    <div className="flex flex-wrap items-center gap-2 md:col-span-2"><button className="button-secondary" disabled={pending} name="command" value="draft">Capture draft</button><button className="button-primary" disabled={pending||!completeMonth} name="command" value={history.state==='correction'?'revise':'close'}>{history.state==='correction'?'Publish new revision':'Close month'}</button>{!completeMonth?<p className="text-muted-foreground text-sm">Close becomes available after the Kolkata month ends.</p>:null}</div>}
+    <button className={cn(buttonVariants(), 'justify-self-start')} disabled={pending} name="command" value="begin_correction">Authorize correction</button></>:
+    <div className="flex flex-wrap items-center gap-2 md:col-span-2"><button className={buttonVariants({ variant: 'outline' })} disabled={pending} name="command" value="draft">Capture draft</button><button className={buttonVariants()} disabled={pending||!completeMonth} name="command" value={history.state==='correction'?'revise':'close'}>{history.state==='correction'?'Publish new revision':'Close month'}</button>{!completeMonth?<p className="text-muted-foreground text-sm">Close becomes available after the Kolkata month ends.</p>:null}</div>}
   </form>:null}
   {result.message?<p role="status" className="bg-muted/70 rounded-xl px-3 py-2 text-sm">{result.message}</p>:null}
  </section>;

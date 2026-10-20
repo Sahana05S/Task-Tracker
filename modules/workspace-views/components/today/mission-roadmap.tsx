@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
+import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
 import { cn } from '@/shared/utils';
 import { missionDueLabel, type MissionDueFilter, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/client';
@@ -20,6 +21,10 @@ const FOCUS = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-o
 const SECTIONS = ['setup', 'activity', 'closure'] as const;
 
 type View = 'roadmap' | 'list';
+const VIEW_OPTIONS: readonly SegmentedOption<View>[] = [
+  { value: 'roadmap', label: 'Roadmap', icon: OrbitIcon },
+  { value: 'list', label: 'List', icon: ListIcon },
+];
 interface Props {
   initial: RoadmapMissionBatch | null;
   due: MissionDueFilter;
@@ -108,22 +113,28 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
 
   return <section aria-labelledby="mission-path-title" className="min-w-0">
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div><h2 id="mission-path-title" className="text-foreground text-xl font-bold tracking-tight">Your mission path</h2><p className="text-muted-foreground mt-1 max-w-prose text-sm">Choose a mission. Open its next item. Keep your work in focus.</p></div>
-      <div className="border-border flex rounded-full border p-1" role="group" aria-label="Mission view">
-        <Button size="sm" variant={view === 'roadmap' ? 'default' : 'ghost'} aria-pressed={view === 'roadmap'} onClick={() => { setView('roadmap'); remember(location, due, 'roadmap'); }}><OrbitIcon aria-hidden="true" />Roadmap</Button>
-        <Button size="sm" variant={view === 'list' ? 'default' : 'ghost'} aria-pressed={view === 'list'} onClick={() => { setView('list'); remember(location, due, 'list'); if (location) open(location); }}><ListIcon aria-hidden="true" />List</Button>
-      </div>
+      <div><h2 id="mission-path-title" className="text-foreground text-base font-bold tracking-tight">Your mission path</h2><p className="text-muted-foreground mt-1 max-w-prose text-sm">Choose a mission. Open its next item. Keep your work in focus.</p></div>
+      <SegmentedControl
+        label="Mission view"
+        value={view}
+        options={VIEW_OPTIONS}
+        onValueChange={(next) => {
+          setView(next);
+          remember(location, due, next);
+          if (next === 'list' && location) open(location);
+        }}
+      />
     </div>
     <nav aria-label="Mission deadline filters" className="mt-5 flex flex-wrap gap-2">
       {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
     </nav>
     {view === 'roadmap' ? <>
-      {error ? <div role="alert" className="border-attention-border bg-attention-subtle text-attention-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
+      {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
       {batch?.missions.length || location ? <MissionMap missions={batch?.missions ?? []} today={today} initialLocation={location}
         onLocation={next => { setLocation(next); remember(next, due, 'roadmap'); }} />
-        : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="text-primary font-semibold hover:underline">Browse missions</Link></p> : null}
+        : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
       {batch?.hasMore ? <Button className="mt-4" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : `Load more missions (${batch.missions.length} shown)`}</Button> : null}
-      {batchError ? <p role="alert" className="text-destructive mt-3 text-sm">{batchError} <button type="button" className={cn('rounded font-semibold underline', FOCUS)} disabled={loadingMore} onClick={() => loadMoreMissions()}>Retry batch</button></p> : null}
+      {batchError ? <p role="alert" className="text-danger mt-3 text-sm">{batchError} <button type="button" className={cn('link rounded font-semibold', FOCUS)} disabled={loadingMore} onClick={() => loadMoreMissions()}>Retry batch</button></p> : null}
     </> : <>
     {location ? <nav aria-label="Roadmap breadcrumb" className="border-border mt-5 border-t pt-4">
       <ol className="text-muted-foreground flex flex-wrap items-center gap-x-1 gap-y-2 text-xs">
@@ -145,21 +156,21 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
           </div> : <p className="text-muted-foreground text-xs">{batch ? `${batch.missions.length} open ${batch.missions.length === 1 ? 'mission' : 'missions'} loaded${batch.hasMore ? ' · more below' : ''}` : 'Your open assigned missions'}</p>}
         </div>
         <div className="min-w-0 overflow-x-auto px-4 pb-5 sm:px-5" aria-busy={pending || loadingMore}>
-          {error ? <div role="alert" className="border-attention-border bg-attention-subtle text-attention-foreground my-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => location ? open(location) : loadMoreMissions(true)} disabled={pending || loadingMore}><RotateCcwIcon aria-hidden="true" />Retry {location ? 'branch' : 'roadmap'}</Button></div> : null}
+          {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground my-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => location ? open(location) : loadMoreMissions(true)} disabled={pending || loadingMore}><RotateCcwIcon aria-hidden="true" />Retry {location ? 'branch' : 'roadmap'}</Button></div> : null}
           {location ? pending && !branch ? <LoadingBranch /> : branch?.checklist ? <div className="pt-4">
             {branch.rows.length ? <RoadmapRows baseCursor={location.cursor ?? 0} key={`${location.missionId}:${branch.checklist.id}:${branch.parentNodeId}:${branch.section}:${revision}`} rows={branch.rows} missionId={location.missionId} view={view} selectedId={selected?.id} onSelect={select} onZoom={options => open({ missionId: location.missionId, ...options })} /> : <p className="text-muted-foreground py-8 text-sm">No items in this {branch.section} branch. Add items from the mission checklist.</p>}
             {branch.hasMore ? <Button variant="outline" size="sm" disabled={pending} onClick={() => open(location, true)} className="mt-4">{pending ? 'Loading…' : 'Load more items'}</Button> : null}
-          </div> : !pending && !error ? <p className="text-muted-foreground py-8 text-sm">This mission does not have a checklist yet. <Link href={`/tasks/${encodeURIComponent(mission?.taskTag ?? '')}`} className="text-primary font-semibold hover:underline">Open mission details</Link> to set one up.</p> : null
+          </div> : !pending && !error ? <p className="text-muted-foreground py-8 text-sm">This mission does not have a checklist yet. <Link href={`/tasks/${encodeURIComponent(mission?.taskTag ?? '')}`} className="link font-semibold">Open mission details</Link> to set one up.</p> : null
             : <div className="pt-4">
               {batch?.missions.length ? <ol className="divide-border divide-y" aria-label="Your open assigned missions">{batch.missions.map(item => <li key={item.id} className="relative min-w-0" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 106px' }}>
                 <button type="button" onClick={() => { setMission(item); open({ missionId: item.id }); }} className={cn('group text-left w-full min-w-0 py-3 hover:bg-muted rounded-lg px-2 transition-colors', FOCUS)}>
                   <span className="flex items-start justify-between gap-3"><span className="text-foreground min-w-0 break-words text-sm font-semibold">{item.title}</span><ArrowRightIcon className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" /></span>
-                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><PriorityBadge priority={item.priority} /><span className={cn('text-xs', item.dueDate && item.dueDate < today ? 'text-destructive' : 'text-muted-foreground')}>{missionDueLabel(item.dueDate, today)}</span><Progress value={item.progress} /><span className="text-muted-foreground text-xs">{item.taskTag}</span></span>
+                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><PriorityBadge priority={item.priority} /><span className={cn('text-xs', item.dueDate && item.dueDate < today ? 'text-overdue font-semibold' : 'text-muted-foreground')}>{missionDueLabel(item.dueDate, today)}</span><Progress value={item.progress} /><span className="text-muted-foreground text-xs">{item.taskTag}</span></span>
                 </button>
-              </li>)}</ol> : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="text-primary font-semibold hover:underline">Browse missions</Link></p> : null}
+              </li>)}</ol> : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
             </div>}
           {!location && batch?.hasMore ? <Button className="mt-5 w-full" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : 'Load more missions'}</Button> : null}
-          {batchError ? <p role="alert" className="text-destructive mt-3 text-sm">{batchError} <button type="button" className={cn('rounded font-semibold underline', FOCUS)} disabled={loadingMore} onClick={() => loadMoreMissions()}>Retry batch</button></p> : null}
+          {batchError ? <p role="alert" className="text-danger mt-3 text-sm">{batchError} <button type="button" className={cn('link rounded font-semibold', FOCUS)} disabled={loadingMore} onClick={() => loadMoreMissions()}>Retry batch</button></p> : null}
         </div>
       </div>
       {selected && mission && branch?.checklist ? <aside aria-labelledby="focused-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-6">
@@ -210,7 +221,7 @@ function BranchRow({ row, missionId, view, selectedId, onSelect, onZoom, offset 
     </div>
     {expanded ? <div className="border-border ml-4 min-w-0 border-l pl-2 sm:pl-3">
       {pending && !branch ? <LoadingBranch /> : null}
-      {error ? <p role="alert" className="text-destructive py-3 text-sm">{error} <button type="button" onClick={() => load()} className={cn('rounded underline', FOCUS)}>Retry branch</button></p> : null}
+      {error ? <p role="alert" className="text-danger py-3 text-sm">{error} <button type="button" onClick={() => load()} className={cn('link rounded', FOCUS)}>Retry branch</button></p> : null}
       {branch ? branch.rows.length ? <RoadmapRows rows={branch.rows} missionId={missionId} view={view} selectedId={selectedId} onSelect={onSelect} onZoom={onZoom} /> : <p className="text-muted-foreground py-3 text-xs">No activity items inside this branch.</p> : null}
       {branch?.hasMore ? <Button variant="ghost" size="sm" disabled={pending} onClick={() => load(true)}>{pending ? 'Loading…' : 'Load more items'}</Button> : null}
     </div> : null}

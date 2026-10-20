@@ -35,7 +35,8 @@ import type { ActionResponse, ChecklistNode, Task } from '@/types/tracker';
  * up from their direct children. Server-safe.
  */
 
-export const FIELD = 'border-input bg-background w-full min-w-0 rounded-xl border px-3 text-sm';
+/** The shared control look (`.field` in globals.css), full width. */
+export const FIELD = 'field w-full';
 export const LABEL = 'grid min-w-0 gap-1 text-sm';
 export const LABEL_TEXT = 'text-foreground font-medium';
 
@@ -94,7 +95,7 @@ export function ItemTimerControls({ ctx, node, compact }: { ctx: Pick<ChecklistC
           <input type="hidden" name="timerId" value={mineHere.timerId} />
           <input type="hidden" name="expectedVersion" value={mineHere.version} />
           {compact ? null : <textarea name="notes" placeholder="What did you do? (saved on the task log)" aria-label="Timer notes" className={cn(FIELD, 'min-h-16 py-2')} />}
-          <Button type="submit" size="sm" className="h-9 justify-self-start rounded-xl"><SquareIcon aria-hidden="true" />Stop and log time</Button>
+          <Button type="submit" size="sm" className="h-9 justify-self-start"><SquareIcon aria-hidden="true" />Stop and log time</Button>
         </ExecutionForm>
         {compact ? null : (
           <ExecutionForm action={time.discard} scope={`itemTimerDiscard:${mineHere.timerId}`} className="grid min-w-0 gap-2">
@@ -102,7 +103,7 @@ export function ItemTimerControls({ ctx, node, compact }: { ctx: Pick<ChecklistC
             <input type="hidden" name="expectedVersion" value={mineHere.version} />
             <input type="hidden" name="taskTag" value={ctx.task.taskTag} />
             <input name="reason" required placeholder="Reason for discarding" aria-label="Reason for discarding" className={cn(FIELD, 'h-9')} />
-            <Button type="submit" variant="ghost" size="sm" className="justify-self-start rounded-xl">Discard timer</Button>
+            <Button type="submit" variant="ghost" size="sm" className="justify-self-start">Discard timer</Button>
           </ExecutionForm>
         )}
       </div>
@@ -123,7 +124,7 @@ export function ItemTimerControls({ ctx, node, compact }: { ctx: Pick<ChecklistC
     <ExecutionForm action={time.start} scope={`itemTimerStart:${node.id}`} className="grid min-w-0 gap-2">
       <input type="hidden" name="nodeId" value={node.id} />
       {compact ? null : <textarea name="notes" placeholder="Optional note for the log" aria-label="Timer notes" className={cn(FIELD, 'min-h-16 py-2')} />}
-      <Button type="submit" variant={compact ? 'outline' : 'default'} size="sm" className="h-9 justify-self-start rounded-xl"><PlayIcon aria-hidden="true" />Start timer</Button>
+      <Button type="submit" variant={compact ? 'outline' : 'default'} size="sm" className="h-9 justify-self-start"><PlayIcon aria-hidden="true" />Start timer</Button>
     </ExecutionForm>
   );
 }
@@ -265,7 +266,7 @@ export function AddNodeForm({
       )}
       {ctx.manager ? <LinkedTaskSelect ctx={ctx} selected={null} /> : null}
       <RowDetailFields />
-      <Button type="submit" className="rounded-xl">{submitLabel}</Button>
+      <Button type="submit">{submitLabel}</Button>
     </ExecutionForm>
   );
 }
@@ -284,7 +285,7 @@ export function EditNodeForms({ ctx, node }: { ctx: ChecklistContext; node: Chec
           <input type="hidden" name="node_id" value={node.id} />
           <SectionSelect />
           <ReasonInput placeholder="Reason for explicit subtree mapping" />
-          <Button type="submit" variant="outline" size="sm" className="h-auto min-h-8 justify-self-start rounded-xl whitespace-normal">Map this root and descendants</Button>
+          <Button type="submit" variant="outline" size="sm" className="h-auto min-h-8 justify-self-start whitespace-normal">Map this root and descendants</Button>
         </ExecutionForm>
       ) : null}
       <ExecutionForm action={ctx.action} scope={`edit:${node.id}`}>
@@ -313,7 +314,7 @@ export function EditNodeForms({ ctx, node }: { ctx: ChecklistContext; node: Chec
         )}
         <RowDetailFields node={node} />
         <ReasonInput placeholder="Reason for structure/subtree section correction" />
-        <Button type="submit" variant="outline" size="sm" className="justify-self-start rounded-xl">Correct structure</Button>
+        <Button type="submit" variant="outline" size="sm" className="justify-self-start">Correct structure</Button>
       </ExecutionForm>
       {!node.linkedTaskId && node.section ? (
         <ExecutionForm action={ctx.action} scope={`duplicate:${node.id}`}>
@@ -322,7 +323,7 @@ export function EditNodeForms({ ctx, node }: { ctx: ChecklistContext; node: Chec
           <p className="text-muted-foreground text-xs">
             {hasChildren ? 'Copies this page and everything inside it' : 'Copies this row'}, right after it, as fresh work (No). Rows linked to real tasks are not copied.
           </p>
-          <Button type="submit" variant="outline" size="sm" className="justify-self-start rounded-xl"><CopyIcon aria-hidden="true" />Duplicate</Button>
+          <Button type="submit" variant="outline" size="sm" className="justify-self-start"><CopyIcon aria-hidden="true" />Duplicate</Button>
         </ExecutionForm>
       ) : null}
       {!hasChildren ? (
@@ -330,7 +331,7 @@ export function EditNodeForms({ ctx, node }: { ctx: ChecklistContext; node: Chec
           <CommandFields ctx={ctx} command="delete" />
           <input type="hidden" name="node_id" value={node.id} />
           <ReasonInput placeholder="Reason for removal" />
-          <Button type="submit" variant="ghost" size="sm" className="justify-self-start rounded-xl text-rose-700 hover:text-rose-800">Remove item</Button>
+          <Button type="submit" variant="ghost" size="sm" className="justify-self-start text-danger hover:text-danger-foreground">Remove item</Button>
         </ExecutionForm>
       ) : (
         <p className="text-muted-foreground text-xs">Remove or move the items inside before removing this page.</p>
@@ -353,7 +354,7 @@ export function CompletionForm({ ctx, node, className }: { ctx: Pick<ChecklistCo
             {(node.linkedTaskId ? ['No', 'N/A'] : ['Yes', 'No', 'N/A']).map(s => <option key={s}>{s}</option>)}
           </select>
         </label>
-        <Button type="submit" size="sm" className="h-9 rounded-xl">Save state</Button>
+        <Button type="submit" size="sm" className="h-9">Save state</Button>
       </div>
       {node.linkedTaskId ? <p className="text-muted-foreground max-w-60 text-xs">No restores applicability; completion follows the linked task.</p> : null}
     </ExecutionForm>
@@ -392,7 +393,7 @@ export function ChecklistRow({ ctx, node: n, showSection = true }: { ctx: Checkl
     <article
       className={cn(
         'border-border grid gap-3 rounded-xl border p-3 sm:p-4',
-        container ? 'bg-primary-subtle/40' : v?.isComplete ? 'bg-emerald-50/40' : 'bg-card',
+        container ? 'bg-primary-subtle/40' : v?.isComplete ? 'bg-success-subtle/40' : 'bg-card',
       )}
     >
       <div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-3">
@@ -472,6 +473,3 @@ function linkLabel(url: string): string {
   }
 }
 
-export function EmptyRows({ children }: { children: React.ReactNode }) {
-  return <p className="soft-inset text-muted-foreground px-4 py-6 text-center text-sm">{children}</p>;
-}
