@@ -1,0 +1,783 @@
+{
+  "asOf": "2026-10-20T06:56:46.348419+05:30",
+  "tasks": [
+    {
+      "id": "10000000-0000-0000-0000-000000000001",
+      "tag": "T1",
+      "scale": "8",
+      "shares": {
+        "00000000-0000-0000-0000-000000000004": 1000000
+      },
+      "status": "Not Started",
+      "credits": {
+        "00000000-0000-0000-0000-000000000004": "0.000000000000000000000000"
+      },
+      "deleted": false,
+      "dueDate": null,
+      "category": "T",
+      "priority": "Medium",
+      "progress": "0.00",
+      "revision": "27",
+      "taskHours": "0",
+      "creditMode": "configured",
+      "assignedDate": "2026-10-20",
+      "participants": [
+        "00000000-0000-0000-0000-000000000004"
+      ],
+      "scaleVersion": "0",
+      "shareVersion": "0",
+      "workRevision": "5",
+      "completedDate": null,
+      "periodCredits": {},
+      "progressOwner": "manual",
+      "unknownEffect": false,
+      "primaryAssignee": "00000000-0000-0000-0000-000000000004",
+      "completionShares": null,
+      "lifecycleVersion": "5",
+      "completionPrimary": null,
+      "handoffSuccessorId": null,
+      "periodCreditUnknown": false,
+      "archivedEffectiveDate": null
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000002",
+      "tag": "T2",
+      "scale": "10",
+      "shares": {
+        "00000000-0000-0000-0000-000000000005": 1000000
+      },
+      "status": "Not Started",
+      "credits": {
+        "00000000-0000-0000-0000-000000000005": "0.000000000000000000000000"
+      },
+      "deleted": false,
+      "dueDate": null,
+      "category": "T",
+      "priority": "Medium",
+      "progress": "0.00",
+      "revision": "28",
+      "taskHours": "0",
+      "creditMode": "configured",
+      "assignedDate": "2026-10-20",
+      "participants": [
+        "00000000-0000-0000-0000-000000000005"
+      ],
+      "scaleVersion": "0",
+      "shareVersion": "0",
+      "workRevision": "5",
+      "completedDate": null,
+      "periodCredits": {},
+      "progressOwner": "manual",
+      "unknownEffect": false,
+      "primaryAssignee": "00000000-0000-0000-0000-000000000005",
+      "completionShares": null,
+      "lifecycleVersion": "5",
+      "completionPrimary": null,
+      "handoffSuccessorId": null,
+      "periodCreditUnknown": false,
+      "archivedEffectiveDate": null
+    }
+  ],
+  "members": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "role": "managing_director",
+      "active": true,
+      "deleted": false,
+      "fullName": "user1",
+      "revision": "9",
+      "employeeId": "TEST-1"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "role": "project_engineer",
+      "active": true,
+      "deleted": false,
+      "fullName": "user2",
+      "revision": "10",
+      "employeeId": "TEST-2"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "role": "data_manager",
+      "active": true,
+      "deleted": false,
+      "fullName": "user3",
+      "revision": "11",
+      "employeeId": "TEST-3"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000004",
+      "role": "team_member",
+      "active": true,
+      "deleted": false,
+      "fullName": "user4",
+      "revision": "4",
+      "employeeId": "TEST-4"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000005",
+      "role": "team_member",
+      "active": true,
+      "deleted": false,
+      "fullName": "user5",
+      "revision": "5",
+      "employeeId": "TEST-5"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000006",
+      "role": "team_member",
+      "active": true,
+      "deleted": false,
+      "fullName": "user6",
+      "revision": "6",
+      "employeeId": "TEST-6"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000007",
+      "role": "team_member",
+      "active": false,
+      "deleted": false,
+      "fullName": "user7",
+      "revision": "12",
+      "employeeId": "TEST-7"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000008",
+      "role": "team_member",
+      "active": true,
+      "deleted": false,
+      "fullName": "user8",
+      "revision": "8",
+      "employeeId": "TEST-8"
+    }
+  ],
+  "contract": "m07-sources-v1",
+  "attendance": [
+    {
+      "hours": "8",
+      "valid": true,
+      "userId": "00000000-0000-0000-0000-000000000001",
+      "reasons": [],
+      "offHours": "0",
+      "available": true,
+      "sourceRevision": "28:17:0"
+    },
+    {
+      "hours": "8",
+      "valid": true,
+      "userId": "00000000-0000-0000-0000-000000000002",
+      "reasons": [],
+      "offHours": "0",
+      "available": true,
+      "sourceRevision": "28:17:0"
+    },
+    {
+      "hours": "8",
+      "valid": true,
+      "userId": "00000000-0000-0000-0000-000000000003",
+      "reasons": [],
+      "offHours": "0",
+      "available": true,
+      "sourceRevision": "28:17:0"
+    },
+    {
+      "hours": "8",
+      "valid": true,
+      "userId": "00000000-0000-0000-0000-000000000004",
+      "reasons": [],
+      "offHours": "0",
+      "available": true,
+      "sourceRevision": "28:17:0"
+    },
+    {
+      "hours": "8",
+      "valid": true,
+      "userId": "00000000-0000-0000-0000-000000000005",
+      "reasons": [],
+      "offHours": "0",
+      "available": true,
+      "sourceRevision": "28:17:0"
+    },
+    {
+      "hours": "8",
+      "valid": true,
+      "userId": "00000000-0000-0000-0000-000000000006",
+      "reasons": [],
+      "offHours": "0",
+      "available": true,
+      "sourceRevision": "28:17:0"
+    },
+    {
+      "hours": null,
+      "valid": null,
+      "userId": "00000000-0000-0000-0000-000000000007",
+      "reasons": [
+        "attendance_missing"
+      ],
+      "offHours": null,
+      "available": false,
+      "sourceRevision": "28:17:0"
+    },
+    {
+      "hours": "8",
+      "valid": true,
+      "userId": "00000000-0000-0000-0000-000000000008",
+      "reasons": [],
+      "offHours": "0",
+      "available": true,
+      "sourceRevision": "28:17:0"
+    }
+  ],
+  "periodStart": "2026-10-19",
+  "asOfLocalDate": "2026-10-20",
+  "contributions": {
+    "raw": {
+      "fact": 0.0,
+      "idea": 0.0,
+      "sale": 0.205,
+      "suggestion": 0.0
+    },
+    "asOf": "2026-10-20T06:56:46.348419+05:30",
+    "factors": {
+      "fact": {
+        "reasons": [],
+        "rawValue": 0.0,
+        "available": true,
+        "validatedCount": 0,
+        "eligibleUnvalidatedCount": 0
+      },
+      "idea": {
+        "reasons": [],
+        "rawValue": 0.0,
+        "available": true,
+        "validatedCount": 0,
+        "eligibleUnvalidatedCount": 0
+      },
+      "sale": {
+        "reasons": [],
+        "rawValue": 0.205,
+        "available": true,
+        "salesCounts": {
+          "BN": 5,
+          "BO": 2,
+          "BP": 3
+        },
+        "validatedCount": 1,
+        "eligibleUnvalidatedCount": 4
+      },
+      "suggestion": {
+        "reasons": [],
+        "rawValue": 0.0,
+        "available": true,
+        "validatedCount": 0,
+        "eligibleUnvalidatedCount": 0
+      }
+    },
+    "reasons": [],
+    "sources": [
+      {
+        "id": "3aa9e70d-a2e7-43dd-89d6-5e6cbb0b8527",
+        "kind": "sale",
+        "state": "withdrawn",
+        "version": 2,
+        "validator": null,
+        "observedAt": "2026-10-20T06:56:30.862332+05:30",
+        "salesFields": {
+          "isNewProject": true,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": true
+        },
+        "validatedAt": null,
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-19",
+        "exclusionReason": "withdrawn",
+        "provenanceReason": null
+      },
+      {
+        "id": "48692540-3181-4c67-a03f-25915565d816",
+        "kind": "sale",
+        "state": "pending",
+        "version": 1,
+        "validator": null,
+        "observedAt": "2026-10-20T06:56:04.059541+05:30",
+        "salesFields": {
+          "isNewProject": true,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": true
+        },
+        "validatedAt": null,
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-19",
+        "exclusionReason": null,
+        "provenanceReason": null
+      },
+      {
+        "id": "5f01124e-7618-4760-8039-8d87dc4e0175",
+        "kind": "sale",
+        "state": "pending",
+        "version": 1,
+        "validator": null,
+        "observedAt": "2026-10-20T06:56:13.915434+05:30",
+        "salesFields": {
+          "isNewProject": false,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": false
+        },
+        "validatedAt": null,
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-19",
+        "exclusionReason": null,
+        "provenanceReason": null
+      },
+      {
+        "id": "77a47fc5-676d-4699-bd8a-70021962121e",
+        "kind": "sale",
+        "state": "pending",
+        "version": 1,
+        "validator": null,
+        "observedAt": "2026-10-20T06:56:16.492502+05:30",
+        "salesFields": {
+          "isNewProject": false,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": true
+        },
+        "validatedAt": null,
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-19",
+        "exclusionReason": null,
+        "provenanceReason": null
+      },
+      {
+        "id": "87c484e0-f375-4cdd-8d02-2f4584038bc0",
+        "kind": "sale",
+        "state": "pending",
+        "version": 1,
+        "validator": null,
+        "observedAt": "2026-10-20T06:56:34.195235+05:30",
+        "salesFields": {
+          "isNewProject": false,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": false
+        },
+        "validatedAt": null,
+        "attributedTo": "00000000-0000-0000-0000-000000000005",
+        "businessDate": "2026-10-19",
+        "exclusionReason": null,
+        "provenanceReason": null
+      },
+      {
+        "id": "92d87b0e-05b6-476f-b465-4c06935b2f17",
+        "kind": "sale",
+        "state": "rejected",
+        "version": 2,
+        "validator": "00000000-0000-0000-0000-000000000001",
+        "observedAt": "2026-10-20T06:56:20.137522+05:30",
+        "salesFields": {
+          "isNewProject": true,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": true
+        },
+        "validatedAt": "2026-10-20T06:56:19.847646+05:30",
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-19",
+        "exclusionReason": "rejected",
+        "provenanceReason": null
+      },
+      {
+        "id": "fc3990fc-a895-4447-9ebd-d38bdeff1141",
+        "kind": "sale",
+        "state": "validated",
+        "version": 2,
+        "validator": "00000000-0000-0000-0000-000000000003",
+        "observedAt": "2026-10-20T06:56:18.201633+05:30",
+        "salesFields": {
+          "isNewProject": true,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": true
+        },
+        "validatedAt": "2026-10-20T06:56:17.754359+05:30",
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-19",
+        "exclusionReason": null,
+        "provenanceReason": null
+      }
+    ],
+    "available": true,
+    "periodStart": "2026-10-19",
+    "populations": [
+      {
+        "kind": "sale",
+        "count": 1,
+        "state": "validated",
+        "author": "00000000-0000-0000-0000-000000000004"
+      },
+      {
+        "kind": "sale",
+        "count": 1,
+        "state": "withdrawn",
+        "author": "00000000-0000-0000-0000-000000000004"
+      },
+      {
+        "kind": "sale",
+        "count": 3,
+        "state": "pending",
+        "author": "00000000-0000-0000-0000-000000000004"
+      },
+      {
+        "kind": "sale",
+        "count": 1,
+        "state": "pending",
+        "author": "00000000-0000-0000-0000-000000000005"
+      },
+      {
+        "kind": "sale",
+        "count": 1,
+        "state": "rejected",
+        "author": "00000000-0000-0000-0000-000000000004"
+      }
+    ],
+    "ruleVersion": "m06-support-inputs-v3",
+    "coefficients": {
+      "fact": [
+        0.75,
+        0.38
+      ],
+      "idea": [
+        2,
+        0.75
+      ],
+      "sale": {
+        "BN": 1,
+        "BO": 1.5,
+        "BP": 0.75,
+        "divisor": 50
+      },
+      "suggestion": [
+        2,
+        0.75
+      ]
+    },
+    "salesMapping": {
+      "BN": "eligible (validated or pending) sales_logs entries attributed to the member by sales_by",
+      "BO": "BN entries with is_new_project",
+      "BP": "BN entries with basement_payment_received",
+      "approved": "2026-10-20",
+      "decision": "D05",
+      "businessDate": "sale_date"
+    },
+    "employeeFactors": [
+      {
+        "userId": "00000000-0000-0000-0000-000000000001",
+        "factors": {
+          "fact": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "idea": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "sale": {
+            "reasons": [],
+            "rawValue": 0,
+            "available": true,
+            "salesCounts": {
+              "BN": 0,
+              "BO": 0,
+              "BP": 0
+            },
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "suggestion": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          }
+        }
+      },
+      {
+        "userId": "00000000-0000-0000-0000-000000000002",
+        "factors": {
+          "fact": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "idea": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "sale": {
+            "reasons": [],
+            "rawValue": 0,
+            "available": true,
+            "salesCounts": {
+              "BN": 0,
+              "BO": 0,
+              "BP": 0
+            },
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "suggestion": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          }
+        }
+      },
+      {
+        "userId": "00000000-0000-0000-0000-000000000003",
+        "factors": {
+          "fact": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "idea": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "sale": {
+            "reasons": [],
+            "rawValue": 0,
+            "available": true,
+            "salesCounts": {
+              "BN": 0,
+              "BO": 0,
+              "BP": 0
+            },
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "suggestion": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          }
+        }
+      },
+      {
+        "userId": "00000000-0000-0000-0000-000000000004",
+        "factors": {
+          "fact": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "idea": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "sale": {
+            "reasons": [],
+            "rawValue": 0.185,
+            "available": true,
+            "salesCounts": {
+              "BN": 4,
+              "BO": 2,
+              "BP": 3
+            },
+            "validatedCount": 1,
+            "eligibleUnvalidatedCount": 3
+          },
+          "suggestion": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          }
+        }
+      },
+      {
+        "userId": "00000000-0000-0000-0000-000000000005",
+        "factors": {
+          "fact": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "idea": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "sale": {
+            "reasons": [],
+            "rawValue": 0.02,
+            "available": true,
+            "salesCounts": {
+              "BN": 1,
+              "BO": 0,
+              "BP": 0
+            },
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 1
+          },
+          "suggestion": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          }
+        }
+      },
+      {
+        "userId": "00000000-0000-0000-0000-000000000006",
+        "factors": {
+          "fact": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "idea": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "sale": {
+            "reasons": [],
+            "rawValue": 0,
+            "available": true,
+            "salesCounts": {
+              "BN": 0,
+              "BO": 0,
+              "BP": 0
+            },
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "suggestion": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          }
+        }
+      },
+      {
+        "userId": "00000000-0000-0000-0000-000000000007",
+        "factors": {
+          "fact": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "idea": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "sale": {
+            "reasons": [],
+            "rawValue": 0,
+            "available": true,
+            "salesCounts": {
+              "BN": 0,
+              "BO": 0,
+              "BP": 0
+            },
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "suggestion": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          }
+        }
+      },
+      {
+        "userId": "00000000-0000-0000-0000-000000000008",
+        "factors": {
+          "fact": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "idea": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "sale": {
+            "reasons": [],
+            "rawValue": 0,
+            "available": true,
+            "salesCounts": {
+              "BN": 0,
+              "BO": 0,
+              "BP": 0
+            },
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          },
+          "suggestion": {
+            "reasons": [],
+            "rawValue": 0.0,
+            "available": true,
+            "validatedCount": 0,
+            "eligibleUnvalidatedCount": 0
+          }
+        }
+      }
+    ],
+    "historyAvailable": true,
+    "periodEndExclusive": "2026-10-20",
+    "historyAvailableFrom": "2026-10-20T06:55:47.540862+05:30"
+  },
+  "sourceWatermark": "28:17:0",
+  "historyAvailable": true,
+  "periodEndExclusive": "2026-10-20",
+  "historyAvailableFrom": "2026-10-20T06:55:48.213346+05:30"
+}

@@ -8,7 +8,11 @@ const PLAIN: Record<string, string> = {
   attendance_unavailable: 'Attendance not recorded for some days',
   attendance_missing: 'Attendance not recorded for some days',
   attendance_denominator_missing: 'Attendance not recorded for some days',
-  sales_field_mapping_missing: "Sales data isn't connected yet",
+  // Kept for runs and archives calculated before migration 46 mapped sales (D05).
+  sales_field_mapping_missing: "Sales weren't connected when this was calculated",
+  sales_flags_missing: 'A sales entry is missing its project flags',
+  legacy_population_or_validation_provenance_missing: 'Older entries need review before they count',
+  history_before_input_baseline: 'Records from before tracking began are not available',
   raw_input_unavailable: 'Required input not available',
   member_excluded_from_factor_cohort: 'Not included in the team comparison',
   factor_median_unavailable: "Team median can't be calculated yet",
@@ -49,7 +53,7 @@ export function dataGaps(codes: Iterable<string>): DataGap[] {
 
 export const GAP_SENTENCE: Record<DataGap, string> = {
   attendance: "Attendance hasn't been recorded for every working day.",
-  sales: "Sales data isn't connected yet.",
+  sales: 'Some sales entries need review before they can count.',
   other: 'Some other required inputs are not available yet.',
 };
 

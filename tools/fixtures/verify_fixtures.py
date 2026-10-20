@@ -79,6 +79,12 @@ def calculate(case):
         return sum((FRESHNESS[s] for s in x["eligibleStates"]), D(0))
     if kind == "sales_subtotals":
         return (D("1.5") * D(x["BO"]) + D(x["BN"]) + D(".75") * D(x["BP"])) / 50
+    if kind == "sales_counts":
+        # D05 (20 October 2026): flag counts over the member's eligible sales entries.
+        bn = len(x["entries"])
+        bo = sum(1 for e in x["entries"] if e["newProject"] is True)
+        bp = sum(1 for e in x["entries"] if e["basementPaymentReceived"] is True)
+        return (D("1.5") * bo + bn + D(".75") * bp) / 50
     if kind == "raw_score":
         assert set(x["rawByFactor"]) == set(WEIGHTS)
         assert set(x["units"]) == set(WEIGHTS)

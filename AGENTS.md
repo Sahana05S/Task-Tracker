@@ -23,6 +23,25 @@ change). The refactor is complete on `refactor/base` (not yet merged into
   gitignored (18 October 2026, user request). Read and update them locally; they
   are not in the repository. Test fixtures live in `__tests__/fixtures/`.
 
+## M17 sales factor mapping - 20 October 2026
+
+The user defined the workbook's sales inputs (DECISIONS "D05 sales mapping
+approved"): per member and period, BN = eligible sales_logs entries, BO = those
+flagged as a new project, BP = those with the basement payment received; raw =
+(1.5*BO + BN + 0.75*BP)/50, then the usual difference from the team median.
+Pending and validated entries count once; rejected/withdrawn are excluded;
+legacy or unattributed entries leave sales unavailable for that member until
+reconciled. Migration 46 (`46_sales_factor_mapping.sql`) implements it, so the
+composite score, rankings and awards are no longer blocked on sales. The M16
+recognition ceremony therefore uses migration 47 (streaks stay 45). Tests:
+`tools/test_m17_sales_database.py` and the vitest cases in modules/support and
+modules/scoring.
+
+The same day the user authorized applying 45 and 46 to production after a local
+rehearsal, and one production seed of the September 2026 sheet as test data
+(people by email, tasks by tag, replacing the three earlier test tasks) through
+`tools/seed_sheet_to_project.py`. See `docs/plans/PROD-SEED.md` for what was
+actually run. Production remains otherwise off-limits.
 ## M16 recognition (gamification) - 19 October 2026
 
 The user asked for a gamification layer (streaks, per-metric monthly award
@@ -30,10 +49,11 @@ ceremony, leaderboard, daily star highlight, monthly star worth most) and
 approved the plan with four decisions recorded in DECISIONS "M16 recognition".
 It adds no scoring rule: points are a separate currency and never feed a
 performance score; everything ranks on the shared engine and M08/M12 evidence.
-Sales stays locked (composite-based features show a locked state) until the
-BN/BO/BP mapping exists. The module is `modules/recognition/`
+Sales was locked until the BN/BO/BP mapping existed; it is now mapped by
+migration 46 (M17, above), so composite-based features show their normal state
+once 46 is applied and the locked state is only the fallback for older databases. The module is `modules/recognition/`
 (`docs/plans/M16-recognition.md`). Migrations 43-44 belong to the F3
-follow-up, so recognition uses 45 (streaks, done) and 46 (ceremony, pending).
+follow-up, so recognition uses 45 (streaks, done) and 47 (ceremony, pending; 46 is sales).
 Disposable databases only; no production apply or deployment.
 
 ## M15 multi-company direction - 17 October 2026

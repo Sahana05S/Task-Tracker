@@ -3,7 +3,9 @@ import { calculationReasons,dataGaps,plainReason } from '@/modules/reports/inter
 
 describe('plain reason wording',()=>{
  it('translates known codes, including factor-prefixed ones',()=>{
-  expect(plainReason('sales:sales_field_mapping_missing')).toBe("Sales data isn't connected yet");
+  expect(plainReason('sales:sales_flags_missing')).toBe('A sales entry is missing its project flags');
+  // Runs archived before migration 46 keep their original code and still read plainly.
+  expect(plainReason('sales:sales_field_mapping_missing')).toBe("Sales weren't connected when this was calculated");
   expect(plainReason('productivity:attendance_denominator_missing')).toBe('Attendance not recorded for some days');
   expect(plainReason('daily_coverage_incomplete')).toBe('Not every day has a decided daily star');
  });
@@ -13,7 +15,7 @@ describe('plain reason wording',()=>{
  });
  it('groups the root causes behind the dashboard codes',()=>{
   const codes=['shared_calculation_incomplete','attendance_unavailable','productivity:raw_input_unavailable',
-   'loading:team_assigned_scale_zero','sales:sales_field_mapping_missing','sales:factor_median_unavailable'];
+   'loading:team_assigned_scale_zero','sales:sales_flags_missing','sales:factor_median_unavailable'];
   expect(dataGaps(codes)).toEqual(['attendance','sales','other']);
   expect(dataGaps(['required_inputs_unavailable'])).toEqual([]);
  });

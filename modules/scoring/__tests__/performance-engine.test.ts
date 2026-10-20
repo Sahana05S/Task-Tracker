@@ -42,10 +42,21 @@ describe('M07 independent exact ten-factor fixtures',()=>{
   expect(result.members[1].factors.productivity.rawValue).toBeNull();expect(result.members[1].composite).toBeNull();
  });
  it('missing sales keeps nine measured factors and subtotal separate from final score',()=>{
-  const a=member('a',{progress:'20'}),b=member('b'),c=member('c');for(const m of [a,b,c])m.factors.sales=unavailableRaw('sales_field_mapping_missing');
+  const a=member('a',{progress:'20'}),b=member('b'),c=member('c');for(const m of [a,b,c])m.factors.sales=unavailableRaw('legacy_population_or_validation_provenance_missing');
   const result=calculatePerformance(context(['a','b','c']),[a,b,c]);expect(result.status).toBe('incomplete');
   expect(result.members[0]).toMatchObject({composite:null,knownSubtotal:.25,eligibleForRanking:false,subtotalLabel:'Available-factor subtotal'});
   expect(result.members[0].factors.sales.contribution).toBeNull();expect(()=>performanceForAward(result.members[0])).toThrow('complete');
+ });
+ it('mapped sales (D05) completes the run: only sales differs, composites are the sales deltas',()=>{
+  // Independent expectations: A 3 entries/1 new/2 basement = (1.5+3+1.5)/50 = 3/25; B 1/0/0 = 1/50; C none = 0.
+  const result=calculatePerformance(context(['a','b','c']),[member('a',{sales:'0.12'}),member('b',{sales:'0.02'}),member('c',{sales:'0'})]);
+  expect(result.status).toBe('complete');
+  expect(result.members[0].factors.sales.medianExact).toEqual({numerator:'1',denominator:'50'});
+  expect(result.members.map(m=>m.compositeExact)).toEqual([{numerator:'1',denominator:'10'},{numerator:'0',denominator:'1'},{numerator:'-1',denominator:'50'}]);
+  expect(result.members.map(m=>m.composite)).toEqual([.1,0,-.02]);
+  const pair=calculatePerformance(context(['a','b']),[member('a',{sales:'0.12'}),member('b',{sales:'0.02'})]);
+  expect(pair.members[0].factors.sales).toMatchObject({median:.07,delta:.05});
+  expect(pair.members[1].factors.sales.deltaExact).toEqual({numerator:'-1',denominator:'20'});
  });
  it('does not invent unapproved windows/cohorts/precision',()=>{
   const ctx=context(['a']);ctx.cohorts.progress=null;ctx.windows.progress=null;ctx.precisionPolicy=null;
