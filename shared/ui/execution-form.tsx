@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useActionState, useRef, useState } from 'react';
+import { startTransition, useActionState, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckIcon } from 'lucide-react';
 
@@ -40,6 +40,8 @@ export function ExecutionForm({ action, scope, children, className }: {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [changed, setChanged] = useState(false);
+  // Disabled until the refreshed page lands, so a second click cannot repeat the command.
+  const [refreshing, startRefresh] = useTransition();
   const [state, submit, pending] = useActionState(async (_previous: ActionResponse<unknown> | null, form: FormData) => {
     setChanged(false);
     try {
@@ -49,7 +51,7 @@ export function ExecutionForm({ action, scope, children, className }: {
       if (result.success) {
         settle();
         formRef.current?.reset();
-        router.refresh();
+        startRefresh(() => router.refresh());
       }
       return result;
     } catch {
@@ -76,7 +78,7 @@ export function ExecutionForm({ action, scope, children, className }: {
         startTransition(() => submit(data));
       }}
     >
-      <fieldset disabled={pending} className="grid gap-2 border-0 p-0">
+      <fieldset disabled={pending || refreshing} className="grid gap-2 border-0 p-0">
         {children}
       </fieldset>
       {/* Rendered before it has text, so screen readers announce each update. */}

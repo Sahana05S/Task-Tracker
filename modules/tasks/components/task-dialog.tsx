@@ -4,7 +4,6 @@ import type { NativeTemplate } from '@/modules/tasks/internal/details-contract';
 import { prepareOperation } from '@/shared/commands/client-operation';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { LoaderCircleIcon } from 'lucide-react';
 
 import {
@@ -221,7 +220,7 @@ function TaskForm({
         </label>)}
       </Field>
       {task?.participantCreditMode === 'legacy' ? <div className="grid gap-2 text-sm">
-        <Link href="/task-tools/participants" className="link">Review participant reconciliation</Link>
+        <a href="/task-tools/participants" target="_blank" rel="noopener noreferrer" className="link">Review participant reconciliation (opens in a new tab)</a>
         <label className="flex gap-2"><input type="checkbox" name="acceptLegacyShares" />I reviewed this task's legacy participants and approve configuring these shares.</label>
         <p className="text-muted-foreground">Share changes apply to future credit. Earlier earned credit and frozen reports stay unchanged.</p>
       </div> : null}

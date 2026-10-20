@@ -639,7 +639,7 @@
      ---------------------------------------------------------------------- */
   .field {
     @apply border-input bg-card text-foreground max-w-full min-w-0 rounded-xl border
-      px-3.5 py-2 text-base outline-none transition-[color,background-color,border-color,box-shadow]
+      px-3.5 py-1.5 text-base outline-none transition-[color,background-color,border-color,box-shadow]
       placeholder:text-placeholder selection:bg-primary-subtle selection:text-primary
       focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:ring-2
       disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed
@@ -652,7 +652,7 @@
   }
 
   textarea.field {
-    @apply min-h-10;
+    @apply min-h-10 py-2;
   }
 
   /* Native selects share the control and draw their own chevron. */

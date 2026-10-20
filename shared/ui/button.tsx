@@ -12,7 +12,7 @@ import { cn } from '@/shared/utils';
  * 0.96, only where motion is allowed and never while disabled.
  */
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap outline-none transition-[color,background-color,border-color,scale] duration-150 ease-out disabled:pointer-events-none disabled:opacity-50 motion-safe:enabled:active:scale-[0.96] [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  "inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap outline-none transition-[color,background-color,border-color,scale] duration-150 ease-out disabled:pointer-events-none disabled:opacity-50 motion-safe:active:scale-[0.96] [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   {
     variants: {
       variant: {

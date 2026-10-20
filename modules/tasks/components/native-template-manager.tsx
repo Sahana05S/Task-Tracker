@@ -4,6 +4,7 @@ import {useState} from 'react';
 import {ExecutionForm} from '@/shared/ui/execution-form';
 import {publishNativeTemplate} from '@/modules/tasks/detail-actions';
 import {DETAIL_FIELDS,type NativeTemplate} from '@/modules/tasks/internal/details-contract';
+import { cn } from '@/shared/utils';
 const input='field w-full';
 export function NativeTemplateManager({templates}:{templates:readonly NativeTemplate[]}) {
  const [selection,setSelection]=useState('');const selected=templates.find(t=>t.id===selection);
@@ -18,6 +19,6 @@ export function NativeTemplateManager({templates}:{templates:readonly NativeTemp
  {DETAIL_FIELDS.map(f=><label key={f.key}>{f.label} instruction<textarea className={input} name={'instruction_'+f.key} defaultValue={selected?.instructions[f.key]??''}/></label>)}
  <input type="hidden" name="checklistNodes" value={JSON.stringify(nodes.map(n=>({...n,parent_key:n.parent_key||null})))}/>
  {nodes.map((n,i)=><div key={n.key} className="border-border grid gap-2 rounded-xl border p-3"><label>Checklist item<input className={input} required value={n.title} onChange={e=>setNodes(nodes.map((x,j)=>j===i?{...x,title:e.target.value}:x))}/></label><label>Section<select className={input} value={n.section} onChange={e=>setNodes(nodes.map((x,j)=>j===i?{...x,section:e.target.value,parent_key:''}:x))}>{['setup','activity','closure'].map(s=><option key={s}>{s}</option>)}</select></label><label>Node type<select className={input} value={n.node_type} onChange={e=>setNodes(nodes.map((x,j)=>j===i?{...x,node_type:e.target.value}:x))}>{['Item','Group','Page'].map(s=><option key={s}>{s}</option>)}</select></label><label>Parent<select className={input} value={n.parent_key} onChange={e=>setNodes(nodes.map((x,j)=>j===i?{...x,parent_key:e.target.value}:x))}><option value="">Section root</option>{nodes.slice(0,i).filter(x=>x.section===n.section).map(x=><option key={x.key} value={x.key}>{x.title||'Untitled item'}</option>)}</select></label></div>)}
- <button className={`${buttonVariants({ variant: 'outline' })} justify-self-start`} type="button" onClick={()=>setNodes([...nodes,{key:'node'+(nodes.length+1),title:'',section:'activity',node_type:'Item',parent_key:''}])}>Add checklist item</button><button className={`${buttonVariants()} justify-self-start`} type="submit">Publish template version</button>
+ <button className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')} type="button" onClick={()=>setNodes([...nodes,{key:'node'+(nodes.length+1),title:'',section:'activity',node_type:'Item',parent_key:''}])}>Add checklist item</button><button className={cn(buttonVariants(), 'justify-self-start')} type="submit">Publish template version</button>
  </ExecutionForm></div>;
 }

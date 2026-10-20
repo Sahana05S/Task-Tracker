@@ -9,8 +9,8 @@ export function RecordHistory({ revisions }: { revisions: readonly RecordRevisio
   if (!revisions.length) return <EmptyState>No revisions are recorded for this record.</EmptyState>;
   return (
     <ol className="grid gap-3">
-      {[...revisions].reverse().map((revision) => (
-        <li key={revision.version} className="soft-card grid gap-3 p-5">
+      {[...revisions].reverse().map((revision, index) => (
+        <li key={`${revision.version}:${index}`} className="soft-card grid gap-3 p-5">
           <h2 className="text-foreground flex flex-wrap items-center gap-2 text-base font-bold tracking-tight">
             <HistoryIcon className="text-primary size-4" aria-hidden="true" />
             Revision {revision.version} · {revision.action}

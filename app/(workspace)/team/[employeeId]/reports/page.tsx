@@ -27,6 +27,7 @@ import { canViewEmployeeReports } from '@/modules/team/client';
 import { getEmployeeByEmployeeId, getEmployeeReportsData } from '@/modules/team';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
+import { cn } from '@/shared/utils';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;
@@ -82,7 +83,7 @@ export default async function EmployeeReportsPage({
         actions={
           <Link
             href={`/team/${encodeURIComponent(data.employee.employeeId)}?${viewQuery(context)}`}
-            className={`${buttonVariants({ variant: 'outline' })} gap-2`}
+            className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}
           >
             <ArrowLeftIcon className="size-4" aria-hidden="true" />
             Back to profile

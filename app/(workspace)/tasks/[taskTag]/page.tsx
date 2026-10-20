@@ -126,7 +126,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             items={[
               { label: 'Missions', href: '/tasks' },
               { label: task.taskTag, tag: true },
-              { label: task.title, hideOnPhone: true },
+              { label: task.title },
             ]}
           />
         }
