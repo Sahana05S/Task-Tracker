@@ -26,7 +26,7 @@ export function FeatureShowcaseTabs() {
     <section
       id="interactive-views"
       aria-labelledby="interactive-views-heading"
-      className="border-border bg-slate-50/70 border-b py-20"
+      className="border-border bg-slate-50/70 border-b py-20 [contain-intrinsic-size:auto_900px] [content-visibility:auto]"
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         {/* Section Header */}
@@ -108,7 +108,6 @@ export function FeatureShowcaseTabs() {
                   alt={activeTab.imageAlt}
                   width={1120}
                   height={700}
-                  priority
                   className="h-full w-full object-cover object-top transition-transform duration-300 hover:scale-[1.01]"
                 />
               </div>

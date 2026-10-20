@@ -40,12 +40,15 @@ export const CTA = {
 export interface HeroCopy {
   eyebrow: string;
   headline: string;
+  /** Final word(s) of the headline, rendered in the accent gradient. */
+  headlineAccent: string;
   subtext: string;
 }
 
 export const HERO: HeroCopy = {
   eyebrow: 'Modern Engineering Performance Tracking',
   headline: 'Control your team capacity, task velocity & performance',
+  headlineAccent: 'performance',
   subtext:
     'TaskPulse weights every task, tracks daily logged effort, and benchmarks velocity against the team median. Move from guesswork to clear, transparent delivery insights.',
 };

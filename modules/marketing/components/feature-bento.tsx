@@ -2,6 +2,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import { CheckCircle2Icon } from 'lucide-react';
 
+import { MetricStrip } from '@/modules/marketing/components/metric-strip';
 import { SHOWCASE_FEATURES, WORKFLOW_STEPS } from '@/modules/marketing/internal/content';
 import { cn } from '@/shared/utils';
 
@@ -18,10 +19,14 @@ export function FeatureBento() {
       <section
         id="features"
         aria-labelledby="features-heading"
-        className="border-border bg-white border-b py-20 lg:py-28"
+        className="border-border bg-white border-b pt-2 pb-20 lg:pt-4 lg:pb-28"
       >
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-          <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
+          {/* The figures that used to close the hero, now the first thing
+              below the cloud bank. */}
+          <MetricStrip />
+
+          <div className="mx-auto mt-20 flex max-w-3xl flex-col items-center gap-3 text-center lg:mt-28">
             <span className="badge-soft badge-accent">Core Capabilities</span>
             <h2
               id="features-heading"
@@ -107,7 +112,7 @@ export function FeatureBento() {
       <section
         id="how-it-works"
         aria-labelledby="how-it-works-heading"
-        className="border-border bg-slate-50/70 border-b py-20 lg:py-24"
+        className="border-border bg-slate-50/70 border-b py-20 lg:py-24 [contain-intrinsic-size:auto_900px] [content-visibility:auto]"
       >
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">

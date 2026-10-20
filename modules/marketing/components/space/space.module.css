@@ -1,0 +1,400 @@
+/* ==========================================================================
+   Landing page space art
+
+   A night sky built from the TaskPulse palette: the ink of `--foreground`
+   deepening into the violet of `--primary`, white and recognition-gold stars, a
+   violet planet with success-mint land, and a cloud bank lit in the lavender
+   family whose front layer is white, the same as the sections below it. As the
+   hero scrolls away the cloud layers rise at different speeds and clear into
+   the page.
+
+   Everything here is decorative (`aria-hidden`, no pointer events). Motion is
+   opt-in under `prefers-reduced-motion: no-preference`; scroll-linked motion
+   additionally needs `animation-timeline`, and browsers without it get the
+   same art, static.
+   ========================================================================== */
+
+/* ---- Hero surface ------------------------------------------------------- */
+
+.hero {
+  --sky-top: #110e26;
+  --sky-mid: #1a172e;
+  --sky-low: #2c2470;
+  --sky-horizon: #5b4fd0;
+  --hero-text: #ffffff;
+  --hero-muted: #d9d5f2;
+
+  background-color: var(--sky-top);
+  color: var(--hero-text);
+}
+
+.sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 38% at 12% 8%, rgb(99 85 230 / 0.3), transparent 70%),
+    radial-gradient(ellipse 85% 42% at 50% 100%, rgb(165 160 240 / 0.6), transparent 72%),
+    linear-gradient(
+      180deg,
+      var(--sky-top) 0%,
+      var(--sky-mid) 32%,
+      var(--sky-low) 70%,
+      var(--sky-horizon) 100%
+    );
+}
+
+/* The footer band reuses the sky, shorter and without a horizon glow. */
+.skyBand {
+  background:
+    radial-gradient(ellipse 60% 70% at 85% 20%, rgb(99 85 230 / 0.35), transparent 70%),
+    linear-gradient(160deg, var(--sky-top, #110e26) 0%, #1a172e 45%, #2c2470 100%);
+}
+
+/* Accent word in the headline: violet into mint, both above 7:1 on the sky. */
+.accent {
+  background: linear-gradient(100deg, #b9b3ff 10%, #6ee7c8 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- Stars -------------------------------------------------------------- */
+
+.stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.star {
+  fill: #ffffff;
+}
+
+.starGold {
+  fill: #f5a623;
+}
+
+/* ---- Planet ------------------------------------------------------------- */
+
+.planet {
+  position: absolute;
+  z-index: 1;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.planetGlow {
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(139 124 246 / 0.55) 0%,
+    rgb(99 85 230 / 0.22) 42%,
+    transparent 68%
+  );
+  filter: blur(24px);
+}
+
+.planet svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ---- Rocket ------------------------------------------------------------- */
+
+.rocket {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.rocket svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  transform: rotate(40deg);
+}
+
+.flame {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+}
+
+.trailGlow {
+  filter: blur(4px);
+}
+
+/* ---- Clouds ------------------------------------------------------------- */
+
+.clouds {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  opacity: var(--layer-opacity, 1);
+}
+
+/* Wider than the viewport so the idle drift never shows an edge. */
+.drift {
+  width: calc(100% + 8vw);
+  margin-left: -4vw;
+}
+
+.drift svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Full height on wide screens (puff tops never cropped); on narrow screens
+     the minimum height takes over and the slice crops the sides instead. */
+  aspect-ratio: 1440 / 260;
+}
+
+.bandBack {
+  bottom: 4rem;
+}
+.bandBack svg {
+  min-height: 10rem;
+}
+
+.bandMid {
+  bottom: 2rem;
+}
+.bandMid svg {
+  min-height: 9rem;
+}
+
+/* The front band continues as solid white below the hero (clipped by the
+   hero's overflow), so rising never uncovers sky beneath it. */
+.bandFront {
+  bottom: -45vh;
+}
+.bandFront svg {
+  min-height: 9rem;
+}
+.base {
+  height: 45vh;
+  margin-top: -1px;
+  background: #ffffff;
+}
+
+.haze {
+  bottom: 6rem;
+  height: 8rem;
+  background: radial-gradient(ellipse 55% 60% at 50% 60%, rgb(255 255 255 / 0.55), transparent 72%);
+  filter: blur(16px);
+}
+
+@media (min-width: 640px) {
+  .bandBack {
+    bottom: 5.5rem;
+  }
+  .bandBack svg {
+    min-height: 12rem;
+  }
+  .bandMid {
+    bottom: 2.5rem;
+  }
+  .bandMid svg {
+    min-height: 11rem;
+  }
+  .bandFront svg {
+    min-height: 10rem;
+  }
+  .haze {
+    bottom: 8rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bandBack {
+    bottom: 8rem;
+  }
+  .bandMid {
+    bottom: 3.5rem;
+  }
+  .haze {
+    bottom: 10rem;
+    height: 10rem;
+  }
+}
+
+/* ---- Header over the hero ------------------------------------------------
+   Transparent with white text over the sky, the usual white bar once the page
+   has scrolled ~96px. This is a colour change tied to scroll position, not
+   motion, so it is not behind the reduced-motion gate. Without scroll
+   timelines the header is simply the white bar throughout. */
+
+.header {
+  background-color: rgb(255 255 255 / 0.9);
+  color: #1a172e;
+  border-bottom: 1px solid #eae7f6;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+@keyframes header-solid {
+  from {
+    background-color: rgb(17 14 38 / 0);
+    color: #ffffff;
+    border-bottom-color: rgb(255 255 255 / 0);
+  }
+  to {
+    background-color: rgb(255 255 255 / 0.9);
+    color: #1a172e;
+    border-bottom-color: #eae7f6;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .header {
+    animation: header-solid linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 96px;
+  }
+}
+
+/* ---- Motion -------------------------------------------------------------- */
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes rocket-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0) rotate(-1.5deg);
+  }
+}
+
+@keyframes flame {
+  from {
+    transform: scaleY(1) scaleX(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scaleY(1.18) scaleX(0.9);
+    opacity: 1;
+  }
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(6px);
+  }
+}
+
+@keyframes cloud-drift {
+  from {
+    transform: translate3d(-1.5vw, 0, 0);
+  }
+  to {
+    transform: translate3d(1.5vw, 0, 0);
+  }
+}
+
+@keyframes cloud-rise {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, var(--travel, -22vh), 0);
+  }
+}
+
+@keyframes planet-sink {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 14vh, 0);
+  }
+}
+
+@keyframes rocket-climb {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(5vw, -10vh, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .twinkleSlow {
+    animation: twinkle 4.7s ease-in-out infinite;
+  }
+
+  .twinkleFast {
+    animation: twinkle 3.2s ease-in-out infinite;
+  }
+
+  .float {
+    animation: rocket-float 6s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .flame {
+    animation: flame 0.32s ease-in-out infinite alternate;
+  }
+
+  .sparkle {
+    animation: sparkle 2.4s ease-in-out infinite;
+  }
+
+  .drift {
+    animation: cloud-drift var(--drift, 24s) ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .band {
+      animation: cloud-rise linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0px 120vh;
+      will-change: transform;
+    }
+
+    .planetParallax {
+      animation: planet-sink linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0px 120vh;
+    }
+
+    .rocketParallax {
+      animation: rocket-climb linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0px 120vh;
+    }
+  }
+}

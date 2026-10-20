@@ -2,8 +2,12 @@ import * as React from 'react';
 import Link from 'next/link';
 import { ArrowRightIcon } from 'lucide-react';
 
+import { Rocket } from '@/modules/marketing/components/space/rocket';
+import spaceStyles from '@/modules/marketing/components/space/space.module.css';
+import { StarField } from '@/modules/marketing/components/space/star-field';
 import { Button } from '@/shared/ui/button';
 import { CTA, FOOTER_COLUMNS } from '@/modules/marketing/internal/content';
+import { cn } from '@/shared/utils';
 
 /**
  * Closing call to action and footer.
@@ -11,18 +15,25 @@ import { CTA, FOOTER_COLUMNS } from '@/modules/marketing/internal/content';
  * Internal destinations use `next/link` for client navigation; in-page anchors and
  * `mailto:` addresses stay as plain anchors, since the router has nothing to
  * prefetch for either.
+ *
+ * The closing call to action is a small night sky, bookending the hero: the
+ * same gradient and stars, held still, with a rocket on its way out.
  */
 export function SiteFooter() {
   return (
-    <footer className="bg-white">
-      {/* High-impact Closing CTA (Zoho style) */}
-      <div className="bg-[#312d46] text-white py-16 lg:py-20">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-8 px-4 text-center sm:px-6 lg:flex-row lg:text-left">
+    <footer className="bg-white [contain-intrinsic-size:auto_700px] [content-visibility:auto]">
+      {/* Closing call to action on a small night sky */}
+      <div className={cn(spaceStyles.skyBand, 'relative isolate overflow-hidden py-16 text-white lg:py-20')}>
+        <div aria-hidden="true" className="absolute inset-0 -z-10">
+          <StarField count={50} seed={19} twinkle={false} />
+        </div>
+        <Rocket id="tp-rocket-footer" className="top-6 right-[4%] hidden w-14 opacity-90 lg:block xl:right-[7%]" />
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-8 px-4 text-center sm:px-6 lg:flex-row lg:pr-28 lg:text-left xl:pr-6">
           <div className="flex flex-col gap-3">
             <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               Ready to take control of your team&apos;s delivery velocity?
             </h2>
-            <p className="max-w-2xl text-base text-slate-200">
+            <p className="max-w-2xl text-base text-[#d9d5f2]">
               Start weighting tasks, tracking real effort, and benchmark progress against
               the team median today.
             </p>
@@ -32,7 +43,7 @@ export function SiteFooter() {
             <Button
               asChild
               size="lg"
-              className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-semibold shadow-lg"
+              className="bg-[#6ee7c8] text-[#1a172e] hover:bg-[#9af2d8] font-semibold shadow-lg"
             >
               <Link href={CTA.launch.href}>
                 {CTA.launch.label}

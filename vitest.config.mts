@@ -18,7 +18,8 @@ export default defineConfig({
         'shared/supabase/**', // Supabase client wrappers — need a live connection
         '**/queries.ts',      // DB query helpers — integration territory
         '**/mappers.ts',      // Thin wire-to-domain converters — covered implicitly
-        'modules/marketing/**', // Static typed content, no logic
+        'modules/marketing/internal/content.ts', // Static typed content, no logic
+        'modules/marketing/components/**', // Presentational art and sections
       ],
     },
   },
