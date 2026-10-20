@@ -13,3 +13,9 @@ export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
 export function failure(error: string): AuthActionState {
   return { success: false, error };
 }
+
+/**
+ * The only reply to a password-reset request, whatever happened, so the form
+ * never reveals whether an address has an account.
+ */
+export const RESET_REQUEST_MESSAGE = 'If that address has an account, an email is on its way.';

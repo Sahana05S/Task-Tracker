@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import {
   AlertCircleIcon,
   CheckCircle2Icon,
@@ -193,6 +194,12 @@ export function AuthForm({
             invalid={Boolean(errorMessage)}
             required
           />
+          <Link
+            href="/reset-password"
+            className="-mt-2 self-end rounded-sm text-xs text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none"
+          >
+            Forgot password?
+          </Link>
 
           <FormFeedback error={errorMessage} success={successMessage} />
 
@@ -318,7 +325,7 @@ interface FieldProps extends React.ComponentProps<'input'> {
   invalid?: boolean;
 }
 
-function Field({ id, label, hint, invalid, ...props }: FieldProps) {
+export function Field({ id, label, hint, invalid, ...props }: FieldProps) {
   const hintId = hint ? `${id}-hint` : undefined;
 
   return (
@@ -350,7 +357,7 @@ interface FormFeedbackProps {
   success?: string;
 }
 
-function FormFeedback({ error, success }: FormFeedbackProps) {
+export function FormFeedback({ error, success }: FormFeedbackProps) {
   if (!error && !success) return null;
 
   const isError = Boolean(error);

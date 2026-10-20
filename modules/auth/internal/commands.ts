@@ -63,6 +63,35 @@ export async function exchangeCodeForSession(code: string): Promise<boolean> {
   return !error;
 }
 
+/**
+ * Asks Supabase Auth to email a recovery link that returns to /reset-password.
+ * Returns Supabase's error message, or null. Supabase itself answers the same
+ * way for unknown addresses; callers must still not show this to the visitor.
+ */
+export async function requestPasswordReset(email: string): Promise<string | null> {
+  const siteUrl = await readSiteUrl();
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: siteUrl ? `${siteUrl}/reset-password` : undefined,
+  });
+  return error ? error.message : null;
+}
+
+/** Verifies a recovery `token_hash` (custom email template); true on success. */
+export async function verifyRecoveryToken(tokenHash: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+  return !error;
+}
+
+/** Sets the signed-in user's password; returns a user-facing error, or null. */
+export async function updatePassword(newPassword: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  return error ? error.message : null;
+}
+
 /** The public origin of the current request, or '' when the host is unknown. */
 async function readSiteUrl(): Promise<string> {
   const { headers } = await import('next/headers');
