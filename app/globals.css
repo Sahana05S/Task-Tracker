@@ -22,7 +22,8 @@
   --popover-foreground: #1a172e;
 
   --border: #eae7f6; /* lavender border tint */
-  --input: #dcd8ee;
+  /* Field edges: 3.29:1 on white, the 3:1 a form control boundary needs. */
+  --input: #8f88b8;
 
   /* ---- Text hierarchy -------------------------------------------------- */
   --muted: #f3f1fa;
