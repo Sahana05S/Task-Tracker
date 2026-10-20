@@ -257,7 +257,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
           );
         })}
         {structureHref ? (
-          <Button asChild variant="outline" size="sm" className="ml-auto rounded-xl bg-white/80">
+          <Button asChild variant="outline" size="sm" className="ml-auto bg-white/80">
             <Link href={structureHref}>Structure and linked missions</Link>
           </Button>
         ) : null}
@@ -310,17 +310,17 @@ function Paging({ taskTag, address, cursor, nextCursor, moreHref }: {
   return (
     <nav aria-label="More rows" className="border-border flex flex-wrap gap-2 border-t px-4 py-3 sm:px-5">
       {cursor > 0 ? (
-        <Button asChild variant="outline" size="sm" className="rounded-xl">
+        <Button asChild variant="outline" size="sm">
           <Link href={`${checklistWorkHref(taskTag, { ...address, cursor: Math.max(0, cursor - PAGE_SIZE) })}#${address.parentNodeId ? 'rows' : address.section}`}>Previous rows</Link>
         </Button>
       ) : null}
       {nextCursor !== null ? (
-        <Button asChild variant="outline" size="sm" className="rounded-xl">
+        <Button asChild variant="outline" size="sm">
           <Link href={`${checklistWorkHref(taskTag, { ...address, cursor: nextCursor })}#${address.parentNodeId ? 'rows' : address.section}`}>Next rows</Link>
         </Button>
       ) : null}
       {moreHref ? (
-        <Button asChild variant="outline" size="sm" className="rounded-xl">
+        <Button asChild variant="outline" size="sm">
           <Link href={moreHref}>Show every row</Link>
         </Button>
       ) : null}
@@ -356,7 +356,7 @@ function SectionReview({ task, checklistId, section, version, action }: { task: 
         <Field id={`review-${section}-reason`} label="Why?" hint="Kept with the checklist history." required>
           <Input id={`review-${section}-reason`} name="reason" required maxLength={1000} />
         </Field>
-        <Button type="submit" className="justify-self-start rounded-xl">Confirm {title}</Button>
+        <Button type="submit" className="justify-self-start">Confirm {title}</Button>
       </ExecutionForm>
     </ChecklistSheetButton>
   );
@@ -376,7 +376,7 @@ function NoChecklist({ task, version, canCreate, action }: { task: Task; version
             <Field id="checklist-title" label="Checklist title" className="min-w-60 flex-1">
               <Input id="checklist-title" name="title" defaultValue="Master checklist" required />
             </Field>
-            <Button type="submit" className="rounded-xl">Create checklist</Button>
+            <Button type="submit">Create checklist</Button>
           </div>
         </ExecutionForm>
       ) : (

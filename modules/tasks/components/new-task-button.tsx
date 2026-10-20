@@ -16,7 +16,7 @@ import { Button } from '@/shared/ui/button';
  */
 export function NewTaskButton() {
   return (
-    <Button asChild className="h-10 rounded-xl px-4">
+    <Button asChild className="h-10 px-4">
       <Link href="/tasks?new=1" scroll={false}>
         <PlusIcon aria-hidden="true" />
         New mission

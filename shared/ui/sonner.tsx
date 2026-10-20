@@ -25,18 +25,18 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            'group rounded-lg border border-slate-200 bg-white text-slate-900 shadow-md',
+            'group rounded-lg border border-border bg-white text-foreground shadow-md',
           title: 'text-sm font-medium',
-          description: 'text-sm text-slate-500',
+          description: 'text-sm text-muted-foreground',
           actionButton:
-            'rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-slate-50',
+            'rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground',
           cancelButton:
-            'rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700',
-          closeButton: 'border-slate-200 bg-white text-slate-500',
+            'rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground',
+          closeButton: 'border-border bg-white text-muted-foreground',
           success: 'border-success/30 [&_[data-icon]]:text-success-strong',
           error: 'border-danger-border [&_[data-icon]]:text-danger',
           warning: 'border-amber-200 [&_[data-icon]]:text-amber-600',
-          info: 'border-sky-200 [&_[data-icon]]:text-sky-600',
+          info: 'border-primary/20 [&_[data-icon]]:text-primary',
         },
       }}
     />

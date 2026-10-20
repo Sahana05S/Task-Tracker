@@ -3,7 +3,6 @@ import { prepareOperation } from '@/shared/commands/client-operation';
 
 import * as React from 'react';
 import {
-  AlertCircleIcon,
   LinkIcon,
   LoaderCircleIcon,
   PlusIcon,
@@ -19,6 +18,7 @@ import {
   type LogActionState,
 } from '@/modules/time-tracking/actions';
 import { Button } from '@/shared/ui/button';
+import { Field, FormError } from '@/shared/ui/form-field';
 import { Input } from '@/shared/ui/input';
 import {
   Select,
@@ -40,7 +40,6 @@ import {
   computeScaledProgress,
 } from '@/modules/time-tracking/internal/logs/metrics';
 import { formatNumeric } from '@/shared/tracker/format';
-import { cn } from '@/shared/utils';
 import type { DailyTaskLog } from '@/types/tracker';
 
 export interface QuickLogDrawerProps {
@@ -157,12 +156,12 @@ export function QuickLogDrawer({
         </SheetHeader>
 
         {loading ? (
-          <div className="flex items-center gap-2 px-4 py-8 text-sm text-slate-500">
+          <div className="flex items-center gap-2 px-4 py-8 text-sm text-muted-foreground">
             <LoaderCircleIcon className="size-4 animate-spin" aria-hidden="true" />
             Loading your tasks
           </div>
         ) : loadError ? (
-          <Feedback message={loadError} className="mx-4 my-4" />
+          <FormError message={loadError} className="mx-4 my-4" />
         ) : (
           <LogForm
             // Remount for a different entry so field state does not carry over.
@@ -337,13 +336,13 @@ function LogForm({
               {currentProgress === null ? '0' : currentProgress}%
             </span>{' '}
             to{' '}
-            <span className="font-medium text-slate-900 tabular">
+            <span className="font-medium text-foreground tabular">
               {nextProgress}%
             </span>
             {nextScaled !== null ? (
               <>
                 {' · scaled progress '}
-                <span className="font-medium text-slate-900 tabular">
+                <span className="font-medium text-foreground tabular">
                   {formatNumeric(nextScaled)}
                 </span>
               </>
@@ -367,7 +366,7 @@ function LogForm({
 
         <RawLinksField links={links} onChange={setLinks} />
 
-        {error ? <Feedback message={error} /> : null}
+        {error ? <FormError message={error} /> : null}
       </div>
 
       <SheetFooter className="border-border flex-row justify-end border-t">
@@ -424,8 +423,8 @@ function RawLinksField({ links, onChange }: RawLinksFieldProps) {
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium text-slate-700">Raw links</legend>
-      <p className="text-xs text-slate-500">
+      <legend className="text-sm font-medium text-foreground">Raw links</legend>
+      <p className="text-xs text-muted-foreground">
         Drive files, drawings or boards. http and https only.
       </p>
 
@@ -436,7 +435,7 @@ function RawLinksField({ links, onChange }: RawLinksFieldProps) {
           <li key={index} className="flex items-center gap-2">
             <div className="relative flex-1">
               <LinkIcon
-                className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
               />
               <Input
@@ -482,65 +481,3 @@ function RawLinksField({ links, onChange }: RawLinksFieldProps) {
 /* -------------------------------------------------------------------------- */
 /* Shared bits                                                                */
 /* -------------------------------------------------------------------------- */
-
-interface FieldProps {
-  id: string;
-  label: string;
-  hint?: string;
-  required?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}
-
-function Field({
-  id,
-  label,
-  hint,
-  required = false,
-  className,
-  children,
-}: FieldProps) {
-  return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-sm font-medium text-slate-700">
-        {label}
-        {required ? (
-          <>
-            <span className="ml-0.5 text-danger" aria-hidden="true">
-              *
-            </span>
-            <span className="sr-only">(required)</span>
-          </>
-        ) : null}
-      </label>
-      {children}
-      {hint ? (
-        <p id={`${id}-hint`} className="text-xs text-slate-500">
-          {hint}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function Feedback({
-  message,
-  className,
-}: {
-  message: string;
-  className?: string;
-}) {
-  return (
-    <div
-      role="alert"
-      aria-live="polite"
-      className={cn(
-        'flex items-start gap-2 rounded-md border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger',
-        className,
-      )}
-    >
-      <AlertCircleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-      <span>{message}</span>
-    </div>
-  );
-}

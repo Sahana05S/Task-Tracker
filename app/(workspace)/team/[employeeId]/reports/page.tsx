@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/shared/ui/button';
 import { LiveReport } from '@/modules/reports/components/live-report';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { monthHistory, monthRevision } from '@/modules/reports';
@@ -81,7 +82,7 @@ export default async function EmployeeReportsPage({
         actions={
           <Link
             href={`/team/${encodeURIComponent(data.employee.employeeId)}?${viewQuery(context)}`}
-            className="button-secondary gap-2"
+            className={`${buttonVariants({ variant: 'outline' })} gap-2`}
           >
             <ArrowLeftIcon className="size-4" aria-hidden="true" />
             Back to profile

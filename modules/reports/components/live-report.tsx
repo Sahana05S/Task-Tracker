@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/shared/ui/button';
 import { DownloadIcon, ListChecksIcon } from 'lucide-react';
 import { OperationalEvidence } from './operational-evidence';
 import { AwardHistory } from '@/modules/scoring/components/award-history';
@@ -13,7 +14,7 @@ export function LiveReport({model}:{model:LivePresentation}){
  const query=viewQuery(model.view)+(model.employeeId?'&employee='+encodeURIComponent(model.employeeId):'');
  return <section className="grid gap-5 lg:gap-6">
   <ReportContext model={model}/>
-  <nav aria-label="Download live report" className="flex flex-wrap items-center gap-2">{['json','text','csv'].map(format=><a className="button-secondary h-9 gap-1.5 px-3" key={format} href={'/api/reports/export?'+query+'&format='+format}><DownloadIcon className="size-4" aria-hidden="true"/>Download {format.toUpperCase()}</a>)}<CopyReport text={reportText(model)}/></nav>
+  <nav aria-label="Download live report" className="flex flex-wrap items-center gap-2">{['json','text','csv'].map(format=><a className={`${buttonVariants({ variant: 'outline' })} h-9 gap-1.5 px-3`} key={format} href={'/api/reports/export?'+query+'&format='+format}><DownloadIcon className="size-4" aria-hidden="true"/>Download {format.toUpperCase()}</a>)}<CopyReport text={reportText(model)}/></nav>
   {model.awardAvailabilityReason?<MissionNotice tone="attention" role="status">{model.awardAvailabilityReason}</MissionNotice>:null}
   {model.awards?<AwardHistory awards={model.awards}/>:null}
   <MissionNotice>Detailed rows are restricted to your own work or manager access. Team members can see shared metric aggregates. Automatic Drive operations are unavailable; existing asset links remain usable.</MissionNotice>

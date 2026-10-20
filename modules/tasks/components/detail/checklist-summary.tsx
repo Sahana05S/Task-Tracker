@@ -89,7 +89,7 @@ export function ChecklistHero({
             </ul>
           ) : null}
         </div>
-        <Button asChild className="h-11 rounded-xl px-5 max-sm:w-full">
+        <Button asChild className="h-11 px-5 max-sm:w-full">
           <Link href={href}>
             Open master checklist
             <ArrowRightIcon aria-hidden="true" />

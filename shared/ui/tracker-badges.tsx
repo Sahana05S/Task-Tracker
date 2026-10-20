@@ -104,7 +104,7 @@ export function FreshnessIndicator({
     <span
       className={cn(
         'freshness-indicator',
-        freshness === null ? "text-slate-500" : FRESHNESS_CLASSES[freshness],
+        freshness === null ? "text-muted-foreground" : FRESHNESS_CLASSES[freshness],
         className,
       )}
       {...props}

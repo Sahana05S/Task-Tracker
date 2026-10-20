@@ -209,7 +209,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
                     </select>
                   </label>
                   <ReasonInput placeholder="Reason for section review" />
-                  <Button type="submit" variant="accent" size="sm" className="justify-self-start rounded-xl">Confirm section</Button>
+                  <Button type="submit" variant="accent" size="sm" className="justify-self-start">Confirm section</Button>
                 </ExecutionForm>
               ) : null}
             </div>
@@ -272,7 +272,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
             <p className="text-foreground min-w-0 flex-1 basis-60 text-sm font-medium">
               {r.isComplete ? 'All checklist gates satisfied. Assigned reviewers must approve the current work before Done.' : 'Done is blocked until all sections are initialized and applicable work is complete.'}
             </p>
-            <Button asChild className="rounded-xl max-sm:w-full">
+            <Button asChild className="max-sm:w-full">
               <Link href={workHref}>
                 Back to master checklist
                 <ArrowRightIcon aria-hidden="true" />
@@ -291,7 +291,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
                     <span className={LABEL_TEXT}>Checklist title</span>
                     <input name="title" defaultValue="Master checklist" required className={cn(FIELD, 'h-10')} />
                   </label>
-                  <Button type="submit" className="rounded-xl">Create manual checklist</Button>
+                  <Button type="submit">Create manual checklist</Button>
                 </ExecutionForm>
               </MissionPanel>
             ) : (
@@ -313,7 +313,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
                         </select>
                       </label>
                       <ReasonInput placeholder="Reason after reviewing all sections" />
-                      <Button type="submit" className="rounded-xl">Apply reviewed switch</Button>
+                      <Button type="submit">Apply reviewed switch</Button>
                     </ExecutionForm>
                   </MissionPanel>
                 ) : null}

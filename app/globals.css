@@ -27,6 +27,8 @@
   /* ---- Text hierarchy -------------------------------------------------- */
   --muted: #f3f1fa;
   --muted-foreground: #5c5776;
+  /* Placeholder text: 4.91:1 on white, still lighter than typed values. */
+  --placeholder: #726d8b;
 
   /* ---- Violet interaction ---------------------------------------------- */
   --primary: #6355e6;
@@ -121,6 +123,7 @@
   --color-input: var(--input);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-placeholder: var(--placeholder);
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
@@ -635,8 +638,31 @@
      selects and textareas; `.field-label` stacks a label over its control.
      ---------------------------------------------------------------------- */
   .field {
-    @apply border-input bg-background text-foreground min-h-10 max-w-full min-w-0
-      rounded-xl border px-3 py-2 text-sm transition-colors;
+    @apply border-input bg-card text-foreground max-w-full min-w-0 rounded-xl border
+      px-3.5 py-2 text-base outline-none transition-[color,background-color,border-color,box-shadow]
+      placeholder:text-placeholder selection:bg-primary-subtle selection:text-primary
+      focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:ring-2
+      disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed
+      aria-invalid:border-danger aria-invalid:ring-danger/20 aria-invalid:ring-2 sm:text-sm;
+  }
+
+  /* Single-line controls are one height; utilities such as h-9 still win. */
+  :where(input, select:not([multiple])).field {
+    @apply h-10;
+  }
+
+  textarea.field {
+    @apply min-h-10;
+  }
+
+  /* Native selects share the control and draw their own chevron. */
+  select.field {
+    @apply appearance-none bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c5776' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  select.field[multiple] {
+    @apply bg-none pr-3.5;
   }
 
   .field:focus-visible {
@@ -678,17 +704,7 @@
   }
 
   /* Plain <button>s that do not use the Button component. */
-  .button-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary-hover inline-flex h-10
-      items-center justify-center rounded-xl px-4 text-sm font-semibold whitespace-nowrap
-      transition-colors disabled:pointer-events-none disabled:opacity-50;
-  }
 
-  .button-secondary {
-    @apply border-border text-foreground hover:bg-muted inline-flex h-10 items-center
-      justify-center rounded-xl border bg-white px-4 text-sm font-semibold
-      whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50;
-  }
 
   /* Status filter pill on the Missions toolbar. */
   .filter-pill {

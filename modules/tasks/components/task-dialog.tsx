@@ -14,6 +14,8 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Field, FormError, LabeledSelect } from '@/shared/ui/form-field';
 import { Input } from '@/shared/ui/input';
+import { NativeSelect } from '@/shared/ui/native-select';
+import { Textarea } from '@/shared/ui/textarea';
 import {
   Sheet,
   SheetContent,
@@ -193,7 +195,20 @@ function TaskForm({
       }}
       className="flex min-h-0 flex-1 flex-col"
     >
-      {!isEdit ? <div className="grid gap-2 p-3"><NativeTemplateSelect templates={templates}/><label className="text-sm">Initialization<select name="initializationMode" defaultValue="automatic" className="rounded border p-2"><option value="automatic">Automatically after saving</option><option value="manual">Initialize manually later</option></select></label><label className="text-sm">Description<textarea name="description" className="w-full rounded border p-2"/></label></div> : null}
+      {!isEdit ? (
+        <div className="grid gap-4 px-4 pt-4">
+          <NativeTemplateSelect templates={templates} />
+          <Field id="task-initialization" label="Set up details">
+            <NativeSelect id="task-initialization" name="initializationMode" defaultValue="automatic">
+              <option value="automatic">Automatically after saving</option>
+              <option value="manual">Manually later</option>
+            </NativeSelect>
+          </Field>
+          <Field id="task-description" label="Description">
+            <Textarea id="task-description" name="description" />
+          </Field>
+        </div>
+      ) : null}
       {isEdit ? <input type="hidden" name="taskId" value={task.id} /> : null}
       <input type="hidden" name="lifecycleVersion" value={task?.lifecycleVersion ?? 0} />
       <input type="hidden" name="participantVersion" value={task?.participantVersion ?? 0} />

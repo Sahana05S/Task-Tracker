@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/shared/ui/button';
 import { CalendarClockIcon } from 'lucide-react';
 
 import type { LivePresentation } from '@/modules/reports/internal/presentation/model';
@@ -13,7 +14,7 @@ export function ReportContext({model}:{model:LivePresentation}) {
   <form className="mt-1 grid gap-3 sm:flex sm:flex-wrap sm:items-end" method="get">
    <label className="field-label">Month<input className="field" type="month" name="period" defaultValue={model.view.period.startDate.slice(0,7)}/></label>
    <label className="field-label sm:max-w-sm sm:flex-1">As-of instant (with timezone)<input className="field w-full" name="asOf" defaultValue={model.view.asOf}/></label>
-   <button className="button-secondary justify-self-start" type="submit">View</button>
+   <button className={`${buttonVariants({ variant: 'outline' })} justify-self-start`} type="submit">View</button>
   </form>
  </section>;
 }

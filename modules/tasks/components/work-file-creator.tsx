@@ -8,7 +8,7 @@ import { Button } from '@/shared/ui/button';
 import { addTaskAsset } from '@/modules/tasks/detail-actions';
 import { cn } from '@/shared/utils';
 
-const FIELD = 'border-input bg-background w-full min-w-0 rounded-xl border px-3 text-sm';
+const FIELD = 'field w-full';
 
 const KINDS = [
   { label: 'Google Doc', href: 'https://docs.new', icon: FileTextIcon },
@@ -77,7 +77,7 @@ export function WorkFileCreator({
           <span className="text-foreground font-medium">2. Name it</span>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <code className="bg-background border-border min-w-0 max-w-full truncate rounded-lg border px-2.5 py-1.5 text-xs">{suggested}</code>
-            <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={copyName}>
+            <Button type="button" variant="outline" size="sm" onClick={copyName}>
               {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
               {copied ? 'Copied' : 'Copy name'}
             </Button>
@@ -112,7 +112,7 @@ export function WorkFileCreator({
               <span className="text-foreground font-medium">File link</span>
               <input name="url" type="url" required placeholder="https://docs.google.com/…" className={cn(FIELD, 'h-10')} />
             </label>
-            <Button type="submit" className="justify-self-start rounded-xl">Save work file link</Button>
+            <Button type="submit" className="justify-self-start">Save work file link</Button>
           </ExecutionForm>
         </li>
       </ol>

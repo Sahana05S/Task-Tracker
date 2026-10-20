@@ -121,7 +121,7 @@ export function ChecklistRowActions({
                   <Field id={id('reason')} label="Why are you changing it?" hint="Kept with the checklist history." required>
                     <Input id={id('reason')} name="reason" required maxLength={1000} />
                   </Field>
-                  <Button type="submit" className="justify-self-start rounded-xl">Save changes</Button>
+                  <Button type="submit" className="justify-self-start">Save changes</Button>
                 </div>
               </ExecutionForm>
             </section>
@@ -138,7 +138,7 @@ export function ChecklistRowActions({
               <ExecutionForm action={action} scope={`duplicate:${row.id}`}>
                 <input type="hidden" name="command" value="duplicate" />
                 {hidden}
-                <Button type="submit" variant="outline" className="justify-self-start rounded-xl">
+                <Button type="submit" variant="outline" className="justify-self-start">
                   Duplicate{row.childCount ? ' with its rows' : ''}
                 </Button>
               </ExecutionForm>
@@ -157,7 +157,7 @@ export function ChecklistRowActions({
                   <Field id={id('remove-reason')} label="Why remove it?" required>
                     <Input id={id('remove-reason')} name="reason" required maxLength={1000} />
                   </Field>
-                  <Button type="submit" variant="destructive" className="justify-self-start rounded-xl">
+                  <Button type="submit" variant="destructive" className="justify-self-start">
                     Remove {row.isSubMission ? 'Sub-mission' : 'row'}
                   </Button>
                 </div>

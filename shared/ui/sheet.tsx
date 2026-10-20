@@ -30,7 +30,7 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-slate-900/40',
+        'fixed inset-0 z-50 bg-foreground/40',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
         className,
@@ -73,7 +73,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'fixed z-50 flex flex-col gap-4 bg-white shadow-soft-lg transition ease-in-out',
+          'fixed z-50 flex flex-col gap-4 overscroll-contain bg-white shadow-soft-lg transition ease-in-out',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=open]:duration-300 data-[state=closed]:duration-200',
           sideClasses[side],
@@ -85,9 +85,9 @@ function SheetContent({
         {!hideCloseButton ? (
           <SheetPrimitive.Close
             className={cn(
-              'absolute top-4 right-4 rounded-md p-1 text-slate-500 transition-colors',
-              'hover:bg-slate-100 hover:text-slate-900',
-              'focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none',
+              'absolute top-4 right-4 rounded-md p-1 text-muted-foreground transition-colors',
+              'hover:bg-muted hover:text-foreground',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
             )}
           >
             <XIcon className="size-4" />
@@ -129,7 +129,7 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn('text-base font-semibold text-slate-900', className)}
+      className={cn('text-base font-semibold text-foreground', className)}
       {...props}
     />
   );
@@ -142,7 +142,7 @@ function SheetDescription({
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn('text-sm text-slate-500', className)}
+      className={cn('text-sm text-muted-foreground', className)}
       {...props}
     />
   );

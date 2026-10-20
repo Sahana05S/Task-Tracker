@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/shared/ui/button';
 import { LiveReport } from '@/modules/reports/components/live-report';
 import { viewContext, viewQuery } from '@/modules/reports/client';
 import { displayPerformance } from '@/shared/math/exact';
@@ -93,13 +94,13 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
           <div className="flex items-center gap-2">
             <Link
               href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?${viewQuery(context)}`}
-              className="button-primary"
+              className={buttonVariants()}
             >
               Reports & charts
             </Link>
             <Link
               href="/team"
-              className="button-secondary"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Team index
             </Link>

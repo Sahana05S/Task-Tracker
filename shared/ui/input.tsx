@@ -2,19 +2,18 @@ import * as React from 'react';
 
 import { cn } from '@/shared/utils';
 
+/**
+ * Single-line field. The control look lives once, in `.field` (globals.css),
+ * so this input, `Textarea`, `NativeSelect` and older forms that use the class
+ * directly all render the same box, focus ring and error state.
+ */
 function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
   return (
     <input
       type={type}
       data-slot="input"
       className={cn(
-        // Recessed field on a card: soft fill, hairline edge, generous corner.
-        'border-input text-foreground flex h-10 w-full min-w-0 rounded-xl border bg-white px-3.5 py-1 text-sm transition-colors outline-none',
-        'placeholder:text-slate-400',
-        'selection:bg-primary-subtle selection:text-primary',
-        'focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:ring-2',
-        'disabled:bg-muted disabled:cursor-not-allowed disabled:text-slate-400',
-        'aria-invalid:border-danger aria-invalid:ring-2 aria-invalid:ring-danger/20',
+        'field flex w-full',
         'file:inline-flex file:border-0 file:bg-transparent file:text-sm file:font-medium',
         className,
       )}

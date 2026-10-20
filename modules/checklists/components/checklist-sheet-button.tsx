@@ -20,7 +20,7 @@ export function ChecklistSheetButton({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="rounded-xl">{label}</Button>
+        <Button type="button" variant="outline" size="sm">{label}</Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full gap-0 sm:max-w-md">
         <SheetHeader className="pr-12">

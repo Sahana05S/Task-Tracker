@@ -1,4 +1,5 @@
 'use client';
+import { buttonVariants } from '@/shared/ui/button';
 import { useRef,useState,useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { requestDriveOperation } from '@/modules/drive/actions';
@@ -33,7 +34,7 @@ export function DriveOperations({tasks,model,canManage}:{tasks:readonly Task[];m
    {command==='blank'?<><select name="fileKind" aria-label="File kind" className={input}>{(model?.configuration?.blankKinds??[]).map(k=><option key={k}>{k}</option>)}</select><select name="ipoRole" aria-label="Destination" className={input}>{['input','process','output'].map(k=><option key={k}>{k}</option>)}</select></>:null}
    {command==='copy_template'?<select name="templateKey" aria-label="Template" className={input}>{model?.configuration?.templates.map(t=><option key={t.key} value={t.key}>{t.label}</option>)}</select>:null}
    {command==='rename'?<select name="assetKey" aria-label="Provider asset" className={input}>{assets.map(a=><option key={a.key} value={a.key}>{a.name}</option>)}</select>:null}
-   <button className="button-secondary justify-self-start" disabled={pending||!model?.configured||!!task?.archivedEffectiveDate||!task}>Queue provider operation</button>
+   <button className={`${buttonVariants({ variant: 'outline' })} justify-self-start`} disabled={pending||!model?.configured||!!task?.archivedEffectiveDate||!task}>Queue provider operation</button>
   </form>:null}
   <p role="status" className="text-sm">{message}</p>
   {jobs.map(j=><div key={j.id} className="border-border grid gap-2 rounded-xl border p-3 text-sm"><p>Retained job record: {j.command}: {j.status} · {j.attempts} attempts</p>
