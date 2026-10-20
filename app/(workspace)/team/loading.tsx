@@ -1,10 +1,6 @@
-import { Skeleton } from '@/shared/ui/skeleton';
+import { PageSkeleton } from '@/shared/ui/page-skeleton';
 
+/** Team index: the live view, the support figures and the member table. */
 export default function TeamLoading() {
-  return (
-    <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
-      <Skeleton className="h-28 w-full" />
-      <Skeleton className="h-80 w-full" />
-    </div>
-  );
+  return <PageSkeleton label="Loading the team index" tiles={5} panels={['h-40', 'h-96']} />;
 }

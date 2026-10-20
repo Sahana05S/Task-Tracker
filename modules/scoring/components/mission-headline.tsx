@@ -64,7 +64,7 @@ export function MissionHeadlineStrip({
 }) {
   const { allocationSpread: spread, averageProductivity: prod, averageProgress: prog } = headline;
   return (
-    <section aria-label="Team headline" className="mb-5 grid gap-3">
+    <section aria-label="Team headline" className="grid gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-foreground text-sm font-bold">Team headline · {monthLabel}</h2>
         <p className="text-muted-foreground text-xs">Live month to date; figures change as work is logged.</p>

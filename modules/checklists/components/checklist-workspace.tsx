@@ -1,11 +1,12 @@
 import Link from 'next/link';
-import { ArrowLeftIcon, CheckCircle2Icon, CircleDashedIcon, CircleDotIcon, ClipboardCheckIcon, FileStackIcon, GaugeIcon, TriangleAlertIcon } from 'lucide-react';
+import { CheckCircle2Icon, CircleDashedIcon, CircleDotIcon, ClipboardCheckIcon, FileStackIcon, GaugeIcon, TriangleAlertIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Field } from '@/shared/ui/form-field';
 import { Input } from '@/shared/ui/input';
-import { AvatarStack, MissionProgress } from '@/shared/ui/mission-ui';
+import { AvatarStack, MissionPage, MissionProgress } from '@/shared/ui/mission-ui';
+import { Breadcrumb, type BreadcrumbItem } from '@/shared/ui/page-nav';
 import { cn } from '@/shared/utils';
 import { checklistHref } from '../internal/pages';
 import { checklistWorkHref } from '../internal/location';
@@ -96,47 +97,22 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
     : ancestors.length > 1 ? ancestorHref(task.taskTag, ancestors[ancestors.length - 2], 'activity')
       : ancestors.length === 1 ? homeHref : missionHref;
   const structureHref = manager && !checklist?.ownerNodeId ? checklistHref(task.taskTag) : undefined;
+  const crumbs: BreadcrumbItem[] = [
+    { label: task.taskTag, href: missionHref, tag: true },
+    { label: 'Master checklist', href: homeHref },
+    ...ancestors.map((ancestor, index) => ({
+      label: ancestor.title,
+      href: ancestorHref(task.taskTag, ancestor, section),
+      hideOnPhone: index < ancestors.length - 2,
+    })),
+  ];
   const tableActions = { checklist: props.actions.checklist, start: props.actions.start, stop: props.actions.stop, discard: props.actions.discard };
   const issues = checklistIssues(rollup.errors);
 
   return (
     <ChecklistVersionProvider version={version}>
-      <div className="mx-auto grid w-full max-w-[1200px] content-start gap-5 px-4 pt-6 pb-10 lg:px-6">
-        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
-          <Link
-            href={backHref}
-            aria-label="Back"
-            className="text-muted-foreground hover:text-foreground hover:bg-muted bg-card flex size-9 shrink-0 items-center justify-center rounded-xl shadow-(--shadow-card) transition-colors"
-          >
-            <ArrowLeftIcon className="size-4" aria-hidden="true" />
-          </Link>
-          <ol className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <li>
-              <Link href={missionHref} className="task-tag bg-primary-subtle text-primary-subtle-foreground rounded-md px-2 py-0.5">{task.taskTag}</Link>
-            </li>
-            <li className="flex items-center gap-2">
-              <span aria-hidden="true" className="text-muted-foreground">/</span>
-              {props.sections && !ancestors.length ? (
-                <span className="text-foreground font-medium" aria-current="page">Master checklist</span>
-              ) : (
-                <Link href={homeHref} className="text-muted-foreground hover:text-foreground font-medium">Master checklist</Link>
-              )}
-            </li>
-            {ancestors.map((ancestor, index) => {
-              const isCurrent = index === ancestors.length - 1 && (props.page || props.sections);
-              return (
-                <li key={ancestor.nodeId} className={cn('flex min-w-0 items-center gap-2', index < ancestors.length - 2 && 'max-sm:hidden')}>
-                  <span aria-hidden="true" className="text-muted-foreground">/</span>
-                  {isCurrent ? (
-                    <span className="text-foreground max-w-[16rem] truncate font-medium" aria-current="page">{ancestor.title}</span>
-                  ) : (
-                    <Link href={ancestorHref(task.taskTag, ancestor, section)} className="text-muted-foreground hover:text-foreground max-w-[12rem] truncate font-medium">{ancestor.title}</Link>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
+      <MissionPage>
+        <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
 
         {checklist && props.sections ? (
           <HomeHero {...props} checklist={checklist} structureHref={structureHref} />
@@ -206,7 +182,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
         {checklist?.ownerNodeId ? (
           <p className="text-muted-foreground text-sm">Sub-mission owners and deadline follow the mission. Time logged here counts on the mission.</p>
         ) : null}
-      </div>
+      </MissionPage>
     </ChecklistVersionProvider>
   );
 }

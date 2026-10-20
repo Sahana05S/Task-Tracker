@@ -99,6 +99,7 @@ export function MissionPage({
 }) {
   return (
     <div
+      data-page-width={wide ? 'wide' : undefined}
       className={cn(
         'mx-auto grid w-full content-start gap-5 px-4 pt-6 pb-10 lg:gap-6 lg:px-6',
         wide ? 'max-w-[1440px]' : 'max-w-[1200px]',
@@ -111,8 +112,9 @@ export function MissionPage({
 }
 
 /**
- * Page title row matching the Missions list: large title, optional count
- * chip, a muted description and page actions on the right.
+ * The page title row every workspace page uses: optional breadcrumb, an
+ * optional meta row (badges), the title with a count chip, a muted
+ * description, page actions on the right and optional tabs underneath.
  */
 export function MissionPageHeader({
   title,
@@ -120,26 +122,37 @@ export function MissionPageHeader({
   description,
   eyebrow,
   actions,
+  breadcrumb,
+  meta,
+  tabs,
 }: {
   title: string;
   chip?: React.ReactNode;
   description?: React.ReactNode;
   eyebrow?: string;
   actions?: React.ReactNode;
+  breadcrumb?: React.ReactNode;
+  meta?: React.ReactNode;
+  tabs?: React.ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end gap-x-4 gap-y-3">
-      <div className="flex min-w-0 flex-col gap-1">
-        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">
-            {title}
-          </h1>
-          {chip ? <PageChip>{chip}</PageChip> : null}
+    <header className="grid gap-4">
+      {breadcrumb}
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
+          {meta ? <div className="mb-2 flex flex-wrap items-center gap-1.5">{meta}</div> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight text-balance break-words lg:text-[2rem]">
+              {title}
+            </h1>
+            {chip ? <PageChip>{chip}</PageChip> : null}
+          </div>
+          {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
         </div>
-        {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
+        {actions ? <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
-      {actions ? <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {tabs}
     </header>
   );
 }

@@ -1,4 +1,5 @@
 import { Button } from '@/shared/ui/button';
+import { formatDateTime } from '@/shared/tracker/format';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { cn } from '@/shared/utils';
@@ -227,13 +228,6 @@ export function ManualTimeForm({
       </Button>
     </ExecutionForm>
   );
-}
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
 }
 
 function formatElapsed(seconds: number): string {

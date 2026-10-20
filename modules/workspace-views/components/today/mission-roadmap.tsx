@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
+import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
 import { cn } from '@/shared/utils';
 import { missionDueLabel, type MissionDueFilter, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/client';
@@ -20,6 +21,10 @@ const FOCUS = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-o
 const SECTIONS = ['setup', 'activity', 'closure'] as const;
 
 type View = 'roadmap' | 'list';
+const VIEW_OPTIONS: readonly SegmentedOption<View>[] = [
+  { value: 'roadmap', label: 'Roadmap', icon: OrbitIcon },
+  { value: 'list', label: 'List', icon: ListIcon },
+];
 interface Props {
   initial: RoadmapMissionBatch | null;
   due: MissionDueFilter;
@@ -109,10 +114,16 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
   return <section aria-labelledby="mission-path-title" className="min-w-0">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><h2 id="mission-path-title" className="text-foreground text-xl font-bold tracking-tight">Your mission path</h2><p className="text-muted-foreground mt-1 max-w-prose text-sm">Choose a mission. Open its next item. Keep your work in focus.</p></div>
-      <div className="border-border flex rounded-full border p-1" role="group" aria-label="Mission view">
-        <Button size="sm" variant={view === 'roadmap' ? 'default' : 'ghost'} aria-pressed={view === 'roadmap'} onClick={() => { setView('roadmap'); remember(location, due, 'roadmap'); }}><OrbitIcon aria-hidden="true" />Roadmap</Button>
-        <Button size="sm" variant={view === 'list' ? 'default' : 'ghost'} aria-pressed={view === 'list'} onClick={() => { setView('list'); remember(location, due, 'list'); if (location) open(location); }}><ListIcon aria-hidden="true" />List</Button>
-      </div>
+      <SegmentedControl
+        label="Mission view"
+        value={view}
+        options={VIEW_OPTIONS}
+        onValueChange={(next) => {
+          setView(next);
+          remember(location, due, next);
+          if (next === 'list' && location) open(location);
+        }}
+      />
     </div>
     <nav aria-label="Mission deadline filters" className="mt-5 flex flex-wrap gap-2">
       {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}

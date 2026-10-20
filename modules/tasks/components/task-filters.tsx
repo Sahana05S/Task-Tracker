@@ -5,6 +5,7 @@ import { LayoutGridIcon, SearchIcon, TableIcon, XIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
+import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
 import {
   Select,
   SelectContent,
@@ -28,6 +29,11 @@ import { cn } from '@/shared/utils';
 import type { Task, TaskStatus, User } from '@/types/tracker';
 
 export type MissionView = 'cards' | 'table';
+
+const VIEW_OPTIONS: readonly SegmentedOption<MissionView>[] = [
+  { value: 'cards', label: 'Card view', icon: LayoutGridIcon, iconOnly: true },
+  { value: 'table', label: 'Table view', icon: TableIcon, iconOnly: true },
+];
 
 export interface TaskFiltersProps {
   filters: TaskFilterState;
@@ -126,14 +132,13 @@ export function TaskFilters({
         </div>
 
         {/* View switch. The table needs desktop width, so it is offered from lg. */}
-        <div
-          role="group"
-          aria-label="Mission view"
-          className="bg-muted ml-auto hidden shrink-0 items-center gap-0.5 rounded-xl p-1 lg:flex"
-        >
-          <ViewButton current={view} value="cards" label="Card view" icon={LayoutGridIcon} onSelect={onViewChange} />
-          <ViewButton current={view} value="table" label="Table view" icon={TableIcon} onSelect={onViewChange} />
-        </div>
+        <SegmentedControl
+          label="Mission view"
+          value={view}
+          options={VIEW_OPTIONS}
+          onValueChange={onViewChange}
+          className="ml-auto hidden lg:inline-flex"
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -242,37 +247,6 @@ export function TaskFilters({
         </p>
       </div>
     </div>
-  );
-}
-
-function ViewButton({
-  current,
-  value,
-  label,
-  icon: Icon,
-  onSelect,
-}: {
-  current: MissionView;
-  value: MissionView;
-  label: string;
-  icon: typeof TableIcon;
-  onSelect: (view: MissionView) => void;
-}) {
-  const active = current === value;
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-pressed={active}
-      title={label}
-      onClick={() => onSelect(value)}
-      className={cn(
-        'flex size-8 items-center justify-center rounded-lg transition-colors',
-        active ? 'text-primary bg-white shadow-(--shadow-card)' : 'text-muted-foreground hover:text-foreground',
-      )}
-    >
-      <Icon className="size-4" aria-hidden="true" />
-    </button>
   );
 }
 

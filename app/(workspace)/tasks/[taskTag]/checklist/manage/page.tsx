@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
-  ArrowLeftIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
   CircleDashedIcon,
@@ -30,7 +29,8 @@ import {
   percentage,
   type ChecklistContext,
 } from '@/modules/checklists/components/checklist-rows';
-import { AvatarStack, MissionPanel, MissionProgress } from '@/shared/ui/mission-ui';
+import { AvatarStack, MissionPage, MissionPanel, MissionProgress } from '@/shared/ui/mission-ui';
+import { Breadcrumb } from '@/shared/ui/page-nav';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { requireProfile } from '@/shared/session/profile';
@@ -109,33 +109,21 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
   const sideColumn = executor && open;
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] px-4 pt-5 pb-10 lg:px-6">
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
-        <Link
-          href={workHref}
-          aria-label="Back to master checklist"
-          className="text-muted-foreground hover:text-foreground hover:bg-muted flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-(--shadow-card) transition-colors"
-        >
-          <ArrowLeftIcon className="size-4" aria-hidden="true" />
-        </Link>
-        <Link href="/tasks" className="text-muted-foreground hover:text-foreground hidden shrink-0 font-medium sm:inline">
-          Missions
-        </Link>
-        <span aria-hidden="true" className="text-muted-foreground hidden sm:inline">/</span>
-        <Link href={missionHref} className="task-tag bg-primary-subtle text-primary-subtle-foreground shrink-0 rounded-md px-2 py-0.5">
-          {d.task.taskTag}
-        </Link>
-        <span aria-hidden="true" className="text-muted-foreground">/</span>
-        <Link href={`/tasks/${encodeURIComponent(d.task.taskTag)}/checklist`} className="text-muted-foreground hover:text-foreground shrink-0 font-medium">Master checklist</Link>
-        <span aria-hidden="true" className="text-muted-foreground">/</span>
-        <span className="text-foreground truncate font-medium" aria-current="page">Structure</span>
-      </nav>
+    <MissionPage>
+      <Breadcrumb
+        back={{ href: workHref, label: 'Back to master checklist' }}
+        items={[
+          { label: 'Missions', href: '/tasks', hideOnPhone: true },
+          { label: d.task.taskTag, href: missionHref, tag: true },
+          { label: 'Master checklist', href: workHref },
+          { label: 'Structure' },
+        ]}
+      />
 
       {/* Hero */}
       <section
         aria-label="Master checklist summary"
-        className="hero-card mt-5 p-5 sm:p-6"
+        className="hero-card p-5 sm:p-6"
       >
         <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
           <div className="min-w-0 flex-1 basis-72">
@@ -179,7 +167,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
       </section>
 
       {/* Milestone breakdown */}
-      <section aria-label="Milestone breakdown" className="mt-5 grid gap-3 md:grid-cols-3">
+      <section aria-label="Section progress" className="grid gap-3 md:grid-cols-3">
         {CHECKLIST_SECTIONS.map((s, index) => {
           const section = r.sections[s];
           const na = section.state === 'not_applicable';
@@ -218,7 +206,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
       </section>
 
       {r.errors.length ? (
-        <div role="alert" className="mt-5 flex items-start gap-2 rounded-2xl border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
+        <div role="alert" className="flex items-start gap-2 rounded-2xl border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0 break-words">
             <p className="font-semibold">Correct these references or explicitly map legacy roots:</p>
@@ -227,7 +215,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
         </div>
       ) : null}
 
-      <div className={cn('mt-5 grid gap-5', sideColumn && 'xl:grid-cols-[minmax(0,1fr)_22rem]')}>
+      <div className={cn('grid gap-5', sideColumn && 'xl:grid-cols-[minmax(0,1fr)_22rem]')}>
         <main className="grid min-w-0 content-start gap-5">
           <MissionPanel
             icon={ListChecksIcon}
@@ -322,7 +310,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
           </aside>
         ) : null}
       </div>
-    </div>
+    </MissionPage>
   );
 }
 

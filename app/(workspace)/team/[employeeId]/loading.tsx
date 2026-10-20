@@ -1,10 +1,6 @@
-import { Skeleton } from '@/shared/ui/skeleton';
+import { PageSkeleton } from '@/shared/ui/page-skeleton';
 
+/** Member profile: summary tiles, then the report and chart panels. */
 export default function EmployeeLoading() {
-  return (
-    <div className="grid gap-4 px-4 py-4 lg:px-6">
-      <Skeleton className="h-36 w-full" />
-      <Skeleton className="h-72 w-full" />
-    </div>
-  );
+  return <PageSkeleton label="Loading the profile" tiles={5} panels={['h-72', 'h-72']} />;
 }
