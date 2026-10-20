@@ -109,7 +109,7 @@ export function TaskDataGrid({
     <div className="soft-card-clip relative overflow-x-auto">
       <table className="sheet-grid">
         <caption className="sr-only">
-          Task tracker grid. Column headers are buttons that sort the table.
+          Missions. Column headers are buttons that sort the table.
         </caption>
         <thead>
           <tr>

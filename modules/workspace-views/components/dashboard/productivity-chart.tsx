@@ -24,6 +24,7 @@ import {
 } from '@/shared/ui/chart-palette';
 import type { MemberPerformance } from '@/modules/scoring/client';
 import { formatHours } from '@/shared/tracker/format';
+import { EmptyState } from '@/shared/ui/mission-ui';
 
 export interface ProductivityChartProps {
   members: readonly MemberPerformance[];
@@ -248,9 +249,5 @@ export function ChartShell({
 }
 
 export function EmptyNote({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="soft-inset text-muted-foreground flex h-64 items-center justify-center px-6 text-center text-sm">
-      {children}
-    </p>
-  );
+  return <EmptyState variant="chart">{children}</EmptyState>;
 }

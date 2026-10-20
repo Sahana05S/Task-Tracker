@@ -390,7 +390,7 @@
 
   /* Page or panel title. */
   .panel-title {
-    @apply text-foreground text-lg font-bold tracking-tight;
+    @apply text-foreground text-base font-bold tracking-tight;
   }
 }
 

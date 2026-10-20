@@ -4,8 +4,6 @@ import { notFound } from 'next/navigation';
 import {
   ArrowRightIcon,
   CheckCircle2Icon,
-  CircleDashedIcon,
-  CircleDotIcon,
   ClipboardCheckIcon,
   FlagIcon,
   GaugeIcon,
@@ -14,28 +12,26 @@ import {
   PlusIcon,
   TriangleAlertIcon,
   ZapIcon,
-  type LucideIcon,
-} from 'lucide-react';
+  type LucideIcon } from 'lucide-react';
 
 import {
   AddNodeForm,
   ChecklistRow,
   CommandFields,
-  EmptyRows,
   FIELD,
   LABEL,
   LABEL_TEXT,
   ReasonInput,
   percentage,
-  type ChecklistContext,
-} from '@/modules/checklists/components/checklist-rows';
-import { AvatarStack, MissionPage, MissionPanel, MissionProgress } from '@/shared/ui/mission-ui';
+  type ChecklistContext } from '@/modules/checklists/components/checklist-rows';
+import { AvatarStack, MissionPage, MissionPanel, MissionProgress, EmptyState } from '@/shared/ui/mission-ui';
 import { Breadcrumb } from '@/shared/ui/page-nav';
+import { SectionStateIcon } from '@/modules/checklists/components/section-state-icon';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { requireProfile } from '@/shared/session/profile';
 import { getChecklistItemTime, getOwnedChecklists } from '@/modules/checklists';
-import { CHECKLIST_SECTIONS, type ChecklistSection, type SectionProgress } from '@/modules/checklists/client';
+import { CHECKLIST_SECTIONS, sectionStatus, type ChecklistSection } from '@/modules/checklists/client';
 import { normalizeTaskTagParam, resolveTaskDetailRouteState } from '@/modules/tasks';
 import { getTaskWorkspaceData } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
@@ -54,17 +50,8 @@ export async function generateMetadata({ params }: { params: Promise<{ taskTag: 
 const SECTION_META: Record<ChecklistSection, { label: string; heading: string; icon: LucideIcon; note: string }> = {
   setup: { label: 'Setup', heading: 'Setup & pre-requisites', icon: ClipboardCheckIcon, note: 'Completion gate' },
   activity: { label: 'Activity', heading: 'Activity', icon: ZapIcon, note: 'Drives activity-derived progress' },
-  closure: { label: 'Closure', heading: 'Closure & handoff', icon: FlagIcon, note: 'Completion gate' },
-};
+  closure: { label: 'Closure', heading: 'Closure & handoff', icon: FlagIcon, note: 'Completion gate' } };
 
-function SectionStateIcon({ section, className }: { section: SectionProgress; className?: string }) {
-  if (section.state === 'complete' || section.state === 'not_applicable') {
-    return <CheckCircle2Icon className={cn('text-success-strong', className)} aria-hidden="true" />;
-  }
-  if (section.state === 'invalid') return <TriangleAlertIcon className={cn('text-danger', className)} aria-hidden="true" />;
-  if (section.state === 'partial') return <CircleDotIcon className={cn('text-recognition-foreground', className)} aria-hidden="true" />;
-  return <CircleDashedIcon className={cn('text-muted-foreground', className)} aria-hidden="true" />;
-}
 
 /**
  * Master checklist home (layout references: Stitch master_checklist_1/2 and the
@@ -100,8 +87,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
     executor,
     open,
     time: { info: timeInfo, canStart: canStartTimerForTask(user, d.task), start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer },
-    ownedChecklists,
-  };
+    ownedChecklists };
   const groups = rootsBySection(d.checklistNodes);
   const memberNames = new Map(d.members.map(m => [m.id, m.fullName]));
   const owners = d.task.assigneeIds.map(id => memberNames.get(id) ?? 'Unknown');
@@ -183,7 +169,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
               <MissionProgress value={na ? null : section.progressPercentage} label={`${SECTION_META[s].label} progress`} className="h-1.5" />
               <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
                 <SectionStateIcon section={section} className="size-3.5 shrink-0" />
-                <span>{section.state.replaceAll('_', ' ')} - {section.isComplete ? 'Gate satisfied' : 'Needs attention'}</span>
+                <span>{sectionStatus(section).label}</span>
               </p>
               {manager && open && d.checklist ? (
                 <ExecutionForm action={checklistCommand} scope={`section:${d.task.id}:${s}`} className="soft-divider grid gap-2 pt-3">
@@ -248,7 +234,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
                 );
               })}
               {!d.checklistNodes.length ? (
-                <EmptyRows>No items yet. A manager can initialize work or explicitly confirm empty sections.</EmptyRows>
+                <EmptyState>No items yet. A manager can initialize work or explicitly confirm empty sections.</EmptyState>
               ) : null}
             </div>
           </MissionPanel>
@@ -334,8 +320,7 @@ function rootsBySection(nodes: readonly ChecklistNode[]) {
       // its rows are listed directly instead of behind one more click.
       return {
         section,
-        nodes: roots.flatMap(n => (isSectionRoot(n, section) ? inGroup.filter(c => c.parentNodeId === n.id) : [n])),
-      };
+        nodes: roots.flatMap(n => (isSectionRoot(n, section) ? inGroup.filter(c => c.parentNodeId === n.id) : [n])) };
     })
     .filter(group => group.nodes.length > 0);
 }

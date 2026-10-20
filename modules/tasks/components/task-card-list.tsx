@@ -394,7 +394,7 @@ function MissionSummary({
 
         {task.comments ? (
           <div className="flex flex-col gap-1">
-            <span className="eyebrow text-muted-foreground">Comments</span>
+            <span className="eyebrow">Comments</span>
             <p className="text-muted-foreground text-sm">{task.comments}</p>
           </div>
         ) : null}

@@ -473,6 +473,3 @@ function linkLabel(url: string): string {
   }
 }
 
-export function EmptyRows({ children }: { children: React.ReactNode }) {
-  return <p className="soft-inset text-muted-foreground px-4 py-6 text-center text-sm">{children}</p>;
-}

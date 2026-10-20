@@ -29,6 +29,7 @@ import type {
   EmployeeTrendPoint,
 } from '@/modules/team/internal/employee-charts';
 import { formatNumeric } from '@/shared/tracker/format';
+import { EmptyState } from '@/shared/ui/mission-ui';
 
 export function EmployeeAnalyticsChartsPanel({
   charts,
@@ -289,11 +290,7 @@ function ChartShell({
 }
 
 function EmptyChart({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="soft-inset text-muted-foreground flex h-64 items-center justify-center px-6 text-center text-sm">
-      {children}
-    </p>
-  );
+  return <EmptyState variant="chart">{children}</EmptyState>;
 }
 
 interface TooltipPayloadEntry<Payload> {

@@ -22,7 +22,7 @@ const buttonVariants = cva(
         ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
         /** Violet tint, for secondary actions that are still on-brand. */
         accent: 'bg-primary-subtle text-primary-subtle-foreground hover:bg-primary/15',
-        link: 'text-primary underline-offset-4 hover:underline',
+        link: 'link',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-danger',
       },
       size: {

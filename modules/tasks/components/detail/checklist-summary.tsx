@@ -1,26 +1,20 @@
 import Link from 'next/link';
 import {
   ArrowRightIcon,
-  CheckCircle2Icon,
-  CircleDashedIcon,
-  CircleDotIcon,
-  ClipboardCheckIcon,
-  TriangleAlertIcon,
-} from 'lucide-react';
+  ClipboardCheckIcon } from 'lucide-react';
 
 import { MissionProgress } from '@/shared/ui/mission-ui';
+import { SectionStateIcon } from '@/modules/checklists/components/section-state-icon';
 import type { ChecklistRollup, ChecklistSection, SectionProgress } from '@/modules/checklists/client';
 import { formatPercent } from '@/shared/tracker/format';
 import { Button } from '@/shared/ui/button';
-import { cn } from '@/shared/utils';
 
 /** The master checklist summary on a mission: hero card and Setup/Activity/Closure progress. */
 
 const SECTION_LABELS: Record<ChecklistSection, string> = {
   setup: 'Setup',
   activity: 'Activity',
-  closure: 'Closure',
-};
+  closure: 'Closure' };
 
 const SECTION_ORDER: readonly ChecklistSection[] = ['setup', 'activity', 'closure'];
 
@@ -35,25 +29,12 @@ function sectionStateLabel(section: SectionProgress): string {
   }
 }
 
-function SectionStateIcon({ section, className }: { section: SectionProgress; className?: string }) {
-  if (section.state === 'complete' || section.state === 'not_applicable') {
-    return <CheckCircle2Icon className={cn('text-success-strong', className)} aria-hidden="true" />;
-  }
-  if (section.state === 'invalid') {
-    return <TriangleAlertIcon className={cn('text-danger', className)} aria-hidden="true" />;
-  }
-  if (section.state === 'partial') {
-    return <CircleDotIcon className={cn('text-recognition-foreground', className)} aria-hidden="true" />;
-  }
-  return <CircleDashedIcon className={cn('text-muted-foreground', className)} aria-hidden="true" />;
-}
 
 export function ChecklistHero({
   href,
   title,
   itemCount,
-  rollup,
-}: {
+  rollup }: {
   href: string;
   title: string | null;
   itemCount: number;

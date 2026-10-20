@@ -58,7 +58,7 @@ export function WorkFilesPanel({
 
         {referenceLinks.length > 0 ? (
           <div className="grid gap-2">
-            <h3 className="eyebrow text-muted-foreground">References</h3>
+            <h3 className="eyebrow">References</h3>
             {links.some(l=>!l.ipoRole)?<p className="text-muted-foreground text-sm">Legacy links have no confirmed IPO role and are retained here for review.</p>:null}
             {referenceLinks.map(l=><AssetLink key={l.id} link={l}/>)}
           </div>

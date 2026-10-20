@@ -32,7 +32,7 @@ export function AssetGroup({
 
   return (
     <div className="grid content-start gap-2">
-      <h3 className="eyebrow text-muted-foreground">{title}</h3>
+      <h3 className="eyebrow">{title}</h3>
       {hasContent ? (
         <>
           {sections.map((section) => (

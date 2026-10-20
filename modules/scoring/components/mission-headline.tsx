@@ -4,6 +4,7 @@ import { ArrowUpRightIcon, FlagIcon, GaugeIcon, ScaleIcon, TrendingUpIcon, Users
 import type { Band, HeadlineLeader, MissionHeadline } from '@/modules/scoring/internal/analytics/headline';
 import { cn } from '@/shared/utils';
 import type { CompanyMilestone } from '@/types/tracker';
+import { UnavailableValue } from '@/shared/ui/unavailable-value';
 
 const BAND_CLASS: Record<Band, string> = {
   green: 'border-success/30 bg-success-subtle text-success-strong',
@@ -27,7 +28,7 @@ function Leader({ icon: Icon, label, leader, unit }: { icon: LucideIcon; label: 
           <p className="text-muted-foreground text-xs tabular-nums">{unit(leader.value!)}</p>
         </>
       ) : (
-        <p className="text-muted-foreground text-sm">{leader.reason === 'tie' ? `Tied at ${unit(leader.value!)}` : 'Unavailable'}</p>
+        <p className="text-muted-foreground text-sm">{leader.reason === 'tie' ? `Tied at ${unit(leader.value!)}` : <UnavailableValue reason="not enough data this month" />}</p>
       )}
     </div>
   );
@@ -40,7 +41,7 @@ function Figure({ icon: Icon, label, value, band, note, className }: { icon: Luc
         <Icon className="size-3.5 shrink-0" aria-hidden="true" />
         {label}
       </p>
-      <p className="stat-figure">{value ?? 'Unavailable'}</p>
+      <p className="stat-figure">{value ?? <UnavailableValue reason="not enough data this month" className="text-current opacity-70" />}</p>
       <p className="text-xs opacity-80">{band ? `${BAND_LABEL[band]} · ` : ''}{note}</p>
     </div>
   );

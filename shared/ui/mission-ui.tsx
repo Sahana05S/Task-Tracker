@@ -35,26 +35,25 @@ export function MissionProgress({
 }
 
 /**
- * A person's initials in a tinted circle. The letters come from a CSS
+ * A person's initials in a tinted circle; the tint is derived from the name. The letters come from a CSS
  * `attr()` so they stay out of the element's text content: screen readers and
  * text assertions read only the name beside it.
  */
-export function InitialsAvatar({
-  name,
-  tone = 0,
-  className,
-}: {
-  name: string;
-  tone?: number;
-  className?: string;
-}) {
+export function InitialsAvatar({ name, className }: { name: string; className?: string }) {
   return (
     <span
       aria-hidden="true"
       data-initials={getInitials(name)}
-      className={cn('initials-avatar', `initials-avatar-${tone % 3}`, className)}
+      className={cn('initials-avatar', `initials-avatar-${avatarTone(name)}`, className)}
     />
   );
+}
+
+/** A stable tint per person, so the same name has the same colour everywhere. */
+function avatarTone(name: string): number {
+  let hash = 0;
+  for (const char of name) hash = (hash * 31 + char.codePointAt(0)!) >>> 0;
+  return hash % 3;
 }
 
 /** Overlapping avatars for a card footer, with the names as accessible text. */
@@ -73,7 +72,7 @@ export function AvatarStack({
     <span className="flex min-w-0 items-center gap-2" title={names.join(', ')}>
       <span className="flex shrink-0 -space-x-2">
         {shown.map((name, index) => (
-          <InitialsAvatar key={`${name}-${index}`} name={name} tone={index} className="ring-2 ring-white" />
+          <InitialsAvatar key={`${name}-${index}`} name={name} className="ring-2 ring-white" />
         ))}
       </span>
       <span className="text-muted-foreground truncate text-sm">
@@ -253,12 +252,38 @@ export function MissionNotice({
   );
 }
 
-/** Muted empty state inside a panel. */
-export function MissionEmpty({ children, className }: { children: React.ReactNode; className?: string }) {
+/**
+ * Empty state: what this place is, optionally a title and one next action.
+ * `chart` keeps an empty chart area at the chart's height.
+ */
+export function EmptyState({
+  title,
+  children,
+  icon: Icon,
+  action,
+  variant = 'inline',
+  className,
+}: {
+  title?: string;
+  children?: React.ReactNode;
+  icon?: LucideIcon;
+  action?: React.ReactNode;
+  variant?: 'inline' | 'chart';
+  className?: string;
+}) {
   return (
-    <p className={cn('bg-muted/70 text-muted-foreground rounded-xl px-4 py-6 text-center text-sm', className)}>
-      {children}
-    </p>
+    <div
+      className={cn(
+        'bg-muted/70 text-muted-foreground grid justify-items-center gap-1.5 rounded-xl px-6 py-6 text-center text-sm',
+        variant === 'chart' && 'h-64 content-center',
+        className,
+      )}
+    >
+      {Icon ? <Icon className="size-5" aria-hidden="true" /> : null}
+      {title ? <p className="text-foreground font-semibold">{title}</p> : null}
+      {children ? <p className="max-w-md text-pretty">{children}</p> : null}
+      {action}
+    </div>
   );
 }
 

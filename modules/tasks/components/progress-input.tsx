@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { updateTaskProgress } from '@/modules/tasks/actions';
 import { toProgressValue } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
+import { UnavailableValue } from '@/shared/ui/unavailable-value';
 
 export interface ProgressInputProps {
   taskId: string;
@@ -72,7 +73,7 @@ export function ProgressInput({
     return (
       <div className={cn('flex flex-col gap-1', className)}>
         <span className="sheet-numeric text-foreground text-xs">
-          {committed === null ? 'Unavailable' : `${committed}%`}{progressOwner==='checklist'?' · Activity':''}
+          {committed === null ? <UnavailableValue reason="no progress recorded" /> : `${committed}%`}{progressOwner==='checklist'?' · Activity':''}
         </span>
         <progress
           className="task-progress"

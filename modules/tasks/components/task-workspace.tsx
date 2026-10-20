@@ -12,6 +12,7 @@ import { TaskDataGrid } from '@/modules/tasks/components/task-data-grid';
 import { TaskDialog } from '@/modules/tasks/components/task-dialog';
 import { TaskFilters, type MissionView } from '@/modules/tasks/components/task-filters';
 import { Button } from '@/shared/ui/button';
+import { EmptyState } from '@/shared/ui/mission-ui';
 import {
   Sheet,
   SheetContent,
@@ -138,17 +139,19 @@ export function TaskWorkspace({
 
       {tasks.length === 0 ? (
         <EmptyState
+          icon={SearchXIcon}
+          className="soft-card bg-card py-14"
           title="No missions yet"
-          description={
-            canManage
-              ? 'Create the first mission to start tracking effort and progress.'
-              : 'Once a manager assigns you a mission, it will appear here.'
-          }
-        />
+        >
+          {canManage
+            ? 'Create the first mission to start tracking effort and progress.'
+            : 'Once a manager assigns you a mission, it will appear here.'}
+        </EmptyState>
       ) : visibleTasks.length === 0 ? (
         <EmptyState
+          icon={SearchXIcon}
+          className="soft-card bg-card py-14"
           title="No missions match these filters"
-          description="Widen or clear the filters to see more missions."
           action={
             hasActiveFilters(filters) ? (
               <Button
@@ -209,32 +212,6 @@ export function TaskWorkspace({
         task={pendingDelete}
         onClose={() => setPendingDelete(null)}
       />
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Empty state                                                                */
-/* -------------------------------------------------------------------------- */
-
-function EmptyState({
-  title,
-  description,
-  action,
-}: {
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="soft-card flex flex-col items-center gap-2 px-6 py-14 text-center">
-      <SearchXIcon
-        className="text-muted-foreground size-5"
-        aria-hidden="true"
-      />
-      <p className="text-foreground text-sm font-semibold">{title}</p>
-      <p className="text-muted-foreground max-w-sm text-sm">{description}</p>
-      {action}
     </div>
   );
 }

@@ -242,11 +242,11 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
           {SECTIONS.map(section => <Button key={section} size="sm" variant={(sectionStep.options.section ?? 'activity') === section ? 'default' : 'ghost'} aria-pressed={(sectionStep.options.section ?? 'activity') === section} onClick={() => switchSection(section)} className="capitalize">{section}</Button>)}
         </div> : <span />}
         {mission ? <span className="flex flex-wrap gap-3 text-xs font-semibold">
-          <Link className="text-primary underline-offset-4 hover:underline" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage items</Link>
-          <Link className="text-primary underline-offset-4 hover:underline" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
+          <Link className="link" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage items</Link>
+          <Link className="link" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
         </span> : null}
       </div> : null}
-      {lastLevel?.error ? <p role="alert" className="text-danger mt-2 text-sm">{lastLevel.error} <button type="button" className="font-semibold underline" onClick={() => last && fetchLevel(last)}><RotateCcwIcon className="inline size-3.5" aria-hidden="true" /> Retry branch</button></p> : null}
+      {lastLevel?.error ? <p role="alert" className="text-danger mt-2 text-sm">{lastLevel.error} <button type="button" className="link font-semibold" onClick={() => last && fetchLevel(last)}><RotateCcwIcon className="inline size-3.5" aria-hidden="true" /> Retry branch</button></p> : null}
 
       <section ref={frame} aria-label="Mission map" aria-busy={restoring || !!lastLevel?.loading}
         className={cn(styles.frame, 'mt-3', dragging && styles.dragging)}

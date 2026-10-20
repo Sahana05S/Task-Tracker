@@ -72,7 +72,7 @@ export function FocusMissions({ focus, today }: { focus: Section<{ missions: Foc
       <CardTitle icon={TargetIcon} title="Your focus missions" action={{ href: '/tasks', label: 'See all' }} />
       {focus.status === 'unavailable' ? <Unavailable what="Your missions" /> : focus.data.missions.length === 0 ? (
         <p className="text-muted-foreground rounded-xl bg-[#fbfbfe] px-4 py-6 text-center text-sm">
-          No open missions are assigned to you. <Link href="/tasks" className="text-primary font-semibold hover:underline">Browse missions</Link>
+          No open missions are assigned to you. <Link href="/tasks" className="link font-semibold">Browse missions</Link>
         </p>
       ) : (
         <ul className="grid gap-3">

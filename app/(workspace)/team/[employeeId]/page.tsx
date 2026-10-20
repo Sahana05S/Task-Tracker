@@ -21,7 +21,7 @@ import {
 
 import {
   InitialsAvatar,
-  MissionEmpty,
+  EmptyState,
   MissionNotice,
   MissionPage,
   MissionPageHeader,
@@ -41,6 +41,7 @@ import { getEmployeeProfileData } from '@/modules/team';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatPercent, formatHours } from '@/shared/tracker/format';
 import type { DailyStarRecord, DailyTaskLog, Task } from '@/types/tracker';
+import { UnavailableValue } from '@/shared/ui/unavailable-value';
 
 interface EmployeePageProps {
   params: Promise<{ employeeId: string }>;
@@ -130,7 +131,7 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
           />
           <Metric
             label="Attendance hours"
-            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.attendanceHours):'Unavailable'}
+            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.attendanceHours):null}
             unit="h"
           />
           <Metric
@@ -140,11 +141,11 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
           />
           <Metric
             label="Payable days"
-            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.payableDays): 'Unavailable'}
+            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatNumeric(data.attendanceSummary.payableDays):null}
           />
           <Metric
             label="Off-hours"
-            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.offHours): 'Unavailable'}
+            value={data.presentation.sources.attendance.find(a=>a.userId===data.employee.id)?.available?formatHours(data.attendanceSummary.offHours):null}
             unit="h"
           />
           <Metric
@@ -218,49 +219,49 @@ export default async function EmployeePage({ params,searchParams }: EmployeePage
             <div className="grid gap-2 text-sm">
               <Link
                 href="/tasks"
-                className="text-primary font-medium hover:underline"
+                className="link"
               >
                 Missions
               </Link>
               <Link
                 href="/logs"
-                className="text-primary font-medium hover:underline"
+                className="link"
               >
                 Task logs
               </Link>
               <Link
                 href="/attendance"
-                className="text-primary font-medium hover:underline"
+                className="link"
               >
                 Attendance
               </Link>
               <Link
                 href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?${viewQuery(context)}`}
-                className="text-primary font-medium hover:underline"
+                className="link"
               >
                 Reports & charts
               </Link>
               <Link
                 href="/daily-facts"
-                className="text-primary font-medium hover:underline"
+                className="link"
               >
                 Daily facts
               </Link>
               <Link
                 href="/ideas"
-                className="text-primary font-medium hover:underline"
+                className="link"
               >
                 Ideas
               </Link>
               <Link
                 href="/suggestions"
-                className="text-primary font-medium hover:underline"
+                className="link"
               >
                 Suggestions
               </Link>
               <Link
                 href="/sales"
-                className="text-primary font-medium hover:underline"
+                className="link"
               >
                 Sales log
               </Link>
@@ -294,18 +295,23 @@ function Metric({
   unit,
 }: {
   label: string;
-  value: string;
+  /** Null when the figure cannot be worked out (for example, attendance missing). */
+  value: string | null;
   unit?: string;
 }) {
   return (
-    <StatTile label={label} value={value} unit={value === 'Unavailable' || value === '—' ? undefined : unit} />
+    <StatTile
+      label={label}
+      value={value ?? <UnavailableValue reason="attendance is not recorded for every day" />}
+      unit={value === null || value === '—' ? undefined : unit}
+    />
   );
 }
 
 function TaskList({ tasks }: { tasks: readonly Task[] }) {
   if (tasks.length === 0) {
     return (
-      <MissionEmpty>No missions are assigned to this employee yet.</MissionEmpty>
+      <EmptyState>No missions are assigned to this employee yet.</EmptyState>
     );
   }
 
@@ -364,7 +370,7 @@ function TaskLogSummary({
   tasks: readonly Task[];
 }) {
   if (logs.length === 0) {
-    return <MissionEmpty>No task logs.</MissionEmpty>;
+    return <EmptyState>No task logs.</EmptyState>;
   }
 
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
@@ -407,7 +413,7 @@ function TaskLogCompilation({
 }) {
   if (logs.length === 0) {
     return (
-      <MissionEmpty>No task logs have been recorded this period.</MissionEmpty>
+      <EmptyState>No task logs have been recorded this period.</EmptyState>
     );
   }
 
@@ -450,7 +456,7 @@ function TaskLogCompilation({
 function DailyStarLog({ stars }: { stars: readonly DailyStarRecord[] }) {
   if (stars.length === 0) {
     return (
-      <MissionEmpty>No daily stars have been recorded this period.</MissionEmpty>
+      <EmptyState>No daily stars have been recorded this period.</EmptyState>
     );
   }
 

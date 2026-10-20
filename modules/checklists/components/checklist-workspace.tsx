@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CheckCircle2Icon, CircleDashedIcon, CircleDotIcon, ClipboardCheckIcon, FileStackIcon, GaugeIcon, TriangleAlertIcon } from 'lucide-react';
+import { ClipboardCheckIcon, FileStackIcon, GaugeIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -10,11 +10,12 @@ import { Breadcrumb, type BreadcrumbItem } from '@/shared/ui/page-nav';
 import { cn } from '@/shared/utils';
 import { checklistHref } from '../internal/pages';
 import { checklistWorkHref } from '../internal/location';
-import { CHECKLIST_SECTIONS, type ChecklistRollup, type ChecklistSection, type SectionProgress } from '../internal/progress';
+import { CHECKLIST_SECTIONS, type ChecklistRollup, type ChecklistSection } from '../internal/progress';
 import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-types';
 import type { ChecklistItemTime } from '../internal/item-time';
 import { SECTION_TITLES, checklistIssues, pageResult, percentText } from '../internal/table';
 import { ChecklistSheetButton } from './checklist-sheet-button';
+import { SectionStateIcon } from './section-state-icon';
 import { ChecklistVersionField, ChecklistVersionProvider } from './checklist-state-control';
 import { ChecklistIssues, ChecklistTable } from './checklist-table';
 import type { ActionResponse, Task } from '@/types/tracker';
@@ -61,12 +62,6 @@ export interface ChecklistWorkspaceProps {
 
 const PAGE_SIZE = 50;
 
-function SectionIcon({ section, className }: { section: SectionProgress; className?: string }) {
-  if (section.state === 'complete' || (section.state === 'not_applicable' && section.isComplete)) return <CheckCircle2Icon className={cn('text-success-strong', className)} aria-hidden="true" />;
-  if (section.state === 'invalid') return <TriangleAlertIcon className={cn('text-danger', className)} aria-hidden="true" />;
-  if (section.state === 'partial') return <CircleDotIcon className={cn('text-primary', className)} aria-hidden="true" />;
-  return <CircleDashedIcon className={cn('text-muted-foreground', className)} aria-hidden="true" />;
-}
 
 function ancestorHref(taskTag: string, ancestor: ChecklistAncestor, section: ChecklistSection) {
   return checklistWorkHref(taskTag, ancestor.ownedChecklistId
@@ -103,8 +98,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
     ...ancestors.map((ancestor, index) => ({
       label: ancestor.title,
       href: ancestorHref(task.taskTag, ancestor, section),
-      hideOnPhone: index < ancestors.length - 2,
-    })),
+      hideOnPhone: index < ancestors.length - 2 })),
   ];
   const tableActions = { checklist: props.actions.checklist, start: props.actions.start, stop: props.actions.stop, discard: props.actions.discard };
   const issues = checklistIssues(rollup.errors);
@@ -226,7 +220,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
           const value = section.state === 'not_applicable' ? 'N/A' : percentText(section.progressPercentage) ?? 'Not started';
           return (
             <a key={key} href={`#${key}`} className="text-foreground hover:bg-white inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold transition-colors">
-              <SectionIcon section={section} className="size-3.5" />
+              <SectionStateIcon section={section} className="size-3.5" />
               {SECTION_TITLES[key].title}
               <span className="text-muted-foreground tabular-nums">{value}</span>
             </a>

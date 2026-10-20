@@ -1,12 +1,12 @@
 import { HistoryIcon } from 'lucide-react';
 
-import { MissionEmpty } from '@/shared/ui/mission-ui';
+import { EmptyState } from '@/shared/ui/mission-ui';
 import { formatDate, formatDateTime, formatHours } from '@/shared/tracker/format';
 import type { RecordRevision } from '../internal/revisions';
 
 /** A record's retained revisions, newest first, each as a small fact sheet. */
 export function RecordHistory({ revisions }: { revisions: readonly RecordRevision[] }) {
-  if (!revisions.length) return <MissionEmpty>No revisions are recorded for this record.</MissionEmpty>;
+  if (!revisions.length) return <EmptyState>No revisions are recorded for this record.</EmptyState>;
   return (
     <ol className="grid gap-3">
       {[...revisions].reverse().map((revision) => (

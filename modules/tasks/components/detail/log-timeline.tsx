@@ -27,7 +27,7 @@ export function TaskLogTimeline({
         const name = memberNames.get(log.userId) ?? 'Unknown';
         return (
           <li key={log.id} className="flex gap-3">
-            <InitialsAvatar name={name} tone={index} />
+            <InitialsAvatar name={name} />
             <div className="min-w-0 flex-1">
               <p className="text-sm">
                 <span className="text-foreground font-semibold">{name}</span>{' '}

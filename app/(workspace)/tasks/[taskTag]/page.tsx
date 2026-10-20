@@ -155,14 +155,14 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           <ArchiveIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
             Archived on {task.archivedEffectiveDate}. This mission and its retained history are read-only. {task.archiveReason}
-            {successor?<Link className="ml-2 font-semibold underline" href={`/tasks/${encodeURIComponent(successor.taskTag)}`}>Continue on {successor.taskTag} - {successor.title}</Link>:null}
+            {successor?<Link className="link ml-2 font-semibold" href={`/tasks/${encodeURIComponent(successor.taskTag)}`}>Continue on {successor.taskTag} - {successor.title}</Link>:null}
           </span>
         </p>
       ) : null}
 
       {!archived&&task.reviewerIds.includes(currentUser.id) ? (
         <section className="border-primary/20 bg-primary-subtle/60 rounded-2xl border p-4 sm:p-5" aria-label="Your review">
-          <h2 className="text-foreground mb-2 flex items-center gap-2 text-sm font-bold">
+          <h2 className="text-foreground mb-2 flex items-center gap-2 text-base font-bold tracking-tight">
             <ClipboardCheckIcon className="text-primary size-4" aria-hidden="true" />
             Your review is requested
           </h2>
@@ -197,7 +197,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
             </MissionPanel>
             <MissionPanel icon={ListChecksIcon} title="Checklist phases" action={
-              <Link href={checklistHref} className="text-primary text-xs font-semibold hover:underline">Open</Link>
+              <Link href={checklistHref} className="link text-xs font-semibold">Open</Link>
             }>
               <PhaseProgress rollup={data.checklistRollup} href={checklistHref} />
             </MissionPanel>
