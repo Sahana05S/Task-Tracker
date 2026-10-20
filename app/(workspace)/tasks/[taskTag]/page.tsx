@@ -217,7 +217,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             <MissionPanel icon={ListChecksIcon} title="Checklist phases" action={
               <Link href={checklistHref} className="text-primary text-xs font-semibold hover:underline">Open</Link>
             }>
-              <PhaseProgress rollup={data.checklistRollup} />
+              <PhaseProgress rollup={data.checklistRollup} href={checklistHref} />
             </MissionPanel>
             <MissionPanel icon={PencilIcon} title="Manual time entry">
               <ManualTimeForm taskTag={task.taskTag} canUseTimer={canUseTimer} />

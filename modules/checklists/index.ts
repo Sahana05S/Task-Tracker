@@ -8,4 +8,4 @@ export { loadChecklistRollups } from '@/modules/checklists/internal/read-model';
 
 export { getChecklistBranch, getOwnedChecklists } from './internal/branch';
 
-export { getFocusedChecklistItemTime } from './internal/focused-time';
+export { getFocusedChecklistItemTime, getRunningChecklistTimers } from './internal/focused-time';

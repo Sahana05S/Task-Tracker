@@ -48,7 +48,7 @@ import { checklistCommand } from '@/modules/checklists/actions';
 
 export async function generateMetadata({ params }: { params: Promise<{ taskTag: string }> }): Promise<Metadata> {
   const tag = normalizeTaskTagParam((await params).taskTag);
-  return { title: `${tag ?? 'Mission'} checklist · TaskPulse` };
+  return { title: `${tag ?? 'Mission'} checklist structure · TaskPulse` };
 }
 
 const SECTION_META: Record<ChecklistSection, { label: string; heading: string; icon: LucideIcon; note: string }> = {
@@ -88,6 +88,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
     getOwnedChecklists(d.task.id),
   ]);
   const missionHref = `/tasks/${encodeURIComponent(d.task.taskTag)}`;
+  const workHref = `${missionHref}/checklist`;
   const ctx: ChecklistContext = {
     action: checklistCommand,
     task: d.task,
@@ -112,8 +113,8 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
         <Link
-          href={missionHref}
-          aria-label="Back to mission"
+          href={workHref}
+          aria-label="Back to master checklist"
           className="text-muted-foreground hover:text-foreground hover:bg-muted flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-(--shadow-card) transition-colors"
         >
           <ArrowLeftIcon className="size-4" aria-hidden="true" />
@@ -126,23 +127,22 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
           {d.task.taskTag}
         </Link>
         <span aria-hidden="true" className="text-muted-foreground">/</span>
-        <span className="text-foreground truncate font-medium" aria-current="page">Master checklist</span>
+        <Link href={`/tasks/${encodeURIComponent(d.task.taskTag)}/checklist`} className="text-muted-foreground hover:text-foreground shrink-0 font-medium">Master checklist</Link>
+        <span aria-hidden="true" className="text-muted-foreground">/</span>
+        <span className="text-foreground truncate font-medium" aria-current="page">Structure</span>
       </nav>
 
       {/* Hero */}
-      <Button asChild variant="outline" className="mt-4 justify-self-start">
-        <Link href={`/tasks/${encodeURIComponent(d.task.taskTag)}/checklist`}>Back to checklist</Link>
-      </Button>
       <section
         aria-label="Master checklist summary"
-        className="border-primary/15 mt-5 overflow-hidden rounded-2xl border bg-linear-135 from-[#ece9ff] via-[#f3f0ff] to-[#fff4e2] p-5 sm:p-6"
+        className="hero-card mt-5 p-5 sm:p-6"
       >
         <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
           <div className="min-w-0 flex-1 basis-72">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
                 <ClipboardCheckIcon className="size-3.5" aria-hidden="true" />
-                Mission master checklist
+                Checklist structure
               </span>
               <span className="task-tag rounded-md bg-white px-2 py-0.5">{d.task.taskTag}</span>
             </div>
@@ -273,8 +273,8 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
               {r.isComplete ? 'All checklist gates satisfied. Assigned reviewers must approve the current work before Done.' : 'Done is blocked until all sections are initialized and applicable work is complete.'}
             </p>
             <Button asChild className="rounded-xl max-sm:w-full">
-              <Link href={missionHref}>
-                Back to mission
+              <Link href={workHref}>
+                Back to master checklist
                 <ArrowRightIcon aria-hidden="true" />
               </Link>
             </Button>

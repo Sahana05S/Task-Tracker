@@ -18,3 +18,17 @@ export type { ChecklistItemTime, RunningItemTimer, TaskEffortBreakdown } from '@
 
 export type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow, ChecklistAncestor } from './internal/branch-types';
 export { checklistWorkHref, parseChecklistLocation, openChecklistRow } from './internal/location';
+export {
+  ROW_KIND_LABELS,
+  SECTION_TITLES,
+  checklistIssues,
+  commandVersion,
+  isSectionRoot,
+  opensTable,
+  pageResult,
+  percentText,
+  rowKind,
+  sectionStatus,
+  stateChoices,
+  type ChecklistRowKind,
+} from './internal/table';

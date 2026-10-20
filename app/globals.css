@@ -309,6 +309,11 @@
     @apply border-border border-t;
   }
 
+  /* Summary hero for a mission or checklist: lavender into a warm edge. */
+  .hero-card {
+    @apply border-primary/15 overflow-hidden rounded-2xl border bg-linear-135 from-[#ece9ff] via-[#f3f0ff] to-[#fff4e2];
+  }
+
   /* ------------------------------------------------------------------------
      Metric cards
      ---------------------------------------------------------------------- */

@@ -62,7 +62,7 @@ export function ChecklistHero({
   return (
     <section
       aria-label="Master checklist"
-      className="border-primary/15 relative overflow-hidden rounded-2xl border bg-linear-135 from-[#ece9ff] via-[#f3f0ff] to-[#fff4e2] p-5 sm:p-6"
+      className="hero-card relative p-5 sm:p-6"
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
         <div className="min-w-0 flex-1">
@@ -100,7 +100,7 @@ export function ChecklistHero({
   );
 }
 
-export function PhaseProgress({ rollup }: { rollup?: ChecklistRollup }) {
+export function PhaseProgress({ rollup, href }: { rollup?: ChecklistRollup; href?: string }) {
   if (!rollup) {
     return <p className="text-muted-foreground text-sm">Checklist progress is unavailable.</p>;
   }
@@ -112,7 +112,11 @@ export function PhaseProgress({ rollup }: { rollup?: ChecklistRollup }) {
           <li key={key} className="grid gap-1.5">
             <div className="flex items-center gap-2 text-sm">
               <SectionStateIcon section={section} className="size-4 shrink-0" />
-              <span className="text-foreground font-medium">{index + 1}. {SECTION_LABELS[key]}</span>
+              {href ? (
+                <Link href={`${href}#${key}`} className="text-foreground decoration-primary/40 font-medium underline-offset-4 hover:underline">{index + 1}. {SECTION_LABELS[key]}</Link>
+              ) : (
+                <span className="text-foreground font-medium">{index + 1}. {SECTION_LABELS[key]}</span>
+              )}
               <span className="text-muted-foreground ml-auto text-xs">{sectionStateLabel(section)}</span>
               <span className="text-foreground w-10 text-right text-xs font-semibold tabular-nums">
                 {section.state === 'not_applicable' ? '—' : formatPercent(section.progressPercentage)}
