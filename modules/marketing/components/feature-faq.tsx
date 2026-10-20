@@ -13,7 +13,7 @@ export function FeatureFAQ() {
     <section
       id="faq"
       aria-labelledby="faq-heading"
-      className="border-border bg-white border-b py-20 lg:py-24"
+      className="border-border bg-white border-b py-20 lg:py-24 [contain-intrinsic-size:auto_900px] [content-visibility:auto]"
     >
       <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
         <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">

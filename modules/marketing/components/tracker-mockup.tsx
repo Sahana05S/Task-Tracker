@@ -129,19 +129,11 @@ export function TrackerMockup() {
 
   return (
     /*
-      The shell floats: a soft tinted halo behind it, then the framed window on
-      top. This is the one place on the site where elevation is right — the frame
-      is standing in for a screen in front of the page, not for a panel sitting in
-      it, and the halo is what stops a white window on a white section from
-      disappearing.
+      The framed window stands in for a screen floating in front of the page.
+      The hero wraps it in a glass bezel over the night sky, which is what lifts
+      it off the background, so it carries no halo of its own.
     */
     <div className="relative w-full min-w-0 max-w-full">
-      {/* A flat tint, blurred — not a gradient. The project has no gradients, and
-          one soft forest wash is enough to lift the frame off the section. */}
-      <div
-        aria-hidden="true"
-        className="bg-primary/10 absolute -inset-2 rounded-[1.5rem] blur-2xl pointer-events-none"
-      />
 
       <div className="border-border relative w-full min-w-0 max-w-full overflow-hidden rounded-2xl border bg-white shadow-soft-lg">
         {/* Window chrome */}

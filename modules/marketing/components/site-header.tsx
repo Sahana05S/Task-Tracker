@@ -12,7 +12,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/shared/ui/sheet';
+import spaceStyles from '@/modules/marketing/components/space/space.module.css';
 import { CTA, MARKETING_NAV } from '@/modules/marketing/internal/content';
+import { cn } from '@/shared/utils';
 
 /**
  * Landing page header.
@@ -24,12 +26,18 @@ import { CTA, MARKETING_NAV } from '@/modules/marketing/internal/content';
  *
  * The brand mark is the same `TP` monogram the workspace rail uses, rather than a
  * separate logo glyph — a visitor who signs in should recognise where they landed.
+ *
+ * It floats over the hero's night sky: transparent with white text at the top
+ * of the page, the usual white bar once the page has scrolled (a scroll-linked
+ * colour change in `space.module.css`). Text inherits the header's colour so
+ * both states read correctly; browsers without scroll timelines keep the white
+ * bar throughout.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = React.useState(false);
 
   return (
-    <header className="border-border sticky top-0 z-40 border-b bg-white/90 backdrop-blur-sm">
+    <header className={cn(spaceStyles.header, 'sticky top-0 z-40')}>
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4 sm:px-6">
         <Link
           href="/"
@@ -38,7 +46,7 @@ export function SiteHeader() {
           <span className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold">
             TP
           </span>
-          <span className="text-foreground text-sm font-semibold tracking-tight">
+          <span className="text-sm font-semibold tracking-tight">
             TaskPulse
           </span>
         </Link>
@@ -49,7 +57,7 @@ export function SiteHeader() {
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary/30 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="focus-visible:ring-primary/40 rounded-md px-3 py-1.5 text-sm font-medium opacity-80 transition-opacity hover:bg-current/10 hover:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
                 >
                   {link.label}
                 </a>
@@ -63,7 +71,7 @@ export function SiteHeader() {
             asChild
             variant="ghost"
             size="sm"
-            className="hidden sm:inline-flex"
+            className="hidden text-current opacity-80 hover:bg-current/10 hover:text-current hover:opacity-100 sm:inline-flex"
           >
             <Link href={CTA.signIn.href}>{CTA.signIn.label}</Link>
           </Button>
