@@ -1,4 +1,4 @@
-// PRIVATE. Parses and validates the login and signup forms.
+// PRIVATE. Parses and validates the login, signup and password-reset forms.
 import { readString } from '@/shared/forms/form-data';
 
 import { safeRedirectPath } from './redirects';
@@ -51,13 +51,36 @@ export function parseSignupInput(formData: FormData): Parsed<SignupInput> {
   if (!isPlausibleEmail(email)) {
     return { ok: false, error: 'Enter a valid email address.' };
   }
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return {
-      ok: false,
-      error: `Use a password of at least ${MIN_PASSWORD_LENGTH} characters.`,
-    };
-  }
+  const passwordError = passwordProblem(password);
+  if (passwordError) return { ok: false, error: passwordError };
   return { ok: true, value: { fullName, employeeId, email, password } };
+}
+
+export function parseResetRequestInput(formData: FormData): Parsed<{ email: string }> {
+  const email = readString(formData, 'email');
+  if (!isPlausibleEmail(email)) {
+    return { ok: false, error: 'Enter a valid email address.' };
+  }
+  return { ok: true, value: { email } };
+}
+
+/** The new password from the reset form, held to the same rule as signup. */
+export function parseNewPasswordInput(formData: FormData): Parsed<{ password: string }> {
+  const password = readString(formData, 'password');
+  const confirmPassword = readString(formData, 'confirmPassword');
+
+  const passwordError = passwordProblem(password);
+  if (passwordError) return { ok: false, error: passwordError };
+  if (password !== confirmPassword) {
+    return { ok: false, error: 'The two passwords do not match.' };
+  }
+  return { ok: true, value: { password } };
+}
+
+function passwordProblem(password: string): string | null {
+  return password.length < MIN_PASSWORD_LENGTH
+    ? `Use a password of at least ${MIN_PASSWORD_LENGTH} characters.`
+    : null;
 }
 
 function isPlausibleEmail(email: string): boolean {

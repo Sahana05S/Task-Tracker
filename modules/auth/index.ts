@@ -7,4 +7,9 @@ export {
   type LoginSearchParams,
   type LoginView,
 } from './internal/login-view';
+export {
+  resolveResetPasswordView,
+  type ResetPasswordSearchParams,
+  type ResetPasswordView,
+} from './internal/reset-view';
 export type { AuthActionState, AuthMode } from './internal/types';
