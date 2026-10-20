@@ -108,7 +108,9 @@ describe('checklist home', () => {
     const order = ['id="setup"', 'id="activity"', 'id="closure"'].map(id => html.indexOf(id));
     expect(order.every(index => index > 0)).toBe(true);
     expect(order).toEqual([...order].sort((a, b) => a - b));
-    expect(html.match(/<table/g)).toHaveLength(3);
+    // Closure has no rows, so it says so instead of drawing an empty table.
+    expect(html.match(/<table/g)).toHaveLength(2);
+    expect(html).toContain('No closure rows yet.');
     for (const heading of ['Done', 'Type', 'Progress', 'Item', 'Links', 'Est.', 'Elapsed']) expect(html).toContain(`>${heading}</th>`);
     expect(html).not.toContain('<details');
   });
