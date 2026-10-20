@@ -5,18 +5,22 @@ import { workerClient } from '@/shared/supabase/worker';
 import { kolkataDate } from '@/shared/time/kolkata';
 
 /**
- * The award sandbox worker endpoint. PRIVATE (route handlers call it through
- * the module's index). It queues due awards up to yesterday and runs a batch,
- * each job scoped to its company.
+ * The award worker endpoint. PRIVATE (route handlers call it through the
+ * module's index). It queues due awards up to yesterday and runs a batch of up
+ * to 10 jobs, each scoped to its company. The nightly GitHub Actions schedule
+ * (.github/workflows/award-worker.yml) calls it until a batch comes back empty.
  */
 
 const digest = (value: string) => createHash('sha256').update(value).digest();
 
+/** `sandbox` for test environments, `production` for the scheduled live run; anything else is off. */
+const ENABLED_MODES = new Set(['sandbox', 'production']);
+
 /** Checks configuration and the bearer token. Returns an error response, or null to continue. */
 function refuseUnlessAuthorised(request: Request): Response | null {
   const token = process.env.TASKPULSE_AWARD_WORKER_TOKEN;
-  if (!token || process.env.TASKPULSE_AWARD_WORKER_ENABLED !== 'sandbox') {
-    return Response.json({ status: 'unavailable', reason: 'Award sandbox worker is not configured.' }, { status: 503 });
+  if (!token || !ENABLED_MODES.has(process.env.TASKPULSE_AWARD_WORKER_ENABLED ?? '')) {
+    return Response.json({ status: 'unavailable', reason: 'Award worker is not configured.' }, { status: 503 });
   }
   const supplied = request.headers.get('authorization') ?? '';
   if (!timingSafeEqual(digest(supplied), digest('Bearer ' + token))) {
