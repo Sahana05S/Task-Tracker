@@ -33,8 +33,8 @@ export function Toaster() {
           cancelButton:
             'rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700',
           closeButton: 'border-slate-200 bg-white text-slate-500',
-          success: 'border-emerald-200 [&_[data-icon]]:text-emerald-600',
-          error: 'border-rose-200 [&_[data-icon]]:text-rose-600',
+          success: 'border-success/30 [&_[data-icon]]:text-success-strong',
+          error: 'border-danger-border [&_[data-icon]]:text-danger',
           warning: 'border-amber-200 [&_[data-icon]]:text-amber-600',
           info: 'border-sky-200 [&_[data-icon]]:text-sky-600',
         },

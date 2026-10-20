@@ -147,7 +147,7 @@ export function ChecklistRowActions({
 
           <section aria-labelledby={id('remove-heading')} className="soft-divider grid gap-2 pt-5">
             <h3 id={id('remove-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
-              <Trash2Icon className="text-destructive size-4" aria-hidden="true" />Remove
+              <Trash2Icon className="text-danger size-4" aria-hidden="true" />Remove
             </h3>
             {row.childCount === 0 ? (
               <ExecutionForm action={action} scope={`delete:${row.id}`}>

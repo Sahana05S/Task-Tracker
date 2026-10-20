@@ -6,9 +6,9 @@ import { cn } from '@/shared/utils';
 import type { CompanyMilestone } from '@/types/tracker';
 
 const BAND_CLASS: Record<Band, string> = {
-  green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  amber: 'border-amber-200 bg-amber-50 text-amber-800',
-  red: 'border-rose-200 bg-rose-50 text-rose-800',
+  green: 'border-success/30 bg-success-subtle text-success-strong',
+  amber: 'border-attention-border bg-attention-subtle text-attention-foreground',
+  red: 'border-danger-border bg-danger-subtle text-danger-foreground',
 };
 const BAND_LABEL: Record<Band, string> = { green: 'On track', amber: 'Watch', red: 'Needs attention' };
 

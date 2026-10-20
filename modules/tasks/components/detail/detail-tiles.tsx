@@ -26,9 +26,9 @@ export function FactTile({
       </span>
       <div className="min-w-0">
         <dt className="text-muted-foreground text-xs font-medium">{label}</dt>
-        <dd className={cn('text-foreground mt-0.5 text-sm font-semibold break-words', alert && 'text-rose-700')}>
+        <dd className={cn('text-foreground mt-0.5 text-sm font-semibold break-words', alert && 'text-danger')}>
           {value}
-          {note ? <span className="ml-1.5 text-xs font-semibold text-rose-700">· {note}</span> : null}
+          {note ? <span className="ml-1.5 text-xs font-semibold text-danger">· {note}</span> : null}
         </dd>
       </div>
     </div>

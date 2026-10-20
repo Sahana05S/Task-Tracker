@@ -1,37 +1,90 @@
 'use client';
+
 import { startTransition, useActionState, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CheckIcon } from 'lucide-react';
+
 import { prepareOperation } from '@/shared/commands/client-operation';
+import { FormError } from '@/shared/ui/form-field';
 import type { ActionResponse } from '@/types/tracker';
-export function ExecutionForm({action,scope,children,className}: {
- action: (form: FormData)=>Promise<ActionResponse<unknown>>; scope: string;
- children: React.ReactNode; className?: string;
+
+type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
+
+const INTERRUPTED: ActionResponse<unknown> = {
+  success: false,
+  error: 'The response was interrupted. Submit the same values again to recover the saved result.',
+  errorCode: 'unavailable',
+};
+
+/** Splits the legacy `taskVersion` field ("id:version") into the command's own fields. */
+function expandTaskVersion(form: FormData) {
+  if (!form.has('taskVersion')) return;
+  const [id, version] = String(form.get('taskVersion')).split(':');
+  form.delete('taskVersion');
+  form.set('taskId', id);
+  form.set('expectedVersion', version);
+}
+
+/**
+ * A form for one retained command. It keys each submission with an operation
+ * id (so a lost response can be recovered by resubmitting), refreshes the page
+ * on success and reports the outcome beside the form. The form stays usable
+ * after a save; the confirmation clears as soon as anything changes.
+ */
+export function ExecutionForm({ action, scope, children, className }: {
+  action: Command;
+  scope: string;
+  children: React.ReactNode;
+  className?: string;
 }) {
- const router=useRouter(); const [changed,setChanged]=useState(false); const formRef=useRef<HTMLFormElement>(null);
- const [state,submit,pending]=useActionState(async (_previous: ActionResponse<unknown>|null,form: FormData) => {
-  setChanged(false);
-  try {
-   if(form.has('taskVersion')) { const [id,version]=String(form.get('taskVersion')).split(':'); form.delete('taskVersion'); form.set('taskId',id); form.set('expectedVersion',version); }
-   const confirmed=await prepareOperation(form,scope);
-   const result=await action(form);
-   if (result.success) { confirmed(); formRef.current?.reset(); router.refresh(); }
-   return result;
-  } catch { return {success:false,error:'The response was interrupted. Retry the same values to recover the saved result.',errorCode:'unavailable' as const}; }
- },null);
- // React 19 resets a form after every action, so a refused command cleared what
- // the user typed. onSubmit dispatches in a transition and prevents default,
- // which makes React skip its action pipeline (and that reset); success resets
- // explicitly. `action` stays so server HTML blocks native pre-hydration submits.
- return <form ref={formRef} action={submit} className={className} onChange={()=>setChanged(true)} onSubmit={event=>{
-  event.preventDefault();
-  const data=new FormData(event.currentTarget,(event.nativeEvent as SubmitEvent).submitter);
-  startTransition(()=>submit(data));
- }}>
-  <fieldset disabled={pending || (state?.success===true && !changed)} className="grid gap-2 border-0 p-0">
-   {children}
-  </fieldset>
-  {state?.success && !changed ? <button type="button" className="text-sm underline" onClick={()=>setChanged(true)}>Make another change</button> : null}
-  {pending ? <p role="status" className="text-sm">Saving…</p> : null}
-  {state ? <p role={state.success?'status':'alert'} className={state.success?'text-sm text-emerald-700':'text-sm text-red-700'}>{state.success?'Saved.':state.error}</p> : null}
- </form>;
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [changed, setChanged] = useState(false);
+  const [state, submit, pending] = useActionState(async (_previous: ActionResponse<unknown> | null, form: FormData) => {
+    setChanged(false);
+    try {
+      expandTaskVersion(form);
+      const settle = await prepareOperation(form, scope);
+      const result = await action(form);
+      if (result.success) {
+        settle();
+        formRef.current?.reset();
+        router.refresh();
+      }
+      return result;
+    } catch {
+      return INTERRUPTED;
+    }
+  }, null);
+
+  const saved = state?.success === true && !changed;
+  const failure = state && !state.success && !changed ? state.error : undefined;
+
+  // React 19 resets a form after every action, so a refused command cleared what
+  // the user typed. onSubmit dispatches in a transition and prevents default,
+  // which makes React skip its action pipeline (and that reset); success resets
+  // explicitly. `action` stays so server HTML blocks native pre-hydration submits.
+  return (
+    <form
+      ref={formRef}
+      action={submit}
+      className={className}
+      onChange={() => setChanged(true)}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget, (event.nativeEvent as SubmitEvent).submitter);
+        startTransition(() => submit(data));
+      }}
+    >
+      <fieldset disabled={pending} className="grid gap-2 border-0 p-0">
+        {children}
+      </fieldset>
+      {/* Rendered before it has text, so screen readers announce each update. */}
+      <p role="status" className="text-success-strong flex min-h-0 items-center gap-1.5 text-sm empty:hidden">
+        {pending ? <span className="text-muted-foreground">Saving…</span> : null}
+        {saved && !pending ? <><CheckIcon className="size-4 shrink-0" aria-hidden="true" />Saved</> : null}
+      </p>
+      <FormError message={failure} className="mt-2" />
+    </form>
+  );
 }

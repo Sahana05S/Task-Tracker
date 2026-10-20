@@ -246,7 +246,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
           <Link className="text-primary underline-offset-4 hover:underline" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
         </span> : null}
       </div> : null}
-      {lastLevel?.error ? <p role="alert" className="text-destructive mt-2 text-sm">{lastLevel.error} <button type="button" className="font-semibold underline" onClick={() => last && fetchLevel(last)}><RotateCcwIcon className="inline size-3.5" aria-hidden="true" /> Retry branch</button></p> : null}
+      {lastLevel?.error ? <p role="alert" className="text-danger mt-2 text-sm">{lastLevel.error} <button type="button" className="font-semibold underline" onClick={() => last && fetchLevel(last)}><RotateCcwIcon className="inline size-3.5" aria-hidden="true" /> Retry branch</button></p> : null}
 
       <section ref={frame} aria-label="Mission map" aria-busy={restoring || !!lastLevel?.loading}
         className={cn(styles.frame, 'mt-3', dragging && styles.dragging)}
@@ -295,7 +295,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
               <button type="button" aria-label="Close item" onClick={() => setLeafId(null)} className="text-muted-foreground -mt-1 -mr-1 rounded p-1 hover:text-foreground"><XIcon className="size-4" aria-hidden="true" /></button></div>
             <h3 className="text-foreground mt-2 text-base leading-snug font-semibold break-words">{leaf.title}</h3>
             <p className="text-muted-foreground mt-1 text-xs">{leaf.applicable === false ? 'Not applicable' : leaf.isComplete ? 'Complete' : 'Not done yet'}{leaf.linkedTaskId ? ' · follows a linked mission' : ''}</p>
-            {cardError ? <p role="alert" className="text-destructive mt-2 text-xs">{cardError}</p> : null}
+            {cardError ? <p role="alert" className="text-danger mt-2 text-xs">{cardError}</p> : null}
             {!leaf.linkedTaskId && leaf.applicable !== false ? <Button size="sm" className="mt-3 w-full" variant={leaf.completionState === 'Yes' ? 'outline' : 'default'} disabled={cardBusy} onClick={quickComplete}>
               {cardBusy ? 'Saving…' : leaf.completionState === 'Yes' ? 'Mark not done' : <><CheckIcon aria-hidden="true" />Complete step</>}</Button> : null}
             <Button size="sm" variant="ghost" className="mt-1 w-full" onClick={() => panelHeading.current?.focus()}>Timer and details</Button>

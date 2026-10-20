@@ -45,7 +45,7 @@ export function StreakCard({ streak }: { streak: Section<StreakSummary> }) {
         <span className="text-muted-foreground text-xs">Present + logged, day after day</span>
       </div>
       {streak.status === 'unavailable' ? (
-        <p role="status" className="border-attention-border bg-attention-subtle text-attention-foreground rounded-xl border px-4 py-3 text-sm">
+        <p role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground rounded-xl border px-4 py-3 text-sm">
           Your streak couldn&apos;t be loaded right now. Refresh to try again.
         </p>
       ) : (

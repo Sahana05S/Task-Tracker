@@ -169,7 +169,7 @@ function MilestoneRow({
             <span
               className={cn(
                 'tabular',
-                overdue && 'font-semibold text-rose-700',
+                overdue && 'text-overdue font-semibold',
               )}
             >
               Due {formatDate(milestone.dueDate)}
@@ -204,7 +204,7 @@ function MilestoneRow({
             variant="ghost"
             size="sm"
             onClick={() => onRequestDelete(milestone)}
-            className="h-7 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            className="h-7 px-2 text-xs text-danger hover:bg-danger-subtle hover:text-danger"
           >
             Delete
             <span className="sr-only"> {milestone.title}</span>

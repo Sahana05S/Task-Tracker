@@ -330,7 +330,7 @@ export function EditNodeForms({ ctx, node }: { ctx: ChecklistContext; node: Chec
           <CommandFields ctx={ctx} command="delete" />
           <input type="hidden" name="node_id" value={node.id} />
           <ReasonInput placeholder="Reason for removal" />
-          <Button type="submit" variant="ghost" size="sm" className="justify-self-start rounded-xl text-rose-700 hover:text-rose-800">Remove item</Button>
+          <Button type="submit" variant="ghost" size="sm" className="justify-self-start rounded-xl text-danger hover:text-danger-foreground">Remove item</Button>
         </ExecutionForm>
       ) : (
         <p className="text-muted-foreground text-xs">Remove or move the items inside before removing this page.</p>
@@ -392,7 +392,7 @@ export function ChecklistRow({ ctx, node: n, showSection = true }: { ctx: Checkl
     <article
       className={cn(
         'border-border grid gap-3 rounded-xl border p-3 sm:p-4',
-        container ? 'bg-primary-subtle/40' : v?.isComplete ? 'bg-emerald-50/40' : 'bg-card',
+        container ? 'bg-primary-subtle/40' : v?.isComplete ? 'bg-success-subtle/40' : 'bg-card',
       )}
     >
       <div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-3">

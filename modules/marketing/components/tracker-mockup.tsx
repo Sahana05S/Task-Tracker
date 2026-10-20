@@ -269,7 +269,7 @@ function GridPreview() {
                     className="task-progress"
                     value={row.progress}
                     max={100}
-                    data-complete={row.progress >= 100 ? 'true' : 'false'}
+                   
                     aria-label={`${row.tag} progress`}
                   />
                 </span>

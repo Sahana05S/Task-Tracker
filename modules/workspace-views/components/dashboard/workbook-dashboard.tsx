@@ -159,7 +159,7 @@ function SignedBarCard({
                         'absolute inset-y-0 rounded-full',
                         item.value >= 0
                           ? 'left-1/2 bg-success'
-                          : 'right-1/2 bg-rose-500',
+                          : 'right-1/2 bg-chart-negative',
                       )}
                       style={{ width: `${width}%` }}
                     />

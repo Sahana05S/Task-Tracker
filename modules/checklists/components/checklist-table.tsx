@@ -52,7 +52,7 @@ const STATUS_TONE = {
   done: 'badge-status-done',
   active: 'badge-accent',
   idle: 'badge-neutral',
-  alert: 'bg-rose-50 text-rose-700',
+  alert: 'bg-danger-subtle text-danger',
 } as const;
 
 function RollupIcon({ row }: { row: ChecklistBranchRow }) {
@@ -246,7 +246,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
 export function ChecklistIssues({ issues }: { issues: readonly string[] }) {
   if (!issues.length) return null;
   return (
-    <div role="alert" className="flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+    <div role="alert" className="flex items-start gap-2 rounded-2xl border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
       <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <div className="min-w-0">
         <p className="font-semibold">Part of this checklist needs a manager’s attention.</p>

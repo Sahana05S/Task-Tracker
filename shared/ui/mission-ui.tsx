@@ -187,7 +187,7 @@ export function StatTile({
         <dd
           className={cn(
             'text-foreground mt-0.5 text-sm font-semibold break-words tabular-nums',
-            tone === 'alert' && 'text-rose-700',
+            tone === 'alert' && 'text-danger',
             tone === 'success' && 'text-success-strong',
           )}
         >
@@ -200,9 +200,15 @@ export function StatTile({
   );
 }
 
+const NOTICE_TONES = {
+  info: 'border-primary/15 bg-primary-subtle/50 text-foreground',
+  attention: 'border-attention-border bg-attention-subtle text-attention-foreground',
+  danger: 'border-danger-border bg-danger-subtle text-danger-foreground',
+} as const;
+
 /**
- * Explanatory or warning callout. `info` is the lavender note used for rules
- * text; `attention` is the amber surface reserved for real gaps and refusals.
+ * Callout. `info` is the lavender note for rules text; `attention` is the
+ * amber surface for missing data; `danger` is for failures and refusals.
  */
 export function MissionNotice({
   tone = 'info',
@@ -211,16 +217,14 @@ export function MissionNotice({
   children,
   ...props
 }: {
-  tone?: 'info' | 'attention';
+  tone?: 'info' | 'attention' | 'danger';
   icon?: LucideIcon;
 } & React.ComponentProps<'div'>) {
   return (
     <div
       className={cn(
         'flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm',
-        tone === 'info'
-          ? 'border-primary/15 bg-primary-subtle/50 text-foreground'
-          : 'border-attention-border bg-attention-subtle text-attention-foreground',
+        NOTICE_TONES[tone],
         className,
       )}
       {...props}

@@ -239,7 +239,7 @@ export function TaskDataGrid({
                 <td
                   className={cn(
                     'text-xs whitespace-nowrap',
-                    overdue ? 'font-medium text-rose-700' : 'text-slate-600',
+                    overdue ? 'text-overdue font-medium' : 'text-slate-600',
                   )}
                 >
                   {formatDate(task.dueDate)}

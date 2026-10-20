@@ -14,7 +14,7 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
         'selection:bg-primary-subtle selection:text-primary',
         'focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:ring-2',
         'disabled:bg-muted disabled:cursor-not-allowed disabled:text-slate-400',
-        'aria-invalid:border-rose-300 aria-invalid:ring-2 aria-invalid:ring-rose-500/20',
+        'aria-invalid:border-danger aria-invalid:ring-2 aria-invalid:ring-danger/20',
         'file:inline-flex file:border-0 file:bg-transparent file:text-sm file:font-medium',
         className,
       )}

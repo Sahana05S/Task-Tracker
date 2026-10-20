@@ -182,7 +182,7 @@ function TimelineLegend() {
 function statusBarClass(status: TimelineTaskBar['status']): string {
   switch (status) {
     case 'Done':
-      return 'border-emerald-300 bg-success-subtle text-success-strong';
+      return 'border-success/40 bg-success-subtle text-success-strong';
     case 'In Progress':
       return 'border-amber-300 bg-amber-100 text-amber-900';
     case 'Discarded':
@@ -200,12 +200,12 @@ function freshnessRingClass(freshness: TimelineTaskBar['freshness']): string {
     case 'Super Fresh':
     case 'Almost Fresh':
     case 'Fresh':
-      return 'ring-1 ring-emerald-400/70';
+      return 'ring-1 ring-success/70';
     case 'Almost Stale':
     case 'Stale':
       return 'ring-1 ring-amber-400/80';
     case 'Rotten':
-      return 'ring-1 ring-rose-500/80';
+      return 'ring-1 ring-overdue/80';
     default: return 'ring-1 ring-slate-400/50';
   }
 }

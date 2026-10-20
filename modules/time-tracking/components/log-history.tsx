@@ -93,8 +93,8 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
                     className={cn(
                       'font-mono text-[11px] font-semibold tabular',
                       group.totalProgressDelta > 0
-                        ? 'text-emerald-700'
-                        : 'text-rose-700',
+                        ? 'text-success-strong'
+                        : 'text-danger',
                     )}
                   >
                     {group.totalProgressDelta > 0 ? '+' : ''}
@@ -170,7 +170,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
             <span
               className={cn(
                 'font-semibold',
-                delta > 0 ? 'text-emerald-700' : 'text-rose-700',
+                delta > 0 ? 'text-success-strong' : 'text-danger',
               )}
             >
               {delta > 0 ? '+' : ''}
@@ -229,7 +229,7 @@ function LogEntry({ log, task, onEdit, onRequestDelete }: LogEntryProps) {
           variant="ghost"
           size="sm"
           onClick={onRequestDelete}
-          className="h-7 px-2 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+          className="h-7 px-2 text-danger hover:bg-danger-subtle hover:text-danger-foreground"
         >
           Reverse
         </Button>
@@ -314,7 +314,7 @@ function DeleteLogConfirmation({
         {error ? (
           <div
             role="alert"
-            className="mx-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+            className="mx-4 flex items-start gap-2 rounded-xl border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger"
           >
             <AlertCircleIcon
               className="mt-0.5 size-4 shrink-0"

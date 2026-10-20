@@ -44,6 +44,23 @@
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
 
+  /* ---- Danger and overdue -----------------------------------------------
+     Errors, refusals and destructive outcomes. Amber attention surfaces stay
+     for missing data only, so an error never reads as a gap and vice versa.
+     ------------------------------------------------------------------- */
+  --danger: #be123c;
+  --danger-subtle: #fff1f2;
+  --danger-border: #fecdd3;
+  --danger-foreground: #9f1239;
+  --overdue: #be123c;
+
+  /* ---- Progress ---------------------------------------------------------
+     One progress bar everywhere: mint fill on a lavender track.
+     ------------------------------------------------------------------- */
+  --progress-track: #ebe7f6;
+  --progress-from: #10b981;
+  --progress-to: #34d399;
+
   /* ---- Recognition (gold) and progress (mint) ---------------------------
      Gold is only for stars, awards and recognised contributions. Mint is for
      progress and success. Neither is a general accent.
@@ -118,6 +135,12 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-border: var(--danger-border);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-overdue: var(--overdue);
+  --color-progress-track: var(--progress-track);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -387,7 +410,7 @@
 
   /* --- Task status ------------------------------------------------------ */
   .badge-status-done {
-    @apply bg-emerald-100 text-emerald-800;
+    @apply bg-success-subtle text-success-strong;
   }
 
   .badge-status-in-progress {
@@ -576,11 +599,11 @@
 
   /* Mint progress bar (DESIGN.md): 8px rounded track, mint fill. */
   .progress-track {
-    @apply h-2 w-full overflow-hidden rounded-full bg-[#ebe7f6];
+    @apply bg-progress-track h-2 w-full overflow-hidden rounded-full;
   }
 
   .progress-fill {
-    @apply h-full rounded-full bg-linear-to-r from-[#10b981] to-[#34d399];
+    @apply h-full rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
   }
 
   /* Initials avatar for Missions; letters come from data-initials so they stay
@@ -770,30 +793,22 @@
    ========================================================================== */
 
 @layer components {
+  /* The same mint-on-lavender bar as .progress-track / .progress-fill, on the
+     native element so inline grid cells keep its built-in semantics. */
   .task-progress {
-    @apply h-1.5 w-full appearance-none overflow-hidden rounded-full border-0
-      bg-slate-200;
+    @apply bg-progress-track h-1.5 w-full appearance-none overflow-hidden rounded-full border-0;
   }
 
   .task-progress::-webkit-progress-bar {
-    @apply rounded-full bg-slate-100;
+    @apply bg-progress-track rounded-full;
   }
 
   .task-progress::-webkit-progress-value {
-    @apply bg-primary rounded-full;
+    @apply rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
   }
 
   .task-progress::-moz-progress-bar {
-    @apply bg-primary rounded-full;
-  }
-
-  /* Complete work reads emerald, matching the Done status pill. */
-  .task-progress[data-complete='true']::-webkit-progress-value {
-    @apply bg-emerald-500;
-  }
-
-  .task-progress[data-complete='true']::-moz-progress-bar {
-    @apply bg-emerald-500;
+    @apply rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
   }
 }
 

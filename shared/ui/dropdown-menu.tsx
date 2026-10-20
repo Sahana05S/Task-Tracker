@@ -88,7 +88,7 @@ function DropdownMenuItem({
       className={cn(
         "relative flex cursor-default items-center gap-2 rounded-lg px-2.5 py-2 text-sm outline-none select-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         'focus:bg-primary-subtle focus:text-primary',
-        'data-[variant=destructive]:text-rose-600 data-[variant=destructive]:focus:bg-rose-50 data-[variant=destructive]:focus:text-rose-700',
+        'data-[variant=destructive]:text-danger data-[variant=destructive]:focus:bg-danger-subtle data-[variant=destructive]:focus:text-danger',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         'data-[inset=true]:pl-8',
         className,

@@ -61,7 +61,7 @@ function SectionStateIcon({ section, className }: { section: SectionProgress; cl
   if (section.state === 'complete' || section.state === 'not_applicable') {
     return <CheckCircle2Icon className={cn('text-success-strong', className)} aria-hidden="true" />;
   }
-  if (section.state === 'invalid') return <TriangleAlertIcon className={cn('text-rose-700', className)} aria-hidden="true" />;
+  if (section.state === 'invalid') return <TriangleAlertIcon className={cn('text-danger', className)} aria-hidden="true" />;
   if (section.state === 'partial') return <CircleDotIcon className={cn('text-recognition-foreground', className)} aria-hidden="true" />;
   return <CircleDashedIcon className={cn('text-muted-foreground', className)} aria-hidden="true" />;
 }
@@ -186,7 +186,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
           return (
             <div key={s} className="soft-card grid content-start gap-3 p-4">
               <div className="flex min-w-0 items-center gap-2">
-                <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold', section.isComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-primary-subtle text-primary-subtle-foreground')}>
+                <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold', section.isComplete ? 'bg-success-subtle text-success-strong' : 'bg-primary-subtle text-primary-subtle-foreground')}>
                   {index + 1}
                 </span>
                 <h3 className="text-foreground min-w-0 flex-1 font-semibold capitalize">{s}</h3>
@@ -218,7 +218,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
       </section>
 
       {r.errors.length ? (
-        <div role="alert" className="mt-5 flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+        <div role="alert" className="mt-5 flex items-start gap-2 rounded-2xl border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0 break-words">
             <p className="font-semibold">Correct these references or explicitly map legacy roots:</p>
@@ -266,7 +266,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
           </MissionPanel>
 
           <section aria-label="Completion gates" className="border-primary/15 bg-primary-subtle/50 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border p-4 sm:p-5">
-            <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl', r.isComplete ? 'bg-emerald-100 text-emerald-800' : 'text-primary bg-white')}>
+            <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl', r.isComplete ? 'bg-success-subtle text-success-strong' : 'text-primary bg-white')}>
               {r.isComplete ? <CheckCircle2Icon className="size-5" aria-hidden="true" /> : <FlagIcon className="size-5" aria-hidden="true" />}
             </span>
             <p className="text-foreground min-w-0 flex-1 basis-60 text-sm font-medium">

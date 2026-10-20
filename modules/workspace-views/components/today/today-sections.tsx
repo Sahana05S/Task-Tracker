@@ -50,7 +50,7 @@ function CardTitle({ icon: Icon, title, action, tone = 'primary' }: {
 
 export function Unavailable({ what }: { what: string }) {
   return (
-    <p role="status" className="border-attention-border bg-attention-subtle text-attention-foreground rounded-xl border px-4 py-3 text-sm">
+    <p role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground rounded-xl border px-4 py-3 text-sm">
       {what} couldn&apos;t be loaded right now. Refresh to try again.
     </p>
   );
@@ -84,7 +84,7 @@ export function FocusMissions({ focus, today }: { focus: Section<{ missions: Foc
                 <p className="text-foreground font-semibold">{mission.title}</p>
                 <p className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <PriorityBadge priority={mission.priority} />
-                  <span className={cn('font-medium', due.overdue ? 'text-rose-700' : 'text-muted-foreground')}>{due.text}</span>
+                  <span className={cn('font-medium', due.overdue ? 'text-overdue' : 'text-muted-foreground')}>{due.text}</span>
                   <span className="text-muted-foreground font-mono">{mission.taskTag}</span>
                 </p>
                 <div className="mt-3 flex items-center gap-3">

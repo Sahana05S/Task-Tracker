@@ -506,7 +506,7 @@ function Field({
         {label}
         {required ? (
           <>
-            <span className="ml-0.5 text-rose-600" aria-hidden="true">
+            <span className="ml-0.5 text-danger" aria-hidden="true">
               *
             </span>
             <span className="sr-only">(required)</span>
@@ -535,7 +535,7 @@ function Feedback({
       role="alert"
       aria-live="polite"
       className={cn(
-        'flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700',
+        'flex items-start gap-2 rounded-md border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger',
         className,
       )}
     >

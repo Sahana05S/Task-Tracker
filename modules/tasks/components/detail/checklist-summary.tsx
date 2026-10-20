@@ -40,7 +40,7 @@ function SectionStateIcon({ section, className }: { section: SectionProgress; cl
     return <CheckCircle2Icon className={cn('text-success-strong', className)} aria-hidden="true" />;
   }
   if (section.state === 'invalid') {
-    return <TriangleAlertIcon className={cn('text-rose-700', className)} aria-hidden="true" />;
+    return <TriangleAlertIcon className={cn('text-danger', className)} aria-hidden="true" />;
   }
   if (section.state === 'partial') {
     return <CircleDotIcon className={cn('text-recognition-foreground', className)} aria-hidden="true" />;

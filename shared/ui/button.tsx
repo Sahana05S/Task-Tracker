@@ -23,9 +23,9 @@ const buttonVariants = cva(
         ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
         /** Subtle forest tint, for secondary actions that are still on-brand. */
         accent:
-          'bg-primary-subtle text-primary-subtle-foreground hover:bg-emerald-100',
+          'bg-primary-subtle text-primary-subtle-foreground hover:bg-success-subtle',
         link: 'text-primary underline-offset-4 hover:underline',
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-rose-700',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-danger',
       },
       size: {
         default: 'h-10 px-5 py-2 has-[>svg]:px-4',

@@ -25,6 +25,6 @@ export function RoadmapItemWork({ mission, node, onCommitted, onOpen }: {
   }, [mission.id, node.id, retry]);
   return <>
     <ChecklistItemWork task={mission} node={node} time={time} actions={{ state: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer }} onOpen={onOpen} onCommitted={onCommitted} />
-    {error ? <p role="alert" className="text-destructive mt-3 text-sm">{error} <button type="button" className="min-h-9 rounded px-2 underline focus-visible:outline-primary" onClick={() => setRetry(n => n + 1)}>Retry item time</button></p> : null}
+    {error ? <p role="alert" className="text-danger mt-3 text-sm">{error} <button type="button" className="min-h-9 rounded px-2 underline focus-visible:outline-primary" onClick={() => setRetry(n => n + 1)}>Retry item time</button></p> : null}
   </>;
 }
