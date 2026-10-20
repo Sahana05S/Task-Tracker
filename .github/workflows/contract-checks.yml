@@ -51,3 +51,13 @@ jobs:
         run: python tools/test_m12_database.py --psql "$(command -v psql)" --port 15432
       - name: Disposable logical backup and restore
         run: python tools/test_m13_recovery.py --bin-dir "$(dirname "$(command -v psql)")" --port 15432
+      - name: M14 nested checklist pages
+        run: python tools/test_m14_database.py --psql "$(command -v psql)" --port 15432
+      - name: M15 tenancy and company-scoped commands
+        run: python tools/test_m15_database.py --psql "$(command -v psql)" --port 15432
+      - name: M16 recognition streaks (migration 45)
+        run: python tools/test_m16_database.py --psql "$(command -v psql)" --port 15432
+      - name: M17 sales factor mapping (migration 46)
+        run: python tools/test_m17_sales_database.py --psql "$(command -v psql)" --port 15432
+      - name: M15 award invalidation company scope (migration 48)
+        run: python tools/test_m15_award_invalidation_database.py --psql "$(command -v psql)" --port 15432
