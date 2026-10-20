@@ -113,7 +113,7 @@ export function AuthForm({
                 : 'text-slate-500 hover:text-slate-700',
             )}
           >
-            {value === 'login' ? 'Sign in' : 'Create account'}
+            {value === 'login' ? 'Sign in' : 'Accept invitation'}
           </button>
         ))}
       </div>
@@ -132,7 +132,7 @@ export function AuthForm({
           <GoogleIcon className="size-4 shrink-0" />
         )}
         <span>
-          {isLogin ? 'Continue with Google' : 'Sign up with Google'}
+          {isLogin ? 'Continue with Google' : 'Accept with Google'}
         </span>
       </Button>
 
@@ -152,7 +152,7 @@ export function AuthForm({
           </span>
           <div className="flex flex-col gap-1">
             <h3 className="text-sm font-semibold text-emerald-900">
-              Verify your email address
+              Confirm your email address
             </h3>
             <p className="text-xs leading-relaxed text-emerald-800">
               {successMessage}
@@ -215,31 +215,16 @@ export function AuthForm({
           </Button>
         </form>
       ) : (
-        /* Create Account Form */
+        /* Accept-invitation form: name, ID and role come from the invitation. */
         <form action={signupAction} className="flex flex-col gap-4">
-          <Field
-            id="signup-full-name"
-            name="fullName"
-            label="Full name"
-            autoComplete="name"
-            placeholder="Ada Lovelace"
-            invalid={Boolean(errorMessage)}
-            required
-          />
-          <Field
-            id="signup-employee-id"
-            name="employeeId"
-            label="Employee ID"
-            autoComplete="off"
-            placeholder="EMP-014"
-            hint="Assigned by your workspace administrator."
-            invalid={Boolean(errorMessage)}
-            required
-          />
+          <p className="text-xs text-slate-500">
+            TaskPulse is invite-only. Use the email your managing director invited; your
+            name, employee ID and role come from that invitation.
+          </p>
           <Field
             id="signup-email"
             name="email"
-            label="Email"
+            label="Invited email"
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
@@ -267,13 +252,12 @@ export function AuthForm({
                 Creating account
               </>
             ) : (
-              'Create account'
+              'Create my account'
             )}
           </Button>
 
           <p className="text-xs text-slate-500">
-            A confirmation link will be sent to verify your address. New accounts start with the{' '}
-            <span className="font-medium text-slate-700">Team Member</span> role.
+            Not invited yet? Ask your managing director to invite your email first.
           </p>
         </form>
       )}

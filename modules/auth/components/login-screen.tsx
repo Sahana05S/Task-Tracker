@@ -30,7 +30,11 @@ export function LoginScreen({ view }: LoginScreenProps) {
         <div className="soft-card p-6">
           {view.kind === 'deactivated' ? (
             <div className="grid gap-4">
-              <p role="alert" className="text-sm">Your account is deactivated. Contact a managing director to restore access.</p>
+              <p role="alert" className="text-sm">
+                This account isn&apos;t active. If your managing director has just invited
+                this email, sign out and sign in again. Otherwise ask them to invite you or
+                restore your access.
+              </p>
               <form action={logout}><Button type="submit" variant="outline">Sign out</Button></form>
             </div>
           ) : view.kind === 'orphaned' ? (

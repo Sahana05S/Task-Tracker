@@ -47,6 +47,11 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
         title="Team index"
         chip={`${data.members.length} ${data.members.length === 1 ? 'member' : 'members'}`}
         description={`${data.period.label} · profiles, reports, charts, and star records`}
+        actions={canManage ? (
+          <Link href="/team/manage" className="text-primary text-sm font-medium hover:underline">
+            Manage people
+          </Link>
+        ) : undefined}
       />
 
       <ReportContext model={data.presentation}/>

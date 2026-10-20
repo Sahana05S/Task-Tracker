@@ -2,15 +2,17 @@
 
 The people side of TaskPulse: the `/team` index, each employee's profile and
 reports pages (who may see which), the director's daily-star controls on the
-team page, and the signed-in member's own Settings (display name).
+team page, the director's People page (`/team/manage`: invite, role, details,
+remove/restore access) and the signed-in member's own Settings (display name).
 
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `getTeamIndexData`, `getEmployeeProfileData`, `getEmployeeReportsData`, `getEmployeeByEmployeeId`, `resolveEmployeeRouteState`, `getMemberNames` (id -> display name; empty on error), and their types. Also re-exports everything in `client.ts`. |
+| `index.ts` | Server reads: `getPeopleAdminData` (members and open invitations of the director's company), `getTeamIndexData`, `getEmployeeProfileData`, `getEmployeeReportsData`, `getEmployeeByEmployeeId`, `resolveEmployeeRouteState`, `getMemberNames` (id -> display name; empty on error), and their types. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure: `canViewTeamModule`, `canViewEmployeeProfile`, `canViewEmployeeReports`, `employeeHref`, `employeeReportsHref`, `normalizeEmployeeIdParam`, `buildEmployeeAnalyticsCharts`, `optionalEmployeePerformance` |
 | `profile-actions.ts` | `'use server'` `updateDisplayName` |
-| `components/` | `EmployeeAnalyticsCharts`, `AwardControls`, `SettingsForm` |
+| `people-actions.ts` | `'use server'` `inviteMember`, `revokeInvitation`, `updateMember` (managing director only; enforced by `people_command`) |
+| `components/` | `EmployeeAnalyticsCharts`, `AwardControls`, `SettingsForm`, `InviteForm` / `InvitationList` / `MemberList` (`people-admin.tsx`) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -23,12 +25,14 @@ team page, and the signed-in member's own Settings (display name).
 | `mappers.ts` | Daily star, score component and report snapshot rows |
 | `profile.ts` | Display-name validation and the own-row update |
 | `member-names.ts` | Member display names keyed by id (used by Today) |
+| `people.ts` | People page: form parsing, members/invitations read, `people_command` call |
 
 ## Database it owns
 | Object | Defined in |
 |---|---|
 | `users` (profile reads; own `full_name` update) | `01_init_schema.sql`; own-profile policy in `02_auth_provisioning.sql` |
 | `daily_star_records`, `performance_score_components` (legacy history reads) | `01_init_schema.sql` |
+| `member_invitations`, `people_command(text,jsonb)`, invite-only `handle_new_user`, last-director guard | `49_people_admin_invitations.sql` |
 
 It also reads tables owned by other modules (`daily_task_logs`,
 `attendance_records`, `report_snapshots`, `task_links`). All objects are

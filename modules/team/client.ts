@@ -11,3 +11,4 @@ export {
   type EmployeeTrendPoint,
 } from '@/modules/team/internal/employee-charts';
 export { optionalEmployeePerformance } from '@/modules/team/internal/performance-availability';
+export type { Invitation, PeopleAdminData } from '@/modules/team/internal/people';

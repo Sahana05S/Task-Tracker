@@ -84,6 +84,24 @@ export interface Database {
           updated_at?: string;
         }
       >;
+      /** Migration 49: a director's invitation; applied when the email signs up. Writes go through people_command. */
+      member_invitations: TableDefinition<
+        {
+          id: string;
+          organization_id: string;
+          email: string;
+          full_name: string;
+          employee_id: string;
+          role: UserRole;
+          invited_by: string;
+          created_at: string;
+          accepted_at: string | null;
+          accepted_user: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+        },
+        never
+      >;
       tasks: TableDefinition<
         {
           id: string;
@@ -827,6 +845,7 @@ export interface Database {
       current_organization: { Args: Record<never, never>; Returns: string | null };
       team_holiday_dates: { Args: { p_from: string; p_to: string }; Returns: string[] };
       recognition_activity_days: { Args: { p_as_of?: string | null; p_employee?: string | null }; Returns: Json };
+      people_command: { Args: { p_command: 'invite' | 'revoke' | 'update'; p_payload: Json }; Returns: Json };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
       can_read_employee_details: { Args: { p_user_id: string | null }; Returns: boolean };
