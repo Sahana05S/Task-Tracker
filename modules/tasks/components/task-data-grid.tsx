@@ -2,28 +2,31 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+
+import { checklistWorkHref } from '@/modules/checklists/client';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   ChevronsUpDownIcon,
+  ListChecksIcon,
   MoreHorizontalIcon,
-  PencilIcon,
-  Trash2Icon,
 } from 'lucide-react';
 
+import {
+  headerState,
+  toggleRow,
+  toggleVisible,
+  type Selection,
+} from '@/modules/tasks/components/mission-selection';
 import { ProgressInput } from '@/modules/tasks/components/progress-input';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
-import {
-  CategoryBadge,
-  FreshnessIndicator,
-  PriorityBadge,
-} from '@/shared/ui/tracker-badges';
+import { TaskRowMenuItems, type TaskRowActions } from '@/modules/tasks/components/task-row-menu';
+import { FreshnessIndicator, PriorityBadge } from '@/shared/ui/tracker-badges';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
@@ -33,7 +36,7 @@ import {
   type TaskSortState,
 } from '@/modules/tasks/internal/filters';
 import { canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
-import { formatDate, formatNumeric, isOverdue, formatHours } from '@/shared/tracker/format';
+import { formatDate, isOverdue, formatHours } from '@/shared/tracker/format';
 import { cn, getInitials } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
 
@@ -48,51 +51,48 @@ export interface TaskDataGridProps {
   canManage: boolean;
   sort: TaskSortState;
   onSortChange: (next: TaskSortState) => void;
-  onEdit: (task: Task) => void;
-  onRequestDelete: (task: Task) => void;
+  /** Selected rows; always a subset of `tasks`. */
+  selection: Selection;
+  onSelectionChange: (next: Selection) => void;
+  actions: TaskRowActions;
 }
 
 interface ColumnDef {
   readonly key: TaskSortKey | null;
   readonly label: string;
   readonly numeric?: boolean;
-  readonly frozen?: boolean;
+  /** Read by screen readers only (the actions column). */
+  readonly hidden?: boolean;
 }
 
+/**
+ * The working set from the sheet's Tasks tab (slice 3). Scale, scaled
+ * progress, productivity, reviewers, comments and the dates live in the row's
+ * Quick summary.
+ */
 const COLUMNS: readonly ColumnDef[] = [
-  { key: 'taskTag', label: 'Tag', frozen: true },
-  { key: 'category', label: 'Type' },
   { key: 'title', label: 'Title' },
-  { key: null, label: 'Comments' },
-  { key: 'taskScale', label: 'Scale', numeric: true },
-  { key: 'progressPercentage', label: 'Progress', numeric: true },
-  { key: 'scaledProgress', label: 'Scaled', numeric: true },
-  { key: 'priority', label: 'Priority' },
   { key: 'assignee', label: 'Assignee' },
-  { key: null, label: 'Reviewer(s)' },
-  { key: 'hoursLogged', label: 'Hours', numeric: true },
-  { key: 'taskProductivity', label: 'Prod/h', numeric: true },
-  { key: 'freshness', label: 'Freshness' },
+  { key: 'priority', label: 'Priority' },
   { key: 'status', label: 'Status' },
-  { key: null, label: 'Assigned' },
+  { key: 'progressPercentage', label: 'Progress', numeric: true },
+  { key: 'hoursLogged', label: 'Hours', numeric: true },
+  { key: 'freshness', label: 'Freshness' },
   { key: 'dueDate', label: 'Due' },
-  { key: null, label: 'Done' },
-  { key: null, label: 'Deadline?' },
-  { key: null, label: 'Valid?' },
-  { key: null, label: 'Actions' },
+  { key: null, label: 'Checklist' },
+  { key: null, label: 'Actions', hidden: true },
 ];
 
 /**
- * Dense spreadsheet grid for wide viewports.
+ * Dense spreadsheet grid from 768px up.
  *
  * Structural notes:
- *  - The header row and the Tag column are both sticky, so the grid keeps its
- *    bearings when scrolled in either direction.
- *  - The wrapper scrolls horizontally, which is what makes the frozen Tag column
- *    useful and what the tablet layout in the design spec asks for. Lower the
- *    `lg:` gate in the parent to hand tablets the grid instead of cards.
+ *  - The header row and the first column (selection checkbox and tag) are both
+ *    sticky, so the grid keeps its bearings when scrolled in either direction.
+ *  - The header checkbox selects the visible rows the viewer can act on; the
+ *    shell prunes the selection whenever filters hide a row.
  *  - Status and progress are editable in place. Everything else routes through
- *    the edit form.
+ *    the row menu.
  */
 export function TaskDataGrid({
   tasks,
@@ -102,24 +102,41 @@ export function TaskDataGrid({
   canManage,
   sort,
   onSortChange,
-  onEdit,
-  onRequestDelete,
+  selection,
+  onSelectionChange,
+  actions,
 }: TaskDataGridProps) {
+  // Only rows the viewer can act on are selectable: open missions, and for
+  // members their own. A batch is atomic, so one refused row would fail it all.
+  const selectableIds = React.useMemo(
+    () => tasks.filter((task) => canUpdateTaskOwnFields(currentUser, task)).map((task) => task.id),
+    [tasks, currentUser],
+  );
+  const allState = headerState(selection, selectableIds);
+
   return (
-    <div className="soft-card-clip relative overflow-x-auto">
+    // Focus keeps rows clear of the sticky action bar underneath.
+    <div className="soft-card-clip relative overflow-x-auto [&_:is(a,button,input)]:scroll-mb-24">
       <table className="sheet-grid">
         <caption className="sr-only">
-          Missions. Column headers are buttons that sort the table.
+          Missions. Column headers are buttons that sort the table; the first
+          column selects rows for the actions bar.
         </caption>
         <thead>
           <tr>
+            <th scope="col" className="sheet-grid-frozen" aria-sort={ariaSort(sort, 'taskTag')}>
+              <div className="flex items-center gap-3">
+                <RowCheckbox
+                  checked={allState}
+                  label={allState === true ? 'Clear selection' : `Select all ${selectableIds.length} visible missions you can act on`}
+                  disabled={selectableIds.length === 0}
+                  onChange={() => onSelectionChange(toggleVisible(selection, selectableIds))}
+                />
+                <SortButton label="Tag" sortKey="taskTag" sort={sort} onSortChange={onSortChange} />
+              </div>
+            </th>
             {COLUMNS.map((column) => (
-              <SortableHeader
-                key={column.label}
-                column={column}
-                sort={sort}
-                onSortChange={onSortChange}
-              />
+              <HeaderCell key={column.label} column={column} sort={sort} onSortChange={onSortChange} />
             ))}
           </tr>
         </thead>
@@ -131,55 +148,40 @@ export function TaskDataGrid({
               isOverdue(task.dueDate) &&
               task.status !== 'Done' &&
               task.status !== 'Discarded';
+            const selected = selection.has(task.id);
+            const href = `/tasks/${encodeURIComponent(task.taskTag)}`;
 
             return (
-              <tr key={task.id}>
+              <tr
+                key={task.id}
+                data-selected={selected || undefined}
+                className="group data-[selected]:[&>td]:bg-primary-subtle"
+              >
                 <td className="sheet-grid-frozen">
-                  <Link
-                    href={`/tasks/${encodeURIComponent(task.taskTag)}`}
-                    className="task-tag hover:underline"
-                  >
-                    {task.taskTag}
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <RowCheckbox
+                      checked={selected}
+                      label={`Select ${task.taskTag}`}
+                      disabled={!canEditOwnFields}
+                      onChange={() => onSelectionChange(toggleRow(selection, task.id))}
+                    />
+                    <Link href={href} className="task-tag whitespace-nowrap hover:underline">
+                      {task.taskTag}
+                    </Link>
+                  </div>
                 </td>
 
-                <td>
-                  <CategoryBadge category={task.category} />
-                </td>
-
-                <td className="max-w-80">
+                <td className="max-w-64 min-w-40">
                   <span className="block truncate" title={task.title}>
                     {task.title}
                   </span>
+                  {task.archivedEffectiveDate ? (
+                    <span className="text-muted-foreground block text-xs">Archived, read-only</span>
+                  ) : null}
                 </td>
 
-                <td className="max-w-56">
-                  <span
-                    className="block truncate text-xs text-slate-600"
-                    title={task.comments ?? ''}
-                  >
-                    {task.comments ?? '—'}
-                  </span>
-                </td>
-
-                <td className="sheet-numeric text-xs">
-                  {formatNumeric(task.taskScale)}
-                </td>
-
-                <td className="w-28">
-                  <ProgressInput
-          version={task.lifecycleVersion}
-                    taskId={task.id}
-                    taskTag={task.taskTag}
-                    progressPercentage={task.progressPercentage}
-                    progressOwner={task.progressOwner}
-                    canEdit={canEditOwnFields && task.progressOwner!=='checklist'}
-                  />
-                </td>
-
-                {/* Generated column: read-only by construction. */}
-                <td className="sheet-numeric text-xs font-medium">
-                  {formatNumeric(task.scaledProgress)}
+                <td>
+                  <PeopleCell names={task.assigneeIds.map((id) => memberNames.get(id) ?? 'Unknown')} />
                 </td>
 
                 <td>
@@ -187,17 +189,23 @@ export function TaskDataGrid({
                 </td>
 
                 <td>
-                  <PeopleCell
-                    names={namesForIds(task.assigneeIds, memberNames)}
-                    fallback="Unassigned"
+                  <StatusSelect
+                    version={task.lifecycleVersion}
+                    taskId={task.id}
+                    taskTag={task.taskTag}
+                    status={task.status}
+                    canEdit={canEditOwnFields}
                   />
                 </td>
 
-                <td>
-                  <PeopleCell
-                    names={namesForIds(task.reviewerIds, memberNames)}
-                    fallback="No reviewer"
-                    compact
+                <td className="w-28">
+                  <ProgressInput
+                    version={task.lifecycleVersion}
+                    taskId={task.id}
+                    taskTag={task.taskTag}
+                    progressPercentage={task.progressPercentage}
+                    progressOwner={task.progressOwner}
+                    canEdit={canEditOwnFields && task.progressOwner !== 'checklist'}
                   />
                 </td>
 
@@ -206,70 +214,54 @@ export function TaskDataGrid({
                   {formatHours(effort.hoursLogged)}
                 </td>
 
-                <td
-                  className="sheet-numeric text-xs font-medium"
-                  title={
-                    task.taskProductivity === null
-                      ? 'No hours logged yet'
-                      : `${formatNumeric(task.progressPercentage)} progress points over ${formatHours(effort.hoursLogged)} hours`
-                  }
-                >
-                  {formatNumeric(task.taskProductivity)}
-                </td>
-
                 <td>
                   <FreshnessIndicator freshness={task.freshness} />
-                </td>
-
-                <td>
-                  <StatusSelect
-          version={task.lifecycleVersion}
-                    taskId={task.id}
-                    taskTag={task.taskTag}
-                    status={task.status}
-                    canEdit={canEditOwnFields}
-                  />
-                  {task.archivedEffectiveDate?<span className="block text-xs">Archived (read-only)</span>:null}
-                </td>
-
-                <td className="text-xs whitespace-nowrap text-slate-600">
-                  {formatDate(task.assignedDate)}
                 </td>
 
                 <td
                   className={cn(
                     'text-xs whitespace-nowrap',
-                    overdue ? 'text-overdue font-medium' : 'text-slate-600',
+                    overdue ? 'text-overdue font-medium' : 'text-muted-foreground',
                   )}
                 >
                   {formatDate(task.dueDate)}
                   {overdue ? <span className="sr-only"> (overdue)</span> : null}
                 </td>
 
-                <td className="text-xs whitespace-nowrap text-slate-600">
-                  {formatDate(task.completedDate)}
-                </td>
-
-                <td className="text-xs whitespace-nowrap text-slate-600">
-                  {task.metDeadline === null
-                    ? '—'
-                    : task.metDeadline
-                      ? 'Yes'
-                      : 'No'}
-                </td>
-
-                <td className="text-xs whitespace-nowrap text-slate-600">
-                  {task.validForMetrics ? 'Yes' : 'No'}
-                </td>
-
                 <td>
-                  {canManage&&!task.archivedEffectiveDate ? (
-                    <RowActions
-                      task={task}
-                      onEdit={onEdit}
-                      onRequestDelete={onRequestDelete}
-                    />
-                  ) : null}
+                  <Link
+                    href={checklistWorkHref(task.taskTag)}
+                    className="link inline-flex items-center gap-1 text-xs whitespace-nowrap"
+                    aria-label={`Master checklist for ${task.taskTag}`}
+                  >
+                    <ListChecksIcon className="size-3.5" aria-hidden="true" />
+                    {task.progressOwner === 'checklist' ? 'Drives progress' : 'Open'}
+                  </Link>
+                </td>
+
+                {/* Pinned right so the menu is reachable without scrolling sideways. */}
+                <td className="group-hover:bg-muted sticky right-0 z-10 bg-white">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        aria-label={`Actions for ${task.taskTag}`}
+                      >
+                        <MoreHorizontalIcon aria-hidden="true" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <TaskRowMenuItems
+                        task={task}
+                        canManage={canManage}
+                        canEditOwnFields={canEditOwnFields}
+                        actions={actions}
+                      />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             );
@@ -284,68 +276,76 @@ export function TaskDataGrid({
 /* Header                                                                     */
 /* -------------------------------------------------------------------------- */
 
-interface SortableHeaderProps {
+function ariaSort(sort: TaskSortState, key: TaskSortKey): React.AriaAttributes['aria-sort'] {
+  if (sort.key !== key) return 'none';
+  return sort.direction === 'asc' ? 'ascending' : 'descending';
+}
+
+function HeaderCell({
+  column,
+  sort,
+  onSortChange,
+}: {
   column: ColumnDef;
   sort: TaskSortState;
   onSortChange: (next: TaskSortState) => void;
-}
-
-function SortableHeader({ column, sort, onSortChange }: SortableHeaderProps) {
-  const frozenClass = column.frozen ? 'sheet-grid-frozen' : undefined;
-
-  // Captured into a local so the null check still narrows inside the onClick
-  // closure; a property access would widen back to `TaskSortKey | null`.
-  const sortKey = column.key;
-
-  // The actions column has nothing meaningful to order by.
-  if (sortKey === null) {
+}) {
+  if (column.key === null) {
     return (
-      <th scope="col" className={frozenClass}>
-        <span className="sr-only">{column.label}</span>
+      <th scope="col" className={column.hidden ? 'sticky right-0 z-30' : undefined}>
+        <span className={column.hidden ? 'sr-only' : undefined}>{column.label}</span>
       </th>
     );
   }
-
-  const active = sort.key === sortKey;
-  const ariaSort = active
-    ? sort.direction === 'asc'
-      ? 'ascending'
-      : 'descending'
-    : 'none';
-
   return (
-    <th
-      scope="col"
-      aria-sort={ariaSort}
-      className={cn(frozenClass, column.numeric && 'text-right')}
-    >
-      <button
-        type="button"
-        onClick={() => onSortChange(nextSortState(sort, sortKey))}
-        className={cn(
-          'inline-flex items-center gap-1 rounded-sm text-xs font-semibold uppercase transition-colors',
-          'focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none',
-          active
-            ? 'text-slate-900'
-            : 'text-slate-700 hover:text-slate-900',
-          column.numeric && 'flex-row-reverse',
-        )}
-      >
-        {column.label}
-        {active ? (
-          sort.direction === 'asc' ? (
-            <ArrowUpIcon className="size-3" aria-hidden="true" />
-          ) : (
-            <ArrowDownIcon className="size-3" aria-hidden="true" />
-          )
-        ) : (
-          <ChevronsUpDownIcon
-            className="size-3 text-slate-400"
-            aria-hidden="true"
-          />
-        )}
-      </button>
+    <th scope="col" aria-sort={ariaSort(sort, column.key)} className={cn(column.numeric && 'text-right')}>
+      <SortButton
+        label={column.label}
+        sortKey={column.key}
+        sort={sort}
+        onSortChange={onSortChange}
+        numeric={column.numeric}
+      />
     </th>
+  );
+}
+
+function SortButton({
+  label,
+  sortKey,
+  sort,
+  onSortChange,
+  numeric = false,
+}: {
+  label: string;
+  sortKey: TaskSortKey;
+  sort: TaskSortState;
+  onSortChange: (next: TaskSortState) => void;
+  numeric?: boolean;
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <button
+      type="button"
+      onClick={() => onSortChange(nextSortState(sort, sortKey))}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-sm text-xs font-semibold uppercase transition-colors',
+        'focus-visible:ring-ring/40 focus-visible:ring-2 focus-visible:outline-none',
+        active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+        numeric && 'flex-row-reverse',
+      )}
+    >
+      {label}
+      {active ? (
+        sort.direction === 'asc' ? (
+          <ArrowUpIcon className="size-3" aria-hidden="true" />
+        ) : (
+          <ArrowDownIcon className="size-3" aria-hidden="true" />
+        )
+      ) : (
+        <ChevronsUpDownIcon className="text-placeholder size-3" aria-hidden="true" />
+      )}
+    </button>
   );
 }
 
@@ -353,23 +353,37 @@ function SortableHeader({ column, sort, onSortChange }: SortableHeaderProps) {
 /* Cells                                                                      */
 /* -------------------------------------------------------------------------- */
 
-function namesForIds(
-  ids: readonly string[],
-  memberNames: ReadonlyMap<string, string>,
-): string[] {
-  return ids.map((id) => memberNames.get(id) ?? 'Unknown');
+/** Native checkbox; `indeterminate` can only be set from script. */
+function RowCheckbox({
+  checked,
+  label,
+  disabled = false,
+  onChange,
+}: {
+  checked: boolean | 'indeterminate';
+  label: string;
+  disabled?: boolean;
+  onChange: () => void;
+}) {
+  const ref = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    if (ref.current) ref.current.indeterminate = checked === 'indeterminate';
+  }, [checked]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked === true}
+      onChange={onChange}
+      aria-label={label}
+      disabled={disabled}
+      className="accent-primary size-4 shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+    />
+  );
 }
 
-function PeopleCell({
-  names,
-  fallback,
-  compact = false,
-}: {
-  names: readonly string[];
-  fallback: string;
-  compact?: boolean;
-}) {
-  const displayNames = names.length > 0 ? names : [fallback];
+function PeopleCell({ names }: { names: readonly string[] }) {
+  const displayNames = names.length > 0 ? names : ['Unassigned'];
   const label = displayNames.join(', ');
 
   return (
@@ -379,54 +393,14 @@ function PeopleCell({
           {getInitials(displayNames[0])}
         </AvatarFallback>
       </Avatar>
-      <span
-        className="max-w-40 truncate text-xs text-slate-700"
-        title={label}
-      >
-        {label}
+      <span className="text-foreground max-w-28 truncate text-xs" title={label}>
+        {displayNames[0]}
       </span>
-      {!compact && displayNames.length > 1 ? (
-        <span className="badge-soft badge-neutral px-1.5 py-0 text-[10px]">
+      {displayNames.length > 1 ? (
+        <span className="badge-soft badge-neutral px-1.5 py-0 text-[10px]" title={label}>
           +{displayNames.length - 1}
         </span>
       ) : null}
     </div>
-  );
-}
-
-interface RowActionsProps {
-  task: Task;
-  onEdit: (task: Task) => void;
-  onRequestDelete: (task: Task) => void;
-}
-
-function RowActions({ task, onEdit, onRequestDelete }: RowActionsProps) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          aria-label={`Actions for ${task.taskTag}`}
-        >
-          <MoreHorizontalIcon aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => onEdit(task)}>
-          <PencilIcon aria-hidden="true" />
-          Edit details
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          variant="destructive"
-          onSelect={() => onRequestDelete(task)}
-        >
-          <Trash2Icon aria-hidden="true" />
-          Delete mission
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }

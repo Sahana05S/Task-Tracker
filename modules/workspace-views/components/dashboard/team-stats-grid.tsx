@@ -1,7 +1,12 @@
 import { displayPerformance } from '@/shared/math/exact';
 import * as React from 'react';
 
-import type { TeamAnalytics } from '@/modules/scoring/client';
+import { computeMissionHeadline, type TeamAnalytics } from '@/modules/scoring/client';
+import { MissionHeadlineStrip } from '@/modules/scoring/components/mission-headline';
+import { canManageTasks, getTaskWorkspaceData } from '@/modules/tasks';
+import { getTaskEffortTotals } from '@/modules/time-tracking';
+import { getCurrentProfile } from '@/shared/session/profile';
+import { currentPeriod } from '@/shared/time/period';
 import { formatNumeric, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 
@@ -39,8 +44,12 @@ interface StatCardProps {
  */
 export function TeamStatsGrid({ analytics, attendanceComplete = true, attendanceMissing }: TeamStatsGridProps) {
   const { totals, medians } = analytics;
+  // The headline is live month to date, so it only sits beside the current month.
+  const live = analytics.period.startDate === currentPeriod().startDate;
 
+  // A fragment: the page grid spaces the stats and the headline.
   return (
+    <>
     <dl className="grid grid-cols-2 gap-3 xl:grid-cols-5">
       <StatCard
         hero
@@ -100,6 +109,46 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true, attendance
         }
       />
     </dl>
+    {live ? (
+      <details className="disclosure">
+        <summary>Team headline</summary>
+        <div className="p-4">
+          <React.Suspense fallback={<p className="text-muted-foreground text-sm">Loading team headline…</p>}>
+            <TeamHeadline analytics={analytics} />
+          </React.Suspense>
+        </div>
+      </details>
+    ) : null}
+    </>
+  );
+}
+
+/**
+ * The approved 16 October headline bands (sheet Tasks header), moved here from
+ * the Missions page in slice 3. Collapsed by default; it streams in so the
+ * figures above never wait for it.
+ */
+async function TeamHeadline({ analytics }: { analytics: TeamAnalytics }) {
+  const [workspace, effortTotals, profile] = await Promise.all([
+    // Supplementary: a failed read shows "Unavailable" figures, never zeros.
+    getTaskWorkspaceData().catch(() => null),
+    getTaskEffortTotals().catch(() => null),
+    getCurrentProfile(),
+  ]);
+  const hoursByTask = new Map([...(effortTotals ?? [])].map(([id, effort]) => [id, effort.hoursLogged]));
+  const headline = computeMissionHeadline({
+    analytics,
+    tasks: workspace?.tasks ?? [],
+    period: analytics.period,
+    hoursByTask,
+  });
+  return (
+    <MissionHeadlineStrip
+      headline={headline}
+      monthLabel={analytics.period.label}
+      showLeaders={profile !== null && canManageTasks(profile.role)}
+      goals={null}
+    />
   );
 }
 

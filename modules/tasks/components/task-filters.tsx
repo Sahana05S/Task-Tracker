@@ -26,9 +26,8 @@ import {
   TASK_STATUSES,
 } from '@/shared/tracker/enums';
 import { cn } from '@/shared/utils';
+import type { MissionView } from '@/modules/tasks/components/filter-params';
 import type { Task, TaskStatus, User } from '@/types/tracker';
-
-export type MissionView = 'cards' | 'table';
 
 const VIEW_OPTIONS: readonly SegmentedOption<MissionView>[] = [
   { value: 'cards', label: 'Card view', icon: LayoutGridIcon, iconOnly: true },
@@ -131,13 +130,13 @@ export function TaskFilters({
           ))}
         </div>
 
-        {/* View switch. The table needs desktop width, so it is offered from lg. */}
+        {/* View switch. The table needs tablet width, so it is offered from md. */}
         <SegmentedControl
           label="Mission view"
           value={view}
           options={VIEW_OPTIONS}
           onValueChange={onViewChange}
-          className="ml-auto hidden lg:inline-flex"
+          className="ml-auto hidden md:inline-flex"
         />
       </div>
 
