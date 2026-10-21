@@ -3,6 +3,7 @@
 // star 10, category award 25, monthly star 100. They never feed a score.
 import type { Factor } from '@/modules/scoring/client';
 
+import { rankExact } from './leaderboard-rules';
 import type { RecognitionPolicy } from './policy';
 
 export interface TrophyCounts {
@@ -11,6 +12,16 @@ export interface TrophyCounts {
   monthlyStars: number;
   /** Category awards per factor. */
   categories: Partial<Record<Factor, number>>;
+}
+
+/** One member's trophies as `recognition_points` returns them. */
+export type MemberTrophies = TrophyCounts & { userId: string; name: string };
+
+/** One dated trophy of the viewer. */
+export interface TrophyEvent {
+  kind: 'dailyStar' | 'categoryAward' | 'monthlyStar';
+  date: string;
+  category: Factor | null;
 }
 
 export type TierKey = 'rookie' | 'bronze' | 'silver' | 'gold' | 'diamond';
@@ -61,16 +72,11 @@ export interface HallEntry extends TrophyCounts {
 }
 
 /** Everyone in the company by points, highest first; equal points share a place. */
-export function rankHall(members: readonly (TrophyCounts & { userId: string; name: string })[], points: RecognitionPolicy['points']): HallEntry[] {
-  const scored = members
-    .map((m) => ({ ...m, points: pointsFor(m, points) }))
-    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
-  const entries: HallEntry[] = [];
-  scored.forEach((m, i) => {
-    const rank = i > 0 && scored[i - 1].points === m.points ? entries[i - 1].rank : i + 1;
-    entries.push({ ...m, rank, tier: tierFor(m.points).tier });
-  });
-  return entries;
+export function rankHall(members: readonly MemberTrophies[], points: RecognitionPolicy['points']): HallEntry[] {
+  // Alphabetical first; the stable ranking sort keeps that order within a shared place.
+  const scored = members.map((m) => ({ ...m, points: pointsFor(m, points) })).sort((a, b) => a.name.localeCompare(b.name));
+  return rankExact(scored, (m) => ({ numerator: String(m.points), denominator: '1' }))
+    .map(({ item, rank }) => ({ ...item, rank, tier: tierFor(item.points).tier }));
 }
 
 export interface HallOfFameModel {
@@ -78,5 +84,5 @@ export interface HallOfFameModel {
   entries: HallEntry[];
   viewer: (HallEntry & { progress: TierProgress }) | null;
   /** The viewer's dated trophies, newest first. */
-  recent: { kind: 'dailyStar' | 'categoryAward' | 'monthlyStar'; date: string; category: Factor | null }[];
+  recent: TrophyEvent[];
 }

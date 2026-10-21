@@ -50,8 +50,10 @@ export {
   TIERS,
   type HallEntry,
   type HallOfFameModel,
+  type MemberTrophies,
   type Tier,
   type TierKey,
   type TierProgress,
   type TrophyCounts,
+  type TrophyEvent,
 } from '@/modules/recognition/internal/hall-rules';

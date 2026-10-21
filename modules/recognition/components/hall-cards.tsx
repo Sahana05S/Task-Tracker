@@ -1,6 +1,6 @@
 import { AwardIcon, CrownIcon, FlameIcon, GemIcon, MedalIcon, StarIcon, TrophyIcon, type LucideIcon } from 'lucide-react';
 
-import { BOARD_LABELS, TIERS, type HallEntry, type StreakSummary, type HallOfFameModel, type TierKey, type TierProgress } from '@/modules/recognition/client';
+import { BOARD_LABELS, type HallEntry, type StreakSummary, type HallOfFameModel, type Tier, type TierKey, type TierProgress } from '@/modules/recognition/client';
 import { FACTORS } from '@/modules/scoring/client';
 import { EmptyState, InitialsAvatar } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
@@ -13,13 +13,18 @@ const TIER_STYLE: Record<TierKey, { ring: string; chip: string; icon: LucideIcon
   diamond: { ring: 'stroke-tier-diamond', chip: 'bg-tier-diamond-subtle text-foreground', icon: GemIcon },
 };
 
-export function TierBadge({ tier, className }: { tier: TierKey; className?: string }) {
-  const style = TIER_STYLE[tier];
+/** `3 days`, `1 day`. */
+export function plural(n: number, word: string): string {
+  return `${n} ${n === 1 ? word : `${word}s`}`;
+}
+
+export function TierBadge({ tier, className }: { tier: Tier; className?: string }) {
+  const style = TIER_STYLE[tier.key];
   const Icon = style.icon;
   return (
     <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold', style.chip, className)}>
       <Icon className="size-3" aria-hidden="true" />
-      {TIERS.find((t) => t.key === tier)!.label}
+      {tier.label}
     </span>
   );
 }
@@ -65,18 +70,18 @@ export function TrophyCase({ entry, streak }: { entry: HallEntry; streak: Pick<S
   return (
     <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
       <Badge icon={CrownIcon} title="Monthly star" earned={entry.monthlyStars > 0} tone="bg-recognition-subtle text-recognition"
-        detail={entry.monthlyStars ? `${entry.monthlyStars} ${entry.monthlyStars === 1 ? 'month' : 'months'}` : 'Most daily stars in a month'} />
+        detail={entry.monthlyStars ? plural(entry.monthlyStars, 'month') : 'Most daily stars in a month'} />
       <Badge icon={StarIcon} title="Daily star" earned={entry.dailyStars > 0} tone="bg-recognition-subtle text-recognition"
-        detail={entry.dailyStars ? `${entry.dailyStars} ${entry.dailyStars === 1 ? 'day' : 'days'}` : 'Top certified score of a day'} />
+        detail={entry.dailyStars ? plural(entry.dailyStars, 'day') : 'Top certified score of a day'} />
       {streak ? (
         <Badge icon={FlameIcon} title={milestone ? `${milestone}-day streak` : 'Streak'} earned={milestone !== null} tone="bg-streak-subtle text-streak"
-          detail={`Longest streak ${streak.longest} ${streak.longest === 1 ? 'day' : 'days'}`} />
+          detail={`Longest streak ${plural(streak.longest, 'day')}`} />
       ) : null}
       {FACTORS.map((f) => {
         const n = entry.categories[f] ?? 0;
         return (
           <Badge key={f} icon={AwardIcon} title={`${BOARD_LABELS[f]} award`} earned={n > 0} tone="bg-primary-subtle text-primary"
-            detail={n ? `${n} ${n === 1 ? 'month' : 'months'}` : 'Best in the month'} />
+            detail={n ? plural(n, 'month') : 'Best in the month'} />
         );
       })}
     </ul>
@@ -101,7 +106,7 @@ export function HallOfFameList({ model, viewerId }: { model: HallOfFameModel; vi
               {e.dailyStars} daily · {e.categoryAwards} category · {e.monthlyStars} monthly
             </span>
           </span>
-          <TierBadge tier={e.tier.key} className="hidden sm:inline-flex" />
+          <TierBadge tier={e.tier} className="hidden sm:inline-flex" />
           <span className="w-16 text-right text-sm font-bold tabular-nums">{e.points}<span className="sr-only"> points</span></span>
         </li>
       ))}

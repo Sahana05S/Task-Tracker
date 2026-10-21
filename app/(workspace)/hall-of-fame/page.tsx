@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { DatabaseIcon, TriangleAlertIcon, TrophyIcon } from 'lucide-react';
 
-import { HallOfFameList, PointsRing, TierBadge, TrophyCase } from '@/modules/recognition/components/hall-cards';
-import { BOARD_LABELS, getHallOfFame, getStreak, HallOfFameUnavailable } from '@/modules/recognition';
+import { HallOfFameList, plural, PointsRing, TierBadge, TrophyCase } from '@/modules/recognition/components/hall-cards';
+import { BOARD_LABELS, getHallOfFame, getStreak } from '@/modules/recognition';
 import { settle } from '@/shared/async/settle';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDate } from '@/shared/tracker/format';
@@ -11,6 +11,7 @@ import { MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/s
 export const metadata: Metadata = { title: 'Hall of fame · TaskPulse' };
 
 const KIND_LABEL = { dailyStar: 'Daily star', categoryAward: 'Category award', monthlyStar: 'Monthly star' } as const;
+const MONTH = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 /**
  * All-time recognition: points from daily stars (10), category awards (25)
@@ -19,14 +20,9 @@ const KIND_LABEL = { dailyStar: 'Daily star', categoryAward: 'Category award', m
  */
 export default async function HallOfFamePage() {
   const profile = await requireProfile();
-  const [read, streak] = await Promise.all([
-    getHallOfFame(profile.id).then(
-      (data) => ({ data, unavailable: null }),
-      (error: unknown) => ({ data: null, unavailable: error instanceof HallOfFameUnavailable ? 'migration' as const : 'error' as const }),
-    ),
-    settle(() => getStreak(profile.id)),
-  ]);
-  const { data: hall, unavailable } = read;
+  const [read, streak] = await Promise.all([settle(() => getHallOfFame(profile.id)), settle(() => getStreak(profile.id))]);
+  const hall = read.status === 'ready' ? read.data : null;
+  const unavailable = read.status !== 'ready' ? 'error' : hall === null ? 'migration' : null;
   const me = hall?.viewer ?? null;
 
   return (
@@ -54,11 +50,11 @@ export default async function HallOfFamePage() {
           <div className="grid gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-foreground text-xl font-bold tracking-tight">Your tier</h2>
-              <TierBadge tier={me.progress.tier.key} />
+              <TierBadge tier={me.progress.tier} />
             </div>
             <p className="text-muted-foreground text-sm">
               {me.progress.next
-                ? `${me.progress.toNext} more ${me.progress.toNext === 1 ? 'point' : 'points'} to ${me.progress.next.label}.`
+                ? `${plural(me.progress.toNext, 'point')} more to ${me.progress.next.label}.`
                 : 'You have reached the top tier.'}
               {' '}Place {me.rank} of {hall.entries.length} in the company.
             </p>
@@ -81,7 +77,7 @@ export default async function HallOfFamePage() {
                 {hall.recent.map((r) => (
                   <li key={`${r.kind}-${r.date}-${r.category ?? ''}`} className="flex flex-wrap gap-x-2">
                     <span className="text-foreground font-medium">{r.category ? `${BOARD_LABELS[r.category]} award` : KIND_LABEL[r.kind]}</span>
-                    <span className="text-muted-foreground">{r.kind === 'dailyStar' ? formatDate(r.date) : new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${r.date}T00:00:00Z`))}</span>
+                    <span className="text-muted-foreground">{r.kind === 'dailyStar' ? formatDate(r.date) : MONTH.format(new Date(`${r.date}T00:00:00Z`))}</span>
                   </li>
                 ))}
               </ul>
