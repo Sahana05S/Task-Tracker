@@ -1,18 +1,14 @@
 'use client';
 
 import { TaskWorkspace, type TaskWorkspaceProps } from '@/modules/tasks/components/task-workspace';
-import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
-
-/** The "Log hours" button on each open mission card. */
-function LogHoursButton({ taskId }: { taskId: string }) {
-  return <QuickLogTrigger variant="button" label="Log hours" presetTaskId={taskId} />;
-}
+import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 
 /**
  * The Missions list with time tracking plugged in. The tasks module leaves a
  * slot for the button so it does not depend on time-tracking; this page-level
- * client component fills it.
+ * client component fills it with the timer button. Manual entry ("Log time")
+ * lives in the top bar, the phone "New" menu and the mission page, not on cards.
  */
 export function MissionsWorkspace(props: Omit<TaskWorkspaceProps, 'LogHoursAction'>) {
-  return <TaskWorkspace {...props} LogHoursAction={LogHoursButton} />;
+  return <TaskWorkspace {...props} LogHoursAction={TimerButton} />;
 }

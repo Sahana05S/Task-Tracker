@@ -134,7 +134,7 @@ export function QuickLogDrawer({
       handledResult.current=state;
       onOpenChange(false);
       // The drawer closes on success, so the confirmation has to live outside it.
-      toast.success(isEdit ? 'Log entry updated' : 'Hours logged', {
+      toast.success(isEdit ? 'Log entry updated' : 'Time logged', {
         description:
           'Task progress and productivity have been recalculated.',
       });
@@ -148,7 +148,7 @@ export function QuickLogDrawer({
         className="max-h-[92dvh] gap-0 sm:mx-auto sm:max-w-xl sm:rounded-t-xl"
       >
         <SheetHeader>
-          <SheetTitle>{isEdit ? 'Edit log entry' : 'Log hours'}</SheetTitle>
+          <SheetTitle>{isEdit ? 'Edit log entry' : 'Log time'}</SheetTitle>
           <SheetDescription>
             Record time and the progress it produced. The task's productivity
             rate updates automatically.

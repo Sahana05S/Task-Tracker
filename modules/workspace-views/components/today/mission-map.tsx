@@ -11,6 +11,7 @@ import { checklistWorkHref, type ChecklistBranch, type ChecklistBranchOptions, t
 import { checklistCommand } from '@/modules/checklists/actions';
 import { branchForRow, layoutMissionMap, mapCamera, type Camera, type MapEntity, type MapLevel, type MapNode, type RoadmapLocation } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch } from '@/modules/workspace-views/roadmap-actions';
+import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import styles from './mission-map.module.css';
 
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
@@ -241,7 +242,8 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
         {sectionStep ? <div role="group" aria-label="Checklist sections" className="bg-muted flex rounded-full p-1">
           {SECTIONS.map(section => <Button key={section} size="sm" variant={(sectionStep.options.section ?? 'activity') === section ? 'default' : 'ghost'} aria-pressed={(sectionStep.options.section ?? 'activity') === section} onClick={() => switchSection(section)} className="capitalize">{section}</Button>)}
         </div> : <span />}
-        {mission ? <span className="flex flex-wrap gap-3 text-xs font-semibold">
+        {mission ? <span className="flex flex-wrap items-center gap-3 text-xs font-semibold">
+          <TimerButton taskId={mission.id} taskLabel={mission.taskTag} />
           <Link className="link" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage items</Link>
           <Link className="link" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
         </span> : null}

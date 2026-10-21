@@ -4,6 +4,7 @@ import { AppShell } from '@/modules/workspace-views/components/shell/app-shell';
 import { requireProfile } from '@/shared/session/profile';
 import { getNavCounts } from '@/modules/workspace-views';
 import { getRunningTimers } from '@/modules/time-tracking';
+import { RunningTimerProvider } from '@/modules/time-tracking/components/running-timer-context';
 
 /**
  * Guarded layout for every workspace route.
@@ -25,8 +26,10 @@ export default async function WorkspaceLayout({
   const [counts, timers] = await Promise.all([getNavCounts(profile.id), getRunningTimers(profile.id)]);
 
   return (
-    <AppShell profile={profile} counts={counts} timers={timers}>
-      {children}
-    </AppShell>
+    <RunningTimerProvider timers={timers}>
+      <AppShell profile={profile} counts={counts} timers={timers}>
+        {children}
+      </AppShell>
+    </RunningTimerProvider>
   );
 }

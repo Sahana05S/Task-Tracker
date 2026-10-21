@@ -17,7 +17,7 @@ export {
 export { LOG_COLUMNS, mapDailyTaskLog, mapDailyTaskLogs } from '@/modules/time-tracking/internal/logs/mappers';
 export { mapTaskTimer, mapTaskTimers, TIMER_COLUMNS } from '@/modules/time-tracking/internal/timers/mappers';
 export { canManageTimerRecord, canStartTimerForTask } from '@/modules/time-tracking/internal/timers/permissions';
-export { computeElapsedSeconds, computeTimerStopSummary, secondsToRoundedHours } from '@/modules/time-tracking/internal/timers/elapsed';
+export { computeElapsedSeconds, computeTimerStopSummary, formatElapsed, secondsToRoundedHours } from '@/modules/time-tracking/internal/timers/elapsed';
 export type { RunningTimer } from '@/modules/time-tracking/internal/timers/running-timers';
 export type { TeamRunningTimer } from '@/modules/time-tracking/internal/timers/queries';
 export type { TaskExecution } from '@/modules/time-tracking/internal/execution';
