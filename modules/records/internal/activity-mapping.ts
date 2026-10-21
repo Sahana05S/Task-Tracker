@@ -72,11 +72,46 @@ const RECORD_NOUN: Record<string, string> = {
   meeting: 'a meeting point',
 };
 const RECORD_VERB: Record<string, string> = { save: 'Saved', correct: 'Corrected', validate: 'Reviewed', withdraw: 'Withdrew' };
+// Command names as the log, lifecycle, checklist and Task Tools commands store them.
 const TIME_WORDS: Record<string, string> = {
-  create_task_log: 'Logged time',
-  correct_task_log: 'Corrected a time log',
-  reverse_task_log: 'Reversed a time log',
-  stop_task_timer: 'Logged time from a timer',
+  create_log: 'Logged time',
+  correct_log: 'Corrected a time log',
+  reverse_log: 'Reversed a time log',
+  stop_timer: 'Logged time from a timer',
+};
+const MISSION_WORDS: Record<string, string> = {
+  save_task_with_participants: 'Saved the mission and its assignees',
+  transition: "Changed the mission's status",
+  progress: "Updated the mission's progress",
+  scale: "Set the mission's scale",
+  review: 'Reviewed the mission',
+  initialize_native_details: 'Set up the mission details',
+  publish_detail_template: 'Published a details template',
+};
+const CHECKLIST_WORDS: Record<string, string> = {
+  create: 'Started a checklist',
+  add: 'Added a checklist item',
+  edit: 'Edited a checklist item',
+  state: 'Updated a checklist item',
+  map: 'Linked a checklist item',
+  section: 'Moved a checklist item',
+  mode: 'Changed how a checklist works',
+  delete: 'Removed a checklist item',
+  duplicate: 'Copied a checklist item',
+  submission: 'Submitted a checklist',
+};
+const TOOL_WORDS: Record<string, string> = {
+  bulk_done: 'Marked missions done',
+  bulk_reopen: 'Reopened missions',
+  section: 'Moved missions to another section',
+  archive: 'Archived missions',
+  carryover: 'Carried missions over',
+  support: 'Added support missions',
+  duplicate: 'Copied missions',
+  weekly: 'Copied missions week by week',
+  day_count: 'Copied missions by day count',
+  all_team: 'Copied a mission to the whole team',
+  number_suffix: 'Copied missions with numbered names',
 };
 const MONTH_WORDS: Record<string, string> = {
   month_draft: 'Drafted the month report',
@@ -161,8 +196,15 @@ function summary(row: ActivityRow): string {
   }
   const word = ROW_WORDS[row.record_kind ?? '']?.[action];
   if (word) return word;
-  if (action.startsWith('checklist_')) return `Checklist: ${codeLabel(action.slice('checklist_'.length)).toLowerCase()}`;
-  if (action.startsWith('task_tools_')) return `Mission tools: ${codeLabel(action.slice('task_tools_'.length)).toLowerCase()}`;
+  if (MISSION_WORDS[action]) return MISSION_WORDS[action];
+  if (action.startsWith('checklist_')) {
+    const command = action.slice('checklist_'.length);
+    return CHECKLIST_WORDS[command] ?? `Checklist: ${codeLabel(command).toLowerCase()}`;
+  }
+  if (action.startsWith('task_tools_')) {
+    const command = action.slice('task_tools_'.length);
+    return TOOL_WORDS[command] ?? `Mission tools: ${codeLabel(command).toLowerCase()}`;
+  }
   if (action.startsWith('detail_')) return 'Updated mission details';
   return codeLabel(action);
 }

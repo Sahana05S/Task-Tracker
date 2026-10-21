@@ -30,12 +30,16 @@ describe('activity wording and links', () => {
 
   it('words row changes by table, commands by prefix, and unknown codes readably', () => {
     expect(mapActivity(row({ action: 'INSERT', record_kind: 'task_assignees', subject_user_id: ASHA }), people).summary).toBe('Added an assignee');
-    expect(mapActivity(row({ action: 'checklist_complete_item', record_kind: 'task_checklists' }), people).summary).toBe('Checklist: complete item');
+    expect(mapActivity(row({ action: 'checklist_state', record_kind: 'task_checklists' }), people).summary).toBe('Updated a checklist item');
+    expect(mapActivity(row({ action: 'checklist_something_new', record_kind: 'task_checklists' }), people).summary).toBe('Checklist: something new');
+    expect(mapActivity(row({ action: 'task_tools_bulk_done', record_kind: 'tool_previews' }), people).summary).toBe('Marked missions done');
+    expect(mapActivity(row({ action: 'save_task_with_participants', record_kind: 'tasks', task_tag: 'T1' }), people).summary).toBe('Saved the mission and its assignees');
+    expect(mapActivity(row({ action: 'transition', record_kind: 'tasks', task_tag: 'T1' }), people).summary).toBe("Changed the mission's status");
     expect(mapActivity(row({ kind: 'company', action: 'some_new_command', record_kind: 'x' }), people).summary).toBe('Some new command');
   });
 
   it('words time, month and people rows and links where there is a place to go', () => {
-    expect(mapActivity(row({ kind: 'time', action: 'reverse_task_log', actor_id: ASHA, subject_user_id: ASHA, task_tag: 'T1', record_kind: 'log' }), people))
+    expect(mapActivity(row({ kind: 'time', action: 'reverse_log', actor_id: ASHA, subject_user_id: ASHA, task_tag: 'T1', record_kind: 'log' }), people))
       .toMatchObject({ summary: 'Reversed a time log', about: null, href: '/tasks/T1' });
     expect(mapActivity(row({ kind: 'month', action: 'month_close', period: '2026-09-01' }), people))
       .toMatchObject({ summary: 'Closed the month', href: '/reports?tab=month&period=2026-09' });
@@ -105,7 +109,7 @@ describe('ActivityLog', () => {
     const { renderToStaticMarkup } = await import('react-dom/server');
     const { ActivityLog } = await import('@/modules/records/components/activity-log');
     const entries = [
-      mapActivity(row({ id: 'a:2', occurred_at: '2026-10-20T19:00:00Z', kind: 'time', action: 'create_task_log', actor_id: ASHA, subject_user_id: ASHA, task_tag: 'T1', record_kind: 'log' }), people),
+      mapActivity(row({ id: 'a:2', occurred_at: '2026-10-20T19:00:00Z', kind: 'time', action: 'create_log', actor_id: ASHA, subject_user_id: ASHA, task_tag: 'T1', record_kind: 'log' }), people),
       mapActivity(row({ id: 'a:1', occurred_at: '2026-10-20T10:00:00Z', kind: 'records', action: 'validate', subject_user_id: ASHA, record_kind: 'fact', record_id: 'f1' }), people),
     ];
     const html = renderToStaticMarkup(createElement(ActivityLog, {
