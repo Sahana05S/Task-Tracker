@@ -3,6 +3,7 @@ import type { Json } from '@/types/database';
 import { calculateAward } from './calculation';
 import { observationInstant } from '@/shared/time/observation-clock';
 import type { AwardPolicy } from './contract';
+import { isConflictCode } from '@/shared/commands/conflict';
 type Client=Awaited<ReturnType<typeof createClient>>;
 export async function runAwardJobs(db:Client,limit=10,forOrganization?:(organizationId:string)=>Client) {
  const configuration=await db.rpc('award_policy_context',{});if(configuration.error)throw new Error('Award worker policy unavailable.');
@@ -19,7 +20,7 @@ export async function runAwardJobs(db:Client,limit=10,forOrganization?:(organiza
   try{result=await calculateAward(jobDb,job.date,(await observationInstant(jobDb)).instant.toISOString(),config.policy,job.isRevision===true);}
   catch{const fail=await jobDb.rpc('award_command',{p_command:'fail',p_payload:{...base,errorCode:'source_query_failed'},p_operation:job.leaseToken});if(fail.error)throw new Error('Award source failure could not be recorded.');outcomes.push({jobId:job.id,status:'failed'});continue;}
   let finish=await jobDb.rpc('award_command',{p_command:'commit',p_payload:{...base,result:result as unknown as Json},p_operation:job.leaseToken});
-  if(finish.error){const code=finish.error.code==='40001'?'source_changed':finish.error.code==='23514'&&finish.error.message.includes('Frozen')?'frozen_period':'calculation_failed';
+  if(finish.error){const code=isConflictCode(finish.error.code)?'source_changed':finish.error.code==='23514'&&finish.error.message.includes('Frozen')?'frozen_period':'calculation_failed';
    finish=await jobDb.rpc('award_command',{p_command:'fail',p_payload:{...base,errorCode:code},p_operation:job.leaseToken});if(finish.error)throw new Error('Award outcome could not be recorded.');outcomes.push({jobId:job.id,status:'failed'});
   }else outcomes.push({jobId:job.id,status:result.status});
  }return outcomes;

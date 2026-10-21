@@ -52,7 +52,7 @@ for db in DBS:
     sql(db,'DROP TRIGGER m09_fail ON public.tasks;DROP FUNCTION public.m09_fail();')
     def attempt(p):
       try:commit(db,p);return True
-      except AssertionError as e:assert '40001' in str(e);return False
+      except AssertionError as e:assert any(c in str(e) for c in ('40001','PT409'));return False
     src=new_task(db,'split-race');plans=[preview(db,'support',{**base,'sourceTaskId':src}) for _ in range(2)]
     with ThreadPoolExecutor(max_workers=2) as pool:assert sorted(pool.map(attempt,plans))==[False,True]
     src=new_task(db,'batch-source')

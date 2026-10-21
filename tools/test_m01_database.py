@@ -27,7 +27,7 @@ def sql(db, statement, success=True):
         raise AssertionError(result.stderr + '\n' + statement[:300])
     if not success and result.returncode == 0:
         raise AssertionError('Expected database denial: ' + statement)
-    if not success and not any(code in result.stderr for code in ('42501','23514','40001')):
+    if not success and not any(code in result.stderr for code in ('42501','23514','40001','PT409')):
         raise AssertionError('Failure was not an authorization/contract denial: ' + result.stderr)
     return result.stdout.strip()
 
@@ -208,7 +208,7 @@ for db in DBS:
     with ThreadPoolExecutor(max_workers=2) as pool:
         results=list(pool.map(concurrent_request,range(2)))
     assert sum(result.returncode==0 for result in results)==1
-    assert any('40001' in result.stderr for result in results)
+    assert any(any(c in result.stderr for c in ('40001','PT409')) for result in results)
     print('PASS two real concurrent participant writers: one commit, one version conflict')
     assert sql(db,"SELECT count(*) FROM pg_proc WHERE pronamespace IN ('public'::regnamespace,'taskpulse_private'::regnamespace) AND prosecdef AND NOT coalesce(proconfig @> ARRAY['search_path=\"\"'],false);")=='0'
     assert sql(db,"SELECT count(*) FROM information_schema.column_privileges WHERE table_schema='public' AND grantee IN ('anon','service_role');")=='0'
