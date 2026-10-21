@@ -1,5 +1,4 @@
-import { FACTORS, FACTOR_UNITS, type CalculationResult } from '@/modules/scoring/client';
-import { factorLabel } from '@/modules/reports/client';
+import { FACTOR_LABELS, FACTORS, FACTOR_UNITS, type CalculationResult } from '@/modules/scoring/client';
 import { EmptyState } from '@/shared/ui/mission-ui';
 import { FactorDifferentialsChart } from '@/modules/workspace-views/components/dashboard/factor-differentials-chart';
 
@@ -45,7 +44,7 @@ export function SubScoresGrid({
             return (
               <FactorDifferentialsChart
                 key={factor}
-                title={factorLabel(factor)}
+                title={FACTOR_LABELS[factor]}
                 unit={FACTOR_UNITS[factor]}
                 median={results.find((result) => result.medianExact)?.medianExact ?? null}
                 reasons={results.flatMap((result) => result.reasons)}

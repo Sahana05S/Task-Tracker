@@ -1,4 +1,4 @@
-import { FACTORS, type AwardDay, type Factor, type MemberCalculation } from '@/modules/scoring/client';
+import { FACTOR_LABELS, FACTORS, type AwardDay, type Factor, type MemberCalculation } from '@/modules/scoring/client';
 import { csvCell } from '@/modules/reports/internal/presentation/export';
 import { Exact } from '@/shared/math/exact';
 import { ISO_DATE_PATTERN, UUID_PATTERN } from '@/shared/forms/form-data';
@@ -46,10 +46,6 @@ const TEAM_DETAIL_ROLES: readonly UserRole[] = ['managing_director', 'project_en
 /** Roles that see every member's daily detail (the award read model's own rule). */
 export function seesTeamDetail(role: UserRole): boolean {
   return TEAM_DETAIL_ROLES.includes(role);
-}
-
-export function factorLabel(factor: Factor): string {
-  return factor[0].toUpperCase() + factor.slice(1);
 }
 
 function addDays(date: string, days: number): string {
@@ -127,7 +123,7 @@ export function dailyPerfRows(input: {
 
 /** CSV of the log: one header row, then the rows as shown. */
 export function dailyPerfCsv(rows: readonly DailyPerfRow[]): string {
-  const header = ['Date', 'Member', ...FACTORS.map((factor) => `${factorLabel(factor)} (difference from median)`), 'Sum', 'Hours logged', 'Status'];
+  const header = ['Date', 'Member', ...FACTORS.map((factor) => `${FACTOR_LABELS[factor]} (difference from median)`), 'Sum', 'Hours logged', 'Status'];
   const lines = rows.map((row) => [
     row.date,
     row.fullName,

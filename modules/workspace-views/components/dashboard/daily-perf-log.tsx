@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Download } from 'lucide-react';
 
-import { COEFFICIENTS, FACTORS } from '@/modules/scoring/client';
-import { DAILY_PERF_STATUS_LABEL, factorLabel, type DailyPerfFilter, type DailyPerfLog, type DailyPerfRow } from '@/modules/reports/client';
+import { COEFFICIENTS, FACTOR_LABELS, FACTORS } from '@/modules/scoring/client';
+import { DAILY_PERF_STATUS_LABEL, type DailyPerfFilter, type DailyPerfLog, type DailyPerfRow } from '@/modules/reports/client';
 import { Exact } from '@/shared/math/exact';
 import { buttonVariants } from '@/shared/ui/button';
 import { MissionNotice } from '@/shared/ui/mission-ui';
@@ -131,7 +131,7 @@ function DailyPerfTable({ log }: { log: DailyPerfLog }) {
             <th scope="col" className="bg-muted sticky left-0 z-10 px-3 py-2 text-left font-semibold">Member</th>
             {FACTORS.map((factor) => (
               <th key={factor} scope="col" className="px-2 py-2 text-right font-semibold whitespace-nowrap">
-                {factorLabel(factor)}
+                {FACTOR_LABELS[factor]}
                 <span className="block font-normal">×{COEFFICIENTS[factor]}</span>
               </th>
             ))}

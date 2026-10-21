@@ -19,7 +19,6 @@ export {
   dailyPerfCsv,
   dailyPerfFilter,
   dailyPerfRows,
-  factorLabel,
   monthToDate,
   seesTeamDetail,
   type DailyPerfFilter,
