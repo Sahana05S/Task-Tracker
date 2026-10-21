@@ -848,6 +848,8 @@ export interface Database {
       recognition_ceremony_read: { Args: { p_period: string }; Returns: Json };
       recognition_ceremony_command: { Args: { p_period: string; p_payload: Json; p_operation: string; p_expected_revision: number }; Returns: Json };
       recognition_points: { Args: { p_employee?: string | null }; Returns: Json };
+      recognition_task_waypoints: { Args: { p_task_ids: string[] }; Returns: Json };
+      recognition_waypoint_counts: { Args: { p_from: string; p_to: string; p_employee?: string | null }; Returns: Json };
       people_command: { Args: { p_command: 'invite' | 'revoke' | 'update'; p_payload: Json }; Returns: Json };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
