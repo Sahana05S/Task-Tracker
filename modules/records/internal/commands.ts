@@ -1,6 +1,7 @@
 import type { DatedRecordCommand } from '@/modules/records/internal/input';
 import { createClient } from '@/shared/supabase/server';
 import type { ActionResponse } from '@/types/tracker';
+import { isConflictCode } from '@/shared/commands/conflict';
 
 /** Runs `dated_record_command` and validates its `{ id, version }` result. PRIVATE. */
 export async function runDatedRecordCommand(input: DatedRecordCommand): Promise<ActionResponse<{ id: string; version: number }>> {
@@ -17,7 +18,7 @@ export async function runDatedRecordCommand(input: DatedRecordCommand): Promise<
     return {
       success: false,
       error: error.message,
-      errorCode: error.code === '40001' ? 'conflict' : error.code === '42501' ? 'forbidden' : 'validation',
+      errorCode: isConflictCode(error.code) ? 'conflict' : error.code === '42501' ? 'forbidden' : 'validation',
     };
   }
   if (!data || typeof data !== 'object' || Array.isArray(data) || typeof data.id !== 'string' || typeof data.version !== 'number') {

@@ -14,7 +14,7 @@ def migrate(db,low,high):
   if low<=int(p.name.split('_')[0])<=high:sql(db,p.read_text(encoding='utf-8'))
 def raw_actor(db,uid,statement):
  return subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],input=f"BEGIN;SET LOCAL ROLE authenticated;SELECT set_config('request.jwt.claim.sub','{uid}',true);{statement};COMMIT;",text=True,capture_output=True,encoding='utf-8')
-def denied(db,uid,statement,codes=('42501','23514','40001','23503','P0002')):
+def denied(db,uid,statement,codes=('42501','23514','40001','PT409','23503','P0002')):
  r=raw_actor(db,uid,statement);assert r.returncode and any(code in r.stderr for code in codes),r.stderr
 for db in DBS:
  assert db.startswith('taskpulse_experience_') and db.endswith('_test')
@@ -67,7 +67,7 @@ for db in DBS:
  version=scalar(db,f"lifecycle_version FROM public.tasks WHERE id='{task}'")
  requests=[statement('add',{'title':f'Concurrent{i}','section':'activity','node_type':'Item'},version) for i in range(2)]
  with ThreadPoolExecutor(max_workers=2) as pool:out=list(pool.map(lambda q:raw_actor(db,MEM,q),requests))
- assert sum(r.returncode==0 for r in out)==1 and any('40001' in r.stderr for r in out)
+ assert sum(r.returncode==0 for r in out)==1 and any(any(c in r.stderr for c in ('40001','PT409')) for r in out)
  print('PASS',db,'same-version concurrent commands commit once and conflict once',flush=True)
  before_hours=float(scalar(db,f"coalesce(sum(hours_worked),0) FROM public.daily_task_logs WHERE task_id='{task}' AND reversed_at IS NULL"))
  timer_key=str(uuid4());timer_query=f"SELECT public.start_checklist_item_timer('{leaf['nodeId']}','{{}}'::jsonb,'{timer_key}')"

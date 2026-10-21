@@ -27,7 +27,7 @@ def sql(db, statement, success=True):
         raise AssertionError(result.stderr + '\n' + statement[:300])
     if not success and result.returncode == 0:
         raise AssertionError('Expected database denial: ' + statement)
-    if not success and not any(code in result.stderr for code in ('42501','23514','40001')):
+    if not success and not any(code in result.stderr for code in ('42501','23514','40001','PT409')):
         raise AssertionError('Failure was not an authorization/contract denial: ' + result.stderr)
     return result.stdout.strip()
 
@@ -200,7 +200,7 @@ for db in DBS:
           input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{user4}',true);"+statement+'COMMIT;',text=True,capture_output=True)
         return result
     with ThreadPoolExecutor(max_workers=2) as pool: races=list(pool.map(racing_edit,[2,3]))
-    assert sum(r.returncode==0 for r in races)==1 and any('40001' in r.stderr for r in races)
+    assert sum(r.returncode==0 for r in races)==1 and any(any(c in r.stderr for c in ('40001','PT409')) for r in races)
     print('PASS',db,'concurrent increments/corrections: no lost update, one version winner')
     # Future 70/30 applies to new work only; earlier shares/version unchanged.
     old_shares=value(db,f"credit_shares FROM public.daily_task_logs WHERE id='{log}'")
@@ -297,7 +297,7 @@ for db in DBS:
             statement=rpc('stop_task_timer',second,{},version=0)
             return subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{user4}',true);"+statement+'COMMIT;',text=True,capture_output=True)
         with ThreadPoolExecutor(max_workers=2) as pool: stop_race=list(pool.map(race_stop,range(2)))
-        assert sum(r.returncode==0 for r in stop_race)==1 and any('40001' in r.stderr for r in stop_race)
+        assert sum(r.returncode==0 for r in stop_race)==1 and any(any(c in r.stderr for c in ('40001','PT409')) for r in stop_race)
         assert value(db,f"count(*) FROM public.daily_task_logs WHERE source_timer_id='{second}'")=='1'
         print('PASS',db,'different-key concurrent stops one winner/one conflict')
     else: call(db,'discard_task_timer',second,{'reason':'Ambiguous date'},version=0)
@@ -319,7 +319,7 @@ for db in DBS:
     def run_request(statement):
         return subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{user4}',true);"+statement+'COMMIT;',text=True,capture_output=True)
     with ThreadPoolExecutor(max_workers=2) as pool: mixed=list(pool.map(run_request,statements))
-    assert mixed[0].returncode==0 and mixed[1].returncode!=0 and ('23514' in mixed[1].stderr or '40001' in mixed[1].stderr)
+    assert mixed[0].returncode==0 and mixed[1].returncode!=0 and ('23514' in mixed[1].stderr or any(c in mixed[1].stderr for c in ('40001','PT409')))
     assert value(db,f"count(*) FROM public.daily_task_logs WHERE id='{edit}'")=='1'
     # Both receipt and audit row sets persist; no raw private notes in aggregate.
     aggregate=actor(db,user4,f"SELECT public.team_summary_inputs(2026,10);")

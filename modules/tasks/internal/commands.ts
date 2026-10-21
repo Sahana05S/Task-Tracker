@@ -7,6 +7,7 @@ import { executionError } from '@/shared/commands/result';
 import { createClient } from '@/shared/supabase/server';
 import type { Json } from '@/types/database';
 import type { ActionResponse } from '@/types/tracker';
+import { isConflictCode } from '@/shared/commands/conflict';
 
 /**
  * Writes to tasks and their participants. PRIVATE.
@@ -25,6 +26,9 @@ type CommandResult<T> = { ok: true; value: T } | { ok: false; error: string };
  * are out of step with the policies.
  */
 function describeDatabaseError(error: PostgrestError): string {
+  if (isConflictCode(error.code)) {
+    return 'Someone changed the participants. Reload the task and review the current shares.';
+  }
   switch (error.code) {
     case '23505':
       return 'That task tag is already in use. Task tags must be unique.';
@@ -32,8 +36,6 @@ function describeDatabaseError(error: PostgrestError): string {
       return 'The selected assignee or reviewer no longer exists.';
     case '23514':
       return error.message;
-    case '40001':
-      return 'Someone changed the participants. Reload the task and review the current shares.';
     case '42501':
       return 'You do not have permission to perform that change.';
     default:

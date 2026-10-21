@@ -27,7 +27,7 @@ def sql(db, statement, success=True):
         raise AssertionError(result.stderr + '\n' + statement[:300])
     if not success and result.returncode == 0:
         raise AssertionError('Expected database denial: ' + statement)
-    if not success and not any(code in result.stderr for code in ('42501','23514','40001','23503')):
+    if not success and not any(code in result.stderr for code in ('42501','23514','40001','PT409','23503')):
         raise AssertionError('Failure was not an authorization/contract denial: ' + result.stderr)
     return result.stdout.strip()
 
@@ -246,7 +246,7 @@ for db in DBS:
     q=lambda p:'SELECT public.task_tools_command('+literal(p['id'])+','+literal(uuid4())+');'
     def attempt(p):
       try:actor(db,'00000000-0000-0000-0000-000000000001',q(p));return True
-      except AssertionError as e:assert '40001' in str(e);return False
+      except AssertionError as e:assert any(c in str(e) for c in ('40001','PT409'));return False
     with ThreadPoolExecutor(max_workers=2) as pool:assert sorted(pool.map(attempt,[p1,p2]))==[False,True]
     assert float(value(db,'(SELECT task_scale FROM public.tasks WHERE id='+literal(src)+')'))==5
     for command,params in [('duplicate',{}),('weekly',{'count':2,'startDate':'2026-11-01'}),('day_count',{'count':2,'phaseDays':3,'startDate':'2026-11-01'}),('all_team',{}),('number_suffix',{'count':3,'suffix':'Phase'})]:

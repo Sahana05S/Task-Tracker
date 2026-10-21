@@ -1,6 +1,7 @@
 import { createClient } from '@/shared/supabase/server';
 import { parsePreview, type ToolsPreview } from '@/modules/tasks/internal/tools/contract';
 import type { Json } from '@/types/database';
+import { isConflictCode } from '@/shared/commands/conflict';
 
 /** Task Tools preview/commit RPCs. PRIVATE. */
 
@@ -26,7 +27,7 @@ export async function requestPreview(command: string, payload: Record<string, Js
 export async function commitPreview(previewId: string, operationId: string): Promise<Reply<CommittedItems>> {
   const client = await createClient();
   const { data, error } = await client.rpc('task_tools_command', { p_preview: previewId, p_operation: operationId });
-  if (error) return { success: false, error: error.code === '40001' ? `Preview conflict: ${error.message}` : error.message };
+  if (error) return { success: false, error: isConflictCode(error.code) ? `Preview conflict: ${error.message}` : error.message };
   if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.items)) {
     return { success: false, error: 'Command result unavailable. Retry with the same operation.' };
   }

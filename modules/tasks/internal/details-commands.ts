@@ -1,6 +1,7 @@
 import { createClient } from '@/shared/supabase/server';
 import type { Json } from '@/types/database';
 import type { ActionResponse } from '@/types/tracker';
+import { isConflictCode } from '@/shared/commands/conflict';
 
 /** Writes for native task details, assets, relations and templates. PRIVATE. */
 
@@ -23,7 +24,7 @@ export async function runDetailsCommand(input: DetailsCommand): Promise<ActionRe
     p_operation: input.operationId,
   });
   if (error) {
-    return { success: false, error: error.code === '40001' ? 'Task changed. Reload and review the current details.' : error.message };
+    return { success: false, error: isConflictCode(error.code) ? 'Task changed. Reload and review the current details.' : error.message };
   }
   return { success: true, data };
 }
