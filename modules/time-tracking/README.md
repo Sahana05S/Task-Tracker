@@ -2,7 +2,7 @@
 
 Hours worked on missions: work logs (create, correct, reverse), task timers
 (start, stop, discard, item timers on checklist rows), manual time entry, the
-quick-log drawer, the `/logs` history page, the running-timer pill in the shell,
+"Log time" drawer, the timer button, the `/logs` history page, the running-timer pill in the shell,
 and the effort and productivity formulas built on logged hours.
 
 ## Public API (the only files other code may import)
@@ -11,8 +11,8 @@ and the effort and productivity formulas built on logged hours.
 | `index.ts` | Server reads: `getTaskExecution` (a mission's logs and timers), `getMyLogHistory`, `getTaskEffortTotals`, `getLoggableTasksFor`, `getRunningTimers`, `getTeamRunningTimers`, `getMemberLogDates` (Today's active days). Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure formulas and helpers, safe for `'use client'`: `roundToNumericScale`, `computeScaledProgress`, `computeProductivity`, `isMetricsEligible`, `sumHours`, `aggregateEffortByTask`, `groupLogsByDate`, log/timer mappers, timer elapsed-time helpers, `canStartTimerForTask`, `canManageTimerRecord`, and types |
 | `actions.ts` | `'use server'` `createTaskLog`, `updateTaskLog`, `deleteTaskLog`, `loadLoggableTasks` |
-| `timer-actions.ts` | `'use server'` `startTaskTimer`, `startItemTimer`, `stopTaskTimer`, `discardTaskTimer`, `discardTimerAsManager`, `enterManualTaskTime` |
-| `components/` | `QuickLogTrigger`, `QuickLogDrawer`, `LogHistory`, `timer-panels.tsx` (`TimerControl`, `TimerRecords`, `ManualTimeForm`) |
+| `timer-actions.ts` | `'use server'` `startTaskTimer` (by `taskId`, or `taskTag` from older forms), `startItemTimer`, `stopTaskTimer`, `discardTaskTimer`, `discardTimerAsManager`, `enterManualTaskTime` |
+| `components/` | `QuickLogTrigger` ("Log time" pill) and `QuickLogDrawer`; `TimerButton` (play/stop pill for one mission) and `RunningTimerProvider`/`useRunningTimer` (`running-timer-context.tsx`, mounted by the workspace layout with `getRunningTimers`); `LogHistory`; `timer-panels.tsx` (`TimerControl`, `TimerRecords`, `ManualTimeForm`) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -24,7 +24,7 @@ and the effort and productivity formulas built on logged hours.
 | `logs/mappers.ts` | `daily_task_logs` row -> `DailyTaskLog` |
 | `logs/member-log-dates.ts` | A member's unreversed log dates in a range, for Today (throws on error) |
 | `timers/commands.ts` | Timer RPCs and the task-tag lookup they need |
-| `timers/*` | Elapsed time, timer log drafts, mappers, permissions, running-timer reads |
+| `timers/*` | Elapsed time, timer log drafts, mappers, permissions, running-timer reads (`running-timers.ts` carries the task id and execution version the timer button needs) |
 | `execution.ts` | A mission's logs and timers for the details page |
 | `cache.ts` | Pages to revalidate after a log or timer change |
 
@@ -40,7 +40,16 @@ All objects are company-scoped by migrations 39-40 (M15). The timer commands
 also read `tasks.id` by tag.
 
 ## Depends on
-`shared/*` and the public API of `tasks` (task rules, mappers, effort type,
-tag normalisation). Tasks never imports this module: the `/tasks` page passes
-the "Log hours" button into the task cards (`app/(workspace)/tasks/missions-workspace.tsx`),
+`shared/*` (including `shared/ui/running-clock`) and the public API of `tasks`
+(task rules, mappers, effort type, tag normalisation).
+Tasks never imports this module: the Missions page fills the task cards' slot
+with `TimerButton` (`modules/workspace-views/components/missions-workspace.tsx`),
 and the mission page loads `getTaskExecution` alongside the task data.
+
+## Where time is entered
+One manual entry, "Log time" (`QuickLogDrawer`): the desktop top bar, the phone
+"New" menu, and the mission page's manual-time panel. One timer control,
+`TimerButton`: Today's map and list, Missions cards and the mission page header.
+The database allows one running timer per user, so the button shows Stop on the
+running mission and is unavailable elsewhere; the top-bar pill (which reads
+the same provider) links to it.

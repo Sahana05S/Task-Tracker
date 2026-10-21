@@ -5,6 +5,7 @@ import { createTaskLog } from '@/modules/time-tracking/actions';
 import { revalidateAfterTimer } from '@/modules/time-tracking/internal/cache';
 import { finishTimer, startItemTimerFor, startTimer, taskIdForTag } from '@/modules/time-tracking/internal/timers/commands';
 import { commandIdentity, type ExecutionResult } from '@/shared/commands/result';
+import { UUID_PATTERN } from '@/shared/forms/form-data';
 import { getCurrentProfile } from '@/shared/session/profile';
 import type { ActionResponse } from '@/types/tracker';
 
@@ -46,6 +47,9 @@ async function timerCommand(form: FormData, command: 'start' | 'stop' | 'discard
 
   const payload = { notes: text(form, 'notes') || null, reason: text(form, 'reason') || null };
   if (command === 'start') {
+    // Timer buttons send the mission id; the older forms send its tag.
+    const taskId = text(form, 'taskId');
+    if (UUID_PATTERN.test(taskId)) return committed(await startTimer(taskId, payload, identity.operationId));
     const task = await taskIdForTag(normalizeTaskTagParam(text(form, 'taskTag')));
     if (!task.ok) return task.result;
     return committed(await startTimer(task.id, payload, identity.operationId));

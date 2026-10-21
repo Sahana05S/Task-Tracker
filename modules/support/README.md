@@ -9,9 +9,9 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 | File | What it offers |
 |---|---|
 | `index.ts` | `getSupportModuleData()`, `getMeetingPointsData()`, `summarizeSupport()`, `summarizeEmployeeSupport()`, `loadContributionContext()`, `loadAttendanceContext()`, `parseInputContext()`, the Today reads `getMemberContributionStates()` and `getRecentValidatedContributions()`, summary types, and everything in `client.ts` |
-| `actions.ts` | `'use server'` commands: `saveReportSnapshotAction`, `deleteReportSnapshotAction`, and the knowledge/sales wrappers (`saveKnowledgeEntryAction`, `deleteKnowledgeEntryAction`, `toggleKnowledgeValidationAction`, `saveSalesLogAction`, `deleteSalesLogAction`) that forward to `writeDatedRecord` |
+| `actions.ts` | `'use server'` `loadPostChoices` (members and open missions for the quick Post drawer) and the commands `saveReportSnapshotAction`, `deleteReportSnapshotAction`, and the knowledge/sales wrappers (`saveKnowledgeEntryAction`, `deleteKnowledgeEntryAction`, `toggleKnowledgeValidationAction`, `saveSalesLogAction`, `deleteSalesLogAction`) that forward to `writeDatedRecord` |
 | `client.ts` | Contribution contract (`rawContribution`, `contributionFromStates`, sales `rawSales`/`salesFromStates`/`SALES_COEFFICIENTS`, coefficients, `RecordKind`, `ValidationState`, `DatedRecordMetadata`), input-context types, permission helpers, `DatedEntry`/`TaskChoice` |
-| `components/` | `support-pages.tsx` (`KnowledgeModule`, `SalesLogModule`, `ReportsModule`) and `dated-record-module.tsx` (`DatedRecordModule`, `DatedRecordEditor`) |
+| `components/` | `support-pages.tsx` (`KnowledgeModule`, `SalesLogModule`, `ReportsModule`), `dated-record-module.tsx` (`DatedRecordModule`, `DatedRecordEditor`), `quick-post-drawer.tsx` (`QuickPostDrawer`: one drawer for all five kinds, last-used kind per device, `presetKind`/`presetTaskId`) and `quick-post-trigger.tsx` (`QuickPostTrigger`, the "Post" pill in the top bar and on mission pages; the phone "New" menu opens the drawer directly) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -19,6 +19,7 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 | `report-summary.ts` | Team report-snapshot counts from the shared team summary |
 | `queries.ts` | Period reads of facts, ideas, suggestions, sales, reports, members and tasks; summaries |
 | `meeting-queries.ts` | Meeting points page read (meeting points, members, tasks) |
+| `post-choices.ts` | Quick Post drawer read: active members and open missions (plus a preset mission) |
 | `today-queries.ts` | Today reads: a member's contribution states in a range, the latest validated facts/ideas/suggestions (throw on error) |
 | `input-context.ts` | Calls and validates the contribution/attendance input-context RPCs |
 | `commands.ts` | Report snapshot insert/update/delete and database error messages |
@@ -35,7 +36,9 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 | `contribution_input_context(p_from, p_to_exclusive, p_as_of)` | RPC | 19, replaced in 20 and 21; sales mapped in 46 (`m06-support-inputs-v3`) |
 | `attendance_input_context(p_user, p_from, p_to_exclusive, p_as_of)` | RPC (called here for the attendance module) | 20, replaced in 21 |
 
-Reads only (owned elsewhere): `users`, `tasks`. Record writes for facts, ideas,
+Reads only (owned elsewhere): `users`, `tasks`. Quick posts use the same
+editor and command as the Records tabs, so they stay pending and are validated
+there. Record writes for facts, ideas,
 suggestions, sales and meetings go through `dated_record_command` (migration
 19/20), through the `records` module (`writeDatedRecord`).
 

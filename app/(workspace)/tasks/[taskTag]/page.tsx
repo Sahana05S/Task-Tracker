@@ -11,7 +11,8 @@ import {
   TimerIcon,
 } from 'lucide-react';
 
-import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
+import { QuickPostTrigger } from '@/modules/support/components/quick-post-trigger';
+import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import { MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
 import { Breadcrumb, PageTabs } from '@/shared/ui/page-nav';
 import {
@@ -145,9 +146,12 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           </>
         }
         title={task.title}
-        actions={canUseTimer && !closed ? (
-          <QuickLogTrigger variant="button" label="Log hours" presetTaskId={task.id} className="h-10 px-4" />
-        ) : null}
+        actions={archived ? null : (
+          <>
+            <QuickPostTrigger presetTaskId={task.id} label="Post about this mission" />
+            {canUseTimer && !closed ? <TimerButton taskId={task.id} taskLabel={task.taskTag} size="default" /> : null}
+          </>
+        )}
       />
 
       {archived ? (

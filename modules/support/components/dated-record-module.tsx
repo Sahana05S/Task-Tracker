@@ -17,22 +17,33 @@ export interface DatedEntry extends DatedRecordMetadata {
 }
 export interface TaskChoice {id:string;tag:string;title:string}
 
-export function DatedRecordEditor({kind,entry,members,user,tasks=[],inputContext}:{kind:RecordKind;entry?:DatedEntry;members:readonly User[];user:User;tasks?:readonly TaskChoice[];inputContext?:ContributionInputContext}) {
+/** The member fields the editor reads; the quick Post drawer sends only these. */
+export type RecordMember=Pick<User,'id'|'fullName'|'isActive'>;
+
+export function DatedRecordEditor({kind,entry,members,user,tasks=[],presetTaskId,autoFocus,onSaved,submitLabel='Add record'}:{kind:RecordKind;entry?:DatedEntry;members:readonly RecordMember[];user:Pick<User,'id'|'role'>;tasks?:readonly TaskChoice[];
+  /** Preselects the related task of a new record (quick Post from a mission). */
+  presetTaskId?:string;
+  /** Focuses the content field on mount, e.g. when the drawer opens. */
+  autoFocus?:boolean;
+  /** Runs after a successful save (the drawer closes and toasts). */
+  onSaved?:()=>void;
+  /** Label of a new record's save button. */
+  submitLabel?:string}) {
   const admin=canManageSupportRecords(user.role);
   const extra=entry?.extras??{};
   const text=(label:string,name:string,required=false)=><label className="field-label">{label}<input name={name} defaultValue={String(extra[name]??'')} required={required} className="field"/></label>;
-  return <ExecutionForm action={writeDatedRecord} scope={`dated:${kind}:${entry?.id??'new'}`} className="grid gap-3">
+  return <ExecutionForm action={writeDatedRecord} scope={`dated:${kind}:${entry?.id??'new'}`} className="grid gap-3" onSuccess={onSaved}>
     <input type="hidden" name="kind" value={kind}/><input type="hidden" name="command" value="save"/>
     <input type="hidden" name="recordId" value={entry?.id??''}/><input type="hidden" name="expectedVersion" value={entry?.recordVersion??0}/>
     <label className="field-label">Business date (Asia/Kolkata)<input type="date" name="business_date" defaultValue={entry?.businessDate??kolkataDate()} required className="field"/></label>
     {admin?<label className="field-label">Author<select name="author_id" required defaultValue={entry?(entry.authorId??''):user.id} className="field"><option value="" disabled>Choose an author explicitly</option>{entry?.authorId&&!members.some(m=>m.id===entry.authorId&&m.isActive)?<option value={entry.authorId} disabled>Retained inactive/missing author - review required</option>:null}{members.filter(m=>m.isActive).map(m=><option key={m.id} value={m.id}>{m.fullName}</option>)}</select></label>:<input type="hidden" name="author_id" value={user.id}/>}
-    <label className="field-label">{kind==='sale'?'Notes':'Content'}<textarea name="content" defaultValue={entry?.content??''} required={kind!=='sale'} className="field min-h-24"/></label>
+    <label className="field-label">{kind==='sale'?'Notes':'Content'}<textarea name="content" defaultValue={entry?.content??''} required={kind!=='sale'} autoFocus={autoFocus} className="field min-h-24"/></label>
     <label className="field-label">Asset link<input name="asset_url" type="url" defaultValue={entry?.assetUrl??''} placeholder="https://..." className="field"/></label>
-    <label className="field-label">Related task<select name="related_task_id" defaultValue={entry?.relatedTaskId??''} className="field"><option value="">No task relationship</option>{tasks.map(t=><option key={t.id} value={t.id}>{t.tag} - {t.title}</option>)}</select></label>
+    <label className="field-label">Related task<select name="related_task_id" defaultValue={entry?entry.relatedTaskId??'':presetTaskId??''} className="field"><option value="">No task relationship</option>{tasks.map(t=><option key={t.id} value={t.id}>{t.tag} - {t.title}</option>)}</select></label>
     {kind==='sale'?<>{text('Built-up area (source text; not used in scoring)','project_built_up_area')}{text('Project location','project_location')}{text('Client name','client_name')}<label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" name="is_new_project" defaultChecked={extra.is_new_project===true}/> New project</label><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" name="basement_payment_received" defaultChecked={extra.basement_payment_received===true}/> Basement payment received</label></>:null}
     {kind==='meeting'?<>{text('Meeting type','meeting_type',true)}<label className="field-label">Point type<select name="point_type" defaultValue={String(entry?(extra.point_type??''):'General Point')} className="field"><option value="">Legacy type unknown / unclassified</option>{['Blocking Issue','Concern','Lessons Learned','Work Improvement','General Point'].map(t=><option key={t}>{t}</option>)}</select></label><label className="field-label">To be resolved by<select name="owner_id" defaultValue={String(entry?(extra.owner_id??''):user.id)} className="field"><option value="">Unassigned / legacy owner unknown</option>{extra.owner_id&&!members.some(m=>m.id===extra.owner_id&&m.isActive)?<option value={String(extra.owner_id)} disabled>Retained inactive/missing owner</option>:null}{members.filter(m=>m.isActive).map(m=><option key={m.id} value={m.id}>{m.fullName}</option>)}</select></label>{text('Resolution','resolution')}{text('Comments','comments')}<label className="field-label">Resolution status<select name="resolution_status" defaultValue={String(entry?(extra.resolution_status??''):'Not Started')} className="field"><option value="">Legacy status unknown</option>{['Not Started','In Progress','Discarded','Done'].map(s=><option key={s}>{s}</option>)}</select></label><label className="field-label">Resolution due<input type="date" name="resolution_due" defaultValue={String(extra.resolution_due??'')} className="field"/></label><label className="field-label">Resolved on<input type="date" name="resolved_on" defaultValue={String(extra.resolved_on??'')} className="field"/></label></>:null}
     {entry?<label className="field-label">Correction reason<input name="reason" required maxLength={1000} className="field"/></label>:null}
-    <Button type="submit" className="justify-self-start">{entry?'Save correction':'Add record'}</Button>
+    <Button type="submit" className="justify-self-start">{entry?'Save correction':submitLabel}</Button>
   </ExecutionForm>;
 }
 
