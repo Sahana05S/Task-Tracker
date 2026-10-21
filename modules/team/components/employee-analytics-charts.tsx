@@ -5,12 +5,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  Legend,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -20,268 +16,229 @@ import {
 import {
   CHART_AXIS,
   CHART_GRID,
-  CHART_POSITIVE,
-  seriesColor,
+  CHART_REFERENCE,
+  SERIES_COLORS,
 } from '@/shared/ui/chart-palette';
 import type {
   EmployeeAnalyticsCharts,
+  EmployeeDayHours,
   EmployeeDistributionBucket,
   EmployeeTrendPoint,
 } from '@/modules/team/internal/employee-charts';
-import { formatNumeric } from '@/shared/tracker/format';
-import { EmptyState } from '@/shared/ui/mission-ui';
+import type { DateBucket, DeadlineOutcomeBucket, Factor } from '@/modules/scoring/client';
+import { FACTORS } from '@/modules/scoring/client';
+import { formatHours } from '@/shared/tracker/format';
+import { EmptyState, StatTile } from '@/shared/ui/mission-ui';
 
-export function EmployeeAnalyticsChartsPanel({
-  charts,
-}: {
-  charts: EmployeeAnalyticsCharts;
-}) {
+/** The member's series: the first categorical slot. Context series use the de-emphasis gray. */
+const MEMBER = SERIES_COLORS[0];
+const CONTEXT = SERIES_COLORS[7];
+const TICK = { fontSize: 11, fill: CHART_AXIS };
+
+const FACTOR_TITLES: Record<Factor, string> = {
+  productivity: 'Productivity',
+  criticality: 'Criticality',
+  loading: 'Loading',
+  completion: 'Completion',
+  progress: 'Progress',
+  sales: 'Sales',
+  facts: 'Daily facts',
+  ideas: 'Ideas',
+  suggestions: 'Suggestions',
+  freshness: 'Freshness',
+};
+
+/** Charts tab: factor small multiples, hours, missions and the mission mix. */
+export function EmployeeChartsPanel({ charts }: { charts: EmployeeAnalyticsCharts }) {
   return (
-    <section className="grid gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="panel-title text-lg">Individual analytics charts</h2>
-        <p className="text-muted-foreground text-sm">
-          Dated month-to-date observations and as-of task mix, calculated from recorded
-          task, log, star, and documentation data.
-        </p>
+    <div className="grid gap-5 lg:gap-6">
+      <ChartSection
+        title="Each factor against the team median"
+        subtitle="Month-to-date raw value per dated observation. The dashed line is the team median; gaps are days the value was unavailable."
+      >
+        <MedianLegend />
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-5">
+          {FACTORS.map((factor) => (
+            <FactorMultiple key={factor} title={FACTOR_TITLES[factor]} data={charts.factorTrends[factor]} />
+          ))}
+        </div>
+        <ValueTable
+          caption="Factor values and medians"
+          head={['Date', ...FACTORS.map((f) => FACTOR_TITLES[f])]}
+          rows={(charts.factorTrends.productivity ?? []).map((point, index) => [
+            point.date,
+            ...FACTORS.map((f) => {
+              const p = charts.factorTrends[f][index];
+              return p ? `${p.display ?? 'Unavailable'} / ${p.medianDisplay ?? 'Unavailable'}` : 'Unavailable';
+            }),
+          ])}
+          note="Each cell is the member's value / the team median."
+        />
+      </ChartSection>
+
+      <div className="grid gap-5 lg:gap-6 xl:grid-cols-2">
+        <HoursChart data={charts.dailyHours} />
+        <MissionsChart done={charts.missionsDone} deadlines={charts.deadlines} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <TrendChart
-          title="Performance score trend"
-          subtitle="Dated M07 month-to-date scores; missing inputs leave gaps"
-          data={charts.performanceScoreTrend}
-          empty="No performance score data is available yet."
-        />
-        <TrendChart
-          title="Productivity trend"
-          subtitle="Month-to-date earned credit / regular attendance hours"
-          data={charts.productivityTrend}
-          empty="Dated productivity evidence is unavailable."
-        />
-        <TrendChart
-          title="Progress trend"
-          subtitle="Period-earned captured scaled credit, including checklist/manual work"
-          data={charts.progressTrend}
-          empty="Dated progress evidence is unavailable."
-        />
-        <TrendChart
-          title="Completion trend"
-          subtitle="Month-to-date completion credit at captured shares"
-          data={charts.completionTrend}
-          empty="Dated completion evidence is unavailable."
-        />
-        <TrendChart
-          title="Loading trend"
-          subtitle="Normalized loading fraction from dated carried-task evidence"
-          data={charts.loadingTrend}
-          empty="No task loading exists for this employee yet."
-        />
-        <TrendChart
-          title="Criticality trend"
-          subtitle="Normalized priority credit from dated evidence"
-          data={charts.criticalityTrend}
-          empty="No priority-bearing tasks are available yet."
-        />
-        <DistributionChart
-          title="Mission types"
-          subtitle="Assigned mission categories"
-          data={charts.taskTypes}
-          empty="No task types to chart yet."
-        />
-        <DistributionChart
-          title="Mission priorities"
-          subtitle="Assigned mission priority split"
-          data={charts.taskPriorities}
-          empty="No priorities to chart yet."
-        />
-        <DistributionChart
-          title="Mission statuses"
-          subtitle="Assigned mission status split"
-          data={charts.taskStatuses}
-          empty="No statuses to chart yet."
-        />
-        <DistributionChart
-          title="Mission documentation"
-          subtitle="Mission links plus undocumented missions"
-          data={charts.taskDocumentation}
-          empty="No task documentation exists yet."
-        />
-        <DistributionChart
-          title="Task freshness"
-          subtitle="Fresh, stale, and rotten mission mix"
-          data={charts.taskFreshness}
-          empty="No task freshness to chart yet."
-        />
-      </div>
-    </section>
+      <ChartSection title="Mission mix" subtitle="Counts across this member's missions as of the selected day.">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Distribution title="Types" data={charts.taskTypes} />
+          <Distribution title="Priorities" data={charts.taskPriorities} />
+          <Distribution title="Statuses" data={charts.taskStatuses} />
+          <Distribution title="Documentation" data={charts.taskDocumentation} />
+          <Distribution title="Freshness" data={charts.taskFreshness} />
+        </div>
+      </ChartSection>
+    </div>
   );
 }
 
-function TrendChart({
-  title,
-  subtitle,
-  data,
-  empty,
-}: {
-  title: string;
-  subtitle: string;
-  data: readonly EmployeeTrendPoint[];
-  empty: string;
-}) {
+/** Overview: the composite score against the team median. */
+export function ScoreVsMedianChart({ data }: { data: readonly EmployeeTrendPoint[] }) {
+  const empty = data.every((p) => p.value === null && (p.median ?? null) === null);
   return (
-    <ChartShell title={title} subtitle={subtitle}>
-      {data.length === 0 || data.every(p=>p.value===null) ? (
-        <EmptyChart>{empty}</EmptyChart>
+    <ChartSection
+      title="Score against the team median"
+      subtitle="Composite score per dated observation. Missing inputs leave gaps rather than zeros."
+    >
+      {empty ? (
+        <EmptyState variant="chart">No dated score is available yet this month. Scores appear once every factor has its inputs.</EmptyState>
       ) : (
-        <div className="soft-inset h-64 w-full p-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data}
-              margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
-            >
-              <CartesianGrid stroke={CHART_GRID} vertical={false} />
-              <XAxis
-                dataKey="label"
-                stroke={CHART_AXIS}
-                tickLine={false}
-                axisLine={{ stroke: CHART_GRID }}
-                fontSize={11}
-                minTickGap={16}
-              />
-              <YAxis
-                stroke={CHART_AXIS}
-                tickLine={false}
-                axisLine={false}
-                fontSize={11}
-                width={42}
-              />
-              <Tooltip content={<TrendTooltip />} />
-              <Line
-                connectNulls={false}
-                type="monotone"
-                dataKey="value"
-                stroke={CHART_POSITIVE}
-                strokeWidth={2.5}
-                dot={{ r: 2.5, fill: CHART_POSITIVE }}
-                activeDot={{ r: 4 }}
-                name={title}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <>
+          <MedianLegend />
+          <div className="h-64 w-full">
+            <TrendLines data={data} name="Score" />
+          </div>
+        </>
+      )}
+      <ValueTable caption="Score values" head={['Date', 'Score', 'Team median']} rows={data.map((p) => [p.date, p.display ?? 'Unavailable', p.medianDisplay ?? 'Unavailable'])} />
+    </ChartSection>
+  );
+}
+
+function FactorMultiple({ title, data }: { title: string; data: readonly EmployeeTrendPoint[] }) {
+  const latest = [...data].reverse().find((p) => p.value !== null);
+  const empty = data.every((p) => p.value === null && (p.median ?? null) === null);
+  return (
+    <figure className="bg-muted/50 grid min-w-0 gap-1 rounded-xl p-2.5 sm:p-3">
+      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <span className="text-foreground text-sm font-semibold">{title}</span>
+        <span className="text-muted-foreground text-xs">{latest ? latest.display : 'Unavailable'}</span>
+      </figcaption>
+      {empty ? (
+        <p className="text-muted-foreground flex h-28 items-center justify-center text-center text-xs">No dated values</p>
+      ) : (
+        <div className="h-28 w-full">
+          <TrendLines data={data} name={title} compact />
         </div>
       )}
-      <details className="mt-2"><summary className="text-primary cursor-pointer text-sm font-semibold">Read chart values</summary><table className="sheet-grid mt-2 w-full"><thead><tr><th>Date</th><th>Value</th></tr></thead><tbody>{data.map(p=><tr key={p.date}><td>{p.date}</td><td>{p.display??(p.value===null?'Unavailable':p.value.toFixed(6))}</td></tr>)}</tbody></table></details>
-    </ChartShell>
+    </figure>
   );
 }
 
-function DistributionChart({
-  title,
-  subtitle,
-  data,
-  empty,
-}: {
-  title: string;
-  subtitle: string;
-  data: readonly EmployeeDistributionBucket[];
-  empty: string;
-}) {
-  const visible = React.useMemo(
-    () => data.filter((bucket) => bucket.value > 0),
-    [data],
-  );
-  const total = visible.reduce((sum, bucket) => sum + bucket.value, 0);
-
+function TrendLines({ data, name, compact = false }: { data: readonly EmployeeTrendPoint[]; name: string; compact?: boolean }) {
   return (
-    <ChartShell title={title} subtitle={subtitle}>
-      {visible.length === 0 ? (
-        <EmptyChart>{empty}</EmptyChart>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]">
-          <div className="soft-inset h-56 w-full p-2">
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={data as EmployeeTrendPoint[]} margin={{ top: 6, right: 6, bottom: 0, left: 0 }}>
+        <CartesianGrid stroke={CHART_GRID} vertical={false} />
+        <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={{ stroke: CHART_GRID }} minTickGap={compact ? 28 : 16} hide={compact} />
+        <YAxis tick={TICK} tickLine={false} axisLine={false} width={compact ? 34 : 42} tickCount={compact ? 3 : 5} />
+        <Tooltip content={<TrendTooltip name={name} />} cursor={{ stroke: CHART_GRID, strokeWidth: 1 }} />
+        <Line type="linear" dataKey="median" stroke={CHART_REFERENCE} strokeWidth={1.5} strokeDasharray="4 4" dot={false} activeDot={false} connectNulls={false} isAnimationActive={false} name="Team median" />
+        <Line type="linear" dataKey="value" stroke={MEMBER} strokeWidth={2} dot={data.length <= 12 ? { r: compact ? 2.5 : 4, fill: MEMBER, stroke: 'var(--color-white)', strokeWidth: 2 } : false} activeDot={{ r: 4, stroke: 'var(--color-white)', strokeWidth: 2 }} connectNulls={false} isAnimationActive={false} name={name} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+function HoursChart({ data }: { data: readonly EmployeeDayHours[] }) {
+  const logged = data.some((d) => d.taskHours > 0 || d.attendanceHours !== null);
+  const missing = data.filter((d) => d.attendanceHours === null).length;
+  return (
+    <ChartSection title="Hours per day" subtitle="Task hours logged beside regular attendance hours.">
+      {logged ? (
+        <>
+          <Legend items={[{ label: 'Task hours', color: MEMBER }, { label: 'Attendance hours', color: CONTEXT }]} />
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Tooltip content={<DistributionTooltip total={total} />} />
-                <Pie
-                  data={visible}
-                  dataKey="value"
-                  nameKey="label"
-                  innerRadius="55%"
-                  outerRadius="84%"
-                  paddingAngle={2}
-                  stroke="var(--color-white)"
-                  strokeWidth={1}
-                >
-                  {visible.map((bucket, index) => (
-                    <Cell key={bucket.key} fill={seriesColor(index)} />
-                  ))}
-                </Pie>
-                <Legend
-                  verticalAlign="bottom"
-                  height={28}
-                  formatter={(value) => (
-                    <span className="text-muted-foreground text-[11px]">
-                      {value}
-                    </span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="soft-inset h-56 w-full p-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={visible}
-                layout="vertical"
-                margin={{ top: 4, right: 8, bottom: 4, left: 6 }}
-              >
-                <CartesianGrid stroke={CHART_GRID} horizontal={false} />
-                <XAxis
-                  type="number"
-                  stroke={CHART_AXIS}
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={11}
-                  allowDecimals={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="label"
-                  stroke={CHART_AXIS}
-                  tickLine={false}
-                  axisLine={{ stroke: CHART_GRID }}
-                  fontSize={11}
-                  width={88}
-                />
-                <Tooltip content={<DistributionTooltip total={total} />} />
-                <Bar dataKey="value" radius={[0, 8, 8, 0]}>
-                  {visible.map((bucket, index) => (
-                    <Cell key={bucket.key} fill={seriesColor(index)} />
-                  ))}
-                </Bar>
+              <BarChart data={data as EmployeeDayHours[]} margin={{ top: 6, right: 6, bottom: 0, left: 0 }} barGap={2} barCategoryGap="20%">
+                <CartesianGrid stroke={CHART_GRID} vertical={false} />
+                <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={{ stroke: CHART_GRID }} minTickGap={16} />
+                <YAxis tick={TICK} tickLine={false} axisLine={false} width={34} />
+                <Tooltip content={<HoursTooltip />} cursor={{ fill: 'var(--color-muted)' }} />
+                <Bar dataKey="taskHours" name="Task hours" fill={MEMBER} radius={[4, 4, 0, 0]} maxBarSize={14} isAnimationActive={false} />
+                <Bar dataKey="attendanceHours" name="Attendance hours" fill={CONTEXT} radius={[4, 4, 0, 0]} maxBarSize={14} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+          {missing ? <p className="text-muted-foreground text-xs">Attendance is not recorded for {missing} of {data.length} days; those days show task hours only.</p> : null}
+        </>
+      ) : (
+        <EmptyState variant="chart">No hours logged and no attendance recorded this month yet.</EmptyState>
       )}
-    </ChartShell>
+      <ValueTable caption="Hours per day" head={['Date', 'Task hours', 'Attendance hours']} rows={data.map((d) => [d.date, formatHours(d.taskHours), d.attendanceHours === null ? 'Not recorded' : formatHours(d.attendanceHours)])} />
+    </ChartSection>
   );
 }
 
-function ChartShell({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}) {
+function MissionsChart({ done, deadlines }: { done: readonly DateBucket[]; deadlines: readonly DeadlineOutcomeBucket[] }) {
+  const count = (key: DeadlineOutcomeBucket['key']) => deadlines.find((d) => d.key === key)?.value ?? 0;
   return (
-    <section className="soft-card flex flex-col gap-4 p-5 sm:p-6">
-      <header className="flex flex-col gap-0.5">
-        <h3 className="text-foreground text-base font-bold tracking-tight">{title}</h3>
+    <ChartSection title="Missions and deadlines" subtitle="Missions completed by date, and deadline outcomes this month.">
+      <dl className="grid grid-cols-3 gap-2.5">
+        <StatTile label="Met deadline" value={String(count('met'))} tone={count('met') ? 'success' : 'default'} />
+        <StatTile label="Missed deadline" value={String(count('missed'))} tone={count('missed') ? 'alert' : 'default'} />
+        <StatTile label="Open overdue" value={String(count('open'))} tone={count('open') ? 'alert' : 'default'} />
+      </dl>
+      {done.some((d) => d.value > 0) ? (
+        <div className="h-48 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={done as DateBucket[]} margin={{ top: 6, right: 6, bottom: 0, left: 0 }}>
+              <CartesianGrid stroke={CHART_GRID} vertical={false} />
+              <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={{ stroke: CHART_GRID }} minTickGap={16} />
+              <YAxis tick={TICK} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
+              <Tooltip content={<CountTooltip unit="completed" />} cursor={{ fill: 'var(--color-muted)' }} />
+              <Bar dataKey="value" name="Completed" fill={MEMBER} radius={[4, 4, 0, 0]} maxBarSize={24} isAnimationActive={false} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <EmptyState>No missions completed this month yet.</EmptyState>
+      )}
+      <ValueTable caption="Missions completed by date" head={['Date', 'Completed']} rows={done.filter((d) => d.value > 0).map((d) => [d.date, String(d.value)])} />
+    </ChartSection>
+  );
+}
+
+function Distribution({ title, data }: { title: string; data: readonly EmployeeDistributionBucket[] }) {
+  const visible = data.filter((b) => b.value > 0);
+  return (
+    <figure className="bg-muted/50 grid content-start gap-2 rounded-xl p-3">
+      <figcaption className="text-foreground text-sm font-semibold">{title}</figcaption>
+      {visible.length === 0 ? (
+        <p className="text-muted-foreground py-6 text-center text-xs">Nothing to count yet</p>
+      ) : (
+        <div style={{ height: visible.length * 26 + 8 }} className="w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={visible} layout="vertical" margin={{ top: 4, right: 28, bottom: 4, left: 0 }}>
+              <XAxis type="number" hide allowDecimals={false} />
+              <YAxis type="category" dataKey="label" tick={TICK} tickLine={false} axisLine={false} width={110} />
+              <Tooltip content={<CountTooltip unit="missions" />} cursor={{ fill: 'var(--color-muted)' }} />
+              <Bar dataKey="value" fill={MEMBER} radius={[0, 4, 4, 0]} maxBarSize={14} isAnimationActive={false} label={{ position: 'right', fontSize: 11, fill: 'var(--color-foreground)' }} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </figure>
+  );
+}
+
+function ChartSection({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+  return (
+    <section className="soft-card grid min-w-0 gap-4 p-5 sm:p-6">
+      <header className="grid gap-0.5">
+        <h2 className="text-foreground text-base font-bold tracking-tight">{title}</h2>
         <p className="text-muted-foreground text-xs">{subtitle}</p>
       </header>
       {children}
@@ -289,67 +246,88 @@ function ChartShell({
   );
 }
 
-function EmptyChart({ children }: { children: React.ReactNode }) {
-  return <EmptyState variant="chart">{children}</EmptyState>;
+function MedianLegend() {
+  return <Legend items={[{ label: 'This member', color: MEMBER }, { label: 'Team median', color: CHART_REFERENCE, dashed: true }]} />;
 }
 
-interface TooltipPayloadEntry<Payload> {
-  payload?: Payload;
+function Legend({ items }: { items: readonly { label: string; color: string; dashed?: boolean }[] }) {
+  return (
+    <ul className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-label="Legend">
+      {items.map((item) => (
+        <li key={item.label} className="inline-flex items-center gap-1.5">
+          <svg aria-hidden="true" width="18" height="8" className="shrink-0">
+            {item.dashed ? (
+              <line x1="0" y1="4" x2="18" y2="4" stroke={item.color} strokeWidth="1.5" strokeDasharray="4 3" />
+            ) : (
+              <rect x="0" y="1" width="18" height="6" rx="3" fill={item.color} />
+            )}
+          </svg>
+          {item.label}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
-function TrendTooltip({
-  active,
-  payload,
-}: {
+function ValueTable({ caption, head, rows, note }: { caption: string; head: readonly string[]; rows: readonly (readonly string[])[]; note?: string }) {
+  if (rows.length === 0) return null;
+  return (
+    <details className="disclosure">
+      <summary>Read chart values</summary>
+      {note ? <p className="text-muted-foreground mt-2 text-xs">{note}</p> : null}
+      <div className="border-border mt-2 overflow-x-auto rounded-xl border">
+        <table className="sheet-grid w-full">
+          <caption className="sr-only">{caption}</caption>
+          <thead><tr>{head.map((h) => <th key={h}>{h}</th>)}</tr></thead>
+          <tbody>{rows.map((row) => <tr key={row[0]}>{row.map((cell, i) => <td key={i} className="text-xs tabular-nums whitespace-nowrap">{cell}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+    </details>
+  );
+}
+
+interface TooltipProps<Payload> {
   active?: boolean;
-  payload?: readonly TooltipPayloadEntry<EmployeeTrendPoint>[];
-}) {
+  payload?: readonly { payload?: Payload }[];
+}
+
+function TrendTooltip({ active, payload, name }: TooltipProps<EmployeeTrendPoint> & { name: string }) {
   const point = payload?.[0]?.payload;
   if (!active || !point) return null;
-
   return (
     <TooltipShell title={point.label}>
-      <TooltipRow label="Value" value={point.display??(point.value===null?'Unavailable':point.value.toFixed(6))} />
+      <TooltipRow label={name} value={point.display ?? 'Unavailable'} />
+      <TooltipRow label="Team median" value={point.medianDisplay ?? 'Unavailable'} />
     </TooltipShell>
   );
 }
 
-function DistributionTooltip({
-  active,
-  payload,
-  total,
-}: {
-  active?: boolean;
-  payload?: readonly TooltipPayloadEntry<EmployeeDistributionBucket>[];
-  total: number;
-}) {
+function HoursTooltip({ active, payload }: TooltipProps<EmployeeDayHours>) {
+  const day = payload?.[0]?.payload;
+  if (!active || !day) return null;
+  return (
+    <TooltipShell title={day.label}>
+      <TooltipRow label="Task hours" value={`${formatHours(day.taskHours)} h`} />
+      <TooltipRow label="Attendance" value={day.attendanceHours === null ? 'Not recorded' : `${formatHours(day.attendanceHours)} h`} />
+    </TooltipShell>
+  );
+}
+
+function CountTooltip({ active, payload, unit }: TooltipProps<{ label: string; value: number }> & { unit: string }) {
   const bucket = payload?.[0]?.payload;
   if (!active || !bucket) return null;
-
   return (
     <TooltipShell title={bucket.label}>
-      <TooltipRow label="Count" value={formatNumeric(bucket.value, 0)} />
-      <TooltipRow
-        label="Share"
-        value={`${formatNumeric(total === 0 ? 0 : (bucket.value / total) * 100, 0)}%`}
-      />
+      <TooltipRow label={unit[0].toUpperCase() + unit.slice(1)} value={String(bucket.value)} />
     </TooltipShell>
   );
 }
 
-function TooltipShell({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function TooltipShell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-border rounded-xl border bg-white px-3.5 py-2.5 text-xs shadow-soft-lg">
+    <div className="border-border shadow-soft-lg rounded-xl border bg-white px-3.5 py-2.5 text-xs">
       <p className="text-foreground font-semibold">{title}</p>
-      <dl className="text-muted-foreground mt-1.5 flex flex-col gap-0.5">
-        {children}
-      </dl>
+      <dl className="text-muted-foreground mt-1.5 flex flex-col gap-0.5">{children}</dl>
     </div>
   );
 }
@@ -358,7 +336,7 @@ function TooltipRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
       <dt>{label}</dt>
-      <dd className="text-foreground font-semibold tabular">{value}</dd>
+      <dd className="text-foreground font-semibold tabular-nums">{value}</dd>
     </div>
   );
 }
