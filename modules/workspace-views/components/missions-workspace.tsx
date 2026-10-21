@@ -10,5 +10,10 @@ import { TimerButton } from '@/modules/time-tracking/components/timer-button';
  * lives in the top bar, the phone "New" menu and the mission page, not on cards.
  */
 export function MissionsWorkspace(props: Omit<TaskWorkspaceProps, 'LogHoursAction'>) {
-  return <TaskWorkspace {...props} LogHoursAction={TimerButton} />;
+  return <TaskWorkspace {...props} LogHoursAction={CardTimerButton} />;
+}
+
+/** Names the mission in each card's button ("Start timer on TT-12"), since a list shows many. */
+function CardTimerButton({ taskId, taskTag }: { taskId: string; taskTag: string }) {
+  return <TimerButton taskId={taskId} taskLabel={taskTag} />;
 }
