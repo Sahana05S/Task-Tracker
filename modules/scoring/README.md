@@ -14,7 +14,7 @@ The one shared scoring contract (AGENTS.md: no second formula):
 | File | What it offers |
 |---|---|
 | `index.ts` | Server reads and jobs: `loadPerformance`, `runPerformanceJobs`, `getAwards`, `calculateAward`, `runAwardJobs`, `handleAwardWorkerRun`, `handleHealthCheck` (`GET /api/internal/health`), `getTeamSummaryInputs`, `parseTeamSummary`, `readTeamAwardModel` (raw team-wide award payload for Today). Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure engine and rules, safe for `'use client'`: `calculatePerformance`, `FACTORS`, `COEFFICIENTS`, source parse/resolve, `performanceReport`, award `selectDaily`/`selectMonthly`/`awardContext`, legacy scorer, `computeTeamAnalytics`, dashboard chart and headline builders, and all their types |
+| `client.ts` | Pure engine and rules, safe for `'use client'`: `calculatePerformance`, `FACTORS`, `FACTOR_LABELS`, `COEFFICIENTS`, `memberEligibilityReasons` (attendance reasons that keep a member out of rankings), source parse/resolve, `performanceReport`, award `selectDaily`/`selectMonthly`/`awardContext`, legacy scorer, `computeTeamAnalytics`, dashboard chart and headline builders, and all their types |
 | `award-actions.ts` | `'use server'` `calculateDailyStarAction`, `overrideDailyStarAction` |
 | `components/` | `MissionHeadlineStrip` (the `/tasks` headline), `PerformanceBreakdown`, `AwardHistory`, `AwardStatus` |
 

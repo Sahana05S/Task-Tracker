@@ -1,8 +1,10 @@
 export const PROTECTED_PREFIXES = [
   '/attendance',
+  '/awards',
   '/daily-facts',
   '/dashboard',
   '/ideas',
+  '/leaderboard',
   '/logs',
   '/meeting-points',
   '/milestones',

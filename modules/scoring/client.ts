@@ -5,9 +5,11 @@
 export {
   calculatePerformance,
   COEFFICIENTS,
+  FACTOR_LABELS,
   FACTOR_UNITS,
   FACTORS,
   measuredRaw,
+  memberEligibilityReasons,
   PERFORMANCE_RULE_VERSION,
   unavailableRaw,
   type CalculationContext,
