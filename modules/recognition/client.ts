@@ -27,7 +27,6 @@ export {
   parseBoardKey,
   podiumSteps,
   rankExact,
-  SALES_MAPPING_MISSING,
   type Board,
   type BoardKey,
   type BoardRow,

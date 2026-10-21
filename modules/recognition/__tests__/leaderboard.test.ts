@@ -35,23 +35,22 @@ describe('rankExact (competition ranking on exact values)', () => {
 describe('buildLeaderboard (shared engine projected to ranks)', () => {
   it('ranks the composite for eligible complete members with two-decimal scores', () => {
     const calc = calculatePerformance(ctx(['a', 'b', 'c']), [member('a', { progress: '80' }), member('b'), member('c', { progress: '160' })]);
-    const board = buildLeaderboard(calc, 'a', everyone).boards.composite;
+    const board = buildLeaderboard(calc, everyone).boards.composite;
     expect(board.status).toBe('ready');
     expect(board.rows.map((r) => [r.userId, r.rank, r.value])).toEqual([['c', 1, '1.00'], ['a', 2, '0.00'], ['b', 3, '-1.00']]);
   });
 
   it('gives every factor its own tab ranked by the raw value', () => {
     const calc = calculatePerformance(ctx(['a', 'b', 'c']), [member('a', { ideas: '3' }), member('b', { ideas: '7' }), member('c', { ideas: '3' })]);
-    const model = buildLeaderboard(calc, 'a', everyone);
+    const model = buildLeaderboard(calc, everyone);
     expect(Object.keys(model.boards)).toEqual(['composite', ...FACTORS]);
     expect(model.boards.ideas.rows.map((r) => [r.userId, r.rank])).toEqual([['b', 1], ['a', 2], ['c', 2]]);
     expect(model.boards.ideas.rows[0]).toMatchObject({ value: '7.000000', delta: '4.000000' });
-    expect(model.boards.ideas.unit).toBe('idea raw units');
   });
 
   it('hides other members\' factor values and reasons from a member, but not their rank', () => {
     const inputs = [member('a', { facts: '2' }), member('b', { facts: '4' }), member('c', {}, ['attendance_invalid'])];
-    const model = buildLeaderboard(calculatePerformance(ctx(['a', 'b', 'c']), inputs), 'a', (id) => id === 'a');
+    const model = buildLeaderboard(calculatePerformance(ctx(['a', 'b', 'c']), inputs), (id) => id === 'a');
     expect(model.boards.facts.rows).toEqual([
       { userId: 'b', rank: 1, value: null, delta: null },
       { userId: 'a', rank: 2, value: '2.000000', delta: '0.000000' },
@@ -62,7 +61,7 @@ describe('buildLeaderboard (shared engine projected to ranks)', () => {
 
   it('leaves members with attendance eligibility reasons unranked everywhere, with reasons for managers', () => {
     const inputs = [member('a', { loading: '0.5' }), member('b', { loading: '0.9' }, ['attendance_unavailable'])];
-    const model = buildLeaderboard(calculatePerformance(ctx(['a', 'b']), inputs), 'm', everyone);
+    const model = buildLeaderboard(calculatePerformance(ctx(['a', 'b']), inputs), everyone);
     expect(model.boards.loading.rows.map((r) => r.userId)).toEqual(['a']);
     expect(model.boards.loading.unranked).toEqual([{ userId: 'b', reasons: ['attendance_unavailable'] }]);
     expect(model.boards.composite.rows.map((r) => r.userId)).toEqual(['a']);
@@ -70,7 +69,7 @@ describe('buildLeaderboard (shared engine projected to ranks)', () => {
 
   it('locks the sales tab and the composite only when the sales mapping is missing (pre-46 fallback)', () => {
     const inputs = ['a', 'b'].map((id) => ({ ...member(id), factors: { ...member(id).factors, sales: unavailableRaw('sales_field_mapping_missing') } }));
-    const model = buildLeaderboard(calculatePerformance(ctx(['a', 'b']), inputs), 'a', everyone);
+    const model = buildLeaderboard(calculatePerformance(ctx(['a', 'b']), inputs), everyone);
     expect(model.boards.sales).toMatchObject({ status: 'locked', rows: [] });
     expect(model.boards.composite.status).toBe('locked');
     expect(model.boards.composite.reasons).toContain('sales:sales_field_mapping_missing');
@@ -79,14 +78,14 @@ describe('buildLeaderboard (shared engine projected to ranks)', () => {
 
   it('marks a board unavailable (not locked) for any other missing source', () => {
     const inputs = ['a', 'b'].map((id) => ({ ...member(id), factors: { ...member(id).factors, freshness: unavailableRaw('task_history_before_observed_baseline') } }));
-    const model = buildLeaderboard(calculatePerformance(ctx(['a', 'b']), inputs), 'a', everyone);
+    const model = buildLeaderboard(calculatePerformance(ctx(['a', 'b']), inputs), everyone);
     expect(model.boards.freshness).toMatchObject({ status: 'unavailable', reasons: expect.arrayContaining(['task_history_before_observed_baseline']) });
     expect(model.boards.composite.status).toBe('unavailable');
   });
 
   it('handles an empty population and a single member', () => {
-    expect(buildLeaderboard(calculatePerformance(ctx([]), []), 'a', everyone).boards.composite).toMatchObject({ status: 'unavailable', rows: [] });
-    const solo = buildLeaderboard(calculatePerformance(ctx(['a']), [member('a')]), 'a', everyone);
+    expect(buildLeaderboard(calculatePerformance(ctx([]), []), everyone).boards.composite).toMatchObject({ status: 'unavailable', rows: [] });
+    const solo = buildLeaderboard(calculatePerformance(ctx(['a']), [member('a')]), everyone);
     expect(solo.boards.composite.rows).toEqual([{ userId: 'a', rank: 1, value: '0.00', delta: null }]);
   });
 });

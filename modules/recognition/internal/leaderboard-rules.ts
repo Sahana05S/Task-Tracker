@@ -2,16 +2,13 @@
 // results (no new scoring rule): the composite for members the engine marks
 // eligible for ranking, and each factor's raw value for members with that
 // factor available and no attendance eligibility reasons.
-import { FACTOR_UNITS, FACTORS, memberEligibilityReasons, type CalculationResult, type Factor, type MemberCalculation } from '@/modules/scoring/client';
+import { FACTOR_LABELS, FACTORS, memberEligibilityReasons, type CalculationResult, type Factor, type MemberCalculation } from '@/modules/scoring/client';
 import { displayPerformance, Exact, type ExactValue } from '@/shared/math/exact';
 
 export type BoardKey = 'composite' | Factor;
 export const BOARD_KEYS: readonly BoardKey[] = ['composite', ...FACTORS];
 
-export const BOARD_LABELS: Record<BoardKey, string> = {
-  composite: 'Overall', productivity: 'Productivity', criticality: 'Criticality', loading: 'Loading', completion: 'Completion',
-  progress: 'Progress', sales: 'Sales', facts: 'Facts', ideas: 'Ideas', suggestions: 'Suggestions', freshness: 'Freshness',
-};
+export const BOARD_LABELS: Record<BoardKey, string> = { composite: 'Overall', ...FACTOR_LABELS };
 
 /** What each board ranks, in plain words. */
 export const BOARD_SUMMARIES: Record<BoardKey, string> = {
@@ -46,22 +43,19 @@ export interface Board {
   status: BoardStatus;
   /** Why the board is locked or unavailable (engine reason codes). */
   reasons: string[];
-  /** The unit the values are in. */
-  unit: string;
   rows: BoardRow[];
   /** Members not ranked here; reasons only for members the viewer may see. */
   unranked: { userId: string; reasons: string[] }[];
 }
 
 export interface LeaderboardModel {
-  /** First day of the month, YYYY-MM-DD. */
-  month: string;
   asOf: string;
-  viewerId: string;
   boards: Record<BoardKey, Board>;
+  /** Display names of the calculation's members, by user id. */
+  names: Record<string, string>;
 }
 
-export const SALES_MAPPING_MISSING = 'sales_field_mapping_missing';
+const SALES_MAPPING_MISSING = 'sales_field_mapping_missing';
 
 /** Composite scores show two decimals; factors use the engine's factor display places. */
 const COMPOSITE_PLACES = 2;
@@ -69,43 +63,30 @@ const COMPOSITE_PLACES = 2;
 /** Competition ranking over exact values, highest first. Order of equal values follows input order. */
 export function rankExact<T>(items: readonly T[], value: (item: T) => ExactValue): { item: T; rank: number }[] {
   const sorted = items.map((item) => ({ item, exact: Exact.from(value(item)) })).sort((a, b) => b.exact.compare(a.exact));
-  return sorted.map((entry, index) => {
-    let first = index;
-    while (first > 0 && sorted[first - 1].exact.compare(entry.exact) === 0) first -= 1;
-    return { item: entry.item, rank: first + 1 };
+  const ranked: { item: T; rank: number }[] = [];
+  sorted.forEach((entry, index) => {
+    const tied = index > 0 && sorted[index - 1].exact.compare(entry.exact) === 0;
+    ranked.push({ item: entry.item, rank: tied ? ranked[index - 1].rank : index + 1 });
   });
+  return ranked;
 }
 
-function lockedOrUnavailable(reasons: string[]): BoardStatus {
-  return reasons.some((r) => r === SALES_MAPPING_MISSING || r.endsWith(`:${SALES_MAPPING_MISSING}`)) ? 'locked' : 'unavailable';
-}
-
-function compositeBoard(members: readonly MemberCalculation[], canSee: (userId: string) => boolean): Board {
-  const ranked = members.filter((m) => m.eligibleForRanking && m.compositeExact);
-  const rows = rankExact(ranked, (m) => m.compositeExact!).map(({ item, rank }) => ({
-    userId: item.userId, rank, value: displayPerformance(item.compositeExact, COMPOSITE_PLACES), delta: null,
-  }));
-  const unranked = members.filter((m) => !ranked.includes(m)).map((m) => ({ userId: m.userId, reasons: canSee(m.userId) ? m.reasons : [] }));
-  const reasons = rows.length ? [] : [...new Set(members.flatMap((m) => m.reasons))];
-  return { key: 'composite', status: rows.length ? 'ready' : lockedOrUnavailable(reasons), reasons, unit: 'composite score', rows, unranked };
-}
-
-function factorBoard(factor: Factor, members: readonly MemberCalculation[], places: number, canSee: (userId: string) => boolean): Board {
-  const ranked = members.filter((m) => m.factors[factor].available && m.factors[factor].rawExact && memberEligibilityReasons(m).length === 0);
-  const rows = rankExact(ranked, (m) => m.factors[factor].rawExact!).map(({ item, rank }) => {
-    const visible = canSee(item.userId), result = item.factors[factor];
-    return {
-      userId: item.userId, rank,
-      value: visible ? displayPerformance(result.rawExact, places) : null,
-      delta: visible ? displayPerformance(result.deltaExact, places) : null,
-    };
-  });
-  const unranked = members.filter((m) => !ranked.includes(m)).map((m) => ({
-    userId: m.userId,
-    reasons: canSee(m.userId) ? [...memberEligibilityReasons(m), ...m.factors[factor].reasons] : [],
-  }));
-  const reasons = rows.length ? [] : [...new Set(members.flatMap((m) => m.factors[factor].reasons))];
-  return { key: factor, status: rows.length ? 'ready' : lockedOrUnavailable(reasons), reasons, unit: FACTOR_UNITS[factor], rows, unranked };
+/** One board: who is ranked, on which exact value, and how a row is shown. */
+function rankBoard(
+  key: BoardKey,
+  members: readonly MemberCalculation[],
+  rankable: (m: MemberCalculation) => ExactValue | null,
+  row: (m: MemberCalculation) => Pick<BoardRow, 'value' | 'delta'>,
+  reasonsOf: (m: MemberCalculation) => string[],
+  canSee: (userId: string) => boolean,
+): Board {
+  const values = new Map(members.map((m) => [m, rankable(m)]));
+  const ranked = members.filter((m) => values.get(m));
+  const rows = rankExact(ranked, (m) => values.get(m)!).map(({ item, rank }) => ({ userId: item.userId, rank, ...row(item) }));
+  const unranked = members.filter((m) => !values.get(m)).map((m) => ({ userId: m.userId, reasons: canSee(m.userId) ? reasonsOf(m) : [] }));
+  const reasons = rows.length ? [] : [...new Set(members.flatMap(reasonsOf))];
+  const locked = reasons.some((r) => r === SALES_MAPPING_MISSING || r.endsWith(`:${SALES_MAPPING_MISSING}`));
+  return { key, status: rows.length ? 'ready' : locked ? 'locked' : 'unavailable', reasons, rows, unranked };
 }
 
 /**
@@ -116,16 +97,30 @@ function factorBoard(factor: Factor, members: readonly MemberCalculation[], plac
  */
 export function buildLeaderboard(
   calculation: Pick<CalculationResult, 'context' | 'members'>,
-  viewerId: string,
   canSee: (userId: string) => boolean,
+  names: Record<string, string> = {},
 ): LeaderboardModel {
   const places = calculation.context.factorDisplayPlaces ?? 6;
-  const boards = { composite: compositeBoard(calculation.members, canSee) } as Record<BoardKey, Board>;
-  for (const factor of FACTORS) boards[factor] = factorBoard(factor, calculation.members, places, canSee);
-  return { month: calculation.context.periodStart, asOf: calculation.context.asOf, viewerId, boards };
+  const members = calculation.members;
+  const eligible = new Set(members.filter((m) => memberEligibilityReasons(m).length === 0));
+  const boards = {
+    composite: rankBoard('composite', members,
+      (m) => (m.eligibleForRanking ? m.compositeExact : null),
+      (m) => ({ value: displayPerformance(m.compositeExact, COMPOSITE_PLACES), delta: null }),
+      (m) => m.reasons, canSee),
+  } as Record<BoardKey, Board>;
+  for (const factor of FACTORS) {
+    boards[factor] = rankBoard(factor, members,
+      (m) => (eligible.has(m) && m.factors[factor].available ? m.factors[factor].rawExact : null),
+      (m) => canSee(m.userId)
+        ? { value: displayPerformance(m.factors[factor].rawExact, places), delta: displayPerformance(m.factors[factor].deltaExact, places) }
+        : { value: null, delta: null },
+      (m) => [...memberEligibilityReasons(m), ...m.factors[factor].reasons], canSee);
+  }
+  return { asOf: calculation.context.asOf, boards, names };
 }
 
-/** Reads `?board=` safely; anything unknown falls back to the composite board. */
+/** Reads `?factor=` safely; anything unknown falls back to the composite board. */
 export function parseBoardKey(value: string | undefined): BoardKey {
   return (BOARD_KEYS as readonly string[]).includes(value ?? '') ? (value as BoardKey) : 'composite';
 }

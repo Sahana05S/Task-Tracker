@@ -54,14 +54,14 @@ export function LeaderboardList({ board, names, viewerId }: {
   }
   const figures = board.rows.map((row) => barFigure(board, row));
   const scale = Math.max(0, ...figures.map((f) => Math.abs(f ?? 0)));
-  const valueLabel = board.key === 'composite' ? 'Score' : 'Value, vs median';
+  const valueLabel = board.key === 'composite' ? 'Score' : 'Value';
   return (
     <div className="soft-card soft-card-clip">
-      <div className="text-muted-foreground flex items-center gap-3 border-b px-4 py-2.5 text-xs font-semibold sm:px-5">
+      <div aria-hidden="true" className="text-muted-foreground flex items-center gap-3 border-b px-4 py-2.5 text-xs font-semibold sm:px-5">
         <span className="w-10">Place</span>
         <span className="flex-1">Member</span>
         <span className="hidden w-40 text-center sm:block">vs team median</span>
-        <span className="w-24 text-right sm:w-28">{valueLabel}</span>
+        <span className="w-24 text-right sm:w-28">{board.key === 'composite' ? 'Score' : 'Value, vs median'}</span>
       </div>
       <ol>
         {board.rows.map((row, index) => {
@@ -95,7 +95,7 @@ export function LeaderboardList({ board, names, viewerId }: {
               <span className="w-24 text-right text-sm tabular-nums sm:w-28">
                 {row.value !== null ? (
                   <>
-                    <span className="text-foreground font-semibold">{row.value}</span>
+                    <span className="text-foreground font-semibold"><span className="sr-only">{valueLabel}: </span>{row.value}</span>
                     {row.delta !== null ? (
                       <span className="text-muted-foreground block text-[11px]">
                         {Number(row.delta) > 0 ? '+' : ''}{row.delta}<span className="sr-only"> compared with the team median</span>
@@ -126,7 +126,7 @@ function Unranked({ board, names }: { board: Board; names: Record<string, string
           <li key={entry.userId} className="flex flex-wrap gap-x-2">
             <span className="text-foreground font-medium">{names[entry.userId] ?? 'Team member'}</span>
             <span className="text-muted-foreground">
-              {entry.reasons.length ? reasonSentence(entry.reasons) : 'Not enough data this month.'}
+              {entry.reasons.length ? reasonSentence(entry.reasons) : 'Not ranked this month.'}
             </span>
           </li>
         ))}

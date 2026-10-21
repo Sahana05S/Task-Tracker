@@ -26,7 +26,7 @@ export function LeaderboardPodium({ rows, names, viewerId }: {
   if (!steps.length) return null;
   return (
     <section aria-label="Podium" className="soft-card relative overflow-hidden px-3 pt-6 sm:px-8">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-180 from-[#fff6e3] via-[#f6f2fd] to-white" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-180 from-recognition-subtle/70 via-primary-subtle/50 to-white" />
       <ol className="relative mx-auto grid max-w-2xl grid-cols-3 items-end gap-2 sm:gap-4">
         {steps.map(({ rank, rows: holders }) => {
           const step = STEP[rank as 1 | 2 | 3];

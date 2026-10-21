@@ -5,10 +5,10 @@
 export {
   calculatePerformance,
   COEFFICIENTS,
+  FACTOR_LABELS,
   FACTOR_UNITS,
   FACTORS,
   measuredRaw,
-  MEMBER_ELIGIBILITY_REASONS,
   memberEligibilityReasons,
   PERFORMANCE_RULE_VERSION,
   unavailableRaw,

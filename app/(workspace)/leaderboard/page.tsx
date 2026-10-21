@@ -5,18 +5,14 @@ import { LeaderboardBoardStatus, LeaderboardList } from '@/modules/recognition/c
 import { LeaderboardPodium } from '@/modules/recognition/components/leaderboard-podium';
 import { LeaderboardTabs } from '@/modules/recognition/components/leaderboard-tabs';
 import { BOARD_LABELS, BOARD_SUMMARIES, getLeaderboard, leaderboardPeriod, parseBoardKey } from '@/modules/recognition';
-import { getMemberNames } from '@/modules/team';
 import { settle } from '@/shared/async/settle';
 import { requireProfile } from '@/shared/session/profile';
+import { formatDateTime } from '@/shared/tracker/format';
 import { buttonVariants } from '@/shared/ui/button';
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { currentPeriod } from '@/shared/time/period';
 
 export const metadata: Metadata = { title: 'Leaderboard · TaskPulse' };
-
-function asOfLabel(iso: string): string {
-  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }).format(new Date(iso));
-}
 
 /**
  * The month's leaderboard: the shared ten-factor score and each factor, ranked.
@@ -35,7 +31,8 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
     monthError = error instanceof Error ? error.message : 'Choose a valid month.';
   }
   const month = period.startDate.slice(0, 7);
-  const [model, names] = await Promise.all([settle(() => getLeaderboard(profile, period)), getMemberNames()]);
+  const model = await settle(() => getLeaderboard(profile, period));
+  const names = model.status === 'ready' ? model.data.names : {};
   const board = model.status === 'ready' ? model.data.boards[key] : null;
   const you = board?.rows.find((row) => row.userId === profile.id);
 
@@ -47,14 +44,14 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
         chip={board?.rows.length ? `${board.rows.length} ranked` : undefined}
         description={
           model.status === 'ready'
-            ? `${period.label} · as of ${asOfLabel(model.data.asOf)} · exact ties share a place`
+            ? `${period.label} · as of ${formatDateTime(model.data.asOf)} · exact ties share a place`
             : period.label
         }
         actions={
           <form method="get" className="flex items-center gap-2">
             {key !== 'composite' ? <input type="hidden" name="factor" value={key} /> : null}
             <label htmlFor="leaderboard-month" className="sr-only">Month</label>
-            <input id="leaderboard-month" type="month" name="month" defaultValue={month} max={currentPeriod().startDate.slice(0, 7)} className="field h-10 w-40 bg-white" />
+            <input id="leaderboard-month" type="month" name="month" autoComplete="off" defaultValue={month} max={currentPeriod().startDate.slice(0, 7)} className="field h-10 w-40 bg-white" />
             <button type="submit" className={buttonVariants({ variant: 'outline' })}>View</button>
           </form>
         }

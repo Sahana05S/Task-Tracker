@@ -5,6 +5,8 @@ export const FACTORS=['productivity','criticality','loading','completion','progr
 export type Factor=typeof FACTORS[number];
 export const COEFFICIENTS:Record<Factor,string>={productivity:'1.5',criticality:'0.5',loading:'40',completion:'1.5',progress:'0.0125',sales:'1',facts:'1',ideas:'1',suggestions:'1',freshness:'1'};
 export const FACTOR_UNITS:Record<Factor,string>={productivity:'scaled progress / attendance hour',criticality:'priority weight sum',loading:'fraction 0-1',completion:'completion count',progress:'scaled progress units',sales:'sales raw units',facts:'fact raw units',ideas:'idea raw units',suggestions:'suggestion raw units',freshness:'freshness weight sum'};
+/** Display names of the ten factors. */
+export const FACTOR_LABELS:Record<Factor,string>={productivity:'Productivity',criticality:'Criticality',loading:'Loading',completion:'Completion',progress:'Progress',sales:'Sales',facts:'Facts',ideas:'Ideas',suggestions:'Suggestions',freshness:'Freshness'};
 export interface Provenance {kind:string;id:string;revision:string;businessDate?:string;scaleVersion?:string;shareVersion?:string;exclusionReasons?:string[]}
 export interface RawFactor {value:ExactInput|null;available:boolean;reasons:string[];sources:Provenance[]}
 export interface FactorCohort {id:string;memberIds:string[];missingPolicy:'exclude_unavailable'|'strict';includeObservedZero:boolean}
@@ -28,6 +30,7 @@ export interface MemberCalculation {
 export interface CalculationResult {context:CalculationContext;status:'complete'|'incomplete';members:MemberCalculation[];reasons:string[]}
 /** Member-level eligibility reasons (attendance), as opposed to `factor:reason` entries. */
 export const MEMBER_ELIGIBILITY_REASONS=['attendance_invalid','attendance_unavailable'] as const;
+export type MemberEligibilityReason=typeof MEMBER_ELIGIBILITY_REASONS[number];
 export const memberEligibilityReasons=(member:Pick<MemberCalculation,'reasons'>):string[]=>member.reasons.filter(r=>(MEMBER_ELIGIBILITY_REASONS as readonly string[]).includes(r));
 export const unavailableRaw=(reason:string,sources:Provenance[]=[]):RawFactor=>({value:null,available:false,reasons:[reason],sources});
 export const measuredRaw=(value:ExactInput,sources:Provenance[]=[]):RawFactor=>({value,available:true,reasons:[],sources});
