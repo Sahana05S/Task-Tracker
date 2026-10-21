@@ -31,11 +31,13 @@ function expandTaskVersion(form: FormData) {
  * on success and reports the outcome beside the form. The form stays usable
  * after a save; the confirmation clears as soon as anything changes.
  */
-export function ExecutionForm({ action, scope, children, className }: {
+export function ExecutionForm({ action, scope, children, className, onSuccess }: {
   action: Command;
   scope: string;
   children: React.ReactNode;
   className?: string;
+  /** Runs after a successful save, e.g. to close the drawer that holds the form. */
+  onSuccess?: (result: ActionResponse<unknown>) => void;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -52,6 +54,7 @@ export function ExecutionForm({ action, scope, children, className }: {
         settle();
         formRef.current?.reset();
         startRefresh(() => router.refresh());
+        onSuccess?.(result);
       }
       return result;
     } catch {

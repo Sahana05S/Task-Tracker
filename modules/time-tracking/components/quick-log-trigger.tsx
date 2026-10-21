@@ -1,73 +1,42 @@
 'use client';
 
 import * as React from 'react';
-import { PlusIcon } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { ClockPlusIcon } from 'lucide-react';
 
-import { QuickLogDrawer } from '@/modules/time-tracking/components/quick-log-drawer';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 
+// Loaded on first open: the trigger sits on every workspace page.
+const QuickLogDrawer = dynamic(() => import('@/modules/time-tracking/components/quick-log-drawer').then((m) => m.QuickLogDrawer), { ssr: false });
+
 export interface QuickLogTriggerProps {
-  /** Preselects the drawer's task picker, e.g. from a task card. */
+  /** Preselects the drawer's task picker, e.g. from a mission page. */
   presetTaskId?: string;
-  /**
-   * `fab` is the raised circular action in the mobile bottom bar.
-   * `button` is the inline "Quick Log" control on task cards.
-   */
-  variant?: 'fab' | 'button';
-  /** Label for the `button` variant. */
+  /** Button text; stays the accessible name when `iconOnlyBelowXl` hides it. */
   label?: string;
+  /** Show only the icon from `md` to `xl` (768-1279 px), where the top bar is tight. */
+  iconOnlyBelowXl?: boolean;
   className?: string;
 }
 
 /**
- * Opens the effort logger.
- *
- * Both presentations render a real `<button>`, so each is focusable and
- * announced correctly. The drawer is mounted only while open, so neither pays
- * for the form or its task fetch until someone asks for it.
+ * "Log time": opens the manual effort entry (hours, date, progress, notes).
+ * The phone bar opens the same drawer from its + menu. The drawer is mounted
+ * only while open, so no page pays for the form or its task fetch until
+ * someone asks for it.
  */
-export function QuickLogTrigger({
-  presetTaskId,
-  variant = 'fab',
-  label = 'Quick Log',
-  className,
-}: QuickLogTriggerProps) {
+export function QuickLogTrigger({ presetTaskId, label = 'Log time', iconOnlyBelowXl = false, className }: QuickLogTriggerProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
     <>
-      {variant === 'fab' ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Log hours"
-          className={cn(
-            'bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-ring -mt-6 flex size-14 items-center justify-center rounded-full shadow-(--shadow-soft-lg) transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-            className,
-          )}
-        >
-          <PlusIcon className="size-6" aria-hidden="true" />
-        </button>
-      ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setOpen(true)}
-          className={className}
-        >
-          {label}
-        </Button>
-      )}
-
-      {open ? (
-        <QuickLogDrawer
-          open={open}
-          onOpenChange={setOpen}
-          presetTaskId={presetTaskId}
-        />
-      ) : null}
+      <Button type="button" variant="accent" shape="pill" onClick={() => setOpen(true)}
+        title={iconOnlyBelowXl ? label : undefined} className={cn('font-semibold', className)}>
+        <ClockPlusIcon aria-hidden="true" />
+        <span className={cn(iconOnlyBelowXl && 'md:max-xl:sr-only')}>{label}</span>
+      </Button>
+      {open ? <QuickLogDrawer open={open} onOpenChange={setOpen} presetTaskId={presetTaskId} /> : null}
     </>
   );
 }

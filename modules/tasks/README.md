@@ -4,17 +4,21 @@ Missions (tasks): creating and editing them with their assignees, reviewers and
 participant shares; the lifecycle (status, progress, scale, review); native
 details (Input/Process/Output sections, asset links, related tasks, templates);
 the `/tasks` workspace and mission details page; and Task Tools (batch
-operations that are previewed first and committed atomically).
+operations that are previewed first and committed atomically). Since 21 October
+2026 Task Tools run from the Missions page: a checkbox column and sticky action
+bar in the table, and the same actions per mission in the table and card row
+menus. `/task-tools` keeps Recent operations, participant reconciliation and
+template versions.
 
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `getTaskWorkspaceData`, `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`, and the Today reads `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`. Also re-exports everything in `client.ts`. |
+| `index.ts` | Server reads: `getTaskWorkspaceData`, `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`, `getToolLineage` + `buildRecentOperations` (Tools page Recent operations), and the Today reads `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools workflows and types |
 | `actions.ts` | `'use server'` task commands: `createTask`, `updateTask`, `updateTaskStatus`, `updateTaskProgress`, `changeTaskLifecycle`, `recordTaskReview`, `deleteTask` |
 | `detail-actions.ts` | `'use server'` native-details commands: `initializeTaskDetails`, `saveTaskDetails`, `addTaskAsset`, `addTaskRelation`, `renameNativeLink`, `publishNativeTemplate` |
 | `tool-actions.ts` | `'use server'` Task Tools: `previewTaskTool`, `commitTaskTool` |
-| `components/` | `TaskWorkspace`, `TaskDialog`, `MissionHeadline`, `NewTaskButton`, `TaskLifecyclePanel`, `TaskReviewForm`, `WorkFileCreator`, native details editor/template manager, Task Tools forms, and `detail/` (the mission details page panels) |
+| `components/` | `TaskWorkspace` (filters in the URL, table selection, `BulkActionBar`, `TaskRowMenuItems`, `MissionSummarySheet`), `TaskDialog`, `NewTaskButton`, `TaskLifecyclePanel`, `TaskReviewForm`, `WorkFileCreator`, native details editor/template manager, `tools/` (`useToolOperation` preview-then-commit hook, `OperationDrawer`, the operation catalogue `operations.ts`, `RecentOperations`), and `detail/` (the mission details page panels) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -35,7 +39,7 @@ operations that are previewed first and committed atomically).
 | `filters.ts` | Workspace filtering and sorting |
 | `shares.ts` | Participant share units |
 | `mappers.ts`, `credit-summary.ts` | Database row -> domain model, linear participant projection |
-| `tools/` | Task Tools contract, support split, workbook workflow list, preview/commit RPCs |
+| `tools/` | Task Tools contract, support split, workbook workflow list, preview/commit RPCs, `recent.ts` (Recent operations rebuilt from copy lineage in `task_dependencies` and task archives; Done/reopen/section/refresh batches are not listed until the activity log can be read) |
 
 ## Database it owns
 | Object | Defined in |
@@ -54,8 +58,20 @@ All of these are company-scoped by migrations 39-40 (M15).
 
 ## Depends on
 `shared/*`, the public API of `checklists` (rollups and checklist types), and
-`shared/ui` (mission UI, tracker badges). The `/tasks` mission headline lives in
-scoring; `countOpenTasks` feeds the navigation badge.
+`shared/ui` (mission UI, tracker badges). The team headline (scoring's
+`MissionHeadlineStrip`) is shown collapsed on Team > Analytics; `countOpenTasks`
+feeds the navigation badge.
+
+## Missions page rules (DECISIONS "Bulk actions on the Missions table", 21 Oct 2026)
+- The table (from 768px, `?view=table`) has a checkbox column; the header box
+  selects the visible rows. Changing filters drops hidden rows from the selection.
+- Batch actions (Done, Reopen, Confirm section, Refresh, Archive) act on the
+  selection; copy actions (Duplicate, Weekly / Day-count phases, One per member,
+  Number and suffix, Support split, Carryover) need exactly one row.
+- Members get Done and Refresh only (on their own missions in row menus); the
+  database (`task_tools_command`) enforces the same.
+- Every action previews first; the commit reuses the preview's operation key.
+- Cards have the same single-mission actions in their menu and no select mode.
 
 Tasks does not import time-tracking (time-tracking depends on tasks). The task
 cards take a `LogHoursAction` slot that the `/tasks` page fills, and the mission

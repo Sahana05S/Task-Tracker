@@ -9,23 +9,25 @@ import { MORE_ITEMS, NAV_SECTIONS, activeSection, isMoreActive } from '@/modules
 import { TimerPill } from '@/modules/workspace-views/components/shell/timer-pill';
 import { UserMenu } from '@/modules/workspace-views/components/shell/user-menu';
 import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
+import { QuickPostTrigger } from '@/modules/support/components/quick-post-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import type { RunningTimer } from '@/modules/time-tracking/client';
 import { cn } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 
 /**
  * Sticky workspace top bar. Desktop/tablet: brand, the five destination pills
- * and More, then the running-timer pill, Log hours, notifications and account.
- * Phones: brand, timer pill and account; destinations move to the bottom bar
- * and Log hours to its own floating action.
+ * and More, then the running-timer pill, the two quick actions (Log time and
+ * Post), notifications and account. Below 1280 px the timer pill is compact
+ * and the quick actions show icons only, so the bar never overflows. Phones:
+ * brand, timer pill and account; destinations move to the bottom bar and the
+ * quick actions to its "New" menu.
  */
-export function TopBar({ profile, timers }: { profile: User; timers: readonly RunningTimer[] }) {
+export function TopBar({ profile }: { profile: User }) {
   const pathname = usePathname();
   const section = activeSection(pathname);
   const moreActive = isMoreActive(pathname);
@@ -67,13 +69,12 @@ export function TopBar({ profile, timers }: { profile: User; timers: readonly Ru
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="lg:hidden"><TimerPill timers={timers} compact /></span>
-          <span className="hidden lg:inline-flex"><TimerPill timers={timers} /></span>
-          <QuickLogTrigger
-            variant="button"
-            label="Log hours"
-            className="bg-primary-subtle text-primary-subtle-foreground hover:bg-primary/15 hidden rounded-full border-0 font-semibold md:inline-flex"
-          />
+          <span className="xl:hidden"><TimerPill compact /></span>
+          <span className="hidden xl:inline-flex"><TimerPill /></span>
+          <span className="hidden items-center gap-2 md:flex">
+            <QuickLogTrigger iconOnlyBelowXl className="h-9" />
+            <QuickPostTrigger iconOnlyBelowXl className="h-9" />
+          </span>
           <button type="button" className="icon-button hidden md:flex" aria-label="Notifications">
             <BellIcon className="size-4" aria-hidden="true" />
           </button>

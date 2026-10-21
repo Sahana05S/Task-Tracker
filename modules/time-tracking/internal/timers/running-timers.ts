@@ -2,14 +2,18 @@ import { createClient } from '@/shared/supabase/server';
 
 export interface RunningTimer {
   readonly id: string;
+  /** Sent back as `expectedVersion` when the timer is stopped from the shell. */
+  readonly executionVersion: number;
   readonly startedAt: string;
+  readonly taskId: string;
   readonly taskTag: string;
   readonly taskTitle: string;
 }
 
 /**
- * The signed-in user's running timers, for the shell's "Timer running" pill so a
- * running timer stays one tap away from every page. Row-level security limits
+ * The signed-in user's running timers, for the shell's "Timer running" pill and
+ * the timer buttons (`RunningTimerProvider`), so a running timer stays one tap
+ * away from every page. Row-level security limits
  * this to rows the caller may read. A failure degrades to "none shown" rather
  * than breaking the page; the timer itself remains on its mission page.
  */
@@ -18,7 +22,7 @@ export async function getRunningTimers(userId: string): Promise<RunningTimer[]> 
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('task_timers')
-      .select('id,started_at,tasks!inner(task_tag,title)')
+      .select('id,execution_version,started_at,task_id,tasks!inner(task_tag,title)')
       .eq('user_id', userId)
       .eq('status', 'Running')
       .order('started_at', { ascending: true })
@@ -26,7 +30,10 @@ export async function getRunningTimers(userId: string): Promise<RunningTimer[]> 
     if (error || !data) return [];
     return data.flatMap((row) => {
       const task = Array.isArray(row.tasks) ? row.tasks[0] : row.tasks;
-      return task ? [{ id: row.id, startedAt: row.started_at, taskTag: task.task_tag, taskTitle: task.title }] : [];
+      return task ? [{
+        id: row.id, executionVersion: row.execution_version ?? 0, startedAt: row.started_at,
+        taskId: row.task_id, taskTag: task.task_tag, taskTitle: task.title,
+      }] : [];
     });
   } catch {
     return [];

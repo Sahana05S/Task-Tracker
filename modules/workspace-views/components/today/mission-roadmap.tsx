@@ -12,6 +12,7 @@ import { missionDueLabel, type MissionDueFilter, type RoadmapMission, type Roadm
 import type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow } from '@/modules/checklists/client';
 import { branchForRow, roadmapSearch, type RoadmapLocation } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch, loadRoadmapMissions } from '@/modules/workspace-views/roadmap-actions';
+import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import { MissionMap } from './mission-map';
 
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
@@ -148,7 +149,10 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
       <div className="border-border bg-card min-w-0 rounded-2xl border">
         {location && mission ? <div className="border-border flex flex-wrap items-start justify-between gap-3 border-b px-4 py-4 sm:px-5">
           <div className="min-w-0"><h3 className="text-foreground break-words text-base font-semibold">{mission.title}</h3><p className="text-muted-foreground mt-1 text-xs">{missionDueLabel(mission.dueDate, today)} · {mission.taskTag}</p></div>
-          <Link href={`/tasks/${encodeURIComponent(mission.taskTag)}`} className={cn('text-primary rounded text-xs font-semibold underline-offset-4 hover:underline', FOCUS)}>Mission details</Link>
+          <span className="flex flex-wrap items-center gap-3">
+            <TimerButton taskId={mission.id} taskLabel={mission.taskTag} />
+            <Link href={`/tasks/${encodeURIComponent(mission.taskTag)}`} className={cn('text-primary rounded text-xs font-semibold underline-offset-4 hover:underline', FOCUS)}>Mission details</Link>
+          </span>
         </div> : null}
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-5">
           {location ? <div role="group" aria-label="Checklist sections" className="bg-muted flex rounded-full p-1">
@@ -162,11 +166,12 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
             {branch.hasMore ? <Button variant="outline" size="sm" disabled={pending} onClick={() => open(location, true)} className="mt-4">{pending ? 'Loading…' : 'Load more items'}</Button> : null}
           </div> : !pending && !error ? <p className="text-muted-foreground py-8 text-sm">This mission does not have a checklist yet. <Link href={`/tasks/${encodeURIComponent(mission?.taskTag ?? '')}`} className="link font-semibold">Open mission details</Link> to set one up.</p> : null
             : <div className="pt-4">
-              {batch?.missions.length ? <ol className="divide-border divide-y" aria-label="Your open assigned missions">{batch.missions.map(item => <li key={item.id} className="relative min-w-0" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 106px' }}>
-                <button type="button" onClick={() => { setMission(item); open({ missionId: item.id }); }} className={cn('group text-left w-full min-w-0 py-3 hover:bg-muted rounded-lg px-2 transition-colors', FOCUS)}>
+              {batch?.missions.length ? <ol className="divide-border divide-y" aria-label="Your open assigned missions">{batch.missions.map(item => <li key={item.id} className="relative flex min-w-0 items-center gap-2" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 106px' }}>
+                <button type="button" onClick={() => { setMission(item); open({ missionId: item.id }); }} className={cn('group text-left min-w-0 flex-1 py-3 hover:bg-muted rounded-lg px-2 transition-colors', FOCUS)}>
                   <span className="flex items-start justify-between gap-3"><span className="text-foreground min-w-0 break-words text-sm font-semibold">{item.title}</span><ArrowRightIcon className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" /></span>
                   <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><PriorityBadge priority={item.priority} /><span className={cn('text-xs', item.dueDate && item.dueDate < today ? 'text-overdue font-semibold' : 'text-muted-foreground')}>{missionDueLabel(item.dueDate, today)}</span><Progress value={item.progress} /><span className="text-muted-foreground text-xs">{item.taskTag}</span></span>
                 </button>
+                <TimerButton taskId={item.id} taskLabel={item.taskTag} className="shrink-0" />
               </li>)}</ol> : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
             </div>}
           {!location && batch?.hasMore ? <Button className="mt-5 w-full" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : 'Load more missions'}</Button> : null}

@@ -17,7 +17,7 @@ import {
   TimerIcon,
 } from 'lucide-react';
 
-import { RunningClock } from '@/modules/checklists/components/running-clock';
+import { RunningClock } from '@/shared/ui/running-clock';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
 import { CHECKLIST_SECTIONS, type ChecklistRollup } from '@/modules/checklists/internal/progress';

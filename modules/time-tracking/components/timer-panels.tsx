@@ -11,6 +11,7 @@ import {
   startTaskTimer,
   stopTaskTimer,
 } from '@/modules/time-tracking/timer-actions';
+import { formatElapsed } from '@/modules/time-tracking/internal/timers/elapsed';
 
 /** Timer, timer records and manual time entry for one mission. */
 
@@ -228,12 +229,4 @@ export function ManualTimeForm({
       </Button>
     </ExecutionForm>
   );
-}
-
-function formatElapsed(seconds: number): string {
-  if (seconds <= 0) return '0m';
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours === 0) return `${minutes}m`;
-  return `${hours}h ${minutes}m`;
 }
