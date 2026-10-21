@@ -3,6 +3,26 @@
 /** Streak milestones (days) approved on 19 October 2026. */
 export const DEFAULT_MILESTONES: readonly number[] = [3, 7, 14, 30, 60, 100];
 
+/** One per-mission progress stage. `key` is stable; `label` is what people read. */
+export interface Waypoint {
+  key: string;
+  label: string;
+  /** Progress (0-100) at which the waypoint is reached. */
+  percent: number;
+}
+
+/**
+ * Mission waypoints approved on 20 October 2026; mirrors
+ * `recognition_policy.config.waypoints` (migration 51).
+ */
+export const DEFAULT_WAYPOINTS: readonly Waypoint[] = [
+  { key: 'ignition', label: 'Ignition', percent: 30 },
+  { key: 'escape_velocity', label: 'Escape Velocity', percent: 50 },
+  { key: 'deep_space', label: 'Deep Space', percent: 70 },
+  { key: 'final_approach', label: 'Final Approach', percent: 90 },
+  { key: 'landing', label: 'Landing', percent: 100 },
+];
+
 /**
  * One character per Asia/Kolkata day, as returned by
  * `recognition_activity_days`: `c` counts, `s` is skipped, `b` breaks.

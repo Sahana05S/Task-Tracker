@@ -39,6 +39,9 @@ import { EffortPanel } from '@/modules/tasks/components/detail/effort-panel';
 import { TaskLogTimeline } from '@/modules/tasks/components/detail/log-timeline';
 import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
 import { MissionOverview } from '@/modules/tasks/components/detail/mission-overview';
+import { getMissionWaypoints } from '@/modules/recognition';
+import { WaypointCelebration } from '@/modules/recognition/components/waypoint-celebration';
+import { WaypointTrack } from '@/modules/recognition/components/waypoint-track';
 import { WorkFilesPanel } from '@/modules/tasks/components/detail/work-files-panel';
 import { TaskLifecyclePanel } from '@/modules/tasks/components/task-lifecycle-panel';
 import { TaskReviewForm } from '@/modules/tasks/components/task-review-form';
@@ -95,13 +98,15 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const requested = (await searchParams).tab;
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
-  const [execution, native, templates, workspace, reports, effortBreakdown] = await Promise.all([
+  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
     details && canManage ? getTaskWorkspaceData() : Promise.resolve({ tasks: [], members: [] }),
     details && canManage ? getVisibleReportChoices() : Promise.resolve([]),
     details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
+    // A failed read leaves the track on current progress.
+    tab === 'work' ? getMissionWaypoints([task]).catch(() => null) : Promise.resolve(null),
   ]);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
@@ -193,7 +198,23 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               itemCount={data.checklistNodes.length}
               rollup={data.checklistRollup}
             />
-            <MissionOverview data={data} assigneeNames={assigneeNames} reviewerNames={reviewerNames} overdue={overdue} />
+            <MissionOverview
+              data={data}
+              assigneeNames={assigneeNames}
+              reviewerNames={reviewerNames}
+              overdue={overdue}
+              belowProgress={
+                <WaypointTrack
+                  progress={task.progressPercentage}
+                  reachedKeys={waypoints?.reached[task.id]}
+                  waypoints={waypoints?.waypoints}
+                  taskTag={task.taskTag}
+                  variant="full"
+                  stopped={archived || task.status === 'Discarded'}
+                />
+              }
+            />
+            {waypoints?.recent.length ? <WaypointCelebration tasks={waypoints.recent} waypoints={waypoints.waypoints} /> : null}
             {canManage ? <TaskLifecyclePanel task={task} /> : null}
           </main>
           <aside className="grid h-fit min-w-0 gap-6">
