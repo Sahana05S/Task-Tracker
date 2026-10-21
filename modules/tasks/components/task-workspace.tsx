@@ -17,7 +17,6 @@ import { TaskDialog } from '@/modules/tasks/components/task-dialog';
 import { TaskFilters } from '@/modules/tasks/components/task-filters';
 import type { TaskRowActions } from '@/modules/tasks/components/task-row-menu';
 import { OperationDrawer } from '@/modules/tasks/components/tools/operation-drawer';
-import { operationSpec } from '@/modules/tasks/components/tools/operations';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/mission-ui';
 import {
@@ -276,10 +275,8 @@ export function TaskWorkspace({
         members={members}
         memberNames={memberNames}
         onClose={() => setOperation(null)}
-        onCommitted={(command) => {
-          setSelected(EMPTY_SELECTION);
-          toast.success(`${operationSpec(command).title}: committed`);
-        }}
+        // The drawer shows the committed result itself.
+        onCommitted={() => setSelected(EMPTY_SELECTION)}
       />
 
       <TaskDialog

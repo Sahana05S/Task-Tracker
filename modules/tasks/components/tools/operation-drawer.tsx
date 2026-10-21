@@ -50,10 +50,12 @@ export function OperationDrawer({ command, tasks, members, memberNames, onClose,
       if (command) onCommitted?.(command);
     },
   });
-  const { pending, reset } = operation;
+  const { pending, result, reset } = operation;
 
   const close = () => {
-    if (pending) return;
+    // Pending also covers the page refresh after a commit; once the result is
+    // in, closing is safe.
+    if (pending && !result) return;
     reset();
     onClose();
   };
