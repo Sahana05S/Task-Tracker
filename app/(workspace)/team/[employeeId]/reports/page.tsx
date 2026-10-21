@@ -76,6 +76,7 @@ export default async function EmployeeReportsPage({
         current="reports"
         description={`${data.employee.employeeId} · ${data.period.label} · live report, revisions, stars and saved reports`}
         query={carriedQuery(query)}
+        missionCount={data.presentation.tasks.length}
       />
 
       <div className="grid gap-5 lg:gap-6">

@@ -84,6 +84,11 @@ describe('daily report read model', () => {
     expect(compiledLogs(withLogs(base(), logs), MEMBER, '2026-10-02', '2026-10-05').map((l) => l.logDate)).toEqual(['2026-10-05', '2026-10-02']);
   });
 
+  it('sorts logs without a creation time (as the live presentation returns them)', () => {
+    const logs = [log(1, '2026-10-05'), log(2, '2026-10-05'), log(3, '2026-10-06')].map((l) => ({ ...l, createdAt: undefined as unknown as string }));
+    expect(compiledLogs(withLogs(base(), logs), MEMBER, '2026-10-01', '2026-10-13').map((l) => l.logDate)).toEqual(['2026-10-06', '2026-10-05', '2026-10-05']);
+  });
+
   it('reads validity per day up to the report day from recorded attendance', () => {
     const report = dailyReport(base(), MEMBER, '2026-10-05')!;
     expect(report.validity.map((d) => d.date)).toEqual(['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04', '2026-10-05']);

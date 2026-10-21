@@ -92,7 +92,8 @@ function openOn(task: Task, date: string): boolean {
 export function compiledLogs(model: LivePresentation, memberId: string, from: string, to: string): DailyTaskLog[] {
   return model.logs
     .filter((l) => l.userId === memberId && l.logDate >= from && l.logDate <= to)
-    .sort((a, b) => b.logDate.localeCompare(a.logDate) || b.createdAt.localeCompare(a.createdAt));
+    // The live presentation's logs may carry no createdAt.
+    .sort((a, b) => b.logDate.localeCompare(a.logDate) || (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
 }
 
 /**
