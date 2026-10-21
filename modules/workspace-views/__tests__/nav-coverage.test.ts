@@ -19,8 +19,10 @@ describe('redesigned navigation keeps every workspace route reachable',()=>{
   expect(new Set(hrefs).size).toBe(hrefs.length);
  });
  it('puts the recognition pages under Team',()=>{
-  expect(activeSection('/leaderboard')?.label).toBe('Team');
-  expect(PROTECTED_PREFIXES).toContain('/leaderboard');
+  for(const path of ['/leaderboard','/awards']){
+   expect(activeSection(path)?.label).toBe('Team');
+   expect(PROTECTED_PREFIXES).toContain(path);
+  }
  });
  it('keeps the master checklist inside Missions, not a separate destination',()=>{
   expect(activeSection('/tasks/M13-X/checklist')?.label).toBe('Missions');

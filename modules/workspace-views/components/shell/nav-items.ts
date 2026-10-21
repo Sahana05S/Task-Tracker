@@ -1,4 +1,5 @@
 import {
+  AwardIcon,
   BarChart3Icon,
   BookOpenIcon,
   CalendarCheckIcon,
@@ -86,6 +87,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { label: 'Analytics', href: '/dashboard', match: ['/dashboard'], icon: BarChart3Icon },
       { label: 'People', href: '/team', match: ['/team'], icon: UsersIcon },
       { label: 'Leaderboard', href: '/leaderboard', match: ['/leaderboard'], icon: TrophyIcon },
+      { label: 'Awards', href: '/awards', match: ['/awards'], icon: AwardIcon },
     ],
   },
   {
