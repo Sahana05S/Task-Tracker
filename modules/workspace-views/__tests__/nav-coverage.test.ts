@@ -19,7 +19,7 @@ describe('redesigned navigation keeps every workspace route reachable',()=>{
   expect(new Set(hrefs).size).toBe(hrefs.length);
  });
  it('puts the recognition pages under Team',()=>{
-  for(const path of ['/leaderboard','/awards']){
+  for(const path of ['/leaderboard','/awards','/hall-of-fame']){
    expect(activeSection(path)?.label).toBe('Team');
    expect(PROTECTED_PREFIXES).toContain(path);
   }

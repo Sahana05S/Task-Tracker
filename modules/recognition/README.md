@@ -9,7 +9,7 @@ Recognition points are a separate currency and never feed a performance score.
 User decisions of 19 October 2026 are recorded in `docs/plans/DECISIONS.md`
 ("M16 recognition") and `docs/plans/M16-recognition.md`.
 
-## What it does (current slices: streaks, daily star spotlight, leaderboard, ceremony)
+## What it does (current slices: streaks, daily star spotlight, leaderboard, ceremony, hall of fame)
 An "active day" streak per member: a day counts when the member has active
 Present/Half Day attendance and at least one non-reversed task log (timer
 segments are log rows) or a live fact, idea or suggestion dated that day.
@@ -56,13 +56,25 @@ policies module (wave 3). Winning values are shown only to the winner and
 managers. Without migration 50 the page still shows the provisional results
 and says publishing needs a database update.
 
+The hall of fame (`/hall-of-fame`, Team section) is all-time recognition:
+points from certified effective daily stars (10), category awards on each
+month's latest published ceremony (25) and monthly stars (100), the policy's
+values (DECISIONS "M16 recognition", item 3). Points are a separate currency
+and never feed a performance score; nothing is stored, so overrides, stale
+slots and republished ceremonies change the next read. Tiers: Rookie 0, Bronze
+25, Silver 100, Gold 300, Diamond 750. The page shows the viewer's points ring
+and tier, a trophy case (monthly star, daily star, longest-streak milestone,
+one badge per category; unearned badges say what earns them), the latest
+trophies, and everyone in the company by points (equal points share a place).
+Without migration 50 it says the hall of fame needs a database update.
+
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `getStreak(userId)` -> `StreakSummary`; `getDailyStarHighlight(userId)` -> `DailyStarHighlight`; `getLeaderboard(viewer, period)` -> `LeaderboardModel`, `leaderboardPeriod(month?)`, `getCeremony(viewer, period)` -> `CeremonyModel` (server reads; re-exports `client.ts`) |
+| `index.ts` | `getStreak(userId)` -> `StreakSummary`; `getDailyStarHighlight(userId)` -> `DailyStarHighlight`; `getLeaderboard(viewer, period)` -> `LeaderboardModel`, `leaderboardPeriod(month?)`, `getCeremony(viewer, period)` -> `CeremonyModel`, `getHallOfFame(viewerId)` -> `HallOfFameModel` (throws `HallOfFameUnavailable` before migration 50) (server reads; re-exports `client.ts`) |
 | `ceremony-actions.ts` | `publishCeremonyAction(form)`: publish or republish an elapsed month (managing director; the database enforces it) |
-| `client.ts` | `computeStreak`, `milestonesReached`, `dailyStarHighlight`, `DEFAULT_MILESTONES`, `parseRecognitionPolicy`, `DEFAULT_RECOGNITION_POLICY`, `buildLeaderboard`, `rankExact`, `podiumSteps`, `parseBoardKey`, `BOARD_KEYS`/`BOARD_LABELS`/`BOARD_SUMMARIES`, `selectCategoryWinners`, `monthlyStarAct`, `projectCategories`, types (`CeremonyModel`, `CategoryAward`, `MonthlyStarAct`, `StreakSummary`, `DailyStarHighlight`, `DailyStarSource`, `LeaderboardModel`, `Board`, `BoardRow`, ...) |
-| `components/` | `StreakCard`, `StreakFlame`, `StreakStrip`, `MilestoneMeter`, `MilestoneToast`, `CountUp`, `DailyStarSpotlight`, `ConfettiBurst` (client), `useReducedMotion` (client), `LeaderboardTabs`, `LeaderboardPodium`, `LeaderboardList`, `LeaderboardBoardStatus`, `CeremonyStage` (client), `CeremonyPublish` (client), `AwardCard`, `HiddenAwardCard`, `FinaleCard` |
+| `client.ts` | `computeStreak`, `milestonesReached`, `dailyStarHighlight`, `DEFAULT_MILESTONES`, `parseRecognitionPolicy`, `DEFAULT_RECOGNITION_POLICY`, `buildLeaderboard`, `rankExact`, `podiumSteps`, `parseBoardKey`, `BOARD_KEYS`/`BOARD_LABELS`/`BOARD_SUMMARIES`, `selectCategoryWinners`, `monthlyStarAct`, `projectCategories`, `pointsFor`, `tierFor`, `rankHall`, `TIERS`, types (`HallOfFameModel`, `HallEntry`, `TierProgress`, `CeremonyModel`, `CategoryAward`, `MonthlyStarAct`, `StreakSummary`, `DailyStarHighlight`, `DailyStarSource`, `LeaderboardModel`, `Board`, `BoardRow`, ...) |
+| `components/` | `StreakCard`, `StreakFlame`, `StreakStrip`, `MilestoneMeter`, `MilestoneToast`, `CountUp`, `DailyStarSpotlight`, `ConfettiBurst` (client), `useReducedMotion` (client), `LeaderboardTabs`, `LeaderboardPodium`, `LeaderboardList`, `LeaderboardBoardStatus`, `CeremonyStage` (client), `CeremonyPublish` (client), `AwardCard`, `HiddenAwardCard`, `FinaleCard`, `PointsRing`, `TierBadge`, `TrophyCase`, `HallOfFameList` |
 
 
 ## Private (`internal/`)
@@ -76,6 +88,8 @@ and says publishing needs a database update.
 | `leaderboard.ts` | `loadMonth` (the month's shared calculation at the canonical as-of) and the leaderboard projection |
 | `ceremony-rules.ts` | `selectCategoryWinners`, `monthlyStarAct`, `projectCategories` (pure; the same category rule runs in migration 50) |
 | `ceremony.ts` | Reads the published ceremony or builds the provisional one; publishes through `recognition_ceremony_command` |
+| `hall-rules.ts` | `pointsFor`, `tierFor`, `rankHall`, `TIERS` (pure) |
+| `hall.ts` | Reads `recognition_points` and scores it with the policy |
 | `policy.ts` | Parses `recognition_policy.config`; defaults mirror migration 45 |
 
 ## Database it owns

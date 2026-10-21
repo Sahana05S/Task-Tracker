@@ -5,6 +5,7 @@ import {
   CalendarCheckIcon,
   CalendarRangeIcon,
   ClockIcon,
+  CrownIcon,
   DollarSignIcon,
   FileTextIcon,
   LightbulbIcon,
@@ -88,6 +89,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { label: 'People', href: '/team', match: ['/team'], icon: UsersIcon },
       { label: 'Leaderboard', href: '/leaderboard', match: ['/leaderboard'], icon: TrophyIcon },
       { label: 'Awards', href: '/awards', match: ['/awards'], icon: AwardIcon },
+      { label: 'Hall of fame', href: '/hall-of-fame', match: ['/hall-of-fame'], icon: CrownIcon },
     ],
   },
   {

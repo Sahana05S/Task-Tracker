@@ -43,3 +43,15 @@ export {
   type CeremonyStatus,
   type MonthlyStarAct,
 } from '@/modules/recognition/internal/ceremony-rules';
+export {
+  pointsFor,
+  rankHall,
+  tierFor,
+  TIERS,
+  type HallEntry,
+  type HallOfFameModel,
+  type Tier,
+  type TierKey,
+  type TierProgress,
+  type TrophyCounts,
+} from '@/modules/recognition/internal/hall-rules';
