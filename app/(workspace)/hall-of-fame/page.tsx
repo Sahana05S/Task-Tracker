@@ -56,7 +56,7 @@ export default async function HallOfFamePage() {
               {me.progress.next
                 ? `${plural(me.progress.toNext, 'point')} more to ${me.progress.next.label}.`
                 : 'You have reached the top tier.'}
-              {' '}Place {me.rank} of {hall.entries.length} in the company.
+              {me.points > 0 ? ` Place ${me.rank} of ${hall.entries.length} in the company.` : ' Trophies appear here as you earn them.'}
             </p>
             <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
               <div><dt className="text-muted-foreground inline">Daily stars </dt><dd className="text-foreground inline font-semibold tabular-nums">{me.dailyStars}</dd></div>
