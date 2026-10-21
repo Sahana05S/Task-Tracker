@@ -21,21 +21,32 @@ export function leaderboardPeriod(value: string | undefined, now = new Date()): 
   return period;
 }
 
+type Db = Awaited<ReturnType<typeof createClient>>;
+
 /**
- * The month's leaderboard as `viewer` may see it. The current month is read as
- * of the database clock; a past month as of its last instant (Asia/Kolkata).
- * Throws when the shared sources are unavailable, so the page can say so.
+ * One month of the shared calculation. The current month (or `live`, which
+ * only managers may request for a past month) is read as of the database
+ * clock; a past month as of its last instant (Asia/Kolkata), the canonical
+ * cutoff every member may read.
+ */
+export async function loadMonth(db: Db, period: AnalyticsPeriod, options: { live?: boolean } = {}) {
+  const live = options.live || period.startDate === currentPeriod().startDate;
+  const asOf = live
+    ? (await observationInstant(db)).instant.toISOString()
+    : new Date(`${period.endDate}T23:59:59.999+05:30`).toISOString();
+  const { sources, calculation } = await loadPerformance(db, period.startDate, nextDate(period.endDate), asOf);
+  return { sources, calculation, asOf };
+}
+
+/**
+ * The month's leaderboard as `viewer` may see it. Throws when the shared
+ * sources are unavailable, so the page can say so.
  */
 export async function getLeaderboard(
   viewer: Pick<User, 'id' | 'role' | 'isActive'>,
   period: AnalyticsPeriod,
 ): Promise<LeaderboardModel> {
-  const db = await createClient();
-  const isCurrent = period.startDate === currentPeriod().startDate;
-  const asOf = isCurrent
-    ? (await observationInstant(db)).instant.toISOString()
-    : new Date(`${period.endDate}T23:59:59.999+05:30`).toISOString();
-  const { sources, calculation } = await loadPerformance(db, period.startDate, nextDate(period.endDate), asOf);
+  const { sources, calculation } = await loadMonth(await createClient(), period);
   // Same rule as a profile: the member themself or a manager (team depends on
   // recognition, so the rule is applied here rather than imported from team).
   const canSee = (userId: string) => viewer.isActive && (canManageTasks(viewer.role) || userId === viewer.id);

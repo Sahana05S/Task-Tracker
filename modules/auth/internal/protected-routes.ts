@@ -1,5 +1,6 @@
 export const PROTECTED_PREFIXES = [
   '/attendance',
+  '/awards',
   '/daily-facts',
   '/dashboard',
   '/ideas',
