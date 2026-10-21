@@ -61,5 +61,7 @@ jobs:
         run: python tools/test_m17_sales_database.py --psql "$(command -v psql)" --port 15432
       - name: M15 award invalidation company scope (migration 48)
         run: python tools/test_m15_award_invalidation_database.py --psql "$(command -v psql)" --port 15432
-      - name: Activity log read (migration 54)
+      - name: Conflict errors without PostgREST retries (migration 52)
+        run: python tools/test_conflict_sqlstate_database.py --psql "$(command -v psql)" --port 15432
+      - name: Activity log read (migrations 54 and 57)
         run: python tools/test_activity_feed_database.py --psql "$(command -v psql)" --port 15432

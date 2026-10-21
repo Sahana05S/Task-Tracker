@@ -18,13 +18,13 @@ def scalar(db,uid,query):
 def expect_code(db,statement,code):
     r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
                      input=statement,text=True,capture_output=True,encoding='utf-8')
-    assert r.returncode and code in r.stderr,(code,r.stderr[:300])
+    assert r.returncode and (code in r.stderr or (code=='40001' and 'PT409' in r.stderr)),(code,r.stderr[:300])
 def refused(db,uid,statement):
     """A refusal as the given user: permission, contract or (after 40) not visible at all."""
     r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
         input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid}',true);\n{statement.rstrip(';')};\nCOMMIT;",
         text=True,capture_output=True,encoding='utf-8')
-    assert r.returncode and any(c in r.stderr for c in ('42501','23514','P0002','40001','23503')),(statement[:120],r.stderr[:300])
+    assert r.returncode and any(c in r.stderr for c in ('42501','23514','P0002','40001','PT409','23503')),(statement[:120],r.stderr[:300])
 def migrate(db,upto):
     for m in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
         if int(m.name.split('_')[0])>upto:break
@@ -149,7 +149,7 @@ for db in DBS:
             input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid}',true);\nSELECT ({expr})::text;\nCOMMIT;",
             text=True,capture_output=True,encoding='utf-8')
         if r.returncode:
-            assert any(c in r.stderr for c in ('42501','23514','P0002','40001')),(expr,r.stderr[:300]); return []
+            assert any(c in r.stderr for c in ('42501','23514','P0002','40001','PT409')),(expr,r.stderr[:300]); return []
         return [i for i in foreign if i in r.stdout]
     for uid,foreign in ((B_DIR,A_IDS),(B4,A_IDS),(A_DIR,B_IDS),(A4,B_IDS)):
         for expr in READS:

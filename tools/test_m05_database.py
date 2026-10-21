@@ -27,7 +27,7 @@ def sql(db, statement, success=True):
         raise AssertionError(result.stderr + '\n' + statement[:300])
     if not success and result.returncode == 0:
         raise AssertionError('Expected database denial: ' + statement)
-    if not success and not any(code in result.stderr for code in ('42501','23514','40001','23503')):
+    if not success and not any(code in result.stderr for code in ('42501','23514','40001','PT409','23503')):
         raise AssertionError('Failure was not an authorization/contract denial: ' + result.stderr)
     return result.stdout.strip()
 
@@ -237,7 +237,7 @@ for db in DBS:
     def competing(node):
         try:checklist(db,tid,'state',{'node_id':node,'state':'Yes'},uid='4',version=observed);return True
         except AssertionError as err:
-            assert '40001' in str(err);return False
+            assert any(c in str(err) for c in ('40001','PT409'));return False
     with ThreadPoolExecutor(2) as pool:outcomes=list(pool.map(competing,[b,c]))
     assert sorted(outcomes)==[False,True]
     checklist(db,tid,'state',{'node_id':b if not outcomes[0] else c,'state':'Yes'},uid='4')
