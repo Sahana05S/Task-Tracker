@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+
+import { buildPresentation, viewContext, type DatedCalculation } from '@/modules/reports/client';
+import { FACTORS, type AwardDay } from '@/modules/scoring/client';
+import { Exact } from '@/shared/math/exact';
 
 import { resolvePeriod } from '@/shared/time/period';
 import { type MemberPerformance } from '@/modules/scoring/client';
@@ -224,4 +229,86 @@ it('leaves unsettled shared daily-credit trends unavailable rather than fabricat
   const charts=buildEmployeeAnalyticsCharts({period:SEP_2026,performance:null,tasks:[task],logs:[],stars:[],links:[]});
   expect([charts.progressTrend,charts.productivityTrend,charts.loadingTrend,charts.completionTrend,charts.criticalityTrend]).toEqual([[],[],[],[],[]]);
   expect(charts.taskTypes.some((bucket) => bucket.value>0)).toBe(true);
+});
+
+describe('profile chart read model (M11 fixture)', () => {
+  // October 2026 as of the 13th, member 04: 13 dated observations, one log on the
+  // 13th, 13 attendance days.
+  const response = JSON.parse(readFileSync('__tests__/fixtures/m11-fresh-context.json', 'utf-8'));
+  const view = viewContext(response.sources.periodStart.slice(0, 7), response.sources.asOf, new Date(response.sources.asOf));
+  const member = '00000000-0000-0000-0000-000000000004';
+  const model = buildPresentation(response, view, member);
+  const build = (extra: Partial<Parameters<typeof buildEmployeeAnalyticsCharts>[0]> = {}) =>
+    buildEmployeeAnalyticsCharts({ period: view.period, performance: null, tasks: model.tasks, logs: model.logs, links: [], stars: [], employeeId: member, observations: model.series, asOfDate: view.asOfLocalDate, ...extra });
+
+  it('gives all ten factors in engine order, each point carrying the factor median', () => {
+    const charts = build();
+    expect(Object.keys(charts.factorTrends)).toEqual([...FACTORS]);
+    for (const factor of FACTORS) {
+      expect(charts.factorTrends[factor]).toHaveLength(model.series.length);
+      charts.factorTrends[factor].forEach((point, i) => {
+        const median = model.series[i].calculation.members.find((m) => m.userId === member)?.factors[factor].medianExact ?? null;
+        expect(point.median).toBe(median ? Exact.from(median).number() : null);
+        expect(point.medianDisplay).toBe(median ? Exact.from(median).display(6) : 'Unavailable');
+      });
+    }
+    // Sales is unmapped in this fixture: its points are gaps, not zeros.
+    expect(charts.factorTrends.sales.every((p) => p.value === null && p.display === 'Unavailable')).toBe(true);
+  });
+
+  it('puts the score beside the median of available team composites, gaps when unavailable', () => {
+    const charts = build();
+    expect(charts.performanceScoreTrend.map((p) => p.date)).toEqual(model.series.map((p) => p.date));
+    charts.performanceScoreTrend.forEach((point, i) => {
+      const composites = model.series[i].calculation.members.filter((m) => m.compositeExact !== null);
+      if (composites.length === 0) expect(point.median).toBeNull();
+      expect(point.value).toBe(model.series[i].calculation.members.find((m) => m.userId === member)?.composite ?? null);
+    });
+  });
+
+  it('charts hours per day through the as-of date only, with unrecorded attendance as null', () => {
+    const attendance = [{ businessDate: '2026-10-12', available: true, attendanceHours: '8.5' }, { businessDate: '2026-10-13', available: false, attendanceHours: null }];
+    const hours = build({ attendanceDays: attendance }).dailyHours;
+    expect(hours.map((d) => d.date)).toEqual(Array.from({ length: 13 }, (_, i) => `2026-10-${String(i + 1).padStart(2, '0')}`));
+    expect(hours.find((d) => d.date === '2026-10-13')).toMatchObject({ taskHours: 1, attendanceHours: null });
+    expect(hours.find((d) => d.date === '2026-10-12')).toMatchObject({ taskHours: 0, attendanceHours: 8.5 });
+  });
+
+  it("marks each day's daily star for this member, another member, or not yet decided", () => {
+    const day = (date: string, status: AwardDay['status'], winnerId: string | null, certified = true) => ({ date, status, winnerId, certified } as AwardDay);
+    const stars = build({ awardDays: [day('2026-10-01', 'completed_winner', member), day('2026-10-02', 'completed_winner', 'someone-else'), day('2026-10-03', 'completed_none', null), day('2026-10-04', 'blocked', null), day('2026-10-05', 'completed_winner', member, false)] }).starDays;
+    expect(stars.slice(0, 6).map((d) => d.state)).toEqual(['star', 'other', 'none', 'waiting', 'waiting', 'pending']);
+    expect(stars).toHaveLength(13);
+  });
+
+  it('spreads completed missions over every day so far and passes deadlines through', () => {
+    expect(build().deadlines).toEqual([]);
+    expect(build().missionsDone.every((d) => d.value === 0)).toBe(true);
+    const outcomes = { tasksDoneByDate: [{ date: '2026-10-05', label: 'Oct 5', value: 2 }], deadlineOutcomes: [{ key: 'met' as const, label: 'Met deadline', value: 1 }] };
+    const charts = build({ missionOutcomes: outcomes });
+    expect(charts.deadlines).toEqual(outcomes.deadlineOutcomes);
+    expect(charts.missionsDone).toHaveLength(13);
+    expect(charts.missionsDone.filter((d) => d.value > 0)).toEqual([{ date: '2026-10-05', label: 'Oct 5', value: 2 }]);
+  });
+});
+
+it('takes the score median only when every member has a score, and factor medians from the cohort', () => {
+  const exact = (n: number) => Exact.from(n).json();
+  const factor = (raw: number | null, median: number | null) => ({ rawValue: raw, rawExact: raw === null ? null : exact(raw), medianExact: median === null ? null : exact(median), reasons: [], sources: [] });
+  const member = (userId: string, composite: number | null) => ({ userId, composite, compositeExact: composite === null ? null : exact(composite), reasons: [], factors: { productivity: factor(composite, 2) } });
+  const observe = (date: string, status: string, members: unknown[]) => ({ date, calculation: { status, context: { asOfLocalDate: '2026-09-30' }, members } }) as unknown as DatedCalculation;
+  const charts = buildEmployeeAnalyticsCharts({ period: SEP_2026, performance: null, tasks: [], logs: [], stars: [], links: [], employeeId: 'b', asOfDate: '2026-09-30',
+    observations: [
+      observe('2026-09-10', 'complete', [member('a', 1), member('b', 3), member('c', 10)]),
+      observe('2026-09-11', 'incomplete', [member('a', 1), member('b', 3), member('d', null)]),
+      observe('2026-09-12', 'complete', [member('a', 1), member('c', 10)]),
+    ] });
+  expect(charts.performanceScoreTrend[0]).toMatchObject({ date: '2026-09-10', value: 3, display: '3.00', median: 3, medianDisplay: '3.00' });
+  // One member without a score: the median is unavailable, as on the dashboard.
+  expect(charts.performanceScoreTrend[1]).toMatchObject({ value: 3, median: null, medianDisplay: 'Unavailable' });
+  // This member absent from the day: no value, but the cohort's factor median still shows.
+  expect(charts.performanceScoreTrend[2]).toMatchObject({ value: null, median: 5.5 });
+  expect(charts.factorTrends.productivity[2]).toMatchObject({ value: null, median: 2 });
+  expect(charts.factorTrends.productivity[0]).toMatchObject({ value: 3, median: 2, medianDisplay: '2.000000' });
+  expect(charts.factorTrends.sales[0]).toMatchObject({ value: null, display: 'Unavailable', median: null });
 });

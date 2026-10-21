@@ -3,19 +3,14 @@ import { viewContext, type ViewContext } from '@/modules/reports/client';
 import type { LivePresentation } from '@/modules/reports/client';
 import { optionalEmployeePerformance } from '@/modules/team/internal/performance-availability';
 import { getAwards, type AwardReadModel } from '@/modules/scoring';
-import { getTaskWorkspaceData } from '@/modules/tasks';
 import { getTeamSummaryInputs } from '@/modules/scoring';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { canViewEmployeeReports } from '@/modules/team/internal/permissions';
 import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
-import { type MemberPerformance } from '@/modules/scoring/client';
+import { buildWorkbookDashboardCharts, type MemberPerformance } from '@/modules/scoring/client';
 import { getTeamAnalytics } from '@/modules/reports';
-import {
-  ATTENDANCE_COLUMNS,
-  mapAttendanceRecords,
-} from '@/modules/attendance/client';
+import { ATTENDANCE_COLUMNS } from '@/modules/attendance/client';
 import { summarizeAttendance, type AttendanceSummary } from '@/modules/attendance/client';
-import { LOG_COLUMNS, mapDailyTaskLogs } from '@/modules/time-tracking/client';
 import { sumHours } from '@/modules/time-tracking/client';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
@@ -39,7 +34,6 @@ import {
   REPORT_SNAPSHOT_COLUMNS,
 } from '@/modules/team/internal/mappers';
 import type {
-  AttendanceRecord,
   DailyStarRecord,
   DailyTaskLog,
   PerformanceScoreComponent,
@@ -77,17 +71,9 @@ export interface EmployeeProfileData {
   readonly tasks: readonly Task[];
   readonly taskLinks: readonly TaskLink[];
   readonly logs: readonly DailyTaskLog[];
-  readonly todayLogs: readonly DailyTaskLog[];
-  readonly yesterdayLogs: readonly DailyTaskLog[];
-  readonly todayTasks: readonly Task[];
-  readonly yesterdayTasks: readonly Task[];
-  readonly stars: readonly DailyStarRecord[];
-  readonly attendance: readonly AttendanceRecord[];
   readonly attendanceSummary: AttendanceSummary;
   readonly taskHourSummary: {
     readonly totalHours: number;
-    readonly todayHours: number;
-    readonly yesterdayHours: number;
   };
   readonly reports: readonly ReportSnapshot[];
   readonly charts: EmployeeAnalyticsCharts;
@@ -154,39 +140,9 @@ export async function getEmployeeProfileData(
   const viewer = await getCurrentProfile();
   if (!employee || !viewer || !canViewEmployeeReports(viewer, employee)) return null;
 
-  const presentation=await getLivePresentation(viewContext(period.startDate.slice(0,7),now.toISOString(),now,0),employee.id); // now: page's validated as-of
-  const performance=presentation.analytics.members.find(m=>m.userId===employee.id)??null;
-  const performanceUnavailableReason=performance?.calculation?.status==='incomplete'?'Required performance inputs are unavailable.':undefined;
-  const [currentTasks, logs, stars, attendance, reports] = await Promise.all([
-    getAssignedTasks(employee.id),
-    selectOrEmpty(
-      supabase
-        .from('daily_task_logs')
-        .select(LOG_COLUMNS).is('reversed_at', null)
-        .eq('user_id', employee.id)
-        .gte('log_date', period.startDate)
-        .lte('log_date', period.endDate)
-        .order('log_date', { ascending: false })
-        .order('created_at', { ascending: false }),
-    ),
-    selectOrEmpty(
-      supabase
-        .from('daily_star_records')
-        .select(DAILY_STAR_COLUMNS)
-        .eq('user_id', employee.id)
-        .gte('star_date', period.startDate)
-        .lte('star_date', period.endDate)
-        .order('star_date', { ascending: false }),
-    ),
-    selectOrEmpty(
-      supabase
-        .from('attendance_records')
-        .select(ATTENDANCE_COLUMNS)
-        .eq('user_id', employee.id)
-        .gte('attendance_date', period.startDate)
-        .lte('attendance_date', period.endDate)
-        .order('attendance_date', { ascending: false }),
-    ),
+  const view=viewContext(period.startDate.slice(0,7),now.toISOString(),now,0); // now: page's validated as-of
+  const [presentation, reports, supportData] = await Promise.all([
+    getLivePresentation(view,employee.id),
     selectOrEmpty(
       supabase
         .from('report_snapshots')
@@ -194,18 +150,15 @@ export async function getEmployeeProfileData(
         .eq('employee_id', employee.id)
         .order('created_at', { ascending: false }),
     ),
+    getSupportModuleData(period,view.asOf),
   ]);
+  const performance=presentation.analytics.members.find(m=>m.userId===employee.id)??null;
+  const performanceUnavailableReason=performance?.calculation?.status==='incomplete'?'Required performance inputs are unavailable.':undefined;
 
   const tasks=presentation.tasks;
   const mappedLogs = presentation.logs;
-  const mappedAttendance = mapAttendanceRecords(attendance);
   const taskLinks = presentation.assets.map(row=>mapTaskLink(row as unknown as TaskLinkRow));
-  const supportData = await getSupportModuleData(period,presentation.view.asOf);
   const today = presentation.view.asOfLocalDate;
-  const yesterday = previousIsoDate(today);
-  const todayLogs = mappedLogs.filter((log) => log.logDate === today);
-  const yesterdayLogs = mappedLogs.filter((log) => log.logDate === yesterday);
-  const mappedStars = mapDailyStarRecords(stars);
   const awards=presentation.awards!;
 
   return {
@@ -218,17 +171,9 @@ export async function getEmployeeProfileData(
     tasks,
     taskLinks,
     logs: mappedLogs,
-    todayLogs,
-    yesterdayLogs,
-    todayTasks: tasksForDateEvidence(tasks, todayLogs, today),
-    yesterdayTasks: tasksForDateEvidence(tasks, yesterdayLogs, yesterday),
-    stars: mappedStars,
-    attendance: mappedAttendance,
     attendanceSummary: presentation.analytics.members.find(m=>m.userId===employee.id)?.attendance??summarizeAttendance([]),
     taskHourSummary: {
       totalHours: sumHours(mappedLogs),
-      todayHours: sumHours(todayLogs),
-      yesterdayHours: sumHours(yesterdayLogs),
     },
     reports: mapReportSnapshots(reports),
     charts: buildEmployeeAnalyticsCharts({
@@ -236,10 +181,20 @@ export async function getEmployeeProfileData(
       performance,
       tasks,
       logs: mappedLogs,
-      stars: mappedStars,
+      stars: [],
       scoreHistory:awards.history,
       observations:presentation.series,employeeId:employee.id,
       links: taskLinks,
+      asOfDate: today,
+      attendanceDays: presentation.attendance.find(a=>a.userId===employee.id)?.days ?? [],
+      awardDays: awards.days,
+      missionOutcomes: buildWorkbookDashboardCharts({
+        analytics: presentation.analytics,
+        members: presentation.members,
+        tasks: tasks.filter(task=>task.assigneeIds.includes(employee.id)),
+        period,
+        asOfDate: today,
+      }),
     }),
     supportSummary: summarizeEmployeeSupport({
       userId: employee.id,
@@ -330,10 +285,6 @@ export async function getEmployeeByEmployeeId(
   return data ? mapUser(data) : null;
 }
 
-async function getAssignedTasks(userId: string): Promise<Task[]> {
-  const {tasks} = await getTaskWorkspaceData();
-  return tasks.filter((task) => task.assigneeIds.includes(userId)).sort((a,b) => a.taskTag.localeCompare(b.taskTag));
-}
 
 async function getTaskLinks(taskIds: readonly string[]): Promise<TaskLink[]> {
   if (taskIds.length === 0) return [];
@@ -365,20 +316,7 @@ function mapTaskLink(row: TaskLinkRow): TaskLink {
   };
 }
 
-function tasksForDateEvidence(
-  tasks: readonly Task[],
-  logs: readonly DailyTaskLog[],
-  date: string,
-): Task[] {
-  const taskIds = new Set(logs.map((log) => log.taskId));
-  return tasks.filter((task) => taskIds.has(task.id) || task.assignedDate===date || task.dueDate===date || task.completedDate===date);
-}
 
-function previousIsoDate(isoDate: string): string {
-  const date = new Date(`${isoDate}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() - 1);
-  return date.toISOString().slice(0, 10);
-}
 
 function dateInTimeZone(date: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat('en-CA', {

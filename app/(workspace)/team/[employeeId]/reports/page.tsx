@@ -1,23 +1,18 @@
-import { buttonVariants } from '@/shared/ui/button';
 import { LiveReport } from '@/modules/reports/components/live-report';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { monthHistory, monthRevision } from '@/modules/reports';
-import { viewQuery } from '@/modules/reports/client';
 import { liveViewContext } from '@/modules/reports';
 import { displayPerformance } from '@/shared/math/exact';
 import type { Metadata } from 'next';
-import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
-import { AwardHistory } from '@/modules/scoring/components/award-history';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { ArrowLeftIcon, FileTextIcon, HistoryIcon, ListChecksIcon, StarIcon, type LucideIcon } from 'lucide-react';
+import { FileTextIcon, HistoryIcon, ListChecksIcon, StarIcon, type LucideIcon } from 'lucide-react';
 
 import {
   EmptyState,
   MissionNotice,
   MissionPage,
-  MissionPageHeader,
   MissionPanel,
 } from '@/shared/ui/mission-ui';
 import { requireProfile } from '@/shared/session/profile';
@@ -27,7 +22,7 @@ import { canViewEmployeeReports } from '@/modules/team/client';
 import { getEmployeeByEmployeeId, getEmployeeReportsData } from '@/modules/team';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
-import { cn } from '@/shared/utils';
+import { carriedQuery, ProfileHeader } from '../profile-header';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;
@@ -57,7 +52,7 @@ export default async function EmployeeReportsPage({
     const archive=await monthRevision(context.period.startDate,revision,employee.id);
     if(!archive)notFound();
     const previous=revision>1?await monthRevision(context.period.startDate,revision-1,employee.id):null;
-    return <MissionPage><MissionPageHeader eyebrow="Team · Reports" title={`${employee.fullName} · archived report`} description={`${context.period.label} · revision ${revision}`}/><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="link justify-self-start" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></MissionPage>;
+    return <MissionPage><ProfileHeader employee={employee} current="reports" description={`${context.period.label} · archived revision ${revision}`} query={carriedQuery(query)}/><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="link justify-self-start" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></MissionPage>;
   }
   const routeState = await resolveEmployeeRouteState(
     employeeId,
@@ -76,19 +71,12 @@ export default async function EmployeeReportsPage({
 
   return (
     <MissionPage>
-      <MissionPageHeader
-        eyebrow="Team · Reports"
-        title={`${data.employee.fullName} reports`}
-        description={`${data.period.label} · performance, chart links, stars, and saved reports`}
-        actions={
-          <Link
-            href={`/team/${encodeURIComponent(data.employee.employeeId)}?${viewQuery(context)}`}
-            className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}
-          >
-            <ArrowLeftIcon className="size-4" aria-hidden="true" />
-            Back to profile
-          </Link>
-        }
+      <ProfileHeader
+        employee={data.employee}
+        current="reports"
+        description={`${data.employee.employeeId} · ${data.period.label} · live report, revisions, stars and saved reports`}
+        query={carriedQuery(query)}
+        missionCount={data.presentation.tasks.length}
       />
 
       <div className="grid gap-5 lg:gap-6">
@@ -97,8 +85,6 @@ export default async function EmployeeReportsPage({
         <ItemHoursPanel tasks={itemHours} />
         <h2 className="panel-title mt-2">Retained reports · original rules</h2>
         {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}
-        {data.performance?.calculation?<PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext}/>:null}
-        <AwardHistory awards={data.awards}/>
         <section id="charts" aria-label="Chart summary">
           <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <ChartCard
