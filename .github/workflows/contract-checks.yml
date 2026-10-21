@@ -63,3 +63,5 @@ jobs:
         run: python tools/test_m15_award_invalidation_database.py --psql "$(command -v psql)" --port 15432
       - name: Conflict errors without PostgREST retries (migration 52)
         run: python tools/test_conflict_sqlstate_database.py --psql "$(command -v psql)" --port 15432
+      - name: Demo recognition seed (script only, loopback)
+        run: python tools/test_seed_demo_recognition_database.py --psql "$(command -v psql)" --port 15432 --manifest-dir "$RUNNER_TEMP/demo-recognition"
