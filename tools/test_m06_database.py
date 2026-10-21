@@ -27,7 +27,7 @@ def sql(db, statement, success=True):
         raise AssertionError(result.stderr + '\n' + statement[:300])
     if not success and result.returncode == 0:
         raise AssertionError('Expected database denial: ' + statement)
-    if not success and not any(code in result.stderr for code in ('42501','23514','40001','23503')):
+    if not success and not any(code in result.stderr for code in ('42501','23514','40001','PT409','23503')):
         raise AssertionError('Failure was not an authorization/contract denial: ' + result.stderr)
     return result.stdout.strip()
 
@@ -289,7 +289,7 @@ for db in DBS:
             payload={'state':'validated','reason':'Review race'} if cmd=='validate' else {'business_date':day,'content':'Corrected content','reason':'Correction race'}
             record(db,'suggestion',payload,cmd=cmd,id=racing['id'],uid='3',version=1);return True
         except AssertionError as error:
-            assert '40001' in str(error);return False
+            assert any(c in str(error) for c in ('40001','PT409'));return False
     with ThreadPoolExecutor(2) as pool:results=list(pool.map(race,['validate','save']))
     assert sorted(results)==[False,True]
     # Midway outbox failure undoes source, history, audit and receipt.

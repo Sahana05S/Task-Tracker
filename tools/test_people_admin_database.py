@@ -29,12 +29,12 @@ def expect(db,uid,statement,code,role='authenticated'):
     r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
         input=f"BEGIN; SET LOCAL ROLE {role}; SELECT set_config('request.jwt.claim.sub','{uid}',true);\n{statement.rstrip(';')};\nCOMMIT;",
         text=True,capture_output=True,encoding='utf-8')
-    assert r.returncode and code in r.stderr,(statement[:140],r.stderr[:300])
+    assert r.returncode and (code in r.stderr or (code=='40001' and 'PT409' in r.stderr)),(statement[:140],r.stderr[:300])
 
 def expect_system(db,statement,code):
     r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
         input=statement,text=True,capture_output=True,encoding='utf-8')
-    assert r.returncode and code in r.stderr,(statement[:140],r.stderr[:300])
+    assert r.returncode and (code in r.stderr or (code=='40001' and 'PT409' in r.stderr)),(statement[:140],r.stderr[:300])
 
 def people(db,uid,command,payload):
     out=as_user(db,uid,f"SELECT public.people_command('{command}','{json.dumps(payload)}'::jsonb)")

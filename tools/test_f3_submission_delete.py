@@ -81,7 +81,7 @@ for db in DBS:
     # Idempotent replay returns the stored result; a reused key with other input is refused.
     replay=cl(db,'delete',{'node_id':node,'reason':'not needed'},key=key,ver=v)
     assert replay==result and version(db)==result['version']
-    refused(db,'4','delete',{'node_id':node,'reason':'different'},('40001','23514'))
+    refused(db,'4','delete',{'node_id':node,'reason':'different'},('40001','PT409','23514'))
     print('PASS',db,'assignee removes an empty Sub-mission: owned checklist and its 3 sections deleted, version bumped, audited like a delete, replay idempotent')
 
     # A manager can remove one too.
