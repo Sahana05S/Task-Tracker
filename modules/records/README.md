@@ -30,6 +30,7 @@ company already retains.
 | `dated_record_command` | `19_attendance_and_support_history.sql`, revised in 20 |
 | `dated_record_history` | `19_attendance_and_support_history.sql` |
 | `activity_feed` (read only; plus feed indexes on `audit_events`, `input_history`, `log_revisions`, `month_receipts`) | `54_activity_feed.sql` |
+| `activity_feed` command de-duplication (a row change inside a shown command is not listed twice) | `57_activity_feed_command_dedupe.sql` |
 
 The tables themselves (attendance records, daily facts, ideas, suggestions,
 sales logs, meeting points) belong to `attendance` and `support`, which read
@@ -43,7 +44,9 @@ them. All objects are company-scoped by migrations 39-40 (M15).
   month receipts, and audit events for missions, checklists, people and
   company items. Derived refreshes (task metrics, checklist rollups, award
   invalidations), system rows and rows already told by a better source are
-  left out.
+  left out. Since migration 57 a row-level change made inside a shown command
+  (same transaction, so the same audit time) is not listed again; derived
+  refresh events never hide a change.
 - Managers (managing director, project engineer) see the whole company; any
   other member sees what they did and changes to their account, their dated
   records, their logs and missions they are assigned to. Company separation

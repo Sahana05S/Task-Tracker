@@ -1,4 +1,4 @@
-"""Activity log, migration 54: public.activity_feed visibility, filters, bounds and paging. Two-company disposable PostgreSQL checks. JWT shim only; no hosted connection."""
+"""Activity log, migrations 54 and 57: public.activity_feed visibility, command de-duplication, filters, bounds and paging. Two-company disposable PostgreSQL checks. JWT shim only; no hosted connection."""
 from pathlib import Path
 source=Path(__file__).with_name('test_m09_database.py').read_text(encoding='utf-8')
 exec(compile(source.split('\nfor db in DBS:')[0],str(Path(__file__).with_name('test_m09_database.py')),'exec'))
@@ -10,6 +10,14 @@ T2='10000000-0000-0000-0000-000000000002'
 B_DIR,B4='00000000-0000-0000-0000-0000000000b1','00000000-0000-0000-0000-0000000000b4'
 SOURCES=('taskpulse_private.audit_events','taskpulse_private.input_history','taskpulse_private.log_revisions','taskpulse_private.month_receipts')
 MIGRATION=(ROOT/'supabase/migrations/54_activity_feed.sql').read_text(encoding='utf-8')
+MIGRATION57=(ROOT/'supabase/migrations/57_activity_feed_command_dedupe.sql').read_text(encoding='utf-8')
+
+def broken_apply(db,text):
+    r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
+        input=text.replace('\nCOMMIT;','\nSELECT 1/0;\nCOMMIT;',1),text=True,capture_output=True,encoding='utf-8')
+    assert r.returncode and 'division by zero' in r.stderr,r.stderr[:300]
+def definition(db):
+    return value(db,"md5(pg_get_functiondef('public.activity_feed(date,date,text,uuid,jsonb,integer)'::regprocedure))")
 
 def run(db,uid,statement):
     return subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
@@ -33,7 +41,7 @@ def migrate(db,upto,after=0):
 def counts(db):return {t:value(db,f'count(*) FROM {t}') for t in SOURCES}
 
 LATEST=max(int(p.name.split('_')[0]) for p in (ROOT/'supabase/migrations').glob('*.sql'))
-assert LATEST>=54
+assert LATEST>=57
 
 for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);')
@@ -42,17 +50,22 @@ for db in DBS:
     if db==DBS[1]:
         migrate(db,49); sql(db,seed)
         # A failing 54 leaves nothing behind.
-        broken=MIGRATION.replace('\nCOMMIT;','\nSELECT 1/0;\nCOMMIT;',1)
-        r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],input=broken,text=True,capture_output=True,encoding='utf-8')
-        assert r.returncode and 'division by zero' in r.stderr,r.stderr[:300]
+        broken_apply(db,MIGRATION)
         assert value(db,"count(*) FROM pg_proc WHERE proname='activity_feed'")=='0'
         assert value(db,"count(*) FROM pg_class WHERE relname LIKE '%\\_feed\\_idx'")=='0'
         print('PASS',db,'a failing 54 rolls back: no function, no index')
         call(db,'create_task_log',task,{'log_date':value(db,"(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date"),'hours_worked':1.5,'requested_delta':0},uid='4')  # before 54
         before=counts(db)
-        migrate(db,LATEST,after=49)
+        migrate(db,54,after=49)
         assert counts(db)==before,'54 writes no rows'
         print('PASS',db,'upgrade 49->54 adds the read and indexes without touching retained rows')
+        read54=definition(db)
+        broken_apply(db,MIGRATION57)
+        assert definition(db)==read54
+        print('PASS',db,'a failing 57 rolls back to the 54 read')
+        migrate(db,LATEST,after=54)
+        assert counts(db)==before and definition(db)!=read54,'57 replaces the read and writes no rows'
+        print('PASS',db,f'upgrade 54->{LATEST} replaces the read without touching retained rows')
     else:
         migrate(db,LATEST); sql(db,seed)
         print('PASS',db,f'fresh install 01-{LATEST}')
@@ -82,14 +95,21 @@ for db in DBS:
     # A manager's mission edits (row-level audit with the manager as actor); signed-in roles cannot UPDATE tasks directly.
     sql(db,f"""BEGIN; SELECT set_config('request.jwt.claim.sub','{MD}',true);
       UPDATE public.tasks SET priority='High' WHERE id='{T2}'; UPDATE public.tasks SET due_date='2026-11-30' WHERE id='{task}'; COMMIT;""")
+    # A command and its own row change in one transaction (migration 57): only the command is listed.
+    sql(db,f"""BEGIN; SELECT set_config('request.jwt.claim.sub','{MD}',true);
+      INSERT INTO taskpulse_private.audit_events(actor_id,actor_role,command,table_name,row_id,changed_fields,protected_changes)
+        VALUES('{MD}','managing_director','transition','tasks','{T2}',ARRAY['transition'],'{{"reason":"Renamed in a command"}}');
+      UPDATE public.tasks SET title='B renamed' WHERE id='{T2}'; COMMIT;""")
     sql(db,f"""INSERT INTO taskpulse_private.month_receipts(actor_id,operation,request,response,recorded_at) VALUES
       ('{MD}',gen_random_uuid(),'{{"command":"draft","period":"2026-09-01","payload":{{"reason":"September draft"}}}}','{{}}','2026-10-20T19:00:00Z')""")
     actor(db,B4,"SELECT public.dated_record_command('fact',NULL,'save',"+literal(json.dumps({'business_date':today,'content':'Beta fact'}))+"::jsonb,0,gen_random_uuid())")
-    sql(db,"UPDATE taskpulse_private.audit_events SET occurred_at='2026-10-20T10:00:00Z' WHERE occurred_at>now()-interval '1 hour';"
-           "UPDATE taskpulse_private.log_revisions SET occurred_at='2026-10-20T10:00:00Z' WHERE occurred_at>now()-interval '1 hour';"
+    # One shift for everything recent, so rows of one transaction keep one time and separate transactions stay apart.
+    sql(db,"BEGIN; CREATE TEMP TABLE shift ON COMMIT DROP AS SELECT now()-timestamptz '2026-10-20T10:00:00Z' AS d;"
+           "UPDATE taskpulse_private.audit_events SET occurred_at=occurred_at-(SELECT d FROM shift) WHERE occurred_at>now()-interval '1 hour';"
+           "UPDATE taskpulse_private.log_revisions SET occurred_at=occurred_at-(SELECT d FROM shift) WHERE occurred_at>now()-interval '1 hour';"
            "ALTER TABLE taskpulse_private.input_history DISABLE TRIGGER USER;"
-           "UPDATE taskpulse_private.input_history SET recorded_at='2026-10-20T10:00:00Z' WHERE recorded_at>now()-interval '1 hour';"
-           "ALTER TABLE taskpulse_private.input_history ENABLE TRIGGER USER;")
+           "UPDATE taskpulse_private.input_history SET recorded_at=recorded_at-(SELECT d FROM shift) WHERE recorded_at>now()-interval '1 hour';"
+           "ALTER TABLE taskpulse_private.input_history ENABLE TRIGGER USER; COMMIT;")
 
     # An audit row with a malformed task id.
     sql(db,f"""
@@ -109,8 +129,12 @@ for db in DBS:
     assert next(r for r in recs if r['action']=='validate')['reason']=='Checked against the site log'
     missions=[r for r in rows if r['kind']=='missions']
     missions=[r for r in missions if r['record_kind']!='task_links']
-    assert sorted((r['action'],r['task_tag']) for r in missions)==[('UPDATE','T1'),('UPDATE','T2')],missions
-    assert next(r for r in missions if r['task_tag']=='T1')['fields']==['due_date'] and next(r for r in missions if r['task_tag']=='T2')['fields']==['priority'] and all(r['actor_id']==MD for r in missions)
+    assert sorted((r['action'],r['task_tag']) for r in missions)==[('UPDATE','T1'),('UPDATE','T2'),('transition','T2')],missions
+    updates=[r for r in missions if r['action']=='UPDATE']
+    assert next(r for r in updates if r['task_tag']=='T1')['fields']==['due_date'] and next(r for r in updates if r['task_tag']=='T2')['fields']==['priority']
+    assert all(r['actor_id']==MD for r in missions) and next(r for r in missions if r['action']=='transition')['reason']=='Renamed in a command'
+    assert value(db,"count(*) FROM taskpulse_private.audit_events WHERE table_name='tasks' AND command='UPDATE' AND 'title'=ANY(changed_fields)")=='1'
+    print('PASS',db,'a command and its own row change read as one line; standalone row changes stay listed')
     assert value(db,"count(*) FROM taskpulse_private.audit_events WHERE table_name='tasks' AND command='UPDATE' AND actor_id IS NOT NULL AND NOT changed_fields && ARRAY['priority','due_date']")!='0'
     assert value(db,"count(*) FROM taskpulse_private.audit_events WHERE command='checklist_metric_refresh' AND actor_id IS NOT NULL")!='0'
     print('PASS',db,'derived task metric refreshes and checklist refresh events exist in the audit but are not listed')
