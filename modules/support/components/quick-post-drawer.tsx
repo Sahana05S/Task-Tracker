@@ -66,7 +66,16 @@ export function announcePosted(kind: RecordKind, { close, navigate, onPostAnothe
   toast.success(`${meta.noun} posted`, {
     description: 'It waits for review on the Records tab.',
     action: { label: 'View', onClick: () => navigate(meta.href) },
-    cancel: onPostAnother ? { label: 'Post another', onClick: () => onPostAnother(kind) } : undefined,
+    cancel: onPostAnother ? {
+      label: 'Post another',
+      onClick: () => {
+        // Sonner hands focus back to the page when its button blurs. Let that
+        // happen now, before the drawer opens, or the drawer sees focus leave
+        // and closes itself at once.
+        (globalThis.document?.activeElement as HTMLElement | null)?.blur();
+        onPostAnother(kind);
+      },
+    } : undefined,
   });
 }
 
@@ -89,9 +98,14 @@ export function QuickPostForm({ kind, onKindChange, choices, loadError, presetTa
 }) {
   return (
     <>
-      <div className="-mx-1 overflow-x-auto px-1 pb-1">
-        <SegmentedControl label="Record kind" value={kind} options={POST_KINDS} onValueChange={onKindChange} />
-      </div>
+      {/* Full width, and tighter segments on phones so all five kinds fit at 375 px. */}
+      <SegmentedControl
+        label="Record kind"
+        value={kind}
+        options={POST_KINDS}
+        onValueChange={onKindChange}
+        className="flex w-full [&>button]:flex-1 max-sm:[&>button]:px-1.5"
+      />
       <div className="pt-4">
         {loadError ? (
           <FormError message={loadError} />

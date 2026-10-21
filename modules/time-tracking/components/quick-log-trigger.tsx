@@ -13,10 +13,10 @@ const QuickLogDrawer = dynamic(() => import('@/modules/time-tracking/components/
 export interface QuickLogTriggerProps {
   /** Preselects the drawer's task picker, e.g. from a mission page. */
   presetTaskId?: string;
-  /** Button text; stays the accessible name when `iconOnlyBelowLg` hides it. */
+  /** Button text; stays the accessible name when `iconOnlyBelowXl` hides it. */
   label?: string;
-  /** Show only the icon from `md` to `lg`, where the top bar is tight. */
-  iconOnlyBelowLg?: boolean;
+  /** Show only the icon from `md` to `xl` (768-1279 px), where the top bar is tight. */
+  iconOnlyBelowXl?: boolean;
   className?: string;
 }
 
@@ -26,14 +26,15 @@ export interface QuickLogTriggerProps {
  * only while open, so no page pays for the form or its task fetch until
  * someone asks for it.
  */
-export function QuickLogTrigger({ presetTaskId, label = 'Log time', iconOnlyBelowLg = false, className }: QuickLogTriggerProps) {
+export function QuickLogTrigger({ presetTaskId, label = 'Log time', iconOnlyBelowXl = false, className }: QuickLogTriggerProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
     <>
-      <Button type="button" variant="accent" shape="pill" onClick={() => setOpen(true)} className={cn('font-semibold', className)}>
+      <Button type="button" variant="accent" shape="pill" onClick={() => setOpen(true)}
+        title={iconOnlyBelowXl ? label : undefined} className={cn('font-semibold', className)}>
         <ClockPlusIcon aria-hidden="true" />
-        <span className={cn(iconOnlyBelowLg && 'md:max-lg:sr-only')}>{label}</span>
+        <span className={cn(iconOnlyBelowXl && 'md:max-xl:sr-only')}>{label}</span>
       </Button>
       {open ? <QuickLogDrawer open={open} onOpenChange={setOpen} presetTaskId={presetTaskId} /> : null}
     </>

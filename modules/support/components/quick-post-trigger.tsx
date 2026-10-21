@@ -16,10 +16,10 @@ export interface QuickPostTriggerProps {
   presetKind?: RecordKind;
   /** Preselects the related task (a mission page or card menu). */
   presetTaskId?: string;
-  /** Button text; stays the accessible name when `iconOnlyBelowLg` hides it. */
+  /** Button text; stays the accessible name when `iconOnlyBelowXl` hides it. */
   label?: string;
-  /** Show only the icon from `md` to `lg`, where the top bar is tight. */
-  iconOnlyBelowLg?: boolean;
+  /** Show only the icon from `md` to `xl` (768-1279 px), where the top bar is tight. */
+  iconOnlyBelowXl?: boolean;
   className?: string;
 }
 
@@ -29,7 +29,7 @@ export interface QuickPostTriggerProps {
  * "Post another" in the success toast reopens it; the drawer opens on the
  * kind just posted (remembered on the device) unless `presetKind` is set.
  */
-export function QuickPostTrigger({ presetKind, presetTaskId, label = 'Post', iconOnlyBelowLg = false, className }: QuickPostTriggerProps) {
+export function QuickPostTrigger({ presetKind, presetTaskId, label = 'Post', iconOnlyBelowXl = false, className }: QuickPostTriggerProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -39,10 +39,11 @@ export function QuickPostTrigger({ presetKind, presetTaskId, label = 'Post', ico
         variant="outline"
         shape="pill"
         onClick={() => setOpen(true)}
+        title={iconOnlyBelowXl ? label : undefined}
         className={cn('font-semibold', className)}
       >
         <MessageSquarePlusIcon aria-hidden="true" />
-        <span className={cn(iconOnlyBelowLg && 'md:max-lg:sr-only')}>{label}</span>
+        <span className={cn(iconOnlyBelowXl && 'md:max-xl:sr-only')}>{label}</span>
       </Button>
       {open ? (
         <QuickPostDrawer

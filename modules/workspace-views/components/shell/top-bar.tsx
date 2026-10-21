@@ -22,9 +22,10 @@ import type { User } from '@/types/tracker';
 /**
  * Sticky workspace top bar. Desktop/tablet: brand, the five destination pills
  * and More, then the running-timer pill, the two quick actions (Log time and
- * Post, icon-only on tablets), notifications and account. Phones: brand, timer
- * pill and account; destinations move to the bottom bar and the quick actions
- * to its + menu.
+ * Post), notifications and account. Below 1280 px the timer pill is compact
+ * and the quick actions show icons only, so the bar never overflows. Phones:
+ * brand, timer pill and account; destinations move to the bottom bar and the
+ * quick actions to its "New" menu.
  */
 export function TopBar({ profile }: { profile: User }) {
   const pathname = usePathname();
@@ -68,11 +69,11 @@ export function TopBar({ profile }: { profile: User }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="lg:hidden"><TimerPill compact /></span>
-          <span className="hidden lg:inline-flex"><TimerPill /></span>
+          <span className="xl:hidden"><TimerPill compact /></span>
+          <span className="hidden xl:inline-flex"><TimerPill /></span>
           <span className="hidden items-center gap-2 md:flex">
-            <QuickLogTrigger iconOnlyBelowLg className="h-9" />
-            <QuickPostTrigger iconOnlyBelowLg className="h-9" />
+            <QuickLogTrigger iconOnlyBelowXl className="h-9" />
+            <QuickPostTrigger iconOnlyBelowXl className="h-9" />
           </span>
           <button type="button" className="icon-button hidden md:flex" aria-label="Notifications">
             <BellIcon className="size-4" aria-hidden="true" />
