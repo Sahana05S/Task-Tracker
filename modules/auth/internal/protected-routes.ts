@@ -3,6 +3,7 @@ export const PROTECTED_PREFIXES = [
   '/daily-facts',
   '/dashboard',
   '/ideas',
+  '/leaderboard',
   '/logs',
   '/meeting-points',
   '/milestones',

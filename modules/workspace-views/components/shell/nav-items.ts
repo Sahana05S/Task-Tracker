@@ -11,6 +11,7 @@ import {
   MessageSquareIcon,
   SettingsIcon,
   SparklesIcon,
+  TrophyIcon,
   TargetIcon,
   UsersIcon,
   WrenchIcon,
@@ -84,6 +85,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     tabs: [
       { label: 'Analytics', href: '/dashboard', match: ['/dashboard'], icon: BarChart3Icon },
       { label: 'People', href: '/team', match: ['/team'], icon: UsersIcon },
+      { label: 'Leaderboard', href: '/leaderboard', match: ['/leaderboard'], icon: TrophyIcon },
     ],
   },
   {

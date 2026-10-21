@@ -3,7 +3,7 @@ import { PRIORITY_WEIGHTS } from '@/modules/tasks/client';
 import type { Task,UserRole } from '@/types/tracker';
 import type { ContributionInputContext } from '@/modules/support/client';
 import { Exact } from '@/shared/math/exact';
-import { calculatePerformance,FACTORS,PERFORMANCE_RULE_VERSION,measuredRaw,unavailableRaw,type CalculationContext,type CalculationResult,type Factor,type MemberRawInputs,type Provenance,type RawFactor } from './engine';
+import { calculatePerformance,FACTORS,PERFORMANCE_RULE_VERSION,measuredRaw,unavailableRaw,type CalculationContext,type MemberEligibilityReason,type CalculationResult,type Factor,type MemberRawInputs,type Provenance,type RawFactor } from './engine';
 
 export interface SourceMember {id:string;fullName:string;employeeId:string;role:UserRole;active:boolean;revision:string}
 export interface SourceTask {
@@ -68,7 +68,7 @@ export function resolvePerformance(sources:PerformanceSources,policy:Performance
       const raw=contributions?.factors[key];const refs=sources.contributions.sources.filter(s=>s.kind===key&&s.attributedTo===member.id).map(s=>({kind:key,id:s.id,revision:String(s.version),businessDate:s.businessDate,exclusionReasons:s.exclusionReason?[s.exclusionReason]:s.provenanceReason?[s.provenanceReason]:[]}));
       factors[factor]=raw?.available&&raw.rawValue!==null?measuredRaw(String(raw.rawValue),refs):{value:null,available:false,reasons:raw?.reasons??['contribution_source_missing'],sources:refs};
     }
-    const attendance=sources.attendance.find(a=>a.userId===member.id),eligibility:string[]=[];
+    const attendance=sources.attendance.find(a=>a.userId===member.id),eligibility:MemberEligibilityReason[]=[];
     if(attendance?.valid===false)eligibility.push('attendance_invalid');
     else if(attendance?.valid!==true)eligibility.push('attendance_unavailable');
     if(!sources.historyAvailable){for(const f of ['productivity','criticality','loading','completion','progress','freshness'] as const)factors[f]=unavailableRaw('task_history_before_observed_baseline');}

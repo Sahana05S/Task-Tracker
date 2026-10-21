@@ -3,4 +3,5 @@
 
 export { getStreak } from '@/modules/recognition/internal/streaks';
 export { getDailyStarHighlight } from '@/modules/recognition/internal/daily-star';
+export { getLeaderboard, leaderboardPeriod } from '@/modules/recognition/internal/leaderboard';
 export * from '@/modules/recognition/client';
