@@ -18,6 +18,10 @@ describe('redesigned navigation keeps every workspace route reachable',()=>{
   const hrefs=[...NAV_SECTIONS.flatMap(s=>s.tabs.map(t=>t.href)),...MORE_ITEMS.map(i=>i.href)];
   expect(new Set(hrefs).size).toBe(hrefs.length);
  });
+ it('puts the recognition pages under Team',()=>{
+  expect(activeSection('/leaderboard')?.label).toBe('Team');
+  expect(PROTECTED_PREFIXES).toContain('/leaderboard');
+ });
  it('keeps the master checklist inside Missions, not a separate destination',()=>{
   expect(activeSection('/tasks/M13-X/checklist')?.label).toBe('Missions');
  });
