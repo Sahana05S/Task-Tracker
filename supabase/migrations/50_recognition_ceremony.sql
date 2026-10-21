@@ -143,10 +143,10 @@ CREATE FUNCTION taskpulse_private.recognition_monthly_star(p_org uuid,p_from dat
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path='' AS $$
 DECLARE to_ex date:=(p_from+interval '1 month')::date; missing jsonb; counts jsonb; top integer; tied text[]; pick text;
  n numeric; d numeric; best_n numeric; best_d numeric; winners text[]:='{}'; score jsonb; BEGIN
- SELECT coalesce(jsonb_agg(business_date ORDER BY business_date) FILTER (WHERE NOT decided),'[]'::jsonb) INTO missing
- FROM taskpulse_private.recognition_daily_wins(p_org,p_from,to_ex);
- SELECT coalesce(jsonb_object_agg(winner,wins),'{}'::jsonb) INTO counts FROM (
-  SELECT winner::text winner,count(*) wins FROM taskpulse_private.recognition_daily_wins(p_org,p_from,to_ex) WHERE winner IS NOT NULL GROUP BY winner) c;
+ WITH w AS MATERIALIZED (SELECT * FROM taskpulse_private.recognition_daily_wins(p_org,p_from,to_ex))
+ SELECT (SELECT coalesce(jsonb_agg(business_date ORDER BY business_date),'[]'::jsonb) FROM w WHERE NOT decided),
+  (SELECT coalesce(jsonb_object_agg(winner,wins),'{}'::jsonb) FROM (SELECT winner::text winner,count(*) wins FROM w WHERE winner IS NOT NULL GROUP BY winner) c)
+ INTO missing,counts;
  IF jsonb_array_length(missing)>0 THEN
   RETURN jsonb_build_object('status','incomplete','winnerId',NULL,'counts',counts,'tiedIds','[]'::jsonb,'reasons',jsonb_build_array('daily_coverage_incomplete'),'missingDates',missing);
  END IF;
@@ -171,7 +171,7 @@ DECLARE to_ex date:=(p_from+interval '1 month')::date; missing jsonb; counts jso
  IF cardinality(winners)>1 THEN
   RETURN jsonb_build_object('status','complete','winnerId',NULL,'counts',counts,'tiedIds',to_jsonb(winners),'reasons',jsonb_build_array('exact_monthly_tie'),'missingDates','[]'::jsonb);
  END IF;
- RETURN jsonb_build_object('status','complete','winnerId',winners[1],'counts',counts,'tiedIds',to_jsonb(tied),'reasons','[]'::jsonb,'missingDates','[]'::jsonb);
+ RETURN jsonb_build_object('status','complete','winnerId',winners[1],'counts',counts,'tiedIds','[]'::jsonb,'reasons','[]'::jsonb,'missingDates','[]'::jsonb);
 END $$;
 
 -- ---------------------------------------------------------------------------
@@ -181,7 +181,7 @@ CREATE FUNCTION public.recognition_ceremony_command(p_period date,p_payload json
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE actor uuid:=auth.uid(); org uuid; prior taskpulse_private.recognition_ceremony_receipts; response jsonb;
  request jsonb:=jsonb_build_object('period',p_period,'payload',p_payload,'expectedRevision',p_expected_revision);
- end_date date; calc jsonb; asof timestamptz; current_id uuid; current_num integer; reason text; star jsonb; cid uuid; f text; award jsonb;
+ end_date date; calc jsonb; asof timestamptz; current_id uuid; current_num integer; reason text; star jsonb; cid uuid; f text; award jsonb; awarded integer:=0;
  factors text[]:=ARRAY['productivity','criticality','loading','completion','progress','sales','facts','ideas','suggestions','freshness']; BEGIN
  IF current_setting('role',true)<>'authenticated' OR actor IS NULL OR public.get_user_role() IS DISTINCT FROM 'managing_director' THEN
   RAISE EXCEPTION 'Active managing director required' USING ERRCODE='42501'; END IF;
@@ -235,9 +235,9 @@ DECLARE actor uuid:=auth.uid(); org uuid; prior taskpulse_private.recognition_ce
   INSERT INTO taskpulse_private.recognition_ceremony_awards(ceremony_id,organization_id,category,status,winner_id,winning_raw,tied_ids,reasons)
   VALUES(cid,org,f,award->>'status',(award->>'winnerId')::uuid,nullif(award->'winningRaw','null'::jsonb),
    ARRAY(SELECT jsonb_array_elements_text(award->'tiedIds')::uuid),ARRAY(SELECT jsonb_array_elements_text(award->'reasons')));
+  IF award->>'status'='awarded' THEN awarded:=awarded+1; END IF;
  END LOOP;
- response:=jsonb_build_object('period',p_period,'ceremonyId',cid,'revisionNumber',current_num+1,'monthlyStar',star,
-  'awarded',(SELECT count(*) FROM taskpulse_private.recognition_ceremony_awards WHERE ceremony_id=cid AND status='awarded'));
+ response:=jsonb_build_object('period',p_period,'ceremonyId',cid,'revisionNumber',current_num+1,'monthlyStar',star,'awarded',awarded);
  INSERT INTO taskpulse_private.recognition_ceremony_receipts(organization_id,actor_id,operation,request,response) VALUES(org,actor,p_operation,request,response);
  INSERT INTO taskpulse_private.audit_events(actor_id,actor_role,command,table_name,row_id,changed_fields,protected_changes,operation_id)
  VALUES(actor,'managing_director','recognition_ceremony_publish','recognition_ceremonies',cid,ARRAY['revision_number'],

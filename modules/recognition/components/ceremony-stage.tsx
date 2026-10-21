@@ -8,7 +8,7 @@ import type { CeremonyModel } from '@/modules/recognition/client';
 import { Button } from '@/shared/ui/button';
 
 import { AwardCard, categorySentence, FinaleCard, HiddenAwardCard } from './ceremony-cards';
-import { useReducedMotion } from './use-reduced-motion';
+import { REDUCED_MOTION_QUERY, useReducedMotion } from './use-reduced-motion';
 
 /** Steps: 0 = curtain, 1..10 = categories revealed, 11 = monthly star, then done. */
 type Step = number;
@@ -40,7 +40,7 @@ export function CeremonyStage({ model, viewerId, notes = {}, commendations }: {
 
   useEffect(() => {
     if (!seenKey) return;
-    let seen = reduced || Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+    let seen = reduced || Boolean(window.matchMedia?.(REDUCED_MOTION_QUERY).matches);
     try { seen ||= Boolean(window.sessionStorage.getItem(seenKey)); } catch { seen = true; }
     if (seen) setStep(total + 1);
   }, [seenKey, reduced, total]);

@@ -3,7 +3,7 @@
 // shows the same rule over the live shared calculation and the live monthly
 // winner (`getAwards().monthly`), which needs no certified month archive.
 import { nextDate } from '@/modules/reports/client';
-import { getAwards, selectMonthly, type AwardReadModel, type CalculationResult, type MonthlySelection } from '@/modules/scoring';
+import { awardContext, getAwards, selectMonthly, type AwardPolicy, type AwardReadModel, type CalculationResult, type MonthlySelection } from '@/modules/scoring';
 import { canManageTasks } from '@/modules/tasks/client';
 import { createClient } from '@/shared/supabase/server';
 import { isMissingSchemaError } from '@/shared/supabase/schema-errors';
@@ -24,12 +24,11 @@ interface StoredCeremony {
   period: string;
   published: boolean;
   revisionNumber: number;
-  canPublish: boolean;
   ceremonyId?: string;
   publishedAt?: string;
   reason?: string | null;
   asOf?: string;
-  monthlyStar?: { status: string; winnerId: string | null; counts?: Record<string, number>; tiedIds?: string[]; reasons?: string[] };
+  monthlyStar?: Pick<MonthlySelection, 'status' | 'winnerId' | 'counts' | 'tiedIds' | 'reasons'>;
   awards?: CategoryAward[];
   names?: Record<string, string>;
 }
@@ -44,10 +43,11 @@ async function readStored(db: Db, period: AnalyticsPeriod): Promise<StoredCeremo
   return data as unknown as StoredCeremony;
 }
 
-/** Every date of the month whose daily star cutoff has passed by `now`. */
-function monthDates(period: AnalyticsPeriod, today: string): string[] {
+/** The month's dates whose daily star cutoff has passed, by the award policy (as `getAwards` builds them). */
+function requiredDates(period: AnalyticsPeriod, policy: AwardPolicy | null, now = new Date().toISOString()): string[] {
   const dates: string[] = [];
-  for (let d = period.startDate; d <= period.endDate && d < today; d = nextDate(d)) dates.push(d);
+  if (!policy) return dates;
+  for (let d = period.startDate; d <= period.endDate; d = nextDate(d)) if (awardContext(d, now, policy).cutoff <= now) dates.push(d);
   return dates;
 }
 
@@ -66,7 +66,7 @@ async function liveMonthly(db: Db, period: AnalyticsPeriod, calculation: Calcula
     awards = await getAwards(db, period);
   }
   const ended = period.endDate < today;
-  return selectMonthly(awards.days, monthDates(period, today), calculation, awards.policy, ended);
+  return selectMonthly(awards.days, requiredDates(period, awards.policy), calculation, awards.policy, ended);
 }
 
 export async function getCeremony(viewer: Pick<User, 'id' | 'role' | 'isActive'>, period: AnalyticsPeriod): Promise<CeremonyModel> {
@@ -86,15 +86,14 @@ export async function getCeremony(viewer: Pick<User, 'id' | 'role' | 'isActive'>
   if (stored?.published && stored.monthlyStar && stored.awards) {
     return {
       ...base, status: 'official', names: stored.names ?? {}, asOf: stored.asOf!,
-      categories: stored.awards.map((a) => ({ ...a, winningRaw: a.winningRaw ?? null, tiedIds: a.tiedIds ?? [], reasons: a.reasons ?? [] })),
-      monthlyStar: monthlyStarAct({
-        status: stored.monthlyStar.status as MonthlySelection['status'], winnerId: stored.monthlyStar.winnerId,
-        counts: stored.monthlyStar.counts ?? {}, tiedIds: stored.monthlyStar.tiedIds ?? [], reasons: stored.monthlyStar.reasons ?? [],
-      }),
+      categories: stored.awards.map((a) => ({ ...a, winningRaw: a.winningRaw ?? null })),
+      monthlyStar: monthlyStarAct(stored.monthlyStar),
       publication: { ceremonyId: stored.ceremonyId!, revisionNumber: stored.revisionNumber, publishedAt: stored.publishedAt!, reason: stored.reason ?? null },
     };
   }
-  const { sources, calculation, asOf } = await loadMonth(db, period);
+  // A director about to publish sees the results as of now, exactly what publishing will
+  // keep; everyone else reads the canonical month cutoff.
+  const { sources, calculation, asOf } = await loadMonth(db, period, { live: base.canPublish });
   const names = Object.fromEntries(sources.members.map((m) => [m.id, m.fullName]));
   const monthly = await liveMonthly(db, period, calculation, today);
   return {

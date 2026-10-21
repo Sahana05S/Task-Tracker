@@ -2,13 +2,12 @@
 
 import { useEffect, useState, type CSSProperties } from 'react';
 
-import { useReducedMotion } from './use-reduced-motion';
+import { REDUCED_MOTION_QUERY, useReducedMotion } from './use-reduced-motion';
 
 /** Violet (primary), gold (recognition) and mint (success) from DESIGN.md. */
 const COLOURS = ['#6355e6', '#f5a623', '#10b981'] as const;
 const COUNT = 36;
 const DURATION_MS = 3200;
-const QUERY = '(prefers-reduced-motion: reduce)';
 
 interface Piece { left: number; drift: number; delay: number; colour: string; width: number; height: number }
 
@@ -36,7 +35,7 @@ export function ConfettiBurst({ id }: { id: string }) {
 
   useEffect(() => {
     // The hook reports false on first paint; ask the browser directly as well.
-    if (reduced || typeof window === 'undefined' || window.matchMedia?.(QUERY).matches) return;
+    if (reduced || typeof window === 'undefined' || window.matchMedia?.(REDUCED_MOTION_QUERY).matches) return;
     const key = `tp.confetti.${id}`;
     try {
       if (window.sessionStorage.getItem(key)) return;

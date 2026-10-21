@@ -10,16 +10,14 @@ import { requireProfile } from '@/shared/session/profile';
 import { formatDateTime } from '@/shared/tracker/format';
 import { buttonVariants } from '@/shared/ui/button';
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
-import { currentPeriod } from '@/shared/time/period';
+import { currentPeriod, resolvePeriod } from '@/shared/time/period';
 
 export const metadata: Metadata = { title: 'Awards · TaskPulse' };
 
 /** The month before the current one: the ceremony people usually come for. */
 function lastMonth(): string {
-  const current = currentPeriod();
-  const d = new Date(`${current.startDate}T00:00:00Z`);
-  d.setUTCMonth(d.getUTCMonth() - 1);
-  return d.toISOString().slice(0, 7);
+  const { year, month } = currentPeriod();
+  return (month === 1 ? resolvePeriod(year - 1, 12) : resolvePeriod(year, month - 1)).startDate.slice(0, 7);
 }
 
 /**
