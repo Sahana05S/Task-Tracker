@@ -2,8 +2,9 @@ import { Exact } from '@/shared/math/exact';
 import { performanceReport } from '@/modules/scoring/client';
 import type { LivePresentation } from './model';
 import { formatHours } from '@/shared/tracker/format';
+import { csvCell } from '@/shared/tracker/csv';
+export { csvCell };
 export function liveReport(model:LivePresentation){return {label:'Live report; not a frozen month',context:model.view,scope:model.scope,detailsAvailable:model.detailsAvailable,detailsAvailableFrom:model.detailsAvailableFrom,presentationWatermark:model.presentationWatermark,awardAvailability:model.awardAvailabilityReason??'Retained M08 observations',awards:model.awards,performance:performanceReport(model.calculation,model.employeeId),tasks:model.tasks,taskProductivity:model.taskRates,logs:model.logs,today:model.today,yesterday:model.yesterday,attendance:model.attendance,sections:model.checklists,contributions:model.contributions,assets:model.assets,relations:model.relations};}
-export function csvCell(value:unknown):string {let s=value==null?'':String(value);if(/^[\s\u0000-\u001f]*[=+@-]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
 export function reportCsv(model:LivePresentation):string {
  const rows:unknown[][]=[['Live report',model.view.period.label,model.view.asOf,'Asia/Kolkata',model.calculation.context.ruleVersion],['Employee','Factor','Unit','Raw','Median','Delta','Coefficient','Contribution','Availability','Reasons']];
  for(const m of model.calculation.members.filter(m=>!model.employeeId||m.userId===model.employeeId))for(const [factor,r]of Object.entries(m.factors))rows.push([m.userId,factor,r.unit,r.rawExact===null?'Unavailable':Exact.from(r.rawExact).display(6),r.medianExact===null?'Unavailable':Exact.from(r.medianExact).display(6),r.deltaExact===null?'Unavailable':Exact.from(r.deltaExact).display(6),r.coefficient,r.contributionExact===null?'Unavailable':Exact.from(r.contributionExact).display(6),r.available?'Available':'Unavailable',r.reasons.join('; ')]);

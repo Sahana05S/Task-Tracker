@@ -10,6 +10,11 @@ export function kolkataDate(now = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 
+/** The Asia/Kolkata wall-clock time of an instant, as HH:MM (24-hour). */
+export function kolkataTime(at: Date): string {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: BUSINESS_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at);
+}
+
 /**
  * An Asia/Kolkata wall-clock time on a business date, as an ISO instant.
  * Blank time means no time recorded (null); malformed input throws.

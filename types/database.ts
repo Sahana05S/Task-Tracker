@@ -849,6 +849,8 @@ export interface Database {
       recognition_ceremony_command: { Args: { p_period: string; p_payload: Json; p_operation: string; p_expected_revision: number }; Returns: Json };
       recognition_points: { Args: { p_employee?: string | null }; Returns: Json };
       people_command: { Args: { p_command: 'invite' | 'revoke' | 'update'; p_payload: Json }; Returns: Json };
+      /** Migration 54: the activity log read; company-scoped and role-gated in the database. */
+      activity_feed: { Args: { p_from: string; p_to: string; p_kind?: string | null; p_member?: string | null; p_before?: Json | null; p_limit?: number | null }; Returns: { id: string; occurred_at: string; kind: string; action: string; actor_id: string | null; subject_user_id: string | null; task_id: string | null; task_tag: string | null; record_kind: string | null; record_id: string | null; fields: string[] | null; reason: string | null; period: string | null }[] };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
       can_read_employee_details: { Args: { p_user_id: string | null }; Returns: boolean };
