@@ -8,7 +8,7 @@ and the effort and productivity formulas built on logged hours.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `getTaskExecution` (a mission's logs and timers), `getMyLogHistory`, `getTaskEffortTotals`, `getLoggableTasksFor`, `getRunningTimers`, `getTeamRunningTimers`, `getMemberLogDates` (Today's active days). Also re-exports everything in `client.ts`. |
+| `index.ts` | Server reads: `getTaskExecution` (a mission's logs and timers), `getMyLogHistory`, `getTaskEffortTotals`, `getLoggableTasksFor`, `getRunningTimers`, `getTeamRunningTimers`, `getMemberLogDates` (Today's active days), `getMemberDayHours` (unreversed hours per member-day, for the daily perf log). Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure formulas and helpers, safe for `'use client'`: `roundToNumericScale`, `computeScaledProgress`, `computeProductivity`, `isMetricsEligible`, `sumHours`, `aggregateEffortByTask`, `groupLogsByDate`, log/timer mappers, timer elapsed-time helpers, `canStartTimerForTask`, `canManageTimerRecord`, and types |
 | `actions.ts` | `'use server'` `createTaskLog`, `updateTaskLog`, `deleteTaskLog`, `loadLoggableTasks` |
 | `timer-actions.ts` | `'use server'` `startTaskTimer` (by `taskId`, or `taskTag` from older forms), `startItemTimer`, `stopTaskTimer`, `discardTaskTimer`, `discardTimerAsManager`, `enterManualTaskTime` |
@@ -23,6 +23,7 @@ and the effort and productivity formulas built on logged hours.
 | `logs/metrics.ts` | Effort and productivity formulas (`domain-rules.md`) |
 | `logs/mappers.ts` | `daily_task_logs` row -> `DailyTaskLog` |
 | `logs/member-log-dates.ts` | A member's unreversed log dates in a range, for Today (throws on error) |
+| `logs/member-day-hours.ts` | Unreversed hours per member-day in a range, exact sums, paged (throws on error) |
 | `timers/commands.ts` | Timer RPCs and the task-tag lookup they need |
 | `timers/*` | Elapsed time, timer log drafts, mappers, permissions, running-timer reads (`running-timers.ts` carries the task id and execution version the timer button needs) |
 | `execution.ts` | A mission's logs and timers for the details page |

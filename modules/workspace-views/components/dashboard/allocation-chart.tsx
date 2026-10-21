@@ -7,7 +7,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   ChartShell,
   EmptyNote,
-} from '@/modules/workspace-views/components/dashboard/productivity-chart';
+} from '@/modules/workspace-views/components/dashboard/chart-shell';
 import { seriesColor } from '@/shared/ui/chart-palette';
 import type { MemberPerformance } from '@/modules/scoring/client';
 import { formatNumeric } from '@/shared/tracker/format';

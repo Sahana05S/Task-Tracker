@@ -14,9 +14,11 @@ import { StarPerformerCard } from '@/modules/workspace-views/components/dashboar
 import { TeamStatsGrid } from '@/modules/workspace-views/components/dashboard/team-stats-grid';
 import { TrackerSchemaNotice } from '@/modules/workspace-views/components/dashboard/tracker-schema-notice';
 import { WorkbookDashboard } from '@/modules/workspace-views/components/dashboard/workbook-dashboard';
+import { SubScoresGrid } from '@/modules/workspace-views/components/dashboard/sub-scores-grid';
+import { DailyPerfLogSection } from '@/modules/workspace-views/components/dashboard/daily-perf-log';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
-import { currentPeriod } from '@/shared/time/period';
-import { getStoredSnapshots, getWorkbookDashboard } from '@/modules/reports';
+import { dailyPerfFilter, getDailyPerfLog, getStoredSnapshots, getWorkbookDashboard, monthToDate, seesTeamDetail } from '@/modules/reports';
+import { Suspense } from 'react';
 import { requireProfile } from '@/shared/session/profile';
 import { isMissingSchemaError } from '@/shared/supabase/schema-errors';
 
@@ -34,11 +36,15 @@ export const metadata: Metadata = {
  * Only the chart widgets, the snapshot control and the header are Client
  * Components, which keeps Recharts out of the bundle for everything else.
  */
-export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {
+export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string;member?:string;from?:string;to?:string;log?:string}>}) {
   const profile = await requireProfile();
   const query=await searchParams;
   const context=await liveViewContext(query.period,query.asOf);
   const period=context.period;
+  // Daily perf log: month to date for the viewed month, read only when asked for, started before the other reads.
+  const logFilter=dailyPerfFilter(query,monthToDate(period,context.asOfLocalDate),profile);
+  const log=query.log||query.member||query.from||query.to?getDailyPerfLog(logFilter):null;
+  log?.catch(()=>{}); // Rejections are shown by the section; this only stops an unhandled-rejection warning if the page exits early.
   const presentation=await getLivePresentation(context);
 
   const [dashboardResult, snapshotsResult] = await Promise.allSettled([
@@ -149,6 +155,19 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       )}
 
       <WorkbookDashboard charts={charts} />
+
+      <SubScoresGrid calculation={analytics.calculation} names={names} onlyUserId={presentation.scope==='manager_team_detail'?null:profile.id} />
+
+      <Suspense fallback={<div className="soft-card text-muted-foreground p-5 text-sm sm:p-6">Loading the daily perf log…</div>}>
+        <DailyPerfLogSection
+          log={log}
+          filter={logFilter}
+          period={period.startDate.slice(0,7)}
+          asOf={query.asOf}
+          canChooseMember={seesTeamDetail(profile.role)}
+          canRequest={profile.isActive&&profile.role==='managing_director'}
+        />
+      </Suspense>
 
       <CalculationDetails
         presentation={presentation}
