@@ -62,7 +62,8 @@ export function StandingGrid({ context, state }: { context: MonthSetupContext; s
             const owner = state.ownerOf(mission.id) ?? open[0]?.id;
             return (
               <tr key={mission.id}>
-                <th scope="row" className="sheet-grid-frozen text-left font-normal">
+                {/* A body cell, not a row header: .sheet-grid th is the sticky uppercase column header. */}
+                <td className="sheet-grid-frozen min-w-56 max-w-72">
                   <label className="flex items-start gap-2.5">
                     <RowToggle
                       checked={allOn}
@@ -79,7 +80,7 @@ export function StandingGrid({ context, state }: { context: MonthSetupContext; s
                       </span>
                     </span>
                   </label>
-                </th>
+                </td>
                 {members.map((member) => {
                   const key = standingKey(mission.id, member.id);
                   if (done.has(member.id)) {

@@ -91,7 +91,7 @@ function SetupSteps({ context, contexts, onMonthChange }: {
         {step === 4 ? <PreviewStep state={state} operation={operation} names={names} onPreview={() => operation.prepare('month_setup', state.payload())} /> : null}
       </section>
 
-      <footer className="bg-card/95 border-border sticky bottom-3 z-10 flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 shadow-(--shadow-card) backdrop-blur-sm sm:px-5">
+      <footer className="bg-card/95 border-border sticky bottom-3 z-40 flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 shadow-(--shadow-card) backdrop-blur-sm sm:px-5">
         <p className="text-sm">
           <span className="text-foreground font-semibold tabular-nums">{missionCount(state.counts.total)}</span>
           <span className="text-muted-foreground"> planned for {bounds.label}</span>
