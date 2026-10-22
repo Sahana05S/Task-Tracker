@@ -1,8 +1,8 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
+import { kolkataDate } from '@/shared/time/kolkata';
 import { monthBounds, periodQuery, selectionFromAsOf, type PeriodSelection, type ReadMode } from '@/shared/time/period-selection';
 import { buttonVariants } from '@/shared/ui/button';
 import { HelpTip } from '@/shared/ui/help-tip';
@@ -21,7 +21,7 @@ const AS_OF = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 
  * Month plus the moment its figures are read at: latest, the end of a chosen
  * day, or a chosen day and time (India time). Replaces typing an ISO instant.
  * `keep` carries the page's other query parameters (tab, member…) along.
- * Without JavaScript the form still changes the month.
+ * Without JavaScript the form still changes the month (a plain GET form).
  */
 export function PeriodPicker({ month, asOf, keep, compact = false, className }: {
   /** YYYY-MM being shown. */
@@ -33,7 +33,6 @@ export function PeriodPicker({ month, asOf, keep, compact = false, className }: 
   compact?: boolean;
   className?: string;
 }) {
-  const router = useRouter();
   const id = useId();
   const [selection, setSelection] = useState<PeriodSelection>(() => selectionFromAsOf(month, asOf));
   const bounds = monthBounds(selection.month || month);
@@ -54,13 +53,13 @@ export function PeriodPicker({ month, asOf, keep, compact = false, className }: 
       className={cn('grid gap-3 sm:flex sm:flex-wrap sm:items-end', className)}
       onSubmit={event => {
         event.preventDefault();
-        router.push(`?${periodQuery(selection, keep)}`);
+        window.location.assign(`?${periodQuery(selection, keep)}`);
       }}
     >
       {Object.entries(keep ?? {}).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
       <label className="field-label" htmlFor={`${id}-month`}>
         Month
-        <input id={`${id}-month`} className="field w-40 bg-white" type="month" name="period" value={selection.month} required onChange={event => update({ month: event.target.value })} />
+        <input id={`${id}-month`} className="field w-40 bg-white" type="month" name="period" value={selection.month} max={kolkataDate().slice(0, 7)} required onChange={event => update({ month: event.target.value })} />
       </label>
       <div className="grid gap-1.5">
         <span className="field-label flex items-center gap-0.5" id={`${id}-mode`}>Figures as of<HelpTip tip="asOf" /></span>
@@ -78,7 +77,7 @@ export function PeriodPicker({ month, asOf, keep, compact = false, className }: 
           <input id={`${id}-time`} className="field w-32 bg-white" type="time" value={selection.time} required onChange={event => update({ time: event.target.value })} />
         </label>
       ) : null}
-      <button type="submit" className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')}>View</button>
+      <button type="submit" className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')}>Show figures</button>
       {compact ? null : <p className="text-muted-foreground basis-full text-xs">Showing figures as of {AS_OF.format(new Date(asOf))}.</p>}
     </form>
   );

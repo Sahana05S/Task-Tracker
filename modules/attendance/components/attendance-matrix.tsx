@@ -13,6 +13,8 @@ import { STATUS_STYLE } from './attendance-status-style';
 
 const LONG_DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 const longDate = (date: string) => LONG_DATE.format(new Date(`${date}T00:00:00Z`));
+/** 8 rather than 8.00 inside a small cell. */
+const compactHours = (hours: number) => String(Number(hours.toFixed(2)));
 
 /** What a cell says, for its accessible name and the editor's description. */
 function cellSummary(cell: MatrixCell): string {
@@ -27,11 +29,12 @@ function cellSummary(cell: MatrixCell): string {
 function Cell({ cell, name, editable, onOpen }: { cell: MatrixCell; name: string; editable: boolean; onOpen: () => void }) {
   const style = cell.status ? STATUS_STYLE[cell.status] : null;
   const hours = cell.status === 'Present' || cell.status === 'Half Day' ? cell.attendanceHours : cell.status === 'Off Hours' || cell.status === 'Holiday' ? cell.offHours || null : null;
-  const missing = cell.kind !== 'future' && !cell.status;
+  const missing = cell.kind === 'past' && !cell.status;
+  const open = cell.kind === 'today' && !cell.status;
   const content = (
     <>
-      {style ? <span className="text-[10px] leading-none font-bold tracking-wide">{style.mark}</span> : <span aria-hidden="true">{missing ? '–' : ''}</span>}
-      {hours !== null && hours !== undefined ? <span className="text-xs leading-none font-semibold tabular-nums">{formatHours(hours)}</span> : null}
+      {style ? <span className="text-[10px] leading-none font-bold tracking-wide">{style.mark}</span> : <span aria-hidden="true">{missing ? '–' : open ? '+' : ''}</span>}
+      {hours !== null && hours !== undefined ? <span className="text-xs leading-none font-semibold tabular-nums">{compactHours(hours)}</span> : null}
       {cell.check === 'fails' ? <span className="bg-danger absolute top-1 right-1 size-1.5 rounded-full" aria-hidden="true" /> : null}
       {cell.status && cell.attendanceHours === null ? <span className="bg-recognition absolute top-1 right-1 size-1.5 rounded-full" aria-hidden="true" /> : null}
     </>
@@ -40,6 +43,7 @@ function Cell({ cell, name, editable, onOpen }: { cell: MatrixCell; name: string
     'relative grid h-11 w-full min-w-9 place-content-center justify-items-center gap-0.5 rounded-lg text-center',
     style?.cell,
     missing && 'border-danger-border text-muted-foreground border border-dashed bg-white',
+    open && 'border-primary/40 text-primary border border-dashed bg-white',
     cell.kind === 'future' && 'bg-muted/40',
     cell.check === 'fails' && 'ring-danger/60 ring-1 ring-inset',
   );

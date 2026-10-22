@@ -37,7 +37,7 @@ export interface MatrixCell {
 export interface MatrixRow {
   readonly member: Pick<User, 'id' | 'fullName' | 'employeeId'>;
   readonly cells: readonly MatrixCell[];
-  /** Elapsed days with no active record. */
+  /** Ended days with no active record. */
   readonly missing: number;
 }
 
@@ -129,7 +129,8 @@ export function attendanceMatrix({ month, today, members, records, contexts }: {
       return {
         member: { id: member.id, fullName: member.fullName, employeeId: member.employeeId },
         cells,
-        missing: cells.filter(cell => cell.kind !== 'future' && !cell.status).length,
+        // Today can still be recorded, so only days that have ended count as missing.
+        missing: cells.filter(cell => cell.kind === 'past' && !cell.status).length,
       };
     });
   return { month, days, rows };

@@ -59,13 +59,13 @@ describe('attendance matrix', () => {
     expect(first).toMatchObject({ status: 'Present', attendanceHours: 8, checkIn: '09:00', checkOut: '17:30', check: 'fails', effortHours: 9.5, version: 3 });
     expect(second).toMatchObject({ status: 'Holiday', holidayName: 'Gandhi Jayanti', check: null });
     expect(third).toMatchObject({ status: null, kind: 'today', recordId: null });
-    expect(model().rows[0].missing).toBe(1);
+    expect(model().rows[0].missing).toBe(0);
   });
 
   it('treats a withdrawn record as not recorded but still occupied', () => {
     const cell = model().rows[1].cells[1];
     expect(cell).toMatchObject({ status: null, withdrawn: true, recordId: 'rec-3' });
-    expect(model().rows[1].missing).toBe(3);
+    expect(model().rows[1].missing).toBe(2);
   });
 });
 

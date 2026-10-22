@@ -14,12 +14,12 @@ export function TaskGantt({ timeline }: { timeline: TaskTimeline }) {
       <section className="soft-card flex min-h-80 items-center justify-center p-8 text-center">
         <div className="max-w-md">
           <h2 className="text-foreground text-base font-semibold">
-            No tasks to timeline yet
+            No missions with dates yet
           </h2>
           <p className="text-muted-foreground mt-1 text-sm">
-            Add tasks with assigned dates and due dates to see Gantt bars grouped
-            by assignee.
+            Give missions a start and a due date to see their bars, grouped by person.
           </p>
+          <Link href="/tasks" className="link mt-2 inline-block text-sm font-semibold">Open Missions</Link>
         </div>
       </section>
     );

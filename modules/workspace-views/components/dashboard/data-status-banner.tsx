@@ -7,8 +7,10 @@ import { GAP_SENTENCE, type DataGap } from '@/modules/reports/client';
  * codes at the top of the dashboard; the codes stay in "Calculation details".
  * It never claims completeness: if the calculation is incomplete it is shown.
  */
-export function DataStatusBanner({periodLabel,gaps,attendanceMissing,canRecordAttendance,historyFrom}:{
+export function DataStatusBanner({periodLabel,month,gaps,attendanceMissing,canRecordAttendance,historyFrom}:{
   periodLabel: string;
+  /** YYYY-MM, so the attendance link opens the same month. */
+  month: string;
   gaps: readonly DataGap[];
   attendanceMissing: { missing: number; total: number } | null;
   canRecordAttendance: boolean;
@@ -36,8 +38,8 @@ export function DataStatusBanner({periodLabel,gaps,attendanceMissing,canRecordAt
         Scores, rankings and awards stay unavailable until then. Partial figures below are labelled.
       </p>
       <div className="mt-2 flex flex-wrap gap-3 text-sm font-medium">
-        {canRecordAttendance && gaps.includes('attendance') ? (
-          <Link href="/attendance" className="underline underline-offset-2">Record attendance</Link>
+        {gaps.includes('attendance') ? (
+          <Link href={`/attendance?month=${month}`} className="underline underline-offset-2">{canRecordAttendance ? 'Fill in attendance' : 'Check your attendance'}</Link>
         ) : null}
         <a href="#calculation-details" className="underline underline-offset-2">What&apos;s missing</a>
       </div>

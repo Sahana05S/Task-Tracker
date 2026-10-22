@@ -80,6 +80,14 @@ const STATES: Record<string, CodeMeaning> = {
   // Provider work (Drive)
   not_requested: m('Not requested', 'No Drive work has been asked for.'),
   provider_unavailable: m('Drive not connected', 'Google Drive is not connected yet, so files are linked by hand.'),
+  // Scale modes
+  manual: m('Set by hand', 'A manager typed the scale in.'),
+  hours: m('From hours logged', 'Each logged hour adds 12.5 times the multiplier.'),
+  activity_count: m('From activity count', 'The number of activities times the scale of one.'),
+  linked: m('Share of a linked mission', 'A percentage of another mission’s scale.'),
+  // Checklist structure problems
+  missing_parent: m('Parent row is missing', 'The row points at a parent that no longer exists.'),
+  cycle: m('Rows point at each other', 'Two rows are each inside the other; move one out.'),
   // Task Tools results
   committed: m('Done', 'The change was saved.'),
   replayed: m('Already done', 'This exact change was saved before; nothing was repeated.'),

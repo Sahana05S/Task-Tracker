@@ -2,7 +2,8 @@ import { GaugeIcon } from 'lucide-react';
 
 import { MissionPanel } from '@/shared/ui/mission-ui';
 import { CompactMetric } from '@/modules/tasks/components/detail/detail-tiles';
-import { ELIGIBILITY_LABELS } from '@/modules/tasks/internal/contract';
+import { codeLabels } from '@/shared/tracker/labels';
+import { HelpTip } from '@/shared/ui/help-tip';
 import type { TaskDetailData } from '@/modules/tasks/internal/detail';
 import { formatHours, formatNumeric, formatPercent } from '@/shared/tracker/format';
 
@@ -32,8 +33,8 @@ export function EffortPanel({
         <CompactMetric label="Metrics eligible" value={task.validForMetrics ? 'Yes' : 'No'} />
       </dl>
       <div className="border-border text-muted-foreground mt-4 grid gap-2 border-t pt-3 text-xs">
-        <p>Metric eligibility: {task.validForMetrics ? "Eligible" : (task.eligibilityReasons ?? []).map(reason=>ELIGIBILITY_LABELS[reason] ?? reason).join(", ")}. Hours are required separately for productivity.</p>
-        <p>Participant shares: {task.participantShares ? Object.entries(task.participantShares).map(([id,units])=>`${memberNames.get(id) ?? id}: ${units/10000}%`).join(", ") : "Legacy attribution awaiting reconciliation"}. Completion, criticality and freshness attribution remain undecided for shared work.</p>
+        <p className="flex flex-wrap items-center">Counted in performance: {task.validForMetrics ? 'yes' : `not yet (${codeLabels(task.eligibilityReasons ?? [], ', ') || 'reason not recorded'})`}. Productivity also needs logged hours.<HelpTip tip="eligible" /></p>
+        <p>Participant shares: {task.participantShares ? Object.entries(task.participantShares).map(([id,units])=>`${memberNames.get(id) ?? 'Former member'}: ${units/10000}%`).join(", ") : "not set for this older mission yet"}.</p>
       </div>
     </MissionPanel>
   );

@@ -23,6 +23,7 @@ import type {
   Suggestion,
   User,
 } from '@/types/tracker';
+import { EmptyState } from '@/shared/ui/mission-ui';
 
 type ServerFormAction = (formData: FormData) => void | Promise<void>;
 
@@ -68,7 +69,7 @@ export function ReportsModule({
       ) : null}
       <section className="soft-card-clip xl:col-span-1">
         {reports.length === 0 ? (
-          <p className="text-muted-foreground p-6 text-center text-sm">No reports have been saved yet.</p>
+          <EmptyState title="No saved reports yet" className="m-4">The managing director saves a month&apos;s report here, with the figures as they were.</EmptyState>
         ) : (
           <div className="overflow-x-auto">
             <table className="sheet-grid min-w-[72rem]">

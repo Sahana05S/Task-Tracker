@@ -7,10 +7,10 @@ import type { Task,TaskDetailSection,User } from '@/types/tracker';
 import { cn } from '@/shared/utils';
 const input='field w-full';
 export function NativeTemplateSelect({templates}: {templates:readonly NativeTemplate[]}) {
- return <label className="grid gap-1.5 text-sm font-medium">Template<select name="templateVersionId" className={input} defaultValue=""><option value="">Blank native task (version 1)</option>{templates.filter(t=>t.name!=='Blank native task').map(t=><option key={t.id} value={t.id} disabled={t.requiresReview}>{t.name} · version {t.version}{t.requiresReview?' · legacy review required':''}</option>)}</select></label>;
+ return <label className="grid gap-1.5 text-sm font-medium">Template<select name="templateVersionId" className={input} defaultValue=""><option value="">Blank mission</option>{templates.filter(t=>t.name!=='Blank native task').map(t=><option key={t.id} value={t.id} disabled={t.requiresReview}>{t.name} · version {t.version}{t.requiresReview?' · legacy review required':''}</option>)}</select></label>;
 }
 export function InitializeDetailsForm({task,templates}: {task:Task;templates:readonly NativeTemplate[]}) {
- return <ExecutionForm action={initializeTaskDetails} scope={'initializeDetails:'+task.id}><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="expectedVersion" value={task.lifecycleVersion??0}/><NativeTemplateSelect templates={templates}/><button className={cn(buttonVariants(), 'justify-self-start')} type="submit">Initialize native details</button></ExecutionForm>;
+ return <ExecutionForm action={initializeTaskDetails} scope={'initializeDetails:'+task.id}><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="expectedVersion" value={task.lifecycleVersion??0}/><NativeTemplateSelect templates={templates}/><button className={cn(buttonVariants(), 'justify-self-start')} type="submit">Set up mission details</button></ExecutionForm>;
 }
 export function NativeDetailsEditor({task,sections,tasks,members,reports}: {task:Task;sections:readonly TaskDetailSection[];tasks:readonly Task[];members:readonly User[];reports:readonly {id:string;title:string}[]}) {
  const values=detailValues(sections);

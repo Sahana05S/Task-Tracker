@@ -25,6 +25,7 @@ import {
   percentage,
   type ChecklistContext } from '@/modules/checklists/components/checklist-rows';
 import { AvatarStack, MissionPage, MissionPanel, MissionProgress, EmptyState } from '@/shared/ui/mission-ui';
+import { codeLabel } from '@/shared/tracker/labels';
 import { Breadcrumb } from '@/shared/ui/page-nav';
 import { SectionStateIcon } from '@/modules/checklists/components/section-state-icon';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -143,7 +144,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
           </div>
         </div>
         <div className="mt-4 grid gap-1 rounded-xl bg-white/70 px-4 py-3 text-sm">
-          <h2 className="text-foreground font-semibold">Progress owner: {ownerLabel}</h2>
+          <h2 className="text-foreground font-semibold">Progress comes from: {ownerLabel}</h2>
           <p className="text-foreground">Activity: {percentage(r.taskProgress)}. Current task progress: {percentage(d.task.progressPercentage)}.</p>
           <p className="text-muted-foreground flex items-start gap-2 text-xs">
             <InfoIcon className="text-primary mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
@@ -176,13 +177,13 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
                   <CommandFields ctx={ctx} command="section" />
                   <input type="hidden" name="section" value={s} />
                   <label className={LABEL}>
-                    <span className={LABEL_TEXT}>Section review</span>
+                    <span className={LABEL_TEXT}>Review this section</span>
                     <select name="intentional_empty" className={cn(FIELD, 'h-9')}>
                       <option value="false">Confirm initialized work</option>
                       <option value="true">Confirm intentionally empty</option>
                     </select>
                   </label>
-                  <ReasonInput placeholder="Reason for section review" />
+                  <ReasonInput placeholder="Why this review?" />
                   <Button type="submit" variant="accent" size="sm" className="justify-self-start">Confirm section</Button>
                 </ExecutionForm>
               ) : null}
@@ -195,8 +196,8 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
         <div role="alert" className="flex items-start gap-2 rounded-2xl border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0 break-words">
-            <p className="font-semibold">Correct these references or explicitly map legacy roots:</p>
-            <ul className="mt-1 list-disc pl-5">{[...new Set(r.errors)].map(e => <li key={e}>{e}</li>)}</ul>
+            <p className="font-semibold">Fix these rows before the checklist can count:</p>
+            <ul className="mt-1 list-disc pl-5">{[...new Set(r.errors.map(e => codeLabel(e)))].map(e => <li key={e}>{e}</li>)}</ul>
           </div>
         </div>
       ) : null}
@@ -274,7 +275,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
                   <AddNodeForm ctx={ctx} parent={null} />
                 </MissionPanel>
                 {manager ? (
-                  <MissionPanel icon={GaugeIcon} title="Change progress owner">
+                  <MissionPanel icon={GaugeIcon} title="Change where progress comes from">
                     <p className="text-muted-foreground mb-3 text-sm">Preview: Activity {percentage(r.taskProgress)}. Switching updates current progress without changing earlier earnings. Later changes use their effective scale and shares.</p>
                     <ExecutionForm action={checklistCommand} scope={`mode:${d.task.id}`}>
                       <CommandFields ctx={ctx} command="mode" />

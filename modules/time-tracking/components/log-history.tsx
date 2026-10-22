@@ -25,6 +25,8 @@ import { groupLogsByDate } from '@/modules/time-tracking/internal/logs/metrics';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { DailyTaskLog, Task } from '@/types/tracker';
+import Link from 'next/link';
+import { EmptyState } from '@/shared/ui/mission-ui';
 
 export interface LogHistoryProps {
   logs: readonly DailyTaskLog[];
@@ -63,15 +65,9 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
     <div className="flex flex-col gap-3">
       {/* Title, totals and the Log Hours action live in the page header. */}
       {groups.length === 0 ? (
-        <div className="soft-card p-6 text-center">
-          <p className="text-foreground text-base font-bold">
-            No effort logged yet
-          </p>
-          <p className="text-muted-foreground mx-auto mt-1 max-w-xl text-sm">
-            Record hours against a mission and the progress and productivity
-            figures will follow automatically.
-          </p>
-        </div>
+        <EmptyState title="No time logged yet" className="soft-card" action={<Link href="/tasks" className="link text-sm font-semibold">Open a mission to log time</Link>}>
+          Progress and productivity follow automatically once you log hours.
+        </EmptyState>
       ) : (
         <ol className="flex flex-col gap-4">
           {groups.map((group) => (

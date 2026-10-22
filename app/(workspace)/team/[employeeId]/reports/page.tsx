@@ -120,7 +120,7 @@ export default async function EmployeeReportsPage({
         </section>
 
         <section className="grid gap-4 xl:grid-cols-2">
-          <Panel title="Legacy saved score components (pre-M07)" icon={HistoryIcon}>
+          <Panel title="Score parts saved by the earlier tracker" icon={HistoryIcon}>
             {data.scoreComponents.length === 0 ? (
               <EmptyState>No score component rows yet.</EmptyState>
             ) : (
@@ -269,7 +269,7 @@ function ItemHoursPanel({ tasks }: { tasks: readonly ItemHourTask[] | null }) {
   return (
     <Panel title="Hours by checklist item" icon={ListChecksIcon}>
       {tasks === null ? (
-        <EmptyState>Checklist item hours are unavailable until the item-timer migration is applied.</EmptyState>
+        <EmptyState>Checklist item hours appear once this workspace gets its next database update.</EmptyState>
       ) : tasks.length === 0 ? (
         <EmptyState>No item-timer hours this period. Time logged with a checklist item's timer appears here.</EmptyState>
       ) : (

@@ -15,6 +15,7 @@ import type * as React from 'react';
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
 import type { AwardSnapshot, FocusMission, Section, ValidatedContribution, WeekSummary } from '@/modules/workspace-views/internal/today';
 import { cn } from '@/shared/utils';
+import { EmptyState } from '@/shared/ui/mission-ui';
 
 const KIND_LABEL: Record<ValidatedContribution['kind'], string> = { fact: 'Daily fact', idea: 'Idea', suggestion: 'Suggestion' };
 
@@ -209,7 +210,7 @@ export function RecognisedContributions({ validated }: { validated: Section<Vali
     <Card aria-label="Recognised contributions">
       <CardTitle icon={UsersIcon} title="Recognised contributions" action={{ href: '/team', label: 'Meet team' }} />
       {validated.status === 'unavailable' ? <Unavailable what="Recognised contributions" /> : validated.data.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No contributions have been validated yet.</p>
+        <EmptyState title="Nothing validated yet" action={<Link href="/daily-facts" className="link text-sm font-semibold">Post a daily fact</Link>}>Validated facts, ideas and suggestions from the team appear here.</EmptyState>
       ) : (
         <ul className="divide-border divide-y">
           {validated.data.map((entry) => (

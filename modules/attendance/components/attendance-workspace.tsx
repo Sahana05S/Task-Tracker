@@ -8,7 +8,7 @@ import { cn } from '@/shared/utils';
 import { AttendanceDayFill } from './attendance-day-fill';
 import { AttendanceMatrix } from './attendance-matrix';
 
-const MONTH_LABEL = new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' });
+const MONTH_LABEL = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' });
 const shortMonth = (month: string) => MONTH_LABEL.format(new Date(`${month}-01T00:00:00Z`));
 
 /**

@@ -1,4 +1,5 @@
 import { PeriodPicker } from '@/shared/ui/period-picker';
+import { HelpTip } from '@/shared/ui/help-tip';
 import { getLivePresentation } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
@@ -106,9 +107,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         chip={`${analytics.totals.activeMemberCount} active ${
           analytics.totals.activeMemberCount === 1 ? 'member' : 'members'
         }`}
-        description={`${analytics.period.label} · ${analytics.totals.activeMemberCount} active ${
-          analytics.totals.activeMemberCount === 1 ? 'member' : 'members'
-        } · compared against the team median`}
+        description={<span className="inline-flex flex-wrap items-center">{analytics.period.label} · compared with the team median<HelpTip tip="medianDifference" /></span>}
         actions={
           <PeriodPicker month={period.startDate.slice(0,7)} asOf={context.asOf} compact />
         }
@@ -117,6 +116,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       {incomplete ? (
         <DataStatusBanner
           periodLabel={analytics.period.label}
+          month={period.startDate.slice(0,7)}
           gaps={gaps}
           attendanceMissing={attendanceMissing}
           canRecordAttendance={profile.isActive&&canManageAttendance(profile.role)}

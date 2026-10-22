@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { cookies } from 'next/headers';
+import { FirstRunCard } from '@/modules/workspace-views/components/today/first-run-card';
+import { FIRST_RUN_COOKIE } from '@/modules/workspace-views/components/today/first-run';
 import { MissionRoadmap } from '@/modules/workspace-views/components/today/mission-roadmap';
 import { getAssignedMissionBatch } from '@/modules/tasks';
 import { missionDueFilter } from '@/modules/tasks/client';
@@ -22,6 +25,8 @@ import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 
 export const metadata: Metadata = { title: 'Today · TaskPulse' };
 
+const NEW_MEMBER_MS = 30 * 86_400_000;
+
 /**
  * Personal Today page (layout reference: Stitch today_dashboard_2). Every
  * figure comes from existing data under the caller's permissions; sections show
@@ -36,8 +41,11 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const due = missionDueFilter(query.due);
   const today = kolkataDate();
   const initial = await getAssignedMissionBatch(profile.id, { due }).catch(() => null);
+  // New in the last 30 days, until dismissed.
+  const firstRun = Date.now() - Date.parse(profile.createdAt) < NEW_MEMBER_MS && (await cookies()).get(FIRST_RUN_COOKIE)?.value !== 'dismissed';
   return <MissionPage>
     <MissionPageHeader title="Today" description="A clear path through your work." />
+    {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
     <MissionRoadmap key={due} initial={initial} due={due} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>
       <TodayOverview profile={profile} />
