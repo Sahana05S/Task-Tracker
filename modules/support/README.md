@@ -45,5 +45,7 @@ suggestions, sales and meetings go through `dated_record_command` (migration
 ## Depends on
 `shared/*` (Kolkata dates, calendar periods, the observation clock, the shared
 `team_summary_inputs` fetch for report counts, `shared/ui/execution-form`),
-`types/*`, and the `records` module (`writeDatedRecord`). Support does not import scoring;
-scoring reads support's contribution inputs.
+`types/*`, the `records` module (`writeDatedRecord`) and `settings` (`MeetingTypeSelect`:
+the meeting-point Meeting type is a select over the company's meeting types,
+migration 53, keeping a saved value that left the list). Support does not import
+scoring; scoring reads support's contribution inputs.

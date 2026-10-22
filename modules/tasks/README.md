@@ -57,8 +57,12 @@ template versions.
 All of these are company-scoped by migrations 39-40 (M15).
 
 ## Depends on
-`shared/*`, the public API of `checklists` (rollups and checklist types), and
-`shared/ui` (mission UI, tracker badges). The team headline (scoring's
+`shared/*`, the public API of `checklists` (rollups and checklist types),
+`settings` (the company's mission-type names and hidden codes: the create/edit
+form offers only active types plus the mission's current one) and
+`shared/ui` (mission UI, tracker badges). A new mission may leave its tag blank;
+the database allocates the next sheet tag (`<Mon><YY>_<TYPE><n>`, migration 53),
+as it does for Task Tools copies. Existing `TT-` tags stay valid. The team headline (scoring's
 `MissionHeadlineStrip`) is shown collapsed on Team > Analytics; `countOpenTasks`
 feeds the navigation badge.
 

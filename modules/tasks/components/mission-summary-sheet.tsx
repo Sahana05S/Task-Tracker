@@ -15,7 +15,7 @@ import {
   SheetTitle,
 } from '@/shared/ui/sheet';
 import { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
-import { CATEGORY_LABELS } from '@/shared/tracker/enums';
+import { useCategoryLabels } from '@/modules/settings/components/company-settings-context';
 import { formatDate, formatHours, formatNumeric, formatPercent } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { Task } from '@/types/tracker';
@@ -84,6 +84,7 @@ function MissionSummary({
   onEdit: () => void;
   onRequestDelete: () => void;
 }) {
+  const categoryLabels = useCategoryLabels();
   const href = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const names = (ids: readonly string[], none: string) =>
     ids.length > 0 ? ids.map((id) => memberNames.get(id) ?? 'Unknown').join(', ') : none;
@@ -98,7 +99,7 @@ function MissionSummary({
           <FreshnessIndicator freshness={task.freshness} className="ml-auto" />
         </div>
         <SheetTitle className="pr-8">{task.title}</SheetTitle>
-        <SheetDescription>{CATEGORY_LABELS[task.category]}</SheetDescription>
+        <SheetDescription>{categoryLabels[task.category]}</SheetDescription>
       </SheetHeader>
 
       <div className="flex flex-col gap-4 overflow-y-auto px-4">

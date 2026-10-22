@@ -6,6 +6,7 @@ tags for a plan that cannot commit. The loopback PG18 recovery cluster only.
 """
 
 import argparse
+import re
 import subprocess
 from pathlib import Path
 
@@ -38,8 +39,10 @@ def main(bin_dir):
                         "WHERE employee_id='M13-F87E37-DIR'),false); "
                         f"SELECT (p->>'ready')||'|'||(p->'reasons')::text||'|'||coalesce(p->'items'->0->>'taskTag','NULL') "
                         f"FROM (SELECT public.task_tools_preview('{command}',jsonb_build_object('sourceTaskId',{source},{payload})) p) x")
+        # Migration 53 allocates sheet tags from task_tag_counters; earlier ones used the TT- sequence.
         state = lambda: psql(TARGET, "SELECT (SELECT last_value FROM taskpulse_private.tools_tag_sequence)||'/'||"
-                             "(SELECT count(*) FROM taskpulse_private.tool_tag_reservations)")
+                             "(SELECT count(*) FROM taskpulse_private.tool_tag_reservations)||'/'||"
+                             "coalesce((SELECT sum(last_number) FROM taskpulse_private.task_tag_counters),0)")
         before = state()
         for command, payload in (("duplicate", "'startDate','2026-09-12'"),
                                  ("duplicate", "'startDate','2026-08-20','dueDate','2026-09-05'"),
@@ -51,7 +54,7 @@ def main(bin_dir):
             raise AssertionError("Refused previews consumed or reserved task numbers")
         print("PASS closed-month previews refused with no TT- allocation or reservation")
         ready, _, tag = preview("duplicate", "'startDate','2026-08-20'").splitlines()[-1].split("|")
-        if ready != "true" or not tag.startswith("TT-"):
+        if ready != "true" or not re.match(r"^(TT-\d+|[A-Z][a-z]{2}\d{2}_[A-Z][A-Z0-9]*\d+)$", tag):
             raise AssertionError("Open earlier-month duplicate is not committable")
         print(f"PASS open earlier-month (August) duplicate is ready and allocated {tag}")
         # A Final report over August freezes it for commit; preview must agree.

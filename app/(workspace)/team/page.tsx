@@ -9,6 +9,7 @@ import { AwardStatus } from '@/modules/scoring/components/award-status';
 import { InitialsAvatar, EmptyState, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { getTeamHolidayDates } from '@/modules/attendance';
+import { getCompanyHolidayNames } from '@/modules/settings';
 import { requireProfile } from '@/shared/session/profile';
 import { canViewTeamModule } from '@/modules/team/client';
 import { getTeamIndexData } from '@/modules/team';
@@ -35,9 +36,10 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
   }
 
   const query=await searchParams;const context=await liveViewContext(query.period,query.asOf);
-  const [data, holidays] = await Promise.all([
+  const [data, holidays, holidayNames] = await Promise.all([
     getTeamIndexData(context.period,context),
     getTeamHolidayDates(context.period.startDate, context.period.endDate),
+    getCompanyHolidayNames(context.period.startDate, context.period.endDate),
   ]);
   const canManage = profile.isActive && profile.role === 'managing_director';
 
@@ -59,7 +61,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
       <h2 className="text-foreground text-base font-bold tracking-tight">Contributions this period</h2>
       <SupportSummaryCards summary={data.supportSummary} />
 
-      <AwardStatus awards={data.awards} holidays={holidays} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
+      <AwardStatus awards={data.awards} holidays={holidays} holidayNames={holidayNames} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
       {canManage ? <AwardControls awards={data.awards} members={data.members.map(m=>({id:m.user.id,fullName:m.user.fullName}))} /> : null}
 
       {data.members.length === 0 ? (
@@ -69,7 +71,8 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
         />
       ) : (
         <section className="soft-card-clip" aria-label="Team members">
-          <div className="overflow-x-auto">
+          {/* relative: keeps sr-only text inside the scroll box (it escaped and widened the page) */}
+          <div className="relative overflow-x-auto">
             <table className="sheet-grid min-w-[70rem]">
               <thead>
                 <tr>
