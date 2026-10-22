@@ -15,6 +15,7 @@ export {
   monthRevision,
 } from '@/modules/reports/internal/month/archive';
 export {
+  getDailyPerfLog,
   getStoredSnapshots,
   getTeamAnalytics,
   getWorkbookDashboard,

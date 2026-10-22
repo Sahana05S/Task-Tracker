@@ -3,11 +3,12 @@
 // PUBLIC command of the recognition module: publish a month's award ceremony.
 import { revalidatePath } from 'next/cache';
 
+import { isConflictCode } from '@/shared/commands/conflict';
 import { readString, UUID_PATTERN } from '@/shared/forms/form-data';
 import { getCurrentProfile } from '@/shared/session/profile';
 import type { ActionResponse } from '@/types/tracker';
 
-import { publishCeremony } from '@/modules/recognition/internal/ceremony';
+import { CeremonyCommandError, publishCeremony } from '@/modules/recognition/internal/ceremony';
 import { leaderboardPeriod } from '@/modules/recognition/internal/leaderboard';
 
 /**
@@ -39,6 +40,6 @@ export async function publishCeremonyAction(form: FormData): Promise<ActionRespo
     return { success: true, data: result };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Publishing failed.';
-    return { success: false, error: message, errorCode: /refresh/i.test(message) ? 'conflict' : 'unavailable' };
+    return { success: false, error: message, errorCode: error instanceof CeremonyCommandError && isConflictCode(error.code) ? 'conflict' : 'unavailable' };
   }
 }

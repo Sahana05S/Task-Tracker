@@ -104,6 +104,13 @@ export async function getCeremony(viewer: Pick<User, 'id' | 'role' | 'isActive'>
   };
 }
 
+/** A refused publish, with the database's SQLSTATE (PT409/40001 = changed, reload). */
+export class CeremonyCommandError extends Error {
+  constructor(message: string, readonly code: string | undefined) {
+    super(message);
+  }
+}
+
 /**
  * Publishes (or republishes) an elapsed month as the director. The database
  * recomputes the winners from the calculation, checks it is current and that
@@ -119,6 +126,6 @@ export async function publishCeremony(period: AnalyticsPeriod, input: { reason: 
     p_expected_revision: input.expectedRevision,
     p_payload: { reason: input.reason, calculation: calculation as unknown as Json, monthlySelection: monthly as unknown as Json },
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new CeremonyCommandError(error.message, error.code);
   return data as unknown as { revisionNumber: number };
 }

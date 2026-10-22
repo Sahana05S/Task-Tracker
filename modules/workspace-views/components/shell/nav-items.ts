@@ -5,8 +5,10 @@ import {
   CalendarCheckIcon,
   CalendarRangeIcon,
   ClockIcon,
+  CrownIcon,
   DollarSignIcon,
   FileTextIcon,
+  HistoryIcon,
   LightbulbIcon,
   ListChecksIcon,
   MessageSquareIcon,
@@ -32,6 +34,8 @@ export interface NavTab {
   readonly href: string;
   /** Path prefixes that make this tab active. */
   readonly match: readonly string[];
+  /** Prefixes inside `match` that belong to another tab. */
+  readonly exclude?: readonly string[];
   readonly icon: LucideIcon;
 }
 
@@ -85,9 +89,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     inBottomNav: true,
     tabs: [
       { label: 'Analytics', href: '/dashboard', match: ['/dashboard'], icon: BarChart3Icon },
-      { label: 'People', href: '/team', match: ['/team'], icon: UsersIcon },
+      { label: 'People', href: '/team', match: ['/team'], exclude: ['/team/activity'], icon: UsersIcon },
       { label: 'Leaderboard', href: '/leaderboard', match: ['/leaderboard'], icon: TrophyIcon },
       { label: 'Awards', href: '/awards', match: ['/awards'], icon: AwardIcon },
+      { label: 'Hall of fame', href: '/hall-of-fame', match: ['/hall-of-fame'], icon: CrownIcon },
+      { label: 'Activity', href: '/team/activity', match: ['/team/activity'], icon: HistoryIcon },
     ],
   },
   {
@@ -110,7 +116,7 @@ function matches(pathname: string, prefix: string): boolean {
 }
 
 export function isTabActive(pathname: string, tab: NavTab): boolean {
-  return tab.match.some((prefix) => matches(pathname, prefix));
+  return tab.match.some((prefix) => matches(pathname, prefix)) && !tab.exclude?.some((prefix) => matches(pathname, prefix));
 }
 
 /** The primary section that owns a path, if any. */

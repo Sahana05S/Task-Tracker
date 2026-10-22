@@ -1,5 +1,5 @@
 import { describe,expect,it } from 'vitest';
-import { MORE_ITEMS,NAV_SECTIONS,activeSection,isMoreActive } from '@/modules/workspace-views/components/shell/nav-items';
+import { MORE_ITEMS,NAV_SECTIONS,activeSection,isMoreActive,isTabActive } from '@/modules/workspace-views/components/shell/nav-items';
 import { PROTECTED_PREFIXES } from '@/modules/auth';
 import { weekStartOf } from '@/modules/workspace-views/internal/today';
 
@@ -19,10 +19,15 @@ describe('redesigned navigation keeps every workspace route reachable',()=>{
   expect(new Set(hrefs).size).toBe(hrefs.length);
  });
  it('puts the recognition pages under Team',()=>{
-  for(const path of ['/leaderboard','/awards']){
+  for(const path of ['/leaderboard','/awards','/hall-of-fame']){
    expect(activeSection(path)?.label).toBe('Team');
    expect(PROTECTED_PREFIXES).toContain(path);
   }
+ });
+ it('puts Team > Activity on its own tab, not also on People',()=>{
+  const team=NAV_SECTIONS.find(s=>s.label==='Team')!;
+  expect(team.tabs.filter(tab=>isTabActive('/team/activity',tab)).map(t=>t.label)).toEqual(['Activity']);
+  expect(team.tabs.filter(tab=>isTabActive('/team/EMP-1',tab)).map(t=>t.label)).toEqual(['People']);
  });
  it('keeps the master checklist inside Missions, not a separate destination',()=>{
   expect(activeSection('/tasks/M13-X/checklist')?.label).toBe('Missions');
