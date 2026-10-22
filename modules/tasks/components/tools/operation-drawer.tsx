@@ -324,7 +324,7 @@ export function buildPayload(command: ToolOperation, tasks: readonly Task[], for
 /* Preview and result                                                         */
 /* -------------------------------------------------------------------------- */
 
-function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; names: ReadonlyMap<string, string>; copy: boolean }) {
+export function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; names: ReadonlyMap<string, string>; copy: boolean }) {
   const person = (id: string) => names.get(id) ?? 'Unknown member';
   return (
     <section aria-labelledby="operation-preview" className="grid gap-3">
@@ -351,6 +351,9 @@ function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; names: 
                 <td className="min-w-48">
                   <span className="task-tag">{item.taskTag ?? 'Tag on commit'}</span>
                   <span className="text-muted-foreground block truncate text-xs" title={item.title}>{item.title}</span>
+                  {item.reasons?.length ? (
+                    <span className="text-attention-foreground block text-xs">{item.reasons.map((reason) => codeLabel(reason)).join('; ')}</span>
+                  ) : null}
                 </td>
                 <td className="text-xs whitespace-nowrap">{formatDate(item.assignedDate)} → {item.dueDate ? formatDate(item.dueDate) : 'no deadline'}</td>
                 <td className="text-xs whitespace-nowrap tabular-nums">{item.scale ?? 'Unavailable'} <span className="text-muted-foreground">{codeLabel(item.scaleMode)}</span></td>
@@ -382,7 +385,7 @@ function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; names: 
   );
 }
 
-function CommitResult({ items }: { items: readonly { taskId: string; taskTag: string; status: string }[] }) {
+export function CommitResult({ items }: { items: readonly { taskId: string; taskTag: string; status: string }[] }) {
   return (
     <section aria-labelledby="operation-result" className="grid gap-3">
       <p id="operation-result" role="status" className="text-success-strong flex items-center gap-2 text-sm font-semibold">

@@ -71,5 +71,7 @@ jobs:
         run: python tools/test_company_settings_database.py --psql "$(command -v psql)" --port 15432
       - name: Policies and notifications (migrations 56 and 58)
         run: python tools/test_policies_database.py --psql "$(command -v psql)" --port 15432
+      - name: Month setup wizard (migration 55)
+        run: python tools/test_month_setup_database.py --psql "$(command -v psql)" --port 15432
       - name: Demo recognition seed (script only, loopback)
         run: python tools/test_seed_demo_recognition_database.py --psql "$(command -v psql)" --port 15432 --manifest-dir "$RUNNER_TEMP/demo-recognition"
