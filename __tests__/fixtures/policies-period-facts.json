@@ -1,0 +1,814 @@
+{
+ "description": "Policy facts for five members over ISO week 2026-W42 (Mon 12 to Sun 18 Oct 2026; Sunday is a team holiday), read on 22 Oct 2026, with the expected outcome and reason codes per template. Used by modules/policies/__tests__ (templates, evaluate).",
+ "period": {
+  "kind": "week",
+  "key": "2026-W42",
+  "start": "2026-10-12",
+  "end": "2026-10-18"
+ },
+ "facts": {
+  "readAt": "2026-10-22T04:00:00.000Z",
+  "from": "2026-10-12",
+  "to": "2026-10-18",
+  "through": "2026-10-18",
+  "today": "2026-10-22",
+  "holidaySource": "team_holiday_dates",
+  "teamHolidays": [
+   "2026-10-18"
+  ],
+  "members": [
+   {
+    "userId": "00000000-0000-0000-0000-000000000011",
+    "name": "Asha (always on time)",
+    "role": "team_member",
+    "days": [
+     {
+      "date": "2026-10-12",
+      "status": "Present",
+      "checkIn": "09:10",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-13",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-14",
+      "status": "Present",
+      "checkIn": "09:25",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-15",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-16",
+      "status": "Present",
+      "checkIn": "09:30",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-17",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-18",
+      "status": "Holiday",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": true
+     }
+    ],
+    "tasks": {
+     "open": 2,
+     "overdue": 0,
+     "stale": 0,
+     "rotten": 0,
+     "done": 3,
+     "undated": 0
+    },
+    "contributions": {
+     "facts": 2,
+     "ideas": 1,
+     "suggestions": 0,
+     "sales": 0
+    }
+   },
+   {
+    "userId": "00000000-0000-0000-0000-000000000012",
+    "name": "Bala (one late day)",
+    "role": "team_member",
+    "days": [
+     {
+      "date": "2026-10-12",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-13",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 9,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-14",
+      "status": "Present",
+      "checkIn": "09:42",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-15",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-16",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-17",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-18",
+      "status": "Holiday",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": true
+     }
+    ],
+    "tasks": {
+     "open": 3,
+     "overdue": 1,
+     "stale": 1,
+     "rotten": 0,
+     "done": 1,
+     "undated": 0
+    },
+    "contributions": {
+     "facts": 1,
+     "ideas": 0,
+     "suggestions": 0,
+     "sales": 0
+    }
+   },
+   {
+    "userId": "00000000-0000-0000-0000-000000000013",
+    "name": "Chitra (missing check-ins)",
+    "role": "project_engineer",
+    "days": [
+     {
+      "date": "2026-10-12",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-13",
+      "status": "Present",
+      "checkIn": null,
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-14",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-15",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-16",
+      "status": "Present",
+      "checkIn": null,
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-17",
+      "status": "Present",
+      "checkIn": "09:20",
+      "regularHours": 8,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 7,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-18",
+      "status": "Holiday",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": true
+     }
+    ],
+    "tasks": {
+     "open": 1,
+     "overdue": 0,
+     "stale": 0,
+     "rotten": 0,
+     "done": 2,
+     "undated": 1
+    },
+    "contributions": {
+     "facts": 0,
+     "ideas": 0,
+     "suggestions": 3,
+     "sales": 0
+    }
+   },
+   {
+    "userId": "00000000-0000-0000-0000-000000000014",
+    "name": "Dev (leave week and team holiday)",
+    "role": "team_member",
+    "days": [
+     {
+      "date": "2026-10-12",
+      "status": "Leave",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-13",
+      "status": "Leave",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-14",
+      "status": "Leave",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-15",
+      "status": "Leave",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-16",
+      "status": "Leave",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-17",
+      "status": "Leave",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-18",
+      "status": "Holiday",
+      "checkIn": null,
+      "regularHours": 0,
+      "offHours": 0,
+      "hoursConfirmed": true,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": true
+     }
+    ],
+    "tasks": {
+     "open": 4,
+     "overdue": 2,
+     "stale": 0,
+     "rotten": 1,
+     "done": 0,
+     "undated": 0
+    },
+    "contributions": {
+     "facts": 0,
+     "ideas": 0,
+     "suggestions": 0,
+     "sales": 0
+    }
+   },
+   {
+    "userId": "00000000-0000-0000-0000-000000000015",
+    "name": "Esha (no attendance)",
+    "role": "team_member",
+    "days": [
+     {
+      "date": "2026-10-12",
+      "status": null,
+      "checkIn": null,
+      "regularHours": null,
+      "offHours": null,
+      "hoursConfirmed": false,
+      "loggedHours": 2,
+      "active": true,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-13",
+      "status": null,
+      "checkIn": null,
+      "regularHours": null,
+      "offHours": null,
+      "hoursConfirmed": false,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-14",
+      "status": null,
+      "checkIn": null,
+      "regularHours": null,
+      "offHours": null,
+      "hoursConfirmed": false,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-15",
+      "status": null,
+      "checkIn": null,
+      "regularHours": null,
+      "offHours": null,
+      "hoursConfirmed": false,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-16",
+      "status": null,
+      "checkIn": null,
+      "regularHours": null,
+      "offHours": null,
+      "hoursConfirmed": false,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-17",
+      "status": null,
+      "checkIn": null,
+      "regularHours": null,
+      "offHours": null,
+      "hoursConfirmed": false,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": false
+     },
+     {
+      "date": "2026-10-18",
+      "status": null,
+      "checkIn": null,
+      "regularHours": null,
+      "offHours": null,
+      "hoursConfirmed": false,
+      "loggedHours": 0,
+      "active": false,
+      "teamHoliday": true
+     }
+    ],
+    "tasks": {
+     "open": 0,
+     "overdue": 0,
+     "stale": 0,
+     "rotten": 0,
+     "done": 0,
+     "undated": 0
+    },
+    "contributions": {
+     "facts": 0,
+     "ideas": 0,
+     "suggestions": 0,
+     "sales": 3
+    }
+   }
+  ]
+ },
+ "cases": [
+  {
+   "template": "on_time_all_period",
+   "parameters": {},
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "unavailable",
+    "00000000-0000-0000-0000-000000000014": "unavailable",
+    "00000000-0000-0000-0000-000000000015": "unavailable"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [
+     "late"
+    ],
+    "00000000-0000-0000-0000-000000000013": [
+     "check_in_missing"
+    ],
+    "00000000-0000-0000-0000-000000000014": [
+     "no_working_days"
+    ],
+    "00000000-0000-0000-0000-000000000015": [
+     "attendance_missing"
+    ]
+   }
+  },
+  {
+   "template": "on_time_all_period",
+   "parameters": {
+    "missingCheckIn": "late",
+    "graceDays": 2
+   },
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "met",
+    "00000000-0000-0000-0000-000000000013": "met",
+    "00000000-0000-0000-0000-000000000014": "unavailable",
+    "00000000-0000-0000-0000-000000000015": "unavailable"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [
+     "late_within_grace"
+    ],
+    "00000000-0000-0000-0000-000000000013": [
+     "late_within_grace"
+    ],
+    "00000000-0000-0000-0000-000000000014": [
+     "no_working_days"
+    ],
+    "00000000-0000-0000-0000-000000000015": [
+     "attendance_missing"
+    ]
+   }
+  },
+  {
+   "template": "on_time_all_period",
+   "parameters": {
+    "minWorkingDays": 6,
+    "cutoff": "09:15"
+   },
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "not_met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "not_met",
+    "00000000-0000-0000-0000-000000000014": "not_met",
+    "00000000-0000-0000-0000-000000000015": "unavailable"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [
+     "late"
+    ],
+    "00000000-0000-0000-0000-000000000012": [
+     "late"
+    ],
+    "00000000-0000-0000-0000-000000000013": [
+     "late",
+     "check_in_missing"
+    ],
+    "00000000-0000-0000-0000-000000000014": [
+     "too_few_working_days"
+    ],
+    "00000000-0000-0000-0000-000000000015": [
+     "attendance_missing"
+    ]
+   }
+  },
+  {
+   "template": "full_attendance",
+   "parameters": {},
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "met",
+    "00000000-0000-0000-0000-000000000013": "met",
+    "00000000-0000-0000-0000-000000000014": "not_met",
+    "00000000-0000-0000-0000-000000000015": "unavailable"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [],
+    "00000000-0000-0000-0000-000000000013": [],
+    "00000000-0000-0000-0000-000000000014": [
+     "leave_over_allowance"
+    ],
+    "00000000-0000-0000-0000-000000000015": [
+     "attendance_missing"
+    ]
+   }
+  },
+  {
+   "template": "full_attendance",
+   "parameters": {
+    "allowedLeaveDays": 6
+   },
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "met",
+    "00000000-0000-0000-0000-000000000013": "met",
+    "00000000-0000-0000-0000-000000000014": "met",
+    "00000000-0000-0000-0000-000000000015": "unavailable"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [],
+    "00000000-0000-0000-0000-000000000013": [],
+    "00000000-0000-0000-0000-000000000014": [],
+    "00000000-0000-0000-0000-000000000015": [
+     "attendance_missing"
+    ]
+   }
+  },
+  {
+   "template": "logged_every_working_day",
+   "parameters": {},
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "met",
+    "00000000-0000-0000-0000-000000000014": "unavailable",
+    "00000000-0000-0000-0000-000000000015": "unavailable"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [
+     "below_min_hours"
+    ],
+    "00000000-0000-0000-0000-000000000013": [],
+    "00000000-0000-0000-0000-000000000014": [
+     "no_working_days"
+    ],
+    "00000000-0000-0000-0000-000000000015": [
+     "attendance_missing"
+    ]
+   }
+  },
+  {
+   "template": "hours_within_attendance",
+   "parameters": {},
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "met",
+    "00000000-0000-0000-0000-000000000014": "met",
+    "00000000-0000-0000-0000-000000000015": "unavailable"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [
+     "hours_exceed_attendance"
+    ],
+    "00000000-0000-0000-0000-000000000013": [],
+    "00000000-0000-0000-0000-000000000014": [],
+    "00000000-0000-0000-0000-000000000015": [
+     "attendance_missing"
+    ]
+   }
+  },
+  {
+   "template": "active_day_streak",
+   "parameters": {
+    "streakLength": 5
+   },
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "met",
+    "00000000-0000-0000-0000-000000000014": "not_met",
+    "00000000-0000-0000-0000-000000000015": "not_met"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [
+     "streak_short"
+    ],
+    "00000000-0000-0000-0000-000000000013": [],
+    "00000000-0000-0000-0000-000000000014": [
+     "streak_short"
+    ],
+    "00000000-0000-0000-0000-000000000015": [
+     "streak_short"
+    ]
+   }
+  },
+  {
+   "template": "validated_contributions",
+   "parameters": {},
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "met",
+    "00000000-0000-0000-0000-000000000014": "not_met",
+    "00000000-0000-0000-0000-000000000015": "met"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [
+     "contributions_short"
+    ],
+    "00000000-0000-0000-0000-000000000013": [],
+    "00000000-0000-0000-0000-000000000014": [
+     "contributions_short"
+    ],
+    "00000000-0000-0000-0000-000000000015": []
+   }
+  },
+  {
+   "template": "validated_contributions",
+   "parameters": {
+    "kind": "sales",
+    "count": 1
+   },
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "not_met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "not_met",
+    "00000000-0000-0000-0000-000000000014": "not_met",
+    "00000000-0000-0000-0000-000000000015": "met"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [
+     "contributions_short"
+    ],
+    "00000000-0000-0000-0000-000000000012": [
+     "contributions_short"
+    ],
+    "00000000-0000-0000-0000-000000000013": [
+     "contributions_short"
+    ],
+    "00000000-0000-0000-0000-000000000014": [
+     "contributions_short"
+    ],
+    "00000000-0000-0000-0000-000000000015": []
+   }
+  },
+  {
+   "template": "no_overdue_at_period_end",
+   "parameters": {},
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "met",
+    "00000000-0000-0000-0000-000000000014": "not_met",
+    "00000000-0000-0000-0000-000000000015": "met"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [
+     "overdue_tasks"
+    ],
+    "00000000-0000-0000-0000-000000000013": [],
+    "00000000-0000-0000-0000-000000000014": [
+     "overdue_tasks"
+    ],
+    "00000000-0000-0000-0000-000000000015": []
+   }
+  },
+  {
+   "template": "all_missions_fresh_at_period_end",
+   "parameters": {},
+   "expected": {
+    "00000000-0000-0000-0000-000000000011": "met",
+    "00000000-0000-0000-0000-000000000012": "not_met",
+    "00000000-0000-0000-0000-000000000013": "unavailable",
+    "00000000-0000-0000-0000-000000000014": "not_met",
+    "00000000-0000-0000-0000-000000000015": "met"
+   },
+   "reasons": {
+    "00000000-0000-0000-0000-000000000011": [],
+    "00000000-0000-0000-0000-000000000012": [
+     "stale_tasks"
+    ],
+    "00000000-0000-0000-0000-000000000013": [
+     "undated_tasks"
+    ],
+    "00000000-0000-0000-0000-000000000014": [
+     "rotten_tasks"
+    ],
+    "00000000-0000-0000-0000-000000000015": []
+   }
+  }
+ ]
+}

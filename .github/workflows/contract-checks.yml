@@ -67,5 +67,7 @@ jobs:
         run: python tools/test_m18_waypoints_database.py --psql "$(command -v psql)" --port 15432
       - name: Activity log read (migrations 54 and 57)
         run: python tools/test_activity_feed_database.py --psql "$(command -v psql)" --port 15432
+      - name: Policies and notifications (migration 56)
+        run: python tools/test_policies_database.py --psql "$(command -v psql)" --port 15432
       - name: Demo recognition seed (script only, loopback)
         run: python tools/test_seed_demo_recognition_database.py --psql "$(command -v psql)" --port 15432 --manifest-dir "$RUNNER_TEMP/demo-recognition"

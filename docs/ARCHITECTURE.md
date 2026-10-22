@@ -104,6 +104,7 @@ Start from `modules/_template/` when creating a module.
 | reports | Live reports, exports, month close, report snapshots, dashboard read | lib/presentation, lib/month, lib/analytics/queries, components/reports | Moved |
 | records | Dated records (attendance, facts, ideas, suggestions, sales, meetings): save/validate command and history | app/records | Moved |
 | drive | Google Drive integration (deferred by user) | lib/integrations/drive | Moved |
+| policies | Company policies from templates, their evaluation and commendations (migration 56) | — | New (wave 3) |
 | workspace-views | App shell, Dashboard, Today, Timelines, nav counts, missions list | components/layout, components/dashboard, lib/today, lib/timelines, lib/layout | Moved |
 | marketing | Public landing page | lib/marketing, components/marketing | Moved |
 
