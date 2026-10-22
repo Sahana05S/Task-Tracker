@@ -82,7 +82,9 @@ export function parseTaskFields(formData: FormData): Parsed<TaskFields> {
   const taskScale = readNullableNumber(formData, 'taskScale');
   const assigneeId = assigneeIds?.[0] ?? null;
 
-  if (taskTag === '') return { ok: false, error: 'Enter a task tag.' };
+  // A new mission may leave the tag blank: the database allocates the next
+  // sheet tag (<Mon><YY>_<TYPE><n>, migration 53). An edit keeps its tag.
+  if (taskTag === '' && readString(formData, 'taskId') !== '') return { ok: false, error: 'Enter a task tag.' };
   if (taskTag.length > 30) return { ok: false, error: 'Task tag must be 30 characters or fewer.' };
   if (title === '') return { ok: false, error: 'Enter a task title.' };
   if (title.length > 255) return { ok: false, error: 'Title must be 255 characters or fewer.' };

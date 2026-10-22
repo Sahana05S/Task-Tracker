@@ -5,6 +5,8 @@ import { requireProfile } from '@/shared/session/profile';
 import { getNavCounts } from '@/modules/workspace-views';
 import { getRunningTimers } from '@/modules/time-tracking';
 import { RunningTimerProvider } from '@/modules/time-tracking/components/running-timer-context';
+import { categoryCatalogue, getCompanySettings } from '@/modules/settings';
+import { CompanySettingsProvider } from '@/modules/settings/components/company-settings-context';
 
 /**
  * Guarded layout for every workspace route.
@@ -23,13 +25,20 @@ export default async function WorkspaceLayout({
   readonly children: React.ReactNode;
 }) {
   const profile = await requireProfile();
-  const [counts, timers] = await Promise.all([getNavCounts(profile.id), getRunningTimers(profile.id)]);
+  const [counts, timers, catalogue, settings] = await Promise.all([
+    getNavCounts(profile.id),
+    getRunningTimers(profile.id),
+    categoryCatalogue(),
+    getCompanySettings(),
+  ]);
 
   return (
-    <RunningTimerProvider timers={timers}>
-      <AppShell profile={profile} counts={counts} timers={timers}>
-        {children}
-      </AppShell>
-    </RunningTimerProvider>
+    <CompanySettingsProvider catalogue={catalogue} meetingTypes={settings.meetingTypes}>
+      <RunningTimerProvider timers={timers}>
+        <AppShell profile={profile} counts={counts} timers={timers}>
+          {children}
+        </AppShell>
+      </RunningTimerProvider>
+    </CompanySettingsProvider>
   );
 }

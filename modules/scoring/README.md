@@ -41,7 +41,9 @@ each job's company in `x-taskpulse-organization` (`shared/supabase/worker.ts`).
 
 ## Depends on
 `shared/*` and the public APIs of `tasks`, `time-tracking`, `attendance` and
-`support` (its inputs). None of those import scoring.
+`support` (its inputs). None of those import scoring. `AwardStatus` marks team
+holidays H (company calendar from migration 53, or everyone on Holiday) and
+takes the calendar names as `holidayNames`.
 
 The dashboard read (`getTeamAnalytics`, `getWorkbookDashboard`) composes the
 live presentation, so it lives in the reports module. `components/` also holds

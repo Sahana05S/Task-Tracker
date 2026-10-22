@@ -40,7 +40,8 @@ company-scoped by migrations 39-40 (M15).
 
 ## Depends on
 `shared/*` and the public APIs of `reports`, `scoring`, `tasks`,
-`time-tracking`, `attendance` and `support`. No module imports team; it is a
+`time-tracking`, `attendance`, `support` and `settings` (the Team index names
+calendar holidays; Settings > Company lives in the settings module). No module imports team; it is a
 top-level view of the others.
 
 ## Employee profile tabs
