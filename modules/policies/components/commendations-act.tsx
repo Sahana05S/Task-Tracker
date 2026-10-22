@@ -5,7 +5,7 @@ import type { Section } from '@/shared/async/settle';
 import { EmptyState, MissionNotice } from '@/shared/ui/mission-ui';
 
 import { PERIOD_LABELS, periodLabel } from '@/modules/policies/client';
-import { BadgeSeal } from '@/modules/policies/components/badge-seal';
+import { BadgeSeal, pointsLabel } from '@/modules/policies/components/badge-seal';
 import type { MemberCommendations } from '@/modules/policies/internal/ceremony';
 
 /**
@@ -35,10 +35,10 @@ export function CommendationsAct({ section, monthLabel, viewerId }: {
           {section.data.map((member) => (
             <li key={member.employeeId} className="border-border grid content-start gap-2.5 rounded-2xl border bg-white p-4">
               <div className="flex items-baseline justify-between gap-3">
-                <p className="text-foreground font-semibold">
+                <p className="text-foreground font-semibold break-words">
                   {member.name}{member.employeeId === viewerId ? <span className="text-muted-foreground font-normal"> (you)</span> : null}
                 </p>
-                {member.points > 0 ? <p className="text-muted-foreground text-xs whitespace-nowrap tabular-nums">{member.points} points</p> : null}
+                {member.points > 0 ? <p className="text-muted-foreground text-xs whitespace-nowrap tabular-nums">{pointsLabel(member.points)}</p> : null}
               </div>
               <ul className="grid gap-2">
                 {member.commendations.map((c) => (
