@@ -28,6 +28,7 @@ export { equalParticipantShares, parseSharePercent, TOTAL_SHARE_UNITS } from '@/
 export { mapTask, mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/internal/mappers';
 export { canUseWorkbookWorkflow, WORKBOOK_WORKFLOWS, type WorkbookWorkflow, type WorkbookWorkflowId } from '@/modules/tasks/internal/tools/workflows';
 export type { ToolOperation, ToolsPreview } from '@/modules/tasks/internal/tools/contract';
+export { addMonths, defaultSetupMonth, monthOf, setupBannerMonth, type MonthKey } from '@/modules/tasks/internal/tools/month-setup';
 export type { SupportSplitMode } from '@/modules/tasks/internal/tools/support-split';
 
 export { MISSION_BATCH_SIZE, compareRoadmapMissions, missionBatchLimit, missionDueFilter, missionDueLabel, type MissionDueFilter, type MissionBatchOptions, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/internal/roadmap-contract';

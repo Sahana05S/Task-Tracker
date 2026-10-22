@@ -138,7 +138,7 @@ describe('last month\'s missions', () => {
     expect(defaultPreviousAction(mission({ title: 'October payroll', progress: 50 }))).toBe('repeat');
     expect(defaultPreviousAction(mission({ progress: 40 }))).toBe('carryover');
     expect(defaultPreviousAction(mission({ progress: 0, status: 'Not Started' }))).toBe('skip');
-    expect(defaultPreviousAction(mission({ progress: 100, status: 'Under Review' }))).toBe('skip');
+    expect(defaultPreviousAction(mission({ progress: 100, status: 'On-Hold' }))).toBe('skip');
     expect(defaultPreviousAction(mission({ progress: null }))).toBe('skip');
   });
 

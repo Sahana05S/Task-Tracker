@@ -13,12 +13,12 @@ template versions.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `getTaskWorkspaceData`, `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`, `getToolLineage` + `buildRecentOperations` (Tools page Recent operations), and the Today reads `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`. Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools workflows and types |
+| `index.ts` | Server reads: `getTaskWorkspaceData`, `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`, `getToolLineage` + `buildRecentOperations` (Tools page Recent operations), `getMonthSetupContext` + `countMissionsInMonth` (month setup wizard and the Missions banner), and the Today reads `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`. Also re-exports everything in `client.ts`. |
+| `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools workflows and types, month helpers (`monthOf`, `addMonths`, `defaultSetupMonth`, `setupBannerMonth`) |
 | `actions.ts` | `'use server'` task commands: `createTask`, `updateTask`, `updateTaskStatus`, `updateTaskProgress`, `changeTaskLifecycle`, `recordTaskReview`, `deleteTask` |
 | `detail-actions.ts` | `'use server'` native-details commands: `initializeTaskDetails`, `saveTaskDetails`, `addTaskAsset`, `addTaskRelation`, `renameNativeLink`, `publishNativeTemplate` |
-| `tool-actions.ts` | `'use server'` Task Tools: `previewTaskTool`, `commitTaskTool` |
-| `components/` | `TaskWorkspace` (filters in the URL, table selection, `BulkActionBar`, `TaskRowMenuItems`, `MissionSummarySheet`), `TaskDialog`, `NewTaskButton`, `TaskLifecyclePanel`, `TaskReviewForm`, `WorkFileCreator`, native details editor/template manager, `tools/` (`useToolOperation` preview-then-commit hook, `OperationDrawer`, the operation catalogue `operations.ts`, `RecentOperations`), and `detail/` (the mission details page panels) |
+| `tool-actions.ts` | `'use server'` Task Tools: `previewTaskTool`, `commitTaskTool`; month setup: `previewMonthSetup`, `commitMonthSetup` |
+| `components/` | `TaskWorkspace` (filters in the URL, table selection, `BulkActionBar`, `TaskRowMenuItems`, `MissionSummarySheet`), `TaskDialog`, `NewTaskButton`, `TaskLifecyclePanel`, `TaskReviewForm`, `WorkFileCreator`, native details editor/template manager, `tools/` (`useToolOperation` preview-then-commit hook, `OperationDrawer` with its `PreviewTable`/`CommitResult`, the operation catalogue `operations.ts`, `RecentOperations`), `month-setup/` (`MonthSetupWizard` for `/tasks/setup`, `MissionsPageMenu`, `MonthSetupBanner`), and `detail/` (the mission details page panels) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -39,7 +39,7 @@ template versions.
 | `filters.ts` | Workspace filtering and sorting |
 | `shares.ts` | Participant share units |
 | `mappers.ts`, `credit-summary.ts` | Database row -> domain model, linear participant projection |
-| `tools/` | Task Tools contract, support split, workbook workflow list, preview/commit RPCs, `recent.ts` (Recent operations rebuilt from copy lineage in `task_dependencies` and task archives; Done/reopen/section/refresh batches are not listed until the activity log can be read) |
+| `tools/` | Task Tools contract, support split, workbook workflow list, preview/commit RPCs, `recent.ts` (Recent operations rebuilt from copy lineage in `task_dependencies` and task archives; Done/reopen/section/refresh batches are not listed until the activity log can be read), `month-setup.ts` (pure month setup plan: weekly phases, defaults, coverage filter, payload) and `month-setup-commands.ts` (its RPCs) |
 
 ## Database it owns
 | Object | Defined in |
@@ -53,6 +53,7 @@ template versions.
 | `publish_task_detail_template` | `17_native_task_details_and_templates.sql` |
 | `task_tools_preview`, `task_tools_command` | 24, revised in 25 (preview also 31, 32) |
 | `participant_reconciliation` | `10_permissions_and_participant_contract.sql` |
+| `month_setup_context`, `month_setup_preview`, `month_setup_commit`, `taskpulse_private.month_setup_items` | `55_month_setup.sql` |
 
 All of these are company-scoped by migrations 39-40 (M15).
 
@@ -85,3 +86,21 @@ table's Waypoint column, left out without it), and `MissionOverview` takes a
 `belowProgress` node; tasks does not import recognition.
 
 Roadmap public reads: `getAssignedMissionBatch`, `getAssignedRoadmapMission`, `countAssignedMissionsCompletedBetween` (internal/roadmap.ts). Client contract/filter/order helpers live in roadmap-contract.ts and are exported through client.ts. Batches keyset by due date/UUID to agree with PostgreSQL ordering, preserve legacy primary and participant assignments, and fetch no whole-company task list.
+
+## Month setup (DECISIONS "Month setup wizard - 21 October 2026", migration 55)
+- `/tasks/setup` (managing director and project engineer; the Missions page menu,
+  and a banner from the 25th while next month has no missions). Five steps: month
+  (current or next), standing missions × active members (all ticked; single-owner
+  missions go to their owner or the MD), weekly Tasks Review phases (7 days from
+  the 1st, the last clipped; owner the MD), earlier missions (Repeat as new /
+  Carry over remaining / Skip; Done and Discarded skip, a title naming its month
+  repeats, 0 < progress < 100 carries over; missions the standing list or phases
+  recreate are hidden), then one preview and one atomic commit.
+- Repeat as new is the approved D12 copy (Task Tools `duplicate`) with the month in
+  the title moved on; Carry over is the D12 handoff (`carryover`) unchanged, so it
+  only targets a month that has started. A month set up before its 1st gets
+  standing missions, phases and repeats; its carry-overs are made from the 1st by
+  opening the wizard again (steps 2-3 then show as already set up).
+- Standing and phase missions take their sheet tags at commit, in plan order; a
+  month is set up once (`month_setup_items` unique per cell, week and source).
+- Harness: `tools/test_month_setup_database.py`.

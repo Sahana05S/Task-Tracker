@@ -31,3 +31,4 @@ export {
 } from '@/modules/tasks/internal/member-tasks';
 
 export { getAssignedMissionBatch, getAssignedRoadmapMission, countAssignedMissionsCompletedBetween } from '@/modules/tasks/internal/roadmap';
+export { countMissionsInMonth, getMonthSetupContext, type MonthSetupContext } from '@/modules/tasks/internal/tools/month-setup-commands';

@@ -2,11 +2,13 @@ import { getNativeTemplates } from '@/modules/tasks';
 import type { Metadata } from 'next';
 
 import { NewTaskButton } from '@/modules/tasks/components/new-task-button';
+import { MissionsPageMenu, MonthSetupBanner } from '@/modules/tasks/components/month-setup/month-setup-entry';
 import { MissionsWorkspace } from '@/modules/workspace-views/components/missions-workspace';
 import { requireProfile } from '@/shared/session/profile';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { getTaskEffortTotals } from '@/modules/time-tracking';
-import { getTaskWorkspaceData } from '@/modules/tasks';
+import { addMonths, countMissionsInMonth, defaultSetupMonth, getTaskWorkspaceData, monthOf, setupBannerMonth } from '@/modules/tasks';
+import { kolkataDate } from '@/shared/time/kolkata';
 import { getMissionWaypoints } from '@/modules/recognition';
 import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 import type { UserRole } from '@/types/tracker';
@@ -27,19 +29,20 @@ export const metadata: Metadata = {
  */
 export default async function TasksPage() {
   const profile = await requireProfile();
+  const canManage = (TASK_MANAGER_ROLES as readonly UserRole[]).includes(
+    profile.role,
+  );
 
   const workspace = getTaskWorkspaceData();
-  const [{ tasks, members }, effortTotals, templates, waypoints] = await Promise.all([
+  const [{ tasks, members }, effortTotals, templates, waypoints, setup] = await Promise.all([
     workspace,
     getTaskEffortTotals(),
     getNativeTemplates(),
     // Waypoints never hold the list back: a failed read leaves the tracks on current progress.
     workspace.then(({ tasks }) => getMissionWaypoints(tasks)).catch(() => null),
+    // Neither does month setup: without the counts the menu offers next month and no banner shows.
+    canManage ? monthSetupEntry().catch(() => null) : null,
   ]);
-
-  const canManage = (TASK_MANAGER_ROLES as readonly UserRole[]).includes(
-    profile.role,
-  );
 
   const openCount = tasks.filter(
     (task) => !task.archivedEffectiveDate && task.status !== 'Done' && task.status !== 'Discarded',
@@ -51,8 +54,15 @@ export default async function TasksPage() {
         title="Missions"
         chip={`${openCount} active`}
         description={`${tasks.length} tracked · ${canManage ? 'select rows in the table view to act on several at once' : 'update status and progress on your own missions'}`}
-        actions={canManage ? <NewTaskButton /> : null}
+        actions={canManage ? (
+          <>
+            <NewTaskButton />
+            <MissionsPageMenu setupMonth={setup?.menuMonth ?? addMonths(monthOf(kolkataDate()), 1)} />
+          </>
+        ) : null}
       />
+
+      {setup?.bannerMonth ? <MonthSetupBanner month={setup.bannerMonth} /> : null}
 
       <MissionsWorkspace
         tasks={tasks}
@@ -66,4 +76,19 @@ export default async function TasksPage() {
       />
     </MissionPage>
   );
+}
+
+/** The month the menu offers and, from the 25th while next month is empty, the banner's month. */
+async function monthSetupEntry() {
+  const today = kolkataDate();
+  const current = monthOf(today);
+  const late = Number(today.slice(8, 10)) >= 25;
+  const [currentCount, nextCount] = await Promise.all([
+    countMissionsInMonth(current),
+    late ? countMissionsInMonth(addMonths(current, 1)) : Promise.resolve(null),
+  ]);
+  return {
+    menuMonth: defaultSetupMonth(today, currentCount > 0),
+    bannerMonth: nextCount === null ? null : setupBannerMonth(today, nextCount),
+  };
 }

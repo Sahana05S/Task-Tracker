@@ -324,7 +324,7 @@ export function buildPayload(command: ToolOperation, tasks: readonly Task[], for
 /* Preview and result                                                         */
 /* -------------------------------------------------------------------------- */
 
-function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; names: ReadonlyMap<string, string>; copy: boolean }) {
+export function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; names: ReadonlyMap<string, string>; copy: boolean }) {
   const person = (id: string) => names.get(id) ?? 'Unknown member';
   return (
     <section aria-labelledby="operation-preview" className="grid gap-3">
@@ -382,7 +382,7 @@ function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; names: 
   );
 }
 
-function CommitResult({ items }: { items: readonly { taskId: string; taskTag: string; status: string }[] }) {
+export function CommitResult({ items }: { items: readonly { taskId: string; taskTag: string; status: string }[] }) {
   return (
     <section aria-labelledby="operation-result" className="grid gap-3">
       <p id="operation-result" role="status" className="text-success-strong flex items-center gap-2 text-sm font-semibold">
