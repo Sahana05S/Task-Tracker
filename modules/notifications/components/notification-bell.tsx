@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { BellIcon, CheckCheckIcon } from 'lucide-react';
 
 import {
@@ -45,20 +46,23 @@ function Item({ item, onOpen }: { item: NotificationItem; onOpen: (item: Notific
 /**
  * The top bar's notifications: an unread count on the bell (in its accessible
  * name too) and, when opened, the latest 20 with "Mark all read". The count is
- * read on load and whenever the tab becomes visible again; a failed read says
- * so instead of showing zero.
+ * read on each page change and whenever the tab becomes visible again; a failed
+ * read says so instead of showing zero.
  */
 export function NotificationBell({ className }: { className?: string }) {
   const [bell, setBell] = useState<BellState | null>(null);
   const [inbox, setInbox] = useState<InboxState | null>(null);
   const [loading, startLoading] = useTransition();
+  const pathname = usePathname();
 
   const refreshCount = useCallback(() => {
     notificationCountAction().then(setBell, () => setBell({ status: 'unavailable' }));
   }, []);
 
+  // The bar stays mounted across navigations, so read again on each page change.
+  useEffect(() => { refreshCount(); }, [pathname, refreshCount]);
+
   useEffect(() => {
-    refreshCount();
     const onVisible = () => { if (document.visibilityState === 'visible') refreshCount(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
