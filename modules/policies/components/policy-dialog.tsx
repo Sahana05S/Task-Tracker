@@ -9,7 +9,7 @@ import { Field } from '@/shared/ui/form-field';
 import { NativeSelect } from '@/shared/ui/native-select';
 import { SegmentedControl } from '@/shared/ui/segmented-control';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet';
-import { cn } from '@/shared/utils';
+import { USER_ROLES } from '@/shared/tracker/enums';
 
 import { previewPolicyAction, savePolicyAction, type PreviewResult } from '@/modules/policies/actions';
 import {
@@ -25,9 +25,10 @@ import {
   type PolicyTemplate,
   type Reward,
 } from '@/modules/policies/client';
-import { OUTCOME_COLORS } from '@/modules/policies/components/outcome-strip';
+import { OutcomeDot } from '@/modules/policies/components/outcome-strip';
+import type { AudienceMember as DialogMember } from '@/modules/policies/internal/workspace';
 
-export interface DialogMember { id: string; name: string; role: MemberRole }
+export type { AudienceMember as DialogMember } from '@/modules/policies/internal/workspace';
 
 /** What an existing policy brings into the dialog (edit mode). */
 export interface EditablePolicy {
@@ -42,12 +43,13 @@ export interface EditablePolicy {
   reward: Reward;
 }
 
-const ROLE_LABELS: Record<MemberRole, string> = {
+/** Plural audience labels, in USER_ROLES order. */
+const ROLE_LABELS = {
   managing_director: 'Managing director',
   project_engineer: 'Project engineers',
   data_manager: 'Data managers',
   team_member: 'Team members',
-};
+} satisfies Record<MemberRole, string>;
 
 /** Reads the draft parameters from the form, falling back to the template's defaults. */
 function draftParameters(template: PolicyTemplate, form: HTMLFormElement | null): Parameters {
@@ -133,8 +135,7 @@ function Preview({ result }: { result: PreviewResult }) {
                 <td className="text-foreground py-1.5 pr-2 font-medium">{row.name}</td>
                 <td className="py-1.5 pr-2 whitespace-nowrap">
                   <span className="inline-flex items-center gap-1">
-                    <span aria-hidden="true" className="size-1.5 rounded-full"
-                      style={{ backgroundColor: OUTCOME_COLORS[row.outcome === 'not_met' ? 'notMet' : row.outcome] }} />
+                    <OutcomeDot outcome={row.outcome} />
                     {OUTCOME_LABELS[row.outcome][result.final ? 'final' : 'provisional']}
                   </span>
                 </td>
@@ -222,7 +223,7 @@ function PolicyForm({ template, policy, members, onBack, onSaved, onDirty }: {
             options={[{ value: 'everyone', label: 'Everyone' }, { value: 'roles', label: 'Roles' }, { value: 'members', label: 'People' }]} />
           {audienceKind === 'roles' ? (
             <div className="grid gap-0.5">
-              {(Object.keys(ROLE_LABELS) as MemberRole[]).map((role) => (
+              {USER_ROLES.map((role) => (
                 <label key={role} className="flex min-h-11 items-center gap-2.5 text-sm">
                   <input type="checkbox" name="audienceRoles" value={role} defaultChecked={roles.includes(role)} className="accent-primary size-4" />
                   {ROLE_LABELS[role]}
@@ -313,7 +314,7 @@ export function PolicyDialog({ open, onOpenChange, policy, members }: {
           <PolicyForm key={template.key} template={template} policy={policy} members={members}
             onBack={policy ? null : () => { dirty.current = false; setPicked(null); }} onSaved={close} onDirty={() => { dirty.current = true; }} />
         ) : policy ? (
-          <p className={cn('text-muted-foreground px-5 text-sm')}>This policy uses a rule this version of TaskPulse does not know, so it cannot be edited here.</p>
+          <p className="text-muted-foreground px-5 text-sm">This policy uses a rule this version of TaskPulse does not know, so it cannot be edited here.</p>
         ) : (
           <TemplatePicker onPick={setPicked} />
         )}

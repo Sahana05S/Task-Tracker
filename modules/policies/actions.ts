@@ -5,6 +5,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { isConflictCode } from '@/shared/commands/conflict';
+import { commandIdentity } from '@/shared/commands/result';
 import { readString, UUID_PATTERN } from '@/shared/forms/form-data';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { createClient } from '@/shared/supabase/server';
@@ -35,21 +36,15 @@ function refusal(error: unknown): ActionResponse<never> {
   return { success: false, errorCode: 'unavailable', error: 'Policies are not available right now. Try again in a moment.' };
 }
 
-function identity(form: FormData) {
-  const operationId = readString(form, 'operationId');
-  return UUID_PATTERN.test(operationId) ? operationId : null;
-}
-
 /** Creates a policy, or revises one when the form carries its id and version. */
 export async function savePolicyAction(form: FormData): Promise<ActionResponse<{ policyId: string; version: number }>> {
   if (!(await isDirector())) return ONLY_MD;
-  const operationId = identity(form);
+  const { operationId, version: expectedVersion } = commandIdentity(form);
   if (!operationId) return { success: false, error: 'Refresh the page and try again.', errorCode: 'validation' };
   const parsed = parsePolicyForm(form);
   if (!parsed.ok) return { success: false, error: parsed.error, errorCode: 'validation' };
   const policyId = readString(form, 'policyId');
-  const expectedVersion = Number(readString(form, 'expectedVersion'));
-  if (policyId && (!UUID_PATTERN.test(policyId) || !Number.isSafeInteger(expectedVersion))) {
+  if (policyId && (!UUID_PATTERN.test(policyId) || expectedVersion === null)) {
     return { success: false, error: 'Refresh the page and try again.', errorCode: 'validation' };
   }
   try {
@@ -69,9 +64,8 @@ export async function setPolicyStateAction(form: FormData): Promise<ActionRespon
   if (!(await isDirector())) return ONLY_MD;
   const command = readString(form, 'command');
   const policyId = readString(form, 'policyId');
-  const expectedVersion = Number(readString(form, 'expectedVersion'));
-  const operationId = identity(form);
-  if (!['activate', 'deactivate', 'archive'].includes(command) || !UUID_PATTERN.test(policyId) || !Number.isSafeInteger(expectedVersion) || !operationId) {
+  const { operationId, version: expectedVersion } = commandIdentity(form);
+  if (!['activate', 'deactivate', 'archive'].includes(command) || !UUID_PATTERN.test(policyId) || expectedVersion === null || !operationId) {
     return { success: false, error: 'Refresh the page and try again.', errorCode: 'validation' };
   }
   try {

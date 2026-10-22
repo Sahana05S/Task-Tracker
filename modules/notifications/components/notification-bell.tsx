@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BellIcon, CheckCheckIcon } from 'lucide-react';
@@ -17,6 +17,9 @@ import { cn } from '@/shared/utils';
 
 import { markNotificationsReadAction, notificationCountAction, notificationInboxAction } from '@/modules/notifications/actions';
 import { badgeText, bellLabel, safeHref, timeAgo, type BellState, type InboxState, type NotificationItem } from '@/modules/notifications/client';
+
+/** Page changes within this long reuse the last count, so the bell never queues behind the user's own actions. */
+const REFRESH_AFTER_MS = 60_000;
 
 const UNAVAILABLE_COPY = {
   missing: 'Notifications need a database update before they can appear here.',
@@ -46,8 +49,8 @@ function Item({ item, onOpen }: { item: NotificationItem; onOpen: (item: Notific
 /**
  * The top bar's notifications: an unread count on the bell (in its accessible
  * name too) and, when opened, the latest 20 with "Mark all read". The count is
- * read on each page change and whenever the tab becomes visible again; a failed
- * read says so instead of showing zero.
+ * read on page changes (at most once a minute) and whenever the tab becomes
+ * visible again; a failed read says so instead of showing zero.
  */
 export function NotificationBell({ className }: { className?: string }) {
   const [bell, setBell] = useState<BellState | null>(null);
@@ -55,7 +58,10 @@ export function NotificationBell({ className }: { className?: string }) {
   const [loading, startLoading] = useTransition();
   const pathname = usePathname();
 
-  const refreshCount = useCallback(() => {
+  const lastRead = useRef(0);
+  const refreshCount = useCallback((force = false) => {
+    if (!force && Date.now() - lastRead.current < REFRESH_AFTER_MS) return;
+    lastRead.current = Date.now();
     notificationCountAction().then(setBell, () => setBell({ status: 'unavailable' }));
   }, []);
 
@@ -63,7 +69,7 @@ export function NotificationBell({ className }: { className?: string }) {
   useEffect(() => { refreshCount(); }, [pathname, refreshCount]);
 
   useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === 'visible') refreshCount(); };
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshCount(true); };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [refreshCount]);
@@ -72,7 +78,7 @@ export function NotificationBell({ className }: { className?: string }) {
     startLoading(async () => {
       const next = await notificationInboxAction().catch((): InboxState => ({ status: 'unavailable' }));
       setInbox(next);
-      if (next.status === 'ready') setBell({ status: 'ready', unread: next.unread });
+      if (next.status === 'ready') { lastRead.current = Date.now(); setBell({ status: 'ready', unread: next.unread }); }
     });
   }
 

@@ -1,6 +1,6 @@
 import { cn } from '@/shared/utils';
 
-import type { OutcomeCounts } from '@/modules/policies/client';
+import type { Outcome, OutcomeCounts } from '@/modules/policies/client';
 
 /**
  * This period's outcomes as one thin proportion bar plus the counts in words.
@@ -8,6 +8,12 @@ import type { OutcomeCounts } from '@/modules/policies/client';
  * they sit below 3:1 on white, so the counts are always printed beside them.
  */
 export const OUTCOME_COLORS = { met: '#0f9f74', notMet: '#7468d0', unavailable: '#e08e0b' } as const;
+
+/** The colour dot of one outcome, beside its label. */
+export function OutcomeDot({ outcome, className }: { outcome: Outcome; className?: string }) {
+  return <span aria-hidden="true" className={cn('inline-block size-1.5 shrink-0 rounded-full', className)}
+    style={{ backgroundColor: OUTCOME_COLORS[outcome === 'not_met' ? 'notMet' : outcome] }} />;
+}
 
 const SEGMENTS = [
   { key: 'met', label: 'met' },
