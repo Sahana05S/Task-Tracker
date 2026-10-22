@@ -11,7 +11,7 @@ import { BulkActionBar } from '@/modules/tasks/components/bulk-action-bar';
 import { filtersFromParams, missionsHref, viewFromParams, type MissionView } from '@/modules/tasks/components/filter-params';
 import { MissionSummarySheet } from '@/modules/tasks/components/mission-summary-sheet';
 import { EMPTY_SELECTION, pruneSelection, type Selection } from '@/modules/tasks/components/mission-selection';
-import { TaskCardList, type LogHoursActionComponent } from '@/modules/tasks/components/task-card-list';
+import { TaskCardList, type LogHoursActionComponent, type WaypointSlotComponent } from '@/modules/tasks/components/task-card-list';
 import { TaskDataGrid } from '@/modules/tasks/components/task-data-grid';
 import { TaskDialog } from '@/modules/tasks/components/task-dialog';
 import { TaskFilters } from '@/modules/tasks/components/task-filters';
@@ -55,6 +55,8 @@ export interface TaskWorkspaceProps {
   templates?: readonly NativeTemplate[];
   /** The "Log hours" button on each open mission card, supplied by the composing page. */
   LogHoursAction?: LogHoursActionComponent;
+  /** Waypoint track on cards and the table's Waypoint column (recognition fills it). */
+  WaypointSlot?: WaypointSlotComponent;
 }
 
 /** The operation drawer's subject: one command over a fixed set of missions. */
@@ -80,6 +82,7 @@ export function TaskWorkspace({
   currentUser,
   templates=[],
   LogHoursAction,
+  WaypointSlot,
 }: TaskWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -235,6 +238,7 @@ export function TaskWorkspace({
                 selection={selection}
                 onSelectionChange={setSelected}
                 actions={rowActions}
+                WaypointSlot={WaypointSlot}
               />
               <BulkActionBar
                 selectedCount={selection.size}
@@ -254,6 +258,7 @@ export function TaskWorkspace({
               canManage={canManage}
               actions={rowActions}
               LogHoursAction={LogHoursAction}
+              WaypointSlot={WaypointSlot}
             />
           </div>
         </>

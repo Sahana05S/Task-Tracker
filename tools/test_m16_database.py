@@ -286,7 +286,9 @@ for db in DBS:
     print('PASS',db,'a month with an undecided day publishes its category awards with the monthly star still pending')
 
     points=first_json(as_user(db,A4,"SELECT public.recognition_points(NULL)"))
-    assert points['policy']=={'dailyStar':10,'categoryAward':25,'monthlyStar':100} and points['entries'] is None
+    # The award values; migration 51 also reserves waypoint/landing points at 0 in the same object.
+    assert {k:points['policy'][k] for k in ('dailyStar','categoryAward','monthlyStar')}=={'dailyStar':10,'categoryAward':25,'monthlyStar':100}
+    assert all(v==0 for k,v in points['policy'].items() if k not in ('dailyStar','categoryAward','monthlyStar')) and points['entries'] is None
     pm={m['userId']:m for m in points['members']}
     n1=int(value(db,f"('{P1}'::date+interval '1 month')::date-'{P1}'::date"))
     assert pm[A4]['dailyStars']==11 and pm[A4]['monthlyStars']==1 and pm[A4]['categoryAwards']==2 and pm[A4]['categories']=={'productivity':2},pm[A4]

@@ -4,6 +4,11 @@ const MISSING_SCHEMA_PATTERNS = [
   'could not find table',
 ] as const;
 
+/** PostgREST / PostgreSQL codes for "this function does not exist" (a database before its migration). */
+export function isMissingFunctionError(error: { code?: string } | null | undefined): boolean {
+  return error?.code === 'PGRST202' || error?.code === '42883';
+}
+
 export function isMissingSchemaError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();

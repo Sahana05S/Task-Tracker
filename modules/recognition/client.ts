@@ -17,6 +17,7 @@ export {
 export {
   DEFAULT_RECOGNITION_POLICY,
   parseRecognitionPolicy,
+  parseWaypoints,
   type RecognitionPolicy,
 } from '@/modules/recognition/internal/policy';
 export {
@@ -43,3 +44,14 @@ export {
   type CeremonyStatus,
   type MonthlyStarAct,
 } from '@/modules/recognition/internal/ceremony-rules';
+export { DEFAULT_WAYPOINTS, type Waypoint } from '@/modules/recognition/internal/rules';
+export {
+  CELEBRATION_WINDOW_MS,
+  freshCelebrations,
+  missionWaypoints,
+  waypointState,
+  type WaypointCelebrationItem,
+  type MissionWaypoints,
+  type WaypointCrossing,
+  type WaypointState,
+} from '@/modules/recognition/internal/waypoint-rules';
