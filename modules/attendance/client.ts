@@ -16,3 +16,21 @@ export {
   summarizeAttendance,
   type AttendanceSummary,
 } from './internal/summary';
+export {
+  attendanceMatrix,
+  attendanceMonth,
+  cellCommand,
+  cellValues,
+  emptyCells,
+  fillCommand,
+  hoursBetween,
+  monthDates,
+  shiftMonth,
+  withStatus,
+  type AttendanceMatrixModel,
+  type CellValues,
+  type DayFill,
+  type DayKind,
+  type MatrixCell,
+  type MatrixRow,
+} from './internal/matrix';

@@ -1,4 +1,4 @@
-import { buttonVariants } from '@/shared/ui/button';
+import { PeriodPicker } from '@/shared/ui/period-picker';
 import { getLivePresentation } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
@@ -110,12 +110,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
           analytics.totals.activeMemberCount === 1 ? 'member' : 'members'
         } · compared against the team median`}
         actions={
-          <form method="get" className="flex items-center gap-2">
-            <label htmlFor="dashboard-month" className="sr-only">Month</label>
-            <input id="dashboard-month" type="month" name="period" defaultValue={period.startDate.slice(0,7)}
-              className="field h-10 w-40 bg-white" />
-            <button type="submit" className={buttonVariants({ variant: 'outline' })}>View</button>
-          </form>
+          <PeriodPicker month={period.startDate.slice(0,7)} asOf={context.asOf} compact />
         }
       />
 

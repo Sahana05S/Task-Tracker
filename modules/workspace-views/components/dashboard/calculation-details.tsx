@@ -27,11 +27,11 @@ export function CalculationDetails({presentation,calculation,awards,names,viewer
     <details id="calculation-details" className="soft-card group p-5 sm:p-6">
       <summary className="cursor-pointer list-none">
         <span className="text-foreground text-base font-bold tracking-tight">Calculation details</span>
-        <span className="text-muted-foreground ml-2 text-xs">Sources, rule versions, award runs and per-person inputs</span>
+        <span className="text-muted-foreground ml-2 text-xs">Award runs and each person's inputs</span>
       </summary>
       <div className="mt-4 grid gap-4">
-        <ReportContext model={presentation} />
-        <p className="text-muted-foreground text-xs">{snapshotCount} retained monthly snapshot rows (original rules).</p>
+        <ReportContext model={presentation} picker={false} />
+        <p className="text-muted-foreground text-xs">{snapshotCount} saved monthly figures, kept with the rules they were saved under.</p>
         {awards ? <AwardStatus awards={awards} names={names} /> : null}
         <section className="grid gap-2" aria-label="Performance inputs">
           <h3 className="text-sm font-semibold">Performance inputs</h3>

@@ -6,6 +6,7 @@ import type { ActionResponse } from '@/types/tracker';
 import { beginMonthCorrection,captureMonth } from '@/modules/reports/internal/month/archive';
 
 export interface MonthActionState {ok:boolean;message:string}
+const MONTH_DONE:Record<string,string>={begin_correction:'Correction opened.',draft:'Draft saved.',close:'Month closed.',revise:'New revision published.'};
 export async function monthArchiveAction(_previous:MonthActionState,form:FormData):Promise<MonthActionState>{
  const actor=await getCurrentProfile();
  if(!actor?.isActive||actor.role!=='managing_director')return {ok:false,message:'An active managing director is required.'};
@@ -22,7 +23,7 @@ export async function monthArchiveAction(_previous:MonthActionState,form:FormDat
   }else if(command==='draft'||command==='close'||command==='revise')await captureMonth(command,period,version,operation,reason);
   else return {ok:false,message:'Unsupported month command.'};
   revalidatePath('/reports');
-  return {ok:true,message:`${command.replaceAll('_',' ')} committed. Reload to see the retained revision.`};
+  return {ok:true,message:MONTH_DONE[command]};
  }catch(error){return {ok:false,message:error instanceof Error?error.message:'Month command failed.'};}
 }
 
