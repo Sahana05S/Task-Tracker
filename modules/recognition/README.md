@@ -13,7 +13,7 @@ composite-based features show their normal state; the locked state is only the
 fallback for a database still at 45 or earlier. Migrations: 45 streaks, 50 the
 ceremony, 51 waypoints.
 
-## What it does (current slices: streaks, daily star spotlight, leaderboard, ceremony, waypoints)
+## What it does (current slices: streaks, daily star spotlight, leaderboard, ceremony, waypoints, hall of fame)
 An "active day" streak per member: a day counts when the member has active
 Present/Half Day attendance and at least one non-reversed task log (timer
 segments are log rows) or a live fact, idea or suggestion dated that day.
@@ -72,13 +72,25 @@ overview, a "Waypoints reached" row on Today's week card and a "Waypoints this
 month" tile on the profile. On a database before 51 the tracks follow current
 progress only and the two counts are hidden.
 
+The hall of fame (`/hall-of-fame`, Team section) is all-time recognition:
+points from certified effective daily stars (10), category awards on each
+month's latest published ceremony (25) and monthly stars (100), the policy's
+values (DECISIONS "M16 recognition", item 3). Points are a separate currency
+and never feed a performance score; nothing is stored, so overrides, stale
+slots and republished ceremonies change the next read. Tiers: Rookie 0, Bronze
+25, Silver 100, Gold 300, Diamond 750. The page shows the viewer's points ring
+and tier, a trophy case (monthly star, daily star, longest-streak milestone,
+one badge per category; unearned badges say what earns them), the latest
+trophies, and everyone in the company by points (equal points share a place).
+Without migration 50 it says the hall of fame needs a database update.
+
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `getStreak(userId)` -> `StreakSummary`; `getDailyStarHighlight(userId)` -> `DailyStarHighlight`; `getLeaderboard(viewer, period)` -> `LeaderboardModel`, `leaderboardPeriod(month?)`, `getCeremony(viewer, period)` -> `CeremonyModel`; `getTaskWaypoints(taskIds)` -> `TaskWaypointsModel`; `getMissionWaypoints(tasks)` -> `MissionWaypoints` (reached keys + the viewer's recent crossings, what pages ship to the browser); `getWaypointCount(userId, from, to)` -> `WaypointCount \| null` (null before 51) (server reads; re-exports `client.ts`) |
+| `index.ts` | `getStreak(userId)` -> `StreakSummary`; `getDailyStarHighlight(userId)` -> `DailyStarHighlight`; `getLeaderboard(viewer, period)` -> `LeaderboardModel`, `leaderboardPeriod(month?)`, `getCeremony(viewer, period)` -> `CeremonyModel`; `getTaskWaypoints(taskIds)` -> `TaskWaypointsModel`; `getMissionWaypoints(tasks)` -> `MissionWaypoints` (reached keys + the viewer's recent crossings, what pages ship to the browser); `getWaypointCount(userId, from, to)` -> `WaypointCount \| null` (null before 51), `getHallOfFame(viewerId)` -> `HallOfFameModel` (null before migration 50) (server reads; re-exports `client.ts`) |
 | `ceremony-actions.ts` | `publishCeremonyAction(form)`: publish or republish an elapsed month (managing director; the database enforces it) |
-| `client.ts` | `computeStreak`, `milestonesReached`, `dailyStarHighlight`, `DEFAULT_MILESTONES`, `parseRecognitionPolicy`, `DEFAULT_RECOGNITION_POLICY`, `buildLeaderboard`, `rankExact`, `podiumSteps`, `parseBoardKey`, `BOARD_KEYS`/`BOARD_LABELS`/`BOARD_SUMMARIES`, `selectCategoryWinners`, `monthlyStarAct`, `projectCategories`, `DEFAULT_WAYPOINTS`, `parseWaypoints`, `waypointState`, `missionWaypoints`, `freshCelebrations`, `CELEBRATION_WINDOW_MS`, types (`Waypoint`, `WaypointCrossing`, `CeremonyModel`, `CategoryAward`, `MonthlyStarAct`, `StreakSummary`, `DailyStarHighlight`, `DailyStarSource`, `LeaderboardModel`, `Board`, `BoardRow`, ...) |
-| `components/` | `StreakCard`, `StreakFlame`, `StreakStrip`, `MilestoneMeter`, `MilestoneToast`, `CountUp`, `DailyStarSpotlight`, `ConfettiBurst` (client), `useReducedMotion` (client), `LeaderboardTabs`, `LeaderboardPodium`, `LeaderboardList`, `LeaderboardBoardStatus`, `CeremonyStage` (client), `CeremonyPublish` (client), `AwardCard`, `HiddenAwardCard`, `FinaleCard`, `WaypointTrack` (server-safe), `WaypointCelebration` (client), `WaypointProvider` + `MissionWaypointSlot` (client; fill the tasks module's `WaypointSlot`) |
+| `client.ts` | `computeStreak`, `milestonesReached`, `dailyStarHighlight`, `DEFAULT_MILESTONES`, `parseRecognitionPolicy`, `DEFAULT_RECOGNITION_POLICY`, `buildLeaderboard`, `rankExact`, `podiumSteps`, `parseBoardKey`, `BOARD_KEYS`/`BOARD_LABELS`/`BOARD_SUMMARIES`, `selectCategoryWinners`, `monthlyStarAct`, `projectCategories`, `DEFAULT_WAYPOINTS`, `parseWaypoints`, `waypointState`, `missionWaypoints`, `freshCelebrations`, `CELEBRATION_WINDOW_MS`, `pointsFor`, `tierFor`, `rankHall`, `TIERS`, types (`HallOfFameModel`, `HallEntry`, `TierProgress`, `Waypoint`, `WaypointCrossing`, `CeremonyModel`, `CategoryAward`, `MonthlyStarAct`, `StreakSummary`, `DailyStarHighlight`, `DailyStarSource`, `LeaderboardModel`, `Board`, `BoardRow`, ...) |
+| `components/` | `StreakCard`, `StreakFlame`, `StreakStrip`, `MilestoneMeter`, `MilestoneToast`, `CountUp`, `DailyStarSpotlight`, `ConfettiBurst` (client), `useReducedMotion` (client), `LeaderboardTabs`, `LeaderboardPodium`, `LeaderboardList`, `LeaderboardBoardStatus`, `CeremonyStage` (client), `CeremonyPublish` (client), `AwardCard`, `HiddenAwardCard`, `FinaleCard`, `WaypointTrack` (server-safe), `WaypointCelebration` (client), `WaypointProvider` + `MissionWaypointSlot` (client; fill the tasks module's `WaypointSlot`), `PointsRing`, `TierBadge`, `TrophyCase`, `HallOfFameList` |
 
 
 ## Private (`internal/`)
@@ -94,6 +106,8 @@ progress only and the two counts are hidden.
 | `ceremony.ts` | Reads the published ceremony or builds the provisional one; publishes through `recognition_ceremony_command` |
 | `waypoints.ts` | RPCs `recognition_task_waypoints` / `recognition_waypoint_counts`, batched by 500, with the pre-51 fallback |
 | `waypoint-rules.ts` | `waypointState` (reached = stored crossings + current progress; next), `missionWaypoints` (payload trim), `freshCelebrations` (pure) |
+| `hall-rules.ts` | `pointsFor`, `tierFor`, `rankHall`, `TIERS` (pure) |
+| `hall.ts` | Reads `recognition_points` and scores it with the policy |
 | `policy.ts` | Parses `recognition_policy.config`; defaults mirror migrations 45 and 51 |
 
 ## Database it owns

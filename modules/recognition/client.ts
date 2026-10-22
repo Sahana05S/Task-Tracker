@@ -44,6 +44,20 @@ export {
   type CeremonyStatus,
   type MonthlyStarAct,
 } from '@/modules/recognition/internal/ceremony-rules';
+export {
+  pointsFor,
+  rankHall,
+  tierFor,
+  TIERS,
+  type HallEntry,
+  type HallOfFameModel,
+  type MemberTrophies,
+  type Tier,
+  type TierKey,
+  type TierProgress,
+  type TrophyCounts,
+  type TrophyEvent,
+} from '@/modules/recognition/internal/hall-rules';
 export { DEFAULT_WAYPOINTS, type Waypoint } from '@/modules/recognition/internal/rules';
 export {
   CELEBRATION_WINDOW_MS,
