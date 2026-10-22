@@ -3,7 +3,7 @@ import { DatabaseIcon, TriangleAlertIcon, TrophyIcon } from 'lucide-react';
 
 import { HallOfFameList, plural, PointsRing, TierBadge, TrophyCase } from '@/modules/recognition/components/hall-cards';
 import { BOARD_LABELS, getHallOfFame, getStreak } from '@/modules/recognition';
-import { getCommendationTotals } from '@/modules/policies';
+import { getCommendationTotals, PolicyReadError } from '@/modules/policies';
 import { settle } from '@/shared/async/settle';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDate } from '@/shared/tracker/format';
@@ -21,9 +21,13 @@ const MONTH = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric',
  */
 export default async function HallOfFamePage() {
   const profile = await requireProfile();
-  // Commendation points are optional: without migration 56 the hall shows award points only.
-  const policyPoints = getCommendationTotals().catch(() => ({}));
-  const [read, streak] = await Promise.all([settle(() => getHallOfFame(profile.id, policyPoints)), settle(() => getStreak(profile.id))]);
+  // Commendation points are optional: a database without migration 56 shows award points only;
+  // any other failure is said on the page rather than shown as zero.
+  const totals = getCommendationTotals().then((points) => ({ points, failed: false }),
+    (error: unknown) => ({ points: {}, failed: !(error instanceof PolicyReadError && error.missing) }));
+  const [read, streak, commendations] = await Promise.all([
+    settle(() => getHallOfFame(profile.id, totals.then((t) => t.points))), settle(() => getStreak(profile.id)), totals,
+  ]);
   const hall = read.status === 'ready' ? read.data : null;
   const unavailable = read.status !== 'ready' ? 'error' : hall === null ? 'migration' : null;
   const me = hall?.viewer ?? null;
@@ -45,6 +49,9 @@ export default async function HallOfFamePage() {
         </MissionNotice>
       ) : unavailable === 'error' ? (
         <MissionNotice tone="danger" icon={TriangleAlertIcon} role="status">The hall of fame couldn&apos;t be loaded right now. Refresh to try again.</MissionNotice>
+      ) : null}
+      {hall && commendations.failed ? (
+        <MissionNotice tone="attention" icon={TriangleAlertIcon} role="status">Commendation points couldn&apos;t be loaded, so these totals show award points only. Refresh to try again.</MissionNotice>
       ) : null}
 
       {hall && me ? (

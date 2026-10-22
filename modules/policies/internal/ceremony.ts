@@ -3,7 +3,8 @@
 // pass them in. Points are recognition only and never feed a score.
 import { createClient } from '@/shared/supabase/server';
 
-import { addDays } from './periods';
+import type { PolicyPoints } from '@/modules/recognition/client';
+
 import { readCommendations, type CommendationRow } from './queries';
 
 export interface MemberCommendations {
@@ -13,9 +14,9 @@ export interface MemberCommendations {
   commendations: Pick<CommendationRow, 'policyId' | 'policyName' | 'badge' | 'points' | 'periodKind' | 'periodKey' | 'periodStart' | 'periodEnd'>[];
 }
 
-/** Commendations whose period ended in [periodStart, periodEndExclusive), grouped by member (most points first). */
-export async function getCeremonyCommendations(periodStart: string, periodEndExclusive: string): Promise<MemberCommendations[]> {
-  const rows = await readCommendations(await createClient(), { from: periodStart, to: addDays(periodEndExclusive, -1) });
+/** Commendations whose period ended between two dates (inclusive), grouped by member (most points first). */
+export async function getCeremonyCommendations(periodStart: string, periodEnd: string): Promise<MemberCommendations[]> {
+  const rows = await readCommendations(await createClient(), { from: periodStart, to: periodEnd });
   return groupByMember(rows);
 }
 
@@ -32,7 +33,7 @@ export function groupByMember(rows: readonly CommendationRow[]): MemberCommendat
 }
 
 /** All-time commendation points and counts per member, for the hall of fame. */
-export async function getCommendationTotals(): Promise<Record<string, { points: number; commendations: number }>> {
+export async function getCommendationTotals(): Promise<PolicyPoints> {
   const rows = await readCommendations(await createClient());
   const totals: Record<string, { points: number; commendations: number }> = {};
   for (const row of rows) {

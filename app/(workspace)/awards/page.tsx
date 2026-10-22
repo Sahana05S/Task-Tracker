@@ -4,7 +4,7 @@ import { DatabaseIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
 import { CeremonyPublish } from '@/modules/recognition/components/ceremony-publish';
 import { CeremonyStage } from '@/modules/recognition/components/ceremony-stage';
 import { getCeremony, leaderboardPeriod } from '@/modules/recognition';
-import { addDays, getCeremonyCommendations } from '@/modules/policies';
+import { getCeremonyCommendations } from '@/modules/policies';
 import { CommendationsAct } from '@/modules/policies/components/commendations-act';
 import { plainReason } from '@/modules/reports/client';
 import { settle } from '@/shared/async/settle';
@@ -39,7 +39,7 @@ export default async function AwardsPage({ searchParams }: { searchParams: Promi
   }
   const [ceremony, commendations] = await Promise.all([
     settle(() => getCeremony(profile, period)),
-    settle(() => getCeremonyCommendations(period.startDate, addDays(period.endDate, 1))),
+    settle(() => getCeremonyCommendations(period.startDate, period.endDate)),
   ]);
   const model = ceremony.status === 'ready' ? ceremony.data : null;
   const chip = !model ? undefined
