@@ -2,9 +2,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 
 /**
  * Timing-safe check of an `Authorization: Bearer <token>` header. Both sides are
- * hashed first so the comparison never leaks the token length. Same scheme as
- * the award worker endpoint (modules/scoring/internal/stars/worker.ts, which
- * keeps its own copy); use this one for new internal endpoints.
+ * hashed first so the comparison never leaks the token length. The award and
+ * policies workers use it through authorizeWorkerRequest (shared/supabase/worker.ts).
  */
 const digest = (value: string) => createHash('sha256').update(value).digest();
 

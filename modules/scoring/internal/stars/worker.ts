@@ -1,7 +1,5 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
-
 import { runAwardJobs } from '@/modules/scoring/internal/stars/jobs';
-import { workerClient } from '@/shared/supabase/worker';
+import { authorizeWorkerRequest, workerClient, workerConnection } from '@/shared/supabase/worker';
 import { kolkataDate } from '@/shared/time/kolkata';
 
 /**
@@ -11,24 +9,6 @@ import { kolkataDate } from '@/shared/time/kolkata';
  * (.github/workflows/award-worker.yml) calls it until a batch comes back empty.
  */
 
-const digest = (value: string) => createHash('sha256').update(value).digest();
-
-/** `sandbox` for test environments, `production` for the scheduled live run; anything else is off. */
-const ENABLED_MODES = new Set(['sandbox', 'production']);
-
-/** Checks configuration and the bearer token. Returns an error response, or null to continue. */
-function refuseUnlessAuthorised(request: Request): Response | null {
-  const token = process.env.TASKPULSE_AWARD_WORKER_TOKEN;
-  if (!token || !ENABLED_MODES.has(process.env.TASKPULSE_AWARD_WORKER_ENABLED ?? '')) {
-    return Response.json({ status: 'unavailable', reason: 'Award worker is not configured.' }, { status: 503 });
-  }
-  const supplied = request.headers.get('authorization') ?? '';
-  if (!timingSafeEqual(digest(supplied), digest('Bearer ' + token))) {
-    return Response.json({ status: 'forbidden' }, { status: 403 });
-  }
-  return null;
-}
-
 /** Yesterday in Asia/Kolkata: the last fully closed award day. */
 function lastClosedDay(): string {
   const end = new Date(kolkataDate() + 'T00:00:00Z');
@@ -37,14 +17,14 @@ function lastClosedDay(): string {
 }
 
 export async function handleAwardWorkerRun(request: Request): Promise<Response> {
-  const refused = refuseUnlessAuthorised(request);
+  const refused = authorizeWorkerRequest(request);
   if (refused) return refused;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
+  const connection = workerConnection();
+  if (!connection) {
     return Response.json({ status: 'unavailable', reason: 'Award worker database is not configured.' }, { status: 503 });
   }
+  const { url, key } = connection;
 
   const db = workerClient(url, key);
   try {
