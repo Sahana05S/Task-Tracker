@@ -47,6 +47,16 @@ describe('activity wording and links', () => {
       .toMatchObject({ summary: 'Deactivated a member', about: 'Asha', href: '/team/EMP-4', linkLabel: 'Profile' });
   });
 
+  it('words each Settings > Company save and links its section (migration 59)', () => {
+    const save = (section: string) => mapActivity(row({ kind: 'company', action: `company_settings_${section}`, record_kind: 'organization_settings', fields: null }), people);
+    expect(save('agenda')).toMatchObject({ summary: 'Changed the meeting agenda', href: '/settings?tab=company#agenda', linkLabel: 'Company settings' });
+    expect(save('categories')).toMatchObject({ summary: 'Changed the mission types', href: '/settings?tab=company#mission-types' });
+    expect(save('meeting_types')).toMatchObject({ summary: 'Changed the meeting types', href: '/settings?tab=company#meeting-types' });
+    expect(save('standing_missions')).toMatchObject({ summary: 'Changed the standing missions', href: '/settings?tab=company#standing-missions' });
+    expect(save('holidays')).toMatchObject({ summary: 'Changed the holiday calendar', href: '/settings?tab=company#holidays' });
+    expect(save('something_new')).toMatchObject({ summary: 'Changed company settings', href: '/settings?tab=company' });
+  });
+
   it('never shows an id for an unknown person', () => {
     expect(mapActivity(row({ actor_id: '33333333-3333-4333-8333-333333333333' }), people).actor).toBe('Former member');
   });
