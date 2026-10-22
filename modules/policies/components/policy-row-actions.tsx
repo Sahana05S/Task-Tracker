@@ -17,7 +17,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 
 import { evaluateNowAction, policyResultsAction, setPolicyStateAction, type ResultRow } from '@/modules/policies/actions';
 import { outcomeLabel } from '@/modules/policies/client';
-import { OUTCOME_COLORS } from '@/modules/policies/components/outcome-strip';
+import { OutcomeDot } from '@/modules/policies/components/outcome-strip';
 import { PolicyDialog, type DialogMember, type EditablePolicy } from '@/modules/policies/components/policy-dialog';
 
 type StateCommand = 'activate' | 'deactivate' | 'archive';
@@ -65,8 +65,7 @@ function ResultsSheet({ open, onOpenChange, policyId, periodKey, title }: {
                           <td className="text-foreground py-2 pr-3 font-medium">{row.name}</td>
                           <td className="py-2">
                             <span className="inline-flex items-center gap-1.5">
-                              <span aria-hidden="true" className="size-2 rounded-full"
-                                style={{ backgroundColor: OUTCOME_COLORS[row.outcome === 'not_met' ? 'notMet' : row.outcome] }} />
+                              <OutcomeDot outcome={row.outcome} className="size-2" />
                               {outcomeLabel(row.outcome, row.final)}
                             </span>
                             {row.withdrawn ? <span className="text-attention-foreground block text-xs">Commendation withdrawn after a correction</span> : null}
@@ -116,6 +115,10 @@ export function PolicyRowActions({ policy, active, periodKey, members }: {
   const [results, setResults] = useState(false);
   const [state, setState] = useState<StateCommand | null>(null);
   const [evaluating, startEvaluating] = useTransition();
+  // The table and the phone cards both render these actions (one is hidden by CSS),
+  // so the sheets mount only once they have been opened.
+  const [used, setUsed] = useState({ edit: false, results: false, state: false });
+  const open = (kind: keyof typeof used) => setUsed((u) => (u[kind] ? u : { ...u, [kind]: true }));
 
   function evaluateNow() {
     startEvaluating(async () => {
@@ -138,7 +141,7 @@ export function PolicyRowActions({ policy, active, periodKey, members }: {
           <PlayIcon aria-hidden="true" />{evaluating ? 'Evaluating…' : 'Evaluate now'}
         </Button>
       ) : null}
-      <Button type="button" variant="ghost" size="sm" className="max-md:h-10" onClick={() => setEditing(true)} aria-label={`Edit: ${policy.name}`}>
+      <Button type="button" variant="ghost" size="sm" className="max-md:h-10" onClick={() => { open('edit'); setEditing(true); }} aria-label={`Edit: ${policy.name}`}>
         <PencilIcon aria-hidden="true" />Edit
       </Button>
       <DropdownMenu>
@@ -146,15 +149,15 @@ export function PolicyRowActions({ policy, active, periodKey, members }: {
           <MoreHorizontalIcon className="size-4" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onSelect={() => setResults(true)}>See results</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setState(active ? 'deactivate' : 'activate')}>{active ? 'Pause' : 'Resume'}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => { open('results'); setResults(true); }}>See results</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => { open('state'); setState(active ? 'deactivate' : 'activate'); }}>{active ? 'Pause' : 'Resume'}</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setState('archive')} variant="destructive">Archive</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => { open('state'); setState('archive'); }} variant="destructive">Archive</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <PolicyDialog open={editing} onOpenChange={setEditing} policy={policy} members={members} />
-      <ResultsSheet open={results} onOpenChange={setResults} policyId={policy.id} periodKey={periodKey} title={`${policy.name}: results`} />
-      <StateSheet command={state} onOpenChange={(open) => { if (!open) setState(null); }} policy={policy} />
+      {used.edit ? <PolicyDialog open={editing} onOpenChange={setEditing} policy={policy} members={members} /> : null}
+      {used.results ? <ResultsSheet open={results} onOpenChange={setResults} policyId={policy.id} periodKey={periodKey} title={`${policy.name}: results`} /> : null}
+      {used.state ? <StateSheet command={state} onOpenChange={(next) => { if (!next) setState(null); }} policy={policy} /> : null}
     </div>
   );
 }

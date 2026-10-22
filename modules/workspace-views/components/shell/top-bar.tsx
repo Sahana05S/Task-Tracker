@@ -52,7 +52,9 @@ export function TopBar({ profile }: { profile: User }) {
             );
           })}
           <DropdownMenu>
-            <DropdownMenuTrigger className={cn('nav-pill', moreActive && 'nav-pill-active')}>
+            <DropdownMenuTrigger className={cn('nav-pill', moreActive && 'nav-pill-active',
+              // A wide-only section's pill is hidden below 1024 px, where it lives under More.
+              section?.wideOnly && 'max-lg:bg-primary max-lg:text-primary-foreground max-lg:shadow-sm')}>
               More
               <ChevronDownIcon className="size-3.5" aria-hidden="true" />
             </DropdownMenuTrigger>
