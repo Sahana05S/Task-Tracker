@@ -7,6 +7,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { getTaskEffortTotals } from '@/modules/time-tracking';
 import { getTaskWorkspaceData } from '@/modules/tasks';
+import { getMissionWaypoints } from '@/modules/recognition';
 import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 import type { UserRole } from '@/types/tracker';
 
@@ -27,10 +28,13 @@ export const metadata: Metadata = {
 export default async function TasksPage() {
   const profile = await requireProfile();
 
-  const [{ tasks, members }, effortTotals, templates] = await Promise.all([
-    getTaskWorkspaceData(),
+  const workspace = getTaskWorkspaceData();
+  const [{ tasks, members }, effortTotals, templates, waypoints] = await Promise.all([
+    workspace,
     getTaskEffortTotals(),
     getNativeTemplates(),
+    // Waypoints never hold the list back: a failed read leaves the tracks on current progress.
+    workspace.then(({ tasks }) => getMissionWaypoints(tasks)).catch(() => null),
   ]);
 
   const canManage = (TASK_MANAGER_ROLES as readonly UserRole[]).includes(
@@ -58,6 +62,7 @@ export default async function TasksPage() {
         // aggregate crosses as entries and is rebuilt on the client.
         effortEntries={[...effortTotals]}
         currentUser={profile}
+        waypoints={waypoints}
       />
     </MissionPage>
   );

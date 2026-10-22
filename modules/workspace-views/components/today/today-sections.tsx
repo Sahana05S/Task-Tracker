@@ -4,6 +4,7 @@ import {
   BarChart3Icon,
   CalendarDaysIcon,
   CheckCircle2Icon,
+  FlagIcon,
   HandHeartIcon,
   StarIcon,
   TargetIcon,
@@ -114,9 +115,14 @@ export function FocusMissions({ focus, today }: { focus: Section<{ missions: Foc
 }
 
 /** Monday–today counts from logs, completed missions, contributions and awards. */
-export function WeekSummaryCard({ week }: { week: Section<WeekSummary> }) {
+export function WeekSummaryCard({ week, waypointsReached = null }: {
+  week: Section<WeekSummary>;
+  /** Waypoints crossed this week on your missions; null hides the row (a database before migration 51, or a failed read). */
+  waypointsReached?: number | null;
+}) {
   const rows = week.status === 'ready' ? [
     { icon: CheckCircle2Icon, label: 'Missions completed', value: week.data.missionsCompleted, tone: 'text-success-strong' },
+    ...(waypointsReached === null ? [] : [{ icon: FlagIcon, label: 'Waypoints reached', value: waypointsReached, tone: 'text-success-strong' }]),
     { icon: HandHeartIcon, label: 'Contributions recorded', value: week.data.contributionsRecorded, tone: 'text-primary' },
     { icon: StarIcon, label: 'Daily stars earned', value: week.data.dailyStarsEarned, tone: 'text-recognition' },
   ] : [];
