@@ -15,6 +15,7 @@ export async function getCommendations(range: { from?: string | null; to?: strin
 }
 
 export { handlePolicyWorkerRun } from '@/modules/policies/internal/worker';
+export { getPoliciesWorkspace, type PoliciesWorkspaceModel } from '@/modules/policies/internal/workspace';
 export {
   PolicyReadError,
   type CommendationRow,

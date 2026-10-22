@@ -12,8 +12,8 @@ describe('redesigned navigation keeps every workspace route reachable',()=>{
   const orphans=samples.filter(path=>!activeSection(path)&&!isMoreActive(path));
   expect(orphans).toEqual([]);
  });
- it('has five primary destinations, four phone tabs (with More) and no duplicate hrefs',()=>{
-  expect(NAV_SECTIONS.map(s=>s.label)).toEqual(['Today','Missions','Records','Team','Reports']);
+ it('has six primary destinations, four phone tabs (with More) and no duplicate hrefs',()=>{
+  expect(NAV_SECTIONS.map(s=>s.label)).toEqual(['Today','Missions','Records','Team','Policies','Reports']);
   expect(NAV_SECTIONS.filter(s=>s.inBottomNav).map(s=>s.label)).toEqual(['Today','Missions','Team']);
   const hrefs=[...NAV_SECTIONS.flatMap(s=>s.tabs.map(t=>t.href)),...MORE_ITEMS.map(i=>i.href)];
   expect(new Set(hrefs).size).toBe(hrefs.length);
@@ -28,6 +28,11 @@ describe('redesigned navigation keeps every workspace route reachable',()=>{
   const team=NAV_SECTIONS.find(s=>s.label==='Team')!;
   expect(team.tabs.filter(tab=>isTabActive('/team/activity',tab)).map(t=>t.label)).toEqual(['Activity']);
   expect(team.tabs.filter(tab=>isTabActive('/team/EMP-1',tab)).map(t=>t.label)).toEqual(['People']);
+ });
+ it('gives Policies its own section, reached from More on phones',()=>{
+  expect(activeSection('/policies')?.label).toBe('Policies');
+  expect(NAV_SECTIONS.find(s=>s.label==='Policies')?.inBottomNav).toBe(false);
+  expect(PROTECTED_PREFIXES).toContain('/policies');
  });
  it('keeps the master checklist inside Missions, not a separate destination',()=>{
   expect(activeSection('/tasks/M13-X/checklist')?.label).toBe('Missions');

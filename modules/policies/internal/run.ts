@@ -62,7 +62,7 @@ export async function runDueItems(db: Db, items: DueItem[], trigger: RunTrigger)
       summary.evaluated += response.evaluated;
       summary.changed += response.changed;
       summary.notified += response.notified;
-      summary.stale += response.stale;
+      summary.stale += response.stale ?? 0; // absent before migration 58
       summary.runIds.push(response.runId);
     }
     return summary;

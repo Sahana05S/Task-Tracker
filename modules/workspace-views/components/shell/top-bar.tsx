@@ -41,21 +41,31 @@ export function TopBar({ profile }: { profile: User }) {
         </Link>
 
         <nav aria-label="Primary" className="bg-muted ml-2 hidden items-center gap-0.5 rounded-full p-1 md:flex">
-          {NAV_SECTIONS.map(({ label, href }) => {
+          {NAV_SECTIONS.map(({ label, href, wideOnly }) => {
             const active = section?.href === href;
             return (
               <Link key={href} href={href} aria-current={active ? 'page' : undefined}
-                className={cn('nav-pill', active && 'nav-pill-active')}>
+                className={cn('nav-pill', active && 'nav-pill-active', wideOnly && 'max-lg:hidden')}>
                 {label}
               </Link>
             );
           })}
           <DropdownMenu>
-            <DropdownMenuTrigger className={cn('nav-pill', moreActive && 'nav-pill-active')}>
+            <DropdownMenuTrigger className={cn('nav-pill', moreActive && 'nav-pill-active',
+              // A wide-only section's pill is hidden below 1024 px, where it lives under More.
+              section?.wideOnly && 'max-lg:bg-primary max-lg:text-primary-foreground max-lg:shadow-sm')}>
               More
               <ChevronDownIcon className="size-3.5" aria-hidden="true" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={8} className="w-48">
+              {NAV_SECTIONS.filter((s) => s.wideOnly).map(({ label, href, icon: Icon }) => (
+                <DropdownMenuItem key={href} asChild className="lg:hidden">
+                  <Link href={href}>
+                    <Icon aria-hidden="true" />
+                    {label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
               {MORE_ITEMS.map(({ label, href, icon: Icon }) => (
                 <DropdownMenuItem key={href} asChild>
                   <Link href={href}>
