@@ -8,6 +8,7 @@ describe('notification bell rules', () => {
     expect(bellLabel(0)).toBe('Notifications');
     expect(bellLabel(3)).toBe('Notifications, 3 unread');
     expect(bellLabel(140)).toBe('Notifications, 99+ unread');
+    expect(bellLabel(null, true)).toBe('Notifications, count unavailable');
     expect(badgeText(0)).toBeNull();
     expect(badgeText(7)).toBe('7');
     expect(badgeText(12)).toBe('9+');

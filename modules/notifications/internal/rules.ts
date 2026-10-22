@@ -1,7 +1,8 @@
 // PRIVATE (client-safe via client.ts). Pure helpers for the bell.
 
-/** "Notifications", "Notifications, 1 unread", "Notifications, 99+ unread". */
-export function bellLabel(unread: number | null): string {
+/** "Notifications", "Notifications, 1 unread", "Notifications, 99+ unread", or that the count is unavailable. */
+export function bellLabel(unread: number | null, unavailable = false): string {
+  if (unavailable) return 'Notifications, count unavailable';
   if (!unread) return 'Notifications';
   return `Notifications, ${unread > 99 ? '99+' : unread} unread`;
 }

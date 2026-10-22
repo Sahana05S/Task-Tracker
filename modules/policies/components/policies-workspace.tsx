@@ -23,6 +23,15 @@ import type { PoliciesWorkspaceModel } from '@/modules/policies/internal/workspa
 const STALE_AFTER_MS = 36 * 60 * 60 * 1000;
 const TRIGGER_LABELS: Record<RunRow['trigger'], string> = { nightly: 'Nightly', on_demand: 'Evaluate now', invalidation: 'After a correction' };
 
+/** Failed runs in plain words, with what to do. */
+const RUN_ERRORS: Record<string, string> = {
+  facts_read_failed: 'Attendance and logs could not be read',
+  evaluation_failed: 'A rule could not be checked',
+  record_failed: 'Results could not be saved',
+  due_work_failed: 'The periods to check could not be listed',
+};
+const runError = (code: string | null) => (code && RUN_ERRORS[code]) ?? 'The evaluation stopped';
+
 function rule(policy: PolicyRow): string {
   const template = templateFor(policy.templateKey);
   return template ? template.summary(effectiveParameters(policy), policy.periodKind) : 'A rule this version of TaskPulse does not know.';
@@ -71,7 +80,7 @@ function ManagerList({ policies, canManage, members }: { policies: PolicyRow[]; 
             {policies.map((p) => (
               <tr key={p.id}>
                 <td className="py-2.5">
-                  <p className="text-foreground font-semibold">{p.name}</p>
+                  <p className="text-foreground font-semibold break-words">{p.name}</p>
                   <p className="text-muted-foreground text-xs text-pretty">{rule(p)}</p>
                 </td>
                 <td className="text-xs whitespace-nowrap">
@@ -95,7 +104,7 @@ function ManagerList({ policies, canManage, members }: { policies: PolicyRow[]; 
           <li key={p.id} className="border-border grid gap-3 rounded-2xl border bg-white p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-foreground font-semibold">{p.name}</p>
+                <p className="text-foreground font-semibold break-words">{p.name}</p>
                 <p className="text-muted-foreground text-xs">{periodText(p)}</p>
               </div>
               <StatusChip active={p.active} />
@@ -120,7 +129,7 @@ function MemberList({ policies }: { policies: PolicyRow[] }) {
         return (
           <li key={p.id} className="border-border grid content-start gap-3 rounded-2xl border bg-white p-4">
             <div>
-              <p className="text-foreground font-semibold">{p.name}</p>
+              <p className="text-foreground font-semibold break-words">{p.name}</p>
               <p className="text-muted-foreground text-xs">{periodText(p)}</p>
             </div>
             <p className="text-foreground text-sm text-pretty">{rule(p)}</p>
@@ -166,11 +175,11 @@ function RunsPanel({ runs }: { runs: RunRow[] }) {
         <li key={r.id} className={cn('flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 rounded-xl px-3 py-2 text-sm',
           r.status === 'failed' ? 'bg-attention-subtle text-attention-foreground' : 'bg-muted/70')}>
           <span className="font-medium">
-            {r.status === 'failed' ? `Failed (${r.errorCode})` : `${r.summary.periods ?? 0} periods, ${r.summary.changed ?? 0} results changed`}
+            {r.status === 'failed' ? `Failed: ${runError(r.errorCode)}` : `${r.summary.periods ?? 0} periods, ${r.summary.changed ?? 0} results changed`}
             <span className="text-muted-foreground font-normal"> · {TRIGGER_LABELS[r.trigger]}</span>
           </span>
           <span className="text-muted-foreground text-xs tabular-nums">{formatDateTime(r.recordedAt)}</span>
-          {r.status === 'failed' && r.errorDetail ? <span className="w-full text-xs">{r.errorDetail}</span> : null}
+          {r.status === 'failed' ? <span className="w-full text-xs">Use Evaluate now to try again; if it keeps failing, tell your administrator.</span> : null}
         </li>
       ))}
     </ul>
@@ -201,7 +210,7 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
       />
 
       {model.missing ? (
-        <MissionNotice tone="attention" icon={DatabaseIcon}>Policies need a database update (migration 56) before they can be used here.</MissionNotice>
+        <MissionNotice tone="attention" icon={DatabaseIcon}>Policies are not set up on this workspace yet. Ask your administrator to apply the latest database update.</MissionNotice>
       ) : !list ? (
         <MissionNotice tone="danger" icon={TriangleAlertIcon}>Policies could not be loaded. Refresh the page to try again.</MissionNotice>
       ) : null}
@@ -216,7 +225,7 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
                 note="Usually attendance or check-in times missing" />
               <StatTile icon={CalendarClockIcon} label="Last evaluation" tone={lastStale ? 'alert' : 'default'}
                 value={last ? formatDateTime(last.recordedAt) : runs ? 'Not yet' : 'Unavailable'}
-                note={last?.status === 'failed' ? `Failed: ${last.errorCode}` : lastStale ? 'More than 36 hours ago' : undefined} />
+                note={last?.status === 'failed' ? `Failed: ${runError(last.errorCode)}` : lastStale ? 'More than 36 hours ago' : undefined} />
             </>
           ) : (
             <>

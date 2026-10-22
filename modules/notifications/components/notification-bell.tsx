@@ -29,8 +29,8 @@ function Item({ item, onOpen }: { item: NotificationItem; onOpen: (item: Notific
     <>
       <span aria-hidden="true" className={cn('mt-1.5 size-2 shrink-0 rounded-full', unread ? 'bg-primary' : 'bg-transparent')} />
       <span className="grid min-w-0 gap-0.5">
-        <span className={cn('text-foreground text-sm', unread ? 'font-semibold' : 'font-medium')}>{item.title}</span>
-        {item.body ? <span className="text-muted-foreground text-xs text-pretty">{item.body}</span> : null}
+        <span className={cn('text-foreground text-sm break-words', unread ? 'font-semibold' : 'font-medium')}>{item.title}</span>
+        {item.body ? <span className="text-muted-foreground text-xs text-pretty break-words">{item.body}</span> : null}
         <span className="text-muted-foreground text-[11px]">{unread ? 'New · ' : ''}{timeAgo(item.createdAt)}</span>
       </span>
     </>
@@ -91,7 +91,7 @@ export function NotificationBell({ className }: { className?: string }) {
 
   return (
     <DropdownMenu onOpenChange={(open) => { if (open) loadInbox(); }}>
-      <DropdownMenuTrigger aria-label={bellLabel(unread)} className={cn('icon-button relative', className)}>
+      <DropdownMenuTrigger aria-label={bellLabel(unread, bell !== null && bell.status !== 'ready')} className={cn('icon-button relative', className)}>
         <BellIcon className="size-4" aria-hidden="true" />
         {badge ? (
           <span aria-hidden="true"
@@ -102,17 +102,9 @@ export function NotificationBell({ className }: { className?: string }) {
         {bell && bell.status !== 'ready' ? <span aria-hidden="true" className="bg-attention-foreground/60 absolute top-1 right-1 size-1.5 rounded-full" /> : null}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-[min(22rem,calc(100vw-2rem))] p-0">
-        <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
-          <DropdownMenuLabel className="text-foreground p-0 text-sm font-semibold">Notifications</DropdownMenuLabel>
-          {inbox?.status === 'ready' && inbox.unread > 0 ? (
-            <button type="button" onClick={() => markRead(null)}
-              className="link inline-flex min-h-8 items-center gap-1 text-xs">
-              <CheckCheckIcon className="size-3.5" aria-hidden="true" />Mark all read
-            </button>
-          ) : null}
-        </div>
+        <DropdownMenuLabel className="text-foreground px-3 pt-3 pb-2 text-sm font-semibold">Notifications</DropdownMenuLabel>
         <DropdownMenuSeparator className="my-0" />
-        <div className="max-h-[min(26rem,70dvh)] overflow-y-auto p-1" aria-busy={loading}>
+        <div role="status" className="max-h-[min(26rem,70dvh)] overflow-y-auto overscroll-contain p-1" aria-busy={loading}>
           {inbox === null || (loading && !items.length) ? (
             <p className="text-muted-foreground px-3 py-4 text-sm">Loading…</p>
           ) : inbox.status !== 'ready' ? (
@@ -123,6 +115,15 @@ export function NotificationBell({ className }: { className?: string }) {
             items.map((item) => <Item key={item.id} item={item} onOpen={(i) => { if (!i.readAt) markRead([i.id]); }} />)
           )}
         </div>
+        {inbox?.status === 'ready' && inbox.unread > 0 ? (
+          <>
+            <DropdownMenuSeparator className="my-0" />
+            {/* A menu item, so arrow keys reach it; the menu stays open to show the result. */}
+            <DropdownMenuItem onSelect={(event) => { event.preventDefault(); markRead(null); }} className="text-primary m-1 justify-center text-xs font-medium">
+              <CheckCheckIcon className="size-3.5" aria-hidden="true" />Mark all read
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

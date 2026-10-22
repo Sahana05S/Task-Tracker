@@ -108,7 +108,7 @@ export async function evaluateNowAction(form: FormData): Promise<ActionResponse<
   }
 }
 
-export interface PreviewRow { name: string; outcome: Outcome; reason: string | null }
+export interface PreviewRow { employeeId: string; name: string; outcome: Outcome; reason: string | null }
 export interface PreviewResult { periodLabel: string; final: boolean; members: number; met: number; notMet: number; unavailable: number; rows: PreviewRow[] }
 
 /** What a draft would give for the current period, from the live facts; nothing is saved. */
@@ -129,7 +129,7 @@ export async function previewPolicyAction(form: FormData): Promise<ActionRespons
       data: {
         periodLabel: periodLabel(period), final: result.final, members: result.evaluations.length, ...counts,
         rows: result.evaluations
-          .map((e) => ({ name: e.name, outcome: e.outcome, reason: e.reasons[0] ? describeReason(e.reasons[0]) : null }))
+          .map((e) => ({ employeeId: e.employeeId, name: e.name, outcome: e.outcome, reason: e.reasons[0] ? describeReason(e.reasons[0]) : null }))
           .sort((a, b) => order[a.outcome] - order[b.outcome] || a.name.localeCompare(b.name)),
       },
     };
