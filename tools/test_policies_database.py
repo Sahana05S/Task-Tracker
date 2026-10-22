@@ -1,4 +1,4 @@
-"""Policies and notifications, migration 56: facts visibility, the policy command (MD-only management,
+"""Policies and notifications, migrations 56 and 58 (review fixes): facts visibility, the policy command (MD-only management,
 worker/MD run recording, receipts, PT409 conflicts), evaluation upsert, commendation notifications and
 their de-duplication, failure runs, invalidation -> due work, reads and company separation.
 Two-company disposable PostgreSQL checks. JWT/header shim only; no hosted connection."""
@@ -13,6 +13,13 @@ A_DIR,A2,A3,A4,A5,A6,A8=U(1),U(2),U(3),U(4),U(5),U(6),U(8)
 B_DIR,B4='00000000-0000-0000-0000-0000000000b1','00000000-0000-0000-0000-0000000000b4'
 T1='10000000-0000-0000-0000-000000000001'
 MIGRATION=(ROOT/'supabase/migrations/56_policies_and_notifications.sql').read_text(encoding='utf-8')
+MIGRATION58=(ROOT/'supabase/migrations/58_policies_review_fixes.sql').read_text(encoding='utf-8')
+def broken(db,text):
+    r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
+        input=text.replace('SELECT taskpulse_private.m15_secure();','SELECT 1/0;'),text=True,capture_output=True,encoding='utf-8')
+    assert r.returncode and 'division by zero' in r.stderr,r.stderr[-300:]
+def definitions(db):
+    return value(db,"md5(string_agg(pg_get_functiondef(p.oid),'' ORDER BY p.oid::regprocedure::text)) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','taskpulse_private') AND (p.proname LIKE 'policy%' OR p.proname LIKE 'notifications%')")
 TABLES=('policies','policy_revisions','policy_runs','policy_evaluations','policy_period_states','policy_invalidations','policy_receipts','notifications')
 FUNCTIONS=('policy_period_facts(date,date,uuid)','policy_due_work(date,integer,uuid)','policy_command(text,jsonb,uuid)','policy_list()',
            'policy_evaluations_read(uuid,text)','policy_runs_read(integer)','policy_commendations(date,date,uuid)',
@@ -65,18 +72,25 @@ for db in DBS:
     sql('postgres',f'CREATE DATABASE {db}')
     sql(db,bootstrap)
     if db==DBS[1]:
-        apply(db,skip={56}); sql(db,seed)
-        current=sorted(int(m.name.split('_')[0]) for m in migrations() if not m.name.startswith('56_'))
+        # The test project's state: everything up to 57 with 56 as applied (d257990), then 58.
+        apply(db,skip={56,58}); sql(db,seed)
         before={t:value(db,f"count(*) FROM {t}") for t in ('public.users','public.tasks','public.attendance_records','taskpulse_private.input_history','taskpulse_private.audit_events')}
-        r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
-            input=MIGRATION.replace('SELECT taskpulse_private.m15_secure();','SELECT 1/0;'),text=True,capture_output=True,encoding='utf-8')
-        assert r.returncode and 'division by zero' in r.stderr,r.stderr[-300:]
+        broken(db,MIGRATION)
         assert value(db,"count(*) FROM pg_class WHERE relname IN ('policies','policy_evaluations','notifications')")=='0'
         assert value(db,"count(*) FROM pg_proc WHERE proname LIKE 'policy%' OR proname LIKE 'notifications%'")=='0'
         print('PASS',db,'a failed 56 rolls back completely (no tables, no functions)')
         sql(db,MIGRATION)
         for t,n in before.items():assert value(db,f"count(*) FROM {t}")==n,t
-        print('PASS',db,f'upgrade {current[0]:02d}-{current[-1]} (without 56) -> 56 adds policies and notifications without touching existing rows')
+        print('PASS',db,'56 adds policies and notifications without touching existing rows (the test project state: 01-54, 56, 57)')
+        at56=definitions(db)
+        broken(db,MIGRATION58)
+        assert definitions(db)==at56 and value(db,"count(*) FROM pg_proc WHERE proname IN ('policy_uuid','policy_member','policy_invalidate')")=='0'
+        assert value(db,"count(*) FROM pg_attribute WHERE attrelid='taskpulse_private.policy_invalidations'::regclass AND attname='tx'")=='0'
+        print('PASS',db,'a failed 58 rolls back to the 56 functions (no helpers, no tx column)')
+        sql(db,MIGRATION58)
+        for t,n in before.items():assert value(db,f"count(*) FROM {t}")==n,t
+        assert definitions(db)!=at56
+        print('PASS',db,'upgrade to 58 replaces the policy functions without touching existing rows')
     else:
         apply(db); sql(db,seed)
         print('PASS',db,f'fresh install 01-{LATEST}')
@@ -312,7 +326,7 @@ for db in DBS:
     print('PASS',db,'archive frees the name and freezes the policy')
 
     assert value(db,"taskpulse_private.m15_secure()")=='0 tables and 0 functions moved to taskpulse_definer'
-    assert '40001' not in MIGRATION
-    print('PASS',db,'m15_secure() leaves nothing to move; migration 56 never raises 40001')
+    assert '40001' not in MIGRATION and '40001' not in MIGRATION58
+    print('PASS',db,'m15_secure() leaves nothing to move; migrations 56 and 58 never raise 40001')
 
 print('ALL PASS')

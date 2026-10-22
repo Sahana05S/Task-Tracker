@@ -97,7 +97,11 @@ Periods: day `2026-10-19`, ISO week `2026-W43` (Monday to Sunday), month `2026-1
 | `run.ts` | One evaluation pass: facts once per period, evaluate, record, failures as runs |
 | `worker.ts` | The nightly endpoint: per company due work, `runDueItems`, what is left |
 
-## Database it owns (migration 56, all private, company-owned)
+## Database it owns (migrations 56 and 58, all private, company-owned)
+56 was applied to the test project before its code review, so it stays as
+applied; 58 (`58_policies_review_fixes.sql`) replaces the reviewed functions and
+adds the helpers, the `tx` column, two indexes and the mission/collaborator
+triggers described above.
 Tables `taskpulse_private.policies`, `policy_revisions` (immutable),
 `policy_runs`, `policy_evaluations`, `policy_period_states`,
 `policy_invalidations`, `policy_receipts` (immutable) and `notifications` (read
