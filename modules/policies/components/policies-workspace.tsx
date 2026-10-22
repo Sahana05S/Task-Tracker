@@ -220,7 +220,7 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
           <StatTile icon={ScaleIcon} label="Active policies" value={active.length} note={policies.length > active.length ? `${policies.length - active.length} paused` : undefined} />
           {manager ? (
             <>
-              <StatTile icon={CircleCheckIcon} label="Met this period" value={sum('met')} note={`${sum('notMet')} not met so far`} />
+              <StatTile icon={CircleCheckIcon} label="Met so far" value={sum('met')} note={`${sum('notMet')} not met · each policy’s current period`} />
               <StatTile icon={TriangleAlertIcon} label="Can’t be judged" value={sum('unavailable')}
                 note="Usually attendance or check-in times missing" />
               <StatTile icon={CalendarClockIcon} label="Last evaluation" tone={lastStale ? 'alert' : 'default'}
