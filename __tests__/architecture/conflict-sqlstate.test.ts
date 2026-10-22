@@ -33,6 +33,18 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+/**
+ * App source files outside tests, read once when this file loads (like the
+ * boundaries test) so the walk does not count against a single test's timeout
+ * when the whole suite runs in parallel.
+ */
+const ALLOWED_COMPARISON = new Set([join('shared', 'commands', 'conflict.ts')]);
+const APP_SOURCES = ['app', 'modules', 'shared']
+  .flatMap((dir) => sourceFiles(join(ROOT, dir)))
+  .map((path) => relative(ROOT, path))
+  .filter((path) => !path.split(sep).includes('__tests__') && !ALLOWED_COMPARISON.has(path))
+  .map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') }));
+
 describe('conflict SQLSTATE', () => {
   it('no migration from 53 on raises 40001 or traps serialization_failure', () => {
     const offenders = readdirSync(MIGRATIONS)
@@ -61,12 +73,7 @@ describe('conflict SQLSTATE', () => {
   });
 
   it('app code reads conflicts only through isConflictCode', () => {
-    const allowed = new Set([join('shared', 'commands', 'conflict.ts')]);
-    const offenders = ['app', 'modules', 'shared']
-      .flatMap((dir) => sourceFiles(join(ROOT, dir)))
-      .map((path) => relative(ROOT, path))
-      .filter((path) => !path.split(sep).includes('__tests__') && !allowed.has(path))
-      .filter((path) => COMPARES_40001.test(readFileSync(join(ROOT, path), 'utf8')));
+    const offenders = APP_SOURCES.filter((file) => COMPARES_40001.test(file.text)).map((file) => file.path);
     expect(offenders).toEqual([]);
   });
 });
