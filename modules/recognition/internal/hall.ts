@@ -17,16 +17,17 @@ interface PointsPayload {
  * database has no migration 50 yet. `policyPoints` (commendations from the
  * policies module, read by the page) adds to each member's points.
  */
-export async function getHallOfFame(viewerId: string, policyPoints: PolicyPoints = {}): Promise<HallOfFameModel | null> {
+export async function getHallOfFame(viewerId: string, policyPoints: PolicyPoints | Promise<PolicyPoints> = {}): Promise<HallOfFameModel | null> {
   const db = await createClient();
-  const { data, error } = await db.rpc('recognition_points', { p_employee: viewerId });
+  // Read together: the commendation totals are an independent query.
+  const [{ data, error }, extra] = await Promise.all([db.rpc('recognition_points', { p_employee: viewerId }), policyPoints]);
   if (error) {
     if (isMissingSchemaError(error.message)) return null;
     throw new Error(`Hall of fame read failed: ${error.message}`);
   }
   const payload = data as unknown as PointsPayload;
   const points = parseRecognitionPolicy({ points: payload.policy }).points;
-  const entries = rankHall(payload.members, points, policyPoints);
+  const entries = rankHall(payload.members, points, extra);
   const mine = entries.find((e) => e.userId === viewerId);
   return {
     policy: points,

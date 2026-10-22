@@ -22,8 +22,7 @@ const MONTH = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric',
 export default async function HallOfFamePage() {
   const profile = await requireProfile();
   // Commendation points are optional: without migration 56 the hall shows award points only.
-  const commendations = await settle(getCommendationTotals);
-  const policyPoints = commendations.status === 'ready' ? commendations.data : {};
+  const policyPoints = getCommendationTotals().catch(() => ({}));
   const [read, streak] = await Promise.all([settle(() => getHallOfFame(profile.id, policyPoints)), settle(() => getStreak(profile.id))]);
   const hall = read.status === 'ready' ? read.data : null;
   const unavailable = read.status !== 'ready' ? 'error' : hall === null ? 'migration' : null;
