@@ -113,7 +113,8 @@ export function MissionPage({
 /**
  * The page title row every workspace page uses: optional breadcrumb, an
  * optional meta row (badges), the title with a count chip, a muted
- * description, page actions on the right and optional tabs underneath.
+ * description, page actions on the right (on their own row on phones) and
+ * optional tabs underneath.
  */
 export function MissionPageHeader({
   title,
@@ -149,7 +150,8 @@ export function MissionPageHeader({
           </div>
           {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
         </div>
-        {actions ? <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div> : null}
+        {/* Own row on phones, so actions never squeeze the title into a narrow column. */}
+        {actions ? <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">{actions}</div> : null}
       </div>
       {tabs}
     </header>
