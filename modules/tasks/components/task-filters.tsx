@@ -18,9 +18,8 @@ import {
   EMPTY_FILTERS,
   type TaskFilterState,
 } from '@/modules/tasks/internal/filters';
+import { useCategoryCatalogue } from '@/modules/settings/components/company-settings-context';
 import {
-  CATEGORY_LABELS,
-  TASK_CATEGORIES,
   TASK_FRESHNESS_STATES,
   TASK_PRIORITIES,
   TASK_STATUSES,
@@ -69,6 +68,8 @@ export function TaskFilters({
   onViewChange,
 }: TaskFiltersProps) {
   const activeCount = activeFilterCount(filters);
+  // Every code stays filterable (older missions keep hidden types), in company order.
+  const catalogue = useCategoryCatalogue();
 
   const update = <K extends keyof TaskFilterState>(
     key: K,
@@ -164,9 +165,9 @@ export function TaskFilters({
                 : (value as TaskFilterState['category']),
             )
           }
-          options={TASK_CATEGORIES.map((category) => ({
-            value: category,
-            label: `${category} · ${CATEGORY_LABELS[category]}`,
+          options={catalogue.map((entry) => ({
+            value: entry.code,
+            label: `${entry.code} · ${entry.label}`,
           }))}
           allLabel="All types"
           className="w-44"

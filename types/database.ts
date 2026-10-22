@@ -851,6 +851,10 @@ export interface Database {
       recognition_task_waypoints: { Args: { p_task_ids: string[] }; Returns: Json };
       recognition_waypoint_counts: { Args: { p_from: string; p_to: string; p_employee?: string | null }; Returns: Json };
       people_command: { Args: { p_command: 'invite' | 'revoke' | 'update'; p_payload: Json }; Returns: Json };
+      /** Migration 53: the caller's company settings (any active member; standing missions for managers). */
+      company_settings: { Args: Record<never, never>; Returns: Json };
+      /** Migration 53: managing director only; versioned and idempotent per operation. */
+      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       /** Migration 54: the activity log read; company-scoped and role-gated in the database. */
       activity_feed: { Args: { p_from: string; p_to: string; p_kind?: string | null; p_member?: string | null; p_before?: Json | null; p_limit?: number | null }; Returns: { id: string; occurred_at: string; kind: string; action: string; actor_id: string | null; subject_user_id: string | null; task_id: string | null; task_tag: string | null; record_kind: string | null; record_id: string | null; fields: string[] | null; reason: string | null; period: string | null }[] };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
