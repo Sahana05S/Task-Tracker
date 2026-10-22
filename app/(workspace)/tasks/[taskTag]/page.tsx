@@ -46,7 +46,7 @@ import { WorkFilesPanel } from '@/modules/tasks/components/detail/work-files-pan
 import { TaskLifecyclePanel } from '@/modules/tasks/components/task-lifecycle-panel';
 import { TaskReviewForm } from '@/modules/tasks/components/task-review-form';
 import { requireProfile } from '@/shared/session/profile';
-import { formatHours, isOverdue } from '@/shared/tracker/format';
+import { formatDate, formatHours, isOverdue } from '@/shared/tracker/format';
 
 import { ManualTimeForm, TimerControl, TimerRecords } from '@/modules/time-tracking/components/timer-panels';
 
@@ -163,7 +163,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         <p role="status" className="border-attention-border bg-attention-subtle text-attention-foreground flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm">
           <ArchiveIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
-            Archived on {task.archivedEffectiveDate}. This mission and its retained history are read-only. {task.archiveReason}
+            Archived on {formatDate(task.archivedEffectiveDate ?? null)}. This mission and its retained history are read-only. {task.archiveReason}
             {successor?<Link className="link ml-2 font-semibold" href={`/tasks/${encodeURIComponent(successor.taskTag)}`}>Continue on {successor.taskTag} - {successor.title}</Link>:null}
           </span>
         </p>
