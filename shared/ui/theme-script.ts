@@ -6,6 +6,8 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
 export const THEME_STORAGE_KEY = 'taskpulse:theme';
+/** Browser UI colour (`<meta name="theme-color">`) per theme: each theme's page background. */
+export const THEME_COLOR: Record<ResolvedTheme, string> = { light: '#f7f6fd', dark: '#0d1020' };
 /** The public landing page keeps its own light look whatever the device prefers. */
 export const LIGHT_ONLY_PATHS: readonly string[] = ['/'];
 
@@ -26,4 +28,5 @@ export function resolveTheme(preference: ThemePreference, systemDark: boolean, p
 export const THEME_SCRIPT = `(function(){var e=document.documentElement,t='light';try{var p=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});`
   + `if(p==='dark'||(p==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches))t='dark';`
   + `if(${JSON.stringify(LIGHT_ONLY_PATHS)}.indexOf(location.pathname)>=0)t='light'}catch(_){}`
-  + `e.setAttribute('data-theme',t);e.style.colorScheme=t})()`;
+  + `e.setAttribute('data-theme',t);e.style.colorScheme=t;`
+  + `var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',${JSON.stringify(THEME_COLOR)}[t])})()`;

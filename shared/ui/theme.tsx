@@ -4,6 +4,7 @@ import * as React from 'react';
 import { usePathname } from 'next/navigation';
 
 import {
+  THEME_COLOR,
   THEME_STORAGE_KEY,
   parseThemePreference,
   resolveTheme,
@@ -70,6 +71,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     root.setAttribute('data-theme', resolved);
     root.style.colorScheme = resolved;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[resolved]);
   }, [resolved]);
 
   const setPreference = React.useCallback((next: ThemePreference) => {

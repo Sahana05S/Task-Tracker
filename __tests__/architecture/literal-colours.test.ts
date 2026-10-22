@@ -19,6 +19,8 @@ const SKIP = [/^app\/page\.tsx$/, /^app\/globals\.css$/];
 const ALLOWED: Record<string, string[]> = {
   // Google's "G" mark keeps its brand colours in both themes.
   'modules/auth/components/auth-form.tsx': ['#4285F4', '#34A853', '#FBBC05', '#EA4335'],
+  // <meta name="theme-color"> cannot read a CSS variable; shared/ui/__tests__/theme.test.ts ties these to --background.
+  'shared/ui/theme-script.ts': ['#f7f6fd', '#0d1020'],
 };
 
 const PALETTE = '(?:white|black|slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)';
