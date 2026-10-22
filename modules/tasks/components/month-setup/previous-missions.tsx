@@ -2,10 +2,13 @@
 
 import { TimerIcon } from 'lucide-react';
 
-import { monthBounds, monthOf, swapMonthInTitle, type PreviousAction } from '@/modules/tasks/internal/tools/month-setup';
+import * as React from 'react';
+
+import { formatDay, monthBounds, monthOf, swapMonthInTitle, type PreviousAction } from '@/modules/tasks/internal/tools/month-setup';
 import type { MonthSetupContext } from '@/modules/tasks/internal/tools/month-setup-commands';
 import type { MonthSetupState } from '@/modules/tasks/components/month-setup/use-month-setup';
 import { Field } from '@/shared/ui/form-field';
+import { Textarea } from '@/shared/ui/textarea';
 import { EmptyState, MissionNotice } from '@/shared/ui/mission-ui';
 import { NativeSelect } from '@/shared/ui/native-select';
 import { formatDate } from '@/shared/tracker/format';
@@ -19,8 +22,12 @@ import { codeLabel } from '@/shared/tracker/labels';
 export function PreviousMissions({ context, state }: { context: MonthSetupContext; state: MonthSetupState }) {
   const hidden = context.previous.length - state.rows.length;
   const first = monthBounds(context.month);
-  const startsOn = new Date(`${first.start}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-  const anyCarry = state.rows.some(({ mission }) => state.selection.previous.get(mission.id) === 'carryover');
+  const startsOn = formatDay(first.start);
+  const anyCarry = state.rows.some((mission) => state.selection.previous.get(mission.id) === 'carryover');
+  const repeatTitles = React.useMemo(
+    () => new Map(context.previous.map((mission) => [mission.id, swapMonthInTitle(mission.title, monthOf(mission.assignedDate), context.month)])),
+    [context],
+  );
 
   if (state.rows.length === 0) {
     return (
@@ -58,9 +65,9 @@ export function PreviousMissions({ context, state }: { context: MonthSetupContex
             </tr>
           </thead>
           <tbody>
-            {state.rows.map(({ mission }) => {
+            {state.rows.map((mission) => {
               const action = state.selection.previous.get(mission.id) ?? 'skip';
-              const repeatTitle = swapMonthInTitle(mission.title, monthOf(mission.assignedDate), context.month);
+              const repeatTitle = repeatTitles.get(mission.id) ?? mission.title;
               const id = `previous-${mission.id}`;
               return (
                 <tr key={mission.id}>
@@ -108,11 +115,10 @@ export function PreviousMissions({ context, state }: { context: MonthSetupContex
 
       {anyCarry && state.carry ? (
         <Field id="carryover-reason" label="Carry-over reason" hint="Kept with each archived mission. Leave blank for the standard wording.">
-          <textarea
+          <Textarea
             id="carryover-reason"
             maxLength={1000}
             rows={2}
-            className="field w-full"
             value={state.selection.reason}
             onChange={(event) => state.setReason(event.target.value)}
             placeholder={`Carried over by the ${first.label} month setup`}

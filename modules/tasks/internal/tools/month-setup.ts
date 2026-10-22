@@ -1,4 +1,5 @@
 import { renderTitlePattern } from '@/modules/settings/client';
+import { isMonthKey, monthPeriod, shiftMonth } from '@/shared/time/period';
 import type { Json } from '@/types/database';
 import type { TaskCategory, TaskPriority, TaskStatus } from '@/types/tracker';
 
@@ -34,7 +35,6 @@ export interface Phase {
 export interface SetupMember {
   id: string;
   name: string;
-  role: string;
 }
 
 export interface SetupStanding {
@@ -73,22 +73,15 @@ export interface MonthSetupSelection {
   previous: ReadonlyMap<string, PreviousAction>;
 }
 
-const MONTH_KEY = /^(\d{4})-(0[1-9]|1[0-2])$/;
-const LABEL = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const NAME = new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' });
 const SHORT = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
-const iso = (date: Date) => date.toISOString().slice(0, 10);
-const utc = (key: MonthKey, day = 1) => {
-  const match = MONTH_KEY.exec(key);
-  if (!match) throw new Error(`Month must be YYYY-MM, got "${key}".`);
-  return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, day));
-};
+const utc = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
 export function monthBounds(key: MonthKey): MonthBounds {
-  const first = utc(key);
-  const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0));
-  return { key, start: iso(first), end: iso(last), days: last.getUTCDate(), label: LABEL.format(first), name: NAME.format(first) };
+  if (!isMonthKey(key)) throw new Error(`Month must be YYYY-MM, got "${key}".`);
+  const { startDate, endDate, label } = monthPeriod(key);
+  return { key, start: startDate, end: endDate, days: Number(endDate.slice(8)), label, name: NAME.format(utc(startDate)) };
 }
 
 /** The month of a `YYYY-MM-DD` date. */
@@ -96,18 +89,21 @@ export function monthOf(date: string): MonthKey {
   return date.slice(0, 7);
 }
 
-export function addMonths(key: MonthKey, count: number): MonthKey {
-  const first = utc(key);
-  return iso(new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + count, 1))).slice(0, 7);
+export const addMonths = shiftMonth;
+
+/** "1 Nov": a day in the setup's short form. */
+export function formatDay(iso: string): string {
+  return SHORT.format(utc(iso));
 }
 
 /** Seven-day phases from the 1st; the last one is clipped to month end. */
 export function weeklyPhases(key: MonthKey): Phase[] {
   const { days } = monthBounds(key);
+  const day = (n: number) => `${key}-${String(n).padStart(2, '0')}`;
   return Array.from({ length: Math.ceil(days / 7) }, (_, index) => ({
     week: index + 1,
-    start: iso(utc(key, index * 7 + 1)),
-    end: iso(utc(key, Math.min(index * 7 + 7, days))),
+    start: day(index * 7 + 1),
+    end: day(Math.min(index * 7 + 7, days)),
   }));
 }
 
@@ -116,7 +112,7 @@ export function phaseTitle(key: MonthKey, week: number): string {
 }
 
 export function phaseRange(phase: Phase): string {
-  return `${SHORT.format(new Date(`${phase.start}T00:00:00Z`))} – ${SHORT.format(new Date(`${phase.end}T00:00:00Z`))}`;
+  return `${formatDay(phase.start)} – ${formatDay(phase.end)}`;
 }
 
 /** Next month by default; the current month while it has no missions. */
@@ -129,15 +125,6 @@ export function setupBannerMonth(today: string, nextMonthMissions: number): Mont
   return Number(today.slice(8, 10)) >= 25 && nextMonthMissions === 0 ? addMonths(monthOf(today), 1) : null;
 }
 
-/**
- * The approved D12 handoff targets the current month only and archives the
- * source on the commit day, so a month set up ahead of its 1st gets its
- * carry-overs once it starts.
- */
-export function carryoverAvailable(month: MonthKey, today: string): boolean {
-  return month === monthOf(today);
-}
-
 export function standingKey(missionId: string, memberId: string): string {
   return `${missionId}:${memberId}`;
 }
@@ -147,26 +134,31 @@ export function singleOwner(mission: SetupStanding, members: readonly SetupMembe
   return mission.ownerId && members.some((member) => member.id === mission.ownerId) ? mission.ownerId : directorId;
 }
 
-/** Every active member gets the full set; single missions go to their owner. */
+/**
+ * Every active member gets the full set; single missions go to their owner.
+ * Cells an earlier setup of the month created (`setUp`) are left out, and so
+ * is a single mission that already has its owner.
+ */
 export function defaultStandingSelection(
-  standing: readonly SetupStanding[],
+  standing: readonly (SetupStanding & { setUp?: readonly string[] })[],
   members: readonly SetupMember[],
   directorId: string | null,
 ): Set<string> {
   const selected = new Set<string>();
   for (const mission of standing) {
+    const done = new Set(mission.setUp);
     if (mission.ownerMode === 'per_member') {
-      for (const member of members) selected.add(standingKey(mission.id, member.id));
+      for (const member of members) if (!done.has(member.id)) selected.add(standingKey(mission.id, member.id));
     } else {
       const owner = singleOwner(mission, members, directorId);
-      if (owner) selected.add(standingKey(mission.id, owner));
+      if (owner && done.size === 0) selected.add(standingKey(mission.id, owner));
     }
   }
   return selected;
 }
 
 export function standingTitle(mission: SetupStanding, key: MonthKey, memberName: string): string {
-  return renderTitlePattern(mission.titlePattern, utc(key), memberName);
+  return renderTitlePattern(mission.titlePattern, utc(monthBounds(key).start), memberName);
 }
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -183,6 +175,8 @@ export function swapMonthInTitle(title: string, from: MonthKey, to: MonthKey): s
     .replace(new RegExp(`\\b${a.name} ${from.slice(0, 4)}\\b`, 'gi'), b.label)
     .replace(new RegExp(`\\b${a.name}\\b`, 'gi'), b.name);
 }
+
+const TASKS_REVIEW = /^Tasks Review\b/i;
 
 /**
  * A mission this setup already recreates: its title is one of the included
@@ -207,12 +201,6 @@ export function coverageMatcher(standing: readonly SetupStanding[], phases = tru
   };
 }
 
-const TASKS_REVIEW = /^Tasks Review\b/i;
-
-export function isCovered(mission: PreviousMission, standing: readonly SetupStanding[], phases = true): boolean {
-  return coverageMatcher(standing, phases)(mission);
-}
-
 /**
  * Discarded and Done skip; a title naming its month repeats; started,
  * unfinished work carries over; anything else is skipped.
@@ -224,20 +212,18 @@ export function defaultPreviousAction(mission: PreviousMission): PreviousAction 
   return progress > 0 && progress < 100 ? 'carryover' : 'skip';
 }
 
-/** Step 4 rows: earlier missions not covered by steps 2 and 3, with their defaults. */
-export function previousRows(missions: readonly PreviousMission[], standing: readonly SetupStanding[], phases = true) {
+/** Step 4: earlier missions not covered by steps 2 and 3. */
+export function previousRows(missions: readonly PreviousMission[], standing: readonly SetupStanding[], phases = true): PreviousMission[] {
   const covered = coverageMatcher(standing, phases);
-  return missions
-    .filter((mission) => !covered(mission))
-    .map((mission) => ({ mission, defaultAction: defaultPreviousAction(mission) }));
+  return missions.filter((mission) => !covered(mission));
 }
 
 /**
- * The month_setup_preview payload. Carry-overs are sent only once the month
- * has started; before that they wait (see `carryoverAvailable`).
+ * The month_setup_preview payload. The approved D12 handoff targets the
+ * current month only and archives the source on the commit day, so carry-overs
+ * are sent only once the month has started (`carryover`).
  */
-export function buildSetupPayload(selection: MonthSetupSelection, today: string): Record<string, Json> {
-  const carry = carryoverAvailable(selection.month, today);
+export function buildSetupPayload(selection: MonthSetupSelection, carryover: boolean): Record<string, Json> {
   return {
     month: selection.month,
     standing: [...selection.standing].sort().map((key) => {
@@ -246,7 +232,7 @@ export function buildSetupPayload(selection: MonthSetupSelection, today: string)
     }),
     phases: selection.phasesOwnerId ? { ownerId: selection.phasesOwnerId } : null,
     previous: [...selection.previous]
-      .filter(([, action]) => action === 'repeat' || (action === 'carryover' && carry))
+      .filter(([, action]) => action === 'repeat' || (action === 'carryover' && carryover))
       .map(([taskId, action]) => ({ taskId, action })),
   };
 }

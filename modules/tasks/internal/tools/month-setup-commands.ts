@@ -1,7 +1,6 @@
 import { createClient } from '@/shared/supabase/server';
-import { isConflictCode } from '@/shared/commands/conflict';
-import { parsePreview, type ToolsPreview } from '@/modules/tasks/internal/tools/contract';
-import type { CommittedItems, Reply } from '@/modules/tasks/internal/tools/commands';
+import type { ToolsPreview } from '@/modules/tasks/internal/tools/contract';
+import { commitReply, previewReply, type CommittedItems, type Reply } from '@/modules/tasks/internal/tools/commands';
 import { monthBounds, type MonthKey, type PreviousMission, type SetupMember, type SetupStanding } from '@/modules/tasks/internal/tools/month-setup';
 import type { Json } from '@/types/database';
 
@@ -62,20 +61,11 @@ export async function countMissionsInMonth(month: MonthKey): Promise<number> {
 export async function requestMonthSetupPreview(payload: Record<string, Json>): Promise<Reply<ToolsPreview>> {
   const client = await createClient();
   const { data, error } = await client.rpc('month_setup_preview', { p_payload: payload });
-  if (error) return { success: false, error: error.message };
-  try {
-    return { success: true, data: parsePreview(data) };
-  } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : 'Preview unavailable.' };
-  }
+  return previewReply(data, error);
 }
 
 export async function commitMonthSetupPreview(previewId: string, operationId: string): Promise<Reply<CommittedItems>> {
   const client = await createClient();
   const { data, error } = await client.rpc('month_setup_commit', { p_preview: previewId, p_operation: operationId });
-  if (error) return { success: false, error: isConflictCode(error.code) ? `Preview conflict: ${error.message}` : error.message };
-  if (!isRecord(data) || !Array.isArray(data.items)) {
-    return { success: false, error: 'Command result unavailable. Retry with the same operation.' };
-  }
-  return { success: true, data: data as unknown as CommittedItems };
+  return commitReply(data, error);
 }

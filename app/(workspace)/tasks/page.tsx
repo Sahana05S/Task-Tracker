@@ -57,7 +57,7 @@ export default async function TasksPage() {
         actions={canManage ? (
           <>
             <NewTaskButton />
-            <MissionsPageMenu setupMonth={setup?.menuMonth ?? addMonths(monthOf(kolkataDate()), 1)} />
+            <MissionsPageMenu setupMonth={setup?.menuMonth ?? defaultSetupMonth(kolkataDate(), true)} />
           </>
         ) : null}
       />
@@ -82,10 +82,11 @@ export default async function TasksPage() {
 async function monthSetupEntry() {
   const today = kolkataDate();
   const current = monthOf(today);
-  const late = Number(today.slice(8, 10)) >= 25;
+  // Next month is counted only on the banner's days (an empty month there would show it).
+  const bannerDays = setupBannerMonth(today, 0) !== null;
   const [currentCount, nextCount] = await Promise.all([
     countMissionsInMonth(current),
-    late ? countMissionsInMonth(addMonths(current, 1)) : Promise.resolve(null),
+    bannerDays ? countMissionsInMonth(addMonths(current, 1)) : Promise.resolve(null),
   ]);
   return {
     menuMonth: defaultSetupMonth(today, currentCount > 0),

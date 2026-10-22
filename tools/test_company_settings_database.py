@@ -69,10 +69,10 @@ for db in DBS:
     sql(db,bootstrap)
     every=[int(m.name.split('_')[0]) for m in MIGRATIONS]
     if db==DBS[1]:
-        # The hosted test project had 01-52, 54 and 57; 53 arrived later (--include-all).
-        # 55 (month setup) builds on 53, so it follows 53 here.
-        DEPENDENTS=[n for n in every if n==55]
-        migrate(db,[n for n in every if n!=53 and n not in DEPENDENTS]); sql(db,seed)
+        # The hosted test project had 01-52, 54 and 57; 53 arrived later (--include-all),
+        # then everything after it (55 month setup builds on 53).
+        HOSTED=[n for n in every if n<=52 or n in (54,57)]
+        migrate(db,HOSTED); sql(db,seed)
         typed=new_task(db,'TT-000042')
         before=counts(db)
         dated_before=value(db,"md5(pg_get_functiondef('public.dated_record_command(text,uuid,text,jsonb,bigint,uuid)'::regprocedure))")
@@ -84,7 +84,7 @@ for db in DBS:
         assert value(db,"md5(pg_get_functiondef('public.dated_record_command(text,uuid,text,jsonb,bigint,uuid)'::regprocedure))")==dated_before
         assert counts(db)==before
         print('PASS',db,'a failed migration 53 rolls back completely (tables, functions, trigger, attendance command)')
-        sql(db,M53); migrate(db,DEPENDENTS)
+        sql(db,M53); migrate(db,[n for n in every if n!=53 and n not in HOSTED])
         assert counts(db)==before,'53 changes no existing rows'
         assert value(db,f"task_tag FROM public.tasks WHERE id='{typed}'")=='TT-000042','existing TT- tags stay valid'
         print('PASS',db,'upgrade 01-52+54+57 -> +53 keeps every existing row and TT- tag')

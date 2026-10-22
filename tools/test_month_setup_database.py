@@ -195,8 +195,9 @@ for db in DBS:
     assert value(db,f"archived_effective_date IS NULL FROM public.tasks WHERE id='{started}'")=='t'
     print('PASS',db,'one changed source fails the whole batch: no standing, phase or copied mission is left and the source stays open')
 
-    # ---- commit -------------------------------------------------------------------------------------------
-    plan=preview(db,MD,payload); assert plan['ready']
+    # ---- commit, as a setup made before the 1st: no carry-overs (user decision, option 1) ------------------
+    early={**payload,'previous':[x for x in payload['previous'] if x['action']!='carryover']}
+    plan=preview(db,MD,early); assert plan['ready'] and 'carryover' not in [i['kind'] for i in plan['items']]
     op=str(uuid4())
     done_state=commit(db,MD,plan['id'],op)
     made=done_state['items']
@@ -214,23 +215,39 @@ for db in DBS:
     assert rows[made[0]['taskId']]['scale_mode']=='manual' and rows[made[0]['taskId']]['category']=='OT'
     rep_row=next(rows[r['taskId']] for i,r in zip(plan['items'],made) if i.get('sourceTaskId')==monthly)
     assert rep_row['title']==f'GST filing - {label}' and rep_row['assigned_date']==cur.isoformat()
-    car_row=next(rows[r['taskId']] for i,r in zip(plan['items'],made) if i['kind']=='carryover')
-    assert float(car_row['task_scale'])==6 and car_row['title']=='Site survey (renamed) - Carryover'
-    src=task(db,started)
-    assert src['archived_effective_date']==today.isoformat() and src['handoff_successor_id']==car_row['id'] and float(src['task_scale'])==10
     assert task(db,monthly)['archived_effective_date'] is None,'repeat leaves its source untouched'
+    assert task(db,started)['archived_effective_date'] is None,'a carry-over row is not part of an early setup'
     assert value(db,f"count(*) FROM taskpulse_private.month_setup_items WHERE period_start='{cur}'")==str(len(made))
     assert value(db,f"count(*) FROM taskpulse_private.audit_events WHERE command='month_setup' AND operation_id='{op}'")=='1'
     assert commit(db,MD,plan['id'],op)==done_state,'replay returns the receipt'
     expect_code(db,MD,commit_sql(preview(db,MD,{'month':CUR,'phases':{'ownerId':MD}})['id'],op),'PT409','Operation reused')
-    print('PASS',db,f'commit: {len(made)} missions with unique {mon}_ tags in plan order, dates and scale modes as previewed, D12 handoff archived the source; replay is idempotent')
+    print('PASS',db,f'early setup: {len(made)} missions with unique {mon}_ tags in plan order, no carry-over committed; replay is idempotent')
+
+    # ---- reopen on or after the 1st: step 4 only, through the unchanged D12 handoff ------------------------
+    ctx=context(db,MD,CUR)
+    assert ctx['carryoverAvailable'] and len(ctx['phasesSetUp'])==weeks
+    assert all(set(s['setUp'])==set(ACTIVE) for s in ctx['standing'] if s['ownerMode']=='per_member')
+    assert all(s['setUp']==[MD] for s in ctx['standing'] if s['ownerMode']=='single'),'steps 2-3 show as set up'
+    shown={x['id'] for x in ctx['previous']}
+    assert started in shown and monthly not in shown and stale not in shown,'step 4 keeps the open carry-over, drops the repeated sources'
+    later=preview(db,MD,{'month':CUR,'previous':[{'taskId':started,'action':'carryover'}]})
+    assert later['ready'] and [i['kind'] for i in later['items']]==['carryover']
+    car_res=commit(db,MD,later['id'])['items'][0]
+    car_row=task(db,car_res['taskId'])
+    assert car_res['kind']=='carryover' and float(car_row['task_scale'])==6 and car_row['title']=='Site survey (renamed) - Carryover'
+    assert car_row['assigned_date']==cur.isoformat() and float(car_row['progress_percentage'])==0
+    src=task(db,started)
+    assert src['archived_effective_date']==today.isoformat() and src['handoff_successor_id']==car_row['id'] and float(src['task_scale'])==10
+    assert value(db,f"relation_type FROM public.task_dependencies WHERE predecessor_task_id='{started}' AND successor_task_id='{car_row['id']}'")=='Carryover'
+    made.append(car_res)
+    print('PASS',db,'reopened: steps 2-3 are set up, step 4 carries 60% of scale 10 over through the D12 handoff (source archived, Carryover lineage)')
 
     # ---- set up once --------------------------------------------------------------------------------------
     again=preview(db,MD,{'month':CUR,'standing':grid[:2],'phases':{'ownerId':MD}})
     assert not again['ready'] and again['reasons']==['already_set_up'] and all(i['reasons']==['already_set_up'] for i in again['items'])
     expect_code(db,MD,commit_sql(again['id'],uuid4()),'23514')
     ctx=context(db,MD,CUR)
-    assert ctx['setUpCount']==len(made) and len(ctx['phasesSetUp'])==weeks and set(ctx['standing'][0]['setUp'])==set(ACTIVE)
+    assert ctx['setUpCount']==len(made)
     assert not ({monthly,stale,started}&{p['id'] for p in ctx['previous']}),'used and archived sources leave step 4'
     print('PASS',db,'a month is set up once: a second preview marks every item already set up and cannot commit')
 
@@ -265,5 +282,11 @@ for db in DBS:
     assert erow['assigned_date']==nxt.isoformat() and erow['title']==f"Rent - {nxt.strftime('%B %Y')}"
     expect_code(db,MD,commit_sql(eplan['id'],uuid4()),'42501','Own month setup preview')
     print('PASS',db,"the project engineer repeats a mission into next month ahead of its 1st; a director cannot commit the engineer's preview")
+
+    # ---- Task Tools Duplicate keeps its copy titles unless given a title ----------------------------------
+    dup=lambda extra:ok(db,MD,"SELECT public.task_tools_preview('duplicate',"+literal(json.dumps({'sourceTaskId':other,'startDate':nxt.isoformat(),**extra}))+'::jsonb)')['items'][0]['title']
+    assert dup({})==f'Rent - {prev_label} (Copy 1)' and dup({'title':'  Rent  '})=='Rent' and dup({'title':' '})==f'Rent - {prev_label} (Copy 1)'
+    expect_code(db,MD,"SELECT public.task_tools_preview('duplicate',"+literal(json.dumps({'sourceTaskId':other,'startDate':nxt.isoformat(),'bogus':1}))+'::jsonb)','23514')
+    print('PASS',db,'Task Tools Duplicate still titles copies "(Copy 1)"; an explicit title replaces it; unknown keys are still refused')
 
 print('ALL PASS month setup database')

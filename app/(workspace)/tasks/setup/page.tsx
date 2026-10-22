@@ -3,13 +3,11 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowLeftIcon } from 'lucide-react';
 
-import { addMonths, defaultSetupMonth, getMonthSetupContext, monthOf } from '@/modules/tasks';
+import { addMonths, canManageTasks, defaultSetupMonth, getMonthSetupContext, monthOf } from '@/modules/tasks';
 import { MonthSetupWizard } from '@/modules/tasks/components/month-setup/month-setup-wizard';
 import { requireProfile } from '@/shared/session/profile';
-import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
-import type { UserRole } from '@/types/tracker';
 
 export const metadata: Metadata = {
   title: 'Set up a month · TaskPulse',
@@ -22,7 +20,7 @@ export const metadata: Metadata = {
  */
 export default async function MonthSetupPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const profile = await requireProfile();
-  if (!(TASK_MANAGER_ROLES as readonly UserRole[]).includes(profile.role)) redirect('/tasks');
+  if (!canManageTasks(profile.role)) redirect('/tasks');
 
   const today = kolkataDate();
   const current = monthOf(today);

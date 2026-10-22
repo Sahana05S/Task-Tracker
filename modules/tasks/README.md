@@ -51,7 +51,7 @@ template versions.
 | `task_lifecycle_command` | `16_task_lifecycle_and_scale_contract.sql` |
 | `task_details_command` | 17, revised in 18, 26, 38 |
 | `publish_task_detail_template` | `17_native_task_details_and_templates.sql` |
-| `task_tools_preview`, `task_tools_command` | 24, revised in 25 (preview also 31, 32) |
+| `task_tools_preview`, `task_tools_command` | 24, revised in 25 (preview also 31, 32, 53 tags, 55 optional Duplicate `title`) |
 | `participant_reconciliation` | `10_permissions_and_participant_contract.sql` |
 | `month_setup_context`, `month_setup_preview`, `month_setup_commit`, `taskpulse_private.month_setup_items` | `55_month_setup.sql` |
 
@@ -96,9 +96,9 @@ Roadmap public reads: `getAssignedMissionBatch`, `getAssignedRoadmapMission`, `c
   Carry over remaining / Skip; Done and Discarded skip, a title naming its month
   repeats, 0 < progress < 100 carries over; missions the standing list or phases
   recreate are hidden), then one preview and one atomic commit.
-- Repeat as new is the approved D12 copy (Task Tools `duplicate`) with the month in
-  the title moved on; Carry over is the D12 handoff (`carryover`) unchanged, so it
-  only targets a month that has started. A month set up before its 1st gets
+- Repeat as new is the approved D12 copy (Task Tools `duplicate`, which takes an
+  optional `title` since 55) named with the month moved on. Carry over is the
+  D12 handoff (`carryover`) unchanged, so it only targets a month that has started. A month set up before its 1st gets
   standing missions, phases and repeats; its carry-overs are made from the 1st by
   opening the wizard again (steps 2-3 then show as already set up).
 - Standing and phase missions take their sheet tags at commit, in plan order; a

@@ -3,11 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
   addMonths,
   buildSetupPayload,
-  carryoverAvailable,
   defaultPreviousAction,
   defaultSetupMonth,
   defaultStandingSelection,
-  isCovered,
+  coverageMatcher,
   mentionsMonth,
   monthBounds,
   phaseTitle,
@@ -33,8 +32,8 @@ const STANDING = [
   standing('db', 'Database Re-Organisation', 'single'),
 ];
 const MEMBERS: SetupMember[] = [
-  { id: 'md', name: 'Asha Rao', role: 'managing_director' },
-  { id: 'u2', name: 'Bala K', role: 'team_member' },
+  { id: 'md', name: 'Asha Rao' },
+  { id: 'u2', name: 'Bala K' },
 ];
 const mission = (over: Partial<PreviousMission>): PreviousMission => ({
   id: 't1', taskTag: 'Oct26_T5', title: 'Site survey', category: 'T', status: 'In Progress', progress: 40,
@@ -98,11 +97,6 @@ describe('which month and when', () => {
     expect(setupBannerMonth('2026-12-31', 0)).toBe('2027-01');
     expect(setupBannerMonth('2026-10-28', 3)).toBeNull();
   });
-
-  it('carries over only into the month that has started', () => {
-    expect(carryoverAvailable('2026-11', '2026-10-26')).toBe(false);
-    expect(carryoverAvailable('2026-11', '2026-11-01')).toBe(true);
-  });
 });
 
 describe('standing missions', () => {
@@ -116,11 +110,18 @@ describe('standing missions', () => {
     ].sort());
   });
 
+  it('leaves out cells and single missions an earlier setup created', () => {
+    const selected = defaultStandingSelection([{ ...STANDING[0], setUp: ['u2'] }, { ...STANDING[4], setUp: ['md'] }], MEMBERS, 'md');
+    expect([...selected]).toEqual([standingKey('off', 'md')]);
+  });
+
   it('renders titles with the month and member', () => {
     expect(standingTitle(STANDING[0], '2026-11', 'Bala K')).toBe('Off Hours - November 2026 - Bala K');
     expect(standingTitle(STANDING[4], '2026-11', 'Asha Rao')).toBe('Database Re-Organisation');
   });
 });
+
+const isCovered = (m: PreviousMission, standing: readonly SetupStanding[], phases = true) => coverageMatcher(standing, phases)(m);
 
 describe('last month\'s missions', () => {
   it('detects and swaps month names in titles', () => {
@@ -158,7 +159,7 @@ describe('last month\'s missions', () => {
     const review = mission({ title: 'Tasks Review - October 2026 - Week 5' });
     expect(isCovered(review, STANDING, false)).toBe(false);
     expect(isCovered(mission({ title: 'Off Hours - October 2026 - Bala K' }), STANDING.slice(1))).toBe(false);
-    expect(previousRows([review], [], false).map((row) => row.defaultAction)).toEqual(['repeat']);
+    expect(previousRows([review], [], false).map((row) => row.id)).toEqual(['t1']);
   });
 
   it('lists the rest with their defaults', () => {
@@ -167,7 +168,7 @@ describe('last month\'s missions', () => {
       mission({ id: 'b', title: 'October payroll' }),
       mission({ id: 'c', title: 'Site survey', progress: 40 }),
     ], STANDING);
-    expect(rows.map((row) => [row.mission.id, row.defaultAction])).toEqual([['b', 'repeat'], ['c', 'carryover']]);
+    expect(rows.map((row) => [row.id, defaultPreviousAction(row)])).toEqual([['b', 'repeat'], ['c', 'carryover']]);
   });
 });
 
@@ -180,7 +181,7 @@ describe('payload', () => {
   };
 
   it('sends ticked cells, the phases owner and the chosen previous actions', () => {
-    expect(buildSetupPayload(selection, '2026-11-02')).toEqual({
+    expect(buildSetupPayload(selection, true)).toEqual({
       month: '2026-11',
       standing: [{ missionId: 'db', memberId: 'md' }, { missionId: 'off', memberId: 'u2' }],
       phases: { ownerId: 'md' },
@@ -188,8 +189,16 @@ describe('payload', () => {
     });
   });
 
+  it('a month reopened after an early setup offers step 4 only', () => {
+    // Option 1 (user, 22 Oct): steps 2-3 were committed before the 1st, so nothing is ticked again.
+    const setUp = STANDING.map((item) => ({ ...item, setUp: item.ownerMode === 'per_member' ? ['md', 'u2'] : ['md'] }));
+    expect(defaultStandingSelection(setUp, MEMBERS, 'md').size).toBe(0);
+    const reopened = { month: '2026-11', standing: new Set<string>(), phasesOwnerId: null, previous: new Map([['c', 'carryover']] as const) };
+    expect(buildSetupPayload(reopened, true)).toEqual({ month: '2026-11', standing: [], phases: null, previous: [{ taskId: 'c', action: 'carryover' }] });
+  });
+
   it('holds carry-overs back until the month starts and can leave phases out', () => {
-    const payload = buildSetupPayload({ ...selection, phasesOwnerId: null }, '2026-10-26');
+    const payload = buildSetupPayload({ ...selection, phasesOwnerId: null }, false);
     expect(payload.phases).toBeNull();
     expect(payload.previous).toEqual([{ taskId: 'b', action: 'repeat' }]);
   });

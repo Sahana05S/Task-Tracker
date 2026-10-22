@@ -6,12 +6,12 @@ import { ArrowLeftIcon, ArrowRightIcon, CalendarRangeIcon, CheckIcon, LoaderCirc
 
 import { CommitResult, PreviewTable } from '@/modules/tasks/components/tools/operation-drawer';
 import { missionCount } from '@/modules/tasks/components/tools/operations';
-import { useToolOperation, type OperationActions } from '@/modules/tasks/components/tools/use-tool-operation';
+import { useToolOperation, type OperationActions, type ToolOperationState } from '@/modules/tasks/components/tools/use-tool-operation';
 import { PhasesCalendar } from '@/modules/tasks/components/month-setup/phases-calendar';
 import { PreviousMissions } from '@/modules/tasks/components/month-setup/previous-missions';
 import { StandingGrid } from '@/modules/tasks/components/month-setup/standing-grid';
 import { STEPS, useMonthSetup, type MonthSetupState, type StepIndex } from '@/modules/tasks/components/month-setup/use-month-setup';
-import { monthBounds, type MonthKey } from '@/modules/tasks/internal/tools/month-setup';
+import { formatDay, monthBounds, type MonthKey } from '@/modules/tasks/internal/tools/month-setup';
 import type { MonthSetupContext } from '@/modules/tasks/internal/tools/month-setup-commands';
 import { commitMonthSetup, previewMonthSetup } from '@/modules/tasks/tool-actions';
 import { Button } from '@/shared/ui/button';
@@ -20,7 +20,7 @@ import { MissionNotice, MissionPanel } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 import type { Json } from '@/types/database';
 
-const ACTIONS: OperationActions = {
+const ACTIONS: OperationActions<'month_setup'> = {
   preview: (_command, payload) => previewMonthSetup(payload as Record<string, Json>),
   commit: commitMonthSetup,
 };
@@ -213,11 +213,9 @@ function monthStatus(context: MonthSetupContext): string {
   return 'No missions yet';
 }
 
-const formatDay = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-
 function PreviewStep({ state, operation, names, onPreview }: {
   state: MonthSetupState;
-  operation: ReturnType<typeof useToolOperation>;
+  operation: ToolOperationState<'month_setup'>;
   names: ReadonlyMap<string, string>;
   onPreview: () => void;
 }) {

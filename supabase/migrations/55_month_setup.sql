@@ -89,6 +89,25 @@ LANGUAGE sql STABLE SET search_path='' AS $$
 $$;
 REVOKE ALL ON FUNCTION taskpulse_private.month_setup_director(uuid) FROM PUBLIC,anon,authenticated,service_role;
 
+-- Task Tools Duplicate takes an optional title, so a repeat is created under
+-- its new month's name (the copy rules are unchanged). Each rewrite replaces
+-- exactly one known fragment of the deployed definition, as 52 and 53 did.
+DO $$
+DECLARE def text; frag text; spec record; BEGIN
+ def:=pg_catalog.pg_get_functiondef('public.task_tools_preview(text,jsonb)'::regprocedure);
+ FOR spec IN SELECT * FROM (VALUES
+  ('''intentionalEmpty'',''targetMonth'']','''intentionalEmpty'',''targetMonth'',''title'']'),
+  ('''title'',left(t.title||CASE','''title'',CASE WHEN p_command=''duplicate'' AND nullif(btrim(p_payload->>''title''),'''') IS NOT NULL THEN left(btrim(p_payload->>''title''),255) ELSE left(t.title||CASE'),
+  (''' (Copy ''||idx||'')'' END,255),',''' (Copy ''||idx||'')'' END,255) END,')
+ ) v(old_text,new_text) LOOP
+  frag:=spec.old_text;
+  IF (length(def)-length(replace(def,frag,'')))/length(frag)<>1 THEN
+   RAISE EXCEPTION 'task_tools_preview no longer has exactly one "%"; update migration 55',frag; END IF;
+  def:=replace(def,frag,spec.new_text);
+ END LOOP;
+ EXECUTE def;
+END $$;
+
 -- ---------------------------------------------------------------------------
 -- Read: what the wizard shows
 -- ---------------------------------------------------------------------------
@@ -151,7 +170,7 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization();
  today date:=(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date; cur date; m date; m_end date; label text;
  pid uuid:=gen_random_uuid(); policy jsonb; items jsonb:='[]'; reasons jsonb:='[]'; item jsonb; item_reasons jsonb;
- e jsonb; s taskpulse_private.standing_missions; member public.users; t public.tasks; v_title text; phase_owner uuid;
+ e jsonb; r record; t public.tasks; v_title text; phase_owner uuid; taken text[];
  wk integer; d date; sub jsonb; action text; reason text; frozen boolean;
  uuid_re constant text:='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; BEGIN
  SELECT u.role::text INTO role FROM public.users u WHERE u.id=actor AND u.is_active FOR SHARE;
@@ -192,20 +211,21 @@ DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization
   OR EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(p_payload->'standing','[]')) v
    JOIN taskpulse_private.standing_missions x ON x.id=(v->>'missionId')::uuid AND x.owner_mode='single' GROUP BY x.id HAVING count(*)>1) THEN
   RAISE EXCEPTION 'Each standing cell is chosen once, and a single-owner mission has one owner' USING ERRCODE='23514'; END IF;
- FOR e IN SELECT v FROM jsonb_array_elements(coalesce(p_payload->'standing','[]')) v
+ -- Titles already dated in the month: a month is set up once, whoever created them.
+ SELECT coalesce(array_agg(DISTINCT lower(x.title)),'{}') INTO taken FROM public.tasks x
+ WHERE x.organization_id=org AND x.archived_effective_date IS NULL AND x.assigned_date BETWEEN m AND m_end;
+ FOR r IN SELECT x.id AS mission_id,x.title_pattern,x.category,x.priority,x.scale_mode,u.id AS member_id,u.full_name,
+   EXISTS(SELECT 1 FROM taskpulse_private.month_setup_items i WHERE i.organization_id=org AND i.period_start=m
+    AND i.standing_mission_id=x.id AND i.member_id=u.id) AS done
+  FROM jsonb_array_elements(coalesce(p_payload->'standing','[]')) v
   JOIN taskpulse_private.standing_missions x ON x.id=(v->>'missionId')::uuid JOIN public.users u ON u.id=(v->>'memberId')::uuid
   ORDER BY x.sort,x.title_pattern,x.id,u.employee_id,u.id LOOP
-  SELECT * INTO s FROM taskpulse_private.standing_missions x WHERE x.id=(e->>'missionId')::uuid;
-  SELECT * INTO member FROM public.users u WHERE u.id=(e->>'memberId')::uuid;
-  v_title:=left(replace(replace(s.title_pattern,'{month}',label),'{member}',member.full_name),255);
-  item_reasons:='[]';
-  IF EXISTS(SELECT 1 FROM taskpulse_private.month_setup_items i WHERE i.organization_id=org AND i.period_start=m AND i.standing_mission_id=s.id AND i.member_id=member.id)
-   OR EXISTS(SELECT 1 FROM public.tasks x WHERE x.organization_id=org AND x.archived_effective_date IS NULL AND x.assigned_date BETWEEN m AND m_end AND lower(x.title)=lower(v_title)) THEN
-   item_reasons:=item_reasons||'"already_set_up"'::jsonb; END IF;
-  items:=items||jsonb_build_array(jsonb_build_object('kind','standing','standingMissionId',s.id,'memberId',member.id,'taskTag',NULL,
-   'title',v_title,'category',s.category,'priority',s.priority,'assignedDate',m,'dueDate',m_end,'scale','0','scaleMode',s.scale_mode,
-   'scaleInputs',CASE s.scale_mode WHEN 'hours' THEN '{"multiplier":1}'::jsonb WHEN 'activity_count' THEN '{"activity_count":0,"unit_scale":1}'::jsonb ELSE '{"value":0}'::jsonb END,
-   'assignees',jsonb_build_array(member.id),'reviewers','[]'::jsonb,'shares','[1000000]'::jsonb,'reasons',item_reasons));
+  v_title:=left(replace(replace(r.title_pattern,'{month}',label),'{member}',r.full_name),255);
+  items:=items||jsonb_build_array(jsonb_build_object('kind','standing','standingMissionId',r.mission_id,'memberId',r.member_id,'taskTag',NULL,
+   'title',v_title,'category',r.category,'priority',r.priority,'assignedDate',m,'dueDate',m_end,'scale','0','scaleMode',r.scale_mode,
+   'scaleInputs',CASE r.scale_mode WHEN 'hours' THEN '{"multiplier":1}'::jsonb WHEN 'activity_count' THEN '{"activity_count":0,"unit_scale":1}'::jsonb ELSE '{"value":0}'::jsonb END,
+   'assignees',jsonb_build_array(r.member_id),'reviewers','[]'::jsonb,'shares','[1000000]'::jsonb,
+   'reasons',CASE WHEN r.done OR lower(v_title)=ANY(taken) THEN '["already_set_up"]'::jsonb ELSE '[]'::jsonb END));
  END LOOP;
 
  -- 2. Weekly Tasks Review phases: seven days from the 1st, the last clipped.
@@ -217,8 +237,7 @@ DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization
    RAISE EXCEPTION 'Weekly phases go to an active member of the company' USING ERRCODE='23514'; END IF;
   FOR wk IN 1..ceil((m_end-m+1)/7.0)::integer LOOP
    d:=m+(wk-1)*7; v_title:='Tasks Review - '||label||' - Week '||wk; item_reasons:='[]';
-   IF EXISTS(SELECT 1 FROM taskpulse_private.month_setup_items i WHERE i.organization_id=org AND i.period_start=m AND i.week=wk)
-    OR EXISTS(SELECT 1 FROM public.tasks x WHERE x.organization_id=org AND x.archived_effective_date IS NULL AND x.assigned_date BETWEEN m AND m_end AND lower(x.title)=lower(v_title)) THEN
+   IF lower(v_title)=ANY(taken) OR EXISTS(SELECT 1 FROM taskpulse_private.month_setup_items i WHERE i.organization_id=org AND i.period_start=m AND i.week=wk) THEN
     item_reasons:=item_reasons||'"already_set_up"'::jsonb; END IF;
    items:=items||jsonb_build_array(jsonb_build_object('kind','phase','week',wk,'taskTag',NULL,'title',v_title,'category','WK','priority','Medium',
     'assignedDate',d,'dueDate',least(d+6,m_end),'scale','0','scaleMode','hours','scaleInputs','{"multiplier":1}'::jsonb,
@@ -230,8 +249,8 @@ DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization
  IF EXISTS(SELECT 1 FROM taskpulse_private.month_periods p WHERE p.period_start=m AND p.state<>'live') THEN
   reasons:=reasons||'"closed_period_requires_named_correction"'::jsonb; END IF;
  frozen:=false;
- FOR item IN SELECT value FROM jsonb_array_elements(items) LOOP
-  BEGIN PERFORM taskpulse_private.assert_open_date((item->'assignees'->>0)::uuid,(item->>'assignedDate')::date);
+ FOR r IN SELECT DISTINCT (i->'assignees'->>0)::uuid AS member_id,(i->>'assignedDate')::date AS day FROM jsonb_array_elements(items) i LOOP
+  BEGIN PERFORM taskpulse_private.assert_open_date(r.member_id,r.day);
   EXCEPTION WHEN check_violation THEN frozen:=true; END;
  END LOOP;
  IF frozen THEN reasons:=reasons||'"frozen_report_period_requires_revision"'::jsonb; END IF;
@@ -258,18 +277,19 @@ DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization
   BEGIN
    sub:=public.task_tools_preview(CASE action WHEN 'repeat' THEN 'duplicate' ELSE 'carryover' END,
     jsonb_build_object('sourceTaskId',t.id,'startDate',m,'dueDate',m_end)
-    ||CASE WHEN action='carryover' THEN jsonb_build_object('targetMonth',to_char(m,'YYYY-MM'),'reason',reason) ELSE '{}'::jsonb END);
+    ||CASE WHEN action='carryover' THEN jsonb_build_object('targetMonth',to_char(m,'YYYY-MM'),'reason',reason)
+     ELSE jsonb_build_object('title',taskpulse_private.month_setup_swap_title(t.title,t.assigned_date,m)) END);
   EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION '%: %',t.task_tag,SQLERRM USING ERRCODE=SQLSTATE; END;
   item_reasons:=sub->'reasons';
-  IF EXISTS(SELECT 1 FROM taskpulse_private.month_setup_items i WHERE i.organization_id=org AND i.period_start=m AND i.source_task_id=t.id) THEN
+  IF lower(sub->'items'->0->>'title')=ANY(taken)
+   OR EXISTS(SELECT 1 FROM taskpulse_private.month_setup_items i WHERE i.organization_id=org AND i.period_start=m AND i.source_task_id=t.id) THEN
    item_reasons:=item_reasons||'"already_set_up"'::jsonb; END IF;
   items:=items||jsonb_build_array((sub->'items'->0)||jsonb_build_object('kind',action,'sourceTaskId',t.id,'sourceTag',t.task_tag,
-   'subPreviewId',sub->>'id','reasons',item_reasons,
-   'title',CASE WHEN action='repeat' THEN left(taskpulse_private.month_setup_swap_title(t.title,t.assigned_date,m),255) ELSE sub->'items'->0->>'title' END));
+   'subPreviewId',sub->>'id','reasons',item_reasons));
  END LOOP;
 
- SELECT reasons||coalesce(jsonb_agg(DISTINCT r),'[]') INTO reasons FROM jsonb_array_elements(items) i, jsonb_array_elements(i->'reasons') r
-  WHERE NOT reasons ? (r#>>'{}');
+ SELECT reasons||coalesce(jsonb_agg(DISTINCT why),'[]') INTO reasons FROM jsonb_array_elements(items) i, jsonb_array_elements(i->'reasons') why
+  WHERE NOT reasons ? (why#>>'{}');
  INSERT INTO taskpulse_private.tool_previews(id,actor_id,command,request,plan,fingerprints)
  VALUES(pid,actor,'month_setup',p_payload,jsonb_build_object('id',pid,'command','month_setup','month',m,'expiresAt',clock_timestamp()+interval '15 minutes',
   'policyId',policy->>'id','policyFingerprint',md5(policy::text),'ready',jsonb_array_length(reasons)=0,'reasons',reasons,'items',items,
@@ -287,7 +307,7 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization();
  today date:=(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date; cur date; m date; m_end date;
  p taskpulse_private.tool_previews; receipt taskpulse_private.command_receipts; policy jsonb; item jsonb; ordinal bigint;
- target uuid; tag text; res jsonb; version bigint; result jsonb:='[]'; state jsonb; BEGIN
+ target uuid; tag text; res jsonb; version bigint; result jsonb:='[]'; state jsonb; taken text[]; BEGIN
  SELECT u.role::text INTO role FROM public.users u WHERE u.id=actor AND u.is_active FOR SHARE;
  IF role IS NULL OR org IS NULL OR role NOT IN ('managing_director','project_engineer') THEN
   RAISE EXCEPTION 'Only an active managing director or project engineer can set up a month' USING ERRCODE='42501'; END IF;
@@ -310,6 +330,8 @@ DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization
  IF m NOT IN (cur,(cur+interval '1 month')::date)
   OR (m<>cur AND EXISTS(SELECT 1 FROM jsonb_array_elements(p.plan->'items') i WHERE i->>'kind'='carryover')) THEN
   RAISE EXCEPTION 'The month changed since the preview; preview again' USING ERRCODE='PT409'; END IF;
+ SELECT coalesce(array_agg(DISTINCT lower(x.title)),'{}') INTO taken FROM public.tasks x
+ WHERE x.organization_id=org AND x.archived_effective_date IS NULL AND x.assigned_date BETWEEN m AND m_end;
 
  FOR item,ordinal IN SELECT value,n FROM jsonb_array_elements(p.plan->'items') WITH ORDINALITY x(value,n) LOOP
   tag:=item->>'taskTag';
@@ -318,8 +340,7 @@ DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization
     IF EXISTS(SELECT 1 FROM taskpulse_private.month_setup_items i WHERE i.organization_id=org AND i.period_start=m AND (
       (item->>'kind'='standing' AND i.standing_mission_id=(item->>'standingMissionId')::uuid AND i.member_id=(item->>'memberId')::uuid)
       OR (item->>'kind'='phase' AND i.week=(item->>'week')::integer)))
-     OR EXISTS(SELECT 1 FROM public.tasks x WHERE x.organization_id=org AND x.archived_effective_date IS NULL
-      AND x.assigned_date BETWEEN m AND m_end AND lower(x.title)=lower(item->>'title')) THEN
+     OR lower(item->>'title')=ANY(taken) THEN
      RAISE EXCEPTION 'Already set up for this month; preview again' USING ERRCODE='PT409'; END IF;
     tag:=taskpulse_private.allocate_task_tag(org,m,item->>'category');
     target:=public.save_task_with_participants(NULL,jsonb_build_object('task_tag',tag,'title',item->>'title','category',item->>'category',
@@ -334,11 +355,11 @@ DECLARE actor uuid:=auth.uid(); role text; org uuid:=public.current_organization
     END IF;
     INSERT INTO taskpulse_private.month_setup_items(task_id,organization_id,preview_id,period_start,kind,standing_mission_id,member_id,week)
     VALUES(target,org,p.id,m,item->>'kind',(item->>'standingMissionId')::uuid,(item->>'memberId')::uuid,(item->>'week')::integer);
+    taken:=taken||lower(item->>'title');
    ELSE
     -- The approved copy and handoff, unchanged; they recheck their own sources.
     res:=public.task_tools_command((item->>'subPreviewId')::uuid,md5(p_operation::text||':'||(item->>'subPreviewId'))::uuid);
     target:=(res->'items'->0->>'taskId')::uuid;
-    IF item->>'kind'='repeat' THEN UPDATE public.tasks SET title=item->>'title' WHERE id=target AND title IS DISTINCT FROM item->>'title'; END IF;
     INSERT INTO taskpulse_private.month_setup_items(task_id,organization_id,preview_id,period_start,kind,source_task_id)
     VALUES(target,org,p.id,m,item->>'kind',(item->>'sourceTaskId')::uuid);
    END IF;

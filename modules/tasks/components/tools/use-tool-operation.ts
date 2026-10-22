@@ -18,9 +18,9 @@ import type { Json } from '@/types/database';
 
 export type ToolPayload = Record<string, Json | undefined>;
 
-/** The two round trips; Task Tools by default, month setup brings its own. */
-export interface OperationActions {
-  preview: (command: string, payload: ToolPayload) => Promise<Reply<ToolsPreview>>;
+/** The two round trips for commands of type `C`; Task Tools by default, month setup brings its own. */
+export interface OperationActions<C extends string = ToolOperation> {
+  preview: (command: C, payload: ToolPayload) => Promise<Reply<ToolsPreview>>;
   commit: (previewId: string, operationKey: string) => Promise<Reply<CommittedItems>>;
 }
 
@@ -34,11 +34,11 @@ export type CommitOutcome =
   | { ok: true; result: CommittedItems }
   | { ok: false; message: string };
 
-export async function requestToolPreview(
-  command: string,
+export async function requestToolPreview<C extends string = ToolOperation>(
+  command: C,
   payload: ToolPayload,
   newKey: () => string = () => crypto.randomUUID(),
-  actions: OperationActions = TOOL_ACTIONS,
+  actions: OperationActions<C> = TOOL_ACTIONS as OperationActions<string>,
 ): Promise<PreviewOutcome> {
   try {
     const reply = await actions.preview(command, payload);
@@ -49,7 +49,7 @@ export async function requestToolPreview(
   }
 }
 
-export async function commitToolPreview(previewId: string, operationKey: string, actions: OperationActions = TOOL_ACTIONS): Promise<CommitOutcome> {
+export async function commitToolPreview(previewId: string, operationKey: string, actions: Pick<OperationActions, 'commit'> = TOOL_ACTIONS): Promise<CommitOutcome> {
   try {
     const reply = await actions.commit(previewId, operationKey);
     if (!reply.success) return { ok: false, message: reply.error };
@@ -62,22 +62,22 @@ export async function commitToolPreview(previewId: string, operationKey: string,
   }
 }
 
-export interface ToolOperationState {
+export interface ToolOperationState<C extends string = ToolOperation> {
   preview: ToolsPreview | null;
   result: CommittedItems | null;
   message: string;
   pending: boolean;
-  prepare: (command: ToolOperation | 'month_setup', payload: ToolPayload) => void;
+  prepare: (command: C, payload: ToolPayload) => void;
   commit: () => void;
   /** Drops the preview (inputs changed) without touching a committed result. */
   invalidate: () => void;
   reset: () => void;
 }
 
-export function useToolOperation({
+export function useToolOperation<C extends string = ToolOperation>({
   onCommitted,
-  actions = TOOL_ACTIONS,
-}: { onCommitted?: (result: CommittedItems) => void; actions?: OperationActions } = {}): ToolOperationState {
+  actions = TOOL_ACTIONS as OperationActions<string>,
+}: { onCommitted?: (result: CommittedItems) => void; actions?: OperationActions<C> } = {}): ToolOperationState<C> {
   // Read at commit time, so a new callback does not re-create `commit`.
   const committedRef = React.useRef(onCommitted);
   React.useEffect(() => {
@@ -89,7 +89,7 @@ export function useToolOperation({
   const [message, setMessage] = React.useState('');
   const [pending, startTransition] = React.useTransition();
 
-  const prepare = React.useCallback((command: ToolOperation | 'month_setup', payload: ToolPayload) => {
+  const prepare = React.useCallback((command: C, payload: ToolPayload) => {
     startTransition(async () => {
       setMessage('');
       setResult(null);

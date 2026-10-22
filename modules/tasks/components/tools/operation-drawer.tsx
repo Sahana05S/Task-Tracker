@@ -351,6 +351,9 @@ export function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; 
                 <td className="min-w-48">
                   <span className="task-tag">{item.taskTag ?? 'Tag on commit'}</span>
                   <span className="text-muted-foreground block truncate text-xs" title={item.title}>{item.title}</span>
+                  {item.reasons?.length ? (
+                    <span className="text-attention-foreground block text-xs">{item.reasons.map((reason) => codeLabel(reason)).join('; ')}</span>
+                  ) : null}
                 </td>
                 <td className="text-xs whitespace-nowrap">{formatDate(item.assignedDate)} → {item.dueDate ? formatDate(item.dueDate) : 'no deadline'}</td>
                 <td className="text-xs whitespace-nowrap tabular-nums">{item.scale ?? 'Unavailable'} <span className="text-muted-foreground">{codeLabel(item.scaleMode)}</span></td>
