@@ -50,4 +50,11 @@ describe('rankHall (everyone by points)', () => {
     const hall = rankHall([member('z', 'Zara', 0, 0, 0), member('y', 'Yash', 0, 1, 0)], points);
     expect(hall.map((e) => [e.userId, e.rank, e.tier.key])).toEqual([['y', 1, 'bronze'], ['z', 2, 'rookie']]);
   });
+
+  it('adds policy commendation points to the total and the tier', () => {
+    const hall = rankHall([member('a', 'Asha', 1, 0, 0), member('z', 'Zara', 0, 0, 0)], points, { z: { points: 20, commendations: 1 } });
+    expect(hall.map((e) => [e.userId, e.points, e.policyPoints, e.commendations, e.rank])).toEqual([['z', 20, 20, 1, 1], ['a', 10, 0, 0, 2]]);
+    expect(hall[0].tier.key).toBe('rookie');
+    expect(rankHall([member('a', 'Asha', 0, 1, 0)], points, { a: { points: 75, commendations: 3 } })[0].tier.key).toBe('silver');
+  });
 });

@@ -52,6 +52,7 @@ export {
   type HallEntry,
   type HallOfFameModel,
   type MemberTrophies,
+  type PolicyPoints,
   type Tier,
   type TierKey,
   type TierProgress,
