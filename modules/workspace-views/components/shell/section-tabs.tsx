@@ -17,7 +17,7 @@ export function SectionTabs() {
   if (!section || section.tabs.length < 2) return null;
   return (
     <nav aria-label={`${section.label} sections`} className="border-border border-b bg-card/60">
-      <div className="flex gap-1 overflow-x-auto px-4 py-2 lg:px-6">
+      <div className="flex gap-1 overflow-x-auto px-4 py-2 [scrollbar-width:none] lg:px-6 [&::-webkit-scrollbar]:hidden">
         {section.tabs.map((tab) => {
           const active = isTabActive(pathname, tab);
           return (

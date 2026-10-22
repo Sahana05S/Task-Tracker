@@ -27,7 +27,7 @@ export function PageSkeleton({
       <span role="status" className="sr-only">{label}</span>
       <div className="grid gap-2" aria-hidden="true">
         <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-4 w-80 max-w-full" />
+        <Skeleton className="h-4 w-full max-w-80" />
       </div>
       {tiles ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5" aria-hidden="true">
