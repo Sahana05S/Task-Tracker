@@ -2,14 +2,12 @@
 import 'server-only';
 
 import { readCompanySettings } from '@/modules/settings/internal/queries';
-import { buildCategoryCatalogue, type CategoryEntry, type CompanySettings } from '@/modules/settings/internal/rules';
+import { buildCategoryCatalogue, type CategoryEntry } from '@/modules/settings/internal/rules';
 
 export * from '@/modules/settings/client';
 
 /** The caller's company settings; built-in defaults on a database before migration 53. */
-export async function getCompanySettings(): Promise<CompanySettings & { available: boolean }> {
-  return readCompanySettings();
-}
+export { readCompanySettings as getCompanySettings };
 
 /** The thirteen mission codes with the company's labels, active flags and order. */
 export async function categoryCatalogue(): Promise<CategoryEntry[]> {

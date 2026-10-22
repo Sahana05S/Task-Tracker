@@ -46,7 +46,7 @@ describe('mission type catalogue', () => {
 
   it('applies company labels, hidden flags and order', () => {
     const catalogue = buildCategoryCatalogue({ PJT: { label: 'Project Task', sort: -1 }, MKT: { active: false }, T: { label: '  ' } });
-    expect(catalogue[0]).toMatchObject({ code: 'PJT', label: 'Project Task', defaultLabel: 'Project / Core Task' });
+    expect(catalogue[0]).toMatchObject({ code: 'PJT', label: 'Project Task' });
     expect(catalogue.find((entry) => entry.code === 'MKT')?.active).toBe(false);
     expect(categoryLabelMap(catalogue).T).toBe('General Task');
   });
@@ -65,8 +65,8 @@ describe('meeting type select', () => {
   });
 
   it('keeps a saved value that left the list', () => {
-    expect(meetingTypeChoices(TYPES, 'Quarterly').at(-1)).toEqual({ value: 'Quarterly', label: 'QTL · Quarterly (hidden)', retained: true });
-    expect(meetingTypeChoices(TYPES, 'Board review').at(-1)).toEqual({ value: 'Board review', label: 'Board review (not in the list)', retained: true });
+    expect(meetingTypeChoices(TYPES, 'Quarterly').at(-1)).toEqual({ value: 'Quarterly', label: 'QTL · Quarterly (hidden)' });
+    expect(meetingTypeChoices(TYPES, 'Board review').at(-1)).toEqual({ value: 'Board review', label: 'Board review (not in the list)' });
     expect(meetingTypeChoices(TYPES, 'Daily')).toHaveLength(2);
   });
 

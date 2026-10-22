@@ -201,6 +201,8 @@ for db in DBS:
     assert value(db,f"task_tag FROM public.tasks WHERE id='{copied}'")==p['items'][0]['taskTag']
     w=preview(db,'weekly',{'sourceTaskId':src,'startDate':today,'count':2})
     assert all(TAG.match(i['taskTag']) for i in w['items']) and len({i['taskTag'] for i in w['items']})==2
+    sp=preview(db,'support',{'sourceTaskId':src,'supportKind':'skill','splitMode':'split-even','assigneeId':M4,'reason':'Skill support copy','startDate':today})
+    assert sp['ready'] and sp['items'][0]['taskTag'].startswith(mon+'_SD'),sp
     print('PASS',db,f'allocator: {t2}, {t3} (running number per company per month, typed tags skipped); company B starts at {bt}; Tools copies use sheet tags')
 
     # Concurrency: 40 parallel allocations, 8 parallel blank-tag creates, all distinct and gap-free in order.

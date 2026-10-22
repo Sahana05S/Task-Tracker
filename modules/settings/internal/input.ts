@@ -1,4 +1,4 @@
-import { readString } from '@/shared/forms/form-data';
+import { ISO_DATE_PATTERN, readString, UUID_PATTERN } from '@/shared/forms/form-data';
 import { TASK_CATEGORIES, TASK_PRIORITIES } from '@/shared/tracker/enums';
 import type { Json } from '@/types/database';
 
@@ -19,8 +19,6 @@ export interface SettingsCommandInput {
   operationId: string;
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const PREFIX = /^[A-Z][A-Z0-9]{0,5}$/;
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
@@ -32,7 +30,7 @@ export function parseSettingsCommand(form: FormData): Parsed<SettingsCommandInpu
   const version = readString(form, 'expectedVersion');
   const expectedVersion = Number(version);
   const operationId = readString(form, 'operationId');
-  if (!/^\d{1,15}$/.test(version) || !UUID.test(operationId)) {
+  if (!/^\d{1,15}$/.test(version) || !UUID_PATTERN.test(operationId)) {
     return { ok: false, error: 'Reload the page and try again.' };
   }
   let raw: unknown;
@@ -83,7 +81,7 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
         if (seen.has(key)) return { ok: false, error: `Each meeting type needs its own prefix and name (${key.startsWith('p:') ? prefix : name} is repeated).` };
         seen.add(key);
       }
-      types.push({ ...(UUID.test(text(entry.id)) ? { id: text(entry.id) } : {}), prefix, name, sort: index, active: entry.active !== false });
+      types.push({ ...(UUID_PATTERN.test(text(entry.id)) ? { id: text(entry.id) } : {}), prefix, name, sort: index, active: entry.active !== false });
     }
     return { ok: true, value: { types } };
   },
@@ -100,9 +98,9 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
       if (!(TASK_PRIORITIES as readonly unknown[]).includes(entry.priority)) return { ok: false, error: `Choose a priority for "${titlePattern}".` };
       if (!(STANDING_SCALE_MODES as readonly unknown[]).includes(entry.scaleMode)) return { ok: false, error: `Choose how "${titlePattern}" is weighted.` };
       const ownerMode = entry.ownerMode === 'single' ? 'single' : 'per_member';
-      const ownerId = ownerMode === 'single' && UUID.test(text(entry.ownerId)) ? text(entry.ownerId) : null;
+      const ownerId = ownerMode === 'single' && UUID_PATTERN.test(text(entry.ownerId)) ? text(entry.ownerId) : null;
       missions.push({
-        ...(UUID.test(text(entry.id)) ? { id: text(entry.id) } : {}),
+        ...(UUID_PATTERN.test(text(entry.id)) ? { id: text(entry.id) } : {}),
         titlePattern,
         category: entry.category as string,
         priority: entry.priority as string,
@@ -124,7 +122,7 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
       if (!isRecord(entry)) return { ok: false, error: 'Holidays could not be read.' };
       const date = text(entry.date);
       const name = text(entry.name);
-      if (!ISO_DATE.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`))) return { ok: false, error: 'Pick a date for every holiday.' };
+      if (!ISO_DATE_PATTERN.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`))) return { ok: false, error: 'Pick a date for every holiday.' };
       if (name.length < 1 || name.length > 120) return { ok: false, error: `Name the holiday on ${date} (up to 120 characters).` };
       if (seen.has(date)) return { ok: false, error: `${date} is listed twice; keep one holiday per date.` };
       seen.add(date);

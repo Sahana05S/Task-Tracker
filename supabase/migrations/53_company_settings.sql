@@ -165,7 +165,10 @@ END $$;
 -- Holiday default on the attendance write path
 -- ---------------------------------------------------------------------------
 -- The command itself is unchanged; it moves behind a wrapper that only fills
--- a missing attendance status on a calendar holiday before calling it.
+-- a missing attendance status on a calendar holiday before calling it. A later
+-- change to the command's rules belongs in taskpulse_private.dated_record_command_m53;
+-- replacing public.dated_record_command would drop the holiday default
+-- (tools/test_company_settings_database.py checks it).
 ALTER FUNCTION public.dated_record_command(text,uuid,text,jsonb,bigint,uuid) RENAME TO dated_record_command_m53;
 ALTER FUNCTION public.dated_record_command_m53(text,uuid,text,jsonb,bigint,uuid) SET SCHEMA taskpulse_private;
 REVOKE ALL ON FUNCTION taskpulse_private.dated_record_command_m53(text,uuid,text,jsonb,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;

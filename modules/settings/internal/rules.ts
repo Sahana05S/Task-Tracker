@@ -1,3 +1,4 @@
+import { UUID_PATTERN } from '@/shared/forms/form-data';
 import { CATEGORY_LABELS, TASK_CATEGORIES, TASK_PRIORITIES } from '@/shared/tracker/enums';
 import type { TaskCategory, TaskPriority } from '@/types/tracker';
 
@@ -19,8 +20,6 @@ export type CategoryOverrides = Partial<Record<TaskCategory, CategoryOverride>>;
 export interface CategoryEntry {
   code: TaskCategory;
   label: string;
-  /** The built-in name, shown beside a renamed label in settings. */
-  defaultLabel: string;
   active: boolean;
   sort: number;
 }
@@ -67,8 +66,8 @@ export interface CompanySettings {
   standingMissions: StandingMission[];
 }
 
-export type SettingsSection = 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays';
-export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays'] as const satisfies readonly SettingsSection[];
+export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays'] as const;
+export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 /** Settings before migration 53 (or a company that saved nothing): built-in labels, no lists. */
 export const EMPTY_COMPANY_SETTINGS: CompanySettings = {
@@ -88,7 +87,6 @@ export function buildCategoryCatalogue(overrides: CategoryOverrides = {}): Categ
     return {
       code,
       label: override.label?.trim() || CATEGORY_LABELS[code],
-      defaultLabel: CATEGORY_LABELS[code],
       active: override.active ?? true,
       sort: override.sort ?? index,
     };
@@ -114,12 +112,12 @@ export function categoryChoices(catalogue: readonly CategoryEntry[], current?: T
  * Choices for the meeting-point "Meeting type" select: active types in order,
  * plus the saved value when it is no longer in the list (older free text).
  */
-export function meetingTypeChoices(types: readonly MeetingType[], current?: string | null): { value: string; label: string; retained: boolean }[] {
-  const active = types.filter((type) => type.active).map((type) => ({ value: type.name, label: `${type.prefix} · ${type.name}`, retained: false }));
+export function meetingTypeChoices(types: readonly MeetingType[], current?: string | null): { value: string; label: string }[] {
+  const active = types.filter((type) => type.active).map((type) => ({ value: type.name, label: `${type.prefix} · ${type.name}` }));
   const saved = current?.trim();
   if (saved && !active.some((choice) => choice.value === saved)) {
     const known = types.find((type) => type.name === saved);
-    active.push({ value: saved, label: known ? `${known.prefix} · ${known.name} (hidden)` : `${saved} (not in the list)`, retained: true });
+    active.push({ value: saved, label: known ? `${known.prefix} · ${known.name} (hidden)` : `${saved} (not in the list)` });
   }
   return active;
 }
@@ -145,7 +143,6 @@ export function formatSheetTag(month: Date, prefix: string, n: number | string):
   return `${mon}${yy}_${prefix}${n}`;
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const asString = (value: unknown, fallback = '') => (typeof value === 'string' ? value : fallback);
 const asNumber = (value: unknown, fallback = 0) => (typeof value === 'number' && Number.isFinite(value) ? value : fallback);
@@ -187,7 +184,7 @@ export function parseCompanySettings(raw: unknown): CompanySettings {
         category: s.category as TaskCategory,
         priority: (TASK_PRIORITIES as readonly unknown[]).includes(s.priority) ? (s.priority as TaskPriority) : 'Medium',
         ownerMode: s.ownerMode === 'single' ? 'single' : 'per_member',
-        ownerId: typeof s.ownerId === 'string' && UUID.test(s.ownerId) ? s.ownerId : null,
+        ownerId: typeof s.ownerId === 'string' && UUID_PATTERN.test(s.ownerId) ? s.ownerId : null,
         scaleMode: (STANDING_SCALE_MODES as readonly unknown[]).includes(s.scaleMode) ? (s.scaleMode as StandingScaleMode) : 'hours',
         sort: asNumber(s.sort),
         active: s.active !== false,
