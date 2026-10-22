@@ -41,8 +41,8 @@ export default function RootLayout({
     */
     <html lang="en" data-theme="light" className={`${jakarta.variable} font-sans`} suppressHydrationWarning>
       <head>
-        {/* Before the script, which points it at the painted theme's background. */}
-        <meta name="theme-color" content={THEME_COLOR.light} />
+        {/* Before the script, which points it at the painted theme's background (so it may differ from the server HTML). */}
+        <meta name="theme-color" content={THEME_COLOR.light} suppressHydrationWarning />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="bg-background text-foreground min-h-dvh antialiased">

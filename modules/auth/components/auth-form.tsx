@@ -42,8 +42,9 @@ export function AuthForm({
   const [oauthError, setOauthError] = React.useState<string | undefined>(
     initialError,
   );
-  // Kept across a failed submit (React resets uncontrolled fields after a form
-  // action) and across the Sign in / Accept invitation switch.
+  // Kept across a failed submit and the Sign in / Accept invitation switch:
+  // React resets the form after an action back to each field's default, and
+  // the email field's default is the last address typed.
   const [email, setEmail] = React.useState('');
   const [loginState, loginAction, loginPending] = React.useActionState(
     login,
@@ -183,7 +184,7 @@ export function AuthForm({
             name="email"
             label="Email"
             {...EMAIL_INPUT}
-            value={email}
+            defaultValue={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@company.com"
             invalid={Boolean(errorMessage)}
@@ -232,7 +233,7 @@ export function AuthForm({
             name="email"
             label="Invited email"
             {...EMAIL_INPUT}
-            value={email}
+            defaultValue={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@company.com"
             invalid={Boolean(errorMessage)}

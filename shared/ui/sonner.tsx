@@ -20,7 +20,7 @@ export function Toaster() {
       theme={resolved}
       position="bottom-right"
       // Phones: clear the bottom bar (4.5rem) and its New button.
-      mobileOffset={{ bottom: 'calc(var(--spacing-bottom-nav) + 4.5rem)' }}
+      mobileOffset={{ bottom: 'calc(var(--spacing-bottom-nav) + 4.5rem + env(safe-area-inset-bottom))' }}
       closeButton
       // Long enough to read a database error, short enough not to linger.
       duration={5000}
