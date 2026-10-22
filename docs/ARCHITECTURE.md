@@ -83,7 +83,7 @@ Start from `modules/_template/` when creating a module.
 | `shared/math/exact.ts` | `Exact` decimal/rational arithmetic |
 | `shared/read-models/team-summary.ts` | Cached raw `team_summary_inputs` fetch shared by scoring and support |
 | `shared/commands/` | Command results and idempotent operation ids |
-| `shared/tracker/` | Common enums and display formatters |
+| `shared/tracker/` | Common enums, display formatters and `csv.ts` (`csvCell`, the formula-safe CSV cell) |
 | `shared/ui/` | Buttons, inputs, dialogs (shadcn), `mission-ui` page/panel blocks, `tracker-badges`, `execution-form`, `chart-palette` |
 | `shared/utils.ts` | `cn()` class-name helper |
 

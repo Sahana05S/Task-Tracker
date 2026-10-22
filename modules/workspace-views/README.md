@@ -6,6 +6,8 @@ module may import it (the boundary test enforces this).
 
 - **Shell**: app shell, top bar, navigation drawer, phone bottom nav, section
   tabs, user menu, running-timer pill, workspace header and placeholders.
+  Team's tabs are Analytics, People and Activity (`/team/activity`); a tab's
+  optional `exclude` keeps People from also lighting up there.
 - **Dashboard**: team stats, productivity and allocation charts, workbook
   dashboard, award summary, calculation details, data-status banner.
   "Performance sub-scores" (`sub-scores-grid.tsx`) draws the ten engine factors
