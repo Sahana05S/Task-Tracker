@@ -137,8 +137,9 @@ export function MissionPageHeader({
   return (
     <header className="grid gap-4">
       {breadcrumb}
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+      {/* Phones stack the actions under the title so the title column keeps its width. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4">
+        <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
           {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
           {meta ? <div className="mb-2 flex flex-wrap items-center gap-1.5">{meta}</div> : null}
           <div className="flex flex-wrap items-center gap-2">
@@ -149,7 +150,7 @@ export function MissionPageHeader({
           </div>
           {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
         </div>
-        {actions ? <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{actions}</div> : null}
       </div>
       {tabs}
     </header>

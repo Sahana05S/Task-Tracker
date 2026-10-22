@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { LiveReport } from '@/modules/reports/components/live-report';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { DailyReportView } from '@/modules/reports/components/daily-report';
@@ -88,7 +89,7 @@ async function DailyReport({ query, tabs }: { query: ReportsSearchParams; tabs: 
   );
 }
 
-/** Month archive, certification and revisions, plus the retained saved reports. */
+/** Month close and its revisions, plus the saved reports. */
 async function MonthClose({ query, tabs }: { query: ReportsSearchParams; tabs: React.ReactNode }) {
   const profile = await requireProfile();
   const context = await liveViewContext(query.period, query.asOf);
@@ -104,15 +105,15 @@ async function MonthClose({ query, tabs }: { query: ReportsSearchParams; tabs: R
     <MissionPage>
       <MissionPageHeader
         title="Reports"
-        description={data ? `${data.period.label} · ${data.summary.reports.total} reports · ${data.summary.reports.final} final` : `${context.period.label} · retained revision ${revision}`}
+        description={data ? `${data.period.label} · ${data.summary.reports.total} reports · ${data.summary.reports.final} final` : `${context.period.label} · revision ${revision}`}
         tabs={tabs}
       />
       <MonthArchiveControls period={context.period.startDate} history={history} canClose={profile.role === 'managing_director'} completeMonth={context.period.endDate < kolkataDate(new Date())} operation={randomUUID()} />
-      {archive ? <ArchivedReport archive={archive} previous={previous} employee={null} /> : revision !== null ? <MissionNotice tone="attention" role="status">That revision is unavailable.</MissionNotice> : presentation ? <LiveReport model={presentation} /> : null}
+      {archive ? <ArchivedReport archive={archive} previous={previous} employee={null} /> : revision !== null ? <MissionNotice tone="attention" role="status">That revision doesn&apos;t exist for {context.period.label}. <Link className="link" href={`/reports?period=${context.period.startDate.slice(0,7)}`}>Show the live month</Link>.</MissionNotice> : presentation ? <LiveReport model={presentation} /> : null}
       {data ? (
         <>
           {profile.role === 'managing_director' ? <ReportSnapshotForm period={context.period} members={data.members} /> : null}
-          <h2 className="panel-title mt-2">Retained saved reports · original rules</h2>
+          <h2 className="panel-title mt-2">Saved reports</h2><p className="text-muted-foreground -mt-3 text-sm">Each saved report keeps the figures and rules it was saved with.</p>
           <ReportsModule reports={data.reports} members={data.members} canManage={canManageReportSnapshots(profile.role)} />
         </>
       ) : null}

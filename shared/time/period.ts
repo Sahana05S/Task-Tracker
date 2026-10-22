@@ -33,6 +33,27 @@ export function resolvePeriod(year: number, month: number): AnalyticsPeriod {
   };
 }
 
+/** Whether a value is a `YYYY-MM` month key. */
+export function isMonthKey(value: string | null | undefined): value is string {
+  return typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
+/** The calendar month of a `YYYY-MM` key. */
+export function monthPeriod(month: string): AnalyticsPeriod {
+  return resolvePeriod(Number(month.slice(0, 4)), Number(month.slice(5, 7)));
+}
+
+/** A `YYYY-MM` key moved by whole months. */
+export function shiftMonth(month: string, by: number): string {
+  return new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + by, 1)).toISOString().slice(0, 7);
+}
+
+/** Every date of a `YYYY-MM` month. */
+export function monthDates(month: string): string[] {
+  const count = Number(monthPeriod(month).endDate.slice(8));
+  return Array.from({ length: count }, (_, index) => `${month}-${String(index + 1).padStart(2, '0')}`);
+}
+
 /** The calendar month containing `now`. */
 export function currentPeriod(now: Date = new Date()): AnalyticsPeriod {
   const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit'}).formatToParts(now);

@@ -16,6 +16,7 @@ import { getTeamIndexData } from '@/modules/team';
 import { employeeHref, employeeReportsHref } from '@/modules/team/client';
 import { formatNumeric, formatHours } from '@/shared/tracker/format';
 import { UnavailableValue } from '@/shared/ui/unavailable-value';
+import { PeriodPicker } from '@/shared/ui/period-picker';
 
 export const metadata: Metadata = {
   title: 'Team · TaskPulse',
@@ -50,14 +51,19 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
         title="Team index"
         chip={`${data.members.length} ${data.members.length === 1 ? 'member' : 'members'}`}
         description={`${data.period.label} · profiles, reports, charts, and star records`}
-        actions={canManage ? (
-          <Link href="/team/manage" className="text-primary text-sm font-medium hover:underline">
-            Manage people
-          </Link>
-        ) : undefined}
+        actions={
+          <>
+            <PeriodPicker month={context.period.startDate.slice(0,7)} asOf={context.asOf} />
+            {canManage ? (
+              <Link href="/team/manage" className="text-primary text-sm font-medium hover:underline">
+                Manage people
+              </Link>
+            ) : null}
+          </>
+        }
       />
 
-      <ReportContext model={data.presentation}/>
+      <ReportContext model={data.presentation} picker={false}/>
       <h2 className="text-foreground text-base font-bold tracking-tight">Contributions this period</h2>
       <SupportSummaryCards summary={data.supportSummary} />
 

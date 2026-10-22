@@ -33,7 +33,7 @@ describe('immutable report output',()=>{
  });
  it('renders a revision label, frozen downloads and its retained detail evidence',()=>{
   const html=renderToStaticMarkup(createElement(ArchivedReport,{archive:fixture(null),previous:null,employee:null}));
-  expect(html).toContain('Incomplete — not certified');
+  expect(html).toContain('Closed with gaps');
   expect(html).toContain('revision=1');
   expect(html).toContain('Original');
  });

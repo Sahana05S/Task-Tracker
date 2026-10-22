@@ -1,21 +1,19 @@
-import { buttonVariants } from '@/shared/ui/button';
 import { CalendarClockIcon } from 'lucide-react';
 
 import type { LivePresentation } from '@/modules/reports/internal/presentation/model';
-import { cn } from '@/shared/utils';
-export function ReportContext({model}:{model:LivePresentation}) {
+import { formatDate, formatDateTime } from '@/shared/tracker/format';
+import { HelpTip } from '@/shared/ui/help-tip';
+import { PeriodPicker } from '@/shared/ui/period-picker';
+
+/** The month and moment a live view reads, with the picker to change them. */
+export function ReportContext({model,keep,picker=true}:{model:LivePresentation;keep?:Readonly<Record<string,string>>;picker?:boolean}) {
  const c=model.calculation.context;
  const complete=model.calculation.status==='complete';
- return <section className="soft-card grid gap-2 p-5 sm:p-6" aria-label="Report context">
-  <h2 className="text-foreground flex items-center gap-2 text-base font-bold tracking-tight"><CalendarClockIcon className="text-primary size-5 shrink-0" aria-hidden="true"/>Live view · {model.view.period.label}</h2>
-  <p className="text-muted-foreground text-sm">As of {new Date(c.asOf).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})} Asia/Kolkata · {c.ruleVersion}</p>
-  <p className="text-muted-foreground text-xs">Metric population: eligible carried tasks and period earnings. Operational counts include recorded tasks. Source watermark: {c.sourceWatermark}.</p>
-  <p role="status" className={complete?'bg-success-subtle text-success-strong rounded-xl px-3 py-2 text-sm':'bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm'}>{complete?'Calculation complete; attendance eligibility still applies.':'Final scores and certified rankings are unavailable where required inputs are missing. Available-factor subtotals are partial.'}</p>
-  {!model.detailsAvailable?<p role="status" className="bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm">Historical presentation details unavailable before {model.detailsAvailableFrom}; recorded metric evidence remains separate.</p>:null}
-  <form className="mt-1 grid gap-3 sm:flex sm:flex-wrap sm:items-end" method="get">
-   <label className="field-label">Month<input className="field" type="month" name="period" defaultValue={model.view.period.startDate.slice(0,7)}/></label>
-   <label className="field-label sm:max-w-sm sm:flex-1">As-of instant (with timezone)<input className="field w-full" name="asOf" defaultValue={model.view.asOf}/></label>
-   <button className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')} type="submit">View</button>
-  </form>
+ return <section className="soft-card grid gap-3 p-5 sm:p-6" aria-label="Report period">
+  <h2 className="text-foreground flex items-center gap-2 text-base font-bold tracking-tight"><CalendarClockIcon className="text-primary size-5 shrink-0" aria-hidden="true"/>{model.view.period.label}</h2>
+  <p role="status" className={complete?'bg-success-subtle text-success-strong rounded-xl px-3 py-2 text-sm':'bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm'}>{complete?'Every input is recorded. Awards still need the attendance check.':<>Some inputs are missing, so final scores and rankings wait. Known factors are shown as a partial total. <HelpTip tip="medianDifference"/></>}</p>
+  {!model.detailsAvailable?<p role="status" className="bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm">Detailed records start on {formatDate(model.detailsAvailableFrom)}; earlier days show totals only.</p>:null}
+  {picker?<PeriodPicker month={model.view.period.startDate.slice(0,7)} asOf={model.view.asOf} asOfLabel={formatDateTime(model.view.asOf)} keep={keep}/>:null}
+  <details className="disclosure text-muted-foreground text-xs"><summary>Calculation reference</summary><p>Rules {c.ruleVersion} · data version {c.sourceWatermark}. Counted missions follow the eligibility rule; activity lists include every recorded mission.</p></details>
  </section>;
 }

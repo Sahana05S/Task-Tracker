@@ -1,26 +1,68 @@
 import Link from 'next/link';
-import { CalendarCheckIcon, CalendarPlusIcon, HistoryIcon, InfoIcon } from 'lucide-react';
-import { InitialsAvatar, EmptyState, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
-import { AttendanceRecordEditor } from '@/modules/attendance/components/attendance-record-editor';
-import type { AttendanceModuleData } from '@/modules/attendance/internal/queries';
-import { formatHours } from '@/shared/tracker/format';
+import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+
+import type { AttendanceMatrixModel } from '@/modules/attendance/client';
+import { HelpTip } from '@/shared/ui/help-tip';
+import { EmptyState, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
+import { shiftMonth } from '@/shared/time/period';
 import { cn } from '@/shared/utils';
-import type { User } from '@/types/tracker';
-export function AttendanceWorkspace({user,periodLabel,data}:{user:User;periodLabel:string;data:AttendanceModuleData}) {
- const names=new Map(data.members.map(m=>[m.id,m.fullName]));
- return <MissionPage>
-  <MissionPageHeader eyebrow="Records" title="Attendance" description={`${periodLabel} - measured attendance, effort and off hours`}/>
-  <div className="grid gap-5 lg:gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]">
-   <aside className="h-fit xl:sticky xl:top-[calc(var(--spacing-header)+1.5rem)]"><MissionPanel icon={CalendarPlusIcon} title="Record attendance"><AttendanceRecordEditor members={data.members} user={user}/></MissionPanel></aside>
-   <main className="grid min-w-0 content-start gap-5 lg:gap-6">
-    <MissionNotice icon={InfoIcon}>Each elapsed local day needs measured attendance. Task effort must fit within regular attendance plus separately recorded off-hours. Absent/Leave have zero hours; Holiday/Off Hours have only off-hours. Attendance is a gate, not a score bonus.</MissionNotice>
-    {[...data.inputContexts].map(([id,context])=>{const state=context.validityAvailable?(context.valid?'Valid':'Invalid'):'Unavailable';return <section className="soft-card p-5 sm:p-6" key={id}><h2 className="text-foreground flex flex-wrap items-center gap-2.5 text-base font-bold tracking-tight"><InitialsAvatar name={names.get(id)??'Employee'}/>{names.get(id)??'Employee'} - period validity: <span className={cn('badge-soft',state==='Valid'?'badge-status-done':state==='Invalid'?'bg-danger-subtle text-danger-foreground':'badge-neutral')}>{state}</span></h2><div className="border-border mt-4 overflow-x-auto rounded-xl border"><table className="sheet-grid min-w-[48rem]"><thead><tr><th>Date</th><th>Status</th><th>Regular hours</th><th>Off hours</th><th>Task effort</th><th>Validity</th></tr></thead><tbody>{context.days.map(day=><tr key={day.businessDate}><td className="tabular-nums">{day.businessDate}</td><td>{day.status??'Missing record'}</td><td className="tabular-nums">{day.attendanceHours==null?'Unavailable':formatHours(day.attendanceHours)}</td><td className="tabular-nums">{day.offHours==null?'Unavailable':formatHours(day.offHours)}</td><td className="tabular-nums">{day.effortHours==null?'Unavailable':formatHours(day.effortHours)}</td><td><span className={cn('font-semibold',day.available?(day.valid?'text-success-strong':'text-danger'):'text-muted-foreground')}>{day.available?(day.valid?'Valid':'Invalid'):'Unavailable'}</span>{day.reasons.length?<p className="text-muted-foreground text-xs">{day.reasons.map(attendanceReason).join('; ')}</p>:null}</td></tr>)}</tbody></table></div>{context.days.length===0?<EmptyState className="mt-3">No elapsed days in this period.</EmptyState>:null}</section>;})}
-    <MissionPanel icon={HistoryIcon} title="Retained attendance records"><div className="grid gap-3">{data.records.length===0?<EmptyState>No attendance records in this period.</EmptyState>:null}{data.records.map(record=><article key={record.id} className="bg-muted/70 grid gap-1.5 rounded-xl px-4 py-3 text-sm"><p className="text-foreground flex flex-wrap items-center gap-x-1 font-semibold"><CalendarCheckIcon className="text-primary mr-1 size-4" aria-hidden="true"/>{record.attendanceDate} - {names.get(record.userId)} - {record.status} - {record.recordState}</p><p className="text-muted-foreground">{record.hoursConfirmed?'Measured':'Legacy measurement needs confirmation'}: attendance {formatHours(record.attendanceHours)} h; off hours {formatHours(record.offHours)} h.</p>{record.recordState!=='withdrawn'?<details className="disclosure mt-1"><summary>Correct with a reason</summary><AttendanceRecordEditor record={record} members={data.members} user={user}/></details>:null}<Link href={`/records/attendance/${record.id}/history`} className="link justify-self-start text-sm">View retained history</Link></article>)}</div></MissionPanel>
-   </main>
-  </div>
- </MissionPage>;
-}
-function attendanceReason(reason:string):string {
- const labels:Record<string,string>={attendance_missing:'Attendance missing',legacy_hours_unconfirmed:'Legacy hours need confirmation',effort_hours_invalid:'Task effort needs reconciliation',attendance_hours_invalid:'Attendance hours need reconciliation',attendance_state_hours_incompatible:'Hours do not match the attendance status',effort_exceeds_attendance_capacity:'Effort exceeds regular plus off-hours',history_before_input_baseline:'Earlier input history is unavailable'};
- return labels[reason]??reason;
+import { AttendanceDayFill } from './attendance-day-fill';
+import { AttendanceMatrix } from './attendance-matrix';
+
+const MONTH_LABEL = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' });
+const shortMonth = (month: string) => MONTH_LABEL.format(new Date(`${month}-01T00:00:00Z`));
+
+/**
+ * The `/attendance` page body: one month as a members-by-days matrix. Each
+ * elapsed day needs a record; click a day to record or correct it, and
+ * managers can fill a day for everyone.
+ */
+export function AttendanceWorkspace({ model, periodLabel, previous, next, editable, canFill, monthError }: {
+  model: AttendanceMatrixModel;
+  periodLabel: string;
+  previous: string;
+  /** Null when the next month has not started. */
+  next: string | null;
+  /** Member ids the viewer may record for. */
+  editable: readonly string[];
+  canFill: boolean;
+  monthError: string | null;
+}) {
+  const missing = model.rows.reduce((sum, row) => sum + row.missing, 0);
+  const elapsed = model.days.filter(day => day.kind !== 'future');
+  const lastDay = elapsed.at(-1)?.date ?? null;
+  const nav = 'border-border text-foreground hover:bg-muted focus-visible:outline-primary inline-flex min-h-10 items-center gap-1 rounded-full border px-3 text-sm font-semibold';
+  return (
+    <MissionPage wide>
+      <MissionPageHeader
+        eyebrow="Records"
+        title="Attendance"
+        description={`${periodLabel} · ${missing ? `${missing} ${missing === 1 ? 'day' : 'days'} not recorded` : elapsed.length ? 'every day recorded' : 'the month has not started'}`}
+        actions={
+          <nav aria-label="Month" className="flex items-center gap-2">
+            <Link href={`/attendance?month=${previous}`} className={nav}><ChevronLeftIcon className="size-4" aria-hidden="true" />{shortMonth(previous)}</Link>
+            {next ? <Link href={`/attendance?month=${next}`} className={nav}>{shortMonth(next)}<ChevronRightIcon className="size-4" aria-hidden="true" /></Link>
+              : <span className={cn(nav, 'text-muted-foreground pointer-events-none opacity-60')} aria-disabled="true" title="That month has not started yet">{shortMonth(shiftMonth(model.month, 1))}<ChevronRightIcon className="size-4" aria-hidden="true" /></span>}
+          </nav>
+        }
+      />
+      {monthError ? <MissionNotice tone="attention" role="status">{monthError}</MissionNotice> : null}
+      <p className="text-muted-foreground text-sm">
+        Record every day that has passed. Time logged on missions each day must fit within regular hours plus off-hours.
+        {' '}<HelpTip tip="gate" />
+      </p>
+      <MissionPanel icon={CalendarDaysIcon} title={periodLabel} subtitle={editable.length ? 'Select a day to record or correct it.' : undefined}>
+        {model.rows.length ? (
+          <div className="grid gap-4">
+            {canFill ? <AttendanceDayFill key={model.month} model={model} lastDay={lastDay} /> : null}
+            <AttendanceMatrix model={model} editable={editable} />
+          </div>
+        ) : (
+          <EmptyState title="Nobody to show yet" action={<Link href="/team" className="link text-sm">Open Team</Link>}>
+            Attendance appears here for every active member.
+          </EmptyState>
+        )}
+      </MissionPanel>
+    </MissionPage>
+  );
 }

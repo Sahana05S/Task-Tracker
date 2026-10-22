@@ -12,6 +12,7 @@ import {
   stopTaskTimer,
 } from '@/modules/time-tracking/timer-actions';
 import { formatElapsed } from '@/modules/time-tracking/internal/timers/elapsed';
+import { EmptyState } from '@/shared/ui/mission-ui';
 
 /** Timer, timer records and manual time entry for one mission. */
 
@@ -105,9 +106,7 @@ export function TimerRecords({
 }) {
   if (timers.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No timer sessions have been recorded for this mission.
-      </p>
+      <EmptyState title="No timer sessions yet">Start the timer on this mission to log time as you work.</EmptyState>
     );
   }
 

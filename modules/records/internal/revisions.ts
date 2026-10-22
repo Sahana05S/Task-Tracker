@@ -1,3 +1,4 @@
+import { codeLabel } from '@/shared/tracker/labels';
 import type { Json } from '@/types/database';
 
 /** Pure mapping of `dated_record_history` rows into readable revisions. PRIVATE. */
@@ -31,14 +32,6 @@ const ACTIONS: Record<string, string> = {
   legacy_current_baseline: 'Carried over from before history began',
 };
 
-const REVIEW_STATES: Record<string, string> = {
-  pending: 'Waiting for review',
-  validated: 'Validated',
-  rejected: 'Rejected',
-  withdrawn: 'Withdrawn',
-  active: 'Active',
-  legacy_unvalidated: 'Earlier record, not reviewed',
-};
 
 const BUSINESS_DATE_KEYS = ['attendance_date', 'fact_date', 'idea_date', 'suggestion_date', 'sale_date', 'meeting_date'] as const;
 const AUTHOR_KEYS = ['user_id', 'posted_by', 'sales_by'] as const;
@@ -68,7 +61,7 @@ export function mapRecordRevision(entry: Json, kind: string, names: ReadonlyMap<
     recordedAt: asText(revision.recordedAt),
     businessDate: firstText(source, BUSINESS_DATE_KEYS),
     author: (authorId && names.get(authorId)) ?? 'Not recorded',
-    reviewState: label(REVIEW_STATES, asText(source.validation_state) ?? asText(source.record_state), 'Not recorded'),
+    reviewState: codeLabel(asText(source.validation_state) ?? asText(source.record_state), 'Not recorded'),
     validator: (validatorId && names.get(validatorId)) ?? 'Not recorded',
     validatedAt: asText(source.validation_at),
     text: firstText(source, TEXT_KEYS),

@@ -16,8 +16,8 @@ export function RecordHistory({ revisions }: { revisions: readonly RecordRevisio
             Revision {revision.version} · {revision.action}
           </h2>
           <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-            <Fact label="Observed" value={formatDateTime(revision.recordedAt)} />
-            <Fact label="Business date" value={formatDate(revision.businessDate)} />
+            <Fact label="Saved" value={formatDateTime(revision.recordedAt)} />
+            <Fact label="For the day" value={formatDate(revision.businessDate)} />
             <Fact label="Attributed to" value={revision.author} />
             <Fact label="Review" value={revision.reviewState} />
             <Fact label="Reviewed by" value={revision.validator} />

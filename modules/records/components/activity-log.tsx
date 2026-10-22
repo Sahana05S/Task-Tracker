@@ -48,7 +48,7 @@ export function ActivityLog({
   if (page && !page.available) {
     return (
       <MissionNotice tone="info" icon={History}>
-        The activity log is not available here yet: this database is waiting for an update (migration 54). Everything is
+        The activity log is not available here yet: this workspace is waiting for a database update. Everything is
         still recorded, and it will appear once the update is applied.
       </MissionNotice>
     );
@@ -94,7 +94,7 @@ export function ActivityLog({
       ) : (
         <MissionPanel
           title="Changes"
-          subtitle={`${filter.from} to ${filter.to} · newest first · times in Asia/Kolkata`}
+          subtitle={`${filter.from} to ${filter.to} · newest first · India time`}
           action={
             <a href={csv} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
               <Download className="size-4" aria-hidden="true" />

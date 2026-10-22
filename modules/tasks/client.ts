@@ -4,7 +4,6 @@
 export {
   classifyFreshness,
   eligibilityReasons,
-  ELIGIBILITY_LABELS,
   FRESHNESS_SCORES,
   PRIORITY_WEIGHTS,
   scaleValue,

@@ -6,7 +6,7 @@ import { PeopleTile } from '@/modules/tasks/components/detail/detail-tiles';
 import type { TaskDetailData } from '@/modules/tasks/internal/detail';
 import { CATEGORY_LABELS } from '@/shared/tracker/enums';
 import { formatDate, formatHours, formatPercent } from '@/shared/tracker/format';
-import { codeLabel } from '@/shared/tracker/labels';
+import { codeLabel, TASK_FRESHNESS_MEANINGS } from '@/shared/tracker/labels';
 
 /**
  * The mission's core facts: progress, status, dates and people. This is the
@@ -63,7 +63,7 @@ export function MissionOverview({
           icon={GaugeIcon}
           label="Task freshness"
           value={task.freshness ?? '—'}
-          note={task.freshness ? undefined : codeLabel(task.freshnessReason, 'Dates needed to work it out are missing')}
+          note={task.freshness ? TASK_FRESHNESS_MEANINGS[task.freshness] : codeLabel(task.freshnessReason, 'Dates needed to work it out are missing')}
         />
         <PeopleTile label="Assignees" names={assigneeNames} fallback="Unassigned" />
         <PeopleTile label="Reviewers" names={reviewerNames} fallback="No reviewer" />

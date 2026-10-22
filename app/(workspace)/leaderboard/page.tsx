@@ -51,7 +51,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
           <form method="get" className="flex items-center gap-2">
             {key !== 'composite' ? <input type="hidden" name="factor" value={key} /> : null}
             <label htmlFor="leaderboard-month" className="sr-only">Month</label>
-            <input id="leaderboard-month" type="month" name="month" autoComplete="off" defaultValue={month} max={currentPeriod().startDate.slice(0, 7)} className="field h-10 w-40 bg-white" />
+            <input id="leaderboard-month" type="month" name="month" autoComplete="off" defaultValue={month} max={currentPeriod().startDate.slice(0, 7)} className="field h-10 w-48 bg-white" />
             <button type="submit" className={buttonVariants({ variant: 'outline' })}>View</button>
           </form>
         }

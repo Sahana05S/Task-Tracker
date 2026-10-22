@@ -3,6 +3,7 @@ export const PROTECTED_PREFIXES = [
   '/awards',
   '/daily-facts',
   '/dashboard',
+  '/guide',
   '/hall-of-fame',
   '/ideas',
   '/leaderboard',
