@@ -40,6 +40,49 @@ attendance stays Unavailable and excess effort makes the period invalid;
 another day's spare hours cannot make it valid. Attendance is an award gate,
 not a score bonus.
 
+### Importing a month from the billed attendance sheet
+
+`tools/seed_sheet_to_project.py --attendance FILE --attendance-month YYYY-MM`
+imports one month tab of the billed attendance workbook (the tracker's
+"Attendance Sheet Link"). Export the workbook as `.xlsx` first; a private
+sheet cannot be fetched by link. Each person-day is saved with
+`dated_record_command('attendance')` as the managing director, in one
+transaction, so validation, input history and the audit log apply exactly as
+for a manual save.
+
+- Staff rows match profiles in the company by full name. When a name differs,
+  pass `--attendance-person "Sheet Name=email or employee id"`. Unknown,
+  inactive or ambiguous names stop the run before anything is written.
+- Codes: `P` and `UD` are Present, `H` Half Day, `AB` Absent and `F` Holiday.
+  `L` (late) is a flag, and check-in/out times are kept. A blank Sunday is a
+  Holiday named Sunday. A blank date on the company holiday calendar takes
+  the calendar's name. Any other blank working day, or an unknown code, stops
+  the run. A status written in the sheet always wins over the calendar.
+- Regular hours are the sheet's Worked Hours, rounded down to 0.01 h so they
+  never exceed the check-in/out span. Off-hours are the task hours logged that
+  day beyond the worked hours (zero on Absent days). The dry run lists every
+  such day, and Absent days with logged hours, which will read invalid.
+- Managing directors' rows are skipped; `--attendance-include-directors`
+  imports them.
+- Without `--yes` the tool prints the gates, the people matrix, counts per
+  person and status, total hours, and the days it would create, restore
+  (withdrawn rows), skip or overwrite. Existing attendance that differs from
+  the sheet is refused unless `--overwrite-attendance` is given.
+- The manifest (outside the repository) lists every row written, with the
+  previous values of overwritten rows. `--undo MANIFEST` withdraws the created
+  rows and puts overwritten rows back. It refuses if any of those rows changed
+  since the import. Re-running an import that already matches writes nothing.
+- After writing, the tool re-reads every person-day and prints the director's
+  September performance read per member: attendance available, valid and the
+  reasons.
+
+Hosted runs use the same target gates as the task seed: a linked workdir, an
+ACTIVE_HEALTHY project and the ledger count (`--allow-ledger`). The demo
+project also needs `--confirm-production-ref` and the user's go-ahead.
+`tools/test_attendance_import_database.py` checks the whole flow on a
+disposable database with the synthetic workbook
+`tools/fixtures/attendance-september-2026.xlsx`.
+
 Authors may edit or withdraw their own pending fact, idea or suggestion.
 Managers/data managers validate another person's contribution; self-validation
 is denied. A reviewed correction needs a reason and resets the entry to pending

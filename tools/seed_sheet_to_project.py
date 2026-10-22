@@ -8,6 +8,12 @@ into its own empty directory), then plans and, only with --yes, applies:
   C  tasks    one transaction per sheet task through the app's own RPCs, impersonating the director/assignee
   D  verify   counts, hours, eligibility, triggers and the director's performance/presentation reads
 
+--attendance FILE --attendance-month YYYY-MM imports one month of the billed
+attendance workbook instead: staff matched by full name (or --attendance-person),
+every person-day saved with dated_record_command('attendance') as the managing
+director in one transaction, then the director's performance read is checked.
+Managing directors' rows are skipped (user decision, 22 October 2026).
+
 Without --yes the tool only prints the plan (dry run). Hosted mode talks to the
 project through the Supabase CLI query channel and, for Auth users, the Admin
 API with a service-role key fetched into memory (never printed or written).
@@ -27,7 +33,7 @@ import tempfile
 import urllib.error
 import urllib.request
 import uuid
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -632,6 +638,23 @@ END $delete$;
 
 # --------------------------------------------------------------------------- plan
 
+def target_gates(args, backend, gate):
+    """Which project or database this run talks to; shared by the task seed and the attendance import."""
+    if isinstance(backend, HostedBackend):
+        ref = args.project_ref
+        gate(len(ref) == 20 and ref.isalpha() and ref.islower(), "project ref is a 20-letter lowercase ref", ref)
+        link = args.workdir / "supabase" / ".temp" / "project-ref"
+        gate(link.is_file() and link.read_text(encoding="utf-8").strip() == ref, "workdir is linked to that ref", str(link))
+        project = next((p for p in backend.projects() if p.get("id") == ref), None)
+        gate(project and project.get("status") == "ACTIVE_HEALTHY", "project is ACTIVE_HEALTHY",
+             f"{project.get('name') if project else 'not listed'} {project.get('status') if project else ''}")
+        if backend.is_production:
+            gate(args.confirm_production_ref == PRODUCTION_REF, "production ref confirmed with --confirm-production-ref")
+    else:
+        gate(re.fullmatch(r"[a-z][a-z0-9_]{2,62}", args.db) and args.db not in ("postgres", "template0", "template1"),
+             "local database name is a disposable name", args.db)
+
+
 def plan(args, backend, sheet):
     gates, notes = [], []
 
@@ -1180,6 +1203,546 @@ def undo(args, backend, manifest_path):
     print(f"Undo complete; manifest {record['path']}")
 
 
+# --------------------------------------------------------------------------- attendance import
+
+# Billed attendance workbook codes ("Attendance key" tab); a status is one base code plus
+# optional flags, space-separated ("P L"). User decisions, 22 October 2026: AB is Absent,
+# off-hours are task hours logged beyond the sheet's worked hours, managing directors are skipped.
+ATTENDANCE_BASES = {"P": "Present", "UD": "Present", "H": "Half Day", "AB": "Absent", "F": "Holiday"}
+ATTENDANCE_FLAGS = {"L"}
+FESTIVAL_NAME = "Festival holiday"
+SUNDAY_NAME = "Sunday"
+ATTENDANCE_REASON = "Imported from the billed attendance sheet"
+ATTENDANCE_UNDO_REASON = "Removed by attendance-import undo"
+DAY_SUBHEADER = ["IN", "OUT", "Worked Hours", "Status"]
+
+
+def name_key(text):
+    return " ".join(str(text or "").split()).casefold()
+
+
+def sheet_clock(value, what):
+    """A sheet IN/OUT cell as a local time of day, or None when blank."""
+    if blank(value):
+        return None
+    if isinstance(value, dt.datetime):
+        return value.time().replace(microsecond=0)
+    if isinstance(value, dt.time):
+        return value.replace(microsecond=0)
+    if isinstance(value, (int, float)) and 0 <= value < 1:
+        seconds = int((dec(value) * 86400).quantize(Decimal(1), rounding=ROUND_HALF_UP))
+        return dt.time(seconds // 3600, seconds % 3600 // 60, seconds % 60)
+    match = re.fullmatch(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", str(value).strip())
+    if not match or int(match.group(1)) > 23 or int(match.group(2)) > 59:
+        raise Refusal(f"{what}: {value!r} is not a time of day")
+    return dt.time(int(match.group(1)), int(match.group(2)), int(match.group(3) or 0))
+
+
+def sheet_seconds(value, what):
+    """A Worked Hours cell (time, duration, day fraction or H:MM[:SS] text) in whole seconds, or None."""
+    if blank(value):
+        return None
+    if isinstance(value, dt.datetime):
+        value = value.time()
+    if isinstance(value, dt.time):
+        return value.hour * 3600 + value.minute * 60 + value.second
+    if isinstance(value, dt.timedelta):
+        return int(value.total_seconds())
+    if isinstance(value, (int, float)) and 0 <= value <= 1:
+        return int((dec(value) * 86400).quantize(Decimal(1), rounding=ROUND_HALF_UP))
+    match = re.fullmatch(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", str(value).strip())
+    if not match:
+        raise Refusal(f"{what}: worked hours {value!r} are not H:MM[:SS]")
+    return int(match.group(1)) * 3600 + int(match.group(2)) * 60 + int(match.group(3) or 0)
+
+
+def sheet_date(value):
+    if isinstance(value, dt.datetime):
+        return value.date()
+    if isinstance(value, dt.date):
+        return value
+    try:
+        return dt.datetime.strptime(str(value).strip(), "%d %b %Y").date()
+    except (TypeError, ValueError):
+        return None
+
+
+def read_attendance(path, month):
+    """One month tab of the billed attendance workbook: rows of staff, four columns per day."""
+    import warnings
+    import openpyxl
+    warnings.filterwarnings("ignore", module="openpyxl")
+    workbook = openpyxl.load_workbook(path, data_only=True)
+    title = f"{month:%B %Y}"
+    if title not in workbook.sheetnames:
+        raise Refusal(f"Attendance workbook has no '{title}' tab")
+    page = workbook[title]
+    header = next((r for r in range(2, 21) if name_key(page.cell(r, 1).value) == "staff name"), None)
+    if header is None:
+        raise Refusal(f"{title}: no 'STAFF NAME' header in column A rows 2-20")
+    last = shift_date(month, 1) - dt.timedelta(days=1)
+    columns = {}
+    for c in range(2, page.max_column + 1):
+        day = sheet_date(page.cell(header - 1, c).value)
+        if day is not None:
+            if day.replace(day=1) != month or day in columns:
+                raise Refusal(f"{title}: date {day} in row {header - 1} is outside the month or repeated")
+            columns[day] = c
+    days = sorted(columns)
+    if days != [month + dt.timedelta(days=i) for i in range(last.day)]:
+        raise Refusal(f"{title}: row {header - 1} must date every day of {month:%B %Y} ({len(days)} found)")
+    for day in days:
+        c = columns[day]
+        if columns[days[0]] + 4 * (day.day - 1) != c:
+            raise Refusal(f"{title}: day columns are not four apart at {day}")
+        found = [str(page.cell(header + 1, c + k).value or "").strip() for k in range(4)]
+        if found != DAY_SUBHEADER:
+            raise Refusal(f"{title}: {day} sub-headers read {found}, expected {DAY_SUBHEADER}")
+        weekday = str(page.cell(header, c).value or "").strip()
+        if weekday and weekday != day.strftime("%a"):
+            raise Refusal(f"{title}: {day} is labelled {weekday!r}, not {day:%a}")
+
+    people, problems = [], []
+    for r in range(header + 2, page.max_row + 1):
+        name = " ".join(str(page.cell(r, 1).value or "").split())
+        cells = [page.cell(r, columns[d] + k).value for d in days for k in range(4)]
+        if not name:
+            if any(not blank(v) for v in cells):
+                problems.append(f"row {r}: day values without a staff name")
+            continue
+        entries = []
+        for day in days:
+            where = f"{name} {day}"
+            raw_in, raw_out, raw_worked, raw_status = (page.cell(r, columns[day] + k).value for k in range(4))
+            tokens = str(raw_status or "").split()
+            bases = [t for t in tokens if t in ATTENDANCE_BASES]
+            unknown = [t for t in tokens if t not in ATTENDANCE_BASES and t not in ATTENDANCE_FLAGS]
+            try:
+                check_in, check_out = sheet_clock(raw_in, f"{where} IN"), sheet_clock(raw_out, f"{where} OUT")
+                seconds = sheet_seconds(raw_worked, where)
+            except Refusal as error:
+                problems.append(str(error))
+                continue
+            if unknown or len(bases) > 1 or (tokens and not bases):
+                problems.append(f"{where}: unknown status code {' '.join(tokens)!r} (key: {', '.join(sorted(ATTENDANCE_BASES))}, flag L)")
+                continue
+            status = ATTENDANCE_BASES[bases[0]] if bases else None
+            timed = check_in is not None or check_out is not None or seconds
+            if status in ("Present", "Half Day"):
+                if seconds is None:
+                    problems.append(f"{where}: {tokens[0]} without worked hours (blank is not zero)")
+                    continue
+                if (check_in is None) != (check_out is None):
+                    problems.append(f"{where}: IN and OUT must both be given or both be blank")
+                    continue
+                if check_in is not None:
+                    span = (dt.datetime.combine(day, check_out) - dt.datetime.combine(day, check_in)).total_seconds()
+                    if span < seconds:
+                        problems.append(f"{where}: worked {raw_worked} is longer than IN {check_in} to OUT {check_out}")
+                        continue
+            elif timed:
+                problems.append(f"{where}: {' '.join(tokens) or 'blank status'} with times or worked hours")
+                continue
+            entries.append({"day": day.isoformat(), "code": " ".join(tokens), "status": status, "late": "L" in tokens,
+                            "check_in": check_in.isoformat() if check_in else None,
+                            "check_out": check_out.isoformat() if check_out else None,
+                            # Never more than the IN-OUT span the command checks against.
+                            "hours": str((Decimal(seconds or 0) / 3600).quantize(TWO, rounding=ROUND_DOWN))})
+        people.append({"name": name, "row": r, "days": entries})
+    keys = [name_key(p["name"]) for p in people]
+    if len(set(keys)) != len(keys):
+        problems.append("duplicate staff names: " + ", ".join(sorted({p['name'] for p in people if keys.count(name_key(p['name'])) > 1})))
+    if not people:
+        problems.append("no staff rows")
+    if problems:
+        raise Refusal(f"{title}: {len(problems)} problem(s) in the sheet:\n  " + "\n  ".join(problems))
+    return {"month": month.isoformat(), "title": title, "people": people}
+
+
+def attendance_state_sql(month):
+    first, after = lit(month), lit(shift_date(month, 1))
+    return transaction("", f"""jsonb_build_object(
+ 'current_user', current_user,
+ 'definer_member', (SELECT pg_has_role(current_user,'taskpulse_definer','MEMBER') FROM pg_roles WHERE rolname='taskpulse_definer'),
+ 'ledger', CASE WHEN to_regclass('supabase_migrations.schema_migrations') IS NULL THEN NULL
+   ELSE (SELECT count(*) FROM supabase_migrations.schema_migrations) END,
+ 'organizations', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'name',name,'status',status,'is_default',is_default)),'[]') FROM public.organizations),
+ 'users', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'email',lower(email),'employee_id',employee_id,'full_name',full_name,
+   'role',role,'is_active',is_active,'organization_id',organization_id) ORDER BY email),'[]') FROM public.users),
+ 'calendar', to_regclass('taskpulse_private.company_holidays') IS NOT NULL,
+ 'holidays', CASE WHEN to_regclass('taskpulse_private.company_holidays') IS NULL THEN '[]'::jsonb ELSE
+   (SELECT coalesce(jsonb_agg(jsonb_build_object('organization_id',organization_id,'day',holiday_date,'name',name)),'[]')
+    FROM taskpulse_private.company_holidays WHERE holiday_date >= {first}::date AND holiday_date < {after}::date) END,
+ 'month_periods', (SELECT coalesce(jsonb_agg(jsonb_build_object('state',state,'organization_id',organization_id)),'[]')
+   FROM taskpulse_private.month_periods WHERE period_start = {first}::date),
+ 'frozen', EXISTS(SELECT 1 FROM public.monthly_performance_snapshots WHERE make_date(snapshot_year,snapshot_month,1) = {first}::date)
+   OR EXISTS(SELECT 1 FROM public.report_snapshots WHERE status='Final' AND (period_start IS NULL OR period_start < {after}::date)
+   AND (period_end IS NULL OR period_end >= {first}::date)),
+ 'attendance', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'user_id',user_id,'day',attendance_date,'status',status,
+   'hours',attendance_hours,'off_hours',off_hours,'check_in',check_in_at,'check_out',check_out_at,'holiday_name',holiday_name,
+   'state',record_state,'version',record_version)),'[]') FROM public.attendance_records
+   WHERE attendance_date >= {first}::date AND attendance_date < {after}::date),
+ 'logged', (SELECT coalesce(jsonb_object_agg(k,h),'{{}}') FROM (SELECT user_id||'|'||log_date AS k, sum(hours_worked) AS h
+   FROM public.daily_task_logs WHERE reversed_at IS NULL AND log_date >= {first}::date AND log_date < {after}::date GROUP BY 1) x),
+ 'today', (clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date
+)""")
+
+
+def local_instant(day, clock):
+    return f"{day}T{clock}+05:30" if clock else None
+
+
+def same_instant(a, b):
+    if a is None or b is None:
+        return a is None and b is None
+    return dt.datetime.fromisoformat(a) == dt.datetime.fromisoformat(b)
+
+
+def attendance_payload(entry):
+    """What dated_record_command('attendance','save') receives for one planned person-day."""
+    payload = {"business_date": entry["day"], "author_id": entry["user_id"], "attendance_status": entry["status"],
+               "attendance_hours": entry["hours"], "off_hours": entry["off_hours"],
+               "check_in_at": local_instant(entry["day"], entry["check_in"]),
+               "check_out_at": local_instant(entry["day"], entry["check_out"])}
+    if entry["holiday_name"]:
+        payload["holiday_name"] = entry["holiday_name"]
+    return {k: v for k, v in payload.items() if v is not None}
+
+
+def attendance_matches(row, entry):
+    return (row["state"] == "active" and row["status"] == entry["status"]
+            and dec(row["hours"]) == Decimal(entry["hours"]) and dec(row["off_hours"]) == Decimal(entry["off_hours"])
+            and same_instant(row["check_in"], local_instant(entry["day"], entry["check_in"]))
+            and same_instant(row["check_out"], local_instant(entry["day"], entry["check_out"]))
+            and (row["holiday_name"] or None) == (entry["holiday_name"] or None))
+
+
+def plan_attendance(args, backend, sheet):
+    gates, notes = [], []
+
+    def gate(ok, label, detail=""):
+        gates.append((bool(ok), label, detail))
+        return ok
+
+    target_gates(args, backend, gate)
+    month = dt.date.fromisoformat(sheet["month"])
+    state = backend.query("attendance-state", attendance_state_sql(month))
+    gate(state["ledger"] == args.allow_ledger, f"migration ledger has {args.allow_ledger} entries", f"found {state['ledger']}")
+    gate(state["definer_member"], "current user is a member of taskpulse_definer", state["current_user"])
+    gate(state["calendar"], "company holiday calendar exists (migration 53)")
+    defaults = [o for o in state["organizations"] if o["is_default"] and o["status"] == "active"]
+    org = defaults[0]["id"] if len(defaults) == 1 else None
+    gate(org, "exactly one active default company", ", ".join(o["name"] for o in defaults))
+    gate(all(m["state"] == "live" for m in state["month_periods"] if m["organization_id"] == org),
+         f"{sheet['title']} is absent or live in month_periods", ", ".join(m["state"] for m in state["month_periods"]) or "none")
+    gate(not state["frozen"], f"no monthly snapshot or Final report freezes {sheet['title']}")
+    today = dt.date.fromisoformat(state["today"])
+    gate(shift_date(month, 1) - dt.timedelta(days=1) <= today, f"every day of {sheet['title']} has passed (Asia/Kolkata)", str(today))
+
+    users = [u for u in state["users"] if u["organization_id"] == org]
+    by_email = {u["email"]: u for u in users}
+    by_employee = {u["employee_id"]: u for u in users if u["employee_id"]}
+    overrides = {}
+    for item in args.attendance_person:
+        name, _, ref = item.partition("=")
+        overrides[name_key(name)] = ref.strip()
+    unused = set(overrides) - {name_key(p["name"]) for p in sheet["people"]}
+    gate(not unused, "every --attendance-person names a sheet row", ", ".join(sorted(unused)))
+    people = []
+    for person in sheet["people"]:
+        entry = {"name": person["name"]}
+        ref = overrides.get(name_key(person["name"]))
+        if ref:
+            found = [u for u in (by_email.get(ref.lower()), by_employee.get(ref)) if u]
+            found = list({u["id"]: u for u in found}.values())
+        else:
+            found = [u for u in users if name_key(u["full_name"]) == name_key(person["name"])]
+        if not found:
+            entry.update(action="unknown", detail=f"no profile in the company {'for ' + ref if ref else 'with this full name'}")
+        elif len(found) > 1:
+            entry.update(action="unknown", detail="several profiles: " + ", ".join(u["email"] for u in found))
+        else:
+            user = found[0]
+            entry.update(user_id=user["id"], email=user["email"], employee_id=user["employee_id"], role=user["role"])
+            if not user["is_active"]:
+                entry.update(action="unknown", detail="profile is inactive")
+            elif user["role"] == "managing_director" and not args.attendance_include_directors:
+                entry.update(action="skip-director")
+            else:
+                entry["action"] = "import"
+        people.append(entry)
+    gate(all(p["action"] != "unknown" for p in people), "every staff row matches one active profile",
+         "; ".join(f"{p['name']}: {p['detail']}" for p in people if p["action"] == "unknown"))
+    matched = [p["user_id"] for p in people if p.get("user_id")]
+    gate(len(set(matched)) == len(matched), "no two staff rows match the same profile")
+
+    directors = [u for u in users if u["is_active"] and u["role"] == "managing_director"]
+    if args.attendance_actor:
+        actor = by_email.get(args.attendance_actor.lower())
+        gate(actor in directors, "--attendance-actor is an active managing director", args.attendance_actor)
+    else:
+        actor = directors[0] if len(directors) == 1 else None
+        gate(actor, "exactly one active managing director to record attendance (or --attendance-actor)",
+             ", ".join(u["email"] for u in directors))
+
+    holidays = {h["day"]: h["name"] for h in state["holidays"] if h["organization_id"] == org}
+    logged = {k: dec(v) for k, v in state["logged"].items()}
+    existing = {(a["user_id"], a["day"]): a for a in state["attendance"]}
+    rows, problems = [], []
+    by_name = {p["name"]: p for p in people}
+    for person in sheet["people"]:
+        match = by_name[person["name"]]
+        if match["action"] != "import":
+            continue
+        for day in person["days"]:
+            date = dt.date.fromisoformat(day["day"])
+            holiday = holidays.get(day["day"])
+            status, name = day["status"], None
+            if status is None:
+                if holiday:
+                    status, name = "Holiday", holiday
+                elif date.weekday() == 6:
+                    status, name = "Holiday", SUNDAY_NAME
+                else:
+                    problems.append(f"{person['name']} {date} ({date:%a}): blank status on a working day")
+                    continue
+            elif status == "Holiday":
+                name = holiday or FESTIVAL_NAME
+            elif holiday:
+                notes.append(f"{person['name']} {date}: sheet says {day['code']} on calendar holiday {holiday!r}; the sheet wins")
+            effort = logged.get(f"{match['user_id']}|{day['day']}", Decimal(0))
+            hours = Decimal(day["hours"])
+            off = max(Decimal(0), effort - hours) if status != "Absent" else Decimal(0)
+            if hours + off > 24:
+                problems.append(f"{person['name']} {date}: {fmt_num(hours)} h worked + {fmt_num(off)} off-hours exceed a day")
+                continue
+            entry = {"name": person["name"], "user_id": match["user_id"], "email": match["email"], "day": day["day"],
+                     "code": day["code"], "status": status, "late": day["late"], "hours": fmt_num(hours),
+                     "off_hours": fmt_num(off), "logged": fmt_num(effort), "check_in": day["check_in"],
+                     "check_out": day["check_out"], "holiday_name": name,
+                     "invalid": status == "Absent" and effort > 0}
+            have = existing.get((match["user_id"], day["day"]))
+            if have is None:
+                entry["action"] = "create"
+            elif attendance_matches(have, entry):
+                entry.update(action="exists-skip", id=have["id"])
+            elif have["state"] == "withdrawn":
+                entry.update(action="restore", id=have["id"], version=have["version"], before=have)
+            elif args.overwrite_attendance:
+                entry.update(action="overwrite", id=have["id"], version=have["version"], before=have)
+            else:
+                entry.update(action="conflict", before=have)
+            rows.append(entry)
+    gate(not problems, "every imported day maps to a status the app accepts", "; ".join(problems[:6]) + (" ..." if len(problems) > 6 else ""))
+    conflicts = [r for r in rows if r["action"] == "conflict"]
+    gate(not conflicts, "no existing attendance differs from the sheet (or --overwrite-attendance)",
+         "; ".join(f"{r['email']} {r['day']} {r['before']['status']}" for r in conflicts[:6]) + (" ..." if len(conflicts) > 6 else ""))
+    return {"gates": gates, "notes": notes, "org": org, "people": people, "actor": actor, "rows": rows, "today": str(today)}
+
+
+def print_attendance_plan(args, backend, sheet, result, sha):
+    rows = result["rows"]
+    print(f"Target: {backend.label}{' (PRODUCTION)' if backend.is_production else ''}")
+    print(f"Attendance: sha256 {sha}; tab '{sheet['title']}'; {len(sheet['people'])} staff row(s)")
+    print("\nPre-flight gates:")
+    for ok, label, detail in result["gates"]:
+        print(f"  {'PASS' if ok else 'FAIL'}  {label}{(' - ' + detail) if detail else ''}")
+    print("\nPeople:")
+    for p in result["people"]:
+        who = f"{p.get('email', '-'):<34} {p.get('employee_id') or '-':<8} {p.get('role', '-'):<18}"
+        print(f"  {p['action']:<14} {who} {p['name']}{(' - ' + p['detail']) if p.get('detail') else ''}")
+    print(f"  recorded by: {result['actor']['email'] if result['actor'] else '-'}")
+    print("\nPer person (status counts; regular hours; off-hours; actions):")
+    totals = {"hours": Decimal(0), "off": Decimal(0)}
+    for p in result["people"]:
+        mine = [r for r in rows if r.get("user_id") == p.get("user_id")]
+        if not mine:
+            continue
+        counts = {}
+        for r in mine:
+            label = r["status"] + (f" ({r['holiday_name']})" if r["holiday_name"] else "")
+            counts[label] = counts.get(label, 0) + 1
+        hours, off = sum(Decimal(r["hours"]) for r in mine), sum(Decimal(r["off_hours"]) for r in mine)
+        totals["hours"] += hours
+        totals["off"] += off
+        actions = {}
+        for r in mine:
+            actions[r["action"]] = actions.get(r["action"], 0) + 1
+        print(f"  {p['email']}: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items()))
+              + f"; late {sum(r['late'] for r in mine)}; {fmt_num(hours)} h; off {fmt_num(off)} h; "
+              + ", ".join(f"{k} {v}" for k, v in sorted(actions.items())))
+    print(f"  total: {len(rows)} person-day(s), {fmt_num(totals['hours'])} regular h, {fmt_num(totals['off'])} off-hours")
+    for r in rows:
+        if r["action"] in ("overwrite", "restore", "conflict"):
+            b = r["before"]
+            print(f"  {r['action']:<9} {r['email']} {r['day']}: {b['state']} {b['status']} {b['hours']}+{b['off_hours']} h"
+                  f" -> {r['status']} {r['hours']}+{r['off_hours']} h")
+    for r in rows:
+        if r["invalid"]:
+            print(f"  note: {r['email']} {r['day']} is Absent in the sheet with {r['logged']} h logged; the day will read invalid")
+        elif Decimal(r["off_hours"]):
+            print(f"  note: {r['email']} {r['day']} {r['status']}: {r['logged']} h logged, {r['hours']} h worked -> off-hours {r['off_hours']}")
+    for note in result["notes"]:
+        print(f"  note: {note}")
+    skipped = [p for p in result["people"] if p["action"] == "skip-director"]
+    if skipped:
+        print(f"  note: managing director row(s) not imported: {', '.join(p['email'] for p in skipped)} (--attendance-include-directors to include)")
+
+
+def actor_calls(backend, actor_id, name, calls):
+    """Runs {key: SQL call} in order as one user in one atomic script; returns {key: result}."""
+    values = ",\n ".join(f"({n},{lit(key)},{call})" for n, (key, call) in enumerate(calls.items()))
+    body = (as_actor(actor_id) + "SELECT set_config('seed.out',(SELECT coalesce(jsonb_object_agg(k,r ORDER BY n),'{}') "
+            f"FROM (VALUES\n {values}) v(n,k,r))::text,true);\n")
+    return backend.query(name, transaction(body, "current_setting('seed.out')::jsonb"))
+
+
+def attendance_call(org, entry):
+    payload = attendance_payload(entry)
+    if entry["action"] == "create":
+        version, ident = 0, "NULL"
+    else:
+        version, ident = entry["version"], f"{lit(entry['id'])}::uuid"
+        payload["reason"] = ATTENDANCE_REASON
+    operation = op_id(org, "attendance", entry["user_id"], entry["day"], version, json.dumps(payload, sort_keys=True))
+    return f"public.dated_record_command('attendance',{ident},'save',{jlit(payload)},{version},{lit(operation)}::uuid)"
+
+
+def apply_attendance(backend, result, manifest):
+    writes = [r for r in result["rows"] if r["action"] in ("create", "restore", "overwrite")]
+    if not writes:
+        print("\nNothing to write: every person-day already matches the sheet.")
+        return
+    calls = {f"{r['user_id']}|{r['day']}": attendance_call(result["org"], r) for r in writes}
+    out = actor_calls(backend, result["actor"]["id"], "attendance-import", calls)
+    for r in writes:
+        response = out[f"{r['user_id']}|{r['day']}"]
+        manifest["attendance"].append({"id": response["id"], "version": response["version"], "user_id": r["user_id"],
+                                       "email": r["email"], "day": r["day"], "action": r["action"], "after": attendance_payload(r),
+                                       "before": r.get("before")})
+    manifest["actions"].append(f"saved {len(writes)} attendance record(s) as {result['actor']['email']} in one transaction")
+    save_manifest(manifest)
+    print(f"\nSaved {len(writes)} attendance record(s): "
+          + ", ".join(f"{a} {sum(1 for r in writes if r['action'] == a)}" for a in ("create", "restore", "overwrite")))
+
+
+def verify_attendance(backend, result, sheet, manifest):
+    month = dt.date.fromisoformat(sheet["month"])
+    rows = [r for r in result["rows"] if r["action"] != "conflict"]
+    body = (as_actor(result["actor"]["id"]) + "SELECT set_config('seed.perf', public.performance_source_context("
+            f"{lit(month)}::date,{lit(shift_date(month, 1))}::date,clock_timestamp())::text, true);\n")
+    observed = backend.query("attendance-verify", transaction(body, f"""jsonb_build_object(
+ 'rows', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'user_id',user_id,'day',attendance_date,'status',status,
+   'hours',attendance_hours,'off_hours',off_hours,'check_in',check_in_at,'check_out',check_out_at,'holiday_name',holiday_name,
+   'state',record_state,'version',record_version)),'[]') FROM public.attendance_records
+   WHERE attendance_date >= {lit(month)}::date AND attendance_date < {lit(shift_date(month, 1))}::date),
+ 'attendance', (SELECT current_setting('seed.perf')::jsonb->'attendance'))"""))
+    have = {(a["user_id"], a["day"]): a for a in observed["rows"]}
+    failures = [f"{r['email']} {r['day']}: database differs from the sheet" for r in rows
+                if not (have.get((r["user_id"], r["day"])) and attendance_matches(have[(r["user_id"], r["day"])], r))]
+    perf = {a["userId"]: a for a in observed["attendance"] or []}
+    report = {"person_days": len(rows), "failures": failures, "members": {}}
+    print(f"\nVerify: {len(rows) - len(failures)} of {len(rows)} person-day(s) match the sheet")
+    for p in result["people"]:
+        a = perf.get(p.get("user_id"))
+        if not a:
+            continue
+        report["members"][p["email"]] = {k: a.get(k) for k in ("available", "valid", "hours", "offHours", "reasons")}
+        print(f"  {p['email']:<34} {p['action']:<14} attendance available {a['available']}, valid {a['valid']}, "
+              f"{a['hours'] or '-'} h + {a['offHours'] or '-'} off; reasons {', '.join(a['reasons']) or 'none'}")
+    manifest["verification"] = report
+    save_manifest(manifest)
+    if failures:
+        for failure in failures:
+            print(f"  FAIL {failure}")
+        raise RuntimeError(f"Attendance verification failed ({len(failures)} person-day(s))")
+    print("  PASS attendance verification")
+
+
+def undo_attendance(args, backend, source, manifest_path):
+    entries = source["attendance"]
+    print(f"Undo {manifest_path}: {len(entries)} attendance record(s) saved as {source['actor']['email']}")
+    gates = []
+    target_gates(args, backend, lambda ok, label, detail="": gates.append((bool(ok), label + (f" - {detail}" if detail else ""))))
+    state = backend.query("attendance-undo-state", transaction("", "jsonb_build_object('ledger', CASE WHEN to_regclass("
+        "'supabase_migrations.schema_migrations') IS NULL THEN NULL ELSE (SELECT count(*) FROM supabase_migrations.schema_migrations) END,"
+        "'rows', (SELECT coalesce(jsonb_object_agg(id, jsonb_build_object('status',status,'hours',attendance_hours,'off_hours',off_hours,"
+        "'check_in',check_in_at,'check_out',check_out_at,'holiday_name',holiday_name,'state',record_state,'version',record_version)),'{}') "
+        f"FROM public.attendance_records WHERE id = ANY({uuid_array([e['id'] for e in entries])})))"))
+    gates.append((state["ledger"] == args.allow_ledger, f"migration ledger has {args.allow_ledger} entries"))
+    calls, done, changed = {}, 0, []
+    for e in entries:
+        row = state["rows"].get(e["id"])
+        if row is None:
+            changed.append(f"{e['email']} {e['day']}: record missing")
+        elif row["version"] == e["version"]:
+            if e["action"] == "overwrite":
+                b = e["before"]
+                payload = {"business_date": e["day"], "attendance_status": b["status"], "attendance_hours": fmt_num(b["hours"]),
+                           "off_hours": fmt_num(b["off_hours"]), "check_in_at": b["check_in"], "check_out_at": b["check_out"],
+                           "holiday_name": b["holiday_name"], "reason": ATTENDANCE_UNDO_REASON}
+                payload = {k: v for k, v in payload.items() if v is not None}
+                calls[e["id"]] = (f"public.dated_record_command('attendance',{lit(e['id'])}::uuid,'save',{jlit(payload)},{e['version']},"
+                                  f"{lit(op_id('attendance-undo', e['id'], e['version']))}::uuid)")
+                if b["state"] == "withdrawn":
+                    changed.append(f"{e['email']} {e['day']}: overwrote a withdrawn record; restore it by hand")
+            else:
+                calls[e["id"]] = (f"public.dated_record_command('attendance',{lit(e['id'])}::uuid,'withdraw',"
+                                  f"{jlit({'reason': ATTENDANCE_UNDO_REASON})},{e['version']},"
+                                  f"{lit(op_id('attendance-undo', e['id'], e['version']))}::uuid)")
+        elif row["version"] == e["version"] + 1 and (row["state"] == "withdrawn" if e["action"] != "overwrite"
+                                                      else row["status"] == e["before"]["status"]):
+            done += 1  # an earlier undo of this manifest
+        else:
+            changed.append(f"{e['email']} {e['day']}: changed since the import (version {row['version']}, was {e['version']})")
+    gates.append((not changed, "no imported record changed since the import", "; ".join(changed[:6])))
+    for ok, label, *detail in gates:
+        print(f"  {'PASS' if ok else 'FAIL'}  {label}{(' - ' + detail[0]) if detail and detail[0] else ''}")
+    print(f"  to withdraw/restore: {len(calls)}; already undone: {done}")
+    if not all(ok for ok, *_ in gates):
+        raise Refusal("Undo gates failed")
+    if not args.yes:
+        print("Dry run: pass --yes to undo.")
+        return
+    record = new_manifest(args, backend, source.get("sheet_sha256"))
+    record.update(kind="attendance-undo", undo_of=str(manifest_path), attendance=[])
+    save_manifest(record)
+    if calls:
+        out = actor_calls(backend, source["actor"]["id"], "attendance-undo", calls)
+        record["attendance"] = [{"id": k, **v} for k, v in out.items()]
+    record["actions"].append(f"undid {len(calls)} attendance record(s)")
+    save_manifest(record)
+    print(f"PASS undo: {len(calls)} attendance record(s) withdrawn or restored; manifest {record['path']}")
+
+
+def attendance_main(args, backend):
+    path = args.attendance if not re.match(r"https://", str(args.attendance)) else \
+        download(str(args.attendance), args.download_dir, "attendance.xlsx")
+    sha = sha256_file(path)
+    year, month = map(int, args.attendance_month.split("-"))
+    sheet = read_attendance(path, dt.date(year, month, 1))
+    result = plan_attendance(args, backend, sheet)
+    print_attendance_plan(args, backend, sheet, result, sha)
+    if not all(ok for ok, _, _ in result["gates"]):
+        print("\nREFUSED: one or more gates failed; nothing was written.")
+        return 2
+    if not args.yes or args.dry_run:
+        print("\nDry run: nothing was written. Pass --yes to apply.")
+        return 0
+    if backend.is_production and args.confirm_production_ref != PRODUCTION_REF:
+        raise Refusal("production needs --confirm-production-ref")
+    manifest = new_manifest(args, backend, sha)
+    manifest.update(kind="attendance-import", organization_id=result["org"], month=sheet["month"], attendance=[],
+                    actor={"id": result["actor"]["id"], "email": result["actor"]["email"]})
+    save_manifest(manifest)
+    print(f"\nManifest: {manifest['path']}")
+    apply_attendance(backend, result, manifest)
+    verify_attendance(backend, result, sheet, manifest)
+    manifest["finished_at"] = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    save_manifest(manifest)
+    return 0
+
+
 # --------------------------------------------------------------------------- manifest / main
 
 def target_identity(args, backend):
@@ -1201,13 +1764,13 @@ def save_manifest(manifest):
     path.write_text(json.dumps(manifest, indent=1, ensure_ascii=False, default=str), encoding="utf-8")
 
 
-def download(url, directory):
+def download(url, directory, name="tracker.xlsx"):
     if not re.fullmatch(r"https://docs\.google\.com/spreadsheets/d/[\w-]+/export\?format=xlsx", url):
-        raise Refusal("--sheet-url must be a Google Sheets xlsx export link")
+        raise Refusal("the sheet link must be a Google Sheets xlsx export link")
     directory.mkdir(parents=True, exist_ok=True)
     if any(directory.iterdir()):
         raise Refusal("--download-dir must be a new or empty directory")
-    target = directory / "tracker.xlsx"
+    target = directory / name
     with urllib.request.urlopen(url, timeout=60) as response, open(target, "wb") as handle:
         handle.write(response.read())
     return target
@@ -1218,6 +1781,15 @@ def parse_args(argv=None):
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--xlsx", type=Path)
     source.add_argument("--sheet-url")
+    source.add_argument("--attendance", metavar="XLSX_OR_EXPORT_URL",
+                        help="import one month of the billed attendance workbook instead of seeding tasks")
+    parser.add_argument("--attendance-month", metavar="YYYY-MM", help="the month tab to import, e.g. 2026-09")
+    parser.add_argument("--attendance-person", action="append", default=[], metavar="NAME=EMAIL_OR_EMPLOYEE_ID",
+                        help="match a staff row to a profile when the full names differ (repeatable)")
+    parser.add_argument("--attendance-actor", metavar="EMAIL", help="managing director who records the attendance")
+    parser.add_argument("--attendance-include-directors", action="store_true", help="also import managing directors' rows")
+    parser.add_argument("--overwrite-attendance", action="store_true",
+                        help="correct existing attendance that differs from the sheet (the manifest keeps the old values)")
     parser.add_argument("--download-dir", type=Path)
     parser.add_argument("--target", choices=("hosted", "local"), required=True)
     parser.add_argument("--project-ref")
@@ -1244,10 +1816,25 @@ def parse_args(argv=None):
         parser.error("--target hosted needs --project-ref and --workdir")
     if args.target == "local" and not (args.psql and args.db):
         parser.error("--target local needs --psql and --db")
-    if not args.undo and not (args.xlsx or args.sheet_url):
-        parser.error("give --xlsx or --sheet-url (with --download-dir)")
+    if not args.undo and not (args.xlsx or args.sheet_url or args.attendance):
+        parser.error("give --xlsx or --sheet-url (with --download-dir), or --attendance")
     if args.sheet_url and not args.download_dir:
         parser.error("--sheet-url needs --download-dir")
+    if args.attendance:
+        if args.undo:
+            parser.error("--undo takes the manifest only")
+        if not (args.attendance_month and re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", args.attendance_month)):
+            parser.error("--attendance needs --attendance-month YYYY-MM")
+        if args.attendance.startswith("https://"):
+            if not args.download_dir:
+                parser.error("an --attendance link needs --download-dir")
+        else:
+            args.attendance = Path(args.attendance)
+        if any("=" not in p or not p.partition("=")[0].strip() or not p.partition("=")[2].strip() for p in args.attendance_person):
+            parser.error("--attendance-person must be NAME=EMAIL_OR_EMPLOYEE_ID")
+    elif args.attendance_month or args.attendance_person or args.attendance_actor or args.overwrite_attendance \
+            or args.attendance_include_directors:
+        parser.error("the --attendance-* and --overwrite-attendance options need --attendance")
     if args.target == "hosted" and args.project_ref == PRODUCTION_REF and (args.rehearsal_email_domain or args.shift_month):
         parser.error("--rehearsal-email-domain and --shift-month are refused on production")
     if args.rehearsal_email_domain and not re.fullmatch(r"[a-z0-9-]+(\.[a-z0-9-]+)+", args.rehearsal_email_domain):
@@ -1270,8 +1857,16 @@ def main(argv=None):
         LocalBackend(sql_dir, args.psql, args.port, args.db)
     try:
         if args.undo:
-            undo(args, backend, args.undo)
+            source = json.loads(Path(args.undo).read_text(encoding="utf-8"))
+            if source.get("kind") == "attendance-import":
+                if source["target"] != target_identity(args, backend):
+                    raise Refusal(f"Manifest target {source['target']} is not this target")
+                undo_attendance(args, backend, source, args.undo)
+            else:
+                undo(args, backend, args.undo)
             return 0
+        if args.attendance:
+            return attendance_main(args, backend)
         path = args.xlsx or download(args.sheet_url, args.download_dir)
         sheet_sha = sha256_file(path)
         months = 0
