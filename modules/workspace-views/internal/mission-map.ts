@@ -34,6 +34,9 @@ const SPACING = [143, 130, 107];
 const PAD = 190;
 /** Sibling spacing multiplier when the road runs horizontally (labels sit side by side). */
 export const HORIZONTAL_SPREAD = 1.4;
+/** Siblings are centred on their parent up to a first page (20 rows + "More items"); later pages extend
+    the fan without moving the nodes already placed. */
+export const FAN = 21;
 /** Room for about five nested levels to the left and twenty siblings above the first mission (vertical frame). */
 export const ORIGIN = { x: 1300, y: 900 };
 export const MAP_HUES = 5;
@@ -53,11 +56,11 @@ export function layoutMissionMap(missions: MapEntity[], levels: MapLevel[], orie
     const parent = byId.get(level.parentId);
     if (!parent) break;
     const d = Math.min(parent.depth, DISTANCE.length - 1);
-    const count = level.children.length;
+    const count = level.children.length, centred = Math.min(count, FAN);
     const spacing = SPACING[d] * (count > 5 ? 0.78 : 1) * spread;
     level.children.forEach((child, i) => {
       if (byId.has(child.id)) return;
-      const node: MapNode = { ...child, x: parent.x + parent.side * DISTANCE[d], y: parent.y + (i - (count - 1) / 2) * spacing,
+      const node: MapNode = { ...child, x: parent.x + parent.side * DISTANCE[d], y: parent.y + (i - (centred - 1) / 2) * spacing,
         side: parent.side, depth: parent.depth + 1, hue: parent.hue, parentId: parent.id };
       nodes.push(node); byId.set(node.id, node);
     });
@@ -88,24 +91,24 @@ export interface Camera { x: number; y: number; z: number }
  * A horizontal map is aimed as its vertical twin with the view turned, so the road is fitted by its width.
  */
 export function mapCamera(layout: MissionMapLayout, focusId: string | null, view: { w: number; h: number }, expanded: boolean): Camera {
-  if (layout.orientation === 'horizontal') {
-    const turned = { ...layout, orientation: 'vertical' as const, nodes: layout.nodes.map(n => ({ ...n, x: n.y, y: n.x })), width: layout.height, height: layout.width };
-    const c = mapCamera(turned, focusId, { w: view.h, h: view.w }, expanded);
-    return { x: c.y, y: c.x, z: c.z };
-  }
+  // Measured across the road and along it, whichever way the road runs.
+  const h = layout.orientation === 'horizontal';
+  const across = (n: { x: number; y: number }) => h ? n.y : n.x, along = (n: { x: number; y: number }) => h ? n.x : n.y;
+  const span = h ? { across: view.h, along: view.w } : { across: view.w, along: view.h };
+  const camera = (a: number, l: number, z: number): Camera => h ? { x: l, y: a, z } : { x: a, y: l, z };
   const focus = focusId ? layout.nodes.find(n => n.id === focusId) : undefined;
   if (!focus) {
     const roots = layout.nodes.filter(n => n.depth === 0);
     if (!roots.length) return { x: layout.width / 2, y: layout.height / 2, z: 1 };
-    const top = roots[0].y, bottom = roots.at(-1)!.y;
-    const fit = Math.min((view.w - 24) / 520, (view.h - 80) / Math.min(620, bottom - top + 160), 1.04);
-    // Long roads start at the top rather than shrinking every mission out of reach.
-    const centreY = Math.min((top + bottom) / 2, top + (view.h / 2 - 70) / Math.max(fit, 0.5));
-    return { x: (roots[0].x + (roots[1]?.x ?? roots[0].x)) / 2, y: centreY, z: Math.max(0.5, fit) };
+    const start = along(roots[0]), end = along(roots.at(-1)!);
+    const fit = Math.min((span.across - 24) / 520, (span.along - 80) / Math.min(620, end - start + 160), 1.04);
+    // Long roads start at their beginning rather than shrinking every mission out of reach.
+    const centre = Math.min((start + end) / 2, start + (span.along / 2 - 70) / Math.max(fit, 0.5));
+    return camera((across(roots[0]) + across(roots[1] ?? roots[0])) / 2, centre, Math.max(0.5, fit));
   }
   const offset = expanded ? (focus.depth === 0 ? 112 : 103) : 93;
-  const z = Math.min((view.w - 24) / (expanded ? 480 : 430), (view.h - 85) / (expanded ? 410 : 310), [1.05, 1.18, 1.3, 1.38][Math.min(3, focus.depth)]);
-  return { x: focus.x + focus.side * offset, y: focus.y, z: Math.max(0.45, z) };
+  const z = Math.min((span.across - 24) / (expanded ? 480 : 430), (span.along - 85) / (expanded ? 410 : 310), [1.05, 1.18, 1.3, 1.38][Math.min(3, focus.depth)]);
+  return camera(across(focus) + focus.side * offset, along(focus), Math.max(0.45, z));
 }
 
 /**

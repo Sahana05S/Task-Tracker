@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, LocateFixedIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, SparklesIcon, XIcon } from 'lucide-react';
@@ -35,6 +35,25 @@ const isContainer = (row: ChecklistBranchRow) => row.isSubMission || row.childCo
 const pct = (value: number | null) => value === null ? 'Not started' : `${Math.round(value)}%`;
 const HINT_MS = 1800;
 
+/** The caption under the map and the one-time "Use Ctrl + scroll" hint, kept out of the map's render. */
+const MapHint = forwardRef<{ show: () => void }>(function MapHint(_, ref) {
+  const [mod, setMod] = useState('Ctrl');
+  const [hint, setHint] = useState(false);
+  const shown = useRef(false);
+  useEffect(() => { if (/Mac|iPhone|iPad/.test(navigator.userAgent)) setMod('⌘'); }, []);
+  useEffect(() => {
+    if (!hint) return;
+    const timer = setTimeout(() => setHint(false), HINT_MS);
+    return () => clearTimeout(timer);
+  }, [hint]);
+  useImperativeHandle(ref, () => ({ show: () => { if (!shown.current) { shown.current = true; setHint(true); } } }), []);
+  return <>
+    <p className={cn(styles.float, styles.bottom)}>Drag to pan · {mod} + scroll to zoom</p>
+    {/* Stays mounted so the status is announced when its text appears. */}
+    <p className={cn(styles.hint, !hint && styles.idle)} role="status">{hint ? `Use ${mod} + scroll to zoom` : ''}</p>
+  </>;
+});
+
 export function MissionMap({ missions, today, initialLocation, onLocation, orientation = 'vertical' }: {
   missions: RoadmapMission[];
   today: string;
@@ -50,8 +69,6 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
   const [aimed, setCamera] = useState<Camera | null>(null);
   const [free, setFree] = useState(false);
   const [recentre, setRecentre] = useState(0);
-  const [hint, setHint] = useState(false);
-  const [mod, setMod] = useState('Ctrl');
   const [size, setSize] = useState({ w: 800, h: 520 });
   const [dragging, setDragging] = useState(false);
   const [restoring, setRestoring] = useState(!!initialLocation);
@@ -62,7 +79,8 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
   const levelsRef = useRef(levels);
   const sequence = useRef<Record<string, number>>({});
   const drag = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null);
-  const hinted = useRef(false);
+  const hintRef = useRef<{ show: () => void }>(null);
+  const aimedAt = useRef<{ id: string | null; orientation: MapOrientation; recentre: number; pos: { x: number; y: number } | null } | null>(null);
   levelsRef.current = levels;
 
   // Missions in the loaded batch, plus a deep-linked mission from a later batch.
@@ -136,58 +154,70 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
       if (branch?.hasMore) children.push({ id: `more:${step.id}`, title: 'More items', kind: 'more', progress: null, complete: false });
       return { parentId: step.id, children };
     });
-    return layoutMissionMap(entities, mapLevels, orientation);
+    const layout = layoutMissionMap(entities, mapLevels, orientation);
+    return { ...layout, byId: new Map(layout.nodes.map(n => [n.id, n])) };
   }, [roots, path, levels, orientation]);
 
   const last = path.at(-1);
   const focusId = leafId ?? last?.id ?? null;
   const expanded = !leafId && !!last;
   const camera = aimed ?? mapCamera(layout, focusId, size, expanded);
-  const focusShown = layout.nodes.some(n => n.id === focusId);
-  // The camera re-aims only when the focus, the layout direction or Re-centre changes. A resize keeps
-  // the centre point, and branches or "More items" loading in place never move it.
+  const focusNode = focusId ? layout.byId.get(focusId) : undefined;
+  // The camera re-aims only when the focus, the layout direction or Re-centre changes, never on a
+  // resize. If the focused node itself shifts (its level loads around it), the view slides with it
+  // and any manual pan is kept.
   useEffect(() => {
+    const prev = aimedAt.current;
+    const pos = focusNode ? { x: focusNode.x, y: focusNode.y } : null;
+    aimedAt.current = { id: focusId, orientation, recentre, pos };
+    if (prev && prev.id === focusId && prev.orientation === orientation && prev.recentre === recentre && !!prev.pos === !!pos) {
+      if (pos && prev.pos && (pos.x !== prev.pos.x || pos.y !== prev.pos.y)) {
+        const dx = pos.x - prev.pos.x, dy = pos.y - prev.pos.y;
+        setCamera(c => c && { ...c, x: c.x + dx, y: c.y + dy });
+      }
+      return;
+    }
     const el = frame.current;
     setFree(false);
     setCamera(mapCamera(layout, focusId, el ? { w: el.clientWidth, h: el.clientHeight } : size, expanded));
-  }, [focusId, focusShown, orientation, recentre]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [focusId, focusNode?.x, focusNode?.y, orientation, recentre]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (/Mac|iPhone|iPad/.test(navigator.userAgent)) setMod('⌘');
     const el = frame.current;
     if (!el) return;
     const observer = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
     observer.observe(el);
     // A plain wheel scrolls the page; Ctrl/Cmd + wheel and trackpad pinch (sent as ctrl + wheel) zoom.
-    let hintTimer: ReturnType<typeof setTimeout> | undefined;
     const wheel = (e: WheelEvent) => {
       const factor = wheelZoomFactor(e);
-      if (factor === null) {
-        if (!hinted.current) { hinted.current = true; setHint(true); hintTimer = setTimeout(() => setHint(false), HINT_MS); }
-        return;
-      }
+      if (factor === null) { hintRef.current?.show(); return; }
       e.preventDefault();
       zoomAt(factor, e.clientX, e.clientY);
     };
-    // One finger scrolls the page (touch-action in the CSS); two fingers pinch the map.
-    let pinch: number | null = null;
+    // One finger scrolls the page (touch-action in the CSS); two fingers pinch the map. The
+    // non-passive move listener exists only while two fingers are down, so page scrolling stays smooth.
+    let pinch = 0;
     const spread = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-    const touchStart = (e: TouchEvent) => { pinch = e.touches.length === 2 ? spread(e.touches) : null; };
     const touchMove = (e: TouchEvent) => {
-      if (e.touches.length !== 2 || !pinch) return;
+      // Once the browser owns the gesture as a scroll the event cannot be cancelled: leave it to the page.
+      if (e.touches.length !== 2 || !e.cancelable) return;
       e.preventDefault();
       const next = spread(e.touches);
       zoomAt(next / pinch, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2);
       pinch = next;
     };
-    const touchEnd = (e: TouchEvent) => { if (e.touches.length < 2) pinch = null; };
+    const touchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      pinch = spread(e.touches);
+      el.addEventListener('touchmove', touchMove, { passive: false });
+    };
+    const touchEnd = (e: TouchEvent) => { if (e.touches.length < 2) el.removeEventListener('touchmove', touchMove); };
     el.addEventListener('wheel', wheel, { passive: false });
     el.addEventListener('touchstart', touchStart, { passive: true });
-    el.addEventListener('touchmove', touchMove, { passive: false });
     el.addEventListener('touchend', touchEnd);
     el.addEventListener('touchcancel', touchEnd);
     return () => {
-      observer.disconnect(); clearTimeout(hintTimer);
+      observer.disconnect();
       el.removeEventListener('wheel', wheel);
       el.removeEventListener('touchstart', touchStart); el.removeEventListener('touchmove', touchMove);
       el.removeEventListener('touchend', touchEnd); el.removeEventListener('touchcancel', touchEnd);
@@ -238,7 +268,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
   }
 
   const leaf = leafId ? rows.get(leafId) : undefined;
-  const leafNode = leafId ? layout.nodes.find(n => n.id === leafId) : undefined;
+  const leafNode = leafId ? layout.byId.get(leafId) : undefined;
   const leafLevel = leaf && last ? levels[last.id]?.branch : undefined;
   const mission = path[0] ? roots.find(m => m.id === path[0].id) : undefined;
   async function quickComplete() {
@@ -306,7 +336,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
         <div className={cn(styles.world, (dragging || free) && styles.free)} style={{ width: layout.width, height: layout.height, transform: `translate3d(${w / 2 - camera.x * camera.z}px,${h / 2 - camera.y * camera.z}px,0) scale(${camera.z})` }}>
           <svg className={styles.paths} width={layout.width} height={layout.height} aria-hidden="true">
             {layout.road ? <path className={styles.road} d={layout.road} /> : null}
-            {layout.edges.map(edge => <path key={edge.id} d={edge.d} className={cn(styles.link, path.length > 0 && !pathIds.has(edge.id) && layout.nodes.find(n => n.id === edge.id)?.parentId !== last?.id && styles.muted)} style={{ stroke: `var(--hue-${edge.hue})` }} />)}
+            {layout.edges.map(edge => <path key={edge.id} d={edge.d} className={cn(styles.link, path.length > 0 && !pathIds.has(edge.id) && layout.byId.get(edge.id)?.parentId !== last?.id && styles.muted)} style={{ stroke: `var(--hue-${edge.hue})` }} />)}
           </svg>
           {layout.nodes.map(node => {
             const row = rows.get(node.id);
@@ -350,8 +380,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
         </div>
         <p className={cn(styles.float, styles.left)} aria-live="polite">{status}</p>
         <p className={cn(styles.float, styles.right)}>{free ? 'Manual' : last ? `Depth ${path.length}` : 'Overview'} · {Math.round(camera.z * 100)}%</p>
-        <p className={cn(styles.float, styles.bottom)}>Drag to pan · {mod} + scroll to zoom</p>
-        {hint ? <p className={styles.hint} role="status">Use {mod} + scroll to zoom</p> : null}
+        <MapHint ref={hintRef} />
       </section>
     </div>
     {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-6">

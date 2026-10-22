@@ -5,7 +5,7 @@ export interface RoadmapLocation extends ChecklistBranchOptions {
   missionId: string;
   nodeId?: string;
 }
-export function roadmapSearch(location: RoadmapLocation | null, due: string, view: string, { zoom = 100, layout = 'vertical' }: { zoom?: number; layout?: MapOrientation } = {}): string {
+export function roadmapSearch(location: RoadmapLocation | null, due: string, view: string, layout: MapOrientation = 'vertical'): string {
   const query = new URLSearchParams();
   if (due !== 'all') query.set('due', due);
   if (view === 'list') query.set('view', 'list');
@@ -18,7 +18,6 @@ export function roadmapSearch(location: RoadmapLocation | null, due: string, vie
     if (location.cursor) query.set('cursor', String(location.cursor));
     if (location.section && location.section !== 'activity') query.set('section', location.section);
   }
-  if (zoom !== 100) query.set('zoom', String(zoom));
   return query.size ? `?${query}` : '/today';
 }
 export function branchForRow(row: { id: string; checklistId: string; ownedChecklistId: string | null }): ChecklistBranchOptions {

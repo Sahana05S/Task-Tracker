@@ -62,13 +62,23 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
   const [revision, setRevision] = useState(0);
   const request = useRef(0);
   const panelHeading = useRef<HTMLHeadingElement>(null);
+  // The map reports locations from an effect that holds an older `onLocation`, so `remember` reads
+  // the layout through a ref rather than the render it was created in.
   const layoutRef = useRef(layout);
-  layoutRef.current = layout;
   function remember(location: RoadmapLocation | null, due: string, view: View) {
-    window.history.replaceState(null, '', roadmapSearch(location, due, view, { layout: layoutRef.current }));
+    window.history.replaceState(null, '', roadmapSearch(location, due, view, layoutRef.current));
+  }
+  function chooseLayout(next: MapOrientation) {
+    setLayout(next);
+    layoutRef.current = next;
+    rememberMapLayout(next);
+    remember(location, due, view);
   }
   // No layout in the URL: use the one last chosen on this device (vertical until switched).
-  useEffect(() => { if (!initialLayout) setLayout(readMapLayout()); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const stored = readMapLayout();
+    if (!initialLayout && stored !== 'vertical') chooseLayout(stored);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function open(path: RoadmapLocation, append = false) {
     const sequence = ++request.current;
@@ -131,12 +141,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
           label="Map layout"
           value={layout}
           options={LAYOUT_OPTIONS}
-          onValueChange={(next) => {
-            setLayout(next);
-            layoutRef.current = next;
-            rememberMapLayout(next);
-            remember(location, due, view);
-          }}
+          onValueChange={chooseLayout}
         /> : null}
         <SegmentedControl
           label="Mission view"
@@ -151,7 +156,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
       </div>
     </div>
     <nav aria-label="Mission deadline filters" className="mt-5 flex flex-wrap gap-2">
-      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view, { layout })} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
+      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view, layout)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
     </nav>
     {view === 'roadmap' ? <>
       {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}

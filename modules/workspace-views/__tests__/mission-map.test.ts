@@ -32,6 +32,16 @@ describe('mission map layout', () => {
     expect([after.x, after.y]).toEqual([before.x, before.y]);
   });
 
+  it('keeps a first page of siblings still when more items load', () => {
+    const page = (n: number) => [{ parentId: 'm1', children: [...Array.from({ length: n }, (_, i) => entity(`c${i}`)), entity('more:m1', 'more')] }];
+    const before = layoutMissionMap(missions, page(20)).nodes.filter(n => n.parentId);
+    const after = layoutMissionMap(missions, page(40)).nodes.filter(n => n.parentId);
+    for (const node of before.slice(0, 20)) {
+      const moved = after.find(n => n.id === node.id)!;
+      expect([moved.x, moved.y]).toEqual([node.x, node.y]);
+    }
+  });
+
   it('ignores levels whose parent is not on the map', () => {
     expect(layoutMissionMap(missions, [{ parentId: 'missing', children: [entity('x')] }]).nodes).toHaveLength(3);
   });
@@ -63,7 +73,8 @@ describe('horizontal mission map', () => {
     }
     const swap = (d: string) => d.replace(/(-?[\d.]+) (-?[\d.]+)/g, '$2 $1');
     expect(horizontal.road).toBe(swap(vertical.road));
-    expect([horizontal.width, horizontal.height]).toEqual([vertical.height, vertical.width]);
+    const [plainV, plainH] = [layoutMissionMap(missions, []), layoutMissionMap(missions, [], 'horizontal')];
+    expect([plainH.width, plainH.height]).toEqual([plainV.height, plainV.width]);
   });
 
   it('mirrors every branch node: the same distance off the road, siblings spread wider along it', () => {
@@ -126,11 +137,11 @@ describe('map wheel', () => {
 
 describe('roadmap URL layout', () => {
   it('round-trips the horizontal layout and leaves vertical out of the URL', () => {
-    const search = roadmapSearch({ missionId: '00000000-0000-4000-8000-000000000001', section: 'activity' }, 'today', 'roadmap', { layout: 'horizontal' });
+    const search = roadmapSearch({ missionId: '00000000-0000-4000-8000-000000000001', section: 'activity' }, 'today', 'roadmap', 'horizontal');
     const query = Object.fromEntries(new URLSearchParams(search.slice(1)));
     expect(roadmapLayout(query.layout)).toBe('horizontal');
     expect(parseRoadmapLocation(query)?.missionId).toBe('00000000-0000-4000-8000-000000000001');
-    expect(roadmapSearch(null, 'all', 'roadmap', { layout: 'vertical' })).toBe('/today');
+    expect(roadmapSearch(null, 'all', 'roadmap', 'vertical')).toBe('/today');
     expect(roadmapLayout(undefined)).toBeNull();
     expect(roadmapLayout('diagonal')).toBeNull();
   });
