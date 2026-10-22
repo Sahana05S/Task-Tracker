@@ -5,6 +5,7 @@ import * as React from 'react';
 import {
   buildSetupPayload,
   carryoverAvailable,
+  defaultPreviousAction,
   defaultStandingSelection,
   previousRows,
   singleOwner,
@@ -43,15 +44,26 @@ function initialSelection(context: MonthSetupContext): SetupSelection {
   return {
     standing,
     phasesOwnerId: context.phasesSetUp.length > 0 ? null : context.directorId,
-    previous: new Map(previousRows(context.previous, context.standing).map(({ mission, defaultAction }) => [mission.id, defaultAction])),
+    // Every earlier mission has a default; step 4 shows the ones this setup does not recreate.
+    previous: new Map(context.previous.map((mission) => [mission.id, defaultPreviousAction(mission)])),
     reason: '',
   };
 }
 
 export function useMonthSetup(context: MonthSetupContext, onChange: () => void) {
   const [selection, setSelection] = React.useState(() => initialSelection(context));
-  const rows = React.useMemo(() => previousRows(context.previous, context.standing), [context]);
   const phases = React.useMemo(() => weeklyPhases(context.month), [context.month]);
+  // A standing mission covers last month's copy once any cell is ticked or already set up;
+  // the phases cover Tasks Review missions while they are created or already exist.
+  const included = context.standing
+    .filter((mission) => mission.setUp.length > 0 || context.members.some((member) => selection.standing.has(standingKey(mission.id, member.id))))
+    .map((mission) => mission.id)
+    .join(',');
+  const phasesCovered = selection.phasesOwnerId !== null || context.phasesSetUp.length > 0;
+  const rows = React.useMemo(() => {
+    const ids = new Set(included.split(','));
+    return previousRows(context.previous, context.standing.filter((mission) => ids.has(mission.id)), phasesCovered);
+  }, [context, included, phasesCovered]);
   const carry = carryoverAvailable(context.month, context.today);
 
   const update = React.useCallback((change: (current: SetupSelection) => SetupSelection) => {
@@ -87,7 +99,8 @@ export function useMonthSetup(context: MonthSetupContext, onChange: () => void) 
   let repeats = 0;
   let carries = 0;
   let waiting = 0;
-  for (const action of selection.previous.values()) {
+  for (const { mission } of rows) {
+    const action = selection.previous.get(mission.id);
     if (action === 'repeat') repeats += 1;
     else if (action === 'carryover' && carry) carries += 1;
     else if (action === 'carryover') waiting += 1;
@@ -96,7 +109,8 @@ export function useMonthSetup(context: MonthSetupContext, onChange: () => void) 
   const total = selection.standing.size + phaseCount + repeats + carries;
 
   const payload = () => {
-    const body = buildSetupPayload({ month: context.month, standing: selection.standing, phasesOwnerId: selection.phasesOwnerId, previous: selection.previous }, context.today);
+    const previous = new Map(rows.map(({ mission }) => [mission.id, selection.previous.get(mission.id) ?? 'skip']));
+    const body = buildSetupPayload({ month: context.month, standing: selection.standing, phasesOwnerId: selection.phasesOwnerId, previous }, context.today);
     return selection.reason.trim() ? { ...body, reason: selection.reason.trim() } : body;
   };
 

@@ -11,6 +11,13 @@ import { CategoryBadge } from '@/shared/ui/tracker-badges';
 
 const firstName = (member: SetupMember) => member.name.split(/\s+/)[0] || member.name;
 
+/** First names, or full names where two members share one. */
+function columnNames(members: readonly SetupMember[]): Map<string, string> {
+  const counts = new Map<string, number>();
+  for (const member of members) counts.set(firstName(member), (counts.get(firstName(member)) ?? 0) + 1);
+  return new Map(members.map((member) => [member.id, (counts.get(firstName(member)) ?? 0) > 1 ? member.name : firstName(member)]));
+}
+
 /**
  * Standing missions × active members. Per-member rows tick a box per person;
  * single-owner rows pick one owner. Cells an earlier setup of this month
@@ -18,6 +25,7 @@ const firstName = (member: SetupMember) => member.name.split(/\s+/)[0] || member
  */
 export function StandingGrid({ context, state }: { context: MonthSetupContext; state: MonthSetupState }) {
   const { members, standing } = context;
+  const names = columnNames(members);
   if (standing.length === 0) {
     return (
       <EmptyState
@@ -37,7 +45,7 @@ export function StandingGrid({ context, state }: { context: MonthSetupContext; s
             <th scope="col" className="sheet-grid-frozen min-w-56 text-left">Mission</th>
             {members.map((member) => (
               <th key={member.id} scope="col" className="min-w-20 text-center" title={member.name}>
-                {firstName(member)}
+                {names.get(member.id)}
               </th>
             ))}
           </tr>
@@ -48,7 +56,8 @@ export function StandingGrid({ context, state }: { context: MonthSetupContext; s
             const single = mission.ownerMode === 'single';
             const ticked = members.filter((member) => state.selection.standing.has(standingKey(mission.id, member.id)));
             const open = members.filter((member) => !done.has(member.id));
-            const allOn = ticked.length > 0 && ticked.length === open.length;
+            // A single-owner row is on when it has its owner; a per-member row when everyone is ticked.
+            const allOn = ticked.length > 0 && (single || ticked.length === open.length);
             const rowLabel = standingTitle(mission, context.month, single ? 'owner' : 'each member');
             const owner = state.ownerOf(mission.id) ?? open[0]?.id;
             return (
@@ -57,7 +66,7 @@ export function StandingGrid({ context, state }: { context: MonthSetupContext; s
                   <label className="flex items-start gap-2.5">
                     <RowToggle
                       checked={allOn}
-                      mixed={ticked.length > 0 && !allOn}
+                      mixed={!single && ticked.length > 0 && !allOn}
                       disabled={open.length === 0 || (single && done.size > 0)}
                       label={`Include ${rowLabel}`}
                       onChange={(on) => state.setRow(mission.id, !on ? [] : single ? (owner ? [owner] : []) : open.map((m) => m.id))}

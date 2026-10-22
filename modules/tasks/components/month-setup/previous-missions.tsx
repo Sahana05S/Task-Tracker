@@ -20,7 +20,7 @@ export function PreviousMissions({ context, state }: { context: MonthSetupContex
   const hidden = context.previous.length - state.rows.length;
   const first = monthBounds(context.month);
   const startsOn = new Date(`${first.start}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-  const anyCarry = [...state.selection.previous.values()].includes('carryover');
+  const anyCarry = state.rows.some(({ mission }) => state.selection.previous.get(mission.id) === 'carryover');
 
   if (state.rows.length === 0) {
     return (

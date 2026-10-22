@@ -185,19 +185,32 @@ export function swapMonthInTitle(title: string, from: MonthKey, to: MonthKey): s
 }
 
 /**
- * A mission the standing list or the weekly phases already recreate: its title
- * is a standing pattern rendered for its own month (any member), or a weekly
- * Tasks Review phase. Step 4 hides these.
+ * A mission this setup already recreates: its title is one of the included
+ * standing patterns rendered for its own month (any member), or a weekly Tasks
+ * Review phase while phases are included. Step 4 hides these.
  */
-export function isCovered(mission: PreviousMission, standing: readonly SetupStanding[]): boolean {
-  if (/^Tasks Review\b/i.test(mission.title.trim())) return true;
-  const label = monthBounds(monthOf(mission.assignedDate)).label;
-  return standing.some((item) => {
-    const pattern = escapeRegExp(item.titlePattern)
-      .replaceAll('\\{month\\}', escapeRegExp(label))
-      .replaceAll('\\{member\\}', '.+');
-    return new RegExp(`^${pattern}$`, 'i').test(mission.title.trim());
-  });
+export function coverageMatcher(standing: readonly SetupStanding[], phases = true): (mission: PreviousMission) => boolean {
+  const byMonth = new Map<MonthKey, RegExp[]>();
+  const patterns = (key: MonthKey) => {
+    let list = byMonth.get(key);
+    if (!list) {
+      const label = escapeRegExp(monthBounds(key).label);
+      list = standing.map((item) => new RegExp(`^${escapeRegExp(item.titlePattern).replaceAll('\\{month\\}', label).replaceAll('\\{member\\}', '.+')}$`, 'i'));
+      byMonth.set(key, list);
+    }
+    return list;
+  };
+  return (mission) => {
+    const title = mission.title.trim();
+    if (phases && TASKS_REVIEW.test(title)) return true;
+    return patterns(monthOf(mission.assignedDate)).some((pattern) => pattern.test(title));
+  };
+}
+
+const TASKS_REVIEW = /^Tasks Review\b/i;
+
+export function isCovered(mission: PreviousMission, standing: readonly SetupStanding[], phases = true): boolean {
+  return coverageMatcher(standing, phases)(mission);
 }
 
 /**
@@ -212,9 +225,10 @@ export function defaultPreviousAction(mission: PreviousMission): PreviousAction 
 }
 
 /** Step 4 rows: earlier missions not covered by steps 2 and 3, with their defaults. */
-export function previousRows(missions: readonly PreviousMission[], standing: readonly SetupStanding[]) {
+export function previousRows(missions: readonly PreviousMission[], standing: readonly SetupStanding[], phases = true) {
+  const covered = coverageMatcher(standing, phases);
   return missions
-    .filter((mission) => !isCovered(mission, standing))
+    .filter((mission) => !covered(mission))
     .map((mission) => ({ mission, defaultAction: defaultPreviousAction(mission) }));
 }
 

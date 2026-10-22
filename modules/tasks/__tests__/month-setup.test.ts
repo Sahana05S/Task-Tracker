@@ -154,6 +154,13 @@ describe('last month\'s missions', () => {
     expect(isCovered(mission({ title: 'Tasks Tracker, Accounts Book and Attendance Sheet - October 2026' }), STANDING)).toBe(true);
   });
 
+  it('covers only what this setup includes', () => {
+    const review = mission({ title: 'Tasks Review - October 2026 - Week 5' });
+    expect(isCovered(review, STANDING, false)).toBe(false);
+    expect(isCovered(mission({ title: 'Off Hours - October 2026 - Bala K' }), STANDING.slice(1))).toBe(false);
+    expect(previousRows([review], [], false).map((row) => row.defaultAction)).toEqual(['repeat']);
+  });
+
   it('lists the rest with their defaults', () => {
     const rows = previousRows([
       mission({ id: 'a', title: 'Off Hours - October 2026 - Bala K' }),
