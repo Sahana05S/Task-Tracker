@@ -73,3 +73,7 @@ jobs:
         run: python tools/test_policies_database.py --psql "$(command -v psql)" --port 15432
       - name: Demo recognition seed (script only, loopback)
         run: python tools/test_seed_demo_recognition_database.py --psql "$(command -v psql)" --port 15432 --manifest-dir "$RUNNER_TEMP/demo-recognition"
+      - name: Install openpyxl for the sheet tools
+        run: python -m pip install openpyxl==3.1.5
+      - name: Attendance import from the billed attendance sheet (script only, loopback)
+        run: python tools/test_attendance_import_database.py --psql "$(command -v psql)" --port 15432 --manifest-dir "$RUNNER_TEMP/attendance-import"
