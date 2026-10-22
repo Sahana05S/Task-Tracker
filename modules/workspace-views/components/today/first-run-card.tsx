@@ -27,18 +27,18 @@ export function FirstRunCard({ name }: { name: string }) {
       </button>
       <div className="pr-10">
         <h2 id="first-run-title" className="text-foreground text-base font-bold tracking-tight">Welcome, {name.split(' ')[0]}. Three things to start with</h2>
-        <p className="text-muted-foreground mt-0.5 text-sm">Each takes a minute. You can come back to the guide any time.</p>
+        <p className="text-muted-foreground mt-0.5 hidden text-sm sm:block">Each takes a minute. You can come back to the guide any time.</p>
       </div>
       <ol className="grid gap-3 md:grid-cols-3">
         {STEPS.map(({ icon: Icon, title, body, href, action }, index) => (
-          <li key={href} className="bg-card border-border grid content-start gap-1.5 rounded-xl border p-4">
+          <li key={href} className="bg-card border-border grid content-start gap-1 rounded-xl border px-4 py-3 sm:gap-1.5 sm:p-4">
             <p className="text-primary flex items-center gap-2 text-xs font-bold tracking-wide uppercase">
               <span className="bg-primary text-primary-foreground grid size-5 place-items-center rounded-full text-[11px]" aria-hidden="true">{index + 1}</span>
               <Icon className="size-4" aria-hidden="true" />
             </p>
             <h3 className="text-foreground text-sm font-semibold">{title}</h3>
-            <p className="text-muted-foreground text-sm">{body}</p>
-            <Link href={href} className="link mt-1 justify-self-start text-sm font-semibold">{action}</Link>
+            <p className="text-muted-foreground hidden text-sm sm:block">{body}</p>
+            <Link href={href} className="link justify-self-start text-sm font-semibold sm:mt-1">{action}</Link>
           </li>
         ))}
       </ol>

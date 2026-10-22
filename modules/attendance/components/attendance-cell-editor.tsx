@@ -36,16 +36,19 @@ export function AttendanceCellEditor({ memberId, cell, onSaved }: { memberId: st
   const { regular: regularAllowed, off: offAllowed } = statusHours(values.status);
   const correcting = Boolean(cell.recordId);
   const id = (name: string) => `attendance-${cell.date}-${name}`;
+  // "No attendance recorded" is why the editor is open; only the other reasons need saying.
+  const reasons = [...new Set(cell.reasons)].filter(reason => reason !== 'attendance_missing');
+  const logged = cell.effortHours ? `${formatHours(cell.effortHours)} h logged on missions this day.` : null;
 
   return (
     <ExecutionForm action={saveAttendanceRecord} scope={`attendance:${memberId}:${cell.date}`} className="grid gap-4" onSuccess={onSaved}>
       {Object.entries(cellCommand(memberId, cell, values)).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
-      {cell.reasons.length ? (
+      {reasons.length ? (
         <div className="bg-attention-subtle text-attention-foreground grid gap-0.5 rounded-xl px-3 py-2 text-sm">
-          {[...new Set(cell.reasons)].map(reason => <p key={reason}><span className="font-semibold">{codeLabel(reason)}.</span> {codeMeaning(reason)}</p>)}
-          {cell.effortHours !== null ? <p>{formatHours(cell.effortHours)} h logged on missions this day.</p> : null}
+          {reasons.map(reason => <p key={reason}><span className="font-semibold">{codeLabel(reason)}.</span> {codeMeaning(reason)}</p>)}
+          {logged ? <p>{logged}</p> : null}
         </div>
-      ) : cell.effortHours ? <p className="text-muted-foreground text-sm">{formatHours(cell.effortHours)} h logged on missions this day.</p> : null}
+      ) : logged ? <p className="text-muted-foreground text-sm">{logged}</p> : null}
       <fieldset className="grid gap-2">
         <legend className="text-foreground mb-2 text-sm font-medium">Status</legend>
         <div className="grid grid-cols-3 gap-1.5">

@@ -16,7 +16,7 @@ export function TaskLifecyclePanel({ task }: { task: Task }) {
  const field=(label:string,name:string,value?:number|null)=><label className="text-sm font-medium">{label}<input type="number" name={name} min="0" step="any" defaultValue={value ?? ''} required className={control} /></label>;
  return <section className="soft-card grid gap-4 p-5 sm:p-6">
   <h2 className="text-foreground flex items-center gap-2 text-base font-bold tracking-tight"><RefreshCwIcon className="text-primary size-5" aria-hidden="true" />Lifecycle and scale</h2>
-  <p className="text-muted-foreground flex flex-wrap items-center text-sm">Scale: {codeLabel(task.scaleMode ?? 'manual')}{task.scaleProvenance ? ` (${task.scaleProvenance})` : ''}. Credit already earned keeps the scale it was earned at.<HelpTip tip="scale" /></p>
+  <p className="text-muted-foreground text-sm">Scale: {codeLabel(task.scaleMode ?? 'manual')}{task.scaleProvenance ? ` (${task.scaleProvenance})` : ''}. Credit already earned keeps the scale it was earned at.<HelpTip tip="scale" /></p>
   <div className="grid gap-4 xl:grid-cols-2">
   <ExecutionForm action={form=>changeTaskLifecycle(null,form)} scope="transition" className="bg-muted/70 grid content-start gap-3 rounded-xl p-4">
    {identity}<input type="hidden" name="command" value="transition" />

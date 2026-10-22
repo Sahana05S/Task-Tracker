@@ -33,7 +33,7 @@ export function EffortPanel({
         <CompactMetric label="Metrics eligible" value={task.validForMetrics ? 'Yes' : 'No'} />
       </dl>
       <div className="border-border text-muted-foreground mt-4 grid gap-2 border-t pt-3 text-xs">
-        <p className="flex flex-wrap items-center">Counted in performance: {task.validForMetrics ? 'yes' : `not yet (${codeLabels(task.eligibilityReasons ?? [], ', ') || 'reason not recorded'})`}. Productivity also needs logged hours.<HelpTip tip="eligible" /></p>
+        <p>Counted in performance: {task.validForMetrics ? 'yes' : `not yet (${codeLabels(task.eligibilityReasons ?? [], ', ') || 'reason not recorded'})`}. Productivity also needs logged hours.<HelpTip tip="eligible" /></p>
         <p>Participant shares: {task.participantShares ? Object.entries(task.participantShares).map(([id,units])=>`${memberNames.get(id) ?? 'Former member'}: ${units/10000}%`).join(", ") : "not set for this older mission yet"}.</p>
       </div>
     </MissionPanel>

@@ -4,6 +4,7 @@ import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-reac
 import type { AttendanceMatrixModel } from '@/modules/attendance/client';
 import { HelpTip } from '@/shared/ui/help-tip';
 import { EmptyState, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
+import { shiftMonth } from '@/shared/time/period';
 import { cn } from '@/shared/utils';
 import { AttendanceDayFill } from './attendance-day-fill';
 import { AttendanceMatrix } from './attendance-matrix';
@@ -41,14 +42,14 @@ export function AttendanceWorkspace({ model, periodLabel, previous, next, editab
           <nav aria-label="Month" className="flex items-center gap-2">
             <Link href={`/attendance?month=${previous}`} className={nav}><ChevronLeftIcon className="size-4" aria-hidden="true" />{shortMonth(previous)}</Link>
             {next ? <Link href={`/attendance?month=${next}`} className={nav}>{shortMonth(next)}<ChevronRightIcon className="size-4" aria-hidden="true" /></Link>
-              : <span className={cn(nav, 'text-muted-foreground pointer-events-none opacity-60')} aria-disabled="true">{shortMonth(model.month)}<ChevronRightIcon className="size-4" aria-hidden="true" /></span>}
+              : <span className={cn(nav, 'text-muted-foreground pointer-events-none opacity-60')} aria-disabled="true" title="That month has not started yet">{shortMonth(shiftMonth(model.month, 1))}<ChevronRightIcon className="size-4" aria-hidden="true" /></span>}
           </nav>
         }
       />
       {monthError ? <MissionNotice tone="attention" role="status">{monthError}</MissionNotice> : null}
-      <p className="text-muted-foreground flex flex-wrap items-center text-sm">
+      <p className="text-muted-foreground text-sm">
         Record every day that has passed. Time logged on missions each day must fit within regular hours plus off-hours.
-        <HelpTip tip="gate" />
+        {' '}<HelpTip tip="gate" />
       </p>
       <MissionPanel icon={CalendarDaysIcon} title={periodLabel} subtitle={editable.length ? 'Select a day to record or correct it.' : undefined}>
         {model.rows.length ? (
