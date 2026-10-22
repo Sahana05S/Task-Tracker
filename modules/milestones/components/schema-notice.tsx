@@ -37,7 +37,7 @@ export function SchemaNotice({ migration }: SchemaNoticeProps) {
       <details className="mt-3 max-w-2xl">
         <summary className="cursor-pointer text-sm font-semibold">Setup steps for whoever manages the database</summary>
       <p className="mt-1.5 max-w-2xl text-sm opacity-90">
-        This page reads 
+        This page reads{' '}
         <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
           company_statements
         </code>{' '}

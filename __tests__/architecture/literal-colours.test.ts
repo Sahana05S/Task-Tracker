@@ -35,8 +35,8 @@ const LITERALS = [
   /\b(?:rgba?|hsla?|oklch)\(\s*\d[^)]*\)/g,
 ];
 
-// Cheap test before the full patterns run: most files have no palette word or hex at all.
-const MAYBE = new RegExp(`#[0-9a-fA-F]{3}|-${PALETTE}(?![\\w])|\\b(?:rgba?|hsla?|oklch)\\(`);
+// Cheap first pass, built from the same patterns so the two never drift (non-global copies keep no state).
+const MAYBE = LITERALS.map((pattern) => new RegExp(pattern.source, pattern.flags.replace('g', '')));
 
 function* walk(dir: string): Generator<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -53,7 +53,7 @@ describe('theme tokens', () => {
         const rel = relative(ROOT, file).replace(/\\/g, '/');
         if (SKIP.some((s) => s.test(rel))) continue;
         const text = readFileSync(file, 'utf8');
-        if (!MAYBE.test(text)) continue;
+        if (!MAYBE.some((pattern) => pattern.test(text))) continue;
         const allowed = new Set(ALLOWED[rel] ?? []);
         for (const pattern of LITERALS) {
           for (const match of text.matchAll(pattern)) {
