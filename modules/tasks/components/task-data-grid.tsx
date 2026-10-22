@@ -20,6 +20,7 @@ import {
 } from '@/modules/tasks/components/mission-selection';
 import { ProgressInput } from '@/modules/tasks/components/progress-input';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
+import type { WaypointSlotComponent } from '@/modules/tasks/components/task-card-list';
 import { TaskRowMenuItems, type TaskRowActions } from '@/modules/tasks/components/task-row-menu';
 import { FreshnessIndicator, PriorityBadge } from '@/shared/ui/tracker-badges';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -55,6 +56,8 @@ export interface TaskDataGridProps {
   selection: Selection;
   onSelectionChange: (next: Selection) => void;
   actions: TaskRowActions;
+  /** The Waypoint column's cell; the column is left out without it. */
+  WaypointSlot?: WaypointSlotComponent;
 }
 
 interface ColumnDef {
@@ -63,6 +66,8 @@ interface ColumnDef {
   readonly numeric?: boolean;
   /** Read by screen readers only (the actions column). */
   readonly hidden?: boolean;
+  /** Shown only when the composing page fills `WaypointSlot`. */
+  readonly waypointSlot?: boolean;
 }
 
 /**
@@ -76,6 +81,7 @@ const COLUMNS: readonly ColumnDef[] = [
   { key: 'priority', label: 'Priority' },
   { key: 'status', label: 'Status' },
   { key: 'progressPercentage', label: 'Progress', numeric: true },
+  { key: null, label: 'Waypoint', waypointSlot: true },
   { key: 'hoursLogged', label: 'Hours', numeric: true },
   { key: 'freshness', label: 'Freshness' },
   { key: 'dueDate', label: 'Due' },
@@ -105,7 +111,9 @@ export function TaskDataGrid({
   selection,
   onSelectionChange,
   actions,
+  WaypointSlot,
 }: TaskDataGridProps) {
+  const columns = WaypointSlot ? COLUMNS : COLUMNS.filter((column) => !column.waypointSlot);
   // Only rows the viewer can act on are selectable: open missions, and for
   // members their own. A batch is atomic, so one refused row would fail it all.
   const selectableIds = React.useMemo(
@@ -135,7 +143,7 @@ export function TaskDataGrid({
                 <SortButton label="Tag" sortKey="taskTag" sort={sort} onSortChange={onSortChange} />
               </div>
             </th>
-            {COLUMNS.map((column) => (
+            {columns.map((column) => (
               <HeaderCell key={column.label} column={column} sort={sort} onSortChange={onSortChange} />
             ))}
           </tr>
@@ -208,6 +216,12 @@ export function TaskDataGrid({
                     canEdit={canEditOwnFields && task.progressOwner !== 'checklist'}
                   />
                 </td>
+
+                {WaypointSlot ? (
+                  <td className="w-36 max-w-36">
+                    <WaypointSlot taskId={task.id} taskTag={task.taskTag} progress={task.progressPercentage} stopped={Boolean(task.archivedEffectiveDate) || task.status === 'Discarded'} variant="cell" />
+                  </td>
+                ) : null}
 
                 {/* Aggregated from daily_task_logs; no column on tasks. */}
                 <td className="sheet-numeric text-xs">

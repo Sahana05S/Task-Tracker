@@ -9,3 +9,4 @@ export { getTeamRunningTimers } from '@/modules/time-tracking/internal/timers/qu
 export { getTaskExecution } from '@/modules/time-tracking/internal/execution';
 export { countMyLogsInPeriod } from '@/modules/time-tracking/internal/logs/counts';
 export { getMemberLogDates } from '@/modules/time-tracking/internal/logs/member-log-dates';
+export { getMemberDayHours } from '@/modules/time-tracking/internal/logs/member-day-hours';

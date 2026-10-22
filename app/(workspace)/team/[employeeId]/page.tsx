@@ -14,8 +14,10 @@ import { StarCalendar } from '@/modules/team/components/star-calendar';
 import { requireProfile } from '@/shared/session/profile';
 import { canViewEmployeeProfile } from '@/modules/team/client';
 import { getEmployeeProfileData, type EmployeeProfileData } from '@/modules/team';
+import { getWaypointCount, type WaypointCount } from '@/modules/recognition';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatHours, formatNumeric } from '@/shared/tracker/format';
+import { currentPeriod } from '@/shared/time/period';
 import { UnavailableValue } from '@/shared/ui/unavailable-value';
 import { carriedQuery, ProfileHeader, type ProfileTab } from './profile-header';
 
@@ -47,6 +49,10 @@ export default async function EmployeePage({ params, searchParams }: EmployeePag
 
   const data = routeState.data;
   if (!canViewEmployeeProfile(viewer, data.employee)) notFound();
+  // Recognition only; the database refuses another member's count unless the viewer manages.
+  const waypoints = tab === 'overview'
+    ? await getWaypointCount(data.employee.id, data.period.startDate, data.period.endDate).catch(() => null)
+    : null;
 
   return (
     <MissionPage>
@@ -65,13 +71,13 @@ export default async function EmployeePage({ params, searchParams }: EmployeePag
       ) : tab === 'missions' ? (
         <Missions data={data} />
       ) : (
-        <Overview data={data} />
+        <Overview data={data} waypoints={waypoints} />
       )}
     </MissionPage>
   );
 }
 
-function Overview({ data }: { data: EmployeeProfileData }) {
+function Overview({ data, waypoints }: { data: EmployeeProfileData; waypoints: WaypointCount | null }) {
   const attendance = data.presentation.sources.attendance.find(a => a.userId === data.employee.id)?.available ?? false;
   const support = data.presentation.contributions.filter(c => ['fact', 'idea', 'suggestion'].includes(c.kind));
   const score = data.performance ? displayPerformance(data.performance.calculation?.compositeExact ?? null, 2) : '—';
@@ -89,6 +95,13 @@ function Overview({ data }: { data: EmployeeProfileData }) {
             <StatTile label="Support posts" value={String(support.length)} note={`${support.filter(c => c.source.validation_state === 'validated').length} validated`} />
             <StatTile label="Sales logs" value={String(data.presentation.contributions.filter(c => c.kind === 'sale').length)} />
             <StatTile label="Employee reports" value={String(data.supportSummary.reports)} />
+            {waypoints ? (
+              <StatTile
+                label={data.period.startDate === currentPeriod().startDate ? 'Waypoints this month' : 'Waypoints reached'}
+                value={String(waypoints.total)}
+                note={waypoints.byKey.landing ? `${waypoints.byKey.landing} landed` : undefined}
+              />
+            ) : null}
           </dl>
         </section>
         <StarCalendar days={data.charts.starDays} />

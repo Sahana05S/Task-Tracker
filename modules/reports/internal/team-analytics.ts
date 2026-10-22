@@ -1,8 +1,11 @@
 import { getLivePresentation } from '@/modules/reports/internal/presentation/queries';
 import { viewContext,type ViewContext } from '@/modules/reports/internal/presentation/context';
 import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
+import { getAwards } from '@/modules/scoring';
 import { type TeamAnalytics } from '@/modules/scoring/client';
 import { buildWorkbookDashboardCharts, type WorkbookDashboardCharts } from '@/modules/scoring/client';
+import { dailyPerfRows, type DailyPerfFilter, type DailyPerfLog } from '@/modules/reports/internal/daily-perf-log';
+import { getMemberDayHours } from '@/modules/time-tracking';
 import { createClient } from '@/shared/supabase/server';
 
 /**
@@ -83,4 +86,34 @@ export async function getStoredSnapshots(
     isStarPerformer: row.is_star_performer ?? false,
     createdAt: row.created_at,
   }));
+}
+
+/**
+ * The daily perf log for a filter built with `dailyPerfFilter`. Rows cover
+ * active members plus anyone with a retained run in the range, or just the
+ * filtered member. Throws when a source is unavailable, so the page shows it
+ * as unavailable rather than as empty.
+ */
+export async function getDailyPerfLog(filter: DailyPerfFilter): Promise<DailyPerfLog> {
+  const db = await createClient();
+  const range: AnalyticsPeriod = {
+    year: Number(filter.from.slice(0, 4)),
+    month: Number(filter.from.slice(5, 7)),
+    startDate: filter.from,
+    endDate: filter.to,
+    label: `${filter.from} to ${filter.to}`,
+  };
+  const [awards, users, hours] = await Promise.all([
+    getAwards(db, range, undefined, filter.member ?? undefined),
+    db.from('users').select('id, full_name, is_active'),
+    getMemberDayHours(filter.from, filter.to, filter.member),
+  ]);
+  if (users.error) throw new Error(`Members unavailable: ${users.error.message}`);
+  const ran = new Set(awards.days.flatMap((day) => day.candidates.map((candidate) => candidate.userId)));
+  const options = users.data
+    .filter((user) => user.is_active || ran.has(user.id) || user.id === filter.member)
+    .map((user) => ({ id: user.id, fullName: user.full_name }))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+  const members = filter.member ? options.filter((option) => option.id === filter.member) : options;
+  return { ...filter, members, options, rows: dailyPerfRows({ from: filter.from, to: filter.to, members, days: awards.days, hours }) };
 }

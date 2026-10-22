@@ -47,7 +47,18 @@ export interface TaskCardListProps {
    * composes this list with time tracking, so tasks does not depend on it.
    */
   LogHoursAction?: LogHoursActionComponent;
+  /** The mission's waypoint track under its progress bar (recognition fills it). */
+  WaypointSlot?: WaypointSlotComponent;
 }
+
+/** A recognition waypoint track for one task; `stopped` is a discarded or archived mission. */
+export type WaypointSlotComponent = React.ComponentType<{
+  taskId: string;
+  taskTag: string;
+  progress: number | null;
+  stopped: boolean;
+  variant: 'compact' | 'cell';
+}>;
 
 /** A time-tracking control for one task (the tag gives it a unique accessible name). */
 export type LogHoursActionComponent = React.ComponentType<{ taskId: string; taskTag: string }>;
@@ -73,6 +84,7 @@ export const TaskCardList = React.memo(function TaskCardList({
   canManage,
   actions,
   LogHoursAction,
+  WaypointSlot,
 }: TaskCardListProps) {
   return (
     <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -87,6 +99,7 @@ export const TaskCardList = React.memo(function TaskCardList({
             canManage={canManage}
             actions={actions}
             LogHoursAction={LogHoursAction}
+            WaypointSlot={WaypointSlot}
           />
         </li>
       ))}
@@ -108,6 +121,7 @@ interface MissionCardProps {
   canManage: boolean;
   actions: TaskRowActions;
   LogHoursAction?: LogHoursActionComponent;
+  WaypointSlot?: WaypointSlotComponent;
 }
 
 function MissionCard({
@@ -119,6 +133,7 @@ function MissionCard({
   canManage,
   actions,
   LogHoursAction,
+  WaypointSlot,
 }: MissionCardProps) {
   const href = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const archived = Boolean(task.archivedEffectiveDate);
@@ -198,6 +213,9 @@ function MissionCard({
           </span>
         </div>
         <MissionProgress value={task.progressPercentage} label={`Progress for ${task.taskTag}`} />
+        {WaypointSlot ? (
+          <WaypointSlot taskId={task.id} taskTag={task.taskTag} progress={task.progressPercentage} stopped={archived || task.status === 'Discarded'} variant="compact" />
+        ) : null}
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <span className="tabular-nums">
             <ClockIcon className="mr-1 inline size-3 align-[-1px]" aria-hidden="true" />

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { CalendarDaysIcon, CheckCircle2Icon, CircleDotIcon, GaugeIcon } from 'lucide-react';
 
 import { MissionProgress, StatTile } from '@/shared/ui/mission-ui';
@@ -16,11 +17,14 @@ export function MissionOverview({
   assigneeNames,
   reviewerNames,
   overdue,
+  belowProgress,
 }: {
   data: TaskDetailData;
   assigneeNames: readonly string[];
   reviewerNames: readonly string[];
   overdue: boolean;
+  /** Under the progress bar: the waypoint track, supplied by the page. */
+  belowProgress?: ReactNode;
 }) {
   const task = data.task;
   return (
@@ -33,6 +37,7 @@ export function MissionOverview({
         </span>
       </div>
       <MissionProgress value={task.progressPercentage} label="Overall progress" className="mt-2 h-2.5" />
+      {belowProgress ? <div className="mt-1.5">{belowProgress}</div> : null}
       <p className="text-muted-foreground mt-2 text-xs">
         Activity checklist {formatPercent(data.checklistProgressPercentage)} ·{' '}
         {formatHours(data.effort.hoursLogged)} h logged
