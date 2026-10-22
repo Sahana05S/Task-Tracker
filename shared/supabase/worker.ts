@@ -1,7 +1,6 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
-
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import { bearerMatches } from '@/shared/security/bearer';
 import type { Database } from '@/types/database';
 
 /**
@@ -20,8 +19,6 @@ export function workerClient(url: string, key: string, organizationId?: string |
 /** Builds the per-company client for one job, or keeps the unscoped one. */
 export type ForOrganization = (organizationId: string) => SupabaseClient<Database>;
 
-const digest = (value: string) => createHash('sha256').update(value).digest();
-
 /** `sandbox` for test environments, `production` for the scheduled live run; anything else is off. */
 const ENABLED_MODES = new Set(['sandbox', 'production']);
 
@@ -36,8 +33,7 @@ export function authorizeWorkerRequest(request: Request, worker = 'Award worker'
   if (!token || !ENABLED_MODES.has(process.env.TASKPULSE_AWARD_WORKER_ENABLED ?? '')) {
     return Response.json({ status: 'unavailable', reason: `${worker} is not configured.` }, { status: 503 });
   }
-  const supplied = request.headers.get('authorization') ?? '';
-  if (!timingSafeEqual(digest(supplied), digest('Bearer ' + token))) {
+  if (!bearerMatches(request, token)) {
     return Response.json({ status: 'forbidden' }, { status: 403 });
   }
   return null;

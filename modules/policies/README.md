@@ -44,11 +44,14 @@ nothing in scoring reads the policy tables.
 - **Nightly worker.** `POST /api/internal/policies` (`handlePolicyWorkerRun`)
   runs behind `authorizeWorkerRequest` (`shared/supabase/worker.ts`: the award
   worker's token and switch). Per active company, with a client scoped by
-  `x-taskpulse-organization`, it reads up to 20 due periods, evaluates them with
-  `runDueItems` and reports `remaining`; the second step of
-  `.github/workflows/award-worker.yml` calls it until nothing is due (at most 20
-  calls a night) and fails the job when a company pass fails. A company whose due
-  work cannot be read gets a failed run too, and the loop moves on.
+  `x-taskpulse-organization`, it evaluates due periods 20 at a time with
+  `runDueItems` until none are due, the company fails, or the call's 45-second
+  budget is spent, and reports what the database still has due (`remaining`).
+  The second step of `.github/workflows/award-worker.yml` calls again while
+  anything remains (at most 20 calls a night) and fails the job when a company
+  pass fails. A failing company is not retried that night; its due work waits.
+  A company whose due work cannot be read gets a failed run too, and the other
+  companies still run.
 - **Versions.** Every change is an immutable revision. A closed period is judged
   by the version in force when it ended; the open period by the current one.
 

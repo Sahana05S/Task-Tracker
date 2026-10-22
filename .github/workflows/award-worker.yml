@@ -82,6 +82,10 @@ jobs:
           TOKEN: ${{ secrets.TASKPULSE_AWARD_WORKER_TOKEN }}
         run: |
           set -euo pipefail
+          if [ -z "${APP_URL:-}" ] || [ -z "${TOKEN:-}" ]; then
+            echo "::error::APP_URL and TASKPULSE_AWARD_WORKER_TOKEN secrets are required."
+            exit 1
+          fi
           all='[]'
           for batch in $(seq 1 20); do
             code=$(curl -sS -o response.json -w '%{http_code}' -X POST \
