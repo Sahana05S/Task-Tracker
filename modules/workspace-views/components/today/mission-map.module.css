@@ -11,7 +11,7 @@
   content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .45;
   background-image: radial-gradient(var(--map-road) 1px, transparent 1px); background-size: 24px 24px;
 }
-.dragging { cursor: grabbing; }
+.dragging { cursor: grabbing; user-select: none; }
 .world {
   position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; pointer-events: none;
   transition: transform 300ms cubic-bezier(.22,.82,.18,1);

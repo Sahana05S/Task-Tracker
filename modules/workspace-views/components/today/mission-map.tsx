@@ -48,9 +48,9 @@ const MapHint = forwardRef<{ show: () => void }>(function MapHint(_, ref) {
   }, [hint]);
   useImperativeHandle(ref, () => ({ show: () => { if (!shown.current) { shown.current = true; setHint(true); } } }), []);
   return <>
-    <p className={cn(styles.float, styles.bottom)}>Drag to pan · {mod} + scroll to zoom</p>
+    <p className={cn(styles.float, styles.bottom)}>Drag to pan · {mod}{'\u00a0+\u00a0'}scroll to zoom</p>
     {/* Stays mounted so the status is announced when its text appears. */}
-    <p className={cn(styles.hint, !hint && styles.idle)} role="status">{hint ? `Use ${mod} + scroll to zoom` : ''}</p>
+    <p className={cn(styles.hint, !hint && styles.idle)} role="status">{hint ? `Use ${mod}\u00a0+\u00a0scroll to zoom` : ''}</p>
   </>;
 });
 
@@ -383,7 +383,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
         <MapHint ref={hintRef} />
       </section>
     </div>
-    {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-6">
+    {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-[calc(var(--spacing-header)+1.5rem)]">
       <div className="flex items-start justify-between gap-3"><h3 ref={panelHeading} id="map-work-title" tabIndex={-1} className="text-foreground min-w-0 text-lg font-semibold break-words outline-none">{leaf.title}</h3>
         <Button variant="ghost" size="icon" className="size-8" aria-label="Close focused work" onClick={() => setLeafId(null)}><XIcon aria-hidden="true" /></Button></div>
       <RoadmapItemWork key={`${leaf.id}:${leafLevel.taskVersion}`} mission={{ ...mission, lifecycleVersion: leafLevel.taskVersion }} node={leaf} onOpen={() => undefined} onCommitted={refreshPath} />

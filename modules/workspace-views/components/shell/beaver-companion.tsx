@@ -25,7 +25,8 @@ export function BeaverCompanion({ state = 'neutral', message = 'One small step m
   state?: BeaverState; message?: string;
 }) {
   const pathname = usePathname();
-  const [hidden, setHidden] = useState(true);
+  // Null until the stored preference is read, so neither state flashes on load.
+  const [hidden, setHidden] = useState<boolean | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   useEffect(() => {
     try { setHidden(window.localStorage.getItem(PREFERENCE) === '1'); }
@@ -42,6 +43,7 @@ export function BeaverCompanion({ state = 'neutral', message = 'One small step m
     setHidden(value);
     try { window.localStorage.setItem(PREFERENCE, value ? '1' : '0'); } catch { /* Storage may be unavailable; the current preference still works. */ }
   }
+  if (hidden === null) return null;
   if (hidden) return <button type="button" className="text-muted-foreground hover:text-foreground focus-visible:outline-primary min-h-9 rounded px-2 py-1 text-xs underline underline-offset-4" onClick={() => setPreference(false)}>Show beaver</button>;
   return <aside aria-label="TaskPulse companion" className="flex max-w-sm items-center gap-2">
     <TaskPulseBeaver state={hint ? 'thinking' : state} size={64} />

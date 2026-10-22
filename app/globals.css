@@ -457,6 +457,20 @@
   html {
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
+    /* Anchor jumps and focused targets park below the sticky top bar. */
+    scroll-padding-top: calc(var(--spacing-header) + 0.5rem);
+  }
+
+  /* No double-tap zoom delay on controls. */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  label,
+  summary,
+  [role='button'] {
+    touch-action: manipulation;
   }
 
   body {
@@ -1153,6 +1167,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Menus, sheets and skeletons (tw-animate-css, animate-pulse) stop moving too. */
+  .animate-in,
+  .animate-out,
+  .animate-pulse {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
   .flame-flicker,
   .flame-inner,
   .anim-pop,

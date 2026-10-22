@@ -207,7 +207,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
           {batchError ? <p role="alert" className="text-danger mt-3 text-sm">{batchError} <button type="button" className={cn('link rounded font-semibold', FOCUS)} disabled={loadingMore} onClick={() => loadMoreMissions()}>Retry batch</button></p> : null}
         </div>
       </div>
-      {selected && mission && branch?.checklist ? <aside aria-labelledby="focused-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-6">
+      {selected && mission && branch?.checklist ? <aside aria-labelledby="focused-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-[calc(var(--spacing-header)+1.5rem)]">
         <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 ref={panelHeading} id="focused-work-title" tabIndex={-1} className="text-foreground break-words text-lg font-semibold outline-none">{selected.title}</h3></div><Button variant="ghost" size="icon" className="size-8" aria-label="Close focused work" onClick={closePanel}><XIcon aria-hidden="true" /></Button></div>
         <RoadmapItemWork key={`${selected.id}:${branch.taskVersion}`} mission={{ ...mission, lifecycleVersion: branch.taskVersion }} node={selected} onOpen={() => open({ missionId: mission.id, ...branchForRow(selected) })} onCommitted={refreshBranch} />
       </aside> : null}

@@ -191,7 +191,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
 
       {tab === 'work' ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <main className="grid min-w-0 content-start gap-6">
+          <section className="grid min-w-0 content-start gap-6">
             <ChecklistHero
               href={checklistHref}
               title={data.checklist?.title ?? null}
@@ -216,7 +216,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             />
             {waypoints?.recent.length ? <WaypointCelebration tasks={waypoints.recent} waypoints={waypoints.waypoints} /> : null}
             {canManage ? <TaskLifecyclePanel task={task} /> : null}
-          </main>
+          </section>
           <aside className="grid h-fit min-w-0 gap-6">
             <MissionPanel icon={TimerIcon} title="Timer">
               <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
@@ -233,7 +233,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         </div>
       ) : details && native ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <main className="grid min-w-0 content-start gap-6">
+          <section className="grid min-w-0 content-start gap-6">
             <MissionBrief
               task={task}
               sections={data.sections}
@@ -255,7 +255,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             <MissionPanel icon={GitBranchIcon} title="Dependency missions">
               <DependencyList dependencies={data.dependencies} taskId={task.id} />
             </MissionPanel>
-          </main>
+          </section>
           <aside className="grid h-fit min-w-0 gap-6">
             <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
           </aside>

@@ -17,7 +17,9 @@ import { createClient } from '@/shared/supabase/client';
 import { cn } from '@/shared/utils';
 
 const INITIAL_STATE: AuthActionState | null = null;
-
+const FEEDBACK_ID = 'auth-feedback';
+/** Email fields: no spellcheck, capitals or autocorrect, and the email keyboard on phones. */
+export const EMAIL_INPUT = { type: 'email', autoComplete: 'email', inputMode: 'email', spellCheck: false, autoCapitalize: 'none' } as const;
 export interface AuthFormProps {
   /** Destination after a successful sign-in. Validated again server-side. */
   redirectTo: string;
@@ -40,7 +42,9 @@ export function AuthForm({
   const [oauthError, setOauthError] = React.useState<string | undefined>(
     initialError,
   );
-
+  // Kept across a failed submit (React resets uncontrolled fields after a form
+  // action) and across the Sign in / Accept invitation switch.
+  const [email, setEmail] = React.useState('');
   const [loginState, loginAction, loginPending] = React.useActionState(
     login,
     INITIAL_STATE,
@@ -91,16 +95,15 @@ export function AuthForm({
     <div className="flex flex-col gap-5">
       {/* Mode switch */}
       <div
-        role="tablist"
-        aria-label="Authentication mode"
+        role="group"
+        aria-label="Sign in or accept an invitation"
         className="grid grid-cols-2 gap-1 rounded-md border border-border bg-muted p-1"
       >
         {(['login', 'signup'] satisfies readonly AuthMode[]).map((value) => (
           <button
             key={value}
             type="button"
-            role="tab"
-            aria-selected={mode === value}
+            aria-pressed={mode === value}
             onClick={() => {
               setMode(value);
               setOauthError(undefined);
@@ -127,7 +130,7 @@ export function AuthForm({
         className="relative flex w-full items-center justify-center gap-2.5 border-input py-2.5 font-medium text-foreground hover:bg-muted hover:text-foreground"
       >
         {oauthLoading ? (
-          <LoaderCircleIcon className="size-4 animate-spin text-muted-foreground" />
+          <LoaderCircleIcon className="size-4 animate-spin text-muted-foreground" aria-hidden="true" />
         ) : (
           <GoogleIcon className="size-4 shrink-0" />
         )}
@@ -151,9 +154,9 @@ export function AuthForm({
             <MailCheckIcon className="size-5" />
           </span>
           <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-semibold text-success-strong">
+            <p className="text-sm font-semibold text-success-strong">
               Confirm your email address
-            </h3>
+            </p>
             <p className="text-xs leading-relaxed text-success-strong">
               {successMessage}
             </p>
@@ -163,7 +166,7 @@ export function AuthForm({
             <button
               type="button"
               onClick={() => setMode('login')}
-              className="font-semibold underline underline-offset-2"
+              className="rounded-sm font-semibold underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
             >
               Sign in
             </button>{' '}
@@ -179,10 +182,12 @@ export function AuthForm({
             id="login-email"
             name="email"
             label="Email"
-            type="email"
-            autoComplete="email"
+            {...EMAIL_INPUT}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             placeholder="you@company.com"
             invalid={Boolean(errorMessage)}
+            errorId={FEEDBACK_ID}
             required
           />
           <Field
@@ -192,6 +197,7 @@ export function AuthForm({
             type="password"
             autoComplete="current-password"
             invalid={Boolean(errorMessage)}
+            errorId={FEEDBACK_ID}
             required
           />
           <Link
@@ -201,13 +207,13 @@ export function AuthForm({
             Forgot password?
           </Link>
 
-          <FormFeedback error={errorMessage} success={successMessage} />
+          <FormFeedback id={FEEDBACK_ID} error={errorMessage} success={successMessage} />
 
           <Button type="submit" disabled={pending || oauthLoading} className="w-full">
             {pending ? (
               <>
                 <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
-                Signing in
+                Signing in…
               </>
             ) : (
               'Sign in'
@@ -225,10 +231,12 @@ export function AuthForm({
             id="signup-email"
             name="email"
             label="Invited email"
-            type="email"
-            autoComplete="email"
+            {...EMAIL_INPUT}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             placeholder="you@company.com"
             invalid={Boolean(errorMessage)}
+            errorId={FEEDBACK_ID}
             required
           />
           <Field
@@ -240,16 +248,15 @@ export function AuthForm({
             hint="At least 8 characters."
             minLength={8}
             invalid={Boolean(errorMessage)}
+            errorId={FEEDBACK_ID}
             required
           />
-
-          <FormFeedback error={errorMessage} success={successMessage} />
-
+          <FormFeedback id={FEEDBACK_ID} error={errorMessage} success={successMessage} />
           <Button type="submit" disabled={pending || oauthLoading} className="w-full">
             {pending ? (
               <>
                 <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
-                Creating account
+                Creating account…
               </>
             ) : (
               'Create my account'
@@ -307,10 +314,13 @@ interface FieldProps extends React.ComponentProps<'input'> {
   label: string;
   hint?: string;
   invalid?: boolean;
+  /** The form's message element, read out with the field while it is invalid. */
+  errorId?: string;
 }
 
-export function Field({ id, label, hint, invalid, ...props }: FieldProps) {
+export function Field({ id, label, hint, invalid, errorId, ...props }: FieldProps) {
   const hintId = hint ? `${id}-hint` : undefined;
+  const describedBy = [hintId, invalid ? errorId : undefined].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -320,7 +330,7 @@ export function Field({ id, label, hint, invalid, ...props }: FieldProps) {
       <Input
         id={id}
         aria-invalid={invalid}
-        aria-describedby={hintId}
+        aria-describedby={describedBy}
         {...props}
       />
       {hint ? (
@@ -337,19 +347,18 @@ export function Field({ id, label, hint, invalid, ...props }: FieldProps) {
 /* -------------------------------------------------------------------------- */
 
 interface FormFeedbackProps {
+  id?: string;
   error?: string;
   success?: string;
 }
 
-export function FormFeedback({ error, success }: FormFeedbackProps) {
+export function FormFeedback({ id, error, success }: FormFeedbackProps) {
   if (!error && !success) return null;
-
   const isError = Boolean(error);
-
   return (
     <div
-      role="alert"
-      aria-live="polite"
+      id={id}
+      role={isError ? 'alert' : 'status'}
       className={cn(
         'flex items-start gap-2 rounded-md border px-3 py-2 text-sm',
         isError

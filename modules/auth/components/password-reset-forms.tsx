@@ -6,7 +6,7 @@ import { LoaderCircleIcon } from 'lucide-react';
 import { forgotPassword, resetPassword } from '../actions';
 import type { AuthActionState } from '../client';
 import { Button } from '@/shared/ui/button';
-import { Field, FormFeedback } from './auth-form';
+import { EMAIL_INPUT, Field, FormFeedback } from './auth-form';
 
 const INITIAL_STATE: AuthActionState | null = null;
 
@@ -31,20 +31,20 @@ export function ForgotPasswordForm({ linkError }: { linkError?: boolean }) {
         id="reset-email"
         name="email"
         label="Email"
-        type="email"
-        autoComplete="email"
+        {...EMAIL_INPUT}
         placeholder="you@company.com"
         invalid={Boolean(error)}
+        errorId="reset-feedback"
         required
       />
 
-      <FormFeedback error={error} success={success} />
+      <FormFeedback id="reset-feedback" error={error} success={success} />
 
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? (
           <>
             <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
-            Sending
+            Sending…
           </>
         ) : (
           'Send reset link'
@@ -89,7 +89,7 @@ export function NewPasswordForm() {
         {pending ? (
           <>
             <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
-            Saving
+            Saving…
           </>
         ) : (
           'Set password'
