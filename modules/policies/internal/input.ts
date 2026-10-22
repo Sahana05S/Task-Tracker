@@ -1,16 +1,14 @@
 // PRIVATE. Parses the policy dialog's FormData into a definition. Friendly
 // messages only: policy_command validates the shape again.
-import { UUID_PATTERN } from '@/shared/forms/form-data';
+import { readString as text, UUID_PATTERN } from '@/shared/forms/form-data';
+import { isUserRole } from '@/shared/tracker/enums';
 
 import { templateFor, type ParameterSpec } from './templates';
-import type { Audience, MemberRole, Parameters, ParameterValue, PeriodKind, PolicyDefinition } from './types';
+import type { Audience, Parameters, ParameterValue, PeriodKind, PolicyDefinition } from './types';
 
 export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
 
-const ROLES: readonly MemberRole[] = ['managing_director', 'project_engineer', 'data_manager', 'team_member'];
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-const text = (form: FormData, key: string) => String(form.get(key) ?? '').trim();
 
 export function parseParameter(spec: ParameterSpec, raw: string): Parsed<ParameterValue> {
   switch (spec.type) {
@@ -38,7 +36,7 @@ function parseAudience(form: FormData): Parsed<Audience> {
   const kind = text(form, 'audienceKind') || 'everyone';
   if (kind === 'everyone') return { ok: true, value: { kind } };
   if (kind === 'roles') {
-    const roles = form.getAll('audienceRoles').map(String).filter((r): r is MemberRole => (ROLES as readonly string[]).includes(r));
+    const roles = form.getAll('audienceRoles').map(String).filter(isUserRole);
     return roles.length ? { ok: true, value: { kind, roles: [...new Set(roles)] } } : { ok: false, error: 'Pick at least one role.' };
   }
   if (kind === 'members') {

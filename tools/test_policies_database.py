@@ -110,7 +110,7 @@ for db in DBS:
     op=str(uuid4())
     created=ok(db,A_DIR,command('create',p1_def,op))
     P1=created['policyId']
-    assert created=={'policyId':P1,'version':1,'active':True}
+    assert created=={'policyId':P1,'version':1,'active':True,'archived':False}
     assert ok(db,A_DIR,command('create',p1_def,op))==created,'a replay returns the first response'
     refused(db,A_DIR,command('create',{**p1_def,'name':'Something else'},op),'PT409')
     assert value(db,"count(*) FROM taskpulse_private.policies")=='1'
@@ -217,7 +217,8 @@ for db in DBS:
     assert remet['changed']==1 and remet['notified']==0 and value(db,f"count(*) FROM taskpulse_private.notifications WHERE recipient_id='{A4}'")=='1'
     print('PASS',db,'a correction to not met keeps the commendation date (withdrawn after correction); met again is not notified twice')
 
-    refused(db,W,recording('nightly',[{**item(by[today],[ev(A4,'met')]),'final':True}]),'PT409')
+    skipped=ok(db,W,recording('nightly',[{**item(by[today],[ev(A4,'met')]),'final':True}]))
+    assert skipped['stale']==1 and skipped['periods']==0 and skipped['evaluated']==0,'a period that closed meanwhile is skipped and stays due'
     refused(db,W,recording('nightly',[{**item(by[d(2)],[ev(A4,'met')]),'periodKey':d(1)}]),'23514')
     refused(db,W,recording('nightly',[item(by[d(2)],[ev(B4,'met')])]),'42501')
     refused(db,W,recording('nightly',[item(by[d(2)],[ev(A4,'maybe')])]),'23514')
@@ -231,7 +232,7 @@ for db in DBS:
     refused(db,A_DIR,recording('on_demand',[item(p2,[ev(A5,'met')])]),'23514')
     assert ok(db,A_DIR,recording('on_demand',[item(p2,[ev(A4,'met')])]))['changed']==1
     assert value(db,"count(*) FROM taskpulse_private.policy_runs WHERE trigger='on_demand' AND status='completed' AND actor_id IS NOT NULL")=='1'
-    print('PASS',db,'refused: a period that closed meanwhile (PT409), mismatched keys, other-company members, unknown outcomes, oversized evidence, other-company workers, wrong triggers, non-directors and members outside the audience')
+    print('PASS',db,'a period that closed meanwhile is skipped (stays due); refused: mismatched keys, other-company members, unknown outcomes, oversized evidence, other-company workers, wrong triggers, non-directors and members outside the audience')
 
     for k,i in by.items():
         if k!=d(3):ok(db,W,recording('nightly',[item(i,[ev(A4,'not_met','below_min_hours'),ev(A5,'unavailable','attendance_missing')])]))
@@ -250,11 +251,18 @@ for db in DBS:
     ok(db,W,recording('invalidation',[item(by[d(1)],[ev(A4,'met'),ev(A5,'unavailable','attendance_missing')])]))
     assert d(1) not in [i['periodKey'] for i in ok(db,W,due())['items'] if i['policyId']==P1]
     sql(db,f"BEGIN; SELECT set_config('request.jwt.claim.sub','{A_DIR}',true); UPDATE public.tasks SET due_date='{d(2)}' WHERE id='{T1}'; COMMIT;")
-    assert value(db,f"from_date||'/'||to_date FROM taskpulse_private.policy_invalidations WHERE source='task' ORDER BY id DESC LIMIT 1")==f'{d(10)}/{today}'
+    assert value(db,f"from_date||'/'||to_date FROM taskpulse_private.policy_invalidations WHERE source='task' ORDER BY id DESC LIMIT 1")==f'{d(20)}/{today}'
     assert {i['periodKey'] for i in ok(db,W,due())['items'] if i['policyId']==P1}>={d(4),d(3),d(2),d(1),today}
+    # A correction that moves a dated record invalidates its old date too.
+    fact=ok(db,A4,f"SELECT public.dated_record_command('fact',NULL,'save',{j({'business_date':d(4),'content':'Moved fact'})},0,gen_random_uuid())")
+    ok(db,A4,f"SELECT public.dated_record_command('fact','{fact['id']}','save',{j({'business_date':d(2),'content':'Moved fact','reason':'Wrong date'})},{fact['version']},gen_random_uuid())")
+    moved=value(db,f"string_agg(from_date::text,',' ORDER BY from_date) FROM (SELECT from_date FROM taskpulse_private.policy_invalidations WHERE source='fact' ORDER BY id DESC LIMIT 2) x")
+    assert moved==f'{d(4)},{d(2)}',moved
+    sql(db,f"BEGIN; SELECT set_config('request.jwt.claim.sub','{A_DIR}',true); INSERT INTO public.task_assignees(task_id,user_id,share_units,is_primary) VALUES('{T1}','{A5}',0,false); COMMIT;")
+    assert value(db,"from_date||'/'||to_date FROM taskpulse_private.policy_invalidations WHERE source='task_assignee'")==f"{d(20)}/{today}"
     att(B4,d(1),'Present','09:00')
     assert value(db,f"count(*) FROM taskpulse_private.policy_invalidations WHERE organization_id='{B}'")=='0','no live policy in B: nothing recorded'
-    print('PASS',db,'attendance and mission changes record invalidated ranges; due work returns the touched periods until evaluated with facts read after the change; companies without policies record nothing')
+    print('PASS',db,'attendance, moved records, mission and collaborator changes record invalidated ranges (a mission from its assigned date); due work returns the touched periods until evaluated with facts read after the change; companies without policies record nothing')
 
     # ------------------------------------------------------------------ notifications
     inbox=ok(db,A4,"SELECT public.notifications_list(20)")

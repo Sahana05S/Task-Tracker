@@ -1,6 +1,6 @@
 // PRIVATE. The template contract. Adding a template is one file in this
 // folder, one line in ./index.ts and its fixture cases: no migration.
-import type { DayFact, MemberFacts, Parameters, ParameterValue, Period, PeriodKind, Reason, Reward, TemplateResult } from '../types';
+import type { DayFact, MemberFacts, Parameters, Period, PeriodKind, Reason, Reward, TemplateResult } from '../types';
 
 export type ParameterSpec =
   | { key: string; label: string; help?: string; type: 'time' }
@@ -86,8 +86,4 @@ export function reason(code: string, dates: string[] = [], more: Omit<Reason, 'c
 
 export function plural(n: number, one: string, many = one + 's'): string {
   return `${n} ${n === 1 ? one : many}`;
-}
-
-export function valueOf(params: Parameters, spec: ParameterSpec, defaults: Parameters): ParameterValue {
-  return params[spec.key] ?? defaults[spec.key];
 }

@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { isMissingFunctionError } from '@/shared/supabase/schema-errors';
 import type { Database, Json } from '@/types/database';
 
+import type { OutcomeCounts } from './evaluate';
 import type { Audience, FactsModel, Outcome, Parameters, PeriodKind, PolicyDefinition, Reason, Reward } from './types';
 
 export type Db = SupabaseClient<Database>;
@@ -41,6 +42,9 @@ export interface DueItem {
 }
 export interface DueWork { today: string; through: string; remaining: number; items: DueItem[] }
 
+/** record_run's answer; `stale` counts periods that opened or closed since their facts were read (left due). */
+export interface RecordResponse { runId: string; evaluated: number; changed: number; notified: number; stale: number }
+
 export async function readDueWork(db: Db, options: { through?: string; limit?: number; policyId?: string } = {}): Promise<DueWork> {
   return unwrap<DueWork>('Policy due work', await db.rpc('policy_due_work', {
     p_through: options.through ?? null, p_limit: options.limit ?? 20, p_policy: options.policyId ?? null,
@@ -64,7 +68,7 @@ export interface PolicyRow {
   appliesToMe: boolean;
   period: { key: string; start: string; end: string };
   lastEvaluatedAt: string | null;
-  counts: { met: number; notMet: number; unavailable: number } | null;
+  counts: OutcomeCounts | null;
   mine: { outcome: Outcome; final: boolean; reasons: Reason[]; evaluatedAt: string } | null;
 }
 export interface PolicyList { today: string; canManage: boolean; isManager: boolean; policies: PolicyRow[] }

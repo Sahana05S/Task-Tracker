@@ -1,9 +1,10 @@
 // PRIVATE. Domain types of the policies module (migration 56). Pure: shared
 // by templates, the evaluator, the worker and client components (via client.ts).
+import type { AttendanceStatus, UserRole } from '@/types/tracker';
 
 export type PeriodKind = 'day' | 'week' | 'month';
 export type Outcome = 'met' | 'not_met' | 'unavailable';
-export type MemberRole = 'managing_director' | 'project_engineer' | 'data_manager' | 'team_member';
+export type MemberRole = UserRole;
 
 /** One policy period: keys 2026-10-19 (day), 2026-W43 (ISO week), 2026-10 (month). Dates inclusive. */
 export interface Period {
@@ -42,7 +43,7 @@ export interface PolicyDefinition {
 /** One member-day from policy_period_facts. Hours are null when not confirmed. */
 export interface DayFact {
   date: string;
-  status: 'Present' | 'Absent' | 'Half Day' | 'Holiday' | 'Leave' | 'Off Hours' | null;
+  status: AttendanceStatus | null;
   checkIn: string | null;
   regularHours: number | null;
   offHours: number | null;

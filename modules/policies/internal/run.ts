@@ -4,7 +4,7 @@
 // becomes a failed run (record_failure), never a silent zero.
 import { policyCommand } from './commands';
 import { evaluatePolicy } from './evaluate';
-import { readFacts, type Db, type DueItem } from './queries';
+import { readFacts, type Db, type DueItem, type RecordResponse } from './queries';
 import type { FactsModel, Period } from './types';
 
 export type RunTrigger = 'nightly' | 'on_demand' | 'invalidation';
@@ -15,31 +15,37 @@ export interface RunSummary {
   evaluated: number;
   changed: number;
   notified: number;
+  /** Periods skipped because they opened or closed meanwhile; they stay due. */
+  stale: number;
   runIds: string[];
   errorCode?: string;
 }
 
-interface RecordResponse { runId: string; evaluated: number; changed: number; notified: number }
-
 const BATCH = 50;
+/** Facts reads in flight at once (each can cover 62 days of a company). */
+const READS = 4;
+
+const rangeOf = (item: DueItem) => `${item.periodStart}/${item.periodEnd}`;
 
 function failureCode(stage: 'facts' | 'evaluate' | 'record'): string {
   return { facts: 'facts_read_failed', evaluate: 'evaluation_failed', record: 'record_failed' }[stage];
 }
 
 export async function runDueItems(db: Db, items: DueItem[], trigger: RunTrigger): Promise<RunSummary> {
-  const summary: RunSummary = { status: 'completed', periods: 0, evaluated: 0, changed: 0, notified: 0, runIds: [] };
+  const summary: RunSummary = { status: 'completed', periods: 0, evaluated: 0, changed: 0, notified: 0, stale: 0, runIds: [] };
   if (!items.length) return summary;
   let stage: 'facts' | 'evaluate' | 'record' = 'facts';
   try {
     const facts = new Map<string, FactsModel>();
-    for (const item of items) {
-      const range = `${item.periodStart}/${item.periodEnd}`;
-      if (!facts.has(range)) facts.set(range, await readFacts(db, item.periodStart, item.periodEnd));
+    const pending = [...new Map(items.map((item) => [rangeOf(item), item])).entries()];
+    for (let i = 0; i < pending.length; i += READS) {
+      await Promise.all(pending.slice(i, i + READS).map(async ([range, item]) => {
+        facts.set(range, await readFacts(db, item.periodStart, item.periodEnd));
+      }));
     }
     stage = 'evaluate';
     const records = items.map((item) => {
-      const model = facts.get(`${item.periodStart}/${item.periodEnd}`)!;
+      const model = facts.get(rangeOf(item))!;
       const period: Period = { kind: item.periodKind, key: item.periodKey, start: item.periodStart, end: item.periodEnd };
       const result = evaluatePolicy(item.definition, period, model);
       return {
@@ -56,6 +62,7 @@ export async function runDueItems(db: Db, items: DueItem[], trigger: RunTrigger)
       summary.evaluated += response.evaluated;
       summary.changed += response.changed;
       summary.notified += response.notified;
+      summary.stale += response.stale;
       summary.runIds.push(response.runId);
     }
     return summary;

@@ -29,11 +29,18 @@ nothing in scoring reads the policy tables.
 - **Failures are rows.** A failed pass writes a `failed` run with an error code
   and notifies the managing directors once a day. Nothing is shown as a zero.
 - **Corrections.** Every retained input change (attendance, logs, contributions,
-  sales) and every change to a mission's dates, assignee, archive or discarded
-  state records an invalidated date range; `policy_due_work` returns the touched
-  periods again. Only rows whose outcome, reasons or evidence changed are
+  sales; for a moved record its old date too) records an invalidated date. A
+  mission added, removed or changed (dates, assignee, archive, discarded) or a
+  collaborator change invalidates the mission's footprint, from its assigned date
+  to today. Reactivating a policy re-checks the 62-day window. One range is
+  recorded once per transaction, so bulk updates stay cheap. `policy_due_work`
+  returns the touched periods again until they are evaluated from facts read
+  after the change. Only rows whose outcome, reasons or evidence changed are
   updated. A commendation that stops being met keeps its date and shows as
   "withdrawn after correction"; notifications are never sent twice.
+- **Midnight.** A period that closes between the facts read and the recording is
+  skipped (`stale` in the response) and stays due; it is never recorded as final
+  from provisional facts.
 - **Versions.** Every change is an immutable revision. A closed period is judged
   by the version in force when it ended; the open period by the current one.
 

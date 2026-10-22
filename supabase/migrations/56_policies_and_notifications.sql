@@ -60,6 +60,8 @@ CREATE TABLE taskpulse_private.policies (
 -- One live (not archived) policy per name in a company.
 CREATE UNIQUE INDEX policies_live_name ON taskpulse_private.policies(organization_id,lower(btrim(name))) WHERE archived_at IS NULL;
 CREATE INDEX policies_created_by_idx ON taskpulse_private.policies(created_by);
+-- The invalidation triggers ask "does this company have a live policy?" on every input write.
+CREATE INDEX policies_live_idx ON taskpulse_private.policies(organization_id) WHERE active;
 
 -- Every version of a policy, immutable: closed periods are judged by the
 -- version in force when they ended.
@@ -141,9 +143,13 @@ CREATE TABLE taskpulse_private.policy_invalidations (
  from_date date NOT NULL,
  to_date date NOT NULL CHECK (to_date>=from_date),
  source text NOT NULL CHECK (source ~ '^[a-z_]{1,40}$'),
- invalidated_at timestamptz NOT NULL DEFAULT clock_timestamp()
+ invalidated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ -- The writing transaction, so one bulk update records a range once.
+ tx bigint NOT NULL DEFAULT (pg_current_xact_id()::text::bigint)
 );
 CREATE INDEX policy_invalidations_lookup ON taskpulse_private.policy_invalidations(organization_id,invalidated_at);
+-- Member sales counts in the facts read (facts, ideas, suggestions have theirs since 45).
+CREATE INDEX IF NOT EXISTS sales_logs_sales_by_date_idx ON public.sales_logs(sales_by,sale_date);
 
 CREATE TABLE taskpulse_private.policy_receipts (
  organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT,
@@ -212,6 +218,12 @@ LANGUAGE sql IMMUTABLE SET search_path='' AS $$
  WHERE p_kind IN ('day','week','month') AND p_day IS NOT NULL AND isfinite(p_day);
 $$;
 
+-- A uuid from text, or NULL when it is not one.
+CREATE FUNCTION taskpulse_private.policy_uuid(p text) RETURNS uuid
+LANGUAGE sql IMMUTABLE SET search_path='' AS $$
+ SELECT CASE WHEN p ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN p::uuid END;
+$$;
+
 -- Audience: {"kind":"everyone"}, {"kind":"roles","roles":[...]} or
 -- {"kind":"members","ids":[...]}.
 CREATE FUNCTION taskpulse_private.policy_audience_includes(p_audience jsonb,p_user uuid,p_role text)
@@ -251,7 +263,7 @@ DECLARE name text; description text; audience jsonb; reward jsonb; params jsonb;
         OR r#>>'{}' NOT IN ('managing_director','project_engineer','data_manager','team_member')))
    OR (audience->>'kind'='members' AND jsonb_typeof(audience->'ids')='array' AND jsonb_array_length(audience->'ids') BETWEEN 1 AND 500
        AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(audience->'ids') r WHERE jsonb_typeof(r)<>'string'
-        OR r#>>'{}' !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'))) THEN
+        OR taskpulse_private.policy_uuid(r#>>'{}') IS NULL))) THEN
   RAISE EXCEPTION 'Audience must be everyone, a list of roles or a list of members' USING ERRCODE='23514'; END IF;
  reward:=p->'reward';
  IF jsonb_typeof(reward)<>'object' OR reward->>'kind' IS DISTINCT FROM 'commendation'
@@ -283,6 +295,15 @@ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$ BEGIN
  IF actor IS NULL OR role IS NULL OR org IS NULL THEN RAISE EXCEPTION 'Active authenticated account required' USING ERRCODE='42501'; END IF;
 END $$;
 
+-- The signed-in caller of a read (workers are refused), with manager authority.
+CREATE FUNCTION taskpulse_private.policy_member(OUT org uuid,OUT actor uuid,OUT role text,OUT manager boolean)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
+DECLARE c record; BEGIN
+ SELECT * INTO c FROM taskpulse_private.policy_caller();
+ IF c.worker THEN RAISE EXCEPTION 'Signed-in account required' USING ERRCODE='42501'; END IF;
+ org:=c.org; actor:=c.actor; role:=c.role; manager:=c.role IN ('managing_director','project_engineer');
+END $$;
+
 -- Team holiday dates of the caller's company: 37/53's public function when it
 -- accepts the caller, else 37's rule (every active member on Holiday).
 CREATE FUNCTION taskpulse_private.policy_team_holidays(p_org uuid,p_from date,p_to date,OUT dates date[],OUT source text)
@@ -290,7 +311,7 @@ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$ BEGIN
  IF p_to<p_from THEN dates:='{}'; source:='none'; RETURN; END IF;
  BEGIN
   dates:=public.team_holiday_dates(p_from,p_to); source:='team_holiday_dates'; RETURN;
- EXCEPTION WHEN insufficient_privilege OR undefined_function THEN NULL;
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
  END;
  SELECT coalesce(array_agg(g.day::date ORDER BY g.day),'{}') INTO dates
  FROM generate_series(p_from,p_to,interval '1 day') g(day)
@@ -335,13 +356,15 @@ DECLARE c record; manager boolean; today date:=(clock_timestamp() AT TIME ZONE '
  logged AS (
   SELECT l.user_id,l.log_date AS day,sum(l.hours_worked) AS hours FROM public.daily_task_logs l JOIN people p ON p.id=l.user_id
   WHERE l.reversed_at IS NULL AND l.log_date BETWEEN p_from AND through GROUP BY 1,2),
- contributed AS (
-  SELECT f.posted_by AS user_id,f.fact_date AS day FROM public.daily_facts f JOIN people p ON p.id=f.posted_by
-  WHERE f.validation_state NOT IN ('withdrawn','rejected') AND f.fact_date BETWEEN p_from AND through
-  UNION SELECT i.posted_by,i.idea_date FROM public.ideas i JOIN people p ON p.id=i.posted_by
-  WHERE i.validation_state NOT IN ('withdrawn','rejected') AND i.idea_date BETWEEN p_from AND through
-  UNION SELECT s.posted_by,s.suggestion_date FROM public.suggestions s JOIN people p ON p.id=s.posted_by
-  WHERE s.validation_state NOT IN ('withdrawn','rejected') AND s.suggestion_date BETWEEN p_from AND through),
+ posted AS (
+  SELECT f.posted_by AS user_id,f.fact_date AS day,'facts' AS kind,f.validation_state AS state FROM public.daily_facts f JOIN people p ON p.id=f.posted_by
+  WHERE f.fact_date BETWEEN p_from AND through
+  UNION ALL SELECT i.posted_by,i.idea_date,'ideas',i.validation_state FROM public.ideas i JOIN people p ON p.id=i.posted_by
+  WHERE i.idea_date BETWEEN p_from AND through
+  UNION ALL SELECT s.posted_by,s.suggestion_date,'suggestions',s.validation_state FROM public.suggestions s JOIN people p ON p.id=s.posted_by
+  WHERE s.suggestion_date BETWEEN p_from AND through
+  UNION ALL SELECT s.sales_by,s.sale_date,'sales',s.validation_state FROM public.sales_logs s JOIN people p ON p.id=s.sales_by
+  WHERE s.sale_date BETWEEN p_from AND through),
  day_rows AS (
   SELECT p.id AS user_id,jsonb_agg(jsonb_build_object(
     'date',d.day,'status',a.status,
@@ -355,14 +378,15 @@ DECLARE c record; manager boolean; today date:=(clock_timestamp() AT TIME ZONE '
   FROM people p CROSS JOIN days d
   LEFT JOIN att a ON a.user_id=p.id AND a.day=d.day
   LEFT JOIN logged l ON l.user_id=p.id AND l.day=d.day
-  LEFT JOIN (SELECT DISTINCT user_id,day FROM contributed) x ON x.user_id=p.id AND x.day=d.day
+  LEFT JOIN (SELECT DISTINCT user_id,day FROM posted WHERE kind<>'sales' AND state NOT IN ('withdrawn','rejected')) x ON x.user_id=p.id AND x.day=d.day
   GROUP BY p.id),
  mine AS (
-  SELECT p.id AS user_id,t.id,t.assigned_date,t.due_date,
+  SELECT x.user_id,t.id,t.assigned_date,t.due_date,
    CASE WHEN t.completed_date<=through THEN t.completed_date END AS completed
-  FROM people p JOIN public.tasks t ON t.organization_id=c.org
-   AND (t.assignee_id=p.id OR EXISTS(SELECT 1 FROM public.task_assignees ta WHERE ta.task_id=t.id AND ta.user_id=p.id))
-  WHERE t.status<>'Discarded' AND (t.assigned_date IS NULL OR t.assigned_date<=through)
+  FROM (SELECT t.id AS task_id,p.id AS user_id FROM public.tasks t JOIN people p ON p.id=t.assignee_id
+        UNION SELECT ta.task_id,ta.user_id FROM public.task_assignees ta JOIN people p ON p.id=ta.user_id) x
+  JOIN public.tasks t ON t.id=x.task_id
+  WHERE t.organization_id=c.org AND t.status<>'Discarded' AND (t.assigned_date IS NULL OR t.assigned_date<=through)
    AND (t.archived_effective_date IS NULL OR t.archived_effective_date>through)),
  judged AS (
   SELECT m.*,taskpulse_private.freshness_result(m.assigned_date,m.due_date,m.completed,
@@ -378,16 +402,13 @@ DECLARE c record; manager boolean; today date:=(clock_timestamp() AT TIME ZONE '
    'undated',count(*) FILTER (WHERE fresh IS NULL)) AS tasks
   FROM judged GROUP BY user_id),
  contrib_rows AS (
-  SELECT p.id AS user_id,jsonb_build_object(
-   'facts',(SELECT count(*) FROM public.daily_facts f WHERE f.posted_by=p.id AND f.validation_state='validated' AND f.fact_date BETWEEN p_from AND through),
-   'ideas',(SELECT count(*) FROM public.ideas i WHERE i.posted_by=p.id AND i.validation_state='validated' AND i.idea_date BETWEEN p_from AND through),
-   'suggestions',(SELECT count(*) FROM public.suggestions s WHERE s.posted_by=p.id AND s.validation_state='validated' AND s.suggestion_date BETWEEN p_from AND through),
-   'sales',(SELECT count(*) FROM public.sales_logs s WHERE s.sales_by=p.id AND s.validation_state='validated' AND s.sale_date BETWEEN p_from AND through)) AS counts
-  FROM people p)
+  SELECT user_id,jsonb_build_object('facts',count(*) FILTER (WHERE kind='facts'),'ideas',count(*) FILTER (WHERE kind='ideas'),
+   'suggestions',count(*) FILTER (WHERE kind='suggestions'),'sales',count(*) FILTER (WHERE kind='sales')) AS counts
+  FROM posted WHERE state='validated' GROUP BY user_id)
  SELECT coalesce(jsonb_agg(jsonb_build_object('userId',p.id,'name',p.full_name,'role',p.role,
    'days',coalesce(dr.days,'[]'::jsonb),
    'tasks',coalesce(tr.tasks,'{"open":0,"overdue":0,"stale":0,"rotten":0,"done":0,"undated":0}'::jsonb),
-   'contributions',cr.counts) ORDER BY p.id),'[]'::jsonb) INTO members
+   'contributions',coalesce(cr.counts,'{"facts":0,"ideas":0,"suggestions":0,"sales":0}'::jsonb)) ORDER BY p.id),'[]'::jsonb) INTO members
  FROM people p LEFT JOIN day_rows dr ON dr.user_id=p.id LEFT JOIN task_rows tr ON tr.user_id=p.id LEFT JOIN contrib_rows cr ON cr.user_id=p.id;
  RETURN jsonb_build_object('readAt',clock_timestamp(),'from',p_from,'to',p_to,'through',CASE WHEN through>=p_from THEN through END,'today',today,
   'timezone','Asia/Kolkata','holidaySource',holidays.source,'teamHolidays',to_jsonb(holidays.dates),'members',members);
@@ -411,11 +432,11 @@ DECLARE c record; today date:=(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::d
  through:=coalesce(p_through,today);
  IF NOT isfinite(through) OR through>today THEN RAISE EXCEPTION 'Through date must be today or earlier' USING ERRCODE='23514'; END IF;
  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION 'Limit between 1 and 100 required' USING ERRCODE='23514'; END IF;
- IF p_policy IS NOT NULL AND NOT EXISTS(SELECT 1 FROM taskpulse_private.policies WHERE id=p_policy AND organization_id=c.org AND active AND archived_at IS NULL) THEN
+ IF p_policy IS NOT NULL AND NOT EXISTS(SELECT 1 FROM taskpulse_private.policies WHERE id=p_policy AND organization_id=c.org AND active) THEN
   RAISE EXCEPTION 'Active policy not found in your company' USING ERRCODE='23514'; END IF;
  day_start:=(today::timestamp AT TIME ZONE 'Asia/Kolkata');
  WITH pol AS (
-  SELECT * FROM taskpulse_private.policies WHERE organization_id=c.org AND active AND archived_at IS NULL),
+  SELECT * FROM taskpulse_private.policies WHERE organization_id=c.org AND active),
  cand AS (
   SELECT DISTINCT p.id AS policy_id,pp.period_key,pp.period_start,pp.period_end
   FROM pol p
@@ -469,10 +490,10 @@ CREATE FUNCTION public.policy_command(p_command text,p_payload jsonb,p_operation
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE c record; akey text; digest text; prior taskpulse_private.policy_receipts; response jsonb;
  today date:=(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date;
- def jsonb; pol taskpulse_private.policies; expected integer; reason text; new_id uuid;
+ def jsonb; pol taskpulse_private.policies; reason text;
  run_id uuid; trig text; item jsonb; ev jsonb; rev taskpulse_private.policy_revisions; per record; is_final boolean;
  emp uuid; emp_role text; facts_at timestamptz; changed integer:=0; evaluated integer:=0; notified integer:=0; n integer; items integer:=0;
- met integer:=0; not_met integer:=0; unavailable integer:=0; outcome text; badge text; points integer; title text; BEGIN
+ met integer:=0; not_met integer:=0; unavailable integer:=0; stale integer:=0; outcome text; badge text; points integer; title text; BEGIN
  SELECT * INTO c FROM taskpulse_private.policy_caller();
  IF p_command IS NULL OR p_command NOT IN ('create','revise','activate','deactivate','archive','record_run','record_failure') THEN
   RAISE EXCEPTION 'Unknown policy command' USING ERRCODE='23514'; END IF;
@@ -493,33 +514,29 @@ DECLARE c record; akey text; digest text; prior taskpulse_private.policy_receipt
   RETURN prior.response;
  END IF;
 
- IF p_command='create' THEN
-  def:=taskpulse_private.policy_definition(p_payload);
-  IF EXISTS(SELECT 1 FROM taskpulse_private.policies WHERE organization_id=c.org AND archived_at IS NULL AND lower(btrim(name))=lower(def->>'name')) THEN
-   RAISE EXCEPTION 'A policy with this name already exists' USING ERRCODE='23514'; END IF;
-  INSERT INTO taskpulse_private.policies(organization_id,name,description,template_key,parameters,period_kind,audience,reward,rule_version,active,created_by)
-  VALUES(c.org,def->>'name',def->>'description',def->>'templateKey',def->'parameters',def->>'periodKind',def->'audience',def->'reward',def->>'ruleVersion',
-   coalesce(CASE WHEN jsonb_typeof(p_payload->'active')='boolean' THEN (p_payload->>'active')::boolean END,true),c.actor)
-  RETURNING * INTO pol;
-  INSERT INTO taskpulse_private.policy_revisions(policy_id,organization_id,version,command,definition,actor_id)
-  VALUES(pol.id,c.org,1,'create',def||jsonb_build_object('active',pol.active),c.actor);
-  response:=jsonb_build_object('policyId',pol.id,'version',1,'active',pol.active);
-
- ELSIF p_command IN ('revise','activate','deactivate','archive') THEN
-  IF coalesce(p_payload->>'policyId','') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-   OR jsonb_typeof(p_payload->'expectedVersion')<>'number' THEN
-   RAISE EXCEPTION 'Policy and expected version required' USING ERRCODE='23514'; END IF;
-  expected:=(p_payload->>'expectedVersion')::integer;
-  reason:=nullif(btrim(coalesce(p_payload->>'reason','')),'');
-  IF length(reason)>300 THEN RAISE EXCEPTION 'The reason is limited to 300 characters' USING ERRCODE='23514'; END IF;
-  SELECT * INTO pol FROM taskpulse_private.policies WHERE id=(p_payload->>'policyId')::uuid AND organization_id=c.org FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Policy not found in your company' USING ERRCODE='42501'; END IF;
-  IF pol.version<>expected THEN RAISE EXCEPTION 'The policy changed; refresh and try again' USING ERRCODE='PT409'; END IF;
-  IF pol.archived_at IS NOT NULL THEN RAISE EXCEPTION 'An archived policy cannot be changed' USING ERRCODE='23514'; END IF;
-  IF p_command='revise' THEN
+ IF p_command IN ('create','revise','activate','deactivate','archive') THEN
+  IF p_command<>'create' THEN
+   IF taskpulse_private.policy_uuid(p_payload->>'policyId') IS NULL OR jsonb_typeof(p_payload->'expectedVersion')<>'number' THEN
+    RAISE EXCEPTION 'Policy and expected version required' USING ERRCODE='23514'; END IF;
+   reason:=nullif(btrim(coalesce(p_payload->>'reason','')),'');
+   IF length(reason)>300 THEN RAISE EXCEPTION 'The reason is limited to 300 characters' USING ERRCODE='23514'; END IF;
+   SELECT * INTO pol FROM taskpulse_private.policies WHERE id=(p_payload->>'policyId')::uuid AND organization_id=c.org FOR UPDATE;
+   IF NOT FOUND THEN RAISE EXCEPTION 'Policy not found in your company' USING ERRCODE='42501'; END IF;
+   IF pol.version<>(p_payload->>'expectedVersion')::numeric THEN RAISE EXCEPTION 'The policy changed; refresh and try again' USING ERRCODE='PT409'; END IF;
+   IF pol.archived_at IS NOT NULL THEN RAISE EXCEPTION 'An archived policy cannot be changed' USING ERRCODE='23514'; END IF;
+  END IF;
+  IF p_command IN ('create','revise') THEN
    def:=taskpulse_private.policy_definition(p_payload-'policyId'-'expectedVersion'-'reason'-'active');
-   IF EXISTS(SELECT 1 FROM taskpulse_private.policies WHERE organization_id=c.org AND archived_at IS NULL AND id<>pol.id AND lower(btrim(name))=lower(def->>'name')) THEN
+   IF EXISTS(SELECT 1 FROM taskpulse_private.policies WHERE organization_id=c.org AND archived_at IS NULL AND id IS DISTINCT FROM pol.id
+     AND lower(btrim(name))=lower(def->>'name')) THEN
     RAISE EXCEPTION 'A policy with this name already exists' USING ERRCODE='23514'; END IF;
+  END IF;
+  IF p_command='create' THEN
+   INSERT INTO taskpulse_private.policies(organization_id,name,description,template_key,parameters,period_kind,audience,reward,rule_version,active,created_by)
+   VALUES(c.org,def->>'name',def->>'description',def->>'templateKey',def->'parameters',def->>'periodKind',def->'audience',def->'reward',def->>'ruleVersion',
+    coalesce(CASE WHEN jsonb_typeof(p_payload->'active')='boolean' THEN (p_payload->>'active')::boolean END,true),c.actor)
+   RETURNING * INTO pol;
+  ELSIF p_command='revise' THEN
    UPDATE taskpulse_private.policies SET name=def->>'name',description=def->>'description',template_key=def->>'templateKey',parameters=def->'parameters',
     period_kind=def->>'periodKind',audience=def->'audience',reward=def->'reward',rule_version=def->>'ruleVersion',version=version+1,updated_at=clock_timestamp()
    WHERE id=pol.id RETURNING * INTO pol;
@@ -527,6 +544,8 @@ DECLARE c record; akey text; digest text; prior taskpulse_private.policy_receipt
    UPDATE taskpulse_private.policies SET active=(p_command='activate'),archived_at=CASE WHEN p_command='archive' THEN clock_timestamp() END,
     version=version+1,updated_at=clock_timestamp()
    WHERE id=pol.id RETURNING * INTO pol;
+   -- Inputs changed while no policy was live were not recorded: check the whole window again.
+   IF p_command='activate' THEN PERFORM taskpulse_private.policy_invalidate(c.org,NULL,NULL,'policy_activated'); END IF;
   END IF;
   INSERT INTO taskpulse_private.policy_revisions(policy_id,organization_id,version,command,definition,reason,actor_id)
   VALUES(pol.id,c.org,pol.version,p_command,jsonb_build_object('name',pol.name,'description',pol.description,'templateKey',pol.template_key,
@@ -543,8 +562,7 @@ DECLARE c record; akey text; digest text; prior taskpulse_private.policy_receipt
   INSERT INTO taskpulse_private.policy_runs(organization_id,trigger,status,actor_id,operation)
   VALUES(c.org,trig,'completed',c.actor,p_operation) RETURNING id INTO run_id;
   FOR item IN SELECT value FROM jsonb_array_elements(p_payload->'items') LOOP
-   items:=items+1;
-   IF jsonb_typeof(item)<>'object' OR coalesce(item->>'policyId','') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+   IF jsonb_typeof(item)<>'object' OR taskpulse_private.policy_uuid(item->>'policyId') IS NULL
     OR jsonb_typeof(item->'policyVersion')<>'number' OR jsonb_typeof(item->'evaluations')<>'array'
     OR jsonb_array_length(item->'evaluations')>500 OR jsonb_typeof(item->'final')<>'boolean' THEN
     RAISE EXCEPTION 'Each item needs a policy, version, final flag and at most 500 evaluations' USING ERRCODE='23514'; END IF;
@@ -560,16 +578,16 @@ DECLARE c record; akey text; digest text; prior taskpulse_private.policy_receipt
    IF per.period_start>today OR per.period_end<today-61 THEN
     RAISE EXCEPTION 'Only periods within the last 62 days can be evaluated' USING ERRCODE='23514'; END IF;
    is_final:=per.period_end<today;
-   IF (item->>'final')::boolean<>is_final THEN
-    RAISE EXCEPTION 'The period opened or closed since it was evaluated; evaluate again' USING ERRCODE='PT409'; END IF;
+   -- The period closed (midnight) since its facts were read: skip it, it stays due.
+   IF (item->>'final')::boolean<>is_final THEN stale:=stale+1; CONTINUE; END IF;
+   items:=items+1;
    -- When the evaluator read its facts: an input changed after that stays due.
    BEGIN facts_at:=(item->>'factsAt')::timestamptz; EXCEPTION WHEN others THEN facts_at:=NULL; END;
-   facts_at:=CASE WHEN facts_at IS NULL OR NOT isfinite(facts_at) OR facts_at>clock_timestamp() THEN clock_timestamp()
-    ELSE greatest(facts_at,clock_timestamp()-interval '1 hour') END;
+   facts_at:=CASE WHEN facts_at IS NULL OR NOT isfinite(facts_at) OR facts_at>clock_timestamp() THEN clock_timestamp() ELSE facts_at END;
    badge:=rev.definition->'reward'->>'badge'; points:=(rev.definition->'reward'->>'points')::integer;
    FOR ev IN SELECT value FROM jsonb_array_elements(item->'evaluations') LOOP
     outcome:=ev->>'outcome';
-    IF jsonb_typeof(ev)<>'object' OR coalesce(ev->>'employeeId','') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    IF jsonb_typeof(ev)<>'object' OR taskpulse_private.policy_uuid(ev->>'employeeId') IS NULL
      OR outcome IS NULL OR outcome NOT IN ('met','not_met','unavailable')
      OR jsonb_typeof(coalesce(ev->'reasons','[]'))<>'array' OR jsonb_array_length(coalesce(ev->'reasons','[]'))>20
      OR EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(ev->'reasons','[]')) r WHERE jsonb_typeof(r)<>'object' OR octet_length(r::text)>500)
@@ -609,7 +627,7 @@ DECLARE c record; akey text; digest text; prior taskpulse_private.policy_receipt
   END LOOP;
   DELETE FROM taskpulse_private.policy_invalidations WHERE organization_id=c.org AND to_date<today-70;
   response:=jsonb_build_object('runId',run_id,'status','completed','periods',items,'evaluated',evaluated,'changed',changed,'notified',notified,
-   'met',met,'notMet',not_met,'unavailable',unavailable);
+   'met',met,'notMet',not_met,'unavailable',unavailable,'stale',stale);
   UPDATE taskpulse_private.policy_runs SET summary=response-'runId'-'status' WHERE id=run_id;
 
  ELSE -- record_failure
@@ -644,9 +662,8 @@ END $$;
 CREATE FUNCTION public.policy_list() RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE c record; manager boolean; today date:=(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date; result jsonb; BEGIN
- SELECT * INTO c FROM taskpulse_private.policy_caller();
- IF c.worker THEN RAISE EXCEPTION 'Signed-in account required' USING ERRCODE='42501'; END IF;
- manager:=c.role IN ('managing_director','project_engineer');
+ SELECT * INTO c FROM taskpulse_private.policy_member();
+ manager:=c.manager;
  SELECT coalesce(jsonb_agg(jsonb_build_object(
    'id',p.id,'name',p.name,'description',p.description,'templateKey',p.template_key,'parameters',p.parameters,'periodKind',p.period_kind,
    'audience',CASE WHEN manager THEN p.audience ELSE jsonb_build_object('kind',p.audience->>'kind') END,
@@ -672,9 +689,8 @@ END $$;
 CREATE FUNCTION public.policy_evaluations_read(p_policy uuid,p_period_key text DEFAULT NULL) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE c record; manager boolean; result jsonb; BEGIN
- SELECT * INTO c FROM taskpulse_private.policy_caller();
- IF c.worker THEN RAISE EXCEPTION 'Signed-in account required' USING ERRCODE='42501'; END IF;
- manager:=c.role IN ('managing_director','project_engineer');
+ SELECT * INTO c FROM taskpulse_private.policy_member();
+ manager:=c.manager;
  IF NOT EXISTS(SELECT 1 FROM taskpulse_private.policies p WHERE p.id=p_policy AND p.organization_id=c.org AND p.archived_at IS NULL
    AND (manager OR (p.active AND taskpulse_private.policy_audience_includes(p.audience,c.actor,c.role)))) THEN
   RAISE EXCEPTION 'Policy not found in your company' USING ERRCODE='42501'; END IF;
@@ -693,8 +709,8 @@ END $$;
 CREATE FUNCTION public.policy_runs_read(p_limit integer DEFAULT 20) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE c record; result jsonb; BEGIN
- SELECT * INTO c FROM taskpulse_private.policy_caller();
- IF c.worker OR c.role NOT IN ('managing_director','project_engineer') THEN RAISE EXCEPTION 'Manager authority required' USING ERRCODE='42501'; END IF;
+ SELECT * INTO c FROM taskpulse_private.policy_member();
+ IF NOT c.manager THEN RAISE EXCEPTION 'Manager authority required' USING ERRCODE='42501'; END IF;
  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION 'Limit between 1 and 100 required' USING ERRCODE='23514'; END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',r.id,'trigger',r.trigger,'status',r.status,'actorId',r.actor_id,'summary',r.summary,
    'errorCode',r.error_code,'errorDetail',r.error_detail,'recordedAt',r.recorded_at) ORDER BY r.recorded_at DESC,r.id),'[]'::jsonb) INTO result
@@ -709,8 +725,7 @@ END $$;
 CREATE FUNCTION public.policy_commendations(p_from date DEFAULT NULL,p_to date DEFAULT NULL,p_employee uuid DEFAULT NULL) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE c record; result jsonb; BEGIN
- SELECT * INTO c FROM taskpulse_private.policy_caller();
- IF c.worker THEN RAISE EXCEPTION 'Signed-in account required' USING ERRCODE='42501'; END IF;
+ SELECT * INTO c FROM taskpulse_private.policy_member();
  IF (p_from IS NOT NULL AND NOT isfinite(p_from)) OR (p_to IS NOT NULL AND NOT isfinite(p_to)) OR p_to<p_from THEN
   RAISE EXCEPTION 'A valid date range is required' USING ERRCODE='23514'; END IF;
  IF p_employee IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.users u WHERE u.id=p_employee AND u.organization_id=c.org) THEN
@@ -734,8 +749,7 @@ END $$;
 CREATE FUNCTION public.notifications_list(p_limit integer DEFAULT 20) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE c record; result jsonb; BEGIN
- SELECT * INTO c FROM taskpulse_private.policy_caller();
- IF c.worker THEN RAISE EXCEPTION 'Signed-in account required' USING ERRCODE='42501'; END IF;
+ SELECT * INTO c FROM taskpulse_private.policy_member();
  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 50 THEN RAISE EXCEPTION 'Limit between 1 and 50 required' USING ERRCODE='23514'; END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',n.id,'kind',n.kind,'title',n.title,'body',n.body,'href',n.href,'createdAt',n.created_at,'readAt',n.read_at)
    ORDER BY n.created_at DESC,n.id),'[]'::jsonb) INTO result
@@ -747,8 +761,7 @@ END $$;
 CREATE FUNCTION public.notifications_unread_count() RETURNS integer
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE c record; BEGIN
- SELECT * INTO c FROM taskpulse_private.policy_caller();
- IF c.worker THEN RAISE EXCEPTION 'Signed-in account required' USING ERRCODE='42501'; END IF;
+ SELECT * INTO c FROM taskpulse_private.policy_member();
  RETURN (SELECT count(*) FROM taskpulse_private.notifications WHERE recipient_id=c.actor AND organization_id=c.org AND read_at IS NULL);
 END $$;
 
@@ -756,8 +769,7 @@ END $$;
 CREATE FUNCTION public.notifications_mark_read(p_ids uuid[] DEFAULT NULL) RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE c record; n integer; BEGIN
- SELECT * INTO c FROM taskpulse_private.policy_caller();
- IF c.worker THEN RAISE EXCEPTION 'Signed-in account required' USING ERRCODE='42501'; END IF;
+ SELECT * INTO c FROM taskpulse_private.policy_member();
  IF p_ids IS NOT NULL AND cardinality(p_ids)>200 THEN RAISE EXCEPTION 'At most 200 notifications at once' USING ERRCODE='23514'; END IF;
  UPDATE taskpulse_private.notifications SET read_at=clock_timestamp()
  WHERE recipient_id=c.actor AND organization_id=c.org AND read_at IS NULL AND (p_ids IS NULL OR id=ANY(p_ids));
@@ -768,47 +780,61 @@ END $$;
 -- ---------------------------------------------------------------------------
 -- Invalidations
 -- ---------------------------------------------------------------------------
+-- Records that inputs from p_from to p_to (NULL: the 62-day window edges)
+-- changed, for a company with a live policy, once per range and source in a
+-- transaction.
+CREATE FUNCTION taskpulse_private.policy_invalidate(p_org uuid,p_from date,p_to date,p_source text) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+DECLARE today date:=(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date; f date; t date; cur_tx bigint:=pg_current_xact_id()::text::bigint; BEGIN
+ IF p_org IS NULL OR NOT EXISTS(SELECT 1 FROM taskpulse_private.policies p WHERE p.organization_id=p_org AND p.active) THEN RETURN; END IF;
+ f:=greatest(coalesce(p_from,today-61),today-61); t:=least(coalesce(p_to,today),today);
+ IF f>t OR EXISTS(SELECT 1 FROM taskpulse_private.policy_invalidations i WHERE i.organization_id=p_org AND i.tx=cur_tx
+   AND i.source=p_source AND i.from_date<=f AND i.to_date>=t) THEN RETURN; END IF;
+ INSERT INTO taskpulse_private.policy_invalidations(organization_id,from_date,to_date,source) VALUES(p_org,f,t,p_source);
+END $$;
+
 -- A retained input change (attendance, effort logs, contributions, sales) on
--- its business date. Nothing is recorded for a company without live policies.
+-- its business date, and on the date of the record's previous version when a
+-- correction moved it.
 CREATE FUNCTION taskpulse_private.policy_invalidate_input() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE key text; day date; BEGIN
+DECLARE key text; prev_day date; BEGIN
  key:=CASE NEW.kind WHEN 'attendance' THEN 'attendance_date' WHEN 'fact' THEN 'fact_date' WHEN 'idea' THEN 'idea_date'
   WHEN 'suggestion' THEN 'suggestion_date' WHEN 'sale' THEN 'sale_date' WHEN 'effort' THEN 'log_date' END;
- IF key IS NULL OR NEW.organization_id IS NULL OR NEW.command='legacy_current_baseline' THEN RETURN NULL; END IF;
- BEGIN day:=(NEW.source->>key)::date; EXCEPTION WHEN others THEN RETURN NULL; END;
- IF day IS NULL OR NOT EXISTS(SELECT 1 FROM taskpulse_private.policies p WHERE p.organization_id=NEW.organization_id AND p.active) THEN RETURN NULL; END IF;
- INSERT INTO taskpulse_private.policy_invalidations(organization_id,from_date,to_date,source) VALUES(NEW.organization_id,day,day,NEW.kind);
+ IF key IS NULL OR NEW.command='legacy_current_baseline' THEN RETURN NULL; END IF;
+ PERFORM taskpulse_private.policy_invalidate(NEW.organization_id,(NEW.source->>key)::date,(NEW.source->>key)::date,NEW.kind);
+ SELECT (h.source->>key)::date INTO prev_day FROM taskpulse_private.input_history h
+ WHERE h.kind=NEW.kind AND h.record_id=NEW.record_id AND h.sequence<NEW.sequence ORDER BY h.recorded_at DESC,h.sequence DESC LIMIT 1;
+ IF prev_day IS DISTINCT FROM (NEW.source->>key)::date THEN PERFORM taskpulse_private.policy_invalidate(NEW.organization_id,prev_day,prev_day,NEW.kind); END IF;
  RETURN NULL;
 END $$;
 CREATE TRIGGER zz_m56_policy_invalidation AFTER INSERT ON taskpulse_private.input_history FOR EACH ROW
  EXECUTE FUNCTION taskpulse_private.policy_invalidate_input();
 
--- A mission's dates, discarded state, assignee or archive changed: every day
--- from the earliest changed date to today may now count it differently at a
--- period end. Task counts are rebuilt from dates, so only a change into or out
--- of Discarded matters among statuses (and the nightly freshness decay, which
--- writes only `freshness`, records nothing).
+-- A mission counts at every period end from its assigned date on (open,
+-- overdue, stale, rotten, done), so a change to it, or to who is on it,
+-- invalidates that footprint. Task counts are rebuilt from dates: the nightly
+-- freshness decay, which writes only `freshness`, records nothing.
 CREATE FUNCTION taskpulse_private.policy_invalidate_task() RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE today date:=(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date; first_day date; BEGIN
- IF NOT EXISTS(SELECT 1 FROM taskpulse_private.policies p WHERE p.organization_id=NEW.organization_id AND p.active) THEN RETURN NULL; END IF;
- first_day:=least(
-  CASE WHEN OLD.due_date IS DISTINCT FROM NEW.due_date THEN least(OLD.due_date,NEW.due_date) END,
-  CASE WHEN OLD.completed_date IS DISTINCT FROM NEW.completed_date THEN least(OLD.completed_date,NEW.completed_date) END,
-  CASE WHEN OLD.assigned_date IS DISTINCT FROM NEW.assigned_date THEN least(OLD.assigned_date,NEW.assigned_date) END,
-  CASE WHEN OLD.archived_effective_date IS DISTINCT FROM NEW.archived_effective_date THEN least(OLD.archived_effective_date,NEW.archived_effective_date) END,
-  CASE WHEN OLD.assignee_id IS DISTINCT FROM NEW.assignee_id OR (OLD.status='Discarded') IS DISTINCT FROM (NEW.status='Discarded') THEN today-61 END);
- IF first_day IS NULL THEN RETURN NULL; END IF;
- first_day:=greatest(first_day,today-61);
- IF first_day>today THEN RETURN NULL; END IF;
- INSERT INTO taskpulse_private.policy_invalidations(organization_id,from_date,to_date,source) VALUES(NEW.organization_id,first_day,today,'task');
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$ BEGIN
+ IF TG_TABLE_NAME='task_assignees' THEN
+  PERFORM taskpulse_private.policy_invalidate(t.organization_id,t.assigned_date,NULL,'task_assignee')
+  FROM public.tasks t WHERE t.id=CASE WHEN TG_OP='DELETE' THEN OLD.task_id ELSE NEW.task_id END;
+ ELSIF TG_OP='UPDATE' THEN
+  PERFORM taskpulse_private.policy_invalidate(NEW.organization_id,least(OLD.assigned_date,NEW.assigned_date),NULL,'task');
+ ELSE
+  PERFORM taskpulse_private.policy_invalidate(CASE WHEN TG_OP='DELETE' THEN OLD.organization_id ELSE NEW.organization_id END,
+   CASE WHEN TG_OP='DELETE' THEN OLD.assigned_date ELSE NEW.assigned_date END,NULL,'task');
+ END IF;
  RETURN NULL;
 END $$;
 CREATE TRIGGER zz_m56_policy_task_invalidation AFTER UPDATE OF status,due_date,completed_date,assigned_date,assignee_id,archived_effective_date ON public.tasks
  FOR EACH ROW WHEN ((OLD.status='Discarded',OLD.due_date,OLD.completed_date,OLD.assigned_date,OLD.assignee_id,OLD.archived_effective_date)
   IS DISTINCT FROM (NEW.status='Discarded',NEW.due_date,NEW.completed_date,NEW.assigned_date,NEW.assignee_id,NEW.archived_effective_date))
  EXECUTE FUNCTION taskpulse_private.policy_invalidate_task();
+CREATE TRIGGER zz_m56_policy_task_added AFTER INSERT OR DELETE ON public.tasks FOR EACH ROW EXECUTE FUNCTION taskpulse_private.policy_invalidate_task();
+CREATE TRIGGER zz_m56_policy_assignee_invalidation AFTER INSERT OR DELETE OR UPDATE OF user_id,task_id ON public.task_assignees
+ FOR EACH ROW EXECUTE FUNCTION taskpulse_private.policy_invalidate_task();
 
 -- ---------------------------------------------------------------------------
 -- Privileges
@@ -817,7 +843,8 @@ REVOKE ALL ON taskpulse_private.policies,taskpulse_private.policy_revisions,task
  taskpulse_private.policy_period_states,taskpulse_private.policy_invalidations,taskpulse_private.policy_receipts,taskpulse_private.notifications
  FROM PUBLIC,anon,authenticated,service_role;
 REVOKE ALL ON FUNCTION taskpulse_private.policy_period(text,date),taskpulse_private.policy_audience_includes(jsonb,uuid,text),
- taskpulse_private.policy_definition(jsonb),taskpulse_private.policy_caller(),taskpulse_private.policy_team_holidays(uuid,date,date),
+ taskpulse_private.policy_definition(jsonb),taskpulse_private.policy_caller(),taskpulse_private.policy_member(),taskpulse_private.policy_uuid(text),
+ taskpulse_private.policy_team_holidays(uuid,date,date),taskpulse_private.policy_invalidate(uuid,date,date,text),
  taskpulse_private.policy_invalidate_input(),taskpulse_private.policy_invalidate_task() FROM PUBLIC,anon,authenticated,service_role;
 REVOKE ALL ON FUNCTION public.policy_period_facts(date,date,uuid),public.policy_due_work(date,integer,uuid),public.policy_command(text,jsonb,uuid),
  public.policy_list(),public.policy_evaluations_read(uuid,text),public.policy_runs_read(integer),public.policy_commendations(date,date,uuid),

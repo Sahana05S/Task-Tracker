@@ -1,10 +1,11 @@
 // PRIVATE. Policy periods. Mirrors taskpulse_private.policy_period (migration
 // 56): a day, an ISO week (Monday to Sunday, key 2026-W43) or a calendar month.
+import { ISO_DATE_PATTERN as ISO_DATE } from '@/shared/forms/form-data';
+import { resolvePeriod } from '@/shared/time/period';
+
 import type { Period, PeriodKind } from './types';
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const LONG_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 function parse(date: string): Date {
   if (!ISO_DATE.test(date)) throw new Error(`Valid date required, got "${date}".`);
@@ -44,10 +45,8 @@ export function periodOf(kind: PeriodKind, date: string): Period {
     const start = iso(monday);
     return { kind, key: `${year}-W${String(week).padStart(2, '0')}`, start, end: addDays(start, 6) };
   }
-  const start = `${date.slice(0, 7)}-01`;
-  const next = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth() + 1, 1));
-  next.setUTCDate(0);
-  return { kind, key: date.slice(0, 7), start, end: iso(next) };
+  const month = resolvePeriod(day.getUTCFullYear(), day.getUTCMonth() + 1);
+  return { kind, key: date.slice(0, 7), start: month.startDate, end: month.endDate };
 }
 
 export function previousPeriod(period: Period): Period {
@@ -65,7 +64,7 @@ export function datesIn(start: string, end: string): string[] {
   return out;
 }
 
-function short(date: string): string {
+export function shortDate(date: string): string {
   const d = parse(date);
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
 }
@@ -73,13 +72,9 @@ function short(date: string): string {
 /** "21 Oct 2026", "Week of 19 Oct (19–25 Oct)", "October 2026". */
 export function periodLabel(period: Pick<Period, 'kind' | 'start' | 'end'>): string {
   const d = parse(period.start);
-  if (period.kind === 'day') return `${short(period.start)} ${d.getUTCFullYear()}`;
-  if (period.kind === 'week') return `Week of ${short(period.start)} (${short(period.start)}–${short(period.end)})`;
-  return `${LONG_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-}
-
-export function shortDate(date: string): string {
-  return short(date);
+  if (period.kind === 'day') return `${shortDate(period.start)} ${d.getUTCFullYear()}`;
+  if (period.kind === 'week') return `Week of ${shortDate(period.start)} (${shortDate(period.start)}–${shortDate(period.end)})`;
+  return resolvePeriod(d.getUTCFullYear(), d.getUTCMonth() + 1).label;
 }
 
 export const PERIOD_LABELS: Record<PeriodKind, { noun: string; adjective: string }> = {
