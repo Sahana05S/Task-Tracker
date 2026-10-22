@@ -166,7 +166,7 @@ function ValidityStrip({ report }: { report: DailyReport }) {
     <div className="grid gap-3">
       <ol className="flex flex-wrap gap-1" aria-label="Validity by day">
         {report.validity.map((d) => (
-          <li key={d.date} title={`${formatDate(d.date)}: ${VALIDITY_LABEL[d.state]}`} className={cn('size-4 rounded-[5px] border', VALIDITY_STYLE[d.state], d.date === report.date && 'ring-primary ring-2 ring-offset-1')}>
+          <li key={d.date} title={`${formatDate(d.date)}: ${VALIDITY_LABEL[d.state]}`} className={cn('size-4 rounded-[5px] border', VALIDITY_STYLE[d.state], d.date === report.date && 'ring-primary ring-2 ring-offset-1 ring-offset-card')}>
             <span className="sr-only">{formatDate(d.date)}: {VALIDITY_LABEL[d.state]}</span>
           </li>
         ))}

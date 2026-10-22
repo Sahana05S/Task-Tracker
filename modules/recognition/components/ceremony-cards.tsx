@@ -61,7 +61,7 @@ export function AwardCard({ award, names, viewerId, reveal, note }: {
       </span>
       {won ? (
         <div className="flex min-w-0 flex-col items-start gap-2">
-          <InitialsAvatar name={winner!} className="ring-recognition size-10 shrink-0 ring-2 ring-offset-2" />
+          <InitialsAvatar name={winner!} className="ring-recognition ring-offset-card size-10 shrink-0 ring-2 ring-offset-2" />
           <div className="min-w-0">
             <p className="text-foreground leading-snug font-bold break-words">{winner}{you ? <span className="text-primary"> (you)</span> : null}</p>
             {award.winningRaw ? <p className="text-muted-foreground text-xs tabular-nums">{displayPerformance(award.winningRaw)}</p> : null}
@@ -118,7 +118,7 @@ export function FinaleCard({ star, names, viewerId, celebrate, confettiId }: {
         {winner ? (
           <>
             <CrownIcon className="text-recognition size-8 fill-current" aria-hidden="true" />
-            <InitialsAvatar name={winner} className={cn('ring-recognition size-20 text-2xl ring-4 ring-offset-4', celebrate && 'anim-pop')} />
+            <InitialsAvatar name={winner} className={cn('ring-recognition ring-offset-card size-20 text-2xl ring-4 ring-offset-4', celebrate && 'anim-pop')} />
             <h2 className="text-foreground text-2xl font-black tracking-tight text-balance">
               {you ? 'You are the monthly star' : winner}
             </h2>

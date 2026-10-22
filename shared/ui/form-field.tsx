@@ -146,7 +146,6 @@ export function FormError({ message, className }: FormErrorProps) {
   return (
     <p
       role="alert"
-      aria-live="polite"
       className={cn(
         'border-danger-border bg-danger-subtle text-danger-foreground flex items-start gap-2 rounded-xl border px-3 py-2 text-sm',
         className,

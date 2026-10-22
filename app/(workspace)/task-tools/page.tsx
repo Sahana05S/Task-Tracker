@@ -46,7 +46,7 @@ export default async function TaskToolsPage() {
 
       <MissionPanel icon={HistoryIcon} title="Recent operations">
         <p className="text-muted-foreground -mt-1 mb-4 text-sm">
-          Newest first. Done, reopen, section and refresh batches are not listed here yet.
+          Newest first.
         </p>
         <RecentOperations operations={operations} />
       </MissionPanel>
@@ -64,7 +64,7 @@ export default async function TaskToolsPage() {
             </div>
           </MissionPanel>
 
-          <MissionPanel icon={ListTodoIcon} title="Native template versions">
+          <MissionPanel icon={ListTodoIcon} title="Mission templates">
             <NativeTemplateManager templates={templates} />
           </MissionPanel>
         </>

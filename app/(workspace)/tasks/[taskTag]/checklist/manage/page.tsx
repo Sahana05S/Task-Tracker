@@ -203,7 +203,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
       ) : null}
 
       <div className={cn('grid gap-5', sideColumn && 'xl:grid-cols-[minmax(0,1fr)_22rem]')}>
-        <main className="grid min-w-0 content-start gap-5">
+        <section className="grid min-w-0 content-start gap-5">
           <MissionPanel
             icon={ListChecksIcon}
             title="Checklist items"
@@ -254,7 +254,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
               </Link>
             </Button>
           </section>
-        </main>
+        </section>
 
         {sideColumn ? (
           <aside className="grid min-w-0 content-start gap-5">

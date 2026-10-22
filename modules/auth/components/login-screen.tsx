@@ -31,7 +31,7 @@ export function LoginScreen({ view }: LoginScreenProps) {
           {view.kind === 'deactivated' ? (
             <div className="grid gap-4">
               <p role="alert" className="text-sm">
-                This account isn&apos;t active. If your managing director has just invited
+                This account isn’t active. If your managing director has just invited
                 this email, sign out and sign in again. Otherwise ask them to invite you or
                 restore your access.
               </p>
@@ -89,12 +89,8 @@ function OrphanedAccountNotice() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        If you are setting the project up, apply{' '}
-        <code className="rounded bg-muted px-1 py-0.5 text-xs text-foreground">
-          supabase/migrations/02_auth_provisioning.sql
-        </code>{' '}
-        and sign up again. Otherwise ask a managing director to create your
-        profile.
+        Ask your managing director to invite this email address, then accept
+        the invitation to create your profile.
       </p>
 
       <form action={logout}>

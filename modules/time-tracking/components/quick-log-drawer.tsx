@@ -311,7 +311,7 @@ function LogForm({
 
         <Field
           id="log-delta"
-          label="Progress requested"
+          label="Progress to add (%)"
           hint="Percentage points to add to the task's current progress. Negative values correct an overstatement."
         >
           <Input
@@ -423,7 +423,7 @@ function RawLinksField({ links, onChange }: RawLinksFieldProps) {
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium text-foreground">Raw links</legend>
+      <legend className="text-sm font-medium text-foreground">Links</legend>
       <p className="text-xs text-muted-foreground">
         Drive files, drawings or boards. http and https only.
       </p>

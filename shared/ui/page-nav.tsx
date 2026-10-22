@@ -77,7 +77,7 @@ export interface PageTab {
 /** Link tabs under a page title, in the same pill style as the section tabs. */
 export function PageTabs({ label, tabs }: { label: string; tabs: readonly PageTab[] }) {
   return (
-    <nav aria-label={label} className="flex max-w-full gap-1 overflow-x-auto">
+    <nav aria-label={label} className="-m-1 flex max-w-full gap-1 overflow-x-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map((tab) => (
         <Link
           key={tab.href}

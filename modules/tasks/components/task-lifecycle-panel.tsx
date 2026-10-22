@@ -33,7 +33,7 @@ export function TaskLifecyclePanel({ task }: { task: Task }) {
    {mode==='activity_count' ? <>{field('Numeric activity count','activityCount')}{field('Scale per activity','unitScale')}<p className="text-muted-foreground text-xs">Enter the count from the source activity register. Automatic checklist counting is not yet available.</p></> : null}
    {mode==='linked' ? <><label className="text-sm font-medium">Source task tag<input name="sourceTaskTag" required className={control} /></label>{field('Linked percentage','percentage')}</> : null}
    <label className="text-sm font-medium">Override (blank uses formula; zero is valid)<input type="number" name="override" min="0" step="any" defaultValue={task.scaleOverride ?? ''} className={control} /></label>
-   <label className="text-sm font-medium">Source/provenance<input name="provenance" required maxLength={1000} className={control} /></label>
+   <label className="text-sm font-medium">Where the value comes from<input name="provenance" required maxLength={1000} className={control} /></label>
    <label className="text-sm font-medium">Reason<input name="reason" required maxLength={1000} className={control} /></label>
    <Button type="submit" size="sm" className="justify-self-start">Save prospective scale</Button>
   </ExecutionForm>

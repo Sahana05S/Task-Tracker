@@ -3,7 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 
 import { Toaster } from '@/shared/ui/sonner';
 import { ThemeProvider } from '@/shared/ui/theme';
-import { THEME_SCRIPT } from '@/shared/ui/theme-script';
+import { THEME_COLOR, THEME_SCRIPT } from '@/shared/ui/theme-script';
 import './globals.css';
 
 /**
@@ -41,6 +41,8 @@ export default function RootLayout({
     */
     <html lang="en" data-theme="light" className={`${jakarta.variable} font-sans`} suppressHydrationWarning>
       <head>
+        {/* Before the script, which points it at the painted theme's background (so it may differ from the server HTML). */}
+        <meta name="theme-color" content={THEME_COLOR.light} suppressHydrationWarning />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="bg-background text-foreground min-h-dvh antialiased">

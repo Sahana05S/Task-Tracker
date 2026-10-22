@@ -107,7 +107,7 @@ export function TaskFilters({
         <div
           role="group"
           aria-label="Filter by status"
-          className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1"
+          className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <button
             type="button"

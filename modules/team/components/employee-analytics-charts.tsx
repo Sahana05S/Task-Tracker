@@ -146,7 +146,7 @@ function TrendLines({ data, name, compact = false }: { data: readonly EmployeeTr
         <YAxis tick={TICK} tickLine={false} axisLine={false} width={compact ? 34 : 42} tickCount={compact ? 3 : 5} />
         <Tooltip content={<TrendTooltip name={name} />} cursor={{ stroke: CHART_GRID, strokeWidth: 1 }} />
         <Line type="linear" dataKey="median" stroke={CHART_REFERENCE} strokeWidth={1.5} strokeDasharray="4 4" dot={false} activeDot={false} connectNulls={false} isAnimationActive={false} name="Team median" />
-        <Line type="linear" dataKey="value" stroke={MEMBER} strokeWidth={2} dot={data.length <= 12 ? { r: compact ? 2.5 : 4, fill: MEMBER, stroke: 'var(--color-white)', strokeWidth: 2 } : false} activeDot={{ r: 4, stroke: 'var(--color-white)', strokeWidth: 2 }} connectNulls={false} isAnimationActive={false} name={name} />
+        <Line type="linear" dataKey="value" stroke={MEMBER} strokeWidth={2} dot={data.length <= 12 ? { r: compact ? 2.5 : 4, fill: MEMBER, stroke: 'var(--color-card)', strokeWidth: 2 } : false} activeDot={{ r: 4, stroke: 'var(--color-card)', strokeWidth: 2 }} connectNulls={false} isAnimationActive={false} name={name} />
       </LineChart>
     </ResponsiveContainer>
   );

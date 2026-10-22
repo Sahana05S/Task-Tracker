@@ -88,8 +88,11 @@ Managers/data managers validate another person's contribution; self-validation
 is denied. A reviewed correction needs a reason and resets the entry to pending
 while retaining the previous review. Pending, validated, rejected and withdrawn
 have distinct credit. Use the original business date and the report's as-of
-time when investigating differences. Sales entries may be recorded, but the
-BN/BO/BP score mapping is unresolved, so a sales factor can be Unavailable.
+time when investigating differences. Sales count through the approved BN/BO/BP
+mapping (migration 46): each eligible entry counts once, new projects and
+basement payments add weight, rejected and withdrawn entries do not, and a
+member with legacy or unattributed entries shows sales as Unavailable until
+they are reconciled.
 
 ## Read performance and awards
 
@@ -133,6 +136,40 @@ Switching it on takes four settings, each done by the owner:
 
 `TASKPULSE_AWARD_WORKER_ENABLED=sandbox` remains for test environments; any
 other value keeps the endpoint off.
+
+### Nightly policies run
+
+The same workflow has a second step that calls `POST /api/internal/policies`
+(same token) after the award step, even if that step failed. Each call
+evaluates up to 20 due policy periods per company; the step repeats until
+nothing remains (20 calls at most), writes a summary table and fails on a
+failed company. A failed evaluation is recorded as a run with its reason and
+the managing directors get one notification a day; it is never shown as "not
+met". Evaluate now on a policy runs the same evaluator for the current and
+previous period.
+
+## Company settings and the activity log
+
+Settings > Company (managing director) holds the mission-type names, meeting
+types, the meeting agenda, standing missions and the holiday calendar. Each
+section saves on its own with a version check. Once a calendar is saved, an
+attendance entry on a listed holiday that names no status is recorded as
+Holiday (nothing changes for companies without a calendar). Team > Activity
+lists who changed what (managers see the company, members their own) with a
+link to the mission, record history, profile or month; company-settings saves
+are audited but do not appear there yet (the feed needs a forward migration
+adding `organization_settings` to its rules).
+
+## Everyday controls
+
+- **Appearance:** Light, Dark or System from the account menu or Settings >
+  Profile, remembered on that device. System follows the computer or phone
+  setting. The public landing page always shows its light look.
+- **Today map:** scrolling moves the page; Ctrl (⌘ on a Mac) + scroll or a
+  pinch zooms; drag with a mouse or pen to pan. Re-centre brings the focused
+  mission or item back into view. Vertical/Horizontal switches the road's
+  direction; the choice is kept in the link (`?layout=horizontal`) and on the
+  device.
 
 ## Reports and closed months
 

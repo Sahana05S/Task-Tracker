@@ -46,7 +46,7 @@ import { WorkFilesPanel } from '@/modules/tasks/components/detail/work-files-pan
 import { TaskLifecyclePanel } from '@/modules/tasks/components/task-lifecycle-panel';
 import { TaskReviewForm } from '@/modules/tasks/components/task-review-form';
 import { requireProfile } from '@/shared/session/profile';
-import { formatHours, isOverdue } from '@/shared/tracker/format';
+import { formatDate, formatHours, isOverdue } from '@/shared/tracker/format';
 
 import { ManualTimeForm, TimerControl, TimerRecords } from '@/modules/time-tracking/components/timer-panels';
 
@@ -163,7 +163,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         <p role="status" className="border-attention-border bg-attention-subtle text-attention-foreground flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm">
           <ArchiveIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
-            Archived on {task.archivedEffectiveDate}. This mission and its retained history are read-only. {task.archiveReason}
+            Archived on {formatDate(task.archivedEffectiveDate ?? null)}. This mission and its retained history are read-only. {task.archiveReason}
             {successor?<Link className="link ml-2 font-semibold" href={`/tasks/${encodeURIComponent(successor.taskTag)}`}>Continue on {successor.taskTag} - {successor.title}</Link>:null}
           </span>
         </p>
@@ -191,7 +191,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
 
       {tab === 'work' ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <main className="grid min-w-0 content-start gap-6">
+          <section className="grid min-w-0 content-start gap-6">
             <ChecklistHero
               href={checklistHref}
               title={data.checklist?.title ?? null}
@@ -216,7 +216,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             />
             {waypoints?.recent.length ? <WaypointCelebration tasks={waypoints.recent} waypoints={waypoints.waypoints} /> : null}
             {canManage ? <TaskLifecyclePanel task={task} /> : null}
-          </main>
+          </section>
           <aside className="grid h-fit min-w-0 gap-6">
             <MissionPanel icon={TimerIcon} title="Timer">
               <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
@@ -233,7 +233,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         </div>
       ) : details && native ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <main className="grid min-w-0 content-start gap-6">
+          <section className="grid min-w-0 content-start gap-6">
             <MissionBrief
               task={task}
               sections={data.sections}
@@ -255,7 +255,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             <MissionPanel icon={GitBranchIcon} title="Dependency missions">
               <DependencyList dependencies={data.dependencies} taskId={task.id} />
             </MissionPanel>
-          </main>
+          </section>
           <aside className="grid h-fit min-w-0 gap-6">
             <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
           </aside>

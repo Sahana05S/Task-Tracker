@@ -90,7 +90,7 @@ export async function DailyPerfLogSection({
         </form>
 
         {!log ? (
-          <p className="text-muted-foreground text-sm">Choose a date range and select Show log to read the retained daily runs.</p>
+          <p className="text-muted-foreground text-sm">Choose a date range and select Show log to see each day’s results.</p>
         ) : !data ? (
           <MissionNotice tone="attention">
             Daily award runs or logged hours could not be read, so the log is unavailable. Try again shortly.

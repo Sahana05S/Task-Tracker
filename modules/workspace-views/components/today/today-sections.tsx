@@ -53,7 +53,7 @@ function CardTitle({ icon: Icon, title, action, tone = 'primary' }: {
 export function Unavailable({ what }: { what: string }) {
   return (
     <p role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground rounded-xl border px-4 py-3 text-sm">
-      {what} couldn&apos;t be loaded right now. Refresh to try again.
+      {what} couldn’t be loaded right now. Refresh to try again.
     </p>
   );
 }
@@ -135,7 +135,7 @@ export function WeekSummaryCard({ week, waypointsReached = null }: {
           <span className="text-muted-foreground text-xs">{week.data.activeDays} active {week.data.activeDays === 1 ? 'day' : 'days'}</span>
         ) : null}
       </div>
-      {week.status === 'unavailable' ? <Unavailable what="This week's summary" /> : (
+      {week.status === 'unavailable' ? <Unavailable what="This week’s summary" /> : (
         <>
           <dl className="divide-border divide-y">
             {rows.map(({ icon: Icon, label, value, tone }) => (
@@ -169,11 +169,11 @@ export function StarCalendar({ awards, today, monthStart, userId }: {
   const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(first);
   return (
     <Card aria-label="Star calendar">
-      <CardTitle icon={CalendarDaysIcon} title="Star calendar" tone="recognition" action={{ href: '/dashboard', label: 'Awards' }} />
+      <CardTitle icon={CalendarDaysIcon} title="Star calendar" tone="recognition" action={{ href: '/awards', label: 'Awards' }} />
       {awards.status === 'unavailable' ? <Unavailable what="Your star calendar" /> : (
         <>
           <p className="text-muted-foreground mb-3 text-center text-xs font-medium">{monthLabel}</p>
-          <div className="grid grid-cols-7 gap-y-1.5 text-center text-xs" role="grid" aria-label={`${monthLabel} daily stars`}>
+          <div className="grid grid-cols-7 gap-y-1.5 text-center text-xs" role="group" aria-label={`${monthLabel} daily stars`}>
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => <span key={i} className="text-muted-foreground pb-1 font-semibold" aria-hidden="true">{d}</span>)}
             {Array.from({ length: lead }, (_, i) => <span key={`lead-${i}`} aria-hidden="true" />)}
             {Array.from({ length: daysInMonth }, (_, i) => {
@@ -182,7 +182,7 @@ export function StarCalendar({ awards, today, monthStart, userId }: {
               const isToday = date === today;
               return (
                 <span key={date} className="flex justify-center">
-                  <span title={won ? `${date}: daily star earned` : isToday ? 'Today' : undefined}
+                  <span title={won ? `${i + 1} ${monthLabel}: daily star earned` : isToday ? 'Today' : undefined}
                     className={cn('flex size-8 items-center justify-center rounded-full tabular-nums',
                       won && 'bg-recognition-subtle text-recognition-foreground font-bold',
                       isToday && !won && 'bg-primary text-primary-foreground font-bold',

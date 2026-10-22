@@ -30,9 +30,12 @@ export function AppShell({ profile, counts, timers, children }: AppShellProps) {
   return (
     <NavDrawerProvider>
       <div className="bg-background min-h-dvh">
+        <a href="#main" className="bg-primary text-primary-foreground sr-only z-50 rounded-lg px-4 py-2 text-sm font-semibold focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+          Skip to content
+        </a>
         <TopBar profile={profile} />
         <SectionTabs />
-        <main>{children}</main>
+        <main id="main" tabIndex={-1} className="outline-none">{children}</main>
         <footer className="mx-auto flex min-h-24 w-full max-w-[1200px] justify-end px-4 pt-3 pb-36 md:pb-6 lg:px-6 [body:has([data-page-width=wide])_&]:max-w-[1440px]">
           <BeaverCompanion state={timers.length ? 'focused' : 'neutral'} message={timers.length ? 'Your timer is running. One step at a time.' : 'One small step moves your mission forward.'} />
         </footer>
