@@ -41,8 +41,8 @@ function Cell({ cell, name, day, editable, onOpen }: { cell: MatrixCell; name: s
   const className = cn(
     'relative grid h-11 w-full min-w-9 place-content-center justify-items-center gap-0.5 rounded-lg text-center',
     style?.cell,
-    missing && 'border-danger-border text-muted-foreground border border-dashed bg-white',
-    open && 'border-primary/40 text-primary border border-dashed bg-white',
+    missing && 'border-danger-border text-muted-foreground border border-dashed bg-card',
+    open && 'border-primary/40 text-primary border border-dashed bg-card',
     cell.kind === 'future' && 'bg-muted/40',
     cell.check === 'fails' && 'ring-danger/60 ring-1 ring-inset',
   );
@@ -79,11 +79,11 @@ export function AttendanceMatrix({ model, editable }: { model: AttendanceMatrixM
       <ul className="flex flex-wrap gap-1.5 text-xs" aria-label="Legend and counts this month">
         {ATTENDANCE_STATUSES.map(status => (
           <li key={status} className={cn('inline-flex items-center gap-1.5 rounded-full py-1 pr-2.5 pl-1', STATUS_STYLE[status].cell)}>
-            <span className="grid min-w-6 place-items-center rounded-full bg-white/70 px-1 text-[10px] font-bold">{STATUS_STYLE[status].mark}</span>
+            <span className="grid min-w-6 place-items-center rounded-full bg-card/70 px-1 text-[10px] font-bold">{STATUS_STYLE[status].mark}</span>
             {status}<span className="font-semibold tabular-nums">{counts.get(status) ?? 0}</span>
           </li>
         ))}
-        <li className="border-danger-border text-danger-foreground inline-flex items-center gap-1.5 rounded-full border border-dashed bg-white px-2.5 py-1">
+        <li className="border-danger-border text-danger-foreground inline-flex items-center gap-1.5 rounded-full border border-dashed bg-card px-2.5 py-1">
           Not recorded<span className="font-semibold tabular-nums">{missing}</span>
         </li>
         <li className="text-muted-foreground inline-flex items-center gap-1.5 px-1 py-1">

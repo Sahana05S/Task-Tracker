@@ -25,7 +25,7 @@ export function PeopleTile({
           <span className="text-muted-foreground text-sm">{fallback}</span>
         ) : (
           names.map((name, index) => (
-            <span key={`${name}-${index}`} className="flex items-center gap-2 rounded-full bg-white py-1 pr-3 pl-1 text-sm font-medium shadow-(--shadow-card)">
+            <span key={`${name}-${index}`} className="flex items-center gap-2 rounded-full bg-card py-1 pr-3 pl-1 text-sm font-medium shadow-(--shadow-card)">
               <InitialsAvatar name={name} className="size-7 text-[10px]" />
               {name}
             </span>
@@ -53,7 +53,7 @@ export function SmartGoalTile({
   value: string | null;
 }) {
   return (
-    <div className="border-border rounded-xl border bg-white px-3.5 py-3">
+    <div className="border-border rounded-xl border bg-card px-3.5 py-3">
       <p className="text-primary text-[11px] font-bold tracking-[0.06em] uppercase">{label}</p>
       <p className={cn('mt-1 text-sm whitespace-pre-wrap', value ? 'text-foreground' : 'text-muted-foreground')}>
         {value ?? '—'}

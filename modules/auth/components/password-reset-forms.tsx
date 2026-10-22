@@ -24,7 +24,7 @@ export function ForgotPasswordForm({ linkError }: { linkError?: boolean }) {
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted-foreground">
         Enter the email address you sign in with and we will send you a link to set a new password.
       </p>
       <Field

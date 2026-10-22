@@ -70,7 +70,7 @@ export function ActivityLog({
         {canChooseMember ? (
           <label className="grid gap-1 text-xs font-medium">
             Member
-            <NativeSelect name="member" defaultValue={filter.member ?? ''} className="h-10 min-w-44 bg-white">
+            <NativeSelect name="member" defaultValue={filter.member ?? ''} className="h-10 min-w-44 bg-card">
               <option value="">Everyone</option>
               {people.map((person) => (
                 <option key={person.id} value={person.id}>{person.fullName}</option>
@@ -80,11 +80,11 @@ export function ActivityLog({
         ) : null}
         <label className="grid min-w-0 gap-1 text-xs font-medium">
           From
-          <input type="date" name="from" defaultValue={filter.from} className="field h-10 w-full bg-white sm:w-auto" />
+          <input type="date" name="from" defaultValue={filter.from} className="field h-10 w-full bg-card sm:w-auto" />
         </label>
         <label className="grid min-w-0 gap-1 text-xs font-medium">
           To
-          <input type="date" name="to" defaultValue={filter.to} className="field h-10 w-full bg-white sm:w-auto" />
+          <input type="date" name="to" defaultValue={filter.to} className="field h-10 w-full bg-card sm:w-auto" />
         </label>
         <button type="submit" className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')}>Apply</button>
       </form>
@@ -128,7 +128,7 @@ export function ActivityLog({
 
 function ActivityTable({ entries }: { entries: readonly ActivityEntry[] }) {
   return (
-    <div className="border-border overflow-hidden rounded-xl border bg-white">
+    <div className="border-border overflow-hidden rounded-xl border bg-card">
       <table className="w-full text-sm">
         <caption className="sr-only">Company changes, newest first</caption>
         <thead className="bg-muted/60 text-muted-foreground text-xs">

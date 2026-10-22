@@ -16,7 +16,7 @@ export function SectionTabs() {
   const section = activeSection(pathname);
   if (!section || section.tabs.length < 2) return null;
   return (
-    <nav aria-label={`${section.label} sections`} className="border-border border-b bg-white/60">
+    <nav aria-label={`${section.label} sections`} className="border-border border-b bg-card/60">
       <div className="flex gap-1 overflow-x-auto px-4 py-2 lg:px-6">
         {section.tabs.map((tab) => {
           const active = isTabActive(pathname, tab);

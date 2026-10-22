@@ -67,7 +67,7 @@ export function ChecklistVersionField({ fallback }: { fallback: number }) {
 }
 
 const CHOICE_STYLE: Record<CompletionState, string> = {
-  Yes: 'aria-pressed:bg-success-strong aria-pressed:text-white',
+  Yes: 'aria-pressed:bg-success-strong aria-pressed:text-success-subtle',
   No: 'aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-(--shadow-card)',
   'N/A': 'aria-pressed:bg-primary-subtle aria-pressed:text-primary-subtle-foreground',
 };

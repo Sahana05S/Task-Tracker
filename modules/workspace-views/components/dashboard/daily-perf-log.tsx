@@ -64,7 +64,7 @@ export async function DailyPerfLogSection({
           {canChooseMember && data ? (
             <label className="grid gap-1 text-xs font-medium">
               Member
-              <select name="member" defaultValue={filter.member ?? ''} className="field h-10 min-w-44 bg-white">
+              <select name="member" defaultValue={filter.member ?? ''} className="field h-10 min-w-44 bg-card">
                 <option value="">Everyone</option>
                 {data.options.map((member) => (
                   <option key={member.id} value={member.id}>{member.fullName}</option>
@@ -74,11 +74,11 @@ export async function DailyPerfLogSection({
           ) : null}
           <label className="grid min-w-0 gap-1 text-xs font-medium">
             From
-            <input type="date" name="from" defaultValue={filter.from} className="field h-10 w-full bg-white sm:w-auto" />
+            <input type="date" name="from" defaultValue={filter.from} className="field h-10 w-full bg-card sm:w-auto" />
           </label>
           <label className="grid min-w-0 gap-1 text-xs font-medium">
             To
-            <input type="date" name="to" defaultValue={filter.to} className="field h-10 w-full bg-white sm:w-auto" />
+            <input type="date" name="to" defaultValue={filter.to} className="field h-10 w-full bg-card sm:w-auto" />
           </label>
           <div className="flex items-center gap-2 sm:contents">
             <button type="submit" className={buttonVariants({ variant: 'outline' })}>{log ? 'Apply' : 'Show log'}</button>
@@ -123,7 +123,7 @@ export async function DailyPerfLogSection({
 /** The log as a table, one body per day; a day without any retained run is one line (the CSV keeps every member-day). */
 function DailyPerfTable({ log }: { log: DailyPerfLog }) {
   return (
-    <div className="border-border relative overflow-x-auto rounded-xl border bg-white">
+    <div className="border-border relative overflow-x-auto rounded-xl border bg-card">
       <table className="w-full min-w-[68rem] text-xs">
         <caption className="sr-only">Daily perf log, {log.from} to {log.to}</caption>
         <thead className="bg-muted/60 text-muted-foreground">
@@ -145,7 +145,7 @@ function DailyPerfTable({ log }: { log: DailyPerfLog }) {
           return (
             <tbody key={date} className="border-border border-t">
               <tr>
-                <th scope="colgroup" colSpan={FACTORS.length + 4} className={cn('text-foreground bg-white px-3 text-left font-semibold', empty ? 'py-2.5' : 'pt-3 pb-1')}>
+                <th scope="colgroup" colSpan={FACTORS.length + 4} className={cn('text-foreground bg-card px-3 text-left font-semibold', empty ? 'py-2.5' : 'pt-3 pb-1')}>
                   <span className="sticky left-3 inline-block">
                     {longDay(date)}
                     {empty ? (
@@ -158,7 +158,7 @@ function DailyPerfTable({ log }: { log: DailyPerfLog }) {
               </tr>
               {empty ? null : rows.map((row) => (
                 <tr key={row.userId} className="hover:bg-muted/40">
-                  <th scope="row" className="text-foreground sticky left-0 z-10 max-w-40 truncate bg-white px-3 py-1.5 text-left font-medium">
+                  <th scope="row" className="text-foreground sticky left-0 z-10 max-w-40 truncate bg-card px-3 py-1.5 text-left font-medium">
                     {row.fullName}
                   </th>
                   {row.status === 'not_calculated' ? (

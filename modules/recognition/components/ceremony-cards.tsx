@@ -50,7 +50,7 @@ export function AwardCard({ award, names, viewerId, reveal, note }: {
     <li
       className={cn(
         'soft-card relative flex min-h-36 min-w-0 flex-col gap-2 overflow-hidden p-3 sm:p-4',
-        won && 'border-recognition/50 bg-linear-180 from-recognition-subtle/60 to-white',
+        won && 'border-recognition/50 bg-linear-180 from-recognition-subtle/60 to-card',
         you && 'ring-primary ring-2',
         reveal && 'anim-pop',
       )}
@@ -108,7 +108,7 @@ export function FinaleCard({ star, names, viewerId, celebrate, confettiId }: {
       aria-label="Monthly star"
       className={cn('soft-card relative overflow-hidden p-6 text-center sm:p-8', celebrate && star.status === 'winner' && 'anim-glow')}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-135 from-primary-subtle via-white to-recognition-subtle opacity-90" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-135 from-primary-subtle via-card to-recognition-subtle opacity-90" />
       {celebrate && you ? <ConfettiBurst id={confettiId} /> : null}
       <div className="relative grid justify-items-center gap-3">
         <span className="bg-recognition-subtle text-recognition-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">

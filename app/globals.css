@@ -7,10 +7,24 @@
    Lavender canvas, white bento cards with a soft violet-tinted shadow, violet
    for interaction, gold reserved for recognition (stars, awards) and mint for
    progress/success. Peach/amber surfaces mark real warnings only (missing data,
-   refusals). Light theme only, as before.
+   refusals).
+
+   Dark theme (22 October 2026): `data-theme="dark"` on <html>, set before the
+   first paint by the root layout's inline script (Light / Dark / System per
+   device). It is a contrasting look rather than an inverted one: deep ink-navy
+   canvas, brighter violet for interaction, mint/teal progress, warm amber for
+   attention and chart colours re-picked for the dark surface (dataviz
+   validator, OKLab ΔE). Every text pair below reaches 4.5:1 and every control
+   edge 3:1 on its surface. Use these tokens rather than literal colours; the
+   literal-colour guard (__tests__/architecture/literal-colours.test.ts) fails
+   on new ones outside marketing.
    ========================================================================== */
 
+/* `dark:` utilities follow the stamped theme, not the OS setting. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 :root {
+  color-scheme: light;
   --radius: 0.75rem;
 
   /* ---- Canvas and surfaces --------------------------------------------- */
@@ -111,6 +125,204 @@
   --chart-grid: #efedf8;
   --chart-axis: #9a96b0;
   --chart-reference: #1a172e;
+
+  /* ---- Surfaces that used to be literals ------------------------------- */
+  --grid-header: #fbfcfd; /* sheet-grid header and frozen corner */
+  --hero-from: #ece9ff;
+  --hero-via: #f3f0ff;
+  --hero-to: #fff4e2;
+  --elevation-overlay: 0 16px 36px -4px rgb(99 85 230 / 0.12), 0 4px 12px -2px rgb(26 23 46 / 0.04);
+  --elevation-card: 0 4px 20px -2px rgb(99 85 230 / 0.04), 0 2px 6px -1px rgb(26 23 46 / 0.02);
+
+  /* ---- Badges: status, priority, neutral, category --------------------- */
+  --badge-progress-bg: #fef3c7;
+  --badge-progress-fg: #92400e;
+  --badge-idle-bg: #f1f5f9; /* not started, neutral, category */
+  --badge-idle-fg: #475569;
+  --badge-discarded-bg: #e2e8f0;
+  --badge-discarded-fg: #64748b;
+  --badge-discarded-line: #94a3b8;
+  --badge-focus-bg: #ffe4e6;
+  --badge-focus-fg: #9f1239;
+  --badge-high-bg: #feeceb;
+  --badge-high-fg: #c53030;
+  --badge-medium-bg: #fef3e2;
+  --badge-medium-fg: #b45309;
+  --badge-none-fg: #94a3b8;
+
+  /* ---- Freshness: label colour and dot --------------------------------- */
+  --fresh-fg: #047857;
+  --fresh-dot: #10b981;
+  --stale-fg: #b45309;
+  --stale-dot: #f59e0b;
+  --rotten-fg: #be123c;
+  --rotten-dot: #f43f5e;
+
+  /* ---- Streak meter and the skipped-day ring --------------------------- */
+  --streak-from: #f26b1d;
+  --streak-to: #fb923c;
+  --streak-skipped: #d9d5ec;
+
+  /* ---- Outlines stronger than the hairline border ----------------------- */
+  --border-strong: #c9c4e3; /* unlit flame, "none" calendar cells, unavailable dashed boxes */
+  --border-muted: #d9d5ec; /* pending dashed cells, Gantt bars */
+  --attention-strong: #f5c58a; /* waiting/blocked dashed amber edge */
+
+  /* ---- Policy outcome strip (dataviz-validated triad) ------------------- */
+  --outcome-met: #0f9f74;
+  --outcome-unmet: #7468d0;
+  --outcome-unavailable: #e08e0b;
+
+  /* ---- Today mission map ------------------------------------------------ */
+  --map-hue-0: #6b56cf;
+  --map-hue-1: #bb537e;
+  --map-hue-2: #138b79;
+  --map-hue-3: #986711;
+  --map-hue-4: #347caf;
+  --map-road: #c2cbe0;
+  --map-flag: #f5c980;
+  --map-flag-foreground: #533716;
+
+  /* ---- Native select chevron (stroke = muted foreground) ---------------- */
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c5776' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   Dark theme: every :root colour token, re-picked for an ink-navy canvas.
+   ========================================================================== */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --background: #0d1020;
+  --foreground: #e8e9f5;
+  --card: #161a2e;
+  --card-foreground: #e8e9f5;
+  --popover: #1b2036;
+  --popover-foreground: #e8e9f5;
+
+  --border: #2a3050;
+  /* Field edges: 3.6:1 on cards. */
+  --input: #6c74a6;
+
+  --muted: #1f2440;
+  --muted-foreground: #a6abc9;
+  --placeholder: #8f95b8;
+
+  /* Brighter violet; dark ink on it (8.5:1). */
+  --primary: #a79bff;
+  --primary-foreground: #14112e;
+  --primary-hover: #bbb1ff;
+  --primary-subtle: #27264d;
+  --primary-subtle-foreground: #cdc6ff;
+
+  --secondary: #1f2440;
+  --secondary-foreground: #c9cce4;
+  --accent: #1f2440;
+  --accent-foreground: #c9cce4;
+  --ring: #a79bff;
+
+  --destructive: #e0244c;
+  --destructive-foreground: #ffffff;
+
+  --danger: #ff8da1;
+  --danger-subtle: #2b1322;
+  --danger-border: #7a2a43;
+  --danger-foreground: #ffb4c2;
+  --overdue: #ff8da1;
+
+  /* Mint/teal progress on a navy track. */
+  --progress-track: #272c4a;
+  --progress-from: #2dd4bf;
+  --progress-to: #6ee7c8;
+
+  --recognition: #fbbf24;
+  --recognition-subtle: #30260f;
+  --recognition-foreground: #fcd462;
+  --success: #34d399;
+  --success-strong: #6ee7b7;
+  --success-subtle: #10302a;
+  /* Warm amber for attention. */
+  --attention-subtle: #2c210d;
+  --attention-border: #71531a;
+  --attention-foreground: #fcc54a;
+
+  --streak: #fb8c3c;
+  --streak-subtle: #311c10;
+  --streak-foreground: #fdba74;
+  --tier-bronze: #dc9a5e;
+  --tier-bronze-subtle: #2e2116;
+  --tier-silver: #b6bfcf;
+  --tier-silver-subtle: #232938;
+  --tier-diamond: #52d3ea;
+  --tier-diamond-subtle: #0f2a33;
+
+  /* Categorical order validated on #161a2e (adjacent CVD ΔE >= 8, normal >= 15, 3:1). */
+  --chart-1: #9085e9;
+  --chart-2: #199e70;
+  --chart-3: #d95926;
+  --chart-4: #3987e5;
+  --chart-5: #c98500;
+  --chart-6: #d55181;
+  --chart-7: #008300;
+  --chart-8: #e66767;
+
+  --chart-positive: #34d399;
+  --chart-negative: #fb7185;
+  --chart-grid: #232842;
+  --chart-axis: #9097ba;
+  --chart-reference: #e8e9f5;
+
+  --grid-header: #1a1f36;
+  --hero-from: #221f4a;
+  --hero-via: #1a1d38;
+  --hero-to: #2b2214;
+  --elevation-overlay: 0 16px 36px -4px rgb(0 0 0 / 0.5), 0 4px 12px -2px rgb(0 0 0 / 0.3);
+  --elevation-card: 0 4px 20px -2px rgb(0 0 0 / 0.28), 0 2px 6px -1px rgb(0 0 0 / 0.2);
+
+  --badge-progress-bg: #33270f;
+  --badge-progress-fg: #fcd06b;
+  --badge-idle-bg: #232842;
+  --badge-idle-fg: #b4b9d6;
+  --badge-discarded-bg: #1c2034;
+  --badge-discarded-fg: #8f95b8;
+  --badge-discarded-line: #6c74a6;
+  --badge-focus-bg: #3a1426;
+  --badge-focus-fg: #ffb1c8;
+  --badge-high-bg: #3a1719;
+  --badge-high-fg: #ffa8a3;
+  --badge-medium-bg: #33230f;
+  --badge-medium-fg: #fbbf6a;
+  --badge-none-fg: #8f95b8;
+
+  --fresh-fg: #5eead4;
+  --fresh-dot: #2dd4bf;
+  --stale-fg: #fcc54a;
+  --stale-dot: #fbbf24;
+  --rotten-fg: #ff8da1;
+  --rotten-dot: #fb7185;
+
+  --streak-from: #fb8c3c;
+  --streak-to: #fdba74;
+  --streak-skipped: #3a4066;
+
+  --border-strong: #3a4066;
+  --border-muted: #2f3556;
+  --attention-strong: #8a5a14;
+
+  --outcome-met: #34d399;
+  --outcome-unmet: #a79bff;
+  --outcome-unavailable: #fbbf24;
+
+  --map-hue-0: #9d8cf5;
+  --map-hue-1: #e07aa3;
+  --map-hue-2: #2fc4a8;
+  --map-hue-3: #d9a43a;
+  --map-hue-4: #5fa8e6;
+  --map-road: #2f3556;
+  --map-flag: #fcc54a;
+  --map-flag-foreground: #2c210d;
+
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a6abc9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 @theme inline {
@@ -206,9 +418,9 @@
     hard-edged drop shadow that would make it look pasted on. Panels that sit in
     the layout use a border instead; see `.soft-card`.
   */
-  --shadow-soft-lg: 0 16px 36px -4px rgb(99 85 230 / 0.12), 0 4px 12px -2px rgb(26 23 46 / 0.04);
+  --shadow-soft-lg: var(--elevation-overlay);
   /* Bento card elevation (DESIGN.md level 1). */
-  --shadow-card: 0 4px 20px -2px rgb(99 85 230 / 0.04), 0 2px 6px -1px rgb(26 23 46 / 0.02);
+  --shadow-card: var(--elevation-card);
 
   /*
     Height of the workspace header's first row. The header pins itself to this,
@@ -338,7 +550,7 @@
 
   /* Summary hero for a mission or checklist: lavender into a warm edge. */
   .hero-card {
-    @apply border-primary/15 overflow-hidden rounded-2xl border bg-linear-135 from-[#ece9ff] via-[#f3f0ff] to-[#fff4e2];
+    @apply border-primary/15 overflow-hidden rounded-2xl border bg-linear-135 from-(--hero-from) via-(--hero-via) to-(--hero-to);
   }
 
   /* ------------------------------------------------------------------------
@@ -362,7 +574,7 @@
   }
 
   .metric-card-primary .metric-trend {
-    @apply text-white/75;
+    @apply text-primary-foreground/75;
   }
 
   /* ------------------------------------------------------------------------
@@ -418,30 +630,30 @@
   }
 
   .badge-status-in-progress {
-    @apply bg-amber-100 text-amber-800;
+    @apply bg-(--badge-progress-bg) text-(--badge-progress-fg);
   }
 
   .badge-status-not-started {
-    @apply bg-slate-100 text-slate-600;
+    @apply bg-(--badge-idle-bg) text-(--badge-idle-fg);
   }
 
   /* Discarded reads as withdrawn rather than failed, so it is dimmed and
      struck through instead of taking an alarm colour. */
   .badge-status-discarded {
-    @apply bg-slate-200 text-slate-500 line-through decoration-slate-400;
+    @apply bg-(--badge-discarded-bg) text-(--badge-discarded-fg) line-through decoration-(--badge-discarded-line);
   }
 
   /* --- Task priority --------------------------------------------------- */
   .badge-priority-focus {
-    @apply bg-rose-100 font-bold text-rose-800;
+    @apply bg-(--badge-focus-bg) font-bold text-(--badge-focus-fg);
   }
 
   .badge-priority-high {
-    @apply bg-[#feeceb] text-[#c53030];
+    @apply bg-(--badge-high-bg) text-(--badge-high-fg);
   }
 
   .badge-priority-medium {
-    @apply bg-[#fef3e2] text-[#b45309];
+    @apply bg-(--badge-medium-bg) text-(--badge-medium-fg);
   }
 
   .badge-priority-low {
@@ -450,12 +662,12 @@
 
   /* Unprioritised: present but deliberately recessive. */
   .badge-priority-no {
-    @apply bg-transparent text-slate-400;
+    @apply bg-transparent text-(--badge-none-fg);
   }
 
   /* --- Neutral, for roles and counts ----------------------------------- */
   .badge-neutral {
-    @apply bg-slate-100 text-slate-600;
+    @apply bg-(--badge-idle-bg) text-(--badge-idle-fg);
   }
 
   /* --- Accent, for the single most important chip on a surface ---------- */
@@ -466,8 +678,8 @@
   /* --- Category: neutral and monospaced. Thirteen short codes read as data,
          not as labels, so they take the figure font. ------------------------ */
   .badge-category {
-    @apply bg-slate-100 font-mono text-[10px] font-semibold tracking-wide
-      text-slate-600;
+    @apply bg-(--badge-idle-bg) font-mono text-[10px] font-semibold tracking-wide
+      text-(--badge-idle-fg);
   }
 
   /* --- Freshness: dot plus label, a different form from the filled pills,
@@ -481,27 +693,27 @@
   }
 
   .freshness-fresh {
-    @apply text-emerald-700;
+    @apply text-(--fresh-fg);
   }
 
   .freshness-fresh .freshness-dot {
-    @apply bg-emerald-500;
+    @apply bg-(--fresh-dot);
   }
 
   .freshness-stale {
-    @apply text-amber-700;
+    @apply text-(--stale-fg);
   }
 
   .freshness-stale .freshness-dot {
-    @apply bg-amber-500;
+    @apply bg-(--stale-dot);
   }
 
   .freshness-rotten {
-    @apply text-rose-700;
+    @apply text-(--rotten-fg);
   }
 
   .freshness-rotten .freshness-dot {
-    @apply bg-rose-500;
+    @apply bg-(--rotten-dot);
   }
 }
 
@@ -568,7 +780,7 @@
   /* Square icon button for header actions. Bordered, not floated. */
   .icon-button {
     @apply text-muted-foreground border-border flex size-9 shrink-0 items-center
-      justify-center rounded-full border bg-white transition-colors;
+      justify-center rounded-full border bg-card transition-colors;
   }
 
   /* Top-bar destination pills (desktop). */
@@ -578,7 +790,7 @@
   }
 
   .nav-pill:hover {
-    @apply text-foreground bg-white;
+    @apply text-foreground bg-card;
   }
 
   .nav-pill-active,
@@ -659,7 +871,7 @@
   /* Native selects share the control and draw their own chevron. */
   select.field {
     @apply appearance-none bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat pr-9;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c5776' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: var(--select-chevron);
   }
 
   select.field[multiple] {
@@ -689,7 +901,7 @@
 
   /* Collapsible panel matching Mission details' Disclosure. */
   .disclosure {
-    @apply border-border rounded-xl border bg-white;
+    @apply border-border bg-card rounded-xl border;
   }
 
   .disclosure > summary {
@@ -755,7 +967,7 @@
   /* Denser than before: 6px vertical padding on rows, 8px on the header. */
   .sheet-grid th {
     @apply text-muted-foreground border-border sticky top-0 z-20 border-b
-      bg-[#fbfcfd] px-3 py-2 text-left text-[10px] font-semibold tracking-wider
+      bg-(--grid-header) px-3 py-2 text-left text-[10px] font-semibold tracking-wider
       whitespace-nowrap uppercase;
   }
 
@@ -767,12 +979,12 @@
   /* Frozen first column for horizontal scrolling. Opaque, so scrolled content
      passes behind it rather than through it. */
   .sheet-grid .sheet-grid-frozen {
-    @apply sticky left-0 z-10 bg-white;
+    @apply bg-card sticky left-0 z-10;
   }
 
   /* The corner cell belongs to both sticky contexts, so it outranks each. */
   .sheet-grid th.sheet-grid-frozen {
-    @apply z-30 bg-[#fbfcfd];
+    @apply z-30 bg-(--grid-header);
   }
 
   /* Last row drops its rule: the card's rounded edge is the boundary. */
@@ -911,7 +1123,7 @@
 
   /* Ember fill for the streak milestone meter (same track as MissionProgress). */
   .streak-meter .progress-fill {
-    @apply bg-linear-to-r from-[#f26b1d] to-[#fb923c];
+    @apply bg-linear-to-r from-(--streak-from) to-(--streak-to);
   }
 
   /* 14-day strip: shape carries the state, colour only reinforces it. */
@@ -924,7 +1136,7 @@
   }
 
   .streak-dot-skipped {
-    @apply border-[#d9d5ec] bg-transparent;
+    @apply border-(--streak-skipped) bg-transparent;
   }
 
   .streak-dot-broken {

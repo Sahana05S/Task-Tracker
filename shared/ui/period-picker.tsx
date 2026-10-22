@@ -59,7 +59,7 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, className }: {
       {Object.entries(keep ?? {}).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
       <label className="field-label" htmlFor={`${id}-month`}>
         Month
-        <input id={`${id}-month`} className="field w-48 bg-white" type="month" name="period" value={selection.month} max={kolkataDate().slice(0, 7)} required onChange={event => update({ month: event.target.value })} />
+        <input id={`${id}-month`} className="field w-48 bg-card" type="month" name="period" value={selection.month} max={kolkataDate().slice(0, 7)} required onChange={event => update({ month: event.target.value })} />
       </label>
       <div className="grid gap-1.5">
         <span className="field-label flex items-center gap-0.5">Figures as of<HelpTip tip="asOf" /></span>
@@ -68,13 +68,13 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, className }: {
       {selection.mode !== 'latest' ? (
         <label className="field-label" htmlFor={`${id}-date`}>
           Day
-          <input id={`${id}-date`} className="field w-44 bg-white" type="date" value={selection.date} min={bounds.first} max={selection.mode === 'endOfDay' ? bounds.lastEnded : bounds.lastStarted} required onChange={event => update({ date: event.target.value })} />
+          <input id={`${id}-date`} className="field w-44 bg-card" type="date" value={selection.date} min={bounds.first} max={selection.mode === 'endOfDay' ? bounds.lastEnded : bounds.lastStarted} required onChange={event => update({ date: event.target.value })} />
         </label>
       ) : null}
       {selection.mode === 'custom' ? (
         <label className="field-label" htmlFor={`${id}-time`}>
           Time (India)
-          <input id={`${id}-time`} className="field w-32 bg-white" type="time" value={selection.time} required onChange={event => update({ time: event.target.value })} />
+          <input id={`${id}-time`} className="field w-32 bg-card" type="time" value={selection.time} required onChange={event => update({ time: event.target.value })} />
         </label>
       ) : null}
       <button type="submit" className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')}>Show figures</button>

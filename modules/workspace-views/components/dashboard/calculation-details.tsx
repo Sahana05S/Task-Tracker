@@ -37,7 +37,7 @@ export function CalculationDetails({presentation,calculation,awards,names,viewer
           <h3 className="text-sm font-semibold">Performance inputs</h3>
           {members.length === 0 ? <p className="text-muted-foreground text-sm">No individual inputs are visible to you for this period.</p> : null}
           {members.map(result => (
-            <details key={result.userId} className="border-border rounded-xl border bg-white p-3">
+            <details key={result.userId} className="border-border rounded-xl border bg-card p-3">
               <summary className="text-primary cursor-pointer text-sm font-semibold">{names[result.userId] ?? 'Employee'}</summary>
               <PerformanceBreakdown result={result} context={calculation?.context} />
             </details>

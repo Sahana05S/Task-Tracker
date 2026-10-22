@@ -10,9 +10,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
+import { THEME_OPTIONS, useTheme, type ThemePreference } from '@/shared/ui/theme';
 import { cn, getInitials } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 
@@ -39,6 +43,7 @@ export function UserMenu({
   className,
 }: UserMenuProps) {
   const initials = getInitials(profile.fullName);
+  const { preference, setPreference } = useTheme();
 
   /*
     Radix closes the menu when an item is selected, which unmounts this form.
@@ -130,6 +135,19 @@ export function UserMenu({
             Profile &amp; settings
           </Link>
         </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        {/* Appearance for this device; the same choice as Settings > Profile. */}
+        <DropdownMenuLabel className="text-muted-foreground text-xs font-medium">Theme</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={preference} onValueChange={(value) => setPreference(value as ThemePreference)}>
+          {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+            <DropdownMenuRadioItem key={value} value={value} onSelect={(event) => event.preventDefault()}>
+              <Icon className="text-muted-foreground size-4" aria-hidden="true" />
+              {label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
 
         <DropdownMenuSeparator />
 

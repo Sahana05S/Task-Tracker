@@ -105,7 +105,7 @@ export function StatusSelect({
 
       {pending ? (
         <LoaderCircleIcon
-          className="size-3.5 shrink-0 animate-spin text-slate-400"
+          className="size-3.5 shrink-0 animate-spin text-placeholder"
           aria-label="Saving"
         />
       ) : null}

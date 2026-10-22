@@ -51,7 +51,7 @@ export function PointsRing({ points, progress }: { points: number; progress: Tie
 /** One badge in the trophy case; unearned ones stay grey with what earns them. */
 function Badge({ icon: Icon, title, detail, earned, tone }: { icon: LucideIcon; title: string; detail: string; earned: boolean; tone: string }) {
   return (
-    <li className={cn('flex min-w-0 items-center gap-3 rounded-xl border p-3', earned ? 'bg-white' : 'bg-muted/60 border-dashed')}>
+    <li className={cn('flex min-w-0 items-center gap-3 rounded-xl border p-3', earned ? 'bg-card' : 'bg-muted/60 border-dashed')}>
       <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-full', earned ? tone : 'bg-muted text-muted-foreground/60')}>
         <Icon className="size-5" aria-hidden="true" />
       </span>

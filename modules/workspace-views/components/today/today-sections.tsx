@@ -73,7 +73,7 @@ export function FocusMissions({ focus, today }: { focus: Section<{ missions: Foc
     <Card aria-label="Your focus missions">
       <CardTitle icon={TargetIcon} title="Your focus missions" action={{ href: '/tasks', label: 'See all' }} />
       {focus.status === 'unavailable' ? <Unavailable what="Your missions" /> : focus.data.missions.length === 0 ? (
-        <p className="text-muted-foreground rounded-xl bg-[#fbfbfe] px-4 py-6 text-center text-sm">
+        <p className="text-muted-foreground rounded-xl bg-background px-4 py-6 text-center text-sm">
           No open missions are assigned to you. <Link href="/tasks" className="link font-semibold">Browse missions</Link>
         </p>
       ) : (
@@ -82,7 +82,7 @@ export function FocusMissions({ focus, today }: { focus: Section<{ missions: Foc
             const due = dueLabel(mission.dueDate, today);
             const progress = mission.progress === null ? null : Math.max(0, Math.min(100, mission.progress));
             return (
-              <li key={mission.id} className="rounded-2xl border border-[#ece9f7] bg-[#fbfbfe] p-4">
+              <li key={mission.id} className="rounded-2xl border border-border bg-background p-4">
                 <p className="text-foreground font-semibold">{mission.title}</p>
                 <p className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <PriorityBadge priority={mission.priority} />

@@ -187,7 +187,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
     <section aria-label="Checklist summary" className="hero-card p-5 sm:p-6">
       <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
         <div className="min-w-0 flex-1 basis-72">
-          <p className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
+          <p className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold">
             <ClipboardCheckIcon className="size-3.5" aria-hidden="true" />
             {checklist.ownerNodeId ? 'Sub-mission checklist' : 'Master checklist'}
           </p>
@@ -198,7 +198,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
             <AvatarStack names={ownerNames} />
           </div>
         </div>
-        <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-white/85 p-4 shadow-(--shadow-card) sm:w-72">
+        <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-card/85 p-4 shadow-(--shadow-card) sm:w-72">
           <div className="flex items-center gap-3">
             <span className="bg-recognition-subtle text-recognition-foreground flex size-10 shrink-0 items-center justify-center rounded-xl">
               <GaugeIcon className="size-5" aria-hidden="true" />
@@ -219,7 +219,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
           const section = rollup.sections[key];
           const value = section.state === 'not_applicable' ? 'N/A' : percentText(section.progressPercentage) ?? 'Not started';
           return (
-            <a key={key} href={`#${key}`} className="text-foreground hover:bg-white inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold transition-colors">
+            <a key={key} href={`#${key}`} className="text-foreground hover:bg-card inline-flex items-center gap-1.5 rounded-full bg-card/70 px-3 py-1.5 text-xs font-semibold transition-colors">
               <SectionStateIcon section={section} className="size-3.5" />
               {SECTION_TITLES[key].title}
               <span className="text-muted-foreground tabular-nums">{value}</span>
@@ -227,7 +227,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
           );
         })}
         {structureHref ? (
-          <Button asChild variant="outline" size="sm" className="ml-auto bg-white/80">
+          <Button asChild variant="outline" size="sm" className="ml-auto bg-card/80">
             <Link href={structureHref}>Structure and linked missions</Link>
           </Button>
         ) : null}
@@ -246,7 +246,7 @@ function PageHero({ rollup, page, title, parentTitle }: { rollup: ChecklistRollu
       <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
         <div className="min-w-0 flex-1 basis-72">
           <div className="flex flex-wrap items-center gap-1.5">
-            <p className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
+            <p className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold">
               <FileStackIcon className="size-3.5" aria-hidden="true" />Checklist page
             </p>
             <span className="badge-soft badge-neutral">{SECTION_TITLES[page.section].title}</span>
@@ -254,7 +254,7 @@ function PageHero({ rollup, page, title, parentTitle }: { rollup: ChecklistRollu
           <h1 className="text-foreground mt-3 text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">{title}</h1>
           <p className="text-muted-foreground mt-1 text-sm break-words">Inside {parentTitle}</p>
         </div>
-        <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-white/85 p-4 shadow-(--shadow-card) sm:w-72">
+        <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-card/85 p-4 shadow-(--shadow-card) sm:w-72">
           <div className="flex items-center justify-between gap-3">
             <p className="stat-figure">{result === 'N/A' ? 'N/A' : percentText(value) ?? (page.rows.length ? '—' : 'No rows')}</p>
             <span className={cn('badge-soft', result === 'CLOSED' ? 'badge-status-done' : result === 'N/A' ? 'badge-neutral' : 'badge-accent')}>

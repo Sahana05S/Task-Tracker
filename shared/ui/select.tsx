@@ -72,7 +72,7 @@ function SelectContent({
         data-slot="select-content"
         position={position}
         className={cn(
-          'border-border text-foreground relative z-50 max-h-(--radix-select-content-available-height) min-w-32 overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border bg-white shadow-soft-lg',
+          'border-border text-foreground relative z-50 max-h-(--radix-select-content-available-height) min-w-32 overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border bg-popover shadow-soft-lg',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
           'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',

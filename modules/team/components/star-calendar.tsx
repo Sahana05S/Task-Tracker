@@ -7,10 +7,10 @@ import { cn } from '@/shared/utils';
 
 const STYLE: Record<StarDayState, string> = {
   star: 'bg-recognition border-recognition',
-  other: 'bg-white border-[#c9c4e3]',
-  none: 'bg-white border-[#c9c4e3]',
-  waiting: 'bg-attention-subtle border-[#f5c58a] border-dashed',
-  pending: 'bg-muted border-[#d9d5ec] border-dashed',
+  other: 'bg-card border-(--border-strong)',
+  none: 'bg-card border-(--border-strong)',
+  waiting: 'bg-attention-subtle border-(--attention-strong) border-dashed',
+  pending: 'bg-muted border-(--border-muted) border-dashed',
 };
 const LABEL: Record<StarDayState, string> = {
   star: 'Daily star',

@@ -2,7 +2,9 @@
 
 This explains where code lives and the rules that keep features independent.
 It is enforced by `__tests__/architecture/boundaries.test.ts`, which runs with
-`npm test`.
+`npm test`. Colours come from the tokens in `app/globals.css` (light and dark
+values); `__tests__/architecture/literal-colours.test.ts` fails on a literal
+colour in signed-in code (marketing is exempt).
 
 ## The idea in one line
 
@@ -84,7 +86,7 @@ Start from `modules/_template/` when creating a module.
 | `shared/read-models/team-summary.ts` | Cached raw `team_summary_inputs` fetch shared by scoring and support |
 | `shared/commands/` | Command results and idempotent operation ids |
 | `shared/tracker/` | Common enums, display formatters and `csv.ts` (`csvCell`, the formula-safe CSV cell) |
-| `shared/ui/` | Buttons, inputs, dialogs (shadcn), `mission-ui` page/panel blocks, `tracker-badges`, `execution-form`, `chart-palette` |
+| `shared/ui/` | Buttons, inputs, dialogs (shadcn), `mission-ui` page/panel blocks, `tracker-badges`, `execution-form`, `chart-palette`, `theme` (Light / Dark / System: `ThemeProvider`, `useTheme`, `ThemeChoice`; `theme-script.ts` is the pre-paint inline script the root layout embeds) |
 | `shared/utils.ts` | `cn()` class-name helper |
 
 ## Module map

@@ -71,7 +71,7 @@ export function MobileBottomNav() {
 
       <nav
         aria-label="Primary"
-        className="border-border fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="border-border fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
         <ul className="flex h-(--spacing-bottom-nav) items-stretch justify-around px-2">
           {tabs.map(({ label, href, icon: Icon }) => {

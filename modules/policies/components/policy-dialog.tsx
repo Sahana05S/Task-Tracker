@@ -106,7 +106,7 @@ function TemplatePicker({ onPick }: { onPick: (template: PolicyTemplate) => void
         {TEMPLATES.map((t) => (
           <li key={t.key}>
             <button type="button" onClick={() => onPick(t)}
-              className="border-border hover:border-primary/40 hover:bg-primary-subtle/40 focus-visible:ring-ring grid w-full gap-0.5 rounded-xl border bg-white px-4 py-3 text-left transition-colors outline-none focus-visible:ring-2">
+              className="border-border hover:border-primary/40 hover:bg-primary-subtle/40 focus-visible:ring-ring grid w-full gap-0.5 rounded-xl border bg-card px-4 py-3 text-left transition-colors outline-none focus-visible:ring-2">
               <span className="text-foreground text-sm font-semibold">{t.label}</span>
               <span className="text-muted-foreground text-xs text-pretty">{t.summary(t.defaults, t.periodKinds.includes('month') ? 'month' : t.periodKinds[0])}</span>
             </button>

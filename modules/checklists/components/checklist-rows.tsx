@@ -369,7 +369,7 @@ export function NodeStateIcon({ ctx, node, className }: { ctx: ChecklistContext;
     <Icon
       className={cn(
         'size-5 shrink-0',
-        v?.applicable === false ? 'text-muted-foreground' : v?.isComplete ? 'text-success-strong' : container ? 'text-primary' : 'text-slate-300',
+        v?.applicable === false ? 'text-muted-foreground' : v?.isComplete ? 'text-success-strong' : container ? 'text-primary' : 'text-input',
         className,
       )}
       aria-hidden="true"

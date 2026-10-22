@@ -20,7 +20,7 @@ export function TrackerSchemaNotice() {
       <p className="mt-1.5 max-w-3xl text-sm opacity-90">
         The dashboard is connected to a Supabase project that does not have the
         replacement tracker tables yet, such as{' '}
-        <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
+        <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
           public.task_assignees
         </code>
         . Apply the remaining migrations to this same project, then reload the
@@ -34,7 +34,7 @@ export function TrackerSchemaNotice() {
           </span>
           <span>
             Open Supabase Dashboard → SQL Editor for the project in{' '}
-            <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
+            <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
               .env.local
             </code>
             .
@@ -49,7 +49,7 @@ export function TrackerSchemaNotice() {
             {REQUIRED_MIGRATIONS.map((migration, index) => (
               <code
                 key={migration}
-                className="mr-1 rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs"
+                className="mr-1 rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs"
               >
                 {index + 7}: {migration}
               </code>
@@ -62,11 +62,11 @@ export function TrackerSchemaNotice() {
           </span>
           <span>
             Run{' '}
-            <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
+            <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
               NOTIFY pgrst, &apos;reload schema&apos;;
             </code>{' '}
             and restart{' '}
-            <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
+            <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
               npm run dev
             </code>
             .

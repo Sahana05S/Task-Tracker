@@ -166,15 +166,15 @@ export function ProgressInput({
           aria-invalid={invalid}
           className={cn(
             'text-foreground w-14 rounded-lg border border-transparent bg-transparent px-1.5 py-0.5 text-right text-xs tabular',
-            'hover:border-input hover:bg-white',
-            'focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:bg-white focus-visible:ring-2 focus-visible:outline-none',
-            'disabled:text-slate-400',
+            'hover:border-input hover:bg-card',
+            'focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:bg-card focus-visible:ring-2 focus-visible:outline-none',
+            'disabled:text-placeholder',
             // Spin buttons steal width the dense grid cannot spare.
             '[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
             invalid && 'border-danger',
           )}
         />
-        <span className="text-xs text-slate-400" aria-hidden="true">
+        <span className="text-xs text-placeholder" aria-hidden="true">
           %
         </span>
 

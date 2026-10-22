@@ -22,7 +22,7 @@ export function ResetPasswordScreen({ view }: ResetPasswordScreenProps) {
           <h1 className="text-foreground text-xl font-bold tracking-tight">
             {settingPassword ? 'Set a new password' : 'Reset your password'}
           </h1>
-          <p className="text-sm text-slate-500">TaskPulse</p>
+          <p className="text-sm text-muted-foreground">TaskPulse</p>
         </div>
 
         <div className="soft-card p-6">
@@ -36,7 +36,7 @@ export function ResetPasswordScreen({ view }: ResetPasswordScreenProps) {
         <p className="mt-4 text-center">
           <Link
             href="/login"
-            className="inline-flex items-center gap-1 rounded-md text-xs text-slate-500 transition-colors hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none"
+            className="inline-flex items-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
           >
             <ArrowLeftIcon className="size-3" aria-hidden="true" />
             Back to sign in

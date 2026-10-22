@@ -22,7 +22,7 @@ export interface BulkActionBarProps {
 }
 
 const barButton =
-  'text-white/85 hover:bg-white/10 hover:text-white focus-visible:ring-offset-foreground h-9 rounded-lg px-3 text-[13px]';
+  'text-background/85 hover:bg-background/10 hover:text-background focus-visible:ring-offset-foreground h-9 rounded-lg px-3 text-[13px]';
 
 /**
  * Sticky bar under the Missions table while rows are selected. Batch actions
@@ -40,13 +40,13 @@ export function BulkActionBar({ selectedCount, canManage, onRun, onClear }: Bulk
       <div
         role="toolbar"
         aria-label={`Actions for ${selectedCount} selected ${selectedCount === 1 ? 'mission' : 'missions'}`}
-        className="bg-foreground shadow-soft-lg pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl p-1.5 text-white motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
+        className="bg-foreground shadow-soft-lg pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl p-1.5 text-background motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
       >
         <span className="bg-primary flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold tabular-nums">
           {selectedCount} selected
         </span>
 
-        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-white/15" />
+        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-card/15" />
 
         {batches.map((operation) => (
           <Button
@@ -85,7 +85,7 @@ export function BulkActionBar({ selectedCount, canManage, onRun, onClear }: Bulk
           </DropdownMenu>
         ) : null}
 
-        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-white/15" />
+        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-card/15" />
 
         <Button
           type="button"

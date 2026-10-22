@@ -26,7 +26,7 @@ export function LeaderboardPodium({ rows, names, viewerId }: {
   if (!steps.length) return null;
   return (
     <section aria-label="Podium" className="soft-card relative overflow-hidden px-3 pt-6 sm:px-8">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-180 from-recognition-subtle/70 via-primary-subtle/50 to-white" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-180 from-recognition-subtle/70 via-primary-subtle/50 to-card" />
       <ol className="relative mx-auto grid max-w-2xl grid-cols-3 items-end gap-2 sm:gap-4">
         {steps.map(({ rank, rows: holders }) => {
           const step = STEP[rank as 1 | 2 | 3];
@@ -41,7 +41,7 @@ export function LeaderboardPodium({ rows, names, viewerId }: {
                       key={row.userId}
                       name={names[row.userId] ?? 'Member'}
                       className={cn(
-                        'size-11 text-sm ring-[3px] ring-white sm:size-14 sm:text-base',
+                        'size-11 text-sm ring-[3px] ring-card sm:size-14 sm:text-base',
                         row.userId === viewerId && 'ring-primary',
                         rank === 1 && 'anim-pop',
                       )}

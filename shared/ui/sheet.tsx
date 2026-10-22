@@ -73,7 +73,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'fixed z-50 flex flex-col gap-4 overscroll-contain bg-white shadow-soft-lg transition ease-in-out',
+          'fixed z-50 flex flex-col gap-4 overscroll-contain bg-popover shadow-soft-lg transition ease-in-out',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=open]:duration-300 data-[state=closed]:duration-200',
           sideClasses[side],
