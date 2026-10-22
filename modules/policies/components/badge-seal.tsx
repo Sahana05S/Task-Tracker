@@ -2,6 +2,13 @@ import { AwardIcon } from 'lucide-react';
 
 import { cn } from '@/shared/utils';
 
+const NUMBER = new Intl.NumberFormat('en-IN');
+
+/** "1 recognition point", "1,000 recognition points", "Badge only". */
+export function pointsLabel(points: number): string {
+  return points > 0 ? `${NUMBER.format(points)} recognition ${points === 1 ? 'point' : 'points'}` : 'Badge only';
+}
+
 /**
  * A policy's commendation: the badge name on a bronze seal and its recognition
  * points. Bronze tier tokens, not the award gold, so commendations read as a
@@ -16,8 +23,8 @@ export function BadgeSeal({ badge, points, size = 'sm', className }: { badge: st
         <AwardIcon className={size === 'md' ? 'size-4.5' : 'size-3.5'} />
       </span>
       <span className="min-w-0">
-        <span className={cn('text-foreground block truncate font-semibold', size === 'md' ? 'text-sm' : 'text-[13px]')}>{badge}</span>
-        <span className="text-muted-foreground block text-xs tabular-nums">{points > 0 ? `${points} recognition points` : 'Badge only'}</span>
+        <span title={badge} className={cn('text-foreground block truncate font-semibold', size === 'md' ? 'text-sm' : 'text-[13px]')}>{badge}</span>
+        <span className="text-muted-foreground block text-xs tabular-nums">{pointsLabel(points)}</span>
       </span>
     </span>
   );
