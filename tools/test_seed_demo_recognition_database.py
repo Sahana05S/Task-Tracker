@@ -104,8 +104,14 @@ as_user(uid(2), f"""INSERT INTO public.daily_task_logs(task_id,user_id,log_date,
  ('{task}','{uid(2)}','{weekday}',6),('{task}','{uid(2)}','{weekday}',3.5),('{task}','{uid(2)}','{sunday}',2.25),
  ('{task}','{uid(2)}','{yesterday}',1);""")
 as_user(uid(1), f"SELECT public.dated_record_command('attendance',NULL,'save','{json.dumps({'business_date': str(weekday), 'author_id': uid(3), 'attendance_status': 'Present', 'attendance_hours': '8', 'off_hours': '0'})}'::jsonb,0,gen_random_uuid());")
+# Imported attendance that differs from the synthetic plan (kept as recorded), and a withdrawn record (saved over).
+absent_day, withdrawn_day = weekday + dt.timedelta(days=1), weekday + dt.timedelta(days=2)
+as_user(uid(1), f"SELECT public.dated_record_command('attendance',NULL,'save','{json.dumps({'business_date': str(absent_day), 'author_id': uid(2), 'attendance_status': 'Absent', 'attendance_hours': '0', 'off_hours': '0'})}'::jsonb,0,gen_random_uuid());")
+as_user(uid(1), f"SELECT public.dated_record_command('attendance',NULL,'save','{json.dumps({'business_date': str(withdrawn_day), 'author_id': uid(3), 'attendance_status': 'Present', 'attendance_hours': '6', 'off_hours': '0'})}'::jsonb,0,gen_random_uuid());")
+withdrawn_id = value(f"id FROM public.attendance_records WHERE user_id='{uid(3)}' AND attendance_date='{withdrawn_day}'")
+as_user(uid(1), f"SELECT public.dated_record_command('attendance','{withdrawn_id}','withdraw','{{\"reason\":\"harness\"}}'::jsonb,1,gen_random_uuid());")
 before = state()
-assert before["attendance"] == 1 and before["active_old"] == 4 and before["active_demo"] == 3 and before["slots"] == 0, before
+assert before["attendance"] == 3 and before["active_attendance"] == 2 and before["active_old"] == 4 and before["active_demo"] == 3 and before["slots"] == 0, before
 print("PASS demo stand-in:", before)
 
 # Refused: a second active demo director, and a ledger that does not match.
@@ -120,7 +126,8 @@ print("PASS refused plans wrote nothing")
 
 plan_text = run_tool(label="dry run")
 assert "Dry run: nothing was written" in plan_text and state() == before
-assert f"Phase 4 attendance: {3 * days - 1} to create, 1 already present, for 3 member(s)" in plan_text, plan_text
+assert (f"Phase 4 attendance: {3 * days - 2} to create (1 over withdrawn records), 2 kept as recorded "
+        "(1 differ from the synthetic plan), for 3 member(s)") in plan_text, plan_text
 assert f"Phase 2 requests: {days} award day(s) without a slot" in plan_text
 assert "- harish@sahcon.org (managing_director)" in plan_text
 print("PASS dry run: plan only")
@@ -140,8 +147,10 @@ assert row(uid(1), weekday) == "Present/8.00/0.00/"
 assert value(f"recorded_by FROM public.attendance_records WHERE user_id='{uid(2)}' AND attendance_date='{weekday}'") == uid(1)
 assert value(f"count(*) FROM taskpulse_private.award_slots WHERE business_date NOT BETWEEN '{first}' AND '{yesterday}'") == "0"
 data = json.loads(manifest.read_text(encoding="utf-8"))
-assert len(data["deactivated"]) == 4 and len(data["attendance"]) == 3 * days - 1 and len(data["requests"]) == days
-print(f"PASS apply: 4 old accounts deactivated through people_command, {3 * days - 1} attendance rows as the demo director "
+assert len(data["deactivated"]) == 4 and len(data["attendance"]) == 3 * days - 2 and len(data["requests"]) == days
+assert row(uid(2), absent_day) == "Absent/0.00/0.00/", "recorded attendance is kept as it is"
+assert row(uid(3), withdrawn_day) == "Present/8.00/0.00/", "a withdrawn record is saved over"
+print(f"PASS apply: 4 old accounts deactivated through people_command, {3 * days - 2} attendance rows as the demo director "
       f"(weekdays Present with hours >= logged, Sundays Holiday with off-hours = logged), {days} award days requested")
 
 again = run_tool("--yes", label="idempotent rerun")
@@ -152,8 +161,8 @@ run_tool("--undo", str(manifest), label="undo dry run")
 assert state() == after
 undone = run_tool("--undo", str(manifest), "--yes", label="undo")
 final = state()
-assert f"PASS undo: {3 * days - 1} attendance row(s) withdrawn, 4 account(s) reactivated" in undone
-assert final["active_old"] == 4 and final["active_attendance"] == 1 and final["slots"] == days, final
+assert f"PASS undo: {3 * days - 2} attendance row(s) withdrawn, 4 account(s) reactivated" in undone
+assert final["active_old"] == 4 and final["active_attendance"] == 2 and final["slots"] == days, final
 assert value(f"record_state FROM public.attendance_records WHERE user_id='{uid(3)}' AND attendance_date='{weekday}'") == "active", \
     "the record that existed before the run stays"
 print("PASS undo: people reactivated, the tool's attendance withdrawn, award slots kept as history")

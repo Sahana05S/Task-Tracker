@@ -7,14 +7,16 @@ certify each day. Phases (all listed in the dry run; nothing is written without 
 
   0 state       gates: migration ledger, one active company, approved award policy, no frozen
                 September/October snapshot or final report, exactly one active demo (@demo.com)
-                managing director, no attendance that differs from the plan
+                managing director, no member-day with more than 24 logged hours
   1 people      deactivate the old @sahcon.org accounts through people_command (before-state kept)
   2 requests    award_command('request') as the demo director for 1 September through yesterday
   3 worker      pass 1 through a temporary sandbox worker: past days block; each slot is then
                 stamped with a source watermark
   4 attendance  dated_record_command('attendance') as the demo director for every remaining active
                 member and every elapsed day: Monday to Saturday Present with hours >= logged (at
-                least 8), Sundays Holiday with off-hours = logged
+                least 8), Sundays Holiday with off-hours = logged. Only days without active
+                attendance are written: recorded attendance (the billed-sheet import) is kept
+                as it is, and a withdrawn record is saved over by id
   5 worker      pass 2: every past day certifies (completed_winner or completed_none)
   6 verify      award_read_model: day/winner table, September win counts, yesterday's winner and
                 schedule_enabled
@@ -96,7 +98,7 @@ def state_sql():
  'logged', (SELECT coalesce(jsonb_object_agg(k,h),'{{}}') FROM (SELECT user_id||'|'||log_date AS k,sum(hours_worked) AS h
    FROM public.daily_task_logs WHERE reversed_at IS NULL AND log_date BETWEEN {first} AND {last} GROUP BY 1) x),
  'attendance', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'user_id',user_id,'day',attendance_date,'status',status,
-   'hours',attendance_hours,'off_hours',off_hours,'state',record_state)),'[]')
+   'hours',attendance_hours,'off_hours',off_hours,'state',record_state,'version',record_version)),'[]')
    FROM public.attendance_records WHERE attendance_date BETWEEN {first} AND {last}),
  'slots', (SELECT coalesce(jsonb_object_agg(business_date,version),'{{}}') FROM taskpulse_private.award_slots
    WHERE business_date BETWEEN {first} AND {last}),
@@ -166,15 +168,17 @@ def plan(args, backend):
                 continue
             if have is None:
                 entry["action"] = "create"
-            elif have["state"] == "active" and have["status"] == want["attendance_status"] and \
-                    Decimal(str(have["hours"])) + Decimal(str(have["off_hours"])) >= hours:
-                # Same status and enough recorded time for what was logged: keep it.
-                entry.update(action="exists-skip", id=have["id"])
+            elif have["state"] == "active":
+                # Recorded attendance (the sheet import or a manual save) is real data: keep it as it is
+                # (user decision, 22 October 2026), even where it differs from this synthetic plan.
+                entry.update(action="exists-keep", id=have["id"], have=have,
+                             differs=have["status"] != want["attendance_status"] or
+                             Decimal(str(have["hours"])) + Decimal(str(have["off_hours"])) < hours)
             else:
-                conflicts.append(f"{member['email']} {day}: existing {have['state']} {have['status']} {have['hours']}+{have['off_hours']} h")
-                continue
+                # A withdrawn record leaves the day without attendance; the command saves over it by id.
+                entry.update(action="restore", id=have["id"], version=have["version"])
             attendance.append(entry)
-    gate(not conflicts, "no existing attendance differs from the plan", "; ".join(conflicts[:6]) + (" ..." if len(conflicts) > 6 else ""))
+    gate(not conflicts, "no member-day has more than 24 logged hours", "; ".join(conflicts[:6]) + (" ..." if len(conflicts) > 6 else ""))
 
     idle = sorted({m["email"] for m in members for month in {d.replace(day=1) for d in days}
                    if not any(k.startswith(m["id"] + "|" + str(month)[:7]) for k in logged)})
@@ -199,13 +203,16 @@ def print_plan(args, backend, result):
     print(f"Phase 2 requests: {len(result['requests'])} award day(s) without a slot "
           f"({len(result['days']) - len(result['requests'])} already have one)")
     print(f"Phase 3 worker pass 1: {'local sandbox worker on port ' + str(args.worker_port) if args.worker == 'local' else 'skipped (--worker none)'}")
-    create = [a for a in result["attendance"] if a["action"] == "create"]
-    print(f"Phase 4 attendance: {len(create)} to create, {len(result['attendance']) - len(create)} already present, "
+    create = [a for a in result["attendance"] if a["action"] in ("create", "restore")]
+    kept = [a for a in result["attendance"] if a["action"] == "exists-keep"]
+    print(f"Phase 4 attendance: {len(create)} to create ({sum(a['action'] == 'restore' for a in create)} over withdrawn records), "
+          f"{len(kept)} kept as recorded ({sum(a['differs'] for a in kept)} differ from the synthetic plan), "
           f"for {len(result['members'])} member(s)")
     for member in result["members"]:
         rows = [a for a in create if a["user_id"] == member["id"]]
         present = sum(1 for a in rows if a["attendance_status"] == "Present")
-        print(f"  - {member['email']}: {present} Present, {len(rows) - present} Holiday")
+        print(f"  - {member['email']}: {present} Present, {len(rows) - present} Holiday, "
+              f"{sum(1 for a in kept if a['user_id'] == member['id'])} kept")
     print(f"Phase 5 worker pass 2: {'yes' if args.worker == 'local' else 'skipped (--worker none)'}")
     print("Phase 6 verify: award_read_model day table and September win counts")
     for note in result["notes"]:
@@ -250,7 +257,7 @@ def phase_requests(backend, result, manifest):
 
 
 def phase_attendance(backend, result, manifest):
-    rows = [a for a in result["attendance"] if a["action"] == "create"]
+    rows = [a for a in result["attendance"] if a["action"] in ("create", "restore")]
     if not rows:
         print("  every member-day already has attendance")
         return
@@ -258,6 +265,11 @@ def phase_attendance(backend, result, manifest):
     for a in rows:
         payload = {k: a[k] for k in ("attendance_status", "attendance_hours", "off_hours", "holiday_name") if k in a}
         payload.update(business_date=a["day"], author_id=a["user_id"])
+        if a["action"] == "restore":
+            payload["reason"] = "Demo recognition seed: day had no active attendance"
+            calls[f"{a['user_id']}|{a['day']}"] = (f"public.dated_record_command('attendance',{lit(a['id'])}::uuid,'save',{jlit(payload)},"
+                                                   f"{a['version']},{lit(op_id('attendance', a['user_id'], a['day'], a['version']))}::uuid)")
+            continue
         calls[f"{a['user_id']}|{a['day']}"] = (f"public.dated_record_command('attendance',NULL,'save',{jlit(payload)},0,"
                                                f"{lit(op_id('attendance', a['user_id'], a['day']))}::uuid)")
     out = director_calls(backend, result["director"], "attendance", calls)
