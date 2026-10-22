@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-import type { AttendanceMatrixModel, MatrixCell, MatrixRow } from '@/modules/attendance/client';
+import { statusHours, type AttendanceMatrixModel, type MatrixCell, type MatrixRow } from '@/modules/attendance/client';
 import { ATTENDANCE_STATUSES } from '@/shared/tracker/enums';
 import { formatHours } from '@/shared/tracker/format';
 import { codeLabels } from '@/shared/tracker/labels';
@@ -11,8 +11,6 @@ import { cn } from '@/shared/utils';
 import { AttendanceCellEditor } from './attendance-cell-editor';
 import { STATUS_STYLE } from './attendance-status-style';
 
-const LONG_DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
-const longDate = (date: string) => LONG_DATE.format(new Date(`${date}T00:00:00Z`));
 /** 8 rather than 8.00 inside a small cell. */
 const compactHours = (hours: number) => String(Number(hours.toFixed(2)));
 
@@ -26,9 +24,10 @@ function cellSummary(cell: MatrixCell): string {
   return `${cell.status}, ${hours}${check}`;
 }
 
-function Cell({ cell, name, editable, onOpen }: { cell: MatrixCell; name: string; editable: boolean; onOpen: () => void }) {
+function Cell({ cell, name, day, editable, onOpen }: { cell: MatrixCell; name: string; day: string; editable: boolean; onOpen: () => void }) {
   const style = cell.status ? STATUS_STYLE[cell.status] : null;
-  const hours = cell.status === 'Present' || cell.status === 'Half Day' ? cell.attendanceHours : cell.status === 'Off Hours' || cell.status === 'Holiday' ? cell.offHours || null : null;
+  const rule = cell.status ? statusHours(cell.status) : null;
+  const hours = rule?.regular ? cell.attendanceHours : rule?.off ? cell.offHours || null : null;
   const missing = cell.kind === 'past' && !cell.status;
   const open = cell.kind === 'today' && !cell.status;
   const content = (
@@ -48,11 +47,11 @@ function Cell({ cell, name, editable, onOpen }: { cell: MatrixCell; name: string
     cell.check === 'fails' && 'ring-danger/60 ring-1 ring-inset',
   );
   if (!editable || cell.kind === 'future') {
-    return <div className={className} aria-label={`${name}, ${longDate(cell.date)}: ${cellSummary(cell)}`} role="img">{content}</div>;
+    return <div className={className} aria-label={`${name}, ${day}: ${cellSummary(cell)}`} role="img">{content}</div>;
   }
   return (
     <button type="button" onClick={onOpen} className={cn(className, 'hover:ring-primary/50 focus-visible:ring-ring cursor-pointer outline-none hover:ring-2 focus-visible:ring-2')}
-      aria-label={`${name}, ${longDate(cell.date)}: ${cellSummary(cell)}. Edit`}>
+      aria-label={`${name}, ${day}: ${cellSummary(cell)}. Edit`}>
       {content}
     </button>
   );
@@ -64,7 +63,8 @@ function Cell({ cell, name, editable, onOpen }: { cell: MatrixCell; name: string
  * it. One person (a member viewing their own) sees a calendar instead.
  */
 export function AttendanceMatrix({ model, editable }: { model: AttendanceMatrixModel; editable: readonly string[] }) {
-  const canEdit = (memberId: string) => editable.includes(memberId);
+  const editableIds = useMemo(() => new Set(editable), [editable]);
+  const canEdit = (memberId: string) => editableIds.has(memberId);
   const [open, setOpen] = useState<{ row: MatrixRow; cell: MatrixCell } | null>(null);
   const counts = useMemo(() => {
     const tally = new Map<string, number>();
@@ -101,7 +101,7 @@ export function AttendanceMatrix({ model, editable }: { model: AttendanceMatrixM
                 <th scope="col" className="bg-card border-border sticky left-0 z-10 min-w-36 border-r border-b px-3 py-2 text-left text-xs font-semibold">Member</th>
                 {model.days.map(day => (
                   <th key={day.date} scope="col" className={cn('border-border border-b px-0.5 py-1.5 text-center text-[11px] font-medium', day.weekend && 'bg-muted/60', day.kind === 'today' && 'bg-primary-subtle text-primary-subtle-foreground')}>
-                    <abbr title={longDate(day.date)} className="no-underline">
+                    <abbr title={day.label} className="no-underline">
                       <span className="text-muted-foreground block">{day.weekday.slice(0, 2)}</span>
                       <span className="block font-semibold tabular-nums">{day.day}</span>
                     </abbr>
@@ -118,7 +118,7 @@ export function AttendanceMatrix({ model, editable }: { model: AttendanceMatrixM
                   </th>
                   {row.cells.map((cell, index) => (
                     <td key={cell.date} className={cn('border-border border-b p-0.5', model.days[index].weekend && 'bg-muted/40')}>
-                      <Cell cell={cell} name={row.member.fullName} editable={canEdit(row.member.id)} onOpen={() => setOpen({ row, cell })} />
+                      <Cell cell={cell} name={row.member.fullName} day={model.days[index].label} editable={canEdit(row.member.id)} onOpen={() => setOpen({ row, cell })} />
                     </td>
                   ))}
                 </tr>
@@ -134,7 +134,7 @@ export function AttendanceMatrix({ model, editable }: { model: AttendanceMatrixM
             <>
               <SheetHeader className="pr-12">
                 <SheetTitle className="text-foreground text-lg font-bold tracking-tight">{open.row.member.fullName}</SheetTitle>
-                <SheetDescription className="text-muted-foreground">{longDate(open.cell.date)} · {cellSummary(open.cell)}</SheetDescription>
+                <SheetDescription className="text-muted-foreground">{model.days.find(day => day.date === open.cell.date)?.label} · {cellSummary(open.cell)}</SheetDescription>
               </SheetHeader>
               <div className="px-5 py-5">
                 <AttendanceCellEditor key={`${open.row.member.id}:${open.cell.date}:${open.cell.version}`} memberId={open.row.member.id} cell={open.cell} onSaved={() => setOpen(null)} />
@@ -157,7 +157,7 @@ function CalendarView({ row, model, editable, onOpen }: { row: MatrixRow; model:
       {row.cells.map((cell, index) => (
         <div key={cell.date} role="gridcell" className="grid gap-0.5">
           <span className={cn('text-center text-[11px] tabular-nums', model.days[index].kind === 'today' ? 'text-primary font-bold' : 'text-muted-foreground')}>{model.days[index].day}</span>
-          <Cell cell={cell} name={row.member.fullName} editable={editable} onOpen={() => onOpen(cell)} />
+          <Cell cell={cell} name={row.member.fullName} day={model.days[index].label} editable={editable} onOpen={() => onOpen(cell)} />
         </div>
       ))}
     </div>

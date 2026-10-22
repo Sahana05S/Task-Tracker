@@ -7,6 +7,7 @@ import { cn } from '@/shared/utils';
 import { codeLabel, codeLabels } from '@/shared/tracker/labels';
 import { FACTOR_LABELS } from '@/modules/scoring/client';
 import { EvidenceTable } from './evidence-table';
+import { formatDateTime } from '@/shared/tracker/format';
 
 export function ArchivedReport({archive,previous,employee}:{archive:MonthArchive;previous:MonthArchive|null;employee:string|null}){
  const selected=employee?archive.members.filter(m=>m.userId===employee):archive.members;
@@ -20,7 +21,7 @@ export function ArchivedReport({archive,previous,employee}:{archive:MonthArchive
  const name=(id:string|null)=>id?names.get(id)??'Team member':'No winner';
  return <section className="soft-card grid gap-4 p-5 sm:p-6" aria-label="Archived report">
   <h2 className="text-foreground text-base font-bold tracking-tight">Revision {archive.revisionNumber} · {codeLabel(archive.disposition)} · {codeLabel(archive.certification)}</h2>
-  <p className="text-muted-foreground text-sm">Figures as of {new Date(archive.asOf).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'})} (India time).</p>
+  <p className="text-muted-foreground text-sm">Figures as of {formatDateTime(archive.asOf)} (India time).</p>
   {archive.superseded?<p role="status" className="bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm">A later revision replaced this one; it stays readable.</p>:null}
   {archive.dataQualityReasons.length?<p role="status" className="bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm">Missing when closed: {codeLabels(archive.dataQualityReasons)}</p>:null}
   <p className="text-sm">Star of the month: {archive.certification==='certified'?name(archive.monthlySelection.winnerId):'not decided, because the month closed with gaps'}.</p>

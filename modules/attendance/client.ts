@@ -13,6 +13,7 @@ export {
   computeHoursFromCheckTimes,
   defaultHoursForStatus,
   EMPTY_ATTENDANCE_SUMMARY,
+  statusHours,
   summarizeAttendance,
   type AttendanceSummary,
 } from './internal/summary';
@@ -24,13 +25,10 @@ export {
   emptyCells,
   fillCommand,
   hoursBetween,
-  monthDates,
-  shiftMonth,
   withStatus,
   type AttendanceMatrixModel,
   type CellValues,
   type DayFill,
-  type DayKind,
   type MatrixCell,
   type MatrixRow,
 } from './internal/matrix';

@@ -13,7 +13,6 @@ export function eligibilityReasons(task: Pick<Task, 'priority' | 'status' | 'tas
   else if (task.taskScale <= 0) reasons.push('scale_nonpositive');
   return reasons;
 }
-export const ELIGIBILITY_LABELS: Record<string, string> = { priority_no: 'Priority is No', not_started: 'Not started', discarded: 'Discarded', progress_missing: 'Progress is missing', progress_below_15: 'Progress below 15%', scale_missing: 'Scale is missing', scale_nonpositive: 'Scale is not positive' };
 import { kolkataDate } from '@/shared/time/kolkata';
 function calendarDay(value: string | null): number | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;

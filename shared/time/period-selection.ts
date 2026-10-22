@@ -1,4 +1,5 @@
-import { kolkataDate, kolkataTime } from '@/shared/time/kolkata';
+import { kolkataDate, kolkataTime, localCheckTime } from '@/shared/time/kolkata';
+import { monthPeriod } from '@/shared/time/period';
 
 /**
  * What the period picker reads: a calendar month and the moment its figures
@@ -31,9 +32,7 @@ export function endOfKolkataDay(date: string): string {
  * stay inside the month.
  */
 export function monthBounds(month: string, now = new Date()): { first: string; last: string; lastStarted: string; lastEnded: string } {
-  const [year, number] = month.split('-').map(Number);
-  const first = `${month}-01`;
-  const last = new Date(Date.UTC(year, number, 0)).toISOString().slice(0, 10);
+  const { startDate: first, endDate: last } = monthPeriod(month);
   const today = kolkataDate(now);
   const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
   const clamp = (date: string) => (date < first ? first : date > last ? last : date);
@@ -56,10 +55,8 @@ export function periodQuery(selection: PeriodSelection, keep: Readonly<Record<st
 /** The explicit instant a selection asks for, or null for latest. */
 export function selectionInstant(selection: PeriodSelection): string | null {
   if (selection.mode === 'endOfDay' && /^\d{4}-\d{2}-\d{2}$/.test(selection.date)) return endOfKolkataDay(selection.date);
-  if (selection.mode === 'custom' && /^\d{4}-\d{2}-\d{2}$/.test(selection.date) && /^([01]\d|2[0-3]):[0-5]\d$/.test(selection.time)) {
-    return new Date(`${selection.date}T${selection.time}:00+05:30`).toISOString();
-  }
-  return null;
+  if (selection.mode !== 'custom' || !selection.time) return null;
+  try { return localCheckTime(selection.date, selection.time); } catch { return null; }
 }
 
 /**
@@ -69,10 +66,10 @@ export function selectionInstant(selection: PeriodSelection): string | null {
 export function selectionFromAsOf(month: string, asOf: string, now = new Date()): PeriodSelection {
   const at = new Date(asOf);
   const date = kolkataDate(at);
-  const { last } = monthBounds(month, now);
+  const { last, lastEnded } = monthBounds(month, now);
   const endOfDay = at.toISOString() === endOfKolkataDay(date);
   if (Math.abs(now.getTime() - at.getTime()) < 5 * 60_000 || (endOfDay && date === last)) {
-    return { month, mode: 'latest', date: monthBounds(month, now).lastEnded, time: kolkataTime(now) };
+    return { month, mode: 'latest', date: lastEnded, time: kolkataTime(now) };
   }
   if (endOfDay) return { month, mode: 'endOfDay', date, time: '23:59' };
   return { month, mode: 'custom', date, time: kolkataTime(at) };

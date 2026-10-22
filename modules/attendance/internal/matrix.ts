@@ -1,8 +1,8 @@
 import type { AttendanceInputContext } from '@/modules/support/client';
 import { kolkataTime } from '@/shared/time/kolkata';
-import { resolvePeriod, type AnalyticsPeriod } from '@/shared/time/period';
+import { isMonthKey, monthDates, monthPeriod, shiftMonth, type AnalyticsPeriod } from '@/shared/time/period';
 import type { AttendanceRecord, AttendanceStatus, User } from '@/types/tracker';
-import { defaultHoursForStatus } from './summary';
+import { defaultHoursForStatus, statusHours } from './summary';
 
 /**
  * The attendance month matrix: members by days, built from what attendance
@@ -44,25 +44,13 @@ export interface MatrixRow {
 export interface AttendanceMatrixModel {
   /** YYYY-MM */
   readonly month: string;
-  readonly days: readonly { readonly date: string; readonly kind: DayKind; readonly weekday: string; readonly day: number; readonly weekend: boolean }[];
+  /** `label` is the long date ("Wednesday 21 October"), built once per day for headers and cell names. */
+  readonly days: readonly { readonly date: string; readonly kind: DayKind; readonly weekday: string; readonly day: number; readonly weekend: boolean; readonly label: string }[];
   readonly rows: readonly MatrixRow[];
 }
 
 const WEEKDAY = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
-
-/** Every date of a YYYY-MM month. */
-export function monthDates(month: string): string[] {
-  const [year, number] = month.split('-').map(Number);
-  const count = new Date(Date.UTC(year, number, 0)).getUTCDate();
-  return Array.from({ length: count }, (_, index) => `${month}-${String(index + 1).padStart(2, '0')}`);
-}
-
-/** Shifts a YYYY-MM month by whole months. */
-export function shiftMonth(month: string, by: number): string {
-  const [year, number] = month.split('-').map(Number);
-  const at = new Date(Date.UTC(year, number - 1 + by, 1));
-  return at.toISOString().slice(0, 7);
-}
+const LONG_DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 
 /**
  * The month the page shows from `?month=YYYY-MM`: this month when absent, and
@@ -70,12 +58,10 @@ export function shiftMonth(month: string, by: number): string {
  */
 export function attendanceMonth(value: string | undefined, today: string): { period: AnalyticsPeriod; previous: string; next: string | null; error: string | null } {
   const current = today.slice(0, 7);
-  const valid = value !== undefined && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
-  const month = valid && value <= current ? value : current;
-  const error = value === undefined || month === value ? null : valid ? 'That month has not started yet. Showing this month.' : 'That month could not be read. Showing this month.';
-  const [year, number] = month.split('-').map(Number);
+  const month = isMonthKey(value) && value <= current ? value : current;
+  const error = value === undefined || month === value ? null : isMonthKey(value) ? 'That month has not started yet. Showing this month.' : 'That month could not be read. Showing this month.';
   const following = shiftMonth(month, 1);
-  return { period: resolvePeriod(year, number), previous: shiftMonth(month, -1), next: following <= current ? following : null, error };
+  return { period: monthPeriod(month), previous: shiftMonth(month, -1), next: following <= current ? following : null, error };
 }
 
 const hours = (value: string | number | null | undefined) => (value === null || value === undefined || value === '' ? null : Number(value));
@@ -96,11 +82,13 @@ export function attendanceMatrix({ month, today, members, records, contexts }: {
       weekday: WEEKDAY.format(at),
       day: at.getUTCDate(),
       weekend: at.getUTCDay() === 0,
+      label: LONG_DATE.format(at),
     };
   });
   const byKey = new Map(records.map(record => [`${record.userId}:${record.attendanceDate}`, record]));
+  const recorded = new Set(records.map(record => record.userId));
   const rows = members
-    .filter(member => member.isActive || records.some(record => record.userId === member.id))
+    .filter(member => member.isActive || recorded.has(member.id))
     .map(member => {
       const checks = new Map((contexts.get(member.id)?.days ?? []).map(day => [day.businessDate, day]));
       const cells = days.map(({ date, kind }): MatrixCell => {
@@ -175,22 +163,25 @@ export function cellValues(cell: MatrixCell): CellValues {
  */
 export function withStatus(values: CellValues, status: AttendanceStatus): CellValues {
   const defaults = defaultHoursForStatus(status);
-  const keepsOffHours = status !== 'Absent' && status !== 'Leave';
+  const keepsOffHours = statusHours(status).off && status !== 'Off Hours';
   return {
     ...values,
     status,
     attendanceHours: String(defaults.attendanceHours),
-    offHours: keepsOffHours && Number(values.offHours) > 0 && status !== 'Off Hours' ? values.offHours : String(defaults.offHours),
+    offHours: keepsOffHours && Number(values.offHours) > 0 ? values.offHours : String(defaults.offHours),
   };
 }
 
-/** Hours between two HH:MM times on one day, to two decimals; null if not a forward pair. */
+/**
+ * Hours between two HH:MM times on one day, rounded down to two decimals so
+ * they never exceed the span the database checks; null if not a forward pair.
+ */
 export function hoursBetween(checkIn: string, checkOut: string): number | null {
   const minutes = (time: string) => (/^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? Number(time.slice(0, 2)) * 60 + Number(time.slice(3)) : null);
   const start = minutes(checkIn);
   const end = minutes(checkOut);
   if (start === null || end === null || end <= start) return null;
-  return Math.round(((end - start) / 60) * 100) / 100;
+  return Math.floor(((end - start) / 60) * 100) / 100;
 }
 
 /**
@@ -233,15 +224,6 @@ export function emptyCells(model: AttendanceMatrixModel, date: string): string[]
 
 /** The command fields for one new record of a day fill. */
 export function fillCommand(memberId: string, date: string, fill: DayFill, holidayName: string): Record<string, string> {
-  const defaults = defaultHoursForStatus(fill);
-  return cellCommand(memberId, { date, recordId: null, version: 0 }, {
-    status: fill,
-    attendanceHours: String(defaults.attendanceHours),
-    offHours: String(defaults.offHours),
-    checkIn: '',
-    checkOut: '',
-    holidayName,
-    notes: '',
-    reason: '',
-  });
+  const empty: CellValues = { status: 'Present', attendanceHours: '0', offHours: '0', checkIn: '', checkOut: '', holidayName: '', notes: '', reason: '' };
+  return cellCommand(memberId, { date, recordId: null, version: 0 }, { ...withStatus(empty, fill), holidayName });
 }

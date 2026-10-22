@@ -25,7 +25,7 @@ import {
   percentage,
   type ChecklistContext } from '@/modules/checklists/components/checklist-rows';
 import { AvatarStack, MissionPage, MissionPanel, MissionProgress, EmptyState } from '@/shared/ui/mission-ui';
-import { codeLabel } from '@/shared/tracker/labels';
+import { checklistIssues } from '@/modules/checklists/client';
 import { Breadcrumb } from '@/shared/ui/page-nav';
 import { SectionStateIcon } from '@/modules/checklists/components/section-state-icon';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -197,7 +197,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0 break-words">
             <p className="font-semibold">Fix these rows before the checklist can count:</p>
-            <ul className="mt-1 list-disc pl-5">{[...new Set(r.errors.map(e => codeLabel(e)))].map(e => <li key={e}>{e}</li>)}</ul>
+            <ul className="mt-1 list-disc pl-5">{checklistIssues(r.errors).map(e => <li key={e}>{e}</li>)}</ul>
           </div>
         </div>
       ) : null}

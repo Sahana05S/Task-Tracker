@@ -85,9 +85,6 @@ const STATES: Record<string, CodeMeaning> = {
   hours: m('From hours logged', 'Each logged hour adds 12.5 times the multiplier.'),
   activity_count: m('From activity count', 'The number of activities times the scale of one.'),
   linked: m('Share of a linked mission', 'A percentage of another mission’s scale.'),
-  // Checklist structure problems
-  missing_parent: m('Parent row is missing', 'The row points at a parent that no longer exists.'),
-  cycle: m('Rows point at each other', 'Two rows are each inside the other; move one out.'),
   // Task Tools results
   committed: m('Done', 'The change was saved.'),
   replayed: m('Already done', 'This exact change was saved before; nothing was repeated.'),
@@ -99,7 +96,7 @@ const SCORING_REASONS: Record<string, CodeMeaning> = {
   raw_input_unavailable: m('Required input not available', 'An input this factor needs has not been recorded.'),
   invalid_numeric_source: m('Value needs checking', 'A recorded number could not be read and needs correcting.'),
   zero_excluded_by_cohort: m('Zero left out', 'This comparison leaves out people with a value of zero.'),
-  member_excluded_from_factor_cohort: m('Not in the team comparison', 'This person is not part of the team median for this factor.'),
+  member_excluded_from_factor_cohort: m('Not included in the team comparison', 'This person is not part of the team median for this factor.'),
   factor_cohort_unapproved: m('Comparison group not set', 'Who this factor compares against has not been decided.'),
   factor_median_unavailable: m("Team median can't be calculated yet", 'Not enough team values are recorded to find the middle value.'),
   factor_window_unapproved: m('Time window not set', 'The period this factor covers has not been decided.'),
@@ -108,7 +105,7 @@ const SCORING_REASONS: Record<string, CodeMeaning> = {
   empty_member_population: m('No team members', 'There is nobody to compare in this period.'),
   task_history_before_observed_baseline: m('Before tracking began', 'Mission history from before tracking started is not available.'),
   task_and_member_history_before_observed_baseline: m('Before tracking began', 'Mission and member history from before tracking started is not available.'),
-  history_before_input_baseline: m('Before tracking began', 'Records from before tracking began are not available.'),
+  history_before_input_baseline: m('Records from before tracking began are not available', 'Records from before tracking began are not available.'),
   task_numeric_source_invalid: m('Mission value needs checking', 'A mission number could not be read and needs correcting.'),
   task_rate_source_missing: m('Mission rate missing', 'The mission has no hours or progress to work out a rate.'),
   task_rate_source_invalid: m('Mission rate needs checking', 'The mission rate could not be worked out from its records.'),
@@ -119,9 +116,9 @@ const SCORING_REASONS: Record<string, CodeMeaning> = {
   attendance_unavailable: m('Attendance not recorded for some days', 'Every working day needs an attendance record before scores are final.'),
   attendance_invalid: m('Attendance does not cover the time logged', 'On some day the logged work is more than attendance plus off-hours.'),
   attendance_evidence_unavailable: m('Attendance not recorded', 'Attendance for the award day is missing.'),
-  sales_field_mapping_missing: m("Sales weren't connected", 'Sales were not counted when this was calculated.'),
-  sales_flags_missing: m('Sales entry incomplete', 'A sales entry is missing its new-project or payment flags.'),
-  legacy_population_or_validation_provenance_missing: m('Older entries need review', 'Entries from the old sheet need reconciling before they count.'),
+  sales_field_mapping_missing: m("Sales weren't connected when this was calculated", 'Sales were not counted when this was calculated.'),
+  sales_flags_missing: m('A sales entry is missing its project flags', 'A sales entry is missing its new-project or payment flags.'),
+  legacy_population_or_validation_provenance_missing: m('Older entries need review before they count', 'Entries from the old sheet need reconciling before they count.'),
   legacy_population_unknown: m('Older entries need review', 'It is not known who the old sheet entries belong to.'),
   legacy_validation_provenance_missing: m('Older reviews unknown', 'Old sheet entries have no record of who reviewed them.'),
   legacy_author_missing: m('Author unknown', 'An old entry has no known author.'),
@@ -142,7 +139,7 @@ const SCORING_REASONS: Record<string, CodeMeaning> = {
 /** Why a daily or monthly award could not be decided. */
 const AWARD_REASONS: Record<string, CodeMeaning> = {
   award_cutoff_not_reached: m("Today's award isn't due yet", 'Daily awards are decided after the end of the day.'),
-  award_policy_unapproved: m('Award rules not approved', 'The award rules are not approved yet.'),
+  award_policy_unapproved: m('Award rules are not approved yet', 'The award rules are not approved yet.'),
   exact_tie_policy_unapproved: m('Tie rule not set', 'What happens on an exact tie has not been decided.'),
   exact_highest_score_tie: m('Exact tie for first', 'Two or more people had exactly the same top score, so nobody won.'),
   exact_monthly_tie: m('Exact tie for the month', 'Two or more people tied on daily wins and score, so nobody won.'),
@@ -151,10 +148,10 @@ const AWARD_REASONS: Record<string, CodeMeaning> = {
   candidate_gate_missing: m('Eligibility unknown', 'A candidate is missing their attendance check.'),
   candidate_population_mismatch: m('Team changed', 'The team changed during the calculation; it will be redone.'),
   candidate_evidence_unavailable: m('Candidate data missing', 'Some candidate scores could not be read.'),
-  daily_coverage_incomplete: m('Not every day decided', 'Some days of the month have no decided daily star yet.'),
+  daily_coverage_incomplete: m('Not every day has a decided daily star', 'Some days of the month have no decided daily star yet.'),
   no_effective_daily_wins: m('No daily wins yet', 'Nobody has a daily star this month yet.'),
   monthly_tie_break_unavailable: m('Tie-break not available', 'The month score used to break a tie is not available yet.'),
-  shared_monthly_context_unavailable: m('Waiting for the monthly calculation', 'The monthly award needs the current month calculation first.'),
+  shared_monthly_context_unavailable: m('Monthly award is waiting for the current calculation', 'The monthly award needs the current month calculation first.'),
   historical_effective_award_context_unavailable: m('Earlier award data missing', 'Data for earlier awards is not available.'),
   frozen_period_retains_original_awards: m('Closed month keeps its awards', 'Awards in a closed month stay as they were decided.'),
   source_changed: m('Records changed', 'Records changed after the award was calculated; it will be recalculated.'),
@@ -179,7 +176,7 @@ const ATTENDANCE_REASONS: Record<string, CodeMeaning> = {
 
 const CODES: Record<string, CodeMeaning> = { ...STATES, ...SCORING_REASONS, ...AWARD_REASONS, ...ATTENDANCE_REASONS };
 
-/** Every code the glossary knows, for tests and the guide's glossary page. */
+/** Every code the glossary knows (the coverage test checks emitted codes against it). */
 export const KNOWN_CODES: readonly string[] = Object.keys(CODES);
 
 /** A "factor:reason" code reads as its reason; an id suffix ("unsectioned:3f2a") is dropped. */
@@ -284,44 +281,4 @@ export const MILESTONE_STATUS_MEANINGS = {
   Achieved: 'Reached.',
 } satisfies Record<MilestoneStatus, string>;
 
-/* -------------------------------------------------------------------------- */
-/* Terms explained by a HelpTip                                               */
-/* -------------------------------------------------------------------------- */
-
-export type GuideTopic = 'missions' | 'checklist' | 'time' | 'records' | 'recognition' | 'waypoints' | 'policies' | 'reports' | 'analytics';
-
-export interface GlossaryTerm {
-  readonly term: string;
-  readonly meaning: string;
-  /** The guide page (and section) that explains it in full. */
-  readonly topic: GuideTopic;
-  readonly anchor: string;
-}
-
-const t = (term: string, meaning: string, topic: GuideTopic, anchor: string): GlossaryTerm => ({ term, meaning, topic, anchor });
-
-export const GLOSSARY = {
-  asOf: t('As of', 'The moment the figures are read at. Later changes do not alter what was true then.', 'reports', 'as-of'),
-  retained: t('Kept history', 'Every change is kept, so earlier versions stay readable. Nothing is overwritten.', 'records', 'history'),
-  gate: t('Attendance check', 'To take part in awards, logged work each day must fit within attendance plus off-hours. It is a check, not a bonus.', 'records', 'attendance'),
-  scale: t('Scale', 'How big a mission is. Progress times scale is the work it is worth.', 'missions', 'scale'),
-  freshness: t('Freshness', 'How on-time a mission is, from Super Fresh (+3) to Rotten (−3).', 'missions', 'freshness'),
-  medianDifference: t('Difference from the team median', 'Each factor compares you with the middle value of the team. Above the middle is positive, below is negative.', 'analytics', 'median'),
-  waypoint: t('Waypoint', 'A named stage a mission reaches at 30, 50, 70, 90 and 100% progress. It stays reached and never changes a score.', 'waypoints', 'waypoints'),
-  commendation: t('Commendation', 'Recognition a policy gives when its conditions are met. It never changes a score.', 'policies', 'commendations'),
-  eligible: t('Counted in performance', 'A mission counts once it has a scale, a priority other than No, has started and reached 15%.', 'missions', 'eligibility'),
-  sections: t('Setup, Activity, Closure', 'Activity drives progress. All three, plus reviews, must be complete before Done.', 'checklist', 'sections'),
-  loading: t('Loading', 'Your share of the team’s assigned work, shown as a percentage.', 'analytics', 'factors'),
-  productivity: t('Productivity', 'Work done (progress times scale) per attendance hour.', 'analytics', 'factors'),
-  offHours: t('Off-hours', 'Work outside the regular day, recorded separately from regular hours.', 'records', 'attendance'),
-  period: t('Period', 'A calendar month in India time. Pick a month and when to read it.', 'reports', 'as-of'),
-  pending: t('Waiting for review', 'Saved entries count at a lower rate until someone else validates them.', 'records', 'review'),
-  monthClose: t('Month close', 'Closing keeps the month’s figures as they were. Corrections need a director and a reason.', 'reports', 'close'),
-} satisfies Record<string, GlossaryTerm>;
-
-export type GlossaryKey = keyof typeof GLOSSARY;
-
-/** The guide link for a glossary term. */
-export function guideHref(term: Pick<GlossaryTerm, 'topic' | 'anchor'>): string {
-  return `/guide/${term.topic}#${term.anchor}`;
-}
+export { GLOSSARY, guideHref, type GlossaryKey, type GlossaryTerm, type GuideTopic } from './glossary';

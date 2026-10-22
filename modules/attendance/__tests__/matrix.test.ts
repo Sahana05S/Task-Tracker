@@ -8,9 +8,9 @@ import {
   emptyCells,
   fillCommand,
   hoursBetween,
-  monthDates,
   withStatus,
 } from '@/modules/attendance/client';
+import { monthDates } from '@/shared/time/period';
 import type { AttendanceInputContext } from '@/modules/support/client';
 import type { AttendanceRecord } from '@/types/tracker';
 

@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { HelpTip, HelpTipBody, helpTipContent, TermWithTip } from '@/shared/ui/help-tip';
+import { HelpTip, HelpTipBody } from '@/shared/ui/help-tip';
 
 describe('HelpTip', () => {
   it('is a real button in the tab order, named after the term, announcing a dialog it controls', () => {
@@ -18,20 +18,9 @@ describe('HelpTip', () => {
   });
 
   it('opens to the meaning and a keyboard-reachable "Learn more" link to the guide', () => {
-    const html = renderToStaticMarkup(createElement(HelpTipBody, { content: helpTipContent('waypoint') }));
+    const html = renderToStaticMarkup(createElement(HelpTipBody, { tip: 'waypoint' }));
     expect(html).toContain('Waypoint');
     expect(html).toContain('30, 50, 70, 90 and 100%');
     expect(html).toContain('<a class="link mt-2 inline-block font-medium" href="/guide/waypoints#waypoints">Learn more</a>');
-  });
-
-  it('takes words written at the call site, with no link when there is nothing more to read', () => {
-    const html = renderToStaticMarkup(createElement(HelpTipBody, { content: { term: 'Reason', meaning: 'Kept with the history.' } }));
-    expect(html).toContain('Kept with the history.');
-    expect(html).not.toContain('Learn more');
-  });
-
-  it('keeps the term visible beside its tip', () => {
-    const html = renderToStaticMarkup(createElement(TermWithTip, { tip: 'scale' }));
-    expect(html).toMatch(/^<span[^>]*>Scale<button/);
   });
 });

@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { ClockIcon, HistoryIcon } from 'lucide-react';
 
 import { saveAttendanceRecord } from '@/modules/attendance/actions';
-import { cellCommand, cellValues, hoursBetween, withStatus, type CellValues, type MatrixCell } from '@/modules/attendance/client';
+import { cellCommand, cellValues, hoursBetween, statusHours, withStatus, type CellValues, type MatrixCell } from '@/modules/attendance/client';
 import { ATTENDANCE_STATUSES } from '@/shared/tracker/enums';
 import { formatHours } from '@/shared/tracker/format';
-import { ATTENDANCE_STATUS_MEANINGS, codeLabels } from '@/shared/tracker/labels';
+import { ATTENDANCE_STATUS_MEANINGS, codeLabel, codeMeaning } from '@/shared/tracker/labels';
 import { kolkataTime } from '@/shared/time/kolkata';
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -33,8 +33,7 @@ export function AttendanceCellEditor({ memberId, cell, onSaved }: { memberId: st
     return span !== null && Number(next.attendanceHours) > span ? { ...next, attendanceHours: String(span) } : next;
   });
   const timed = hoursBetween(values.checkIn, values.checkOut);
-  const regularAllowed = values.status === 'Present' || values.status === 'Half Day';
-  const offAllowed = values.status !== 'Absent' && values.status !== 'Leave';
+  const { regular: regularAllowed, off: offAllowed } = statusHours(values.status);
   const correcting = Boolean(cell.recordId);
   const id = (name: string) => `attendance-${cell.date}-${name}`;
 
@@ -42,9 +41,10 @@ export function AttendanceCellEditor({ memberId, cell, onSaved }: { memberId: st
     <ExecutionForm action={saveAttendanceRecord} scope={`attendance:${memberId}:${cell.date}`} className="grid gap-4" onSuccess={onSaved}>
       {Object.entries(cellCommand(memberId, cell, values)).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
       {cell.reasons.length ? (
-        <p className="bg-attention-subtle text-attention-foreground rounded-xl px-3 py-2 text-sm">
-          {codeLabels(cell.reasons)}{cell.effortHours !== null ? ` · ${formatHours(cell.effortHours)} h logged on missions` : ''}.
-        </p>
+        <div className="bg-attention-subtle text-attention-foreground grid gap-0.5 rounded-xl px-3 py-2 text-sm">
+          {[...new Set(cell.reasons)].map(reason => <p key={reason}><span className="font-semibold">{codeLabel(reason)}.</span> {codeMeaning(reason)}</p>)}
+          {cell.effortHours !== null ? <p>{formatHours(cell.effortHours)} h logged on missions this day.</p> : null}
+        </div>
       ) : cell.effortHours ? <p className="text-muted-foreground text-sm">{formatHours(cell.effortHours)} h logged on missions this day.</p> : null}
       <fieldset className="grid gap-2">
         <legend className="text-foreground mb-2 text-sm font-medium">Status</legend>

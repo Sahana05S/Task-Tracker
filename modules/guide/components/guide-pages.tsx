@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 
 import { GUIDE_TOPICS, type GuideTopicContent } from '@/modules/guide/internal/topics';
-import { GLOSSARY, guideHref, type GuideTopic } from '@/shared/tracker/labels';
+import { CATEGORY_LABELS, MILESTONE_STATUSES, ROLE_LABELS, TASK_CATEGORIES, USER_ROLES } from '@/shared/tracker/enums';
+import { CATEGORY_MEANINGS, GLOSSARY, guideHref, MILESTONE_STATUS_MEANINGS, ROLE_MEANINGS, type GuideTopic } from '@/shared/tracker/labels';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 
 const ICONS: Record<GuideTopic, LucideIcon> = {
@@ -66,7 +67,31 @@ export function GuideIndex() {
           ))}
         </dl>
       </section>
+      <section aria-labelledby="people-and-work" className="soft-card p-5 sm:p-6">
+        <h2 id="people-and-work" className="text-foreground text-base font-bold tracking-tight">Roles, categories and milestones</h2>
+        <div className="mt-3 grid gap-6 lg:grid-cols-3">
+          <MeaningList title="Roles" entries={USER_ROLES.map(role => [ROLE_LABELS[role], ROLE_MEANINGS[role]])} />
+          <MeaningList title="Mission categories" entries={TASK_CATEGORIES.map(code => [`${CATEGORY_LABELS[code]} (${code})`, CATEGORY_MEANINGS[code]])} />
+          <MeaningList title="Milestone stages" entries={MILESTONE_STATUSES.map(status => [status, MILESTONE_STATUS_MEANINGS[status]])} />
+        </div>
+      </section>
     </MissionPage>
+  );
+}
+
+function MeaningList({ title, entries }: { title: string; entries: readonly (readonly [string, string])[] }) {
+  return (
+    <div>
+      <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+      <dl className="mt-2 grid gap-2">
+        {entries.map(([term, meaning]) => (
+          <div key={term}>
+            <dt className="text-foreground text-sm font-medium">{term}</dt>
+            <dd className="text-muted-foreground text-sm">{meaning}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 

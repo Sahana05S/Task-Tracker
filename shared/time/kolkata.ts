@@ -6,13 +6,16 @@
 export const BUSINESS_TIME_ZONE = 'Asia/Kolkata' as const;
 
 /** The Asia/Kolkata calendar date of `now`, as YYYY-MM-DD. */
+const DATE = new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' });
+const TIME = new Intl.DateTimeFormat('en-GB', { timeZone: BUSINESS_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
 export function kolkataDate(now = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  return DATE.format(now);
 }
 
 /** The Asia/Kolkata wall-clock time of an instant, as HH:MM (24-hour). */
 export function kolkataTime(at: Date): string {
-  return new Intl.DateTimeFormat('en-GB', { timeZone: BUSINESS_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at);
+  return TIME.format(at);
 }
 
 /**

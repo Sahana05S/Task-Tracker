@@ -73,6 +73,11 @@ export function summarizeAttendance(
   };
 }
 
+/** Which hours a status takes: regular hours only on a working day; no hours at all when absent or on leave. */
+export function statusHours(status: AttendanceStatus): { readonly regular: boolean; readonly off: boolean } {
+  return { regular: status === 'Present' || status === 'Half Day', off: status !== 'Absent' && status !== 'Leave' };
+}
+
 export function defaultHoursForStatus(status: AttendanceStatus): {
   readonly attendanceHours: number;
   readonly offHours: number;

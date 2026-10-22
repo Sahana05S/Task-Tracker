@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 
 import { kolkataDate } from '@/shared/time/kolkata';
+import { isMonthKey } from '@/shared/time/period';
 import { monthBounds, periodQuery, selectionFromAsOf, type PeriodSelection, type ReadMode } from '@/shared/time/period-selection';
 import { buttonVariants } from '@/shared/ui/button';
 import { HelpTip } from '@/shared/ui/help-tip';
@@ -15,8 +16,6 @@ const MODES = [
   { value: 'custom', label: 'Custom' },
 ] as const satisfies readonly { value: ReadMode; label: string }[];
 
-/** A cleared or half-typed month input is not a month. */
-const validMonth = (value: string) => (/^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? value : null);
 
 /**
  * Month plus the moment its figures are read at: latest, the end of a chosen
@@ -24,7 +23,7 @@ const validMonth = (value: string) => (/^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? v
  * `keep` carries the page's other query parameters (tab, member…) along.
  * Without JavaScript the form still changes the month (a plain GET form).
  */
-export function PeriodPicker({ month, asOf, asOfLabel, keep, compact = false, className }: {
+export function PeriodPicker({ month, asOf, asOfLabel, keep, className }: {
   /** YYYY-MM being shown. */
   month: string;
   /** The instant the server read, ISO. */
@@ -32,18 +31,16 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, compact = false, cl
   /** That instant in words, formatted on the server so it hydrates unchanged. */
   asOfLabel?: string;
   keep?: Readonly<Record<string, string>>;
-  /** Header use: month and a single "Read" choice on one row. */
-  compact?: boolean;
   className?: string;
 }) {
   const id = useId();
   const [selection, setSelection] = useState<PeriodSelection>(() => selectionFromAsOf(month, asOf));
-  const bounds = monthBounds(validMonth(selection.month) ?? month);
+  const bounds = monthBounds(isMonthKey(selection.month) ? selection.month : month);
   const update = (patch: Partial<PeriodSelection>) => setSelection(current => {
     const next = { ...current, ...patch };
     // Keep the chosen day inside the chosen month.
     if (patch.month || patch.mode) {
-      const range = monthBounds(validMonth(next.month) ?? month);
+      const range = monthBounds(isMonthKey(next.month) ? next.month : month);
       const max = next.mode === 'endOfDay' ? range.lastEnded : range.lastStarted;
       if (next.date < range.first || next.date > max) next.date = max;
     }
@@ -65,7 +62,7 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, compact = false, cl
         <input id={`${id}-month`} className="field w-40 bg-white" type="month" name="period" value={selection.month} max={kolkataDate().slice(0, 7)} required onChange={event => update({ month: event.target.value })} />
       </label>
       <div className="grid gap-1.5">
-        <span className="field-label flex items-center gap-0.5" id={`${id}-mode`}>Figures as of<HelpTip tip="asOf" /></span>
+        <span className="field-label flex items-center gap-0.5">Figures as of<HelpTip tip="asOf" /></span>
         <SegmentedControl label="Figures as of" value={selection.mode} options={MODES} onValueChange={mode => update({ mode })} />
       </div>
       {selection.mode !== 'latest' ? (
@@ -81,7 +78,7 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, compact = false, cl
         </label>
       ) : null}
       <button type="submit" className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')}>Show figures</button>
-      {compact || !asOfLabel ? null : <p className="text-muted-foreground basis-full text-xs">Showing figures as of {asOfLabel}.</p>}
+      {!asOfLabel ? null : <p className="text-muted-foreground basis-full text-xs">Showing figures as of {asOfLabel}.</p>}
     </form>
   );
 }

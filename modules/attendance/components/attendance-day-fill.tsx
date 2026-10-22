@@ -28,7 +28,7 @@ export function AttendanceDayFill({ model, lastDay }: { model: AttendanceMatrixM
   const [holidayName, setHolidayName] = useState('');
   const [message, setMessage] = useState('');
   const targets = useMemo(() => (date ? emptyCells(model, date) : []), [model, date]);
-  const names = new Map(model.rows.map(row => [row.member.id, row.member.fullName]));
+  const names = useMemo(() => new Map(model.rows.map(row => [row.member.id, row.member.fullName])), [model]);
   if (!lastDay) return null;
 
   return (

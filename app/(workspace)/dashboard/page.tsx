@@ -109,7 +109,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         }`}
         description={<span className="inline-flex flex-wrap items-center">{analytics.period.label} · compared with the team median<HelpTip tip="medianDifference" /></span>}
         actions={
-          <PeriodPicker month={period.startDate.slice(0,7)} asOf={context.asOf} compact />
+          <PeriodPicker month={period.startDate.slice(0,7)} asOf={context.asOf} />
         }
       />
 

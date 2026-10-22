@@ -5,7 +5,7 @@ import { writeDatedRecord } from '@/modules/records/actions';
 import { fillCommand, type DayFill } from '@/modules/attendance/internal/matrix';
 import { canManageAttendance } from '@/modules/attendance/internal/permissions';
 import { getCurrentProfile } from '@/shared/session/profile';
-import { ISO_DATE_PATTERN, UUID_PATTERN } from '@/shared/forms/form-data';
+import { ISO_DATE_PATTERN, readString, UUID_PATTERN } from '@/shared/forms/form-data';
 import type { ActionResponse } from '@/types/tracker';
 
 export async function saveAttendanceRecord(form:FormData){form.set('kind','attendance');return writeDatedRecord(form);}
@@ -28,7 +28,7 @@ function memberOperation(base:string,memberId:string,date:string):string{
 export async function fillAttendanceDay(form:FormData):Promise<ActionResponse<{saved:number;skipped:string[]}>>{
  const profile=await getCurrentProfile();
  if(!profile?.isActive||!canManageAttendance(profile.role))return {success:false,error:'Only the managing director or a project engineer can fill a day for everyone.',errorCode:'forbidden'};
- const date=String(form.get('date')??''),fill=String(form.get('fill')??'') as DayFill,holidayName=String(form.get('holidayName')??'').trim(),operation=String(form.get('operationId')??'');
+ const date=readString(form,'date'),fill=readString(form,'fill') as DayFill,holidayName=readString(form,'holidayName'),operation=readString(form,'operationId');
  const members=form.getAll('memberId').map(String);
  if(!ISO_DATE_PATTERN.test(date)||!FILLS.includes(fill)||!UUID_PATTERN.test(operation)||!members.length||!members.every(id=>UUID_PATTERN.test(id)))return {success:false,error:'Choose a day, what to fill and at least one member.',errorCode:'validation'};
  if(fill==='Holiday'&&!holidayName)return {success:false,error:'Name the holiday.',errorCode:'validation'};

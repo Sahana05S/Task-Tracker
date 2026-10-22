@@ -1,28 +1,14 @@
+import { codeLabel, codeMeaning } from '@/shared/tracker/labels';
+
 /**
- * Plain wording for calculation/award reason codes on everyday surfaces.
- * Codes stay unchanged in data, exports and the dashboard's details disclosure;
- * this only decides what a person reads first. Unknown codes are never hidden:
- * they fall back to a generic "required data" sentence.
+ * Plain wording for calculation/award reason codes on everyday surfaces: the
+ * glossary label (shared/tracker/labels), except where a whole month reads
+ * differently from one day. Codes stay unchanged in data and exports. Unknown
+ * codes are never hidden: they fall back to a generic "required data" sentence.
  */
-const PLAIN: Record<string, string> = {
-  attendance_unavailable: 'Attendance not recorded for some days',
+const MONTH_LEVEL: Record<string, string> = {
   attendance_missing: 'Attendance not recorded for some days',
   attendance_denominator_missing: 'Attendance not recorded for some days',
-  // Kept for runs and archives calculated before migration 46 mapped sales (D05).
-  sales_field_mapping_missing: "Sales weren't connected when this was calculated",
-  sales_flags_missing: 'A sales entry is missing its project flags',
-  legacy_population_or_validation_provenance_missing: 'Older entries need review before they count',
-  history_before_input_baseline: 'Records from before tracking began are not available',
-  raw_input_unavailable: 'Required input not available',
-  member_excluded_from_factor_cohort: 'Not included in the team comparison',
-  factor_median_unavailable: "Team median can't be calculated yet",
-  team_assigned_scale_zero: 'No measured workload assigned',
-  shared_calculation_incomplete: 'Waiting for required data',
-  required_inputs_unavailable: 'Waiting for required data',
-  daily_coverage_incomplete: 'Not every day has a decided daily star',
-  shared_monthly_context_unavailable: 'Monthly award is waiting for the current calculation',
-  award_cutoff_not_reached: "Today's award isn't due yet",
-  award_policy_unapproved: 'Award rules are not approved yet',
 };
 
 /** Strip a "factor:" prefix such as "productivity:raw_input_unavailable". */
@@ -32,7 +18,8 @@ function base(code: string): string {
 }
 
 export function plainReason(code: string): string {
-  return PLAIN[base(code)] ?? 'Required data not available';
+  const key = base(code);
+  return MONTH_LEVEL[key] ?? (codeMeaning(key) ? codeLabel(key) : 'Required data not available');
 }
 
 export type DataGap = 'attendance' | 'sales' | 'other';
