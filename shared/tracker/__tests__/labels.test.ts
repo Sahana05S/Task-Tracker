@@ -86,6 +86,11 @@ describe('codeLabel', () => {
     expect(codeMeaning('some_new_code')).toBeNull();
   });
 
+  it('does not read object prototype names as codes', () => {
+    expect(codeLabel('constructor')).toBe('Constructor');
+    expect(codeMeaning('toString')).toBeNull();
+  });
+
   it('falls back when the code is empty', () => {
     expect(codeLabel(null)).toBe('Not recorded');
     expect(codeLabel('', 'Unknown')).toBe('Unknown');

@@ -9,7 +9,10 @@ const PREFERENCE = 'taskpulse:beaver-hidden:v1';
 const SEEN = 'taskpulse:beaver-seen:v1';
 
 function readSeen(): string[] {
-  try { return JSON.parse(window.localStorage.getItem(SEEN) ?? '[]') as string[]; }
+  try {
+    const seen: unknown = JSON.parse(window.localStorage.getItem(SEEN) ?? '[]');
+    return Array.isArray(seen) ? seen.filter((key): key is string => typeof key === 'string') : [];
+  }
   catch { return []; }
 }
 

@@ -15,7 +15,8 @@ const MODES = [
   { value: 'custom', label: 'Custom' },
 ] as const satisfies readonly { value: ReadMode; label: string }[];
 
-const AS_OF = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+/** A cleared or half-typed month input is not a month. */
+const validMonth = (value: string) => (/^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? value : null);
 
 /**
  * Month plus the moment its figures are read at: latest, the end of a chosen
@@ -23,11 +24,13 @@ const AS_OF = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 
  * `keep` carries the page's other query parameters (tab, member…) along.
  * Without JavaScript the form still changes the month (a plain GET form).
  */
-export function PeriodPicker({ month, asOf, keep, compact = false, className }: {
+export function PeriodPicker({ month, asOf, asOfLabel, keep, compact = false, className }: {
   /** YYYY-MM being shown. */
   month: string;
   /** The instant the server read, ISO. */
   asOf: string;
+  /** That instant in words, formatted on the server so it hydrates unchanged. */
+  asOfLabel?: string;
   keep?: Readonly<Record<string, string>>;
   /** Header use: month and a single "Read" choice on one row. */
   compact?: boolean;
@@ -35,12 +38,12 @@ export function PeriodPicker({ month, asOf, keep, compact = false, className }: 
 }) {
   const id = useId();
   const [selection, setSelection] = useState<PeriodSelection>(() => selectionFromAsOf(month, asOf));
-  const bounds = monthBounds(selection.month || month);
+  const bounds = monthBounds(validMonth(selection.month) ?? month);
   const update = (patch: Partial<PeriodSelection>) => setSelection(current => {
     const next = { ...current, ...patch };
     // Keep the chosen day inside the chosen month.
     if (patch.month || patch.mode) {
-      const range = monthBounds(next.month);
+      const range = monthBounds(validMonth(next.month) ?? month);
       const max = next.mode === 'endOfDay' ? range.lastEnded : range.lastStarted;
       if (next.date < range.first || next.date > max) next.date = max;
     }
@@ -78,7 +81,7 @@ export function PeriodPicker({ month, asOf, keep, compact = false, className }: 
         </label>
       ) : null}
       <button type="submit" className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')}>Show figures</button>
-      {compact ? null : <p className="text-muted-foreground basis-full text-xs">Showing figures as of {AS_OF.format(new Date(asOf))}.</p>}
+      {compact || !asOfLabel ? null : <p className="text-muted-foreground basis-full text-xs">Showing figures as of {asOfLabel}.</p>}
     </form>
   );
 }

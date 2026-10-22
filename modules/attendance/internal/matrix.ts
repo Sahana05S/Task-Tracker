@@ -35,7 +35,7 @@ export interface MatrixCell {
 }
 
 export interface MatrixRow {
-  readonly member: Pick<User, 'id' | 'fullName' | 'employeeId'>;
+  readonly member: Pick<User, 'id' | 'fullName' | 'employeeId' | 'isActive'>;
   readonly cells: readonly MatrixCell[];
   /** Ended days with no active record. */
   readonly missing: number;
@@ -127,7 +127,7 @@ export function attendanceMatrix({ month, today, members, records, contexts }: {
         };
       });
       return {
-        member: { id: member.id, fullName: member.fullName, employeeId: member.employeeId },
+        member: { id: member.id, fullName: member.fullName, employeeId: member.employeeId, isActive: member.isActive },
         cells,
         // Today can still be recorded, so only days that have ended count as missing.
         missing: cells.filter(cell => cell.kind === 'past' && !cell.status).length,
@@ -223,9 +223,12 @@ export function cellCommand(memberId: string, cell: Pick<MatrixCell, 'date' | 'r
 
 export type DayFill = 'Holiday' | 'Present' | 'Half Day';
 
-/** Members with no record (active or withdrawn) on a date: the only cells a fill may create. */
+/**
+ * Active members with no record (active or withdrawn) on a date: the only
+ * cells a fill may create. Inactive members cannot be written for.
+ */
 export function emptyCells(model: AttendanceMatrixModel, date: string): string[] {
-  return model.rows.filter(row => row.cells.some(cell => cell.date === date && !cell.recordId)).map(row => row.member.id);
+  return model.rows.filter(row => row.member.isActive && row.cells.some(cell => cell.date === date && !cell.recordId)).map(row => row.member.id);
 }
 
 /** The command fields for one new record of a day fill. */

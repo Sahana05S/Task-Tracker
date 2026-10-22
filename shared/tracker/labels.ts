@@ -184,9 +184,9 @@ export const KNOWN_CODES: readonly string[] = Object.keys(CODES);
 
 /** A "factor:reason" code reads as its reason; an id suffix ("unsectioned:3f2a") is dropped. */
 function lookup(code: string): CodeMeaning | undefined {
-  if (CODES[code]) return CODES[code];
+  const own = (key: string | undefined) => (key !== undefined && Object.hasOwn(CODES, key) ? CODES[key] : undefined);
   const [head, tail] = code.split(':');
-  return CODES[tail ?? ''] ?? CODES[head];
+  return own(code) ?? own(tail) ?? own(head);
 }
 
 /** Words for one code; `fallback` when the code is empty. */

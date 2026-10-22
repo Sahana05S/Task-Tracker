@@ -131,6 +131,12 @@ describe('fill a day', () => {
     expect(emptyCells(model(), '2026-10-01')).toEqual([meena.id]);
   });
 
+  it('never targets an inactive member, who cannot be written for', () => {
+    const withFormer = attendanceMatrix({ month: '2026-10', today: '2026-10-03', members: [ravi, gone], records: [record({ id: 'rec-9', userId: gone.id, attendanceDate: '2026-10-01' })], contexts: new Map() });
+    expect(withFormer.rows.map(r => r.member.fullName)).toEqual(['Ravi', 'Former']);
+    expect(emptyCells(withFormer, '2026-10-02')).toEqual([ravi.id]);
+  });
+
   it('creates holidays and usual-hour days as new records', () => {
     expect(fillCommand(meena.id, '2026-10-01', 'Holiday', 'Diwali')).toMatchObject({ recordId: '', expectedVersion: '0', attendance_status: 'Holiday', attendance_hours: '0', off_hours: '0', holiday_name: 'Diwali', reason: '' });
     expect(fillCommand(meena.id, '2026-10-01', 'Present', '')).toMatchObject({ attendance_status: 'Present', attendance_hours: '8', holiday_name: '' });

@@ -53,7 +53,7 @@ export function AttendanceWorkspace({ model, periodLabel, previous, next, editab
       <MissionPanel icon={CalendarDaysIcon} title={periodLabel} subtitle={editable.length ? 'Select a day to record or correct it.' : undefined}>
         {model.rows.length ? (
           <div className="grid gap-4">
-            {canFill ? <AttendanceDayFill model={model} lastDay={lastDay} /> : null}
+            {canFill ? <AttendanceDayFill key={model.month} model={model} lastDay={lastDay} /> : null}
             <AttendanceMatrix model={model} editable={editable} />
           </div>
         ) : (

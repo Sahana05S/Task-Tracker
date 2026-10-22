@@ -16,7 +16,7 @@ export function ArchivedReport({archive,previous,employee}:{archive:MonthArchive
  const presentation=archive.presentationInputs&&typeof archive.presentationInputs==='object'&&!Array.isArray(archive.presentationInputs)?archive.presentationInputs:{};
  const list=(key:string):Record<string,unknown>[]=>Array.isArray(presentation[key])?(presentation[key] as Record<string,unknown>[]):[];
  const sourceRows=archive.sourceInputs&&typeof archive.sourceInputs==='object'&&!Array.isArray(archive.sourceInputs)&&Array.isArray(archive.sourceInputs.members)?archive.sourceInputs.members as Record<string,unknown>[]:[];
- const names=new Map(sourceRows.map(row=>[String(row.id),String(row.full_name??row.fullName??'Team member')]));
+ const names=new Map(sourceRows.map(row=>[String(row.id??row.userId),String(row.full_name??row.fullName??row.name??'Team member')]));
  const name=(id:string|null)=>id?names.get(id)??'Team member':'No winner';
  return <section className="soft-card grid gap-4 p-5 sm:p-6" aria-label="Archived report">
   <h2 className="text-foreground text-base font-bold tracking-tight">Revision {archive.revisionNumber} · {codeLabel(archive.disposition)} · {codeLabel(archive.certification)}</h2>

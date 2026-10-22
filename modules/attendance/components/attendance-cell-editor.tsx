@@ -26,6 +26,12 @@ import { STATUS_STYLE } from './attendance-status-style';
 export function AttendanceCellEditor({ memberId, cell, onSaved }: { memberId: string; cell: MatrixCell; onSaved: () => void }) {
   const [values, setValues] = useState<CellValues>(() => cellValues(cell));
   const set = (patch: Partial<CellValues>) => setValues(current => ({ ...current, ...patch }));
+  // Check times must cover the regular hours, so a pair shorter than the hours lowers them to fit.
+  const setTimes = (patch: Pick<Partial<CellValues>, 'checkIn' | 'checkOut'>) => setValues(current => {
+    const next = { ...current, ...patch };
+    const span = hoursBetween(next.checkIn, next.checkOut);
+    return span !== null && Number(next.attendanceHours) > span ? { ...next, attendanceHours: String(span) } : next;
+  });
   const timed = hoursBetween(values.checkIn, values.checkOut);
   const regularAllowed = values.status === 'Present' || values.status === 'Half Day';
   const offAllowed = values.status !== 'Absent' && values.status !== 'Leave';
@@ -56,14 +62,14 @@ export function AttendanceCellEditor({ memberId, cell, onSaved }: { memberId: st
       <div className="grid grid-cols-2 gap-3">
         <Field id={id('in')} label="Check-in">
           <div className="flex gap-1.5">
-            <input id={id('in')} type="time" className="field min-w-0 flex-1" value={values.checkIn} onChange={event => set({ checkIn: event.target.value })} />
-            {cell.kind === 'today' ? <Button type="button" variant="outline" size="sm" className="h-auto" onClick={() => set({ checkIn: kolkataTime(new Date()) })} aria-label="Check in now">Now</Button> : null}
+            <input id={id('in')} type="time" className="field min-w-0 flex-1" value={values.checkIn} onChange={event => setTimes({ checkIn: event.target.value })} />
+            {cell.kind === 'today' ? <Button type="button" variant="outline" size="sm" className="h-auto" onClick={() => setTimes({ checkIn: kolkataTime(new Date()) })} aria-label="Check in now">Now</Button> : null}
           </div>
         </Field>
         <Field id={id('out')} label="Check-out">
           <div className="flex gap-1.5">
-            <input id={id('out')} type="time" className="field min-w-0 flex-1" value={values.checkOut} onChange={event => set({ checkOut: event.target.value })} />
-            {cell.kind === 'today' ? <Button type="button" variant="outline" size="sm" className="h-auto" onClick={() => set({ checkOut: kolkataTime(new Date()) })} aria-label="Check out now">Now</Button> : null}
+            <input id={id('out')} type="time" className="field min-w-0 flex-1" value={values.checkOut} onChange={event => setTimes({ checkOut: event.target.value })} />
+            {cell.kind === 'today' ? <Button type="button" variant="outline" size="sm" className="h-auto" onClick={() => setTimes({ checkOut: kolkataTime(new Date()) })} aria-label="Check out now">Now</Button> : null}
           </div>
         </Field>
       </div>
@@ -77,7 +83,7 @@ export function AttendanceCellEditor({ memberId, cell, onSaved }: { memberId: st
           <input id={id('hours')} type="number" inputMode="decimal" min={0} max={24} step="any" required className="field" value={values.attendanceHours} disabled={!regularAllowed} onChange={event => set({ attendanceHours: event.target.value })} />
         </Field>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={id('off')} className="text-foreground flex items-center text-sm font-medium">Off-hours<HelpTip tip="offHours" /></label>
+          <span className="flex items-center"><label htmlFor={id('off')} className="text-foreground text-sm font-medium">Off-hours</label><HelpTip tip="offHours" /></span>
           <input id={id('off')} type="number" inputMode="decimal" min={0} max={24} step="any" required className="field" value={values.offHours} disabled={!offAllowed} onChange={event => set({ offHours: event.target.value })} />
         </div>
       </div>
