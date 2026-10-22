@@ -68,10 +68,13 @@ function ParameterInput({ spec, value }: { spec: ParameterSpec; value: Parameter
   const describedBy = spec.help ? `${id}-hint` : undefined;
   if (spec.type === 'boolean') {
     return (
-      <label className="flex min-h-11 items-center gap-2.5 text-sm">
-        <input type="checkbox" name={name} defaultChecked={value === true} className="accent-primary size-4" />
-        <span className="text-foreground font-medium">{spec.label}</span>
-      </label>
+      <div className="grid gap-0.5">
+        <label className="flex min-h-11 items-center gap-2.5 text-sm">
+          <input type="checkbox" name={name} defaultChecked={value === true} aria-describedby={describedBy} className="accent-primary size-4" />
+          <span className="text-foreground font-medium">{spec.label}</span>
+        </label>
+        {spec.help ? <p id={`${id}-hint`} className="text-muted-foreground text-xs">{spec.help}</p> : null}
+      </div>
     );
   }
   return (
@@ -81,10 +84,10 @@ function ParameterInput({ spec, value }: { spec: ParameterSpec; value: Parameter
           {spec.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </NativeSelect>
       ) : spec.type === 'time' ? (
-        <input id={id} name={name} type="time" required defaultValue={String(value)} aria-describedby={describedBy} className="field h-11 w-36" />
+        <input id={id} name={name} type="time" required autoComplete="off" defaultValue={String(value)} aria-describedby={describedBy} className="field h-11 w-36" />
       ) : (
         <div className="flex items-center gap-2">
-          <input id={id} name={name} type="number" inputMode={spec.type === 'integer' ? 'numeric' : 'decimal'} required
+          <input id={id} name={name} type="number" autoComplete="off" inputMode={spec.type === 'integer' ? 'numeric' : 'decimal'} required
             min={spec.min} max={spec.max} step={spec.step ?? 1} defaultValue={String(value)} aria-describedby={describedBy} className="field h-11 w-28 tabular-nums" />
           {spec.unit ? <span className="text-muted-foreground text-sm">{spec.unit}</span> : null}
         </div>
@@ -115,7 +118,7 @@ function TemplatePicker({ onPick }: { onPick: (template: PolicyTemplate) => void
 function Preview({ result }: { result: PreviewResult }) {
   const shown = result.rows.slice(0, 12);
   return (
-    <div className="bg-muted/70 grid gap-2 rounded-xl px-3.5 py-3" aria-live="polite">
+    <div className="bg-muted/70 grid gap-2 rounded-xl px-3.5 py-3">
       <p className="text-foreground text-sm font-semibold">
         {result.members === 0 ? 'Nobody is in this audience yet.'
           : `${result.met} of ${result.members} would meet this for ${result.periodLabel}${result.final ? '' : ' so far'}.`}
@@ -126,7 +129,7 @@ function Preview({ result }: { result: PreviewResult }) {
           <thead className="sr-only"><tr><th>Member</th><th>Outcome</th><th>Main reason</th></tr></thead>
           <tbody>
             {shown.map((row) => (
-              <tr key={row.name} className="border-border border-t first:border-t-0 align-top">
+              <tr key={row.employeeId} className="border-border border-t first:border-t-0 align-top">
                 <td className="text-foreground py-1.5 pr-2 font-medium">{row.name}</td>
                 <td className="py-1.5 pr-2 whitespace-nowrap">
                   <span className="inline-flex items-center gap-1">
@@ -146,12 +149,13 @@ function Preview({ result }: { result: PreviewResult }) {
   );
 }
 
-function PolicyForm({ template, policy, members, onBack, onSaved }: {
+function PolicyForm({ template, policy, members, onBack, onSaved, onDirty }: {
   template: PolicyTemplate;
   policy: EditablePolicy | null;
   members: DialogMember[];
   onBack: (() => void) | null;
   onSaved: () => void;
+  onDirty: () => void;
 }) {
   const formId = useId();
   const wrapper = useRef<HTMLDivElement>(null);
@@ -173,13 +177,13 @@ function PolicyForm({ template, policy, members, onBack, onSaved }: {
     const data = new FormData(element);
     startPreview(async () => {
       const response = await previewPolicyAction(data);
-      setPreview(response.success && response.data ? { result: response.data } : { error: response.error ?? 'Preview failed.' });
+      setPreview(response.success && response.data ? { result: response.data } : { error: response.error ?? 'The preview did not run. Check the values and try again.' });
     });
   }
 
   return (
     <ExecutionForm action={savePolicyAction} scope={policy ? `policy:${policy.id}` : `policy:new:${template.key}`} onSuccess={onSaved} className="grid gap-4 px-5 pb-6">
-      <div ref={wrapper} className="grid gap-5" onChange={() => { setParams(draftParameters(template, form())); setPreview(null); }}>
+      <div ref={wrapper} className="grid gap-5" onChange={() => { setParams(draftParameters(template, form())); setPreview(null); onDirty(); }}>
         <input type="hidden" name="templateKey" value={template.key} />
         <input type="hidden" name="periodKind" value={periodKind} />
         <input type="hidden" name="audienceKind" value={audienceKind} />
@@ -187,7 +191,7 @@ function PolicyForm({ template, policy, members, onBack, onSaved }: {
 
         <div className="border-primary/15 bg-primary-subtle/50 grid gap-1 rounded-xl border px-3.5 py-3">
           <p className="eyebrow">{template.label}</p>
-          <p className="text-foreground text-sm font-medium text-pretty" aria-live="polite">{template.summary(params, periodKind)}</p>
+          <p className="text-foreground text-sm font-medium text-pretty">{template.summary(params, periodKind)}</p>
           {onBack ? (
             <button type="button" onClick={onBack} className="link justify-self-start text-xs">
               <ArrowLeftIcon className="mr-1 inline size-3" aria-hidden="true" />Choose another rule
@@ -196,12 +200,12 @@ function PolicyForm({ template, policy, members, onBack, onSaved }: {
         </div>
 
         <Field id={`${formId}-name`} label="Name" required>
-          <input id={`${formId}-name`} name="name" required maxLength={80} defaultValue={policy?.name ?? template.label} className="field h-11" />
+          <input id={`${formId}-name`} name="name" required maxLength={80} autoComplete="off" defaultValue={policy?.name ?? template.label} className="field h-11" />
         </Field>
 
         <div className="grid gap-1.5">
-          <span className="text-foreground text-sm font-medium">Judged every</span>
-          <SegmentedControl label="Period" value={periodKind} onValueChange={(v) => { setPeriodKind(v); setPreview(null); }}
+          <span aria-hidden="true" className="text-foreground text-sm font-medium">Judged every</span>
+          <SegmentedControl label="Judged every" value={periodKind} onValueChange={(v) => { setPeriodKind(v); setPreview(null); }}
             options={template.periodKinds.map((k) => ({ value: k, label: PERIOD_LABELS[k].noun }))} />
         </div>
 
@@ -226,11 +230,11 @@ function PolicyForm({ template, policy, members, onBack, onSaved }: {
               ))}
             </div>
           ) : audienceKind === 'members' ? (
-            <div className="border-border grid max-h-56 gap-0.5 overflow-y-auto rounded-xl border px-3 py-1">
+            <div className="border-border grid max-h-56 gap-0.5 overflow-y-auto overscroll-contain rounded-xl border px-3 py-1">
               {members.length ? members.map((m) => (
                 <label key={m.id} className="flex min-h-11 items-center gap-2.5 text-sm">
                   <input type="checkbox" name="audienceIds" value={m.id} defaultChecked={ids.includes(m.id)} className="accent-primary size-4" />
-                  <span className="min-w-0 truncate">{m.name}</span>
+                  <span className="min-w-0 truncate" title={m.name}>{m.name}</span>
                 </label>
               )) : <p className="text-muted-foreground py-2 text-sm">The member list could not be loaded. Choose Everyone or Roles, or try again later.</p>}
             </div>
@@ -240,10 +244,10 @@ function PolicyForm({ template, policy, members, onBack, onSaved }: {
         <fieldset className="grid gap-3 border-0 p-0 sm:grid-cols-[1fr_auto]">
           <legend className="text-foreground mb-1 text-sm font-semibold">Commendation</legend>
           <Field id={`${formId}-badge`} label="Badge name" required>
-            <input id={`${formId}-badge`} name="badge" required maxLength={40} defaultValue={policy?.reward.badge ?? template.defaultReward.badge} className="field h-11" />
+            <input id={`${formId}-badge`} name="badge" required maxLength={40} autoComplete="off" defaultValue={policy?.reward.badge ?? template.defaultReward.badge} className="field h-11" />
           </Field>
           <Field id={`${formId}-points`} label="Recognition points" hint="0 to 1000; never part of performance scores">
-            <input id={`${formId}-points`} name="points" type="number" inputMode="numeric" required min={0} max={1000} step={1}
+            <input id={`${formId}-points`} name="points" type="number" autoComplete="off" inputMode="numeric" required min={0} max={1000} step={1}
               defaultValue={policy?.reward.points ?? template.defaultReward.points} aria-describedby={`${formId}-points-hint`} className="field h-11 w-28 tabular-nums" />
           </Field>
         </fieldset>
@@ -254,7 +258,7 @@ function PolicyForm({ template, policy, members, onBack, onSaved }: {
         </Field>
         {policy ? (
           <Field id={`${formId}-reason`} label="What changed" hint="Optional. Kept with this version of the policy.">
-            <input id={`${formId}-reason`} name="reason" maxLength={300} aria-describedby={`${formId}-reason-hint`} className="field h-11" />
+            <input id={`${formId}-reason`} name="reason" maxLength={300} autoComplete="off" aria-describedby={`${formId}-reason-hint`} className="field h-11" />
           </Field>
         ) : null}
 
@@ -262,8 +266,10 @@ function PolicyForm({ template, policy, members, onBack, onSaved }: {
           <Button type="button" variant="outline" onClick={runPreview} disabled={previewing} className="justify-self-start">
             <EyeIcon aria-hidden="true" />{previewing ? 'Checking this period…' : 'Preview this period'}
           </Button>
-          {preview?.result ? <Preview result={preview.result} /> : null}
-          {preview?.error ? <p role="alert" className="text-danger text-sm">{preview.error}</p> : null}
+          <div aria-live="polite" className="grid gap-2 empty:hidden">
+            {preview?.result ? <Preview result={preview.result} /> : null}
+            {preview?.error ? <p className="text-danger text-sm">{preview.error}</p> : null}
+          </div>
         </div>
       </div>
       <div className="border-border flex flex-wrap items-center gap-2 border-t pt-4">
@@ -285,9 +291,16 @@ export function PolicyDialog({ open, onOpenChange, policy, members }: {
   members: DialogMember[];
 }) {
   const [picked, setPicked] = useState<PolicyTemplate | null>(null);
+  const dirty = useRef(false);
   const template = policy ? templateFor(policy.templateKey) ?? null : picked;
+  const close = () => { dirty.current = false; setPicked(null); onOpenChange(false); };
   return (
-    <Sheet open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) setPicked(null); }}>
+    <Sheet open={open} onOpenChange={(next) => {
+      if (next) return onOpenChange(true);
+      // Escape, the overlay and the close button would otherwise drop unsaved values.
+      if (dirty.current && !window.confirm('Discard this policy? Your changes are not saved.')) return;
+      close();
+    }}>
       <SheetContent side="right" className="w-full gap-0 overflow-y-auto sm:max-w-lg">
         <SheetHeader className="mb-4">
           <SheetTitle>{policy ? `Edit ${policy.name}` : template ? 'New policy' : 'New policy: choose a rule'}</SheetTitle>
@@ -298,7 +311,7 @@ export function PolicyDialog({ open, onOpenChange, policy, members }: {
         </SheetHeader>
         {template ? (
           <PolicyForm key={template.key} template={template} policy={policy} members={members}
-            onBack={policy ? null : () => setPicked(null)} onSaved={() => { onOpenChange(false); setPicked(null); }} />
+            onBack={policy ? null : () => { dirty.current = false; setPicked(null); }} onSaved={close} onDirty={() => { dirty.current = true; }} />
         ) : policy ? (
           <p className={cn('text-muted-foreground px-5 text-sm')}>This policy uses a rule this version of TaskPulse does not know, so it cannot be edited here.</p>
         ) : (

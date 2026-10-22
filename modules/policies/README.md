@@ -55,6 +55,21 @@ nothing in scoring reads the policy tables.
 - **Versions.** Every change is an immutable revision. A closed period is judged
   by the version in force when it ended; the open period by the current one.
 
+## Page (`/policies`)
+Policies is a top-level section (a pill from 1024 px; under More below that and
+on phones). Managers see every live policy as a sheet-style table (cards on
+phones): the rule in words, the period, the commendation seal, Active/Paused and
+this period's outcome strip (met / not met / can't judge, validated colours,
+counts always printed). The managing director also has New policy, Evaluate now
+(the current and previous period, through the same evaluator and command as
+the worker; a failure is a recorded run), Edit, See results (each member's
+result and main reason), Pause/Resume and Archive (confirmed). Members see the
+policies that apply to them with their own status this period. Everyone sees
+My commendations; managers see Recent runs, failures in amber with plain words.
+The policy dialog picks a template, renders its parameters, audience and
+commendation, previews the current period from live facts and saves through
+`ExecutionForm`; closing it with unsaved changes asks first.
+
 ## Templates
 | Key | Parameters (defaults) | Met when |
 |---|---|---|
@@ -80,7 +95,9 @@ Periods: day `2026-10-19`, ISO week `2026-W43` (Monday to Sunday), month `2026-1
 ## Public API
 | File | What it offers |
 |---|---|
-| `index.ts` | `getPolicies()`, `getCommendations(range)`, `handlePolicyWorkerRun(request)`, read types, and everything in `client.ts` |
+| `index.ts` | `getPolicies()`, `getCommendations(range)`, `getPoliciesWorkspace(profile)`, `handlePolicyWorkerRun(request)`, read types, and everything in `client.ts` |
+| `actions.ts` | `savePolicyAction`, `setPolicyStateAction`, `evaluateNowAction`, `previewPolicyAction`, `policyResultsAction` |
+| `components/` | `PoliciesWorkspace`, `PolicyDialog`, `PolicyRowActions`/`NewPolicyButton`, `OutcomeStrip`, `BadgeSeal` |
 | `client.ts` | Types, `TEMPLATES`/`templateFor`, periods (`periodOf`, `periodLabel`, ...), `evaluatePolicy`, `countOutcomes`, outcome and reason labels |
 
 ## Private (`internal/`)
@@ -96,6 +113,7 @@ Periods: day `2026-10-19`, ISO week `2026-W43` (Monday to Sunday), month `2026-1
 | `commands.ts` | `policy_command` |
 | `run.ts` | One evaluation pass: facts once per period, evaluate, record, failures as runs |
 | `worker.ts` | The nightly endpoint: per company due work, `runDueItems`, what is left |
+| `workspace.ts` | The Policies page read: list, runs, my commendations, audience members |
 
 ## Database it owns (migrations 56 and 58, all private, company-owned)
 56 was applied to the test project before its code review, so it stays as

@@ -37,6 +37,8 @@ function ResultsSheet({ open, onOpenChange, policyId, periodKey, title }: {
   // Read when the sheet opens (the menu opens it, so Radix reports no change here).
   useEffect(() => {
     if (!open) return;
+    setRows(null);
+    setError(null);
     startLoading(async () => {
       const response = await policyResultsAction(policyId, periodKey);
       if (response.success) { setRows(response.data ?? []); setError(null); } else setError(response.error ?? 'Results are not available.');
@@ -56,7 +58,7 @@ function ResultsSheet({ open, onOpenChange, policyId, periodKey, title }: {
                 : (
                   <table className="w-full text-sm">
                     <caption className="sr-only">Results by member</caption>
-                    <thead><tr className="text-muted-foreground text-left text-xs"><th className="py-2 font-medium">Member</th><th className="py-2 font-medium">Result</th></tr></thead>
+                    <thead><tr className="text-muted-foreground text-left text-xs"><th scope="col" className="py-2 font-medium">Member</th><th scope="col" className="py-2 font-medium">Result</th></tr></thead>
                     <tbody>
                       {rows.map((row) => (
                         <tr key={row.employeeId} className="border-border border-t align-top">
@@ -85,7 +87,7 @@ function StateSheet({ command, onOpenChange, policy }: { command: StateCommand |
   const copy = command ? STATE_COPY[command] : null;
   return (
     <Sheet open={command !== null} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="mx-auto w-full gap-0 sm:max-w-md sm:rounded-3xl sm:bottom-6">
+      <SheetContent side="bottom" className="mx-auto w-full gap-0 pb-[env(safe-area-inset-bottom)] sm:bottom-6 sm:max-w-md sm:rounded-3xl">
         <SheetHeader>
           <SheetTitle>{copy?.title}</SheetTitle>
           <SheetDescription>{policy.name}. {copy?.body}</SheetDescription>
@@ -132,11 +134,11 @@ export function PolicyRowActions({ policy, active, periodKey, members }: {
   return (
     <div className="flex items-center justify-end gap-1">
       {active ? (
-        <Button type="button" variant="ghost" size="sm" className="max-md:h-10" onClick={evaluateNow} disabled={evaluating} aria-label={`Evaluate ${policy.name} now`}>
+        <Button type="button" variant="ghost" size="sm" className="max-md:h-10" onClick={evaluateNow} disabled={evaluating} aria-label={evaluating ? `Evaluating: ${policy.name}` : `Evaluate now: ${policy.name}`}>
           <PlayIcon aria-hidden="true" />{evaluating ? 'Evaluating…' : 'Evaluate now'}
         </Button>
       ) : null}
-      <Button type="button" variant="ghost" size="sm" className="max-md:h-10" onClick={() => setEditing(true)} aria-label={`Edit ${policy.name}`}>
+      <Button type="button" variant="ghost" size="sm" className="max-md:h-10" onClick={() => setEditing(true)} aria-label={`Edit: ${policy.name}`}>
         <PencilIcon aria-hidden="true" />Edit
       </Button>
       <DropdownMenu>
@@ -147,7 +149,7 @@ export function PolicyRowActions({ policy, active, periodKey, members }: {
           <DropdownMenuItem onSelect={() => setResults(true)}>See results</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setState(active ? 'deactivate' : 'activate')}>{active ? 'Pause' : 'Resume'}</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setState('archive')} className="text-danger">Archive</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setState('archive')} variant="destructive">Archive</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <PolicyDialog open={editing} onOpenChange={setEditing} policy={policy} members={members} />
