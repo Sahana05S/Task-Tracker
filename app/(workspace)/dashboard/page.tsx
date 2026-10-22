@@ -107,7 +107,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         chip={`${analytics.totals.activeMemberCount} active ${
           analytics.totals.activeMemberCount === 1 ? 'member' : 'members'
         }`}
-        description={<span className="inline-flex flex-wrap items-center">{analytics.period.label} · compared with the team median<HelpTip tip="medianDifference" /></span>}
+        description={<>{analytics.period.label} · compared with the team median <HelpTip tip="medianDifference" /></>}
         actions={
           <PeriodPicker month={period.startDate.slice(0,7)} asOf={context.asOf} />
         }

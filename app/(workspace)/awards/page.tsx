@@ -56,7 +56,7 @@ export default async function AwardsPage({ searchParams }: { searchParams: Promi
           <form method="get" className="flex items-center gap-2">
             <label htmlFor="awards-month" className="sr-only">Month</label>
             <input id="awards-month" type="month" name="month" autoComplete="off" defaultValue={period.startDate.slice(0, 7)}
-              max={currentPeriod().startDate.slice(0, 7)} className="field h-10 w-40 bg-white" />
+              max={currentPeriod().startDate.slice(0, 7)} className="field h-10 w-48 bg-white" />
             <button type="submit" className={buttonVariants({ variant: 'outline' })}>View</button>
           </form>
         }
