@@ -8,6 +8,7 @@ export const PROTECTED_PREFIXES = [
   '/leaderboard',
   '/logs',
   '/meeting-points',
+  '/policies',
   '/milestones',
   '/reports',
   '/records',

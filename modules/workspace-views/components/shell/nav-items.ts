@@ -12,6 +12,7 @@ import {
   LightbulbIcon,
   ListChecksIcon,
   MessageSquareIcon,
+  ScaleIcon,
   SettingsIcon,
   SparklesIcon,
   TrophyIcon,
@@ -46,6 +47,8 @@ export interface NavSection {
   readonly tabs: readonly NavTab[];
   /** Shown in the phone bottom bar; the rest live under More. */
   readonly inBottomNav: boolean;
+  /** Top-bar pill only from 1024 px; below that it is listed under More (the bar has no room at tablet width). */
+  readonly wideOnly?: boolean;
 }
 
 export const NAV_SECTIONS: readonly NavSection[] = [
@@ -95,6 +98,14 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { label: 'Hall of fame', href: '/hall-of-fame', match: ['/hall-of-fame'], icon: CrownIcon },
       { label: 'Activity', href: '/team/activity', match: ['/team/activity'], icon: HistoryIcon },
     ],
+  },
+  {
+    label: 'Policies',
+    href: '/policies',
+    icon: ScaleIcon,
+    inBottomNav: false,
+    wideOnly: true,
+    tabs: [{ label: 'Policies', href: '/policies', match: ['/policies'], icon: ScaleIcon }],
   },
   {
     label: 'Reports',

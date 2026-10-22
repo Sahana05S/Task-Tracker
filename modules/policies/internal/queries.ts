@@ -43,7 +43,7 @@ export interface DueItem {
 export interface DueWork { today: string; through: string; remaining: number; items: DueItem[] }
 
 /** record_run's answer; `stale` counts periods that opened or closed since their facts were read (left due). */
-export interface RecordResponse { runId: string; evaluated: number; changed: number; notified: number; stale: number }
+export interface RecordResponse { runId: string; evaluated: number; changed: number; notified: number; stale?: number }
 
 export async function readDueWork(db: Db, options: { through?: string; limit?: number; policyId?: string } = {}): Promise<DueWork> {
   return unwrap<DueWork>('Policy due work', await db.rpc('policy_due_work', {
