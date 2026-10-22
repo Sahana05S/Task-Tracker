@@ -27,7 +27,7 @@ const TYPES: MeetingType[] = [
 ];
 
 function withSettings(node: ReactNode, overrides = {}, meetingTypes: MeetingType[] = TYPES) {
-  return renderToStaticMarkup(createElement(CompanySettingsProvider, { catalogue: buildCategoryCatalogue(overrides), meetingTypes }, node));
+  return renderToStaticMarkup(createElement(CompanySettingsProvider, { catalogue: buildCategoryCatalogue(overrides), meetingTypes, children: node }));
 }
 
 function form(entries: Record<string, string>) {
