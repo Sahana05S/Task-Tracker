@@ -24,11 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/shared/ui/sheet';
-import {
-  CATEGORY_LABELS,
-  TASK_CATEGORIES,
-  TASK_PRIORITIES,
-} from '@/shared/tracker/enums';
+import { TASK_PRIORITIES } from '@/shared/tracker/enums';
+import { categoryChoices } from '@/modules/settings/client';
+import { useCategoryCatalogue } from '@/modules/settings/components/company-settings-context';
 import type { Task, User } from '@/types/tracker';
 
 /** `null` opens the form in create mode; a task opens it in edit mode. */
@@ -148,11 +146,17 @@ function TaskForm({
   templates=[],
 }: TaskFormProps) {
   const isEdit = task !== null;
+  // The company's mission types: hidden ones are left out, except the type
+  // this mission already has.
+  const catalogue = useCategoryCatalogue();
+  const categories = categoryChoices(catalogue, task?.category);
 
   // Selects are controlled so their triggers can render a resolved label
   // directly, rather than relying on Radix deriving it from items that only
   // mount once the menu has been opened.
-  const [category, setCategory] = React.useState<string>(task?.category ?? 'T');
+  const [category, setCategory] = React.useState<string>(
+    task?.category ?? (categories.some((entry) => entry.code === 'T') ? 'T' : categories[0]?.code ?? 'T'),
+  );
   const [priority, setPriority] = React.useState<string>(
     task?.priority ?? 'Medium',
   );
@@ -241,8 +245,8 @@ function TaskForm({
         <Field
           id="task-tag"
           label="Task tag"
-          hint="Unique across the workspace, e.g. Sep26_T5"
-          required
+          hint={isEdit ? 'Tags stay fixed once a mission exists.' : 'Leave blank for the next tag in the sheet format, e.g. Oct26_T5.'}
+          required={isEdit}
         >
           <Input
             id="task-tag"
@@ -250,8 +254,8 @@ function TaskForm({
             readOnly={Boolean(task)}
             defaultValue={task?.taskTag ?? ''}
             maxLength={30}
-            placeholder="Sep26_T5"
-            required
+            placeholder={isEdit ? undefined : 'Assigned on save'}
+            required={isEdit}
             className="font-mono"
           />
         </Field>
@@ -280,9 +284,9 @@ function TaskForm({
           name="category"
           value={category}
           onValueChange={setCategory}
-          options={TASK_CATEGORIES.map((entry) => ({
-            value: entry,
-            label: `${entry} · ${CATEGORY_LABELS[entry]}`,
+          options={categories.map((entry) => ({
+            value: entry.code,
+            label: `${entry.code} · ${entry.label}${entry.active ? '' : ' (hidden)'}`,
           }))}
           required
         />
