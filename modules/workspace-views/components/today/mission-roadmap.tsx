@@ -18,7 +18,7 @@ import { MissionMap } from './mission-map';
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
   loading: () => <p role="status" className="text-muted-foreground py-4 text-sm">Preparing work controls…</p>,
 });
-const FOCUS = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 outline-none';
+const FOCUS = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none';
 const SECTIONS = ['setup', 'activity', 'closure'] as const;
 
 type View = 'roadmap' | 'list';

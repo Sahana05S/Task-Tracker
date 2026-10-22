@@ -36,9 +36,9 @@ function noStarSentence(reasons: readonly string[]): string {
 /** Run states the rule names when a slot carries no reasons of its own. */
 const RUN_STATE_SENTENCE: Record<string, string> = {
   award_run_failed: 'The award run for that day failed.',
-  award_run_stale: 'The award run is out of date and needs reaffirmation.',
+  award_run_stale: 'Records changed after this star was chosen; a director needs to re-check it.',
   award_run_missing: 'No award run was recorded for that day.',
-  award_run_uncertified: 'The run was not certified.',
+  award_run_uncertified: 'This result is not final yet.',
 };
 
 /** Plain wording for a blocked run: the data gaps first, else the run's own reasons. */
@@ -116,7 +116,7 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
           {detail}
           {h?.policyApproved ? (
             <p className="text-foreground mt-2 text-sm font-medium">
-              Today&apos;s daily star is decided after {cutoffLabel(h.cutoff)} (Asia/Kolkata).
+              Today&apos;s daily star is decided after {cutoffLabel(h.cutoff)} IST.
             </p>
           ) : null}
           <Link href={profileHref} className="text-primary mt-4 inline-flex items-center gap-1.5 rounded-xl bg-card px-3.5 py-2 text-sm font-semibold shadow-(--shadow-card) hover:bg-card/80">

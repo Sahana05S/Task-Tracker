@@ -7,7 +7,7 @@ import { BookOpenIcon, CalendarCheckIcon, ListChecksIcon, MessageSquareIcon, XIc
 import { FIRST_RUN_COOKIE } from './first-run';
 
 const STEPS = [
-  { icon: ListChecksIcon, title: 'Open a mission and start its timer', body: 'Your missions are on this page. The timer logs your hours for you.', href: '/tasks', action: 'Open Missions' },
+  { icon: ListChecksIcon, title: 'Open a mission and start its timer', body: 'Missions lists everything assigned to you. The timer logs your hours for you.', href: '/tasks', action: 'Open Missions' },
   { icon: CalendarCheckIcon, title: 'Record today’s attendance', body: 'Tap today in the attendance grid. Time you log must fit within it.', href: '/attendance', action: 'Open Attendance' },
   { icon: MessageSquareIcon, title: 'Post a daily fact or an idea', body: 'Each one earns credit, more once someone else validates it.', href: '/daily-facts', action: 'Post a fact' },
 ] as const;

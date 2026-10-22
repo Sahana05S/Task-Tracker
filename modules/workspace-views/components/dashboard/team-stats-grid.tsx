@@ -158,7 +158,7 @@ function StatCard({ label, value, unit, detail, hero = false }: StatCardProps) {
       <dt
         className={cn(
           'text-[11px] font-medium',
-          hero ? 'text-primary-foreground/80' : 'text-muted-foreground',
+          hero ? 'text-primary-foreground/90' : 'text-muted-foreground',
         )}
       >
         {label}
@@ -170,7 +170,7 @@ function StatCard({ label, value, unit, detail, hero = false }: StatCardProps) {
           <span
             className={cn(
               'font-mono text-xs',
-              hero ? 'text-primary-foreground/60' : 'text-muted-foreground',
+              hero ? 'text-primary-foreground/90' : 'text-muted-foreground',
             )}
           >
             {unit}

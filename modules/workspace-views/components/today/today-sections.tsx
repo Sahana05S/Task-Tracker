@@ -169,7 +169,7 @@ export function StarCalendar({ awards, today, monthStart, userId }: {
   const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(first);
   return (
     <Card aria-label="Star calendar">
-      <CardTitle icon={CalendarDaysIcon} title="Star calendar" tone="recognition" action={{ href: '/dashboard', label: 'Awards' }} />
+      <CardTitle icon={CalendarDaysIcon} title="Star calendar" tone="recognition" action={{ href: '/awards', label: 'Awards' }} />
       {awards.status === 'unavailable' ? <Unavailable what="Your star calendar" /> : (
         <>
           <p className="text-muted-foreground mb-3 text-center text-xs font-medium">{monthLabel}</p>

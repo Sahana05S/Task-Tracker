@@ -26,11 +26,18 @@ export function SchemaNotice({ migration }: SchemaNoticeProps) {
         id="schema-notice-heading"
         className="text-sm font-bold"
       >
-        Migration not applied
+        Vision and milestones aren’t set up yet
       </h2>
 
       <p className="mt-1.5 max-w-2xl text-sm opacity-90">
-        This page reads{' '}
+        This workspace’s database is missing the tables this page reads. Ask your
+        managing director to finish the setup.
+      </p>
+
+      <details className="mt-3 max-w-2xl">
+        <summary className="cursor-pointer text-sm font-semibold">Setup steps for whoever manages the database</summary>
+      <p className="mt-1.5 max-w-2xl text-sm opacity-90">
+        This page reads 
         <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
           company_statements
         </code>{' '}
@@ -82,6 +89,7 @@ export function SchemaNotice({ migration }: SchemaNoticeProps) {
         workspace works — and <span className="font-mono">04</span> depends on all
         three, so it can be run as-is.
       </p>
+      </details>
     </section>
   );
 }

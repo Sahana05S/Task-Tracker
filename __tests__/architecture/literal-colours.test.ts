@@ -30,10 +30,13 @@ const LITERALS = [
   // Hex colours: in arbitrary values (`bg-[#fff]`), attributes (`fill="#fff"`), strings and CSS.
   // An in-page anchor (`href="#add"`) is not a colour.
   /(?<=[\['"(:,\s])(?<!href=["'])#[0-9a-fA-F]{3,8}(?![\w-])/g,
+  // Tailwind's own palette variables (`var(--color-white)`) and functional colour literals.
+  new RegExp(`--color-${PALETTE}(?:-\\d{2,3})?(?![\\w-])`, 'g'),
+  /\b(?:rgba?|hsla?|oklch)\(\s*\d[^)]*\)/g,
 ];
 
 // Cheap test before the full patterns run: most files have no palette word or hex at all.
-const MAYBE = new RegExp(`#[0-9a-fA-F]{3}|-${PALETTE}(?![\\w])`);
+const MAYBE = new RegExp(`#[0-9a-fA-F]{3}|-${PALETTE}(?![\\w])|\\b(?:rgba?|hsla?|oklch)\\(`);
 
 function* walk(dir: string): Generator<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

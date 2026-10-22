@@ -14,9 +14,16 @@ export function TrackerSchemaNotice() {
         id="tracker-schema-notice-heading"
         className="text-sm font-bold"
       >
-        Tracker replacement migrations are missing
+        Team analytics isn’t set up yet
       </h2>
 
+      <p className="mt-1.5 max-w-3xl text-sm opacity-90">
+        This workspace’s database is missing the tables analytics reads. Ask your
+        managing director to finish the setup; your saved work is not affected.
+      </p>
+
+      <details className="mt-3 max-w-3xl">
+        <summary className="cursor-pointer text-sm font-semibold">Setup steps for whoever manages the database</summary>
       <p className="mt-1.5 max-w-3xl text-sm opacity-90">
         The dashboard is connected to a Supabase project that does not have the
         replacement tracker tables yet, such as{' '}
@@ -73,6 +80,7 @@ export function TrackerSchemaNotice() {
           </span>
         </li>
       </ol>
+      </details>
     </section>
   );
 }

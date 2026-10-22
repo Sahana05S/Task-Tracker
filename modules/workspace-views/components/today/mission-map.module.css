@@ -36,15 +36,15 @@
 .coin {
   width: 77px; height: 77px; border: 3px solid var(--node); border-radius: 25px; position: relative;
   background: color-mix(in srgb, var(--node) 12%, var(--card)); color: var(--node);
-  box-shadow: 0 8px 0 rgb(0 0 0 / 0.08), 0 11px 36px color-mix(in srgb, var(--node) 15%, transparent);
+  box-shadow: 0 8px 0 var(--map-shadow), 0 11px 36px color-mix(in srgb, var(--node) 15%, transparent);
   display: grid; place-items: center; transform: rotate(-6deg); transition: transform .2s, box-shadow .2s;
 }
 .small .coin { width: 58px; height: 58px; border-radius: 19px; }
-.node:hover .coin, .current .coin { transform: rotate(0) scale(1.09); box-shadow: 0 10px 0 rgb(0 0 0 / 0.07), 0 0 35px color-mix(in srgb, var(--node) 37%, transparent); }
+.node:hover .coin, .current .coin { transform: rotate(0) scale(1.09); box-shadow: 0 10px 0 var(--map-shadow), 0 0 35px color-mix(in srgb, var(--node) 37%, transparent); }
 .current .coin { outline: 6px solid color-mix(in srgb, var(--node) 15%, transparent); }
 .name {
   font-weight: 700; font-size: 12px; line-height: 1.25; max-width: 172px; overflow-wrap: anywhere;
-  background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 6px 9px; box-shadow: 0 3px 18px rgb(0 0 0 / 0.06);
+  background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 6px 9px; box-shadow: 0 3px 18px var(--map-shadow);
 }
 .sub { font-size: 10px; color: var(--muted-foreground); background: var(--card); border-radius: 8px; padding: 2px 5px; white-space: nowrap; }
 .check {

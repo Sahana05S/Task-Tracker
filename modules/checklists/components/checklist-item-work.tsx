@@ -35,7 +35,7 @@ export function ChecklistItemWork({ task, node, time, actions, onOpen, onCommitt
     {container ? <><p className="text-muted-foreground text-sm">{node.isSubMission ? 'This Sub-mission inherits the mission owners and deadline. Its checklist controls progress and completion.' : 'Progress follows the items inside this checklist.'}</p><button type="button" onClick={onOpen} className={cn(buttonVariants(), 'px-4')}>Open checklist</button></> : <>
       <CompletionForm ctx={{ action: wrap(actions.state), task, checklistId: node.checklistId }} node={node} className="grid gap-2" />
       {time ? <ItemTimerControls ctx={{ task, open: true, time: { info: time, canStart: true, start: wrap(actions.start), stop: wrap(actions.stop), discard: wrap(actions.discard) } }} node={node} /> : <p role="status" className="text-muted-foreground text-xs">Loading item time…</p>}
-      {time && !time.available ? <p className="text-muted-foreground text-xs">Item time is unavailable until the checklist read migration is installed.</p> : null}
+      {time && !time.available ? <p className="text-muted-foreground text-xs">Time per item isn’t available on this workspace yet.</p> : null}
     </>}
   </div>;
 }

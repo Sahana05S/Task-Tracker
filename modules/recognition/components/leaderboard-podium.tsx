@@ -7,9 +7,9 @@ import { cn } from '@/shared/utils';
 
 /** Step look per place: height, tier colour and the column (2, 1, 3, centre highest). */
 const STEP = {
-  1: { height: 'h-28 sm:h-36', tone: 'from-tier-gold/90 to-tier-gold/55', text: 'text-recognition-foreground', col: 'col-start-2', rise: 2, label: 'First place' },
-  2: { height: 'h-20 sm:h-28', tone: 'from-tier-silver/70 to-tier-silver/35', text: 'text-secondary-foreground', col: 'col-start-1', rise: 1, label: 'Second place' },
-  3: { height: 'h-14 sm:h-20', tone: 'from-tier-bronze/75 to-tier-bronze/40', text: 'text-tier-bronze', col: 'col-start-3', rise: 0, label: 'Third place' },
+  1: { height: 'h-28 sm:h-36', tone: 'from-tier-gold/90 to-tier-gold/55', text: 'text-metal-ink', col: 'col-start-2', rise: 2, label: 'First place' },
+  2: { height: 'h-20 sm:h-28', tone: 'from-tier-silver/70 to-tier-silver/35', text: 'text-metal-ink', col: 'col-start-1', rise: 1, label: 'Second place' },
+  3: { height: 'h-14 sm:h-20', tone: 'from-tier-bronze/75 to-tier-bronze/40', text: 'text-metal-ink', col: 'col-start-3', rise: 0, label: 'Third place' },
 } as const;
 
 /**

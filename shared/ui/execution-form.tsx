@@ -7,6 +7,7 @@ import { CheckIcon } from 'lucide-react';
 import { prepareOperation } from '@/shared/commands/client-operation';
 import { FormError } from '@/shared/ui/form-field';
 import type { ActionResponse } from '@/types/tracker';
+import { cn } from '@/shared/utils';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 
@@ -31,11 +32,13 @@ function expandTaskVersion(form: FormData) {
  * on success and reports the outcome beside the form. The form stays usable
  * after a save; the confirmation clears as soon as anything changes.
  */
-export function ExecutionForm({ action, scope, children, className, onSuccess }: {
+export function ExecutionForm({ action, scope, children, className, fieldsClassName, onSuccess }: {
   action: Command;
   scope: string;
   children: React.ReactNode;
   className?: string;
+  /** Layout of the fields themselves (they sit in one fieldset), e.g. a row of select, reason and button. */
+  fieldsClassName?: string;
   /** Runs after a successful save, e.g. to close the drawer that holds the form. */
   onSuccess?: (result: ActionResponse<unknown>) => void;
 }) {
@@ -81,7 +84,7 @@ export function ExecutionForm({ action, scope, children, className, onSuccess }:
         startTransition(() => submit(data));
       }}
     >
-      <fieldset disabled={pending || refreshing} className="grid gap-2 border-0 p-0">
+      <fieldset disabled={pending || refreshing} className={cn('grid gap-2 border-0 p-0', fieldsClassName)}>
         {children}
       </fieldset>
       {/* Rendered before it has text, so screen readers announce each update. */}

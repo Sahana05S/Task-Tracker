@@ -104,7 +104,7 @@ export function AllocationChart({
                 outerRadius="85%"
                 paddingAngle={2}
                 strokeWidth={1}
-                stroke="var(--color-white)"
+                stroke="var(--color-card)"
               >
                 {ringData.map((datum) => (
                   <Cell key={datum.fullName} fill={datum.color} />
