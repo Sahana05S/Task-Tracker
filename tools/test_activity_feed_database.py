@@ -1,4 +1,4 @@
-"""Activity log, migrations 54 and 57: public.activity_feed visibility, command de-duplication, filters, bounds and paging. Two-company disposable PostgreSQL checks. JWT shim only; no hosted connection."""
+"""Activity log, migrations 54, 57 and 59: public.activity_feed visibility, command de-duplication, filters, bounds and paging. Two-company disposable PostgreSQL checks. JWT shim only; no hosted connection."""
 from pathlib import Path
 source=Path(__file__).with_name('test_m09_database.py').read_text(encoding='utf-8')
 exec(compile(source.split('\nfor db in DBS:')[0],str(Path(__file__).with_name('test_m09_database.py')),'exec'))
@@ -11,6 +11,7 @@ B_DIR,B4='00000000-0000-0000-0000-0000000000b1','00000000-0000-0000-0000-0000000
 SOURCES=('taskpulse_private.audit_events','taskpulse_private.input_history','taskpulse_private.log_revisions','taskpulse_private.month_receipts')
 MIGRATION=(ROOT/'supabase/migrations/54_activity_feed.sql').read_text(encoding='utf-8')
 MIGRATION57=(ROOT/'supabase/migrations/57_activity_feed_command_dedupe.sql').read_text(encoding='utf-8')
+MIGRATION59=(ROOT/'supabase/migrations/59_activity_feed_company_settings.sql').read_text(encoding='utf-8')
 
 def broken_apply(db,text):
     r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
@@ -41,7 +42,7 @@ def migrate(db,upto,after=0):
 def counts(db):return {t:value(db,f'count(*) FROM {t}') for t in SOURCES}
 
 LATEST=max(int(p.name.split('_')[0]) for p in (ROOT/'supabase/migrations').glob('*.sql'))
-assert LATEST>=57
+assert LATEST>=59
 
 for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);')
@@ -63,9 +64,16 @@ for db in DBS:
         broken_apply(db,MIGRATION57)
         assert definition(db)==read54
         print('PASS',db,'a failing 57 rolls back to the 54 read')
-        migrate(db,LATEST,after=54)
-        assert counts(db)==before and definition(db)!=read54,'57 replaces the read and writes no rows'
-        print('PASS',db,f'upgrade 54->{LATEST} replaces the read without touching retained rows')
+        migrate(db,58,after=54)
+        read58=definition(db)
+        assert counts(db)==before and read58!=read54,'57 replaces the read and writes no rows'
+        print('PASS',db,'upgrade 54->58 replaces the read without touching retained rows')
+        broken_apply(db,MIGRATION59)
+        assert definition(db)==read58
+        print('PASS',db,'a failing 59 rolls back to the 57 read')
+        migrate(db,LATEST,after=58)
+        assert counts(db)==before and definition(db)!=read58,'59 replaces the read and writes no rows'
+        print('PASS',db,f'upgrade 58->{LATEST} replaces the read without touching retained rows')
     else:
         migrate(db,LATEST); sql(db,seed)
         print('PASS',db,f'fresh install 01-{LATEST}')
@@ -103,6 +111,10 @@ for db in DBS:
     sql(db,f"""INSERT INTO taskpulse_private.month_receipts(actor_id,operation,request,response,recorded_at) VALUES
       ('{MD}',gen_random_uuid(),'{{"command":"draft","period":"2026-09-01","payload":{{"reason":"September draft"}}}}','{{}}','2026-10-20T19:00:00Z')""")
     actor(db,B4,"SELECT public.dated_record_command('fact',NULL,'save',"+literal(json.dumps({'business_date':today,'content':'Beta fact'}))+"::jsonb,0,gen_random_uuid())")
+    # A Settings > Company save by the director (migration 53's command, listed from 59).
+    sql(db,"INSERT INTO taskpulse_private.organization_settings(organization_id) SELECT id FROM public.organizations WHERE is_default ON CONFLICT DO NOTHING")
+    version=value(db,"version FROM taskpulse_private.organization_settings WHERE organization_id=(SELECT id FROM public.organizations WHERE is_default)")
+    actor(db,MD,"SELECT public.company_settings_command('agenda','{\"agenda\":\"Safety first, then progress\"}'::jsonb,"+version+",gen_random_uuid())")
     # One shift for everything recent, so rows of one transaction keep one time and separate transactions stay apart.
     sql(db,"BEGIN; CREATE TEMP TABLE shift ON COMMIT DROP AS SELECT now()-timestamptz '2026-10-20T10:00:00Z' AS d;"
            "UPDATE taskpulse_private.audit_events SET occurred_at=occurred_at-(SELECT d FROM shift) WHERE occurred_at>now()-interval '1 hour';"
@@ -121,7 +133,12 @@ for db in DBS:
     assert len(odd)==1 and odd[0]['task_id'] is None,odd
     print('PASS',db,'a malformed id inside retained audit data reads as no mission instead of failing the read')
     kinds={r['kind'] for r in rows}
-    assert kinds=={'missions','records','time','month'},kinds
+    assert kinds=={'missions','records','time','month','company'},kinds
+    company=[r for r in rows if r['kind']=='company']
+    assert [(r['action'],r['record_kind'],r['actor_id'],r['subject_user_id'],r['task_id']) for r in company]==[('company_settings_agenda','organization_settings',MD,None,None)],company
+    assert value(db,"count(*) FROM taskpulse_private.audit_events WHERE table_name='organization_settings' AND command='company_settings_agenda'")=='1'
+    assert [r['action'] for r in feed(db,MD,'2026-10-20','2026-10-21',kind='company')]==['company_settings_agenda']
+    print('PASS',db,'a Settings > Company save reads as one company line by the director (migration 59), also under the company filter')
     logs=[r for r in rows if r['kind']=='time']
     assert {r['subject_user_id'] for r in logs}=={M4,M5} and all(r['task_tag'] for r in logs),logs
     recs=[r for r in rows if r['kind']=='records']
@@ -154,7 +171,7 @@ for db in DBS:
     assert any(r['action']=='validate' and r['actor_id']==MD for r in mine),'a manager review of my record is mine to see'
     assert any(r['record_kind']=='meeting' and r['actor_id']==MD for r in mine),'a meeting point I own is mine to see'
     assert any(r['kind']=='missions' and r['task_tag']=='T1' and r['actor_id']==MD for r in mine),'a change to my mission is mine to see'
-    assert not any(r['subject_user_id']==M5 or r['task_tag']=='T2' or r['kind']=='month' for r in mine),'nothing of member five, T2 or the month'
+    assert not any(r['subject_user_id']==M5 or r['task_tag']=='T2' or r['kind'] in ('month','company') for r in mine),'nothing of member five, T2, the month or company settings'
     assert ids<={r['id'] for r in rows}
     assert feed(db,M4,'2026-10-20','2026-10-21',member=M4)==mine
     expect_code(db,M4,"SELECT * FROM public.activity_feed('2026-10-20','2026-10-21',NULL,'"+M5+"')",'42501')

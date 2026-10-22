@@ -135,6 +135,16 @@ const FIELD_WORDS: Record<string, string> = {
   scale_override: 'scale', archived_effective_date: 'archive date', is_primary: 'primary assignee', share_units: 'share',
   review_approved: 'review',
 };
+// Settings > Company saves (migration 53, listed from migration 59): section -> words and page anchor.
+const COMPANY_SETTINGS: Record<string, { words: string; anchor: string }> = {
+  agenda: { words: 'Changed the meeting agenda', anchor: 'agenda' },
+  categories: { words: 'Changed the mission types', anchor: 'mission-types' },
+  meeting_types: { words: 'Changed the meeting types', anchor: 'meeting-types' },
+  standing_missions: { words: 'Changed the standing missions', anchor: 'standing-missions' },
+  holidays: { words: 'Changed the holiday calendar', anchor: 'holidays' },
+};
+const settingsSection = (action: string) =>
+  action.startsWith('company_settings_') ? COMPANY_SETTINGS[action.slice('company_settings_'.length)] : undefined;
 const PEOPLE_WORDS: Record<string, string> = {
   invite_member: 'Invited a member',
   revoke_invitation: 'Withdrew an invitation',
@@ -190,6 +200,7 @@ function summary(row: ActivityRow): string {
   if (row.kind === 'time') return TIME_WORDS[action] ?? codeLabel(action);
   if (row.kind === 'month') return MONTH_WORDS[action] ?? codeLabel(action);
   if (row.kind === 'people') return PEOPLE_WORDS[action] ?? codeLabel(action);
+  if (action.startsWith('company_settings_')) return settingsSection(action)?.words ?? 'Changed company settings';
   if (action === 'UPDATE' && row.kind === 'missions') {
     const changed = [...new Set((row.fields ?? []).map((field) => FIELD_WORDS[field] ?? codeLabel(field).toLowerCase()))];
     return changed.length ? `Changed the mission's ${changed.join(', ')}` : 'Edited a mission';
@@ -214,6 +225,10 @@ function link(row: ActivityRow, people: ReadonlyMap<string, Person>): { href: st
     return { href: `/records/${row.record_kind}/${row.record_id}/history`, label: 'History' };
   }
   if (row.kind === 'month' && row.period) return { href: `/reports?tab=month&period=${row.period.slice(0, 7)}`, label: 'Month close' };
+  if (row.action.startsWith('company_settings_')) {
+    const section = settingsSection(row.action);
+    return { href: `/settings?tab=company${section ? `#${section.anchor}` : ''}`, label: 'Company settings' };
+  }
   if (row.task_tag) return { href: `/tasks/${encodeURIComponent(row.task_tag)}`, label: row.task_tag };
   const subject = row.subject_user_id ? people.get(row.subject_user_id) : undefined;
   if (row.kind === 'people' && subject?.employeeId) return { href: `/team/${encodeURIComponent(subject.employeeId)}`, label: 'Profile' };
