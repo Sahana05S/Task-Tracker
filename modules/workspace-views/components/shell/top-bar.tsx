@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BellIcon, ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon } from 'lucide-react';
 
 import { BrandMark } from '@/modules/workspace-views/components/shell/brand-mark';
 import { MORE_ITEMS, NAV_SECTIONS, activeSection, isMoreActive } from '@/modules/workspace-views/components/shell/nav-items';
@@ -10,6 +10,7 @@ import { TimerPill } from '@/modules/workspace-views/components/shell/timer-pill
 import { UserMenu } from '@/modules/workspace-views/components/shell/user-menu';
 import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
 import { QuickPostTrigger } from '@/modules/support/components/quick-post-trigger';
+import { NotificationBell } from '@/modules/notifications/components/notification-bell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +25,8 @@ import type { User } from '@/types/tracker';
  * and More, then the running-timer pill, the two quick actions (Log time and
  * Post), notifications and account. Below 1280 px the timer pill is compact
  * and the quick actions show icons only, so the bar never overflows. Phones:
- * brand, timer pill and account; destinations move to the bottom bar and the
- * quick actions to its "New" menu.
+ * brand, timer pill, notifications and account; destinations move to the
+ * bottom bar and the quick actions to its "New" menu.
  */
 export function TopBar({ profile }: { profile: User }) {
   const pathname = usePathname();
@@ -41,21 +42,31 @@ export function TopBar({ profile }: { profile: User }) {
         </Link>
 
         <nav aria-label="Primary" className="bg-muted ml-2 hidden items-center gap-0.5 rounded-full p-1 md:flex">
-          {NAV_SECTIONS.map(({ label, href }) => {
+          {NAV_SECTIONS.map(({ label, href, wideOnly }) => {
             const active = section?.href === href;
             return (
               <Link key={href} href={href} aria-current={active ? 'page' : undefined}
-                className={cn('nav-pill', active && 'nav-pill-active')}>
+                className={cn('nav-pill', active && 'nav-pill-active', wideOnly && 'max-lg:hidden')}>
                 {label}
               </Link>
             );
           })}
           <DropdownMenu>
-            <DropdownMenuTrigger className={cn('nav-pill', moreActive && 'nav-pill-active')}>
+            <DropdownMenuTrigger className={cn('nav-pill', moreActive && 'nav-pill-active',
+              // A wide-only section's pill is hidden below 1024 px, where it lives under More.
+              section?.wideOnly && 'max-lg:bg-primary max-lg:text-primary-foreground max-lg:shadow-sm')}>
               More
               <ChevronDownIcon className="size-3.5" aria-hidden="true" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={8} className="w-48">
+              {NAV_SECTIONS.filter((s) => s.wideOnly).map(({ label, href, icon: Icon }) => (
+                <DropdownMenuItem key={href} asChild className="lg:hidden">
+                  <Link href={href}>
+                    <Icon aria-hidden="true" />
+                    {label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
               {MORE_ITEMS.map(({ label, href, icon: Icon }) => (
                 <DropdownMenuItem key={href} asChild>
                   <Link href={href}>
@@ -75,9 +86,7 @@ export function TopBar({ profile }: { profile: User }) {
             <QuickLogTrigger iconOnlyBelowXl className="h-9" />
             <QuickPostTrigger iconOnlyBelowXl className="h-9" />
           </span>
-          <button type="button" className="icon-button hidden md:flex" aria-label="Notifications">
-            <BellIcon className="size-4" aria-hidden="true" />
-          </button>
+          <NotificationBell className="max-md:size-10" />
           <UserMenu profile={profile} variant="bar" />
         </div>
       </div>

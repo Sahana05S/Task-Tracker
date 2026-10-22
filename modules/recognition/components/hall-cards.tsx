@@ -103,7 +103,7 @@ export function HallOfFameList({ model, viewerId }: { model: HallOfFameModel; vi
           <span className="min-w-0 flex-1">
             <span className="text-foreground block truncate text-sm font-medium">{e.name}{e.userId === viewerId ? <span className="text-primary"> (you)</span> : null}</span>
             <span className="text-muted-foreground block text-xs">
-              {e.dailyStars} daily · {e.categoryAwards} category · {e.monthlyStars} monthly
+              {e.dailyStars} daily · {e.categoryAwards} category · {e.monthlyStars} monthly{e.commendations ? ` · ${e.commendations} commended` : ''}
             </span>
           </span>
           <TierBadge tier={e.tier} className="hidden sm:inline-flex" />

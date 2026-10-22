@@ -15,7 +15,8 @@ type Step = number;
 
 /**
  * The ceremony's acts: one card per category award, then the monthly star,
- * then the `commendations` slot (filled by the policies module once it ships).
+ * then the `commendations` slot (the policies module's CommendationsAct, passed
+ * in by the /awards page so recognition never imports policies).
  *
  * An official ceremony is revealed one card at a time (Next, Skip, Replay) the
  * first time it is opened in a tab; later visits, reduced motion and a
@@ -48,7 +49,7 @@ export function CeremonyStage({ model, viewerId, notes = {}, commendations }: {
   const done = step > total;
   const finish = () => {
     setStep(total + 1);
-    setAnnounce('All awards revealed.');
+    setAnnounce(commendations ? 'All awards revealed. Commendations follow.' : 'All awards revealed.');
     try { if (seenKey) window.sessionStorage.setItem(seenKey, '1'); } catch { /* reveal again next time */ }
   };
   const next = () => {

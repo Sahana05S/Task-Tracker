@@ -63,18 +63,30 @@ export function tierFor(points: number): TierProgress {
   return { tier, next, toNext: next.from - points, percent: Math.floor(((points - tier.from) / (next.from - tier.from)) * 100) };
 }
 
+/** Commendation points and counts per member, from the policies module (passed in by the page). */
+export type PolicyPoints = Readonly<Record<string, { points: number; commendations: number }>>;
+
 export interface HallEntry extends TrophyCounts {
   userId: string;
   name: string;
   points: number;
+  /** The part of `points` from policy commendations. */
+  policyPoints: number;
+  commendations: number;
   rank: number;
   tier: Tier;
 }
 
-/** Everyone in the company by points, highest first; equal points share a place. */
-export function rankHall(members: readonly MemberTrophies[], points: RecognitionPolicy['points']): HallEntry[] {
+/**
+ * Everyone in the company by points, highest first; equal points share a place.
+ * Policy commendation points count towards the total and the tier.
+ */
+export function rankHall(members: readonly MemberTrophies[], points: RecognitionPolicy['points'], policyPoints: PolicyPoints = {}): HallEntry[] {
   // Alphabetical first; the stable ranking sort keeps that order within a shared place.
-  const scored = members.map((m) => ({ ...m, points: pointsFor(m, points) })).sort((a, b) => a.name.localeCompare(b.name));
+  const scored = members.map((m) => {
+    const fromPolicies = policyPoints[m.userId] ?? { points: 0, commendations: 0 };
+    return { ...m, points: pointsFor(m, points) + fromPolicies.points, policyPoints: fromPolicies.points, commendations: fromPolicies.commendations };
+  }).sort((a, b) => a.name.localeCompare(b.name));
   return rankExact(scored, (m) => ({ numerator: String(m.points), denominator: '1' }))
     .map(({ item, rank }) => ({ ...item, rank, tier: tierFor(item.points).tier }));
 }
