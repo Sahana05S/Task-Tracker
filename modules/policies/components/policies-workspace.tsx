@@ -18,7 +18,7 @@ import { OutcomeStrip } from '@/modules/policies/components/outcome-strip';
 import type { EditablePolicy } from '@/modules/policies/components/policy-dialog';
 import { NewPolicyButton, PolicyRowActions } from '@/modules/policies/components/policy-row-actions';
 import type { CommendationRow, PolicyRow, RunRow } from '@/modules/policies/internal/queries';
-import type { PoliciesWorkspaceModel } from '@/modules/policies/internal/workspace';
+import type { AudienceMember, PoliciesWorkspaceModel } from '@/modules/policies/internal/workspace';
 
 const STALE_AFTER_MS = 36 * 60 * 60 * 1000;
 const TRIGGER_LABELS: Record<RunRow['trigger'], string> = { nightly: 'Nightly', on_demand: 'Evaluate now', invalidation: 'After a correction' };
@@ -59,8 +59,7 @@ function periodText(policy: PolicyRow) {
 }
 
 /** The managing director's and engineers' list: a sheet-style table on wide screens, cards on phones. */
-function ManagerList({ policies, canManage, members }: { policies: PolicyRow[]; canManage: boolean; members: NonNullable<PoliciesWorkspaceModel['members']> }) {
-  const people = members.status === 'ready' ? members.data : [];
+function ManagerList({ policies, canManage, people }: { policies: PolicyRow[]; canManage: boolean; people: AudienceMember[] }) {
   return (
     <>
       <div className="hidden overflow-x-auto md:block">
@@ -197,7 +196,7 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
   const last = runs?.[0] ?? null;
   const lastStale = last ? last.status === 'failed' || now - new Date(last.recordedAt).getTime() > STALE_AFTER_MS : false;
   const sum = (key: 'met' | 'notMet' | 'unavailable') => active.reduce((n, p) => n + (p.counts?.[key] ?? 0), 0);
-  const members = model.members ?? { status: 'ready' as const, data: [] };
+  const people = model.members?.status === 'ready' ? model.members.data : [];
 
   return (
     <MissionPage>
@@ -206,7 +205,7 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
         title="Policies"
         chip={list ? `${active.length} active` : undefined}
         description="Company rules for attendance, logging and missions. Meet one for a whole period to earn its badge and recognition points; points never change performance scores."
-        actions={canManage ? <NewPolicyButton members={members.status === 'ready' ? members.data : []} /> : null}
+        actions={canManage ? <NewPolicyButton members={people} /> : null}
       />
 
       {model.missing ? (
@@ -240,7 +239,7 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
       {list ? (
         <MissionPanel icon={ScaleIcon} title={manager ? 'Policies' : 'Policies in force'}
           subtitle={manager ? 'This period’s results, checked every night' : 'The rules that apply to you and where you stand this period'}>
-          {policies.length ? (manager ? <ManagerList policies={policies} canManage={canManage} members={members} /> : <MemberList policies={policies} />)
+          {policies.length ? (manager ? <ManagerList policies={policies} canManage={canManage} people={people} /> : <MemberList policies={policies} />)
             : <EmptyState icon={ScaleIcon} title={canManage ? 'No policies yet' : 'No policies apply to you yet'}>
               {canManage ? 'Create one from a template, for example on time every working day this month.' : 'When the managing director sets one, it shows here with your progress.'}
             </EmptyState>}
