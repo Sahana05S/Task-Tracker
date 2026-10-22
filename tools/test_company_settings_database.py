@@ -238,6 +238,17 @@ for db in DBS:
     assert r.returncode and 'Attendance status required' in r.stderr,"company A's calendar does not default company B"
     assert holidays(M4,d(5))==[d(3),d(2)]
     assert holidays(B4,d(5))==[]
+    # A service-role worker scoped by the company header (policies worker, 56) reads its company's dates only.
+    def worker(org):
+        r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
+            input="BEGIN; SET LOCAL ROLE service_role; SELECT set_config('request.jwt.claims','{\"role\":\"service_role\"}',true);"
+                  +("" if org is None else f"SELECT set_config('request.headers','{{\"x-taskpulse-organization\":\"{org}\"}}',true);")
+                  +f"\nSELECT to_jsonb(public.team_holiday_dates('{d(5)}','{today}'));\nCOMMIT;",text=True,capture_output=True,encoding='utf-8')
+        return r
+    r=worker(A); assert r.returncode==0 and json.loads([x for x in r.stdout.splitlines() if x.startswith("[")][-1])==[d(3),d(2)],r.stderr[:300]
+    r=worker(B); assert r.returncode==0 and json.loads([x for x in r.stdout.splitlines() if x.startswith("[")][-1])==[],r.stderr[:300]
+    r=worker(None); assert r.returncode and '42501' in r.stderr,'an unscoped worker is refused'
+    expect_code(db,None,f"SELECT public.team_holiday_dates('{d(5)}','{today}')",'42501')
     expect_code(db,MD,command_sql('holidays',{'holidays':[{'date':d(3),'name':'A'},{'date':d(3),'name':'B'}]},cur()),'23505')
     expect_code(db,MD,command_sql('holidays',{'holidays':[{'date':'2026-02-30','name':'A'}]},cur()),'23514')
     save(db,MD,'holidays',{'holidays':[]})

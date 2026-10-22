@@ -190,14 +190,17 @@ REVOKE ALL ON FUNCTION public.dated_record_command(text,uuid,text,jsonb,bigint,u
 GRANT EXECUTE ON FUNCTION public.dated_record_command(text,uuid,text,jsonb,bigint,uuid) TO authenticated;
 
 -- Calendar dates plus the derived rule (every active member recorded Holiday).
+-- A signed-in member, or a service-role worker scoped to one company by the
+-- x-taskpulse-organization header (the policies worker, migration 56).
 CREATE OR REPLACE FUNCTION public.team_holiday_dates(p_from date,p_to date) RETURNS date[]
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
-DECLARE result date[]; BEGIN
- IF public.get_user_role() IS NULL THEN RAISE EXCEPTION 'Active authenticated account required' USING ERRCODE='42501'; END IF;
+DECLARE result date[]; org uuid:=taskpulse_private.m15_scope(); BEGIN
+ IF public.get_user_role() IS NULL AND NOT (auth.uid() IS NULL AND org IS NOT NULL) THEN
+  RAISE EXCEPTION 'Active authenticated account required' USING ERRCODE='42501'; END IF;
  IF p_from IS NULL OR p_to IS NULL OR p_to<p_from OR p_to-p_from>62 THEN RAISE EXCEPTION 'Bounded date range of at most 63 days required' USING ERRCODE='23514'; END IF;
  SELECT coalesce(array_agg(d ORDER BY d),'{}') INTO result FROM (
   SELECT h.holiday_date AS d FROM taskpulse_private.company_holidays h
-  WHERE h.organization_id=public.current_organization() AND h.holiday_date BETWEEN p_from AND p_to
+  WHERE h.organization_id=org AND h.holiday_date BETWEEN p_from AND p_to
   UNION
   SELECT x.d FROM generate_series(p_from,p_to,interval '1 day') AS g(day), LATERAL (SELECT g.day::date AS d) x
   WHERE EXISTS(SELECT 1 FROM public.users u WHERE u.is_active)
@@ -206,6 +209,8 @@ DECLARE result date[]; BEGIN
  ) dates;
  RETURN result;
 END $$;
+REVOKE ALL ON FUNCTION public.team_holiday_dates(date,date) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.team_holiday_dates(date,date) TO authenticated,service_role;
 
 -- ---------------------------------------------------------------------------
 -- Read: any active member of the company
