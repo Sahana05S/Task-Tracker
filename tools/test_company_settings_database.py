@@ -230,6 +230,8 @@ for db in DBS:
     assert value(db,f"status||'/'||holiday_name||'/'||attendance_hours FROM public.attendance_records WHERE user_id='{M4}' AND attendance_date='{d(3)}'")=='Holiday/Ayudha Pooja/0'
     attendance(db,M5,{'off_hours':2,'business_date':d(3),'holiday_name':'Own name'})
     assert value(db,f"status||'/'||holiday_name||'/'||off_hours FROM public.attendance_records WHERE user_id='{M5}' AND attendance_date='{d(3)}'")=='Holiday/Own name/2'
+    attendance(db,U(6),{'attendance_hours':None,'off_hours':0,'business_date':d(3),'attendance_status':''})
+    assert value(db,f"status||'/'||attendance_hours FROM public.attendance_records WHERE user_id='{U(6)}' AND attendance_date='{d(3)}'")=='Holiday/0','JSON null hours and a blank status default too'
     attendance(db,M4,{'attendance_hours':8,'off_hours':0,'business_date':d(2),'attendance_status':'Present'})
     assert value(db,f"status FROM public.attendance_records WHERE user_id='{M4}' AND attendance_date='{d(2)}'")=='Present','recorded attendance stays the truth'
     r=attendance(db,M4,{**base,'business_date':d(1)},success=False)
@@ -254,7 +256,7 @@ for db in DBS:
     save(db,MD,'holidays',{'holidays':[]})
     r=attendance(db,M4,{**base,'business_date':d(4)},success=False)
     assert r.returncode and 'Attendance status required' in r.stderr,'an emptied calendar stops defaulting'
-    assert value(db,f"count(*) FROM public.attendance_records WHERE attendance_date='{d(3)}' AND status='Holiday'")=='2','saved records are not rewritten'
+    assert value(db,f"count(*) FROM public.attendance_records WHERE attendance_date='{d(3)}' AND status='Holiday'")=='3','saved records are not rewritten'
     print('PASS',db,'holiday default only on calendar dates of the caller\'s company; explicit status wins; team_holiday_dates adds calendar dates')
 
     # The derived rule still applies without a calendar date.

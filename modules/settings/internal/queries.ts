@@ -16,7 +16,9 @@ export const readCompanySettings = cache(async (): Promise<CompanySettings & { a
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('company_settings');
   if (error) {
-    if (isMissingFunctionError(error)) return { ...EMPTY_COMPANY_SETTINGS, available: false };
+    // Before migration 53, or a caller without an active company (suspended or
+    // not yet joined): built-in defaults, so the workspace still renders.
+    if (isMissingFunctionError(error) || error.code === '42501') return { ...EMPTY_COMPANY_SETTINGS, available: false };
     throw new Error(`Company settings could not be loaded: ${error.message}`);
   }
   return { ...parseCompanySettings(data), available: true };

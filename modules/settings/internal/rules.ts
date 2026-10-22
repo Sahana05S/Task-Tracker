@@ -139,7 +139,7 @@ export function renderTitlePattern(pattern: string, month: Date, member?: string
  * The sheet tag format the database allocator produces (migration 53):
  * `<Mon><YY>_<PREFIX><n>`, one running number per company per month.
  */
-export function formatSheetTag(month: Date, prefix: string, n: number): string {
+export function formatSheetTag(month: Date, prefix: string, n: number | string): string {
   const mon = month.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }).slice(0, 3);
   const yy = String(month.getUTCFullYear() % 100).padStart(2, '0');
   return `${mon}${yy}_${prefix}${n}`;

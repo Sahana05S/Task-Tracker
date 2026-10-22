@@ -180,7 +180,7 @@ DECLARE payload jsonb:=p_payload; holiday text; BEGIN
   WHERE h.organization_id=public.current_organization() AND h.holiday_date=(p_payload->>'business_date')::date;
   IF holiday IS NOT NULL THEN
    payload:=p_payload||jsonb_build_object('attendance_status','Holiday',
-    'attendance_hours',coalesce(p_payload->'attendance_hours','0'::jsonb),
+    'attendance_hours',coalesce(nullif(p_payload->'attendance_hours','null'::jsonb),'0'::jsonb),
     'holiday_name',coalesce(to_jsonb(nullif(btrim(p_payload->>'holiday_name'),'')),to_jsonb(holiday)));
   END IF;
  END IF;
@@ -306,7 +306,8 @@ DECLARE actor uuid:=auth.uid(); org uuid:=public.current_organization(); s taskp
    SELECT coalesce((x->>'id')::uuid,gen_random_uuid()),org,x->>'prefix',btrim(x->>'name'),coalesce((x->>'sort')::integer,(o-1)::integer),coalesce((x->>'active')::boolean,true)
    FROM jsonb_array_elements(list) WITH ORDINALITY e(x,o);
   EXCEPTION WHEN unique_violation THEN
-   RAISE EXCEPTION 'Meeting type prefixes and names must be unique' USING ERRCODE='23505';
+   RAISE EXCEPTION '%',CASE WHEN SQLERRM LIKE '%meeting_types_pkey%' THEN 'A meeting type id is repeated or already in use; reload and try again'
+    ELSE 'Meeting type prefixes and names must be unique' END USING ERRCODE='23505';
   END;
 
  ELSIF p_section='standing_missions' THEN
@@ -338,7 +339,7 @@ DECLARE actor uuid:=auth.uid(); org uuid:=public.current_organization(); s taskp
     coalesce((x->>'sort')::integer,(o-1)::integer),coalesce((x->>'active')::boolean,true)
    FROM jsonb_array_elements(list) WITH ORDINALITY e(x,o);
   EXCEPTION WHEN unique_violation THEN
-   RAISE EXCEPTION 'Standing mission ids must be unique' USING ERRCODE='23505';
+   RAISE EXCEPTION 'A standing mission id is repeated or already in use; reload and try again' USING ERRCODE='23505';
   END;
 
  ELSE -- holidays

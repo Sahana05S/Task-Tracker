@@ -116,7 +116,8 @@ function SectionForm({
       try {
         const finish = await prepareOperation(form, `company_settings_${section}`);
         const result = await saveCompanySettings(previous, form);
-        if (result.success) finish();
+        // Any answer settles the operation; only a lost response keeps it for a retry.
+        finish();
         return result;
       } catch {
         return { success: false, error: 'The connection dropped. Save again to finish the same change.' };
@@ -457,7 +458,7 @@ function StandingMissionsSection({ settings, version, onSaved, members }: Sectio
                   </span>
                 </div>
                 <p className="text-muted-foreground -mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                  <span className={CODE}>{formatSheetTag(example, row.category, index + 1)}</span>
+                  <span className={CODE}>{formatSheetTag(example, row.category, 'n')}</span>
                   <span className="min-w-0 break-words">{renderTitlePattern(row.titlePattern || '…', example, owner)}</span>
                 </p>
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.8fr)_minmax(0,1.3fr)_minmax(0,1fr)_auto] lg:items-end">
