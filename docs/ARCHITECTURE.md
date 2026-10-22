@@ -74,7 +74,7 @@ Start from `modules/_template/` when creating a module.
 
 | Path | Use it for |
 |---|---|
-| `shared/supabase/` | `server.ts`, `client.ts`, `worker.ts` Supabase clients, session middleware |
+| `shared/supabase/` | `server.ts`, `client.ts`, `worker.ts` Supabase clients (`worker.ts` also has `authorizeWorkerRequest`, the internal worker endpoints' token and switch guard), session middleware |
 | `shared/session/` | `getCurrentProfile`, `requireProfile`, `requireRole`, `resolveActor` |
 | `shared/forms/form-data.ts` | `readString`, `readNullableString`, `UUID_PATTERN`, `ISO_DATE_PATTERN` |
 | `shared/time/kolkata.ts` | `kolkataDate()`, `localCheckTime()`, the business time zone |

@@ -2,7 +2,9 @@ name: Nightly award run
 
 # Calls the app's award worker (POST /api/internal/awards) after the daily
 # cutoff. Each call queues due award days through yesterday (Asia/Kolkata) and
-# runs up to 10 jobs; this keeps calling until a batch comes back empty.
+# runs up to 10 jobs; this keeps calling until a batch comes back empty. Then it
+# calls the policies worker (POST /api/internal/policies, same token and
+# switch) until no policy period is due.
 #
 # Needs repository secrets APP_URL (e.g. https://task-tracker-gules-ten.vercel.app)
 # and TASKPULSE_AWARD_WORKER_TOKEN, plus on Vercel: TASKPULSE_AWARD_WORKER_ENABLED=production,
@@ -66,5 +68,44 @@ jobs:
           failed=$(jq '[.[] | select(.status == "failed")] | length' <<<"$all")
           if [ "$failed" -gt 0 ]; then
             echo "::error::${failed} award job(s) failed; inspect retained jobs in the app."
+            exit 1
+          fi
+
+      # Second loop: policies (migration 56). Each call evaluates up to 20 due
+      # policy periods per company and reports what is left; failures are
+      # recorded in the app as failed runs (the directors are notified there).
+      - name: Run policy evaluations until nothing is due
+        # Policies do not depend on the award run, so a failed award step does not skip them.
+        if: ${{ !cancelled() }}
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          TOKEN: ${{ secrets.TASKPULSE_AWARD_WORKER_TOKEN }}
+        run: |
+          set -euo pipefail
+          all='[]'
+          for batch in $(seq 1 20); do
+            code=$(curl -sS -o response.json -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer ${TOKEN}" "${APP_URL%/}/api/internal/policies")
+            if [ "$code" != "200" ]; then
+              echo "::error::Policies batch ${batch} returned HTTP ${code}: $(cat response.json)"
+              exit 1
+            fi
+            outcomes=$(jq -c '.outcomes // []' response.json)
+            all=$(jq -c --argjson a "$all" --argjson b "$outcomes" -n '$a + $b')
+            [ "$(jq '.remaining // 0' response.json)" -eq 0 ] && break
+          done
+          {
+            echo "### Policy evaluations"
+            echo ""
+            echo "| Status | Company passes | Periods | Changed | Notified |"
+            echo "| --- | --- | --- | --- | --- |"
+            jq -r 'group_by(.status) | map("| \(.[0].status) | \(length) | \(map(.periods) | add) | \(map(.changed) | add) | \(map(.notified) | add) |") | .[]' <<<"$all"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$(jq '.remaining // 0' response.json)" -gt 0 ]; then
+            echo "::warning::Policy periods are still due after 20 batches; they continue tomorrow."
+          fi
+          failed=$(jq '[.[] | select(.status == "failed")] | length' <<<"$all")
+          if [ "$failed" -gt 0 ]; then
+            echo "::error::${failed} company pass(es) failed: $(jq -c '[.[] | select(.status == "failed") | {organizationId, errorCode}]' <<<"$all")"
             exit 1
           fi

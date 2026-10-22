@@ -41,6 +41,14 @@ nothing in scoring reads the policy tables.
 - **Midnight.** A period that closes between the facts read and the recording is
   skipped (`stale` in the response) and stays due; it is never recorded as final
   from provisional facts.
+- **Nightly worker.** `POST /api/internal/policies` (`handlePolicyWorkerRun`)
+  runs behind `authorizeWorkerRequest` (`shared/supabase/worker.ts`: the award
+  worker's token and switch). Per active company, with a client scoped by
+  `x-taskpulse-organization`, it reads up to 20 due periods, evaluates them with
+  `runDueItems` and reports `remaining`; the second step of
+  `.github/workflows/award-worker.yml` calls it until nothing is due (at most 20
+  calls a night) and fails the job when a company pass fails. A company whose due
+  work cannot be read gets a failed run too, and the loop moves on.
 - **Versions.** Every change is an immutable revision. A closed period is judged
   by the version in force when it ended; the open period by the current one.
 
@@ -69,7 +77,7 @@ Periods: day `2026-10-19`, ISO week `2026-W43` (Monday to Sunday), month `2026-1
 ## Public API
 | File | What it offers |
 |---|---|
-| `index.ts` | `getPolicies()`, `getCommendations(range)`, read types, and everything in `client.ts` |
+| `index.ts` | `getPolicies()`, `getCommendations(range)`, `handlePolicyWorkerRun(request)`, read types, and everything in `client.ts` |
 | `client.ts` | Types, `TEMPLATES`/`templateFor`, periods (`periodOf`, `periodLabel`, ...), `evaluatePolicy`, `countOutcomes`, outcome and reason labels |
 
 ## Private (`internal/`)
@@ -84,6 +92,7 @@ Periods: day `2026-10-19`, ISO week `2026-W43` (Monday to Sunday), month `2026-1
 | `queries.ts` | Reads of migration 56 |
 | `commands.ts` | `policy_command` |
 | `run.ts` | One evaluation pass: facts once per period, evaluate, record, failures as runs |
+| `worker.ts` | The nightly endpoint: per company due work, `runDueItems`, what is left |
 
 ## Database it owns (migration 56, all private, company-owned)
 Tables `taskpulse_private.policies`, `policy_revisions` (immutable),

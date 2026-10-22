@@ -14,6 +14,7 @@ export async function getCommendations(range: { from?: string | null; to?: strin
   return readCommendations(await createClient(), range);
 }
 
+export { handlePolicyWorkerRun } from '@/modules/policies/internal/worker';
 export {
   PolicyReadError,
   type CommendationRow,
