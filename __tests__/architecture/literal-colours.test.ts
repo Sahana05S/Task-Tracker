@@ -25,7 +25,8 @@ const UTILITY = '(?:bg|text|border|from|to|via|ring|ring-offset|fill|stroke|outl
 const LITERALS = [
   new RegExp(`(?<![\\w-])(?:[\\w-]+:)*${UTILITY}-${PALETTE}(?:-\\d{2,3})?(?:/\\d{1,3})?(?![\\w-])`, 'g'),
   // Hex colours: in arbitrary values (`bg-[#fff]`), attributes (`fill="#fff"`), strings and CSS.
-  /(?<=[\['"(:,\s])#[0-9a-fA-F]{3,8}(?![\w-])/g,
+  // An in-page anchor (`href="#add"`) is not a colour.
+  /(?<=[\['"(:,\s])(?<!href=["'])#[0-9a-fA-F]{3,8}(?![\w-])/g,
 ];
 
 function* walk(dir: string): Generator<string> {

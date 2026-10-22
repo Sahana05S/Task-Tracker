@@ -51,7 +51,7 @@
 .sub { font-size: 10px; color: var(--muted-foreground); background: var(--card); border-radius: 8px; padding: 2px 5px; white-space: nowrap; }
 .check {
   position: absolute; top: -7px; right: -8px; width: 25px; height: 25px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--success); border: 3px solid var(--card); color: var(--success-subtle);
+  background: var(--success-subtle); border: 3px solid var(--card); color: var(--success-strong);
 }
 .flag { position: absolute; bottom: -10px; right: -24px; border-radius: 7px; background: var(--map-flag); color: var(--map-flag-foreground); padding: 3px 5px; font-size: 9px; font-weight: 800; transform: rotate(9deg); }
 

@@ -77,6 +77,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!resolved) return;
     const root = document.documentElement;
+    if (root.getAttribute('data-theme') === resolved) return; // the inline script already painted it
     root.setAttribute('data-theme', resolved);
     root.style.colorScheme = resolved;
   }, [resolved]);

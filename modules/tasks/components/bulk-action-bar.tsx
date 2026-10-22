@@ -46,7 +46,7 @@ export function BulkActionBar({ selectedCount, canManage, onRun, onClear }: Bulk
           {selectedCount} selected
         </span>
 
-        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-card/15" />
+        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-background/15" />
 
         {batches.map((operation) => (
           <Button
@@ -85,7 +85,7 @@ export function BulkActionBar({ selectedCount, canManage, onRun, onClear }: Bulk
           </DropdownMenu>
         ) : null}
 
-        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-card/15" />
+        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-background/15" />
 
         <Button
           type="button"

@@ -167,6 +167,9 @@
   --border-strong: #c9c4e3; /* unlit flame, "none" calendar cells, unavailable dashed boxes */
   --border-muted: #d9d5ec; /* pending dashed cells, Gantt bars */
   --attention-strong: #f5c58a; /* waiting/blocked dashed amber edge */
+  /* Half-day attendance: teal, so it never reads as Present (mint). */
+  --halfday-subtle: #e0f6fb;
+  --halfday-foreground: #0e6f86;
 
   /* ---- Policy outcome strip (dataviz-validated triad) ------------------- */
   --outcome-met: #0f9f74;
@@ -308,6 +311,8 @@
   --border-strong: #3a4066;
   --border-muted: #2f3556;
   --attention-strong: #8a5a14;
+  --halfday-subtle: #0f2a33;
+  --halfday-foreground: #5ed8ee;
 
   --outcome-met: #34d399;
   --outcome-unmet: #a79bff;
