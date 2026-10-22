@@ -2,7 +2,9 @@
 .frame {
   --hue-0: #6b56cf; --hue-1: #bb537e; --hue-2: #138b79; --hue-3: #986711; --hue-4: #347caf;
   --map-line: #c2cbe0;
-  position: relative; isolation: isolate; overflow: hidden; touch-action: none; cursor: grab;
+  position: relative; isolation: isolate; overflow: hidden; cursor: grab;
+  /* One finger scrolls the page; the component handles two-finger pinch itself. */
+  touch-action: pan-x pan-y;
   height: min(565px, 70vh); min-height: 440px; border: 1px solid var(--border); border-radius: 18px;
   background: radial-gradient(ellipse at 40% 25%, #6355e614, transparent 50%), radial-gradient(ellipse at 72% 79%, #10b9810d, transparent 55%), var(--card);
 }
@@ -13,7 +15,7 @@
 .dragging { cursor: grabbing; }
 .world {
   position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; pointer-events: none;
-  transition: transform 850ms cubic-bezier(.22,.82,.18,1);
+  transition: transform 300ms cubic-bezier(.22,.82,.18,1);
 }
 .free { transition: none; }
 .paths { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
@@ -58,6 +60,13 @@
   transform: translateY(-50%); animation: fade .3s ease-out both;
 }
 @keyframes fade { from { opacity: 0; } }
+/* Horizontal road: siblings sit side by side, so labels are narrower and the leaf card opens above or below. */
+.horizontal .node { width: 140px; }
+.horizontal .name { max-width: 140px; }
+.horizontal .small { width: 104px; }
+.horizontal .small .name { max-width: 104px; font-size: 11px; }
+.above { transform: translate(-50%, -100%); }
+.below { transform: translateX(-50%); }
 
 .float {
   position: absolute; z-index: 12; pointer-events: none; font-size: 11px; font-weight: 600; color: var(--muted-foreground);
@@ -65,9 +74,16 @@
 }
 .left { left: 13px; top: 13px; } .right { right: 13px; top: 13px; }
 .bottom { left: 50%; bottom: 11px; transform: translateX(-50%); white-space: nowrap; max-width: calc(100% - 25px); overflow: hidden; text-overflow: ellipsis; }
+.hint {
+  position: absolute; z-index: 13; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;
+  padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 700;
+  background: color-mix(in srgb, var(--foreground) 82%, transparent); color: var(--background); animation: fade .2s ease-out both;
+}
+/* The live region stays mounted (so the hint is announced) and is invisible while empty. */
+.idle { opacity: 0; padding: 0; }
 
 @media (max-width: 760px) { .frame { height: 520px; min-height: 420px; } }
 @media (max-width: 490px) { .frame { height: 490px; } }
 @media (prefers-reduced-motion: reduce) {
-  .world, .node, .link, .card { transition-duration: .01ms !important; animation: none !important; }
+  .world, .node, .link, .card, .hint { transition-duration: .01ms !important; animation: none !important; }
 }

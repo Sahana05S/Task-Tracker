@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, SparklesIcon, XIcon } from 'lucide-react';
+import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, LocateFixedIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, SparklesIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 import { missionDueLabel, type RoadmapMission } from '@/modules/tasks/client';
 import { checklistWorkHref, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistBranchRow, type ChecklistSection } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
-import { branchForRow, layoutMissionMap, mapCamera, type Camera, type MapEntity, type MapLevel, type MapNode, type RoadmapLocation } from '@/modules/workspace-views/client';
+import { branchForRow, layoutMissionMap, mapCamera, wheelZoomFactor, type Camera, type MapEntity, type MapLevel, type MapNode, type MapOrientation, type RoadmapLocation } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import styles from './mission-map.module.css';
@@ -33,12 +33,33 @@ function rowStep(row: Pick<ChecklistBranchRow, 'id' | 'title' | 'checklistId' | 
 }
 const isContainer = (row: ChecklistBranchRow) => row.isSubMission || row.childCount > 0 || ['Page', 'Group'].includes(row.nodeType);
 const pct = (value: number | null) => value === null ? 'Not started' : `${Math.round(value)}%`;
+const HINT_MS = 1800;
 
-export function MissionMap({ missions, today, initialLocation, onLocation }: {
+/** The caption under the map and the one-time "Use Ctrl + scroll" hint, kept out of the map's render. */
+const MapHint = forwardRef<{ show: () => void }>(function MapHint(_, ref) {
+  const [mod, setMod] = useState('Ctrl');
+  const [hint, setHint] = useState(false);
+  const shown = useRef(false);
+  useEffect(() => { if (/Mac|iPhone|iPad/.test(navigator.userAgent)) setMod('⌘'); }, []);
+  useEffect(() => {
+    if (!hint) return;
+    const timer = setTimeout(() => setHint(false), HINT_MS);
+    return () => clearTimeout(timer);
+  }, [hint]);
+  useImperativeHandle(ref, () => ({ show: () => { if (!shown.current) { shown.current = true; setHint(true); } } }), []);
+  return <>
+    <p className={cn(styles.float, styles.bottom)}>Drag to pan · {mod} + scroll to zoom</p>
+    {/* Stays mounted so the status is announced when its text appears. */}
+    <p className={cn(styles.hint, !hint && styles.idle)} role="status">{hint ? `Use ${mod} + scroll to zoom` : ''}</p>
+  </>;
+});
+
+export function MissionMap({ missions, today, initialLocation, onLocation, orientation = 'vertical' }: {
   missions: RoadmapMission[];
   today: string;
   initialLocation: RoadmapLocation | null;
   onLocation: (location: RoadmapLocation | null) => void;
+  orientation?: MapOrientation;
 }) {
   const [path, setPath] = useState<Step[]>([]);
   const [leafId, setLeafId] = useState<string | null>(null);
@@ -47,6 +68,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
   // Null until the first aim; render then derives it so server HTML already shows the road.
   const [aimed, setCamera] = useState<Camera | null>(null);
   const [free, setFree] = useState(false);
+  const [recentre, setRecentre] = useState(0);
   const [size, setSize] = useState({ w: 800, h: 520 });
   const [dragging, setDragging] = useState(false);
   const [restoring, setRestoring] = useState(!!initialLocation);
@@ -57,6 +79,8 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
   const levelsRef = useRef(levels);
   const sequence = useRef<Record<string, number>>({});
   const drag = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null);
+  const hintRef = useRef<{ show: () => void }>(null);
+  const aimedAt = useRef<{ id: string | null; orientation: MapOrientation; recentre: number; pos: { x: number; y: number } | null } | null>(null);
   levelsRef.current = levels;
 
   // Missions in the loaded batch, plus a deep-linked mission from a later batch.
@@ -130,27 +154,74 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
       if (branch?.hasMore) children.push({ id: `more:${step.id}`, title: 'More items', kind: 'more', progress: null, complete: false });
       return { parentId: step.id, children };
     });
-    return layoutMissionMap(entities, mapLevels);
-  }, [roots, path, levels]);
+    const layout = layoutMissionMap(entities, mapLevels, orientation);
+    return { ...layout, byId: new Map(layout.nodes.map(n => [n.id, n])) };
+  }, [roots, path, levels, orientation]);
 
   const last = path.at(-1);
-  const camera = aimed ?? mapCamera(layout, leafId ?? last?.id ?? null, size, !leafId && !!last);
   const focusId = leafId ?? last?.id ?? null;
-  const focusNode = layout.nodes.find(n => n.id === focusId);
-  // Navigation re-aims the camera; manual pan/zoom holds until the next navigation.
-  useEffect(() => { setFree(false); }, [focusId]);
+  const expanded = !leafId && !!last;
+  const camera = aimed ?? mapCamera(layout, focusId, size, expanded);
+  const focusNode = focusId ? layout.byId.get(focusId) : undefined;
+  // The camera re-aims only when the focus, the layout direction or Re-centre changes, never on a
+  // resize. If the focused node itself shifts (its level loads around it), the view slides with it
+  // and any manual pan is kept.
   useEffect(() => {
-    if (!free) setCamera(mapCamera(layout, focusId, size, !leafId && !!last));
-  }, [focusId, focusNode?.x, focusNode?.y, size.w, size.h, free, layout.nodes.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    const prev = aimedAt.current;
+    const pos = focusNode ? { x: focusNode.x, y: focusNode.y } : null;
+    aimedAt.current = { id: focusId, orientation, recentre, pos };
+    if (prev && prev.id === focusId && prev.orientation === orientation && prev.recentre === recentre && !!prev.pos === !!pos) {
+      if (pos && prev.pos && (pos.x !== prev.pos.x || pos.y !== prev.pos.y)) {
+        const dx = pos.x - prev.pos.x, dy = pos.y - prev.pos.y;
+        setCamera(c => c && { ...c, x: c.x + dx, y: c.y + dy });
+      }
+      return;
+    }
+    const el = frame.current;
+    setFree(false);
+    setCamera(mapCamera(layout, focusId, el ? { w: el.clientWidth, h: el.clientHeight } : size, expanded));
+  }, [focusId, focusNode?.x, focusNode?.y, orientation, recentre]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const el = frame.current;
     if (!el) return;
     const observer = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
     observer.observe(el);
-    const wheel = (e: WheelEvent) => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.11 : 0.9, e.clientX, e.clientY); };
+    // A plain wheel scrolls the page; Ctrl/Cmd + wheel and trackpad pinch (sent as ctrl + wheel) zoom.
+    const wheel = (e: WheelEvent) => {
+      const factor = wheelZoomFactor(e);
+      if (factor === null) { hintRef.current?.show(); return; }
+      e.preventDefault();
+      zoomAt(factor, e.clientX, e.clientY);
+    };
+    // One finger scrolls the page (touch-action in the CSS); two fingers pinch the map. The
+    // non-passive move listener exists only while two fingers are down, so page scrolling stays smooth.
+    let pinch = 0;
+    const spread = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const touchMove = (e: TouchEvent) => {
+      // Once the browser owns the gesture as a scroll the event cannot be cancelled: leave it to the page.
+      if (e.touches.length !== 2 || !e.cancelable) return;
+      e.preventDefault();
+      const next = spread(e.touches);
+      zoomAt(next / pinch, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2);
+      pinch = next;
+    };
+    const touchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      pinch = spread(e.touches);
+      el.addEventListener('touchmove', touchMove, { passive: false });
+    };
+    const touchEnd = (e: TouchEvent) => { if (e.touches.length < 2) el.removeEventListener('touchmove', touchMove); };
     el.addEventListener('wheel', wheel, { passive: false });
-    return () => { observer.disconnect(); el.removeEventListener('wheel', wheel); };
+    el.addEventListener('touchstart', touchStart, { passive: true });
+    el.addEventListener('touchend', touchEnd);
+    el.addEventListener('touchcancel', touchEnd);
+    return () => {
+      observer.disconnect();
+      el.removeEventListener('wheel', wheel);
+      el.removeEventListener('touchstart', touchStart); el.removeEventListener('touchmove', touchMove);
+      el.removeEventListener('touchend', touchEnd); el.removeEventListener('touchcancel', touchEnd);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- zoomAt uses only refs and state setters
 
   function zoomAt(factor: number, clientX?: number, clientY?: number) {
@@ -197,7 +268,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
   }
 
   const leaf = leafId ? rows.get(leafId) : undefined;
-  const leafNode = leafId ? layout.nodes.find(n => n.id === leafId) : undefined;
+  const leafNode = leafId ? layout.byId.get(leafId) : undefined;
   const leafLevel = leaf && last ? levels[last.id]?.branch : undefined;
   const mission = path[0] ? roots.find(m => m.id === path[0].id) : undefined;
   async function quickComplete() {
@@ -233,7 +304,8 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
         </nav>
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Map controls">
           <Button size="sm" variant="outline" disabled={!last} onClick={back}><ArrowUpLeftIcon aria-hidden="true" />Back</Button>
-          <Button size="sm" variant="outline" onClick={() => { goTo([]); setFree(false); }}><HouseIcon aria-hidden="true" />Full map</Button>
+          <Button size="sm" variant="outline" onClick={() => { goTo([]); setRecentre(n => n + 1); }}><HouseIcon aria-hidden="true" />Full map</Button>
+          <Button size="sm" variant="outline" onClick={() => setRecentre(n => n + 1)}><LocateFixedIcon aria-hidden="true" />Re-centre</Button>
           <Button size="icon" variant="outline" className="size-8" aria-label="Zoom in" onClick={() => zoomAt(1.25)}><PlusIcon aria-hidden="true" /></Button>
           <Button size="icon" variant="outline" className="size-8" aria-label="Zoom out" onClick={() => zoomAt(0.8)}><MinusIcon aria-hidden="true" /></Button>
         </div>
@@ -251,10 +323,11 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
       {lastLevel?.error ? <p role="alert" className="text-danger mt-2 text-sm">{lastLevel.error} <button type="button" className="link font-semibold" onClick={() => last && fetchLevel(last)}><RotateCcwIcon className="inline size-3.5" aria-hidden="true" /> Retry branch</button></p> : null}
 
       <section ref={frame} aria-label="Mission map" aria-busy={restoring || !!lastLevel?.loading}
-        className={cn(styles.frame, 'mt-3', dragging && styles.dragging)}
+        className={cn(styles.frame, 'mt-3', orientation === 'horizontal' && styles.horizontal, dragging && styles.dragging)}
         onKeyDown={e => { if (e.key === 'Escape' && (last || leafId)) { e.preventDefault(); back(); } }}
         onPointerDown={e => {
-          if ((e.target as HTMLElement).closest('button,a,input,select,textarea') || e.button !== 0) return;
+          // Mouse and pen drag the map; a finger scrolls the page instead.
+          if (e.pointerType === 'touch' || (e.target as HTMLElement).closest('button,a,input,select,textarea') || e.button !== 0) return;
           drag.current = { x: e.clientX, y: e.clientY, cx: camera.x, cy: camera.y };
           setDragging(true); setFree(true); e.currentTarget.setPointerCapture(e.pointerId);
         }}
@@ -263,7 +336,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
         <div className={cn(styles.world, (dragging || free) && styles.free)} style={{ width: layout.width, height: layout.height, transform: `translate3d(${w / 2 - camera.x * camera.z}px,${h / 2 - camera.y * camera.z}px,0) scale(${camera.z})` }}>
           <svg className={styles.paths} width={layout.width} height={layout.height} aria-hidden="true">
             {layout.road ? <path className={styles.road} d={layout.road} /> : null}
-            {layout.edges.map(edge => <path key={edge.id} d={edge.d} className={cn(styles.link, path.length > 0 && !pathIds.has(edge.id) && layout.nodes.find(n => n.id === edge.id)?.parentId !== last?.id && styles.muted)} style={{ stroke: `var(--hue-${edge.hue})` }} />)}
+            {layout.edges.map(edge => <path key={edge.id} d={edge.d} className={cn(styles.link, path.length > 0 && !pathIds.has(edge.id) && layout.byId.get(edge.id)?.parentId !== last?.id && styles.muted)} style={{ stroke: `var(--hue-${edge.hue})` }} />)}
           </svg>
           {layout.nodes.map(node => {
             const row = rows.get(node.id);
@@ -292,7 +365,9 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
               <span className={styles.sub}>{sub}</span>
             </button>;
           })}
-          {leaf && leafNode ? <div className={styles.card} style={{ left: leafNode.side < 0 ? leafNode.x - 126 - 250 : leafNode.x + 126, top: leafNode.y }}>
+          {leaf && leafNode ? <div className={cn(styles.card, orientation === 'horizontal' && (leafNode.side < 0 ? styles.above : styles.below))}
+            style={orientation === 'horizontal' ? { left: leafNode.x, top: leafNode.side < 0 ? leafNode.y - 50 : leafNode.y + 110 }
+              : { left: leafNode.side < 0 ? leafNode.x - 126 - 250 : leafNode.x + 126, top: leafNode.y }}>
             <div className="flex items-start justify-between gap-2"><p className="text-primary text-[10px] font-extrabold tracking-widest uppercase">{leaf.section ?? 'activity'} item</p>
               <button type="button" aria-label="Close item" onClick={() => setLeafId(null)} className="text-muted-foreground -mt-1 -mr-1 rounded p-1 hover:text-foreground"><XIcon className="size-4" aria-hidden="true" /></button></div>
             <h3 className="text-foreground mt-2 text-base leading-snug font-semibold break-words">{leaf.title}</h3>
@@ -305,7 +380,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
         </div>
         <p className={cn(styles.float, styles.left)} aria-live="polite">{status}</p>
         <p className={cn(styles.float, styles.right)}>{free ? 'Manual' : last ? `Depth ${path.length}` : 'Overview'} · {Math.round(camera.z * 100)}%</p>
-        <p className={cn(styles.float, styles.bottom)}>Drag to pan · Scroll or ＋/－ to zoom · Select a node to open it · Esc goes back</p>
+        <MapHint ref={hintRef} />
       </section>
     </div>
     {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-6">

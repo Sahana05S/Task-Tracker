@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, XIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, Rows3Icon, Columns3Icon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
 import { cn } from '@/shared/utils';
 import { missionDueLabel, type MissionDueFilter, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/client';
 import type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow } from '@/modules/checklists/client';
-import { branchForRow, roadmapSearch, type RoadmapLocation } from '@/modules/workspace-views/client';
+import { branchForRow, readMapLayout, rememberMapLayout, roadmapSearch, type MapOrientation, type RoadmapLocation } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch, loadRoadmapMissions } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import { MissionMap } from './mission-map';
@@ -26,15 +26,18 @@ const VIEW_OPTIONS: readonly SegmentedOption<View>[] = [
   { value: 'roadmap', label: 'Roadmap', icon: OrbitIcon },
   { value: 'list', label: 'List', icon: ListIcon },
 ];
+const LAYOUT_OPTIONS: readonly SegmentedOption<MapOrientation>[] = [
+  { value: 'vertical', label: 'Vertical', icon: Rows3Icon },
+  { value: 'horizontal', label: 'Horizontal', icon: Columns3Icon },
+];
 interface Props {
   initial: RoadmapMissionBatch | null;
   due: MissionDueFilter;
   today: string;
   initialView?: View;
   initialLocation?: RoadmapLocation | null;
-}
-function remember(location: RoadmapLocation | null, due: string, view: View) {
-  window.history.replaceState(null, '', roadmapSearch(location, due, view));
+  /** From `?layout=`; null leaves the choice to this device's last one. */
+  initialLayout?: MapOrientation | null;
 }
 function Progress({ value }: { value: number | null }) {
   return <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{value === null ? 'Progress unavailable' : `${Math.round(value)}%`}</span>;
@@ -44,9 +47,10 @@ function LoadingBranch() {
 }
 
 /** The map view and a keyboard-first list over the same bounded data, actions and URL location. */
-export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', initialLocation = null }: Props) {
+export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', initialLocation = null, initialLayout = null }: Props) {
   const [batch, setBatch] = useState(initial);
   const [view, setView] = useState<View>(initialView);
+  const [layout, setLayout] = useState<MapOrientation>(initialLayout ?? 'vertical');
   const [location, setLocation] = useState<RoadmapLocation | null>(initialLocation);
   const [mission, setMission] = useState<RoadmapMission | null>(null);
   const [branch, setBranch] = useState<ChecklistBranch | null>(null);
@@ -58,6 +62,23 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
   const [revision, setRevision] = useState(0);
   const request = useRef(0);
   const panelHeading = useRef<HTMLHeadingElement>(null);
+  // The map reports locations from an effect that holds an older `onLocation`, so `remember` reads
+  // the layout through a ref rather than the render it was created in.
+  const layoutRef = useRef(layout);
+  function remember(location: RoadmapLocation | null, due: string, view: View) {
+    window.history.replaceState(null, '', roadmapSearch(location, due, view, layoutRef.current));
+  }
+  function chooseLayout(next: MapOrientation) {
+    setLayout(next);
+    layoutRef.current = next;
+    rememberMapLayout(next);
+    remember(location, due, view);
+  }
+  // No layout in the URL: use the one last chosen on this device (vertical until switched).
+  useEffect(() => {
+    const stored = readMapLayout();
+    if (!initialLayout && stored !== 'vertical') chooseLayout(stored);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function open(path: RoadmapLocation, append = false) {
     const sequence = ++request.current;
@@ -115,23 +136,31 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
   return <section aria-labelledby="mission-path-title" className="min-w-0">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><h2 id="mission-path-title" className="text-foreground text-base font-bold tracking-tight">Your mission path</h2><p className="text-muted-foreground mt-1 max-w-prose text-sm">Choose a mission. Open its next item. Keep your work in focus.</p></div>
-      <SegmentedControl
-        label="Mission view"
-        value={view}
-        options={VIEW_OPTIONS}
-        onValueChange={(next) => {
-          setView(next);
-          remember(location, due, next);
-          if (next === 'list' && location) open(location);
-        }}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        {view === 'roadmap' ? <SegmentedControl
+          label="Map layout"
+          value={layout}
+          options={LAYOUT_OPTIONS}
+          onValueChange={chooseLayout}
+        /> : null}
+        <SegmentedControl
+          label="Mission view"
+          value={view}
+          options={VIEW_OPTIONS}
+          onValueChange={(next) => {
+            setView(next);
+            remember(location, due, next);
+            if (next === 'list' && location) open(location);
+          }}
+        />
+      </div>
     </div>
     <nav aria-label="Mission deadline filters" className="mt-5 flex flex-wrap gap-2">
-      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
+      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view, layout)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
     </nav>
     {view === 'roadmap' ? <>
       {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
-      {batch?.missions.length || location ? <MissionMap missions={batch?.missions ?? []} today={today} initialLocation={location}
+      {batch?.missions.length || location ? <MissionMap missions={batch?.missions ?? []} today={today} initialLocation={location} orientation={layout}
         onLocation={next => { setLocation(next); remember(next, due, 'roadmap'); }} />
         : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
       {batch?.hasMore ? <Button className="mt-4" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : `Load more missions (${batch.missions.length} shown)`}</Button> : null}
