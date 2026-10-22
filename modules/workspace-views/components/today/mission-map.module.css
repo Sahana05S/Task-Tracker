@@ -1,8 +1,6 @@
 /* Mission map: one camera-controlled world (layout from the TaskPulse bidirectional roadmap reference). */
 .frame {
-  /* Branch hues and the road colour come from the theme tokens (light and dark values in globals.css). */
-  --hue-0: var(--map-hue-0); --hue-1: var(--map-hue-1); --hue-2: var(--map-hue-2); --hue-3: var(--map-hue-3); --hue-4: var(--map-hue-4);
-  --map-line: var(--map-road);
+  /* Branch hues (--map-hue-N) and the road (--map-road) are theme tokens in globals.css. */
   position: relative; isolation: isolate; overflow: hidden; cursor: grab;
   /* One finger scrolls the page; the component handles two-finger pinch itself. */
   touch-action: pan-x pan-y;
@@ -11,7 +9,7 @@
 }
 .frame::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .45;
-  background-image: radial-gradient(var(--map-line) 1px, transparent 1px); background-size: 24px 24px;
+  background-image: radial-gradient(var(--map-road) 1px, transparent 1px); background-size: 24px 24px;
 }
 .dragging { cursor: grabbing; }
 .world {
@@ -20,7 +18,7 @@
 }
 .free { transition: none; }
 .paths { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
-.road { stroke: var(--map-line); stroke-width: 6; stroke-dasharray: 9 14; fill: none; stroke-linecap: round; opacity: .8; }
+.road { stroke: var(--map-road); stroke-width: 6; stroke-dasharray: 9 14; fill: none; stroke-linecap: round; opacity: .8; }
 .link { fill: none; stroke-width: 3.5; stroke-linecap: round; opacity: .86; transition: opacity .45s; animation: draw .85s ease-out both; stroke-dasharray: 600; }
 .muted { opacity: .18; }
 @keyframes draw { from { stroke-dashoffset: 600; opacity: 0; } to { stroke-dashoffset: 0; } }

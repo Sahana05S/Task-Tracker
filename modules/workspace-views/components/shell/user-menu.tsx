@@ -16,7 +16,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import { THEME_OPTIONS, useTheme, type ThemePreference } from '@/shared/ui/theme';
+import { THEME_OPTIONS } from '@/shared/ui/theme-choice';
+import { useTheme } from '@/shared/ui/theme';
+import { parseThemePreference } from '@/shared/ui/theme-script';
 import { cn, getInitials } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 
@@ -140,7 +142,7 @@ export function UserMenu({
 
         {/* Appearance for this device; the same choice as Settings > Profile. */}
         <DropdownMenuLabel className="text-muted-foreground text-xs font-medium">Theme</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={preference} onValueChange={(value) => setPreference(value as ThemePreference)}>
+        <DropdownMenuRadioGroup value={preference} onValueChange={(value) => setPreference(parseThemePreference(value))}>
           {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
             <DropdownMenuRadioItem key={value} value={value} onSelect={(event) => event.preventDefault()}>
               <Icon className="text-muted-foreground size-4" aria-hidden="true" />

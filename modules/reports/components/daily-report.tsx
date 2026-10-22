@@ -149,7 +149,7 @@ export function DailyReportView({ model, memberId, date, from, to, maxDate, canP
 const VALIDITY_STYLE: Record<ValidityState, string> = {
   valid: 'bg-success border-success',
   invalid: 'bg-danger-subtle border-danger',
-  unavailable: 'bg-muted border-(--border-strong) border-dashed',
+  unavailable: 'bg-muted border-border-strong border-dashed',
 };
 const VALIDITY_LABEL: Record<ValidityState, string> = {
   valid: 'Valid',

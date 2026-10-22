@@ -20,7 +20,7 @@
    on new ones outside marketing.
    ========================================================================== */
 
-/* `dark:` utilities follow the stamped theme, not the OS setting. */
+/* A `dark:` utility, when one is needed, follows the stamped theme rather than the OS setting. */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 :root {
@@ -155,20 +155,18 @@
   --fresh-dot: #10b981;
   --stale-fg: #b45309;
   --stale-dot: #f59e0b;
-  --rotten-fg: #be123c;
+  --rotten-fg: var(--danger);
   --rotten-dot: #f43f5e;
 
-  /* ---- Streak meter and the skipped-day ring --------------------------- */
-  --streak-from: #f26b1d;
+  /* ---- Streak meter: ember into a lighter orange ----------------------- */
   --streak-to: #fb923c;
-  --streak-skipped: #d9d5ec;
 
   /* ---- Outlines stronger than the hairline border ----------------------- */
   --border-strong: #c9c4e3; /* unlit flame, "none" calendar cells, unavailable dashed boxes */
   --border-muted: #d9d5ec; /* pending dashed cells, Gantt bars */
   --attention-strong: #f5c58a; /* waiting/blocked dashed amber edge */
   /* Half-day attendance: teal, so it never reads as Present (mint). */
-  --halfday-subtle: #e0f6fb;
+  --halfday-subtle: var(--tier-diamond-subtle);
   --halfday-foreground: #0e6f86;
 
   /* ---- Policy outcome strip (dataviz-validated triad) ------------------- */
@@ -301,22 +299,18 @@
   --fresh-dot: #2dd4bf;
   --stale-fg: #fcc54a;
   --stale-dot: #fbbf24;
-  --rotten-fg: #ff8da1;
   --rotten-dot: #fb7185;
 
-  --streak-from: #fb8c3c;
   --streak-to: #fdba74;
-  --streak-skipped: #3a4066;
 
   --border-strong: #3a4066;
   --border-muted: #2f3556;
   --attention-strong: #8a5a14;
-  --halfday-subtle: #0f2a33;
   --halfday-foreground: #5ed8ee;
 
-  --outcome-met: #34d399;
-  --outcome-unmet: #a79bff;
-  --outcome-unavailable: #fbbf24;
+  --outcome-met: var(--success);
+  --outcome-unmet: var(--primary);
+  --outcome-unavailable: var(--recognition);
 
   --map-hue-0: #9d8cf5;
   --map-hue-1: #e07aa3;
@@ -397,6 +391,11 @@
   --color-tier-gold-subtle: var(--tier-gold-subtle);
   --color-tier-diamond: var(--tier-diamond);
   --color-tier-diamond-subtle: var(--tier-diamond-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-muted: var(--border-muted);
+  --color-attention-strong: var(--attention-strong);
+  --color-halfday-subtle: var(--halfday-subtle);
+  --color-halfday-foreground: var(--halfday-foreground);
 
   /* Plus Jakarta Sans first, system stack behind it. */
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
@@ -1128,7 +1127,7 @@
 
   /* Ember fill for the streak milestone meter (same track as MissionProgress). */
   .streak-meter .progress-fill {
-    @apply bg-linear-to-r from-(--streak-from) to-(--streak-to);
+    @apply from-streak bg-linear-to-r to-(--streak-to);
   }
 
   /* 14-day strip: shape carries the state, colour only reinforces it. */
@@ -1141,7 +1140,7 @@
   }
 
   .streak-dot-skipped {
-    @apply border-(--streak-skipped) bg-transparent;
+    @apply border-border-muted bg-transparent;
   }
 
   .streak-dot-broken {

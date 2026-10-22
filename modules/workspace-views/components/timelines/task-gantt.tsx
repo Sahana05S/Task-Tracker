@@ -191,7 +191,7 @@ function statusBarClass(status: TimelineTaskBar['status']): string {
     case 'On-Hold':
     case 'Carryover':
     case 'Not Started':
-      return 'border-(--border-muted) bg-card text-foreground';
+      return 'border-border-muted bg-card text-foreground';
   }
 }
 

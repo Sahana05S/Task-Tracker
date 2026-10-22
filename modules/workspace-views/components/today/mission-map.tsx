@@ -336,7 +336,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
         <div className={cn(styles.world, (dragging || free) && styles.free)} style={{ width: layout.width, height: layout.height, transform: `translate3d(${w / 2 - camera.x * camera.z}px,${h / 2 - camera.y * camera.z}px,0) scale(${camera.z})` }}>
           <svg className={styles.paths} width={layout.width} height={layout.height} aria-hidden="true">
             {layout.road ? <path className={styles.road} d={layout.road} /> : null}
-            {layout.edges.map(edge => <path key={edge.id} d={edge.d} className={cn(styles.link, path.length > 0 && !pathIds.has(edge.id) && layout.byId.get(edge.id)?.parentId !== last?.id && styles.muted)} style={{ stroke: `var(--hue-${edge.hue})` }} />)}
+            {layout.edges.map(edge => <path key={edge.id} d={edge.d} className={cn(styles.link, path.length > 0 && !pathIds.has(edge.id) && layout.byId.get(edge.id)?.parentId !== last?.id && styles.muted)} style={{ stroke: `var(--map-hue-${edge.hue})` }} />)}
           </svg>
           {layout.nodes.map(node => {
             const row = rows.get(node.id);
@@ -352,7 +352,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
             const kindLabel = { mission: 'Mission', submission: 'Sub-mission', page: 'Page', item: 'Item', more: 'More items' }[node.kind];
             return <button key={node.id} type="button" data-map-node={node.id} tabIndex={dim ? -1 : 0}
               className={cn(styles.node, node.depth > 1 && styles.small, dim && styles.dim, node.id === focusId && styles.current)}
-              style={{ left: node.x, top: node.y, ['--node' as string]: `var(--hue-${node.hue})` }}
+              style={{ left: node.x, top: node.y, ['--node' as string]: `var(--map-hue-${node.hue})` }}
               aria-label={`${kindLabel}: ${node.title}. ${sub}.`}
               aria-expanded={node.kind === 'item' || node.kind === 'more' ? undefined : opened}
               aria-pressed={node.kind === 'item' ? node.id === leafId : undefined}
