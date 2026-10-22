@@ -105,7 +105,7 @@ export function NotificationBell({ className }: { className?: string }) {
         <BellIcon className="size-4" aria-hidden="true" />
         {badge ? (
           <span aria-hidden="true"
-            className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] leading-none font-bold tabular-nums ring-2 ring-white">
+            className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] leading-none font-bold tabular-nums ring-2 ring-card">
             {badge}
           </span>
         ) : null}

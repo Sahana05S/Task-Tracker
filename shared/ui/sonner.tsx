@@ -2,22 +2,22 @@
 
 import { Toaster as SonnerToaster } from 'sonner';
 
+import { useTheme } from '@/shared/ui/theme';
+
 /**
  * Toast host.
  *
- * Mounted once in the root layout. The theme is pinned to light rather than read
- * from a theme provider: `responsive-ui-design.md` describes a single light
- * workspace and defines no dark equivalents, so there is nothing to switch
- * between.
+ * Mounted once in the root layout, inside the theme provider, so toasts follow
+ * the painted Light or Dark theme.
  *
  * Styling is passed through Sonner's `classNames` slots so the toasts inherit the
- * sheet palette — white surface, slate micro-border — instead of Sonner's
- * defaults.
+ * app's tokens (popover surface, hairline border) instead of Sonner's defaults.
  */
 export function Toaster() {
+  const { resolved } = useTheme();
   return (
     <SonnerToaster
-      theme="light"
+      theme={resolved}
       position="bottom-right"
       closeButton
       // Long enough to read a database error, short enough not to linger.
@@ -25,17 +25,17 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            'group rounded-lg border border-border bg-white text-foreground shadow-md',
+            'group rounded-lg border border-border bg-popover text-popover-foreground shadow-md',
           title: 'text-sm font-medium',
           description: 'text-sm text-muted-foreground',
           actionButton:
             'rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground',
           cancelButton:
             'rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground',
-          closeButton: 'border-border bg-white text-muted-foreground',
+          closeButton: 'border-border bg-popover text-muted-foreground',
           success: 'border-success/30 [&_[data-icon]]:text-success-strong',
           error: 'border-danger-border [&_[data-icon]]:text-danger',
-          warning: 'border-amber-200 [&_[data-icon]]:text-amber-600',
+          warning: 'border-attention-border [&_[data-icon]]:text-attention-foreground',
           info: 'border-primary/20 [&_[data-icon]]:text-primary',
         },
       }}

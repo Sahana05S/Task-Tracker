@@ -184,14 +184,14 @@ function statusBarClass(status: TimelineTaskBar['status']): string {
     case 'Done':
       return 'border-success/40 bg-success-subtle text-success-strong';
     case 'In Progress':
-      return 'border-amber-300 bg-amber-100 text-amber-900';
+      return 'border-attention-border bg-attention-subtle text-attention-foreground';
     case 'Discarded':
-      return 'border-slate-300 bg-slate-100 text-slate-500 line-through';
+      return 'border-input bg-muted text-muted-foreground line-through';
     case 'Stopped':
     case 'On-Hold':
     case 'Carryover':
     case 'Not Started':
-      return 'border-[#d9d5ec] bg-white text-foreground';
+      return 'border-border-muted bg-card text-foreground';
   }
 }
 
@@ -203,9 +203,9 @@ function freshnessRingClass(freshness: TimelineTaskBar['freshness']): string {
       return 'ring-1 ring-success/70';
     case 'Almost Stale':
     case 'Stale':
-      return 'ring-1 ring-amber-400/80';
+      return 'ring-1 ring-recognition/80';
     case 'Rotten':
       return 'ring-1 ring-overdue/80';
-    default: return 'ring-1 ring-slate-400/50';
+    default: return 'ring-1 ring-input/50';
   }
 }

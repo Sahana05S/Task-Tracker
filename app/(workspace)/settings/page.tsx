@@ -5,11 +5,12 @@ import { SettingsForm } from '@/modules/team/components/settings-form';
 import { getPeopleAdminData } from '@/modules/team';
 import { canManageCompanySettings, getCompanySettings } from '@/modules/settings';
 import { CompanySettingsEditor } from '@/modules/settings/components/company-settings';
-import { Building2Icon, IdCardIcon, InfoIcon, UserRoundIcon } from 'lucide-react';
+import { Building2Icon, IdCardIcon, InfoIcon, PaletteIcon, UserRoundIcon } from 'lucide-react';
 
 import { InitialsAvatar, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
 import { PageTabs } from '@/shared/ui/page-nav';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
+import { ThemeChoice } from '@/shared/ui/theme-choice';
 import { requireProfile } from '@/shared/session/profile';
 import { ROLE_LABELS } from '@/shared/tracker/enums';
 import { formatDate } from '@/shared/tracker/format';
@@ -64,16 +65,24 @@ type Profile = Awaited<ReturnType<typeof requireProfile>>;
 
 function ProfileTab({ profile }: { profile: Profile }) {
   return (
-    <MissionPanel icon={UserRoundIcon} title="Profile" subtitle="Your display name is the only field you can change here.">
-      <div className="mb-5 flex items-center gap-3">
-        <InitialsAvatar name={profile.fullName} className="size-11 text-sm" />
-        <div className="min-w-0">
-          <p className="text-foreground truncate text-sm font-semibold">{profile.fullName}</p>
-          <p className="text-muted-foreground truncate text-xs">{profile.email}</p>
+    <>
+      <MissionPanel icon={UserRoundIcon} title="Profile" subtitle="Your display name is the only field you can change here.">
+        <div className="mb-5 flex items-center gap-3">
+          <InitialsAvatar name={profile.fullName} className="size-11 text-sm" />
+          <div className="min-w-0">
+            <p className="text-foreground truncate text-sm font-semibold">{profile.fullName}</p>
+            <p className="text-muted-foreground truncate text-xs">{profile.email}</p>
+          </div>
         </div>
-      </div>
-      <SettingsForm profile={profile} />
-    </MissionPanel>
+        <SettingsForm profile={profile} />
+      </MissionPanel>
+      <MissionPanel icon={PaletteIcon} title="Appearance" subtitle="Remembered on this device. System follows your computer or phone setting.">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-foreground text-sm font-medium">Theme</span>
+          <ThemeChoice />
+        </div>
+      </MissionPanel>
+    </>
   );
 }
 

@@ -100,7 +100,7 @@ function ManagerList({ policies, canManage, people }: { policies: PolicyRow[]; c
       </div>
       <ul className="grid gap-3 md:hidden">
         {policies.map((p) => (
-          <li key={p.id} className="border-border grid gap-3 rounded-2xl border bg-white p-4">
+          <li key={p.id} className="border-border grid gap-3 rounded-2xl border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-foreground font-semibold break-words">{p.name}</p>
@@ -126,7 +126,7 @@ function MemberList({ policies }: { policies: PolicyRow[] }) {
       {policies.map((p) => {
         const reason = p.mine?.reasons[0];
         return (
-          <li key={p.id} className="border-border grid content-start gap-3 rounded-2xl border bg-white p-4">
+          <li key={p.id} className="border-border grid content-start gap-3 rounded-2xl border bg-card p-4">
             <div>
               <p className="text-foreground font-semibold break-words">{p.name}</p>
               <p className="text-muted-foreground text-xs">{periodText(p)}</p>

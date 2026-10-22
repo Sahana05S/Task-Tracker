@@ -22,7 +22,7 @@ export function LoginScreen({ view }: LoginScreenProps) {
           <h1 className="text-foreground text-xl font-bold tracking-tight">
             TaskPulse
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Multi-metric performance tracker
           </p>
         </div>
@@ -52,7 +52,7 @@ export function LoginScreen({ view }: LoginScreenProps) {
         <p className="mt-4 text-center">
           <Link
             href="/"
-            className="inline-flex items-center gap-1 rounded-md text-xs text-slate-500 transition-colors hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none"
+            className="inline-flex items-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
           >
             <ArrowLeftIcon className="size-3" aria-hidden="true" />
             Back to taskpulse.com
@@ -73,7 +73,7 @@ function OrphanedAccountNotice() {
     <div className="flex flex-col gap-4">
       <div
         role="alert"
-        className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+        className="flex items-start gap-2 rounded-md border border-attention-border bg-attention-subtle px-3 py-2 text-sm text-attention-foreground"
       >
         <AlertTriangleIcon
           className="mt-0.5 size-4 shrink-0"
@@ -88,9 +88,9 @@ function OrphanedAccountNotice() {
         </div>
       </div>
 
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted-foreground">
         If you are setting the project up, apply{' '}
-        <code className="rounded bg-slate-100 px-1 py-0.5 text-xs text-slate-700">
+        <code className="rounded bg-muted px-1 py-0.5 text-xs text-foreground">
           supabase/migrations/02_auth_provisioning.sql
         </code>{' '}
         and sign up again. Otherwise ask a managing director to create your

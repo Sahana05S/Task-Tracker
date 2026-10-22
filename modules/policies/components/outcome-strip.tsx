@@ -7,7 +7,7 @@ import type { Outcome, OutcomeCounts } from '@/modules/policies/client';
  * Colours were checked with the dataviz validator (CVD separation >= 18 ΔE);
  * they sit below 3:1 on white, so the counts are always printed beside them.
  */
-export const OUTCOME_COLORS = { met: '#0f9f74', notMet: '#7468d0', unavailable: '#e08e0b' } as const;
+export const OUTCOME_COLORS = { met: 'var(--outcome-met)', notMet: 'var(--outcome-unmet)', unavailable: 'var(--outcome-unavailable)' } as const;
 
 /** The colour dot of one outcome, beside its label. */
 export function OutcomeDot({ outcome, className }: { outcome: Outcome; className?: string }) {

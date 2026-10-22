@@ -149,8 +149,8 @@ function SignedBarCard({
                       {formatSigned(item.value)}
                     </span>
                   </div>
-                  <div className="relative h-3 overflow-hidden rounded-full bg-[#ebe7f6]">
-                    <span className="absolute inset-y-0 left-1/2 w-px bg-slate-300" />
+                  <div className="relative h-3 overflow-hidden rounded-full bg-progress-track">
+                    <span className="absolute inset-y-0 left-1/2 w-px bg-input" />
                     <span
                       className={cn(
                         'absolute inset-y-0 rounded-full',
@@ -278,7 +278,7 @@ function DistributionCard({
               style={{ background: conicGradient(visible, total) }}
               aria-hidden="true"
             >
-              <div className="absolute inset-8 rounded-full bg-white" />
+              <div className="absolute inset-8 rounded-full bg-card" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-foreground text-sm font-semibold tabular">
                   {formatNumeric(total, 0)}
@@ -367,7 +367,7 @@ function MetricBar({
           </span>
         </span>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-[#ebe7f6]">
+      <div className="h-2.5 overflow-hidden rounded-full bg-progress-track">
         <span
           className="block h-full rounded-full"
           style={{ width: `${width}%`, backgroundColor: color }}

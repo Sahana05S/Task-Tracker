@@ -33,7 +33,7 @@ export function CommendationsAct({ section, monthLabel, viewerId }: {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {section.data.map((member) => (
-            <li key={member.employeeId} className="border-border grid content-start gap-2.5 rounded-2xl border bg-white p-4">
+            <li key={member.employeeId} className="border-border grid content-start gap-2.5 rounded-2xl border bg-card p-4">
               <div className="flex items-baseline justify-between gap-3">
                 <p className="text-foreground font-semibold break-words">
                   {member.name}{member.employeeId === viewerId ? <span className="text-muted-foreground font-normal"> (you)</span> : null}

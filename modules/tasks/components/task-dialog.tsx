@@ -389,7 +389,7 @@ function MemberCheckboxGroup({
   onChange: (memberId: string, checked: boolean) => void;
 }) {
   return (
-    <div className="border-border max-h-40 overflow-y-auto rounded-md border bg-white p-2">
+    <div className="border-border max-h-40 overflow-y-auto rounded-md border bg-card p-2">
       {members.map((member) => (
         <label
           key={member.id}

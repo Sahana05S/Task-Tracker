@@ -51,7 +51,7 @@ export function AssetGroup({
               href={extraLink.href}
               className="bg-muted/70 hover:bg-primary-subtle flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors"
             >
-              <span aria-hidden="true" className="text-primary flex size-8 shrink-0 items-center justify-center rounded-lg bg-white">
+              <span aria-hidden="true" className="text-primary flex size-8 shrink-0 items-center justify-center rounded-lg bg-card">
                 <ListChecksIcon className="size-4" />
               </span>
               <span className="text-primary">{extraLink.label}</span>
@@ -81,7 +81,7 @@ export function AssetLink({ link }: { link: TaskLink }) {
   const Icon = LINK_ICONS[link.linkType] ?? LinkIcon;
   const body = (
     <>
-      <span aria-hidden="true" className="text-primary flex size-8 shrink-0 items-center justify-center rounded-lg bg-white">
+      <span aria-hidden="true" className="text-primary flex size-8 shrink-0 items-center justify-center rounded-lg bg-card">
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">

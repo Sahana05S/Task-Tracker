@@ -254,7 +254,7 @@ export function TaskDataGrid({
                 </td>
 
                 {/* Pinned right so the menu is reachable without scrolling sideways. */}
-                <td className="group-hover:bg-muted sticky right-0 z-10 bg-white">
+                <td className="group-hover:bg-muted sticky right-0 z-10 bg-card">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

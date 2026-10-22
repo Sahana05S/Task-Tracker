@@ -47,7 +47,7 @@ export function ChecklistHero({
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
         <div className="min-w-0 flex-1">
-          <span className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
+          <span className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
             <ClipboardCheckIcon className="size-3.5" aria-hidden="true" />
             Master checklist
           </span>
@@ -62,7 +62,7 @@ export function ChecklistHero({
           {rollup ? (
             <ul className="mt-3 flex flex-wrap gap-2">
               {SECTION_ORDER.map((key) => (
-                <li key={key} className="flex items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-xs font-medium">
+                <li key={key} className="flex items-center gap-1.5 rounded-full bg-card/80 px-2.5 py-1 text-xs font-medium">
                   <SectionStateIcon section={rollup.sections[key]} className="size-3.5" />
                   {SECTION_LABELS[key]}: {sectionStateLabel(rollup.sections[key])}
                 </li>

@@ -7,9 +7,9 @@ import { cn } from '@/shared/utils';
 type DayState = 'winner' | 'none' | 'blocked' | 'pending';
 const DAY_STYLE: Record<DayState, string> = {
   winner: 'bg-recognition border-recognition',
-  none: 'bg-white border-[#c9c4e3]',
-  blocked: 'bg-attention-border border-[#f5c58a]',
-  pending: 'bg-muted border-[#d9d5ec] border-dashed',
+  none: 'bg-card border-border-strong',
+  blocked: 'bg-attention-border border-attention-strong',
+  pending: 'bg-muted border-border-muted border-dashed',
 };
 const DAY_LABEL: Record<DayState, string> = {
   winner: 'daily star decided',

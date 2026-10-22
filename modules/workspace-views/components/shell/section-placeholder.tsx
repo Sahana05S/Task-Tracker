@@ -45,9 +45,9 @@ export function SectionPlaceholder({
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             This module is built in{' '}
-            <span className="font-medium text-slate-700">{phase}</span>.
+            <span className="font-medium text-foreground">{phase}</span>.
           </p>
         </CardContent>
       </Card>

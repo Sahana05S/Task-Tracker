@@ -68,7 +68,7 @@ export function CeremonyStage({ model, viewerId, notes = {}, commendations }: {
 
       {step === 0 ? (
         <section className="soft-card relative overflow-hidden px-6 py-10 text-center">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-135 from-primary-subtle via-white to-recognition-subtle" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-135 from-primary-subtle via-card to-recognition-subtle" />
           <div className="relative grid justify-items-center gap-3">
             <SparklesIcon className="text-recognition size-8" aria-hidden="true" />
             <h2 className="text-foreground text-xl font-bold tracking-tight">The awards are in</h2>

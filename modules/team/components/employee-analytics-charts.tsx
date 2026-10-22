@@ -325,7 +325,7 @@ function CountTooltip({ active, payload, unit }: TooltipProps<{ label: string; v
 
 function TooltipShell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-border shadow-soft-lg rounded-xl border bg-white px-3.5 py-2.5 text-xs">
+    <div className="border-border shadow-soft-lg rounded-xl border bg-card px-3.5 py-2.5 text-xs">
       <p className="text-foreground font-semibold">{title}</p>
       <dl className="text-muted-foreground mt-1.5 flex flex-col gap-0.5">{children}</dl>
     </div>

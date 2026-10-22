@@ -5,7 +5,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { REDUCED_MOTION_QUERY, useReducedMotion } from './use-reduced-motion';
 
 /** Violet (primary), gold (recognition) and mint (success) from DESIGN.md. */
-const COLOURS = ['#6355e6', '#f5a623', '#10b981'] as const;
+const COLOURS = ['var(--primary)', 'var(--recognition)', 'var(--success)'] as const;
 const COUNT = 36;
 const DURATION_MS = 3200;
 

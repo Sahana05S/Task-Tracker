@@ -93,7 +93,7 @@ export function AuthForm({
       <div
         role="tablist"
         aria-label="Authentication mode"
-        className="grid grid-cols-2 gap-1 rounded-md border border-slate-200 bg-slate-100 p-1"
+        className="grid grid-cols-2 gap-1 rounded-md border border-border bg-muted p-1"
       >
         {(['login', 'signup'] satisfies readonly AuthMode[]).map((value) => (
           <button
@@ -107,10 +107,10 @@ export function AuthForm({
             }}
             className={cn(
               'rounded-sm px-3 py-1.5 text-sm font-medium transition-colors',
-              'focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none',
+              'focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none',
               mode === value
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-500 hover:text-slate-700',
+                ? 'bg-card text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {value === 'login' ? 'Sign in' : 'Accept invitation'}
@@ -124,10 +124,10 @@ export function AuthForm({
         variant="outline"
         disabled={oauthLoading || pending}
         onClick={handleGoogleSignIn}
-        className="relative flex w-full items-center justify-center gap-2.5 border-slate-300 py-2.5 font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+        className="relative flex w-full items-center justify-center gap-2.5 border-input py-2.5 font-medium text-foreground hover:bg-muted hover:text-foreground"
       >
         {oauthLoading ? (
-          <LoaderCircleIcon className="size-4 animate-spin text-slate-500" />
+          <LoaderCircleIcon className="size-4 animate-spin text-muted-foreground" />
         ) : (
           <GoogleIcon className="size-4 shrink-0" />
         )}
@@ -138,8 +138,8 @@ export function AuthForm({
 
       {/* Divider */}
       <div className="relative flex items-center justify-center">
-        <div className="w-full border-t border-slate-200" />
-        <span className="shrink-0 bg-white px-3 text-xs font-medium whitespace-nowrap text-slate-400 uppercase tracking-wider">
+        <div className="w-full border-t border-border" />
+        <span className="shrink-0 bg-card px-3 text-xs font-medium whitespace-nowrap text-placeholder uppercase tracking-wider">
           or with email
         </span>
       </div>
@@ -196,7 +196,7 @@ export function AuthForm({
           />
           <Link
             href="/reset-password"
-            className="-mt-2 self-end rounded-sm text-xs text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:outline-none"
+            className="-mt-2 self-end rounded-sm text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
           >
             Forgot password?
           </Link>
@@ -217,7 +217,7 @@ export function AuthForm({
       ) : (
         /* Accept-invitation form: name, ID and role come from the invitation. */
         <form action={signupAction} className="flex flex-col gap-4">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             TaskPulse is invite-only. Use the email your managing director invited; your
             name, employee ID and role come from that invitation.
           </p>
@@ -256,7 +256,7 @@ export function AuthForm({
             )}
           </Button>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Not invited yet? Ask your managing director to invite your email first.
           </p>
         </form>
@@ -314,7 +314,7 @@ export function Field({ id, label, hint, invalid, ...props }: FieldProps) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
       </label>
       <Input
@@ -324,7 +324,7 @@ export function Field({ id, label, hint, invalid, ...props }: FieldProps) {
         {...props}
       />
       {hint ? (
-        <p id={hintId} className="text-xs text-slate-500">
+        <p id={hintId} className="text-xs text-muted-foreground">
           {hint}
         </p>
       ) : null}

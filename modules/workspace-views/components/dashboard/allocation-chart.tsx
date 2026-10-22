@@ -66,7 +66,7 @@ export function AllocationChart({
   ).length;
   const unavailable=members.some(member=>member.allocationPercent===null);
   const remainder=100-data.reduce((sum,member)=>sum+member.allocationPercent,0);
-  const ringData=!unavailable && remainder>0.000001 ? [...data,{fullName:'Inactive assigned share',allocationPercent:remainder,taskScale:0,taskCount:0,loadingDiff:null,criticalityScore:null,color:'#94a3b8'}] : data;
+  const ringData=!unavailable && remainder>0.000001 ? [...data,{fullName:'Inactive assigned share',allocationPercent:remainder,taskScale:0,taskCount:0,loadingDiff:null,criticalityScore:null,color:'var(--color-chart-8)'}] : data;
 
   if (data.length === 0 || unavailable) {
     return (
@@ -162,7 +162,7 @@ export function AllocationChart({
                   className={cn(
                     'py-1.5 text-right font-medium tabular',
                     datum.loadingDiff === null
-                      ? 'text-slate-400'
+                      ? 'text-placeholder'
                       : datum.loadingDiff >= 0
                         ? 'text-success-strong'
                         : 'text-danger',
@@ -217,30 +217,30 @@ function AllocationTooltip({
   if (!active || !datum) return null;
 
   return (
-    <div className="border-border rounded-xl border bg-white px-3.5 py-2.5 text-xs shadow-soft-lg">
+    <div className="border-border rounded-xl border bg-card px-3.5 py-2.5 text-xs shadow-soft-lg">
       <p className="text-foreground font-semibold">{datum.fullName}</p>
       <dl className="text-muted-foreground mt-1.5 flex flex-col gap-0.5">
         <div className="flex items-baseline justify-between gap-4">
           <dt>Allocation</dt>
-          <dd className="font-medium text-slate-900 tabular">
+          <dd className="font-medium text-foreground tabular">
             {formatNumeric(datum.allocationPercent)}%
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-4">
           <dt>Task scale</dt>
-          <dd className="font-medium text-slate-900 tabular">
+          <dd className="font-medium text-foreground tabular">
             {formatNumeric(datum.taskScale)}
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-4">
           <dt>Tasks carried</dt>
-          <dd className="font-medium text-slate-900 tabular">
+          <dd className="font-medium text-foreground tabular">
             {datum.taskCount}
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-4">
           <dt>Criticality</dt>
-          <dd className="font-medium text-slate-900 tabular">
+          <dd className="font-medium text-foreground tabular">
             {displayPerformance(datum.criticalityScore)}
           </dd>
         </div>

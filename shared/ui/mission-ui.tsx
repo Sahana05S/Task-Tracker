@@ -72,7 +72,7 @@ export function AvatarStack({
     <span className="flex min-w-0 items-center gap-2" title={names.join(', ')}>
       <span className="flex shrink-0 -space-x-2">
         {shown.map((name, index) => (
-          <InitialsAvatar key={`${name}-${index}`} name={name} className="ring-2 ring-white" />
+          <InitialsAvatar key={`${name}-${index}`} name={name} className="ring-2 ring-card" />
         ))}
       </span>
       <span className="text-muted-foreground truncate text-sm">
@@ -191,7 +191,7 @@ export function StatTile({
   return (
     <div className={cn('bg-muted/70 flex min-w-0 items-start gap-2.5 rounded-xl px-3 py-3 sm:gap-3 sm:px-3.5', className)}>
       {Icon ? (
-        <span aria-hidden="true" className="text-primary hidden size-8 shrink-0 items-center justify-center rounded-lg bg-white sm:flex">
+        <span aria-hidden="true" className="text-primary hidden size-8 shrink-0 items-center justify-center rounded-lg bg-card sm:flex">
           <Icon className="size-4" />
         </span>
       ) : null}

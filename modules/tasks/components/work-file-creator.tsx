@@ -65,7 +65,7 @@ export function WorkFileCreator({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-border hover:border-primary/40 text-foreground inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-medium transition-colors"
+                className="border-border hover:border-primary/40 text-foreground inline-flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm font-medium transition-colors"
               >
                 <Icon className="text-primary size-4" aria-hidden="true" />
                 New {label}

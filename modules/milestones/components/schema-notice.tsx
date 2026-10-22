@@ -31,11 +31,11 @@ export function SchemaNotice({ migration }: SchemaNoticeProps) {
 
       <p className="mt-1.5 max-w-2xl text-sm opacity-90">
         This page reads{' '}
-        <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
+        <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
           company_statements
         </code>{' '}
         and{' '}
-        <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
+        <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
           company_milestones
         </code>
         , and neither table exists in the connected Supabase project yet.
@@ -57,11 +57,11 @@ export function SchemaNotice({ migration }: SchemaNoticeProps) {
           </span>
           <span>
             Paste the whole of{' '}
-            <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
+            <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
               {migration}
             </code>{' '}
             and run it once. It is safe to re-run: the seed statements use{' '}
-            <code className="rounded border border-attention-border bg-white px-1 py-0.5 font-mono text-xs">
+            <code className="rounded border border-attention-border bg-card px-1 py-0.5 font-mono text-xs">
               ON CONFLICT DO NOTHING
             </code>{' '}
             and the milestones only seed into an empty table.

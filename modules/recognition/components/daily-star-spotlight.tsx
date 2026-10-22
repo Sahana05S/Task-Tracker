@@ -94,7 +94,7 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
 
   return (
     <section className={cn('soft-card relative overflow-hidden p-5 sm:p-6', celebrate && 'anim-glow')} aria-label="Daily star spotlight">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-135 from-[#dce5ff] via-[#eae4fc] to-[#fff3df] opacity-70" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-135 from-tier-diamond-subtle via-primary-subtle to-recognition-subtle opacity-70" />
       {celebrate && h ? <ConfettiBurst id={`${h.winnerId}.${h.date}`} /> : null}
       <div className="relative flex items-start gap-4">
         <div className="min-w-0 flex-1">
@@ -107,7 +107,7 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
               <InitialsAvatar
                 name={winnerName}
                
-                className={cn('size-12 text-base ring-[3px] ring-recognition ring-offset-2 ring-offset-[#f3f0fb]', celebrate && 'anim-pop')}
+                className={cn('size-12 text-base ring-[3px] ring-recognition ring-offset-2 ring-offset-card', celebrate && 'anim-pop')}
               />
             ) : null}
             <h2 className="text-foreground min-w-0 text-xl font-bold tracking-tight">{title}</h2>
@@ -119,7 +119,7 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
               Today&apos;s daily star is decided after {cutoffLabel(h.cutoff)} (Asia/Kolkata).
             </p>
           ) : null}
-          <Link href={profileHref} className="text-primary mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2 text-sm font-semibold shadow-(--shadow-card) hover:bg-white/80">
+          <Link href={profileHref} className="text-primary mt-4 inline-flex items-center gap-1.5 rounded-xl bg-card px-3.5 py-2 text-sm font-semibold shadow-(--shadow-card) hover:bg-card/80">
             View performance
             <ArrowRightIcon className="size-3.5" aria-hidden="true" />
           </Link>

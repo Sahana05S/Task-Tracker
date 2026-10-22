@@ -115,11 +115,11 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
         <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
           <div className="min-w-0 flex-1 basis-72">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
+              <span className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
                 <ClipboardCheckIcon className="size-3.5" aria-hidden="true" />
                 Checklist structure
               </span>
-              <span className="task-tag rounded-md bg-white px-2 py-0.5">{d.task.taskTag}</span>
+              <span className="task-tag rounded-md bg-card px-2 py-0.5">{d.task.taskTag}</span>
             </div>
             <h1 className="text-foreground mt-3 text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">
               {d.checklist?.title ?? 'Master checklist'}
@@ -130,7 +130,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
               <AvatarStack names={owners} />
             </div>
           </div>
-          <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-white/85 p-4 shadow-(--shadow-card) sm:w-72">
+          <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-card/85 p-4 shadow-(--shadow-card) sm:w-72">
             <div className="flex items-center gap-3">
               <span className="bg-recognition-subtle text-recognition-foreground flex size-10 shrink-0 items-center justify-center rounded-xl">
                 <GaugeIcon className="size-5" aria-hidden="true" />
@@ -143,7 +143,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
             <MissionProgress value={r.taskProgress} label="Activity rollup" className="h-1.5" />
           </div>
         </div>
-        <div className="mt-4 grid gap-1 rounded-xl bg-white/70 px-4 py-3 text-sm">
+        <div className="mt-4 grid gap-1 rounded-xl bg-card/70 px-4 py-3 text-sm">
           <h2 className="text-foreground font-semibold">Progress comes from: {ownerLabel}</h2>
           <p className="text-foreground">Activity: {percentage(r.taskProgress)}. Current task progress: {percentage(d.task.progressPercentage)}.</p>
           <p className="text-muted-foreground flex items-start gap-2 text-xs">
@@ -241,7 +241,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ task
           </MissionPanel>
 
           <section aria-label="Completion gates" className="border-primary/15 bg-primary-subtle/50 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border p-4 sm:p-5">
-            <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl', r.isComplete ? 'bg-success-subtle text-success-strong' : 'text-primary bg-white')}>
+            <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl', r.isComplete ? 'bg-success-subtle text-success-strong' : 'text-primary bg-card')}>
               {r.isComplete ? <CheckCircle2Icon className="size-5" aria-hidden="true" /> : <FlagIcon className="size-5" aria-hidden="true" />}
             </span>
             <p className="text-foreground min-w-0 flex-1 basis-60 text-sm font-medium">
