@@ -4,6 +4,7 @@ import {
   BookOpenIcon,
   CalendarCheckIcon,
   CalendarRangeIcon,
+  CircleHelpIcon,
   ClockIcon,
   CrownIcon,
   DollarSignIcon,
@@ -120,6 +121,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 export const MORE_ITEMS: readonly NavTab[] = [
   { label: 'Company', href: '/milestones', match: ['/milestones'], icon: TargetIcon },
   { label: 'Settings', href: '/settings', match: ['/settings'], icon: SettingsIcon },
+  { label: 'Guide', href: '/guide', match: ['/guide'], icon: CircleHelpIcon },
 ];
 
 function matches(pathname: string, prefix: string): boolean {
