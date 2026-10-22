@@ -850,6 +850,17 @@ export interface Database {
       recognition_points: { Args: { p_employee?: string | null }; Returns: Json };
       recognition_task_waypoints: { Args: { p_task_ids: string[] }; Returns: Json };
       recognition_waypoint_counts: { Args: { p_from: string; p_to: string; p_employee?: string | null }; Returns: Json };
+      /** Migration 56: policies and notifications; company-scoped and role-gated in the database. */
+      policy_period_facts: { Args: { p_from: string; p_to: string; p_employee?: string | null }; Returns: Json };
+      policy_due_work: { Args: { p_through?: string | null; p_limit?: number; p_policy?: string | null }; Returns: Json };
+      policy_command: { Args: { p_command: string; p_payload: Json; p_operation: string }; Returns: Json };
+      policy_list: { Args: Record<never, never>; Returns: Json };
+      policy_evaluations_read: { Args: { p_policy: string; p_period_key?: string | null }; Returns: Json };
+      policy_runs_read: { Args: { p_limit?: number }; Returns: Json };
+      policy_commendations: { Args: { p_from?: string | null; p_to?: string | null; p_employee?: string | null }; Returns: Json };
+      notifications_list: { Args: { p_limit?: number }; Returns: Json };
+      notifications_unread_count: { Args: Record<never, never>; Returns: number };
+      notifications_mark_read: { Args: { p_ids?: string[] | null }; Returns: number };
       people_command: { Args: { p_command: 'invite' | 'revoke' | 'update'; p_payload: Json }; Returns: Json };
       /** Migration 53: the caller's company settings (any active member; standing missions for managers). */
       company_settings: { Args: Record<never, never>; Returns: Json };
