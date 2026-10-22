@@ -8,6 +8,15 @@ module may import it (the boundary test enforces this).
   tabs, user menu, running-timer pill, workspace header and placeholders.
 - **Dashboard**: team stats, productivity and allocation charts, workbook
   dashboard, award summary, calculation details, data-status banner.
+  "Performance sub-scores" (`sub-scores-grid.tsx`) draws the ten engine factors
+  in engine order with `FactorDifferentialsChart` (difference from the team
+  median per member, zero line = median, signed six-decimal values printed,
+  an unavailable factor shows the engine's reasons); managers see the team, a
+  member sees only their own bars. `ProductivityChart` is a thin wrapper over
+  the same chart; `chart-shell.tsx` is the shared card. "Daily perf log"
+  (`daily-perf-log.tsx`) is collapsed and read only when asked for
+  (`?log=1` or `member`/`from`/`to` in the URL); it renders reports'
+  `getDailyPerfLog` grouped by day, with a CSV link to the export route.
 - **Today**: the member's day (focus missions, week summary, award snapshot,
   validated contributions).
 - **Timelines**: the task Gantt and task relations.

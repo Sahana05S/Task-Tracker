@@ -14,3 +14,14 @@ export {
 } from '@/modules/reports/internal/presentation/daily-report';
 export { calculationReasons, dataGaps, GAP_SENTENCE, plainReason, type DataGap } from '@/modules/reports/internal/presentation/plain-language';
 export type { MonthArchive, MonthHistory } from '@/modules/reports/internal/month/archive';
+export {
+  DAILY_PERF_STATUS_LABEL,
+  dailyPerfCsv,
+  dailyPerfFilter,
+  dailyPerfRows,
+  monthToDate,
+  seesTeamDetail,
+  type DailyPerfFilter,
+  type DailyPerfLog,
+  type DailyPerfRow,
+} from '@/modules/reports/internal/daily-perf-log';
