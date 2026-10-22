@@ -25,14 +25,14 @@ export function MeetingAgenda({ agenda, canEdit }: { agenda: string; canEdit: bo
   const heading = !NUMBERED.test(lines[0]) && lines[0].endsWith(':') ? lines[0].slice(0, -1) : null;
   const body = heading ? lines.slice(1) : lines;
   return (
-    <details open className="soft-card group p-5 sm:p-6" aria-label="Meeting agenda">
+    <details open className="soft-card group @container p-5 sm:p-6" aria-label="Meeting agenda">
       <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
         <ListOrderedIcon className="text-primary size-5 shrink-0" aria-hidden="true" />
         <h2 className="text-foreground text-base font-bold tracking-tight">{heading ?? 'Meeting agenda'}</h2>
         <span className="text-muted-foreground ml-auto text-xs group-open:hidden">Show</span>
         <span className="text-muted-foreground ml-auto hidden text-xs group-open:inline">Hide</span>
       </summary>
-      <ol className="mt-3 grid gap-1.5 text-sm sm:grid-cols-2 lg:grid-cols-4">
+      <ol className="mt-3 grid gap-1.5 text-sm @md:grid-cols-2 @3xl:grid-cols-4">
         {body.map((line, index) => {
           const match = NUMBERED.exec(line);
           return (
