@@ -261,7 +261,7 @@ function MissionTypesSection({ settings }: SectionProps) {
           {rows.map((row, index) => (
             <li key={row.code} className={cn(ROW, 'grid-cols-[3.5rem_minmax(0,1fr)] sm:grid-cols-[3.5rem_minmax(0,1fr)_auto_auto]', !row.active && 'opacity-60')}>
               <span className={CODE}>{row.code}</span>
-              <label className="min-w-0">
+              <label className="grid min-w-0">
                 <span className="sr-only">Name for {row.code}</span>
                 <input
                   value={row.label}
@@ -316,7 +316,7 @@ function MeetingTypesSection({ settings }: SectionProps) {
         <ul>
           {rows.map((row, index) => (
             <li key={row.id} className={cn(ROW, 'grid-cols-[5rem_minmax(0,1fr)] sm:grid-cols-[5rem_minmax(0,1fr)_auto_auto_auto]', !row.active && 'opacity-60')}>
-              <label>
+              <label className="grid">
                 <span className="sr-only">Prefix</span>
                 <input
                   value={row.prefix}
@@ -330,7 +330,7 @@ function MeetingTypesSection({ settings }: SectionProps) {
                   className="field font-mono uppercase"
                 />
               </label>
-              <label className="min-w-0">
+              <label className="grid min-w-0">
                 <span className="sr-only">Name</span>
                 <input value={row.name} onChange={(event) => update(index, { name: event.target.value })} maxLength={60} required placeholder="Daily…" autoComplete="off" className="field" />
               </label>
@@ -559,12 +559,12 @@ function HolidaysSection({ settings }: SectionProps) {
             <li key={row.key} className={cn(ROW, 'grid-cols-[minmax(0,11rem)_minmax(0,1fr)_auto]')}>
               <label className="flex items-center gap-2">
                 <span className="sr-only">Date</span>
-                <input type="date" value={row.date} onChange={(event) => update(index, { date: event.target.value })} required className="field" />
+                <input type="date" value={row.date} onChange={(event) => update(index, { date: event.target.value })} required className="field w-full" />
                 <span className="text-muted-foreground w-8 shrink-0 text-xs max-sm:hidden" aria-hidden="true">
                   {weekday(row.date)}
                 </span>
               </label>
-              <label className="min-w-0">
+              <label className="grid min-w-0">
                 <span className="sr-only">Holiday name</span>
                 <input value={row.name} onChange={(event) => update(index, { name: event.target.value })} maxLength={120} required placeholder="Diwali…" autoComplete="off" className="field" />
               </label>

@@ -71,7 +71,8 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
         />
       ) : (
         <section className="soft-card-clip" aria-label="Team members">
-          <div className="overflow-x-auto">
+          {/* relative: keeps sr-only text inside the scroll box (it escaped and widened the page) */}
+          <div className="relative overflow-x-auto">
             <table className="sheet-grid min-w-[70rem]">
               <thead>
                 <tr>
