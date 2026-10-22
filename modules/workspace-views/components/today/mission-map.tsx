@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, SparklesIcon, XIcon } from 'lucide-react';
+import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, LocateFixedIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, SparklesIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 import { missionDueLabel, type RoadmapMission } from '@/modules/tasks/client';
 import { checklistWorkHref, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistBranchRow, type ChecklistSection } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
-import { branchForRow, layoutMissionMap, mapCamera, type Camera, type MapEntity, type MapLevel, type MapNode, type RoadmapLocation } from '@/modules/workspace-views/client';
+import { branchForRow, layoutMissionMap, mapCamera, wheelZoomFactor, type Camera, type MapEntity, type MapLevel, type MapNode, type MapOrientation, type RoadmapLocation } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import styles from './mission-map.module.css';
@@ -33,12 +33,14 @@ function rowStep(row: Pick<ChecklistBranchRow, 'id' | 'title' | 'checklistId' | 
 }
 const isContainer = (row: ChecklistBranchRow) => row.isSubMission || row.childCount > 0 || ['Page', 'Group'].includes(row.nodeType);
 const pct = (value: number | null) => value === null ? 'Not started' : `${Math.round(value)}%`;
+const HINT_MS = 1800;
 
-export function MissionMap({ missions, today, initialLocation, onLocation }: {
+export function MissionMap({ missions, today, initialLocation, onLocation, orientation = 'vertical' }: {
   missions: RoadmapMission[];
   today: string;
   initialLocation: RoadmapLocation | null;
   onLocation: (location: RoadmapLocation | null) => void;
+  orientation?: MapOrientation;
 }) {
   const [path, setPath] = useState<Step[]>([]);
   const [leafId, setLeafId] = useState<string | null>(null);
@@ -47,6 +49,9 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
   // Null until the first aim; render then derives it so server HTML already shows the road.
   const [aimed, setCamera] = useState<Camera | null>(null);
   const [free, setFree] = useState(false);
+  const [recentre, setRecentre] = useState(0);
+  const [hint, setHint] = useState(false);
+  const [mod, setMod] = useState('Ctrl');
   const [size, setSize] = useState({ w: 800, h: 520 });
   const [dragging, setDragging] = useState(false);
   const [restoring, setRestoring] = useState(!!initialLocation);
@@ -57,6 +62,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
   const levelsRef = useRef(levels);
   const sequence = useRef<Record<string, number>>({});
   const drag = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null);
+  const hinted = useRef(false);
   levelsRef.current = levels;
 
   // Missions in the loaded batch, plus a deep-linked mission from a later batch.
@@ -130,27 +136,62 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
       if (branch?.hasMore) children.push({ id: `more:${step.id}`, title: 'More items', kind: 'more', progress: null, complete: false });
       return { parentId: step.id, children };
     });
-    return layoutMissionMap(entities, mapLevels);
-  }, [roots, path, levels]);
+    return layoutMissionMap(entities, mapLevels, orientation);
+  }, [roots, path, levels, orientation]);
 
   const last = path.at(-1);
-  const camera = aimed ?? mapCamera(layout, leafId ?? last?.id ?? null, size, !leafId && !!last);
   const focusId = leafId ?? last?.id ?? null;
-  const focusNode = layout.nodes.find(n => n.id === focusId);
-  // Navigation re-aims the camera; manual pan/zoom holds until the next navigation.
-  useEffect(() => { setFree(false); }, [focusId]);
+  const expanded = !leafId && !!last;
+  const camera = aimed ?? mapCamera(layout, focusId, size, expanded);
+  const focusShown = layout.nodes.some(n => n.id === focusId);
+  // The camera re-aims only when the focus, the layout direction or Re-centre changes. A resize keeps
+  // the centre point, and branches or "More items" loading in place never move it.
   useEffect(() => {
-    if (!free) setCamera(mapCamera(layout, focusId, size, !leafId && !!last));
-  }, [focusId, focusNode?.x, focusNode?.y, size.w, size.h, free, layout.nodes.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    const el = frame.current;
+    setFree(false);
+    setCamera(mapCamera(layout, focusId, el ? { w: el.clientWidth, h: el.clientHeight } : size, expanded));
+  }, [focusId, focusShown, orientation, recentre]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (/Mac|iPhone|iPad/.test(navigator.userAgent)) setMod('⌘');
     const el = frame.current;
     if (!el) return;
     const observer = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
     observer.observe(el);
-    const wheel = (e: WheelEvent) => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.11 : 0.9, e.clientX, e.clientY); };
+    // A plain wheel scrolls the page; Ctrl/Cmd + wheel and trackpad pinch (sent as ctrl + wheel) zoom.
+    let hintTimer: ReturnType<typeof setTimeout> | undefined;
+    const wheel = (e: WheelEvent) => {
+      const factor = wheelZoomFactor(e);
+      if (factor === null) {
+        if (!hinted.current) { hinted.current = true; setHint(true); hintTimer = setTimeout(() => setHint(false), HINT_MS); }
+        return;
+      }
+      e.preventDefault();
+      zoomAt(factor, e.clientX, e.clientY);
+    };
+    // One finger scrolls the page (touch-action in the CSS); two fingers pinch the map.
+    let pinch: number | null = null;
+    const spread = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const touchStart = (e: TouchEvent) => { pinch = e.touches.length === 2 ? spread(e.touches) : null; };
+    const touchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || !pinch) return;
+      e.preventDefault();
+      const next = spread(e.touches);
+      zoomAt(next / pinch, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2);
+      pinch = next;
+    };
+    const touchEnd = (e: TouchEvent) => { if (e.touches.length < 2) pinch = null; };
     el.addEventListener('wheel', wheel, { passive: false });
-    return () => { observer.disconnect(); el.removeEventListener('wheel', wheel); };
+    el.addEventListener('touchstart', touchStart, { passive: true });
+    el.addEventListener('touchmove', touchMove, { passive: false });
+    el.addEventListener('touchend', touchEnd);
+    el.addEventListener('touchcancel', touchEnd);
+    return () => {
+      observer.disconnect(); clearTimeout(hintTimer);
+      el.removeEventListener('wheel', wheel);
+      el.removeEventListener('touchstart', touchStart); el.removeEventListener('touchmove', touchMove);
+      el.removeEventListener('touchend', touchEnd); el.removeEventListener('touchcancel', touchEnd);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- zoomAt uses only refs and state setters
 
   function zoomAt(factor: number, clientX?: number, clientY?: number) {
@@ -233,7 +274,8 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
         </nav>
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Map controls">
           <Button size="sm" variant="outline" disabled={!last} onClick={back}><ArrowUpLeftIcon aria-hidden="true" />Back</Button>
-          <Button size="sm" variant="outline" onClick={() => { goTo([]); setFree(false); }}><HouseIcon aria-hidden="true" />Full map</Button>
+          <Button size="sm" variant="outline" onClick={() => { goTo([]); setRecentre(n => n + 1); }}><HouseIcon aria-hidden="true" />Full map</Button>
+          <Button size="sm" variant="outline" onClick={() => setRecentre(n => n + 1)}><LocateFixedIcon aria-hidden="true" />Re-centre</Button>
           <Button size="icon" variant="outline" className="size-8" aria-label="Zoom in" onClick={() => zoomAt(1.25)}><PlusIcon aria-hidden="true" /></Button>
           <Button size="icon" variant="outline" className="size-8" aria-label="Zoom out" onClick={() => zoomAt(0.8)}><MinusIcon aria-hidden="true" /></Button>
         </div>
@@ -251,10 +293,11 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
       {lastLevel?.error ? <p role="alert" className="text-danger mt-2 text-sm">{lastLevel.error} <button type="button" className="link font-semibold" onClick={() => last && fetchLevel(last)}><RotateCcwIcon className="inline size-3.5" aria-hidden="true" /> Retry branch</button></p> : null}
 
       <section ref={frame} aria-label="Mission map" aria-busy={restoring || !!lastLevel?.loading}
-        className={cn(styles.frame, 'mt-3', dragging && styles.dragging)}
+        className={cn(styles.frame, 'mt-3', orientation === 'horizontal' && styles.horizontal, dragging && styles.dragging)}
         onKeyDown={e => { if (e.key === 'Escape' && (last || leafId)) { e.preventDefault(); back(); } }}
         onPointerDown={e => {
-          if ((e.target as HTMLElement).closest('button,a,input,select,textarea') || e.button !== 0) return;
+          // Mouse and pen drag the map; a finger scrolls the page instead.
+          if (e.pointerType === 'touch' || (e.target as HTMLElement).closest('button,a,input,select,textarea') || e.button !== 0) return;
           drag.current = { x: e.clientX, y: e.clientY, cx: camera.x, cy: camera.y };
           setDragging(true); setFree(true); e.currentTarget.setPointerCapture(e.pointerId);
         }}
@@ -292,7 +335,9 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
               <span className={styles.sub}>{sub}</span>
             </button>;
           })}
-          {leaf && leafNode ? <div className={styles.card} style={{ left: leafNode.side < 0 ? leafNode.x - 126 - 250 : leafNode.x + 126, top: leafNode.y }}>
+          {leaf && leafNode ? <div className={cn(styles.card, orientation === 'horizontal' && (leafNode.side < 0 ? styles.above : styles.below))}
+            style={orientation === 'horizontal' ? { left: leafNode.x, top: leafNode.side < 0 ? leafNode.y - 50 : leafNode.y + 110 }
+              : { left: leafNode.side < 0 ? leafNode.x - 126 - 250 : leafNode.x + 126, top: leafNode.y }}>
             <div className="flex items-start justify-between gap-2"><p className="text-primary text-[10px] font-extrabold tracking-widest uppercase">{leaf.section ?? 'activity'} item</p>
               <button type="button" aria-label="Close item" onClick={() => setLeafId(null)} className="text-muted-foreground -mt-1 -mr-1 rounded p-1 hover:text-foreground"><XIcon className="size-4" aria-hidden="true" /></button></div>
             <h3 className="text-foreground mt-2 text-base leading-snug font-semibold break-words">{leaf.title}</h3>
@@ -305,7 +350,8 @@ export function MissionMap({ missions, today, initialLocation, onLocation }: {
         </div>
         <p className={cn(styles.float, styles.left)} aria-live="polite">{status}</p>
         <p className={cn(styles.float, styles.right)}>{free ? 'Manual' : last ? `Depth ${path.length}` : 'Overview'} · {Math.round(camera.z * 100)}%</p>
-        <p className={cn(styles.float, styles.bottom)}>Drag to pan · Scroll or ＋/－ to zoom · Select a node to open it · Esc goes back</p>
+        <p className={cn(styles.float, styles.bottom)}>Drag to pan · {mod} + scroll to zoom</p>
+        {hint ? <p className={styles.hint} role="status">Use {mod} + scroll to zoom</p> : null}
       </section>
     </div>
     {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-6">

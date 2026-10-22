@@ -7,7 +7,7 @@ import { MissionRoadmap } from '@/modules/workspace-views/components/today/missi
 import { getAssignedMissionBatch } from '@/modules/tasks';
 import { missionDueFilter } from '@/modules/tasks/client';
 import { kolkataDate } from '@/shared/time/kolkata';
-import { parseRoadmapLocation } from '@/modules/workspace-views/client';
+import { parseRoadmapLocation, roadmapLayout } from '@/modules/workspace-views/client';
 
 import {
   AnalyticsTeaser,
@@ -46,7 +46,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   return <MissionPage>
     <MissionPageHeader title="Today" description="A clear path through your work." />
     {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
-    <MissionRoadmap key={due} initial={initial} due={due} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} />
+    <MissionRoadmap key={due} initial={initial} due={due} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLayout={roadmapLayout(query.layout)} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>
       <TodayOverview profile={profile} />
     </Suspense>
