@@ -4,6 +4,8 @@ import { DatabaseIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
 import { CeremonyPublish } from '@/modules/recognition/components/ceremony-publish';
 import { CeremonyStage } from '@/modules/recognition/components/ceremony-stage';
 import { getCeremony, leaderboardPeriod } from '@/modules/recognition';
+import { addDays, getCeremonyCommendations } from '@/modules/policies';
+import { CommendationsAct } from '@/modules/policies/components/commendations-act';
 import { plainReason } from '@/modules/reports/client';
 import { settle } from '@/shared/async/settle';
 import { requireProfile } from '@/shared/session/profile';
@@ -35,7 +37,10 @@ export default async function AwardsPage({ searchParams }: { searchParams: Promi
   } catch (error) {
     monthError = error instanceof Error ? error.message : 'Choose a valid month.';
   }
-  const ceremony = await settle(() => getCeremony(profile, period));
+  const [ceremony, commendations] = await Promise.all([
+    settle(() => getCeremony(profile, period)),
+    settle(() => getCeremonyCommendations(period.startDate, addDays(period.endDate, 1))),
+  ]);
   const model = ceremony.status === 'ready' ? ceremony.data : null;
   const chip = !model ? undefined
     : model.status === 'official' ? `Official · revision ${model.publication!.revisionNumber}`
@@ -88,6 +93,7 @@ export default async function AwardsPage({ searchParams }: { searchParams: Promi
           <CeremonyStage
             model={model}
             viewerId={profile.id}
+            commendations={<CommendationsAct section={commendations} monthLabel={period.label} viewerId={profile.id} />}
             notes={Object.fromEntries(model.categories.filter((c) => c.status === 'unavailable' && c.reasons.length).map((c) => [c.category, plainReason(c.reasons[0])]))}
           />
           {model.canPublish ? <CeremonyPublish month={model.month} expectedRevision={model.expectedRevision} /> : null}

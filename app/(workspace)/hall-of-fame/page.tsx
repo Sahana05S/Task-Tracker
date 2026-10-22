@@ -3,6 +3,7 @@ import { DatabaseIcon, TriangleAlertIcon, TrophyIcon } from 'lucide-react';
 
 import { HallOfFameList, plural, PointsRing, TierBadge, TrophyCase } from '@/modules/recognition/components/hall-cards';
 import { BOARD_LABELS, getHallOfFame, getStreak } from '@/modules/recognition';
+import { getCommendationTotals } from '@/modules/policies';
 import { settle } from '@/shared/async/settle';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDate } from '@/shared/tracker/format';
@@ -20,7 +21,10 @@ const MONTH = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric',
  */
 export default async function HallOfFamePage() {
   const profile = await requireProfile();
-  const [read, streak] = await Promise.all([settle(() => getHallOfFame(profile.id)), settle(() => getStreak(profile.id))]);
+  // Commendation points are optional: without migration 56 the hall shows award points only.
+  const commendations = await settle(getCommendationTotals);
+  const policyPoints = commendations.status === 'ready' ? commendations.data : {};
+  const [read, streak] = await Promise.all([settle(() => getHallOfFame(profile.id, policyPoints)), settle(() => getStreak(profile.id))]);
   const hall = read.status === 'ready' ? read.data : null;
   const unavailable = read.status !== 'ready' ? 'error' : hall === null ? 'migration' : null;
   const me = hall?.viewer ?? null;
@@ -32,7 +36,7 @@ export default async function HallOfFamePage() {
         title="Hall of fame"
         chip={me ? `${me.points} points` : undefined}
         description={hall
-          ? `All time · daily star ${hall.policy.dailyStar}, category award ${hall.policy.categoryAward}, monthly star ${hall.policy.monthlyStar} points · recognition only, never part of a score`
+          ? `All time · daily star ${hall.policy.dailyStar}, category award ${hall.policy.categoryAward}, monthly star ${hall.policy.monthlyStar} points, plus each policy's commendation points · recognition only, never part of a score`
           : 'All-time recognition points'}
       />
 
@@ -62,6 +66,7 @@ export default async function HallOfFamePage() {
               <div><dt className="text-muted-foreground inline">Daily stars </dt><dd className="text-foreground inline font-semibold tabular-nums">{me.dailyStars}</dd></div>
               <div><dt className="text-muted-foreground inline">Category awards </dt><dd className="text-foreground inline font-semibold tabular-nums">{me.categoryAwards}</dd></div>
               <div><dt className="text-muted-foreground inline">Monthly stars </dt><dd className="text-foreground inline font-semibold tabular-nums">{me.monthlyStars}</dd></div>
+              <div><dt className="text-muted-foreground inline">Commendations </dt><dd className="text-foreground inline font-semibold tabular-nums">{me.commendations}</dd></div>
             </dl>
           </div>
         </section>
