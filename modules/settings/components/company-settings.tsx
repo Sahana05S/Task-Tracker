@@ -120,6 +120,13 @@ function SectionForm({
     null,
   );
   const saved = state?.success === true && !dirty;
+  // Leaving with an unsaved section asks first (the browser shows its own wording).
+  React.useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
   const errorId = `${section}-error`;
   return (
     <form
@@ -261,6 +268,7 @@ function MissionTypesSection({ settings }: SectionProps) {
                   onChange={(event) => update(index, { label: event.target.value })}
                   maxLength={60}
                   required
+                  autoComplete="off"
                   className="field"
                   placeholder={CATEGORY_LABELS[row.code]}
                 />
@@ -316,13 +324,15 @@ function MeetingTypesSection({ settings }: SectionProps) {
                   maxLength={6}
                   required
                   pattern="[A-Z][A-Z0-9]{0,5}"
-                  placeholder="DL"
+                  placeholder="DL…"
+                  autoComplete="off"
+                  spellCheck={false}
                   className="field font-mono uppercase"
                 />
               </label>
               <label className="min-w-0">
                 <span className="sr-only">Name</span>
-                <input value={row.name} onChange={(event) => update(index, { name: event.target.value })} maxLength={60} required placeholder="Daily" className="field" />
+                <input value={row.name} onChange={(event) => update(index, { name: event.target.value })} maxLength={60} required placeholder="Daily…" autoComplete="off" className="field" />
               </label>
               <span className="col-start-2 flex items-center justify-between gap-3 sm:col-start-auto sm:contents">
                 <InUse checked={row.active} label={row.name || row.prefix || 'meeting type'} onChange={(active) => update(index, { active })} />
@@ -441,7 +451,7 @@ function StandingMissionsSection({ settings, members }: SectionProps & { members
                 <div className="flex items-start gap-2">
                   <label className="field-label min-w-0 flex-1">
                     Title
-                    <input value={row.titlePattern} onChange={(event) => update(index, { titlePattern: event.target.value })} maxLength={200} required className="field" />
+                    <input value={row.titlePattern} onChange={(event) => update(index, { titlePattern: event.target.value })} maxLength={200} required autoComplete="off" placeholder="HRC Tasks - {month}…" className="field" />
                   </label>
                   <span className="mt-6 flex items-center gap-1">
                     <OrderButtons index={index} count={rows.length} label={label} onMove={(delta) => moveBy(index, delta)} />
@@ -556,7 +566,7 @@ function HolidaysSection({ settings }: SectionProps) {
               </label>
               <label className="min-w-0">
                 <span className="sr-only">Holiday name</span>
-                <input value={row.name} onChange={(event) => update(index, { name: event.target.value })} maxLength={120} required placeholder="Diwali" className="field" />
+                <input value={row.name} onChange={(event) => update(index, { name: event.target.value })} maxLength={120} required placeholder="Diwali…" autoComplete="off" className="field" />
               </label>
               <RemoveButton label={row.name || row.date || 'holiday'} onRemove={() => remove(index)} />
             </li>
