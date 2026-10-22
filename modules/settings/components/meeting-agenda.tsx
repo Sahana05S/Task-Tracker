@@ -44,7 +44,7 @@ export function MeetingAgenda({ agenda, canEdit }: { agenda: string; canEdit: bo
         })}
       </ol>
       {canEdit ? (
-        <Link href="/settings?tab=company#agenda" className="link mt-3 inline-block text-xs">
+        <Link href="/settings?tab=company#agenda" className="link mt-2 inline-flex min-h-10 items-center text-sm">
           Edit agenda
         </Link>
       ) : null}

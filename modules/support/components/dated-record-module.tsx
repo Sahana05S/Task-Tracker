@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { ContributionInputContext } from '../internal/input-context';
 import Link from 'next/link';
 import { writeDatedRecord } from '@/modules/records/actions';
@@ -57,7 +58,7 @@ export function DatedRecordModule({kind,entries,members,user,tasks=[],inputConte
       {e.assetUrl&&/^https?:\/\//.test(e.assetUrl)?<Link href={e.assetUrl} target="_blank" className="link justify-self-start text-sm">Open asset</Link>:e.assetUrl?<p>Retained asset reference needs URL review.</p>:null}
       {e.relatedTaskId?<p className="text-muted-foreground text-sm">Related task: {tasks.find(t=>t.id===e.relatedTaskId)?.tag??'Reference unavailable'}</p>:null}
       {kind==='sale'&&e.extras?<p className="text-muted-foreground text-sm">Built-up area: {e.extras.project_built_up_area??'Unspecified'}; new project: {e.extras.is_new_project?'Yes':'No'}; basement payment: {e.extras.basement_payment_received?'Yes':'No'}</p>:null}
-      {kind==='meeting'&&e.extras?<dl className="bg-muted/70 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 rounded-xl px-4 py-3 text-sm [&>dt]:text-muted-foreground [&>dd]:text-foreground"><dt>Meeting / point type</dt><dd>{e.extras.meeting_type} / {e.extras.point_type}</dd><dt>Owner</dt><dd>{names.get(String(e.extras.owner_id))??'Unassigned'}</dd><dt>Resolution</dt><dd>{e.extras.resolution_status??'Legacy status unknown'}: {e.extras.resolution}</dd><dt>Due / resolved</dt><dd>{e.extras.resolution_due??'Unspecified'} / {e.extras.resolved_on??'Unspecified'}</dd><dt>Comments</dt><dd>{e.extras.comments}</dd></dl>:null}
+      {kind==='meeting'&&e.extras?<MeetingFacts extras={e.extras} owner={names.get(String(e.extras.owner_id))}/>:null}
       {(admin&&e.validationState!=='withdrawn')||(!admin&&e.authorId===user.id&&e.validationState==='pending')?<details className="disclosure"><summary>Correct record</summary><DatedRecordEditor kind={kind} entry={e} members={members} user={user} tasks={tasks}/></details>:null}
       {admin&&e.validationState!=='withdrawn'&&canValidateSupportRecord(user,e.authorId)?<ExecutionForm action={writeDatedRecord} scope={`validate:${kind}:${e.id}`} className="border-border grid gap-2 border-t pt-3 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_auto] sm:items-end"><input type="hidden" name="kind" value={kind}/><input type="hidden" name="command" value="validate"/><input type="hidden" name="recordId" value={e.id}/><input type="hidden" name="expectedVersion" value={e.recordVersion??0}/><label className="field-label">Review decision<select name="state" defaultValue="validated" className="field"><option value="validated">Validated</option><option value="rejected">Rejected</option><option value="pending">Pending / revoke previous validation</option></select></label><input name="reason" required placeholder="Independent review reason" aria-label="Independent review reason" className="field"/><Button type="submit" size="sm">Save review</Button></ExecutionForm>:null}
       {(admin||e.authorId===user.id&&e.validationState==='pending')&&e.validationState!=='withdrawn'?<ExecutionForm action={writeDatedRecord} scope={`withdraw:${kind}:${e.id}`} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><input type="hidden" name="kind" value={kind}/><input type="hidden" name="command" value="withdraw"/><input type="hidden" name="recordId" value={e.id}/><input type="hidden" name="expectedVersion" value={e.recordVersion??0}/><input name="reason" required placeholder="Reason for retained withdrawal" aria-label="Reason for retained withdrawal" className="field"/><Button type="submit" size="sm" variant="destructive">Withdraw record</Button></ExecutionForm>:null}
@@ -65,4 +66,14 @@ export function DatedRecordModule({kind,entries,members,user,tasks=[],inputConte
       {e.authorId===user.id||admin?<Link href={`/records/${kind}/${e.id}/history`} className="link justify-self-start text-sm">View retained history</Link>:null}
     </article>)}
   </main></div>;
+}
+
+/** A meeting point's details; rows with nothing recorded are left out. */
+function MeetingFacts({extras,owner}:{extras:Record<string,string|boolean|null>;owner?:string}) {
+  const text=(key:string)=>{const v=extras[key];return typeof v==='string'&&v.trim()?v:null;};
+  const type=[text('meeting_type'),text('point_type')].filter(Boolean).join(' / ');
+  const resolution=[text('resolution_status'),text('resolution')].filter(Boolean).join(': ');
+  const dates=[text('resolution_due')&&`due ${text('resolution_due')}`,text('resolved_on')&&`resolved ${text('resolved_on')}`].filter(Boolean).join(', ');
+  const rows:[string,string|null][]=[['Meeting / point type',type||null],['Owner',owner??'Unassigned'],['Resolution',resolution||null],['Dates',dates||null],['Comments',text('comments')]];
+  return <dl className="bg-muted/70 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 rounded-xl px-4 py-3 text-sm [&>dt]:text-muted-foreground [&>dd]:text-foreground">{rows.filter(([,v])=>v).map(([k,v])=><React.Fragment key={k}><dt>{k}</dt><dd className="break-words">{v}</dd></React.Fragment>)}</dl>;
 }

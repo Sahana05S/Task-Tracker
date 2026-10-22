@@ -96,6 +96,7 @@ function SectionForm({
   version,
   payload,
   dirty,
+  onDiscard,
   children,
 }: {
   section: SettingsSection;
@@ -103,6 +104,8 @@ function SectionForm({
   version: number;
   payload: () => unknown;
   dirty: boolean;
+  /** Puts the section back to what was last saved. */
+  onDiscard: () => void;
   children: React.ReactNode;
 }) {
   const [state, action, pending] = React.useActionState(
@@ -149,6 +152,11 @@ function SectionForm({
           {pending ? <LoaderCircleIcon className="animate-spin" aria-hidden="true" /> : null}
           Save
         </Button>
+        {dirty && !pending ? (
+          <Button type="button" variant="ghost" onClick={onDiscard}>
+            Discard changes
+          </Button>
+        ) : null}
         <p role="status" className="text-muted-foreground text-xs">
           {pending ? 'Saving…' : dirty ? 'Unsaved changes' : saved ? (
             <span className="text-success-strong inline-flex items-center gap-1 font-medium">
@@ -173,15 +181,17 @@ function useDraft<T>(initial: T) {
   const loaded = React.useMemo(() => JSON.stringify(initial), [initial]);
   // A newer server copy (after a save or a reload) replaces the draft.
   React.useEffect(() => setDraft(JSON.parse(loaded) as T), [loaded]);
-  return [draft, setDraft, JSON.stringify(draft) !== loaded] as const;
+  const reset = () => setDraft(JSON.parse(loaded) as T);
+  return [draft, setDraft, JSON.stringify(draft) !== loaded, reset] as const;
 }
 
 /** A draft list with the row edits every section offers. */
 function useRows<T>(initial: T[]) {
-  const [rows, setRows, dirty] = useDraft(initial);
+  const [rows, setRows, dirty, reset] = useDraft(initial);
   return {
     rows,
     dirty,
+    reset,
     update: (index: number, patch: Partial<T>) => setRows((current) => current.map((row, i) => (i === index ? { ...row, ...patch } : row))),
     remove: (index: number) => setRows((current) => current.filter((_, i) => i !== index)),
     add: (row: T) => setRows((current) => [...current, row]),
@@ -247,7 +257,7 @@ function MissionTypesSection({ settings }: SectionProps) {
     () => buildCategoryCatalogue(settings.categoryOverrides).map(({ code, label, active }) => ({ code, label, active })),
     [settings.categoryOverrides],
   );
-  const { rows, dirty, update, moveBy } = useRows(initial);
+  const { rows, dirty, reset, update, moveBy } = useRows(initial);
   return (
     <MissionPanel
       id="mission-types"
@@ -256,7 +266,7 @@ function MissionTypesSection({ settings }: SectionProps) {
       subtitle="Rename, hide or reorder the thirteen types. Codes and tags never change; a hidden type stays on missions that already use it."
       className="scroll-mt-20"
     >
-      <SectionForm section="categories" version={settings.version} dirty={dirty} payload={() => ({ entries: rows })}>
+      <SectionForm section="categories" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => ({ entries: rows })}>
         <ul>
           {rows.map((row, index) => (
             <li key={row.code} className={cn(ROW, 'grid-cols-[3.5rem_minmax(0,1fr)] sm:grid-cols-[3.5rem_minmax(0,1fr)_auto_auto]', !row.active && 'opacity-60')}>
@@ -302,7 +312,7 @@ function MeetingTypesSection({ settings }: SectionProps) {
     () => settings.meetingTypes.map(({ id, prefix, name, active }) => ({ id, prefix, name, active })),
     [settings.meetingTypes],
   );
-  const { rows, dirty, update, remove, add, moveBy } = useRows(initial);
+  const { rows, dirty, reset, update, remove, add, moveBy } = useRows(initial);
   return (
     <MissionPanel
       id="meeting-types"
@@ -311,7 +321,7 @@ function MeetingTypesSection({ settings }: SectionProps) {
       subtitle="The choices for Meeting type on Meeting points. Points already saved keep their type even if you rename or hide it."
       className="scroll-mt-20"
     >
-      <SectionForm section="meeting_types" version={settings.version} dirty={dirty} payload={() => ({ types: rows })}>
+      <SectionForm section="meeting_types" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => ({ types: rows })}>
         {rows.length === 0 ? <p className="text-muted-foreground text-sm">No meeting types yet. Meeting points keep a free-text type until you add some.</p> : null}
         <ul>
           {rows.map((row, index) => (
@@ -353,7 +363,7 @@ function MeetingTypesSection({ settings }: SectionProps) {
 /* -------------------------------------------------------------------------- */
 
 function AgendaSection({ settings }: SectionProps) {
-  const [agenda, setAgenda, dirty] = useDraft(settings.meetingAgenda);
+  const [agenda, setAgenda, dirty, reset] = useDraft(settings.meetingAgenda);
   return (
     <MissionPanel
       id="agenda"
@@ -362,7 +372,7 @@ function AgendaSection({ settings }: SectionProps) {
       subtitle="Shown at the top of Meeting points for everyone. Number the steps (1. 2. 3.) to show them as a list."
       className="scroll-mt-20"
     >
-      <SectionForm section="agenda" version={settings.version} dirty={dirty} payload={() => ({ agenda })}>
+      <SectionForm section="agenda" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => ({ agenda })}>
         <div className="grid gap-4 lg:grid-cols-2">
           <label className="field-label">
             Agenda text
@@ -407,7 +417,7 @@ function StandingMissionsSection({ settings, members }: SectionProps & { members
       })),
     [settings.standingMissions],
   );
-  const { rows, dirty, update, remove, add, moveBy } = useRows(initial);
+  const { rows, dirty, reset, update, remove, add, moveBy } = useRows(initial);
   const labels = React.useMemo(() => categoryLabelMap(buildCategoryCatalogue(settings.categoryOverrides)), [settings.categoryOverrides]);
   const active = members.filter((member) => member.isActive);
   const sample = active[0]?.fullName ?? 'Member name';
@@ -437,7 +447,7 @@ function StandingMissionsSection({ settings, members }: SectionProps & { members
       subtitle="The missions every month starts with. Month setup offers this list; changing it never touches missions already created."
       className="scroll-mt-20"
     >
-      <SectionForm section="standing_missions" version={settings.version} dirty={dirty} payload={payload}>
+      <SectionForm section="standing_missions" version={settings.version} dirty={dirty} onDiscard={reset} payload={payload}>
         <p className="text-muted-foreground text-xs">
           Write <code className="font-mono">{'{month}'}</code> for the month and <code className="font-mono">{'{member}'}</code> for the owner&rsquo;s name.
         </p>
@@ -537,7 +547,7 @@ const WEEKDAY = new Intl.DateTimeFormat('en-IN', { weekday: 'short', timeZone: '
 
 function HolidaysSection({ settings }: SectionProps) {
   const initial = React.useMemo<HolidayRow[]>(() => settings.holidays.map((h) => ({ key: h.date, ...h })), [settings.holidays]);
-  const { rows, dirty, update, remove, add } = useRows(initial);
+  const { rows, dirty, reset, update, remove, add } = useRows(initial);
   const weekday = (date: string) => (ISO_DATE_PATTERN.test(date) ? WEEKDAY.format(new Date(`${date}T00:00:00Z`)) : '');
   return (
     <MissionPanel
@@ -551,6 +561,7 @@ function HolidaysSection({ settings }: SectionProps) {
         section="holidays"
         version={settings.version}
         dirty={dirty}
+        onDiscard={reset}
         payload={() => ({ holidays: rows.map(({ date, name }) => ({ date, name })) })}
       >
         {rows.length === 0 ? <p className="text-muted-foreground text-sm">No holidays yet. Until you save one, attendance always needs a status.</p> : null}
