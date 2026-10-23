@@ -13,6 +13,12 @@ goes under it. A section counts once it has a row; an empty section is N/A and
 does not block Done. Sub-missions, the Page/Group/Item choice, the section
 review step and the separate structure page are gone.
 
+Since migration 64 (user decision, 23 October 2026) every mission with a
+checklist takes its progress from Activity; the manual/Activity switch is gone
+and `mode` refuses to switch it off. Rows added after 100% lower progress at
+once. When a change cannot be credited yet (no scale, no anchor, legacy shares)
+progress still follows and the credit waits, anchor kept, until reconciled.
+
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
@@ -42,7 +48,8 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | Object | Defined in |
 |---|---|
 | `task_checklists`, `checklist_nodes` | `07_tracker_replacement_foundation.sql` (row details in 33-35; one kind of row in 63) |
-| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43 and 63 |
+| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43, 63 and 64 |
+| `checklist_follows_activity` trigger (`aa_m64_follow_activity`) | `64_progress_follows_activity.sql` (also patches `refresh_task_metrics`) |
 | `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63 |
 | `checklist_branch` | 41, patched in 63 (opens any non-linked row) |
 | `checklist_sections` | 18; kept for older readers, no longer read by the rollup (63) |

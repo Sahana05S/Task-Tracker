@@ -13,7 +13,6 @@ import { CHECKLIST_SECTIONS, type ChecklistRollup, type ChecklistSection } from 
 import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-types';
 import type { ChecklistItemTime } from '../internal/item-time';
 import { SECTION_TITLES, checklistIssues, pageResult, percentText } from '../internal/table';
-import { ChecklistSheetButton } from './checklist-sheet-button';
 import { SectionStateIcon } from './section-state-icon';
 import { ChecklistVersionField, ChecklistVersionProvider } from './checklist-state-control';
 import { ChecklistIssues, ChecklistTable } from './checklist-table';
@@ -54,7 +53,6 @@ export interface ChecklistWorkspaceProps {
   selectedItem?: string;
   /** Managers: where progress comes from, missions to link, and rows that still need a section. */
   managerTools?: {
-    activityDrivesProgress: boolean;
     linkChoices: readonly { id: string; taskTag: string; title: string }[];
     unmapped: readonly { id: string; title: string }[];
   };
@@ -208,7 +206,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
             </span>
             <div className="min-w-0">
               <p className="stat-figure">{percentText(activity) ?? 'Not started'}</p>
-              <p className="text-muted-foreground text-xs">Activity progress</p>
+              <p className="text-muted-foreground text-xs">Mission progress, from Activity</p>
             </div>
           </div>
           <MissionProgress value={activity} label="Activity progress" className="h-1.5" />
@@ -229,11 +227,6 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
             </a>
           );
         })}
-        {tools ? (
-          <div className="ml-auto">
-            <ProgressSource task={task} checklistId={checklist.id} rollup={rollup} enabled={tools.activityDrivesProgress} version={version} action={actions.checklist} />
-          </div>
-        ) : null}
       </div>
     </section>
   );
@@ -292,40 +285,6 @@ function Paging({ taskTag, address, cursor, nextCursor }: {
         </Button>
       ) : null}
     </nav>
-  );
-}
-
-/** Manager: whether Activity drives mission progress (the sheet's Home E6), with a preview. */
-function ProgressSource({ task, checklistId, rollup, enabled, version, action }: { task: Task; checklistId: string; rollup: ChecklistRollup; enabled: boolean; version: number; action: Command }) {
-  return (
-    <ChecklistSheetButton
-      label={enabled ? 'Progress: Activity' : 'Progress: manual'}
-      title="Where mission progress comes from"
-      description={`Activity is ${percentText(rollup.taskProgress) ?? 'not available yet'}. Switching changes current progress without changing earlier earnings.`}
-    >
-      <ExecutionForm action={action} scope={`mode:${checklistId}`}>
-        <input type="hidden" name="command" value="mode" />
-        <input type="hidden" name="checklist_id" value={checklistId} />
-        <input type="hidden" name="taskId" value={task.id} />
-        <ChecklistVersionField fallback={version} />
-        <input type="hidden" name="preview_progress" value={rollup.taskProgressDecimal ?? rollup.taskProgress ?? ''} />
-        <fieldset className="grid gap-2">
-          <legend className="text-foreground mb-1 text-sm font-medium">Mission progress comes from</legend>
-          <label className="border-border has-checked:border-primary has-checked:bg-primary-subtle/50 flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm">
-            <input type="radio" name="enabled" value="true" defaultChecked={enabled} className="accent-primary mt-0.5" />
-            <span><span className="font-semibold">The Activity rows.</span> <span className="text-muted-foreground">Progress follows the checklist.</span></span>
-          </label>
-          <label className="border-border has-checked:border-primary has-checked:bg-primary-subtle/50 flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm">
-            <input type="radio" name="enabled" value="false" defaultChecked={!enabled} className="accent-primary mt-0.5" />
-            <span><span className="font-semibold">Manual updates.</span> <span className="text-muted-foreground">The current progress is kept.</span></span>
-          </label>
-        </fieldset>
-        <Field id="progress-source-reason" label="Why?" hint="Kept with the checklist history." required>
-          <Input id="progress-source-reason" name="reason" required maxLength={1000} />
-        </Field>
-        <Button type="submit" className="justify-self-start">Save</Button>
-      </ExecutionForm>
-    </ChecklistSheetButton>
   );
 }
 

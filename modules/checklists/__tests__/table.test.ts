@@ -142,12 +142,13 @@ describe('checklist home', () => {
     expect(html).not.toContain('unsectioned:');
   });
 
-  it('gives managers the progress source and the rows that still need a section', () => {
+  it('gives managers the rows that still need a section, and no manual progress switch (64)', () => {
     const manager = renderToStaticMarkup(createElement(ChecklistWorkspace, props({
       manager: true,
-      managerTools: { activityDrivesProgress: false, linkChoices: [], unmapped: [{ id: 'old-1', title: 'Old row' }] },
+      managerTools: { linkChoices: [], unmapped: [{ id: 'old-1', title: 'Old row' }] },
     })));
-    expect(manager).toContain('Progress: manual');
+    expect(manager).not.toContain('Progress: manual');
+    expect(manager).toContain('Mission progress, from Activity');
     expect(manager).toContain('Rows without a section');
     expect(manager).toContain('name="node_id" value="old-1"');
     expect(manager).not.toContain('Structure and linked missions');
