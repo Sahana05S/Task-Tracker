@@ -37,7 +37,7 @@ const STATES: Record<string, CodeMeaning> = {
   complete: m('Complete', 'Everything that applies here is finished.'),
   incomplete: m('Incomplete', 'Some required parts are not finished or not available yet.'),
   partial: m('In progress', 'Some applicable items are done; others are still open.'),
-  not_applicable: m('Not applicable', 'Marked N/A, so it is left out of progress.'),
+  not_applicable: m('Not applicable', 'Marked N/A or has no rows, so it is left out of progress and does not block Done.'),
   uninitialized: m('Not confirmed yet', 'The section has not been set up for this mission yet.'),
   missing: m('Not set up', 'This section does not exist for the mission yet.'),
   invalid: m('Needs attention', 'Something here contradicts itself and needs a manager to fix it.'),

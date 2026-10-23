@@ -100,14 +100,10 @@ describe('tool operation hook: preview then commit', () => {
 
   it('builds the batch payload from the selection and the copy payload from one source', () => {
     const tasks = [makeTask({ id: 't1', taskTag: 'T1' }), makeTask({ id: 't2', taskTag: 'T2' })];
-    const section = new FormData();
-    section.set('section', 'closure');
-    section.set('intentionalEmpty', 'false');
-    section.set('reason', '  checked on site  ');
-    expect(buildPayload('section', tasks, section)).toEqual({
+    const archive = new FormData();
+    archive.set('reason', '  checked on site  ');
+    expect(buildPayload('archive', tasks, archive)).toEqual({
       taskIds: ['t1', 't2'],
-      section: 'closure',
-      intentionalEmpty: false,
       reason: 'checked on site',
     });
 
@@ -162,7 +158,7 @@ describe('bulk action bar', () => {
   });
 
   it('gives managers every batch action and the copy menu', () => {
-    expect(buttons(render(3, true))).toEqual(['Done', 'Reopen', 'Confirm section', 'Refresh', 'Archive', 'Copy…']);
+    expect(buttons(render(3, true))).toEqual(['Done', 'Reopen', 'Refresh', 'Archive', 'Copy…']);
   });
 
   it('gives members Done and Refresh only', () => {

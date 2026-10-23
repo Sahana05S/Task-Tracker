@@ -10,18 +10,11 @@ import type { TemplateNode } from '@/modules/tasks/internal/details-contract';
  */
 
 export type TemplateSection = TemplateNode['section'];
-export type TemplateNodeType = TemplateNode['node_type'];
 
 export const TEMPLATE_SECTIONS: readonly { key: TemplateSection; label: string }[] = [
   { key: 'setup', label: 'Setup' },
   { key: 'activity', label: 'Activity' },
   { key: 'closure', label: 'Closure' },
-];
-
-export const TEMPLATE_NODE_TYPES: readonly { key: TemplateNodeType; hint: string }[] = [
-  { key: 'Item', hint: 'one step to tick off' },
-  { key: 'Group', hint: 'a heading that holds items' },
-  { key: 'Page', hint: 'opens its own checklist table' },
 ];
 
 /** An editor row; `parent_key` is '' at the top of its section. */
@@ -53,7 +46,7 @@ export function addNode(nodes: readonly EditorNode[], section: TemplateSection):
 export function updateNode(
   nodes: readonly EditorNode[],
   key: string,
-  patch: Partial<Pick<EditorNode, 'title' | 'node_type' | 'parent_key'>>,
+  patch: Partial<Pick<EditorNode, 'title' | 'parent_key'>>,
 ): EditorNode[] {
   return nodes.map((node) => (node.key === key ? { ...node, ...patch } : node));
 }

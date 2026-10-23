@@ -19,8 +19,7 @@ export function parseChecklistLocation(query: Record<string, string | string[] |
   return { checklistId: uuid('checklist'), parentNodeId: uuid('parent'), section, cursor, limit: 30, item: uuid('item') };
 }
 
-export function openChecklistRow(row: ChecklistBranchRow): ChecklistBranchOptions {
-  return row.ownedChecklistId
-    ? { checklistId: row.ownedChecklistId, section: 'activity' }
-    : { checklistId: row.checklistId, parentNodeId: row.id, section: row.section ?? 'activity' };
+/** Opens the table of the rows under a row. */
+export function openChecklistRow(row: Pick<ChecklistBranchRow, 'id' | 'checklistId' | 'section'>): ChecklistBranchOptions {
+  return { checklistId: row.checklistId, parentNodeId: row.id, section: row.section ?? 'activity' };
 }

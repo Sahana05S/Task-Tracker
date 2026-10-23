@@ -6,7 +6,7 @@ import type { ChecklistNodeProgress, ChecklistSection, CompletionState, SectionP
  * tabs). Server-safe and client-safe; no data access.
  */
 
-export type ChecklistRowKind = 'item' | 'page' | 'submission' | 'linked' | 'parent-item';
+export type ChecklistRowKind = 'item' | 'parent' | 'linked';
 
 export const SECTION_TITLES: Record<ChecklistSection, { title: string; note: string }> = {
   setup: { title: 'Setup', note: 'Completion gate: done before the work starts' },
@@ -14,46 +14,26 @@ export const SECTION_TITLES: Record<ChecklistSection, { title: string; note: str
   closure: { title: 'Closure', note: 'Completion gate: done before the mission closes' },
 };
 
-export const ROW_KIND_LABELS: Record<ChecklistRowKind, string> = {
-  item: 'Item',
-  page: 'Page',
-  submission: 'Sub-mission',
-  linked: 'Linked',
-  'parent-item': 'Item',
-};
-
 /**
- * How a row behaves. Pages, Groups and Sub-missions open their own table; a
- * row linked to a real mission follows that mission; an Item that already has
- * sub-items (legacy structure) rolls up from them and has no state of its own.
+ * How a row behaves (migration 63: one kind of row). A row linked to a real
+ * mission follows that mission and stays a leaf; any other row with rows under
+ * it rolls up from them and opens their table; otherwise it is ticked.
  */
-export function rowKind(row: Pick<ChecklistBranchRow, 'isSubMission' | 'nodeType' | 'linkedTaskId' | 'childCount'>): ChecklistRowKind {
-  if (row.isSubMission) return 'submission';
-  if (row.nodeType === 'Page' || row.nodeType === 'Group') return 'page';
+export function rowKind(row: Pick<ChecklistBranchRow, 'nodeType' | 'linkedTaskId' | 'childCount'>): ChecklistRowKind {
   if (row.linkedTaskId || row.nodeType === 'Task') return 'linked';
-  if (row.childCount > 0) return 'parent-item';
+  if (row.childCount > 0) return 'parent';
   return 'item';
 }
 
 /** Rows that open a nested table through the bounded branch read. */
-export const opensTable = (kind: ChecklistRowKind) => kind === 'page' || kind === 'submission';
+export const opensTable = (kind: ChecklistRowKind) => kind === 'parent';
 
-/** Completion choices a row offers; containers offer none. */
+/** Completion choices a row offers; rows with rows under them offer none. */
 export function stateChoices(kind: ChecklistRowKind): readonly CompletionState[] {
   if (kind === 'item') return ['Yes', 'No', 'N/A'];
   // Completion follows the linked mission; the row can only be excluded or restored.
   if (kind === 'linked') return ['No', 'N/A'];
   return [];
-}
-
-/**
- * Templates and native initialisation create one root Page/Group per section
- * named after it ("Setup", "Activity", "Closure"). That page is the section
- * itself, so the home table lists its rows directly.
- */
-export function isSectionRoot(row: Pick<ChecklistBranchRow, 'parentNodeId' | 'nodeType' | 'title' | 'isSubMission'>, section: ChecklistSection): boolean {
-  return !row.parentNodeId && !row.isSubMission && (row.nodeType === 'Page' || row.nodeType === 'Group')
-    && row.title.trim().toLowerCase() === section;
 }
 
 /** OPEN / CLOSED / N/A for a page, as on the sheet's "[ChL]" tabs. */
@@ -66,8 +46,9 @@ export function pageResult(progress: Pick<ChecklistNodeProgress, 'applicable' | 
 export function sectionStatus(section: SectionProgress): { label: string; tone: 'done' | 'active' | 'idle' | 'alert' } {
   switch (section.state) {
     case 'complete': return { label: 'Gate satisfied', tone: 'done' };
-    case 'not_applicable': return section.isComplete ? { label: 'Confirmed empty', tone: 'done' } : { label: 'No applicable items', tone: 'idle' };
+    case 'not_applicable': return { label: 'No rows (N/A)', tone: 'done' };
     case 'partial': return { label: 'In progress', tone: 'active' };
+    // Older databases only (before migration 63).
     case 'uninitialized': return { label: 'Not confirmed yet', tone: 'idle' };
     case 'missing': return { label: 'Not set up', tone: 'idle' };
     case 'invalid': return { label: 'Needs attention', tone: 'alert' };
@@ -82,12 +63,18 @@ export function percentText(value: number | null | undefined): string | null {
 const ISSUES: Record<string, string> = {
   duplicate_node: 'A row appears twice in this checklist.',
   unsectioned: 'A row has no section yet; a manager must map it to Setup, Activity or Closure.',
-  missing_parent: 'A row points to a page that no longer exists.',
-  cross_section: 'A row sits under a page in a different section.',
-  cycle: 'Two pages contain each other.',
+  missing_parent: 'A row sits under a row that no longer exists.',
+  cross_section: 'A row sits under a row in a different section.',
+  missing_or_cross_parent: 'A row sits under a row that no longer exists or is in a different section.',
+  cycle: 'Two rows sit under each other.',
+  checklist_cycle: 'Two checklists contain each other.',
+  missing_node: 'A row was removed while the checklist was being read; reload the page.',
   linked_unavailable: 'A row linked to a mission cannot read that mission’s progress.',
-  linked_parent: 'A row linked to a mission also has rows inside it.',
+  linked_parent: 'A row linked to a mission also has rows under it.',
   linked_done_mismatch: 'A linked mission is Done but not at 100%.',
+  // Older databases only (before migration 63).
+  empty_group: 'A page has no rows yet; add rows or mark it N/A.',
+  empty_unconfirmed: 'A section was confirmed but has no rows.',
 };
 
 /** Rollup error codes ("unsectioned:<id>") as sentences, deduplicated. */

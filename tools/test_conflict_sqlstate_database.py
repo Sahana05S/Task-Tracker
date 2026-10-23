@@ -25,8 +25,8 @@ def count(db,code):return int(value(db,f"count(*) FROM {FUNCS} AND p.prosrc LIKE
 def stale_checklist_conflict(db):
     tid=new_task(db,'CONFLICT-'+uuid4().hex[:6])
     v=int(value(db,'lifecycle_version FROM public.tasks WHERE id='+literal(tid)))
-    q=('SELECT public.checklist_command('+literal(tid)+",'section',"+literal(json.dumps(
-        {'section':'setup','intentional_empty':True,'reason':'Stale version on purpose'}))+'::jsonb,'+str(v+5)+','+literal(uuid4())+');')
+    q=('SELECT public.checklist_command('+literal(tid)+",'add',"+literal(json.dumps(
+        {'title':'Stale version on purpose','section':'setup'}))+'::jsonb,'+str(v+5)+','+literal(uuid4())+');')
     r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
         input="BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);\n"+q+"\nCOMMIT;",
         text=True,capture_output=True,encoding='utf-8')

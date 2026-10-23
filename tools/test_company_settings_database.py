@@ -84,8 +84,10 @@ for db in DBS:
         assert value(db,"md5(pg_get_functiondef('public.dated_record_command(text,uuid,text,jsonb,bigint,uuid)'::regprocedure))")==dated_before
         assert counts(db)==before
         print('PASS',db,'a failed migration 53 rolls back completely (tables, functions, trigger, attendance command)')
-        sql(db,M53); migrate(db,[n for n in every if n!=53 and n not in HOSTED])
+        sql(db,M53); migrate(db,[n for n in every if n!=53 and n not in HOSTED and n<=62])
         assert counts(db)==before,'53 changes no existing rows'
+        # 63 dissolves the section groups old native initialisation created (audited), so it runs after the check.
+        migrate(db,[n for n in every if n>62])
         assert value(db,f"task_tag FROM public.tasks WHERE id='{typed}'")=='TT-000042','existing TT- tags stay valid'
         print('PASS',db,'upgrade 01-52+54+57 -> +53 keeps every existing row and TT- tag')
     else:

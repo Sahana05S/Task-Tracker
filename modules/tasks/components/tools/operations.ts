@@ -51,13 +51,6 @@ export const BATCH_OPERATIONS = family('batch', [
     reasonRequired: true,
   },
   {
-    command: 'section',
-    label: 'Confirm section',
-    title: 'Confirm a checklist section',
-    summary: 'Confirms Setup, Activity or Closure on each mission. Leaf work is kept.',
-    reasonRequired: true,
-  },
-  {
     command: 'refresh',
     label: 'Refresh',
     title: 'Refresh metrics',

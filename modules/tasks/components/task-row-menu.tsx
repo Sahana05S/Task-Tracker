@@ -5,7 +5,6 @@ import {
   CheckCircle2Icon,
   CopyIcon,
   InfoIcon,
-  ListChecksIcon,
   PencilIcon,
   RefreshCwIcon,
   RotateCcwIcon,
@@ -82,12 +81,6 @@ export function TaskRowMenuItems({
             <RefreshCwIcon aria-hidden="true" />
             Refresh metrics…
           </DropdownMenuItem>
-          {manage ? (
-            <DropdownMenuItem onSelect={() => onRun('section')}>
-              <ListChecksIcon aria-hidden="true" />
-              Confirm section…
-            </DropdownMenuItem>
-          ) : null}
         </>
       ) : null}
 

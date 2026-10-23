@@ -9,20 +9,18 @@ const read = (form: FormData, key: string) => String(form.get(key) ?? '').trim()
 /** The form fields each checklist command sends to `checklist_command`. */
 const COMMAND_FIELDS: Record<string, string[]> = {
   create: ['title'],
-  add: ['title', 'description', 'section', 'parent_id', 'linked_task_id', 'node_type'],
-  submission: ['title', 'description', 'section', 'parent_id'],
+  add: ['title', 'description', 'section', 'parent_id'],
   state: ['node_id', 'state'],
   edit: ['node_id', 'title', 'section', 'parent_id', 'linked_task_id', 'node_type', 'reason'],
   map: ['node_id', 'section', 'reason'],
   delete: ['node_id', 'reason'],
   duplicate: ['node_id'],
-  section: ['section', 'intentional_empty', 'reason'],
   mode: ['enabled', 'reason', 'preview_progress'],
 };
 
 /** Converts one field to its payload value: booleans, an optional preview, or text/null. */
 function fieldValue(key: string, value: string): Json {
-  if (key === 'enabled' || key === 'intentional_empty') return value === 'true';
+  if (key === 'enabled') return value === 'true';
   if (key === 'preview_progress') return value || null;
   return value || null;
 }
@@ -48,7 +46,7 @@ export function parseChecklistCommand(form: FormData): Parsed<ChecklistCommandIn
   // an edit without them keeps the stored links and estimate.
   if (form.has('checklist_id')) payload.checklist_id = fieldValue('checklist_id', read(form, 'checklist_id'));
   const editsRow = command === 'add' || command === 'edit';
-  if ((editsRow || command === 'submission') && form.has('priority')) {
+  if (editsRow && form.has('priority')) {
     const priority = read(form, 'priority');
     if (!/^[0-3]$/.test(priority)) return { ok: false, error: 'Choose a priority from 0 to 3.' };
     payload.priority = Number(priority);

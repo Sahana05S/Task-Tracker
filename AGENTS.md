@@ -23,6 +23,22 @@ change). The refactor is complete on `refactor/base` (not yet merged into
   gitignored (18 October 2026, user request). Read and update them locally; they
   are not in the repository. Test fixtures live in `__tests__/fixtures/`.
 
+## Checklist: one kind of row - 23 October 2026
+
+The user found the master checklist confusing and approved going back to the
+sheet's model (DECISIONS "Checklist one kind of row"): every row is ticked
+Yes/No/N/A, and any row not linked to a mission can have rows added under it;
+such a row takes the equal average of its rows and its own tick is cleared.
+There is no Item/Page/Sub-mission choice, no section review (a section counts
+once it has a row; an empty one is N/A and does not block Done) and no separate
+structure page (`/checklist/manage` redirects). Linked missions stay, managers
+only, from the row menu; rows can move under another row in the same section.
+Migration 63 (`63_checklist_one_row_kind.sql`) folds existing Sub-missions in
+(Activity rows under the row, Setup/Closure rows into the mission's own
+Setup/Closure) without changing any valid mission's Activity progress. Tests:
+`tools/test_m63_checklist_rows_database.py`, `__tests__/fixtures/checklist-rollups.json`.
+The demo apply of 63 needs its own go-ahead.
+
 ## M17 sales factor mapping - 20 October 2026
 
 The user defined the workbook's sales inputs (DECISIONS "D05 sales mapping

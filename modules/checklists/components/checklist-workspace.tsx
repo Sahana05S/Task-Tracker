@@ -8,7 +8,6 @@ import { Input } from '@/shared/ui/input';
 import { AvatarStack, MissionPage, MissionProgress } from '@/shared/ui/mission-ui';
 import { Breadcrumb, type BreadcrumbItem } from '@/shared/ui/page-nav';
 import { cn } from '@/shared/utils';
-import { checklistHref } from '../internal/pages';
 import { checklistWorkHref } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistRollup, type ChecklistSection } from '../internal/progress';
 import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-types';
@@ -25,12 +24,8 @@ type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 export interface ChecklistHomeSection {
   section: ChecklistSection;
   rows: ChecklistBranchRow[];
-  /** The section's own root page when templates created one; new rows go inside it. */
-  addParentId: string | null;
   cursor: number;
   nextCursor: number | null;
-  /** Set when a section-root page has more rows than the home shows. */
-  moreHref: string | null;
 }
 
 export interface ChecklistPageView {
@@ -44,7 +39,7 @@ export interface ChecklistPageView {
 export interface ChecklistWorkspaceProps {
   task: Task;
   ownerNames: readonly string[];
-  checklist: { id: string; ownerNodeId: string | null; title: string } | null;
+  checklist: { id: string; title: string } | null;
   ancestors: readonly ChecklistAncestor[];
   rollup: ChecklistRollup;
   version: number;
@@ -57,23 +52,32 @@ export interface ChecklistWorkspaceProps {
   canTime: boolean;
   time?: ChecklistItemTime;
   selectedItem?: string;
+  /** Managers: where progress comes from, missions to link, and rows that still need a section. */
+  managerTools?: {
+    activityDrivesProgress: boolean;
+    linkChoices: readonly { id: string; taskTag: string; title: string }[];
+    unmapped: readonly { id: string; title: string }[];
+  };
   actions: { checklist: Command; start: Command; stop: Command; discard: Command };
 }
 
 const PAGE_SIZE = 50;
 
-
 function ancestorHref(taskTag: string, ancestor: ChecklistAncestor, section: ChecklistSection) {
-  return checklistWorkHref(taskTag, ancestor.ownedChecklistId
-    ? { checklistId: ancestor.ownedChecklistId, section: 'activity' }
-    : { checklistId: ancestor.checklistId, parentNodeId: ancestor.nodeId, section });
+  return checklistWorkHref(taskTag, { checklistId: ancestor.checklistId, parentNodeId: ancestor.nodeId, section });
+}
+
+/** Move choices for rows of one table: the level above, then the other rows here. */
+function moveTargets(rows: readonly ChecklistBranchRow[], up: { id: string | null; title: string } | null) {
+  return [...(up ? [up] : []), ...rows.filter(row => !row.linkedTaskId && row.nodeType !== 'Task').map(row => ({ id: row.id, title: row.title }))];
 }
 
 /**
  * The master checklist (the sheet's Checklist Home and "[ChL]" tabs). The
- * home shows Setup, Activity and Closure as three tables; a Page opens its own
- * table with a breadcrumb back. Every figure is the authoritative branch
- * rollup; Activity drives progress and Setup / Closure are completion gates.
+ * home shows Setup, Activity and Closure as three tables; any row with rows
+ * under it opens their table with a breadcrumb back. Every figure is the
+ * authoritative branch rollup; Activity drives progress and Setup / Closure
+ * are completion gates.
  */
 export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const { task, checklist, ancestors, rollup, version, manager, executor } = props;
@@ -85,13 +89,11 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   // On a page the last ancestor is the page itself.
   const trail = props.page ? ancestors.slice(0, -1) : ancestors;
   const current = props.page ? ancestors.at(-1) : undefined;
-  // A page goes back to the page or checklist that holds it; a Sub-mission
-  // checklist (whose last ancestor is its own row) to the checklist above it.
+  // A row's table goes back to the table that holds it.
   const backHref = props.page
     ? (trail.length ? ancestorHref(task.taskTag, trail[trail.length - 1], section) : homeHref)
-    : ancestors.length > 1 ? ancestorHref(task.taskTag, ancestors[ancestors.length - 2], 'activity')
-      : ancestors.length === 1 ? homeHref : missionHref;
-  const structureHref = manager && !checklist?.ownerNodeId ? checklistHref(task.taskTag) : undefined;
+    : missionHref;
+  const tools = manager && open ? props.managerTools : undefined;
   const crumbs: BreadcrumbItem[] = [
     { label: task.taskTag, href: missionHref, tag: true },
     { label: 'Master checklist', href: homeHref },
@@ -101,6 +103,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       hideOnPhone: index < ancestors.length - 2 })),
   ];
   const tableActions = { checklist: props.actions.checklist, start: props.actions.start, stop: props.actions.stop, discard: props.actions.discard };
+  const shared = { manager, linkChoices: tools?.linkChoices ?? [] };
   const issues = checklistIssues(rollup.errors);
 
   return (
@@ -109,12 +112,15 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
         <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
 
         {checklist && props.sections ? (
-          <HomeHero {...props} checklist={checklist} structureHref={structureHref} />
+          <HomeHero {...props} checklist={checklist} tools={tools} />
         ) : checklist && props.page ? (
           <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} />
         ) : null}
 
         <ChecklistIssues issues={issues} />
+        {checklist && tools?.unmapped.length ? (
+          <NeedsMapping task={task} checklistId={checklist.id} rows={tools.unmapped} version={version} action={props.actions.checklist} />
+        ) : null}
 
         {!checklist ? (
           <NoChecklist task={task} version={version} canCreate={canEdit} action={props.actions.checklist} />
@@ -134,26 +140,24 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 version={version}
                 checklistId={checklist.id}
                 section={home.section}
-                addParentId={home.addParentId}
+                addParentId={null}
                 canEdit={canEdit}
                 open={open}
                 canTime={props.canTime}
                 time={props.time}
                 actions={tableActions}
                 selectedItem={props.selectedItem}
-                structureHref={structureHref}
-                emptyText={`No ${meta.title.toLowerCase()} rows yet.`}
-                headerAction={manager && open ? (
-                  <SectionReview task={task} checklistId={checklist.id} section={home.section} version={version} action={props.actions.checklist} />
-                ) : null}
-                footer={<Paging taskTag={task.taskTag} address={address} cursor={home.cursor} nextCursor={home.nextCursor} moreHref={home.moreHref} />}
+                {...shared}
+                moveTargets={moveTargets(home.rows, null)}
+                emptyText={`No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
+                footer={<Paging taskTag={task.taskTag} address={address} cursor={home.cursor} nextCursor={home.nextCursor} />}
               />
             );
           })
         ) : props.page ? (
           <ChecklistTable
             id="rows"
-            title="Rows on this page"
+            title={`Rows under ${current?.title ?? 'this row'}`}
             note={`${SECTION_TITLES[props.page.section].title} section`}
             rows={props.page.rows}
             task={task}
@@ -167,21 +171,20 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             time={props.time}
             actions={tableActions}
             selectedItem={props.selectedItem}
-            structureHref={structureHref}
-            emptyText="This page has no rows yet."
-            footer={<Paging taskTag={task.taskTag} address={{ checklistId: checklist.id, parentNodeId: props.page.nodeId, section: props.page.section }} cursor={props.page.cursor} nextCursor={props.page.nextCursor} moreHref={null} />}
+            {...shared}
+            moveTargets={moveTargets(props.page.rows, trail.length
+              ? { id: trail[trail.length - 1].nodeId, title: `Up one level (under ${trail[trail.length - 1].title})` }
+              : { id: null, title: `Up one level (top of ${SECTION_TITLES[props.page.section].title})` })}
+            emptyText="No rows under this one yet. Once you add one, its progress comes from the rows under it."
+            footer={<Paging taskTag={task.taskTag} address={{ checklistId: checklist.id, parentNodeId: props.page.nodeId, section: props.page.section }} cursor={props.page.cursor} nextCursor={props.page.nextCursor} />}
           />
-        ) : null}
-
-        {checklist?.ownerNodeId ? (
-          <p className="text-muted-foreground text-sm">Sub-mission owners and deadline follow the mission. Time logged here counts on the mission.</p>
         ) : null}
       </MissionPage>
     </ChecklistVersionProvider>
   );
 }
 
-function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; structureHref?: string }) {
+function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools'] }) {
   const activity = rollup.taskProgress;
   return (
     <section aria-label="Checklist summary" className="hero-card p-5 sm:p-6">
@@ -189,7 +192,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
         <div className="min-w-0 flex-1 basis-72">
           <p className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold">
             <ClipboardCheckIcon className="size-3.5" aria-hidden="true" />
-            {checklist.ownerNodeId ? 'Sub-mission checklist' : 'Master checklist'}
+            Master checklist
           </p>
           <h1 className="text-foreground mt-3 text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">{checklist.title}</h1>
           <p className="text-muted-foreground mt-1 text-sm break-words">{task.title}</p>
@@ -210,7 +213,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
           </div>
           <MissionProgress value={activity} label="Activity progress" className="h-1.5" />
           <p className="text-muted-foreground text-xs">
-            {rollup.isComplete ? 'All three sections are complete. Reviewers approve before Done.' : 'Done waits until Setup, Activity and Closure are complete.'}
+            {rollup.isComplete ? 'Every row is complete or N/A. Reviewers approve before Done.' : 'Done waits until every row is complete or N/A.'}
           </p>
         </div>
       </div>
@@ -226,10 +229,10 @@ function HomeHero({ task, ownerNames, checklist, rollup, structureHref }: Checkl
             </a>
           );
         })}
-        {structureHref ? (
-          <Button asChild variant="outline" size="sm" className="ml-auto bg-card/80">
-            <Link href={structureHref}>Structure and linked missions</Link>
-          </Button>
+        {tools ? (
+          <div className="ml-auto">
+            <ProgressSource task={task} checklistId={checklist.id} rollup={rollup} enabled={tools.activityDrivesProgress} version={version} action={actions.checklist} />
+          </div>
         ) : null}
       </div>
     </section>
@@ -247,7 +250,7 @@ function PageHero({ rollup, page, title, parentTitle }: { rollup: ChecklistRollu
         <div className="min-w-0 flex-1 basis-72">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold">
-              <FileStackIcon className="size-3.5" aria-hidden="true" />Checklist page
+              <FileStackIcon className="size-3.5" aria-hidden="true" />Checklist row
             </p>
             <span className="badge-soft badge-neutral">{SECTION_TITLES[page.section].title}</span>
           </div>
@@ -269,14 +272,13 @@ function PageHero({ rollup, page, title, parentTitle }: { rollup: ChecklistRollu
   );
 }
 
-function Paging({ taskTag, address, cursor, nextCursor, moreHref }: {
+function Paging({ taskTag, address, cursor, nextCursor }: {
   taskTag: string;
   address: { checklistId: string; parentNodeId?: string; section: ChecklistSection };
   cursor: number;
   nextCursor: number | null;
-  moreHref: string | null;
 }) {
-  if (!cursor && nextCursor === null && !moreHref) return null;
+  if (!cursor && nextCursor === null) return null;
   return (
     <nav aria-label="More rows" className="border-border flex flex-wrap gap-2 border-t px-4 py-3 sm:px-5">
       {cursor > 0 ? (
@@ -289,46 +291,80 @@ function Paging({ taskTag, address, cursor, nextCursor, moreHref }: {
           <Link href={`${checklistWorkHref(taskTag, { ...address, cursor: nextCursor })}#${address.parentNodeId ? 'rows' : address.section}`}>Next rows</Link>
         </Button>
       ) : null}
-      {moreHref ? (
-        <Button asChild variant="outline" size="sm">
-          <Link href={moreHref}>Show every row</Link>
-        </Button>
-      ) : null}
     </nav>
   );
 }
 
-function SectionReview({ task, checklistId, section, version, action }: { task: Task; checklistId: string; section: ChecklistSection; version: number; action: Command }) {
-  const title = SECTION_TITLES[section].title;
+/** Manager: whether Activity drives mission progress (the sheet's Home E6), with a preview. */
+function ProgressSource({ task, checklistId, rollup, enabled, version, action }: { task: Task; checklistId: string; rollup: ChecklistRollup; enabled: boolean; version: number; action: Command }) {
   return (
     <ChecklistSheetButton
-      label="Review"
-      title={`Review ${title}`}
-      description={`Confirm the ${title} section so it can count towards Done.`}
+      label={enabled ? 'Progress: Activity' : 'Progress: manual'}
+      title="Where mission progress comes from"
+      description={`Activity is ${percentText(rollup.taskProgress) ?? 'not available yet'}. Switching changes current progress without changing earlier earnings.`}
     >
-      <ExecutionForm action={action} scope={`section:${checklistId}:${section}`}>
-        <input type="hidden" name="command" value="section" />
+      <ExecutionForm action={action} scope={`mode:${checklistId}`}>
+        <input type="hidden" name="command" value="mode" />
         <input type="hidden" name="checklist_id" value={checklistId} />
         <input type="hidden" name="taskId" value={task.id} />
         <ChecklistVersionField fallback={version} />
-        <input type="hidden" name="section" value={section} />
+        <input type="hidden" name="preview_progress" value={rollup.taskProgressDecimal ?? rollup.taskProgress ?? ''} />
         <fieldset className="grid gap-2">
-          <legend className="text-foreground mb-1 text-sm font-medium">What is true for this section?</legend>
+          <legend className="text-foreground mb-1 text-sm font-medium">Mission progress comes from</legend>
           <label className="border-border has-checked:border-primary has-checked:bg-primary-subtle/50 flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm">
-            <input type="radio" name="intentional_empty" value="false" defaultChecked className="accent-primary mt-0.5" />
-            <span><span className="font-semibold">The work is set up.</span> <span className="text-muted-foreground">Its rows are the work to complete.</span></span>
+            <input type="radio" name="enabled" value="true" defaultChecked={enabled} className="accent-primary mt-0.5" />
+            <span><span className="font-semibold">The Activity rows.</span> <span className="text-muted-foreground">Progress follows the checklist.</span></span>
           </label>
           <label className="border-border has-checked:border-primary has-checked:bg-primary-subtle/50 flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm">
-            <input type="radio" name="intentional_empty" value="true" className="accent-primary mt-0.5" />
-            <span><span className="font-semibold">Nothing is needed here.</span> <span className="text-muted-foreground">Only allowed when the section has no rows to complete.</span></span>
+            <input type="radio" name="enabled" value="false" defaultChecked={!enabled} className="accent-primary mt-0.5" />
+            <span><span className="font-semibold">Manual updates.</span> <span className="text-muted-foreground">The current progress is kept.</span></span>
           </label>
         </fieldset>
-        <Field id={`review-${section}-reason`} label="Why?" hint="Kept with the checklist history." required>
-          <Input id={`review-${section}-reason`} name="reason" required maxLength={1000} />
+        <Field id="progress-source-reason" label="Why?" hint="Kept with the checklist history." required>
+          <Input id="progress-source-reason" name="reason" required maxLength={1000} />
         </Field>
-        <Button type="submit" className="justify-self-start">Confirm {title}</Button>
+        <Button type="submit" className="justify-self-start">Save</Button>
       </ExecutionForm>
     </ChecklistSheetButton>
+  );
+}
+
+/** Manager: top-level rows from older checklists that have no section yet. */
+function NeedsMapping({ task, checklistId, rows, version, action }: { task: Task; checklistId: string; rows: readonly { id: string; title: string }[]; version: number; action: Command }) {
+  return (
+    <section aria-labelledby="needs-mapping-heading" className="soft-card grid gap-3 p-4 sm:p-5">
+      <div>
+        <h2 id="needs-mapping-heading" className="text-foreground text-base font-bold tracking-tight">Rows without a section</h2>
+        <p className="text-muted-foreground text-sm">These rows came from an older checklist. Choose Setup, Activity or Closure for each; the rows under it follow.</p>
+      </div>
+      <ul className="grid gap-3">
+        {rows.map(row => (
+          <li key={row.id}>
+            <ExecutionForm action={action} scope={`map:${row.id}`}>
+              <input type="hidden" name="command" value="map" />
+              <input type="hidden" name="checklist_id" value={checklistId} />
+              <input type="hidden" name="taskId" value={task.id} />
+              <input type="hidden" name="node_id" value={row.id} />
+              <ChecklistVersionField fallback={version} />
+              <div className="flex flex-wrap items-end gap-2">
+                <p className="text-foreground min-w-40 flex-1 basis-48 font-medium break-words">{row.title}</p>
+                <label className="grid gap-1 text-xs font-medium">
+                  Section
+                  <select name="section" required defaultValue="activity" className="border-input bg-card text-foreground focus-visible:ring-ring h-9 rounded-lg border px-2 text-sm outline-none focus-visible:ring-2">
+                    {CHECKLIST_SECTIONS.map(key => <option key={key} value={key}>{SECTION_TITLES[key].title}</option>)}
+                  </select>
+                </label>
+                <label className="grid min-w-40 flex-1 gap-1 text-xs font-medium">
+                  Why?
+                  <Input name="reason" required maxLength={1000} className="h-9" />
+                </label>
+                <Button type="submit" size="sm" className="h-9">Set section</Button>
+              </div>
+            </ExecutionForm>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { requireProfile } from '@/shared/session/profile';
-import { getTaskForChecklist, normalizeTaskTagParam } from '@/modules/tasks';
+import { getTaskForChecklist, getTaskWorkspaceData, normalizeTaskTagParam } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
-import { getChecklistBranch, getRunningChecklistTimers } from '@/modules/checklists';
-import { CHECKLIST_SECTIONS, checklistWorkHref, isSectionRoot, parseChecklistLocation, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistItemTime, type ChecklistSection } from '@/modules/checklists/client';
+import { getChecklistBranch, getRunningChecklistTimers, getUnmappedRootRows } from '@/modules/checklists';
+import { CHECKLIST_SECTIONS, checklistWorkHref, parseChecklistLocation, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistItemTime } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistHomeSection } from '@/modules/checklists/components/checklist-workspace';
 import { checklistCommand } from '@/modules/checklists/actions';
 import { getMemberNames } from '@/modules/team';
@@ -23,30 +23,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return { title: `${tag ?? 'Mission'} checklist · TaskPulse` };
 }
 
-/**
- * One section of the checklist home. When templates created a root page named
- * after the section, its rows are the section's rows, so they are shown in its
- * place and new rows go inside it.
- */
-async function loadHomeSection(taskId: string, taskTag: string, checklistId: string | undefined, section: ChecklistSection, cursor: number): Promise<{ branch: ChecklistBranch; home: ChecklistHomeSection }> {
-  const branch = await getChecklistBranch(taskId, { checklistId, section, cursor, limit: PAGE_SIZE });
-  const root = cursor === 0 ? branch.rows.find(row => isSectionRoot(row, section)) : undefined;
-  const home: ChecklistHomeSection = { section, rows: branch.rows, addParentId: null, cursor, nextCursor: branch.nextCursor, moreHref: null };
-  if (root) {
-    const inner = await getChecklistBranch(taskId, { checklistId: root.checklistId, parentNodeId: root.id, section, limit: PAGE_SIZE });
-    home.rows = branch.rows.flatMap(row => (row.id === root.id ? inner.rows : [row]));
-    home.addParentId = root.id;
-    if (inner.hasMore) home.moreHref = checklistWorkHref(taskTag, { checklistId: root.checklistId, parentNodeId: root.id, section });
-  }
-  return { branch, home };
-}
 
 const NO_TIME: ChecklistItemTime = { available: false, secondsByNode: new Map(), runningByNode: new Map(), mine: null };
 
 /**
  * The master checklist. Without `parent` it is the checklist home (Setup,
- * Activity and Closure tables); with `parent` it is one page's table. Reads
- * are bounded branches, so a large checklist never loads in one go.
+ * Activity and Closure tables); with `parent` it is the table of the rows
+ * under one row. Reads are bounded branches, so a large checklist never loads
+ * in one go.
  */
 export default async function ChecklistPage({ params, searchParams }: { params: Params; searchParams: Search }) {
   const user = await requireProfile();
@@ -61,8 +45,11 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
     if (location.parentNodeId) {
       branch = await getChecklistBranch(task.id, { ...options, parentNodeId: location.parentNodeId, cursor: location.cursor, limit: PAGE_SIZE });
     } else {
-      const loaded = await Promise.all(CHECKLIST_SECTIONS.map(section =>
-        loadHomeSection(task.id, task.taskTag, location.checklistId, section, location.section === section ? location.cursor ?? 0 : 0)));
+      const loaded = await Promise.all(CHECKLIST_SECTIONS.map(async (section) => {
+        const cursor = location.section === section ? location.cursor ?? 0 : 0;
+        const read = await getChecklistBranch(task.id, { ...options, section, cursor, limit: PAGE_SIZE });
+        return { branch: read, home: { section, rows: read.rows, cursor, nextCursor: read.nextCursor } satisfies ChecklistHomeSection };
+      }));
       branch = loaded[0].branch;
       sections = branch.checklist ? loaded.map(entry => entry.home) : undefined;
     }
@@ -80,10 +67,14 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
   }
 
   const rows = sections ? sections.flatMap(s => s.rows) : branch.rows;
-  const [names, time] = await Promise.all([
+  const manager = canManageTasks(user.role);
+  const checklistId = branch.checklist?.id;
+  const [names, time, linkChoices, unmapped] = await Promise.all([
     getMemberNames().catch((): Record<string, string> => ({})),
     // A failed timer read hides the timers instead of failing the checklist.
     getRunningChecklistTimers(task.id, user.id, new Map(rows.map(row => [row.id, row.elapsedSeconds]))).catch(() => NO_TIME),
+    manager ? getTaskWorkspaceData().then(w => w.tasks.filter(t => t.id !== task.id).map(t => ({ id: t.id, taskTag: t.taskTag, title: t.title }))) : [],
+    manager && checklistId && sections ? getUnmappedRootRows(checklistId) : [],
   ]);
 
   return (
@@ -96,11 +87,12 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       version={branch.taskVersion}
       sections={sections}
       page={location.parentNodeId ? { nodeId: location.parentNodeId, section: branch.section, rows: branch.rows, cursor: location.cursor ?? 0, nextCursor: branch.nextCursor } : undefined}
-      manager={canManageTasks(user.role)}
+      manager={manager}
       executor={canUpdateTaskOwnFields(user, task)}
       canTime={canStartTimerForTask(user, task)}
       time={time}
       selectedItem={location.item}
+      managerTools={manager ? { activityDrivesProgress: task.progressOwner === 'checklist', linkChoices, unmapped } : undefined}
       actions={{ checklist: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer }}
     />
   );

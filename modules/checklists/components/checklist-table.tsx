@@ -9,7 +9,7 @@ import { formatMinutes } from '../internal/pages';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import type { ChecklistItemTime } from '../internal/item-time';
 import type { ChecklistSection, CompletionState, SectionProgress } from '../internal/progress';
-import { ROW_KIND_LABELS, opensTable, percentText, rowKind, sectionStatus, stateChoices } from '../internal/table';
+import { opensTable, percentText, rowKind, sectionStatus, stateChoices } from '../internal/table';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowActions } from './checklist-row-actions';
 import { ItemTimerControls } from './checklist-rows';
@@ -30,7 +30,7 @@ export interface ChecklistTableProps {
   version: number;
   checklistId: string;
   section: ChecklistSection;
-  /** Where "Add row" puts new rows (a page id, or the section root). */
+  /** Where "Add row" puts new rows: the row whose table this is, or the section's top level. */
   addParentId: string | null;
   canEdit: boolean;
   /** Not archived, Done or Discarded: timers may start. */
@@ -40,8 +40,12 @@ export interface ChecklistTableProps {
   actions: { checklist: Command; start: Command; stop: Command; discard: Command };
   /** A row id whose menu opens on arrival (old `?item=` links). */
   selectedItem?: string;
-  structureHref?: string;
-  /** Header control, for example the manager's section review. */
+  /** Where a row of this table may move: other rows here, and the level above (id null = top level). */
+  moveTargets?: readonly { id: string | null; title: string }[];
+  /** Missions a manager may link a row to. */
+  linkChoices?: readonly { id: string; taskTag: string; title: string }[];
+  manager: boolean;
+  /** Header control. */
   headerAction?: React.ReactNode;
   /** Paging links under the table. */
   footer?: React.ReactNode;
@@ -62,16 +66,17 @@ function RollupIcon({ row }: { row: ChecklistBranchRow }) {
   return <CircleDashedIcon className="text-muted-foreground size-4" aria-label="Not started" />;
 }
 
-function rowMeta(row: ChecklistBranchRow, inside: string | null, estimate: string | null, elapsed: string | null): string {
-  return [ROW_KIND_LABELS[rowKind(row)], inside, estimate ? `Est. ${estimate}` : null, elapsed ? `${elapsed} logged` : null]
+function rowMeta(inside: string | null, estimate: string | null, elapsed: string | null): string {
+  return [inside, estimate ? `Est. ${estimate}` : null, elapsed ? `${elapsed} logged` : null]
     .filter(Boolean)
     .join(' · ');
 }
 
 /**
- * One checklist table: the sheet's Checkbox / Type / Progress / Item / Links /
+ * One checklist table: the sheet's Checkbox / Progress / Item / Links /
  * Estimated / Elapsed columns, with a one-tap completion control and a row
- * menu. On phones each row becomes a two-line card; nothing scrolls sideways.
+ * menu. A row with rows under it shows their progress and opens their table.
+ * On phones each row becomes a two-line card; nothing scrolls sideways.
  */
 export function ChecklistTable(props: ChecklistTableProps) {
   const { id, title, note, summary, rows, task, version, checklistId, section, addParentId, canEdit, open, canTime, time, actions } = props;
@@ -105,7 +110,6 @@ export function ChecklistTable(props: ChecklistTableProps) {
             <thead className="max-md:hidden">
               <tr>
                 <th scope="col" className="w-0">Done</th>
-                <th scope="col" className="w-0">Type</th>
                 <th scope="col" className="w-0">Progress</th>
                 <th scope="col">Item</th>
                 <th scope="col" className="w-0">Links</th>
@@ -123,9 +127,8 @@ export function ChecklistTable(props: ChecklistTableProps) {
                 const progress = row.applicable ? percentText(row.progressPercentage) : 'N/A';
                 const estimate = formatMinutes(row.estimatedMinutes);
                 const elapsed = row.elapsedSeconds > 0 ? formatMinutes(Math.max(1, Math.round(row.elapsedSeconds / 60))) : null;
-                const inside = kind === 'page' || kind === 'parent-item'
-                  ? `${row.childCount} row${row.childCount === 1 ? '' : 's'}`
-                  : kind === 'submission' ? 'Own checklist' : null;
+                const inside = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside`
+                  : kind === 'linked' ? 'Linked mission' : null;
                 const state: CompletionState = row.completionState ?? 'No';
                 const timerHere = kind === 'item' && time?.available && ((canTime && open) || time.runningByNode.has(row.id));
                 return (
@@ -154,9 +157,6 @@ export function ChecklistTable(props: ChecklistTableProps) {
                         <ChecklistStateBadge state={state} />
                       )}
                     </td>
-                    <td className="max-md:hidden">
-                      <span className="badge-soft badge-neutral">{ROW_KIND_LABELS[kind]}</span>
-                    </td>
                     <td className="max-md:order-4 max-md:border-0 max-md:p-0">
                       <div className="flex items-center gap-2">
                         <span className="text-foreground w-9 text-right text-xs font-semibold tabular-nums">{progress ?? '—'}</span>
@@ -170,11 +170,15 @@ export function ChecklistTable(props: ChecklistTableProps) {
                           <ChevronRightIcon className="text-primary size-3.5 shrink-0" aria-hidden="true" />
                         </Link>
                       ) : (
-                        <span className={cn('text-foreground break-words', kind === 'parent-item' ? 'font-semibold' : 'font-medium')}>{row.title}</span>
+                        <span className="text-foreground font-medium break-words">{row.title}</span>
                       )}
                       {row.description ? <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs break-words">{row.description}</p> : null}
-                      <p className="text-muted-foreground mt-0.5 text-xs md:hidden">{rowMeta(row, inside, estimate, elapsed)}</p>
-                      {inside && href ? <p className="text-muted-foreground mt-0.5 text-xs max-md:hidden">{inside}</p> : null}
+                      {rowMeta(inside, estimate, elapsed) ? <p className="text-muted-foreground mt-0.5 text-xs md:hidden">{rowMeta(inside, estimate, elapsed)}</p> : null}
+                      {inside ? (
+                        <p className="mt-0.5 text-xs max-md:hidden">
+                          {kind === 'linked' ? <span className="badge-soft badge-accent">{inside}</span> : <span className="text-muted-foreground">{inside}</span>}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="max-md:hidden">
                       {row.links.length ? (
@@ -209,7 +213,9 @@ export function ChecklistTable(props: ChecklistTableProps) {
                             version={version}
                             action={actions.checklist}
                             defaultOpen={props.selectedItem === row.id}
-                            structureHref={props.structureHref}
+                            manager={props.manager}
+                            moveTargets={props.moveTargets?.filter(target => target.id !== row.id) ?? []}
+                            linkChoices={props.linkChoices ?? []}
                           />
                         ) : null}
                       </div>
@@ -249,7 +255,7 @@ export function ChecklistIssues({ issues }: { issues: readonly string[] }) {
     <div role="alert" className="flex items-start gap-2 rounded-2xl border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
       <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <div className="min-w-0">
-        <p className="font-semibold">Part of this checklist needs a manager’s attention.</p>
+        <p className="font-semibold">Fix these before the checklist can count:</p>
         <ul className="mt-1 list-disc pl-5">{issues.map(issue => <li key={issue}>{issue}</li>)}</ul>
       </div>
     </div>

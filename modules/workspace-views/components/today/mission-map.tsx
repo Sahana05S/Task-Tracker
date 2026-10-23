@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, LocateFixedIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, SparklesIcon, XIcon } from 'lucide-react';
+import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, LocateFixedIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 import { missionDueLabel, type RoadmapMission } from '@/modules/tasks/client';
@@ -20,18 +20,17 @@ const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.
 const SECTIONS: ChecklistSection[] = ['setup', 'activity', 'closure'];
 const BATCH = 20;
 
-/** One opened node on the path: the mission, then each opened Sub-mission or page. */
+/** One opened node on the path: the mission, then each opened row with rows under it. */
 interface Step { id: string; title: string; missionId: string; options: ChecklistBranchOptions }
 interface Level { branch?: ChecklistBranch; error?: string; loading?: boolean }
 
 function missionStep(m: Pick<RoadmapMission, 'id' | 'title'>, options: ChecklistBranchOptions = { section: 'activity' }): Step {
   return { id: m.id, title: m.title, missionId: m.id, options };
 }
-function rowStep(row: Pick<ChecklistBranchRow, 'id' | 'title' | 'checklistId' | 'ownedChecklistId' | 'section'>, missionId: string): Step {
-  const options = branchForRow(row);
-  return { id: row.id, title: row.title, missionId, options: { ...options, section: options.section ?? row.section ?? 'activity' } };
+function rowStep(row: Pick<ChecklistBranchRow, 'id' | 'title' | 'checklistId' | 'section'>, missionId: string): Step {
+  return { id: row.id, title: row.title, missionId, options: branchForRow(row) };
 }
-const isContainer = (row: ChecklistBranchRow) => row.isSubMission || row.childCount > 0 || ['Page', 'Group'].includes(row.nodeType);
+const isContainer = (row: ChecklistBranchRow) => row.childCount > 0;
 const pct = (value: number | null) => value === null ? 'Not started' : `${Math.round(value)}%`;
 const HINT_MS = 1800;
 
@@ -125,7 +124,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
       if (!result.success || !result.data?.branch) { onLocation(null); return; }
       const { mission, branch } = result.data;
       setFound(p => ({ ...p, [mission.id]: mission }));
-      const ancestors = branch.ancestors.map(a => rowStep({ id: a.nodeId, title: a.title, checklistId: a.checklistId, ownedChecklistId: a.ownedChecklistId, section: loc.section ?? 'activity' }, mission.id));
+      const ancestors = branch.ancestors.map(a => rowStep({ id: a.nodeId, title: a.title, checklistId: a.checklistId, section: loc.section ?? 'activity' }, mission.id));
       const steps = [missionStep(mission), ...ancestors];
       const deepest = steps.length - 1;
       steps[deepest] = { ...steps[deepest], options: { ...steps[deepest].options, section: loc.section ?? 'activity', cursor: loc.cursor ?? 0 } };
@@ -148,9 +147,9 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
     const mapLevels: MapLevel[] = path.map((step, i) => {
       const branch = levels[step.id]?.branch;
       const children: MapEntity[] = (branch?.rows ?? []).map(row => ({ id: row.id, title: row.title, progress: row.progressPercentage, complete: row.isComplete,
-        kind: row.isSubMission ? 'submission' : isContainer(row) ? 'page' : 'item' }));
+        kind: isContainer(row) ? 'page' : 'item' }));
       const next = path[i + 1];
-      if (next && !children.some(c => c.id === next.id)) children.push({ id: next.id, title: next.title, kind: next.options.parentNodeId ? 'page' : 'submission', progress: null, complete: false });
+      if (next && !children.some(c => c.id === next.id)) children.push({ id: next.id, title: next.title, kind: 'page', progress: null, complete: false });
       if (branch?.hasMore) children.push({ id: `more:${step.id}`, title: 'More items', kind: 'more', progress: null, complete: false });
       return { parentId: step.id, children };
     });
@@ -348,8 +347,8 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
               : m ? `${pct(m.progress)} · ${missionDueLabel(m.dueDate, today)}`
               : node.kind === 'item' ? (row?.applicable === false ? 'Not applicable' : node.complete ? 'Complete' : 'Open to work')
               : `${pct(node.progress)} · ${row?.childCount ?? 0} items${opened ? ' · open' : ''}`;
-            const Icon = node.kind === 'mission' ? OrbitIcon : node.kind === 'submission' ? SparklesIcon : node.kind === 'page' ? LayersIcon : node.kind === 'more' ? PlusIcon : node.complete ? CheckIcon : CircleIcon;
-            const kindLabel = { mission: 'Mission', submission: 'Sub-mission', page: 'Page', item: 'Item', more: 'More items' }[node.kind];
+            const Icon = node.kind === 'mission' ? OrbitIcon : node.kind === 'page' ? LayersIcon : node.kind === 'more' ? PlusIcon : node.complete ? CheckIcon : CircleIcon;
+            const kindLabel = { mission: 'Mission', page: 'Row with rows inside', item: 'Row', more: 'More items' }[node.kind];
             return <button key={node.id} type="button" data-map-node={node.id} tabIndex={dim ? -1 : 0}
               className={cn(styles.node, node.depth > 1 && styles.small, dim && styles.dim, node.id === focusId && styles.current)}
               style={{ left: node.x, top: node.y, ['--node' as string]: `var(--map-hue-${node.hue})` }}
@@ -359,7 +358,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
               onClick={e => { e.stopPropagation(); choose(node); }}>
               <span className={styles.coin}><Icon className={node.depth > 1 ? 'size-6' : 'size-7'} aria-hidden="true" />
                 {node.complete && node.kind !== 'item' ? <span className={styles.check}><CheckIcon className="size-3.5" strokeWidth={3} aria-hidden="true" /></span> : null}
-                {overdue ? <span className={styles.flag}>Overdue</span> : m?.dueDate === today ? <span className={styles.flag}>Today</span> : row?.isSubMission && row.priority > 0 ? <span className={styles.flag}>Priority {row.priority}</span> : null}
+                {overdue ? <span className={styles.flag}>Overdue</span> : m?.dueDate === today ? <span className={styles.flag}>Today</span> : null}
               </span>
               <span className={styles.name}>{node.title}</span>
               <span className={styles.sub}>{sub}</span>

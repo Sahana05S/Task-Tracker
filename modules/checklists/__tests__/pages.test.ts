@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ancestry, checklistHref, childrenOf, formatMinutes, isContainer, subtreeSeconds } from '@/modules/checklists/internal/pages';
+import { ancestry, childrenOf, formatMinutes, isContainer, subtreeSeconds } from '@/modules/checklists/internal/pages';
 import type { ChecklistNode } from '@/types/tracker';
 
 const node = (id: string, parentNodeId: string | null, nodeType: ChecklistNode['nodeType'] = 'Item'): ChecklistNode => ({
@@ -23,22 +23,21 @@ describe('nested checklist page helpers', () => {
     expect(ancestry('a', cyclic).map(n => n.id)).toEqual(['b', 'a']);
   });
 
-  it('treats Pages, Groups and any node with children as containers', () => {
+  it('treats any node with rows under it, and only those, as a container', () => {
     expect(isContainer(nodes[1], nodes)).toBe(true);
     expect(isContainer(nodes[2], nodes)).toBe(false);
     expect(isContainer(nodes[3], nodes)).toBe(true);
+    expect(isContainer(node('empty-page', null, 'Page'), nodes)).toBe(false);
     expect(childrenOf('page', nodes).map(n => n.id)).toEqual(['sub']);
     expect(childrenOf(null, nodes).map(n => n.id)).toEqual(['page', 'item-parent']);
   });
 
-  it('formats whole minutes and builds encoded page links', () => {
+  it('formats whole minutes', () => {
     expect(formatMinutes(null)).toBeNull();
     expect(formatMinutes(0)).toBe('0 min');
     expect(formatMinutes(45)).toBe('45 min');
     expect(formatMinutes(60)).toBe('1 h');
     expect(formatMinutes(90)).toBe('1 h 30 min');
-    expect(checklistHref('A B')).toBe('/tasks/A%20B/checklist/manage');
-    expect(checklistHref('T1', 'x')).toBe('/tasks/T1/checklist/x');
   });
 
   it('adds logged time for a page and everything inside it', () => {

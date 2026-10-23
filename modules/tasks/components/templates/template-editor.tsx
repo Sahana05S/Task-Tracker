@@ -4,7 +4,6 @@ import * as React from 'react';
 import { PlusIcon, Trash2Icon } from 'lucide-react';
 
 import {
-  TEMPLATE_NODE_TYPES,
   TEMPLATE_SECTIONS,
   addNode,
   changeSection,
@@ -16,7 +15,6 @@ import {
   toPayloadNodes,
   updateNode,
   type EditorNode,
-  type TemplateNodeType,
   type TemplateSection,
 } from '@/modules/tasks/components/templates/nodes';
 import { publishNativeTemplate } from '@/modules/tasks/detail-actions';
@@ -151,14 +149,6 @@ function EditorBody({ template, onClose }: { template: NativeTemplate | null; on
           <section className="grid gap-4" aria-labelledby={id('checklist')}>
             <div className="grid gap-1">
               <h3 id={id('checklist')} className="text-foreground text-sm font-semibold">Checklist</h3>
-              <p className="text-muted-foreground text-xs">
-                {TEMPLATE_NODE_TYPES.map((type, i) => (
-                  <React.Fragment key={type.key}>
-                    {i > 0 ? ' · ' : ''}
-                    <span className="text-foreground font-medium">{type.key}</span>: {type.hint}
-                  </React.Fragment>
-                ))}
-              </p>
             </div>
             {TEMPLATE_SECTIONS.map((section) => (
               <ChecklistSection key={section.key} section={section} nodes={nodes} onChange={setNodes} idPrefix={id(section.key)} />
@@ -203,7 +193,6 @@ function ChecklistSection({
             node={node}
             depth={depth}
             nodes={nodes}
-            sectionLabel={section.label}
             onChange={onChange}
             idPrefix={`${idPrefix}-${node.key}`}
           />
@@ -221,14 +210,12 @@ function ChecklistRow({
   node,
   depth,
   nodes,
-  sectionLabel,
   onChange,
   idPrefix,
 }: {
   node: EditorNode;
   depth: number;
   nodes: readonly EditorNode[];
-  sectionLabel: string;
   onChange: (nodes: EditorNode[]) => void;
   idPrefix: string;
 }) {
@@ -262,23 +249,14 @@ function ChecklistRow({
           <Trash2Icon aria-hidden="true" />
         </Button>
       </div>
-      <div className="grid gap-2 sm:grid-cols-3">
-        <Field id={`${idPrefix}-type`} label="Type">
-          <NativeSelect
-            id={`${idPrefix}-type`}
-            value={node.node_type}
-            onChange={(event) => onChange(updateNode(nodes, node.key, { node_type: event.target.value as TemplateNodeType }))}
-          >
-            {TEMPLATE_NODE_TYPES.map((type) => <option key={type.key} value={type.key}>{type.key}</option>)}
-          </NativeSelect>
-        </Field>
-        <Field id={`${idPrefix}-parent`} label="Sits inside">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Field id={`${idPrefix}-parent`} label="Under">
           <NativeSelect
             id={`${idPrefix}-parent`}
             value={node.parent_key}
             onChange={(event) => onChange(updateNode(nodes, node.key, { parent_key: event.target.value }))}
           >
-            <option value="">Top of {sectionLabel}</option>
+            <option value="">Top level of the section</option>
             {parentOptions(nodes, node.key).map((option) => (
               <option key={option.key} value={option.key}>{option.title.trim() || 'Untitled item'}</option>
             ))}
