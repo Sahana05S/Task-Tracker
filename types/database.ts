@@ -868,7 +868,7 @@ export interface Database {
       /** Migration 53: the caller's company settings (any active member; standing missions for managers). */
       company_settings: { Args: Record<never, never>; Returns: Json };
       /** Migration 53: managing director only; versioned and idempotent per operation. */
-      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
+      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults' | 'branding'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       /** Migration 55: month setup wizard (managing director or project engineer). */
       month_setup_context: { Args: { p_month: string }; Returns: Json };
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };
