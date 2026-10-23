@@ -9,6 +9,22 @@ import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { buttonVariants } from '@/shared/ui/button';
 import type { User } from '@/types/tracker';
 
+/** Where the person sits on the org chart, for the header's meta row. */
+export interface Placement {
+  jobTitle: string | null;
+  department: string | null;
+  manager: string | null;
+}
+
+/** The person's org chart placement; null when the chart can't be read. */
+export async function readPlacement(userId: string): Promise<Placement | null> {
+  const chart = await getOrgChart().catch(() => null);
+  const person = chart?.people.find(entry => entry.id === userId);
+  if (!person) return null;
+  const manager = person.reportsTo ? chart?.people.find(entry => entry.id === person.reportsTo) : undefined;
+  return { jobTitle: person.jobTitle, department: person.department, manager: manager?.fullName ?? null };
+}
+
 export type ProfileTab = 'overview' | 'charts' | 'missions' | 'reports';
 
 /** The `period` and `asOf` given in the URL, kept when switching tabs. */
@@ -24,14 +40,15 @@ export function carriedQuery(query: { period?: string; asOf?: string }): string 
  * sub-route. Overview, Charts and Missions are `?tab=` views of the profile;
  * Reports is the `/reports` route. The period query is carried across.
  * The meta row adds the person's org chart placement (job title, department,
- * manager) where the database has it.
+ * manager) when the page passes it.
  */
-export async function ProfileHeader({
+export function ProfileHeader({
   employee,
   current,
   description,
   query,
   missionCount,
+  placement,
 }: {
   employee: User;
   current: ProfileTab;
@@ -39,10 +56,8 @@ export async function ProfileHeader({
   /** `period` (and `asOf`) to keep when switching tabs. */
   query: string;
   missionCount?: number;
+  placement?: Placement | null;
 }) {
-  const chart = await getOrgChart().catch(() => null);
-  const person = chart?.people.find(entry => entry.id === employee.id);
-  const manager = person?.reportsTo ? chart?.people.find(entry => entry.id === person.reportsTo) : undefined;
   const base = `/team/${encodeURIComponent(employee.employeeId)}`;
   const withQuery = (path: string, tab?: string) => {
     const params = new URLSearchParams(query);
@@ -62,14 +77,14 @@ export async function ProfileHeader({
       meta={
         <>
           <RoleBadge role={employee.role} />
-          {person?.department ? (
+          {placement?.department ? (
             <span className="badge-soft badge-neutral inline-flex items-center gap-1">
               <Building2Icon aria-hidden="true" className="size-3" />
-              {person.department}
+              {placement.department}
             </span>
           ) : null}
-          {person?.jobTitle ? <span className="text-muted-foreground text-xs">{person.jobTitle}</span> : null}
-          {manager ? <span className="text-muted-foreground text-xs">Reports to {manager.fullName}</span> : null}
+          {placement?.jobTitle ? <span className="text-muted-foreground text-xs">{placement.jobTitle}</span> : null}
+          {placement?.manager ? <span className="text-muted-foreground text-xs">Reports to {placement.manager}</span> : null}
         </>
       }
       description={description}

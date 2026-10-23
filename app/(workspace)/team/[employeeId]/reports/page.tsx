@@ -22,7 +22,7 @@ import { canViewEmployeeReports } from '@/modules/team/client';
 import { getEmployeeByEmployeeId, getEmployeeReportsData } from '@/modules/team';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
-import { carriedQuery, ProfileHeader } from '../profile-header';
+import { carriedQuery, ProfileHeader, readPlacement } from '../profile-header';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;
@@ -64,9 +64,10 @@ export default async function EmployeeReportsPage({
   const data = routeState.data;
   if (!canViewEmployeeReports(viewer, data.employee)) notFound();
   const itemTo = context.asOfLocalDate < context.period.endDate ? context.asOfLocalDate : context.period.endDate;
-  const [archiveHistory, itemHours] = await Promise.all([
+  const [archiveHistory, itemHours, placement] = await Promise.all([
     monthHistory(context.period.startDate),
     getEmployeeItemHours(data.employee.id, context.period.startDate, itemTo),
+    readPlacement(data.employee.id),
   ]);
 
   return (
@@ -77,6 +78,7 @@ export default async function EmployeeReportsPage({
         description={`${data.employee.employeeId} · ${data.period.label} · live report, revisions, stars and saved reports`}
         query={carriedQuery(query)}
         missionCount={data.presentation.tasks.length}
+        placement={placement}
       />
 
       <div className="grid gap-5 lg:gap-6">
