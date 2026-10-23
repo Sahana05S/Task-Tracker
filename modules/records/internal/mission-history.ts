@@ -1,7 +1,7 @@
 import { createClient } from '@/shared/supabase/server';
 import { groupMissionHistory, type MissionChange, type MissionHistoryRow } from './mission-history-mapping';
 
-/** The mission change log read (`mission_history`, migration 68). PRIVATE. */
+/** The mission change log read (`mission_history`, migration 70). PRIVATE. */
 
 export type MissionHistoryPage =
   | { available: true; changes: MissionChange[]; next: string | null }
@@ -10,7 +10,7 @@ export type MissionHistoryPage =
 /** Actions per page; the database allows at most 100. */
 export const MISSION_HISTORY_PAGE = 30;
 
-/** PostgREST "function not found" or PostgreSQL "undefined function": migration 68 is not applied here. */
+/** PostgREST "function not found" or PostgreSQL "undefined function": migration 70 is not applied here. */
 const missingFunction = (error: { code?: string }) => error.code === 'PGRST202' || error.code === '42883';
 
 /**
@@ -18,7 +18,7 @@ const missingFunction = (error: { code?: string }) => error.code === 'PGRST202' 
  * every value it changed. Managers, assignees and reviewers see everyone's
  * actions; other members only their own (the database decides). `before` is
  * the `next` of the previous page. Returns `{ available: false }` before
- * migration 68; throws on any other failure.
+ * migration 70; throws on any other failure.
  */
 export async function getMissionHistory(taskId: string, before: string | null): Promise<MissionHistoryPage> {
   const db = await createClient();

@@ -65,7 +65,7 @@ BEGIN
     FROM unnest(fields) k WHERE k=ANY(ARRAY['role','is_active','assignee_id','reviewer_id','user_id','task_id',
       'participant_credit_mode','participant_version','share_units','is_primary','review_approved','reviewed_at',
       'is_validated','validated_by','is_override','override_by','status','task_scale','priority','task_productivity','score','progress_percentage','hours_worked','progress_delta','requested_progress_delta','effective_progress_delta','execution_version','metric_version','reversed_at','started_at','stopped_at','elapsed_seconds','source_timer_id','generated_log_id']);
-  -- Mission change log (68): the mission and every changed value of the tables people edit by hand.
+  -- Mission change log (70): the mission and every changed value of the tables people edit by hand.
   IF TG_TABLE_NAME IN ('tasks','task_assignees','task_reviewers','task_dependencies','task_links','task_detail_sections',
       'task_checklists','checklist_nodes','task_timers','daily_task_logs','company_statements','company_milestones','report_snapshots') THEN
     mission := CASE TG_TABLE_NAME
@@ -117,7 +117,7 @@ BEGIN
   RETURN NEW;
 END $$;
 REVOKE ALL ON FUNCTION taskpulse_private.audit_event_mission() FROM PUBLIC, anon, authenticated, service_role;
-CREATE TRIGGER m68_mission BEFORE INSERT ON taskpulse_private.audit_events
+CREATE TRIGGER m70_mission BEFORE INSERT ON taskpulse_private.audit_events
   FOR EACH ROW EXECUTE FUNCTION taskpulse_private.audit_event_mission();
 
 -- Back-fill: rows whose row still exists or whose payload names the mission.
@@ -211,6 +211,15 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.mission_history(uuid, timestamptz, integer) FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.mission_history(uuid, timestamptz, integer) TO authenticated;
+
+-- audit_write (owned by taskpulse_definer) calls these on every audited write,
+-- so they are re-owned before COMMIT rather than only by m15_secure below.
+ALTER FUNCTION taskpulse_private.audit_noise() OWNER TO taskpulse_definer;
+ALTER FUNCTION taskpulse_private.audit_value(jsonb) OWNER TO taskpulse_definer;
+ALTER FUNCTION taskpulse_private.audit_mission(text, uuid, jsonb) OWNER TO taskpulse_definer;
+ALTER FUNCTION taskpulse_private.audit_event_mission() OWNER TO taskpulse_definer;
+ALTER FUNCTION taskpulse_private.audit_write() OWNER TO taskpulse_definer;
+ALTER FUNCTION public.mission_history(uuid, timestamptz, integer) OWNER TO taskpulse_definer;
 
 COMMIT;
 SELECT taskpulse_private.m15_secure();

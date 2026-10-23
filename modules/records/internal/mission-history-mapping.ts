@@ -4,7 +4,7 @@ import { formatDate, formatDateTime, formatHours } from '@/shared/tracker/format
 import { CHECKLIST_WORDS, MISSION_WORDS, TIME_WORDS, TOOL_WORDS, type Person } from './activity-mapping';
 
 /**
- * Pure parts of the mission change log: `mission_history` rows (migration 68)
+ * Pure parts of the mission change log: `mission_history` rows (migration 70)
  * grouped into one entry per action (one transaction: the command and every
  * row it changed share occurred_at), with a headline and one line per changed
  * value. PRIVATE.

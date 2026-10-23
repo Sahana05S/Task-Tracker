@@ -10,7 +10,7 @@ History): every action on the mission with every value it changed.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `getRecordHistory(kind, id)` (readable revisions), `isRecordReference(kind, id)`, `RECORD_KINDS`, type `RecordRevision`; activity log: `getActivity(filter, before, limit, known?)` (one page, or `{ available: false }` before migration 54), `handleActivityExport` (the CSV route), `activityFilter`, `parseCursor`, `seesAllActivity`, `ACTIVITY_PAGE`, type `ActivityPage`; mission change log: `getMissionHistory(taskId, before)` (one page, or `{ available: false }` before migration 68), `parseHistoryCursor`, type `MissionHistoryPage` |
+| `index.ts` | `getRecordHistory(kind, id)` (readable revisions), `isRecordReference(kind, id)`, `RECORD_KINDS`, type `RecordRevision`; activity log: `getActivity(filter, before, limit, known?)` (one page, or `{ available: false }` before migration 54), `handleActivityExport` (the CSV route), `activityFilter`, `parseCursor`, `seesAllActivity`, `ACTIVITY_PAGE`, type `ActivityPage`; mission change log: `getMissionHistory(taskId, before)` (one page, or `{ available: false }` before migration 70), `parseHistoryCursor`, type `MissionHistoryPage` |
 | `components/` | `RecordHistory` (the `/records/[kind]/[id]/history` page body), `ActivityLog` (the `/team/activity` page body: kind pills, member and dates in the URL, day groups, Older / Newest paging, CSV link), `MissionChangeLog` (the mission page's History tab: day groups, one entry per action with its changed values, Older / Newest paging) |
 | `actions.ts` | `'use server'` `writeDatedRecord` (save, withdraw, validate) |
 
@@ -34,7 +34,7 @@ History): every action on the mission with every value it changed.
 | `dated_record_history` | `19_attendance_and_support_history.sql` |
 | `activity_feed` (read only; plus feed indexes on `audit_events`, `input_history`, `log_revisions`, `month_receipts`) | `54_activity_feed.sql` |
 | `activity_feed` command de-duplication (a row change inside a shown command is not listed twice) | `57_activity_feed_command_dedupe.sql` |
-| `audit_events.task_id` / `.detail`, `audit_write` keeping every changed value of the mission tables, `mission_history` (read only) | `68_mission_change_log.sql` |
+| `audit_events.task_id` / `.detail`, `audit_write` keeping every changed value of the mission tables, `mission_history` (read only) | `70_mission_change_log.sql` |
 | `activity_feed` lists Settings > Company saves (`company_settings_<section>` on `organization_settings`) | `59_activity_feed_company_settings.sql` |
 
 The tables themselves (attendance records, daily facts, ideas, suggestions,
@@ -64,11 +64,11 @@ them. All objects are company-scoped by migrations 39-40 (M15).
   roles, companies, filters, bounds, paging) and
   `modules/records/__tests__/activity.test.ts`.
 
-## Mission change log rules (migration 68)
+## Mission change log rules (migration 70)
 - Every change to a mission, its assignees, reviewers, links, sections,
   checklist and rows, timers and time logs keeps its before and after values
   (bookkeeping columns such as versions and timestamps left out, text cut at
-  400 characters) and the mission it belongs to. Rows from before 68 show the
+  400 characters) and the mission it belongs to. Rows from before 70 show the
   values they kept (status, priority, progress, hours, people, timer times)
   and otherwise only name the changed field.
 - One entry per action: the command and every row it changed share one
