@@ -1,0 +1,92 @@
+/*
+ * Top-down org tree: each person's reports hang from one line that drops from
+ * their card and branches across. Lines are borders on each list item, in
+ * the app's own colour variables, so they follow light and dark themes.
+ */
+
+.tree {
+  width: max-content;
+  min-width: 100%;
+}
+
+.tree ul {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  padding-top: 1.5rem;
+}
+
+.tree > ul {
+  padding-top: 0;
+}
+
+.tree li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0.5rem 0;
+}
+
+/* The two halves of the branch line above each card. */
+.tree li::before,
+.tree li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 1.5rem;
+  border-top: 1px solid var(--border-strong);
+}
+
+.tree li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1px solid var(--border-strong);
+}
+
+/* No branch to the outside of the first and last cards. */
+.tree li:first-child::before,
+.tree li:last-child::after {
+  border: 0 none;
+}
+
+.tree li:last-child::before {
+  border-right: 1px solid var(--border-strong);
+  border-radius: 0 0.5rem 0 0;
+}
+
+.tree li:first-child::after {
+  border-radius: 0.5rem 0 0 0;
+}
+
+/* A single report needs only the straight line down. */
+.tree li:only-child {
+  padding-top: 0;
+}
+
+.tree li:only-child::before,
+.tree li:only-child::after {
+  display: none;
+}
+
+/* The line that drops from a manager's card to their reports. */
+.tree ul ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 1.5rem;
+  border-left: 1px solid var(--border-strong);
+}
+
+/* Top-level people stand on their own. */
+.tree > ul > li {
+  padding-top: 0;
+}
+
+.tree > ul > li::before,
+.tree > ul > li::after {
+  display: none;
+}
