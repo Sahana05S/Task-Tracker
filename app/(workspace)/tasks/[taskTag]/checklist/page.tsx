@@ -93,7 +93,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       canTime={canStartTimerForTask(user, task)}
       time={time}
       selectedItem={location.item}
-      managerTools={manager ? { activityDrivesProgress: task.progressOwner === 'checklist', linkChoices, unmapped } : undefined}
+      managerTools={manager ? { linkChoices, unmapped } : undefined}
       actions={{ checklist: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer }}
       headerActions={<MissionActionsMenu taskId={task.id} taskTag={task.taskTag} variant="button" />}
     />
