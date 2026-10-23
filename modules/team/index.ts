@@ -17,6 +17,7 @@ export {
   type TeamIndexMember,
 } from '@/modules/team/internal/queries';
 export { getMemberNames } from '@/modules/team/internal/member-names';
+export { readOrgChart as getOrgChart } from '@/modules/team/internal/org-chart';
 export {
   readPeopleAdminData as getPeopleAdminData,
   type Invitation,

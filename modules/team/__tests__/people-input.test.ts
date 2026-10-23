@@ -49,6 +49,25 @@ describe('parseMemberUpdate', () => {
     expect(parseMemberUpdate(form({ userId: ID, role: 'root' }))).toEqual({ ok: false, error: 'Choose a role.' });
   });
 
+  it('reads org chart placement: a present field sets it, blank clears it', () => {
+    const manager = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
+    expect(parseMemberUpdate(form({ userId: ID, reportsTo: manager, jobTitle: ' Site engineer ', departmentId: manager }))).toEqual({
+      ok: true,
+      value: { userId: ID, reportsTo: manager, jobTitle: 'Site engineer', departmentId: manager },
+    });
+    expect(parseMemberUpdate(form({ userId: ID, reportsTo: '', jobTitle: '', departmentId: '' }))).toEqual({
+      ok: true,
+      value: { userId: ID, reportsTo: null, jobTitle: null, departmentId: null },
+    });
+  });
+
+  it('refuses reporting to yourself, bad ids and long titles', () => {
+    expect(parseMemberUpdate(form({ userId: ID, reportsTo: ID }))).toEqual({ ok: false, error: 'Nobody can report to themselves.' });
+    expect(parseMemberUpdate(form({ userId: ID, reportsTo: 'x' }))).toEqual({ ok: false, error: 'Choose who they report to.' });
+    expect(parseMemberUpdate(form({ userId: ID, departmentId: 'x' }))).toEqual({ ok: false, error: 'Choose a department.' });
+    expect(parseMemberUpdate(form({ userId: ID, jobTitle: 'x'.repeat(61) }))).toEqual({ ok: false, error: 'Enter a job title of up to 60 characters.' });
+  });
+
   it('parses an invitation id', () => {
     expect(parseInvitationId(form({ invitationId: ID }))).toEqual({ ok: true, value: ID });
     expect(parseInvitationId(form({ invitationId: '1' }))).toMatchObject({ ok: false });
