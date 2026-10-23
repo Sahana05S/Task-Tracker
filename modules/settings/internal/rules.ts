@@ -32,6 +32,16 @@ export interface MeetingType {
   active: boolean;
 }
 
+/** A department people can be placed in (migration 65). */
+export interface Department {
+  id: string;
+  name: string;
+  sort: number;
+  active: boolean;
+  /** Active people in it; a department with people can be hidden but not removed. */
+  members: number;
+}
+
 export interface CompanyHoliday {
   date: string;
   name: string;
@@ -89,6 +99,8 @@ export interface CompanySettings {
   meetingAgenda: string;
   categoryOverrides: CategoryOverrides;
   meetingTypes: MeetingType[];
+  /** The org chart's departments (migration 65; empty before it). */
+  departments: Department[];
   holidays: CompanyHoliday[];
   /** Managers only; empty for other roles. */
   standingMissions: StandingMission[];
@@ -98,7 +110,7 @@ export interface CompanySettings {
   branding: CompanyBranding;
 }
 
-export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults', 'branding'] as const;
+export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults', 'branding', 'departments'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 /** Settings before migration 53 (or a company that saved nothing): built-in labels, no lists. */
@@ -108,6 +120,7 @@ export const EMPTY_COMPANY_SETTINGS: CompanySettings = {
   meetingAgenda: '',
   categoryOverrides: {},
   meetingTypes: [],
+  departments: [],
   holidays: [],
   standingMissions: [],
   defaultScaleMode: 'manual',
@@ -208,6 +221,13 @@ export function parseCompanySettings(raw: unknown): CompanySettings {
       name: asString(m.name),
       sort: asNumber(m.sort),
       active: m.active !== false,
+    })),
+    departments: list(raw.departments).map((d) => ({
+      id: asString(d.id),
+      name: asString(d.name),
+      sort: asNumber(d.sort),
+      active: d.active !== false,
+      members: asNumber(d.members),
     })),
     holidays: list(raw.holidays).map((h) => ({ date: asString(h.date), name: asString(h.name) })),
     standingMissions: list(raw.standingMissions)
