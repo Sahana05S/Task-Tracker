@@ -31,16 +31,20 @@ export function MissionOverview({
     <section className="soft-card p-5 sm:p-6" aria-label="Mission overview">
       <p className="eyebrow">{CATEGORY_LABELS[task.category]}</p>
       <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="text-foreground text-sm font-semibold">Overall progress</span>
+        <span className="text-foreground text-sm font-semibold">Progress</span>
         <span className="text-success-strong text-xl font-bold tabular-nums">
           {formatPercent(task.progressPercentage)}
         </span>
       </div>
-      <MissionProgress value={task.progressPercentage} label="Overall progress" className="mt-2 h-2.5" />
+      <MissionProgress value={task.progressPercentage} label="Mission progress" className="mt-2 h-2.5" />
       {belowProgress ? <div className="mt-1.5">{belowProgress}</div> : null}
       <p className="text-muted-foreground mt-2 text-xs">
-        Activity checklist {formatPercent(data.checklistProgressPercentage)} ·{' '}
-        {formatHours(data.effort.hoursLogged)} h logged
+        {task.progressOwner === 'checklist'
+          ? 'From the Activity checklist'
+          : data.checklist
+            ? `Set by hand · Activity checklist ${formatPercent(data.checklistProgressPercentage)}`
+            : 'Set by hand'}
+        {' · '}{formatHours(data.effort.hoursLogged)} h logged
       </p>
 
       <dl className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-3">
