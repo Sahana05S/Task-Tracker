@@ -120,11 +120,34 @@ REVOKE ALL ON FUNCTION taskpulse_private.audit_event_mission() FROM PUBLIC, anon
 CREATE TRIGGER m70_mission BEFORE INSERT ON taskpulse_private.audit_events
   FOR EACH ROW EXECUTE FUNCTION taskpulse_private.audit_event_mission();
 
--- Back-fill: rows whose row still exists or whose payload names the mission.
+-- Back-fill, set-based per table (a per-row lookup was too slow for the demo's
+-- pooled connection): rows whose row still exists, then rows whose payload
+-- names the mission.
+UPDATE taskpulse_private.audit_events a SET task_id = a.row_id WHERE a.task_id IS NULL AND a.table_name = 'tasks';
+UPDATE taskpulse_private.audit_events a SET task_id = x.task_id FROM public.task_checklists x
+  WHERE a.task_id IS NULL AND a.table_name = 'task_checklists' AND x.id = a.row_id;
+UPDATE taskpulse_private.audit_events a SET task_id = c.task_id FROM public.checklist_nodes x JOIN public.task_checklists c ON c.id = x.checklist_id
+  WHERE a.task_id IS NULL AND a.table_name = 'checklist_nodes' AND x.id = a.row_id;
+UPDATE taskpulse_private.audit_events a SET task_id = x.task_id FROM public.task_timers x
+  WHERE a.task_id IS NULL AND a.table_name = 'task_timers' AND x.id = a.row_id;
+UPDATE taskpulse_private.audit_events a SET task_id = x.task_id FROM public.daily_task_logs x
+  WHERE a.task_id IS NULL AND a.table_name = 'daily_task_logs' AND x.id = a.row_id;
+UPDATE taskpulse_private.audit_events a SET task_id = x.task_id FROM public.task_assignees x
+  WHERE a.task_id IS NULL AND a.table_name = 'task_assignees' AND x.id = a.row_id;
+UPDATE taskpulse_private.audit_events a SET task_id = x.task_id FROM public.task_reviewers x
+  WHERE a.task_id IS NULL AND a.table_name = 'task_reviewers' AND x.id = a.row_id;
+UPDATE taskpulse_private.audit_events a SET task_id = x.task_id FROM public.task_links x
+  WHERE a.task_id IS NULL AND a.table_name = 'task_links' AND x.id = a.row_id;
+UPDATE taskpulse_private.audit_events a SET task_id = x.task_id FROM public.task_detail_sections x
+  WHERE a.task_id IS NULL AND a.table_name = 'task_detail_sections' AND x.id = a.row_id;
+UPDATE taskpulse_private.audit_events a SET task_id = x.successor_task_id FROM public.task_dependencies x
+  WHERE a.task_id IS NULL AND a.table_name = 'task_dependencies' AND x.id = a.row_id;
 UPDATE taskpulse_private.audit_events a
-SET task_id = taskpulse_private.audit_mission(a.table_name, a.row_id, a.protected_changes)
-WHERE a.task_id IS NULL AND a.table_name IN ('tasks','task_assignees','task_reviewers','task_dependencies','task_links',
-  'task_detail_sections','task_checklists','checklist_nodes','task_timers','daily_task_logs');
+  SET task_id = taskpulse_private.activity_uuid(coalesce(a.protected_changes -> 'task_id' ->> 'after',
+    a.protected_changes -> 'task_id' ->> 'before', a.protected_changes -> 'task_before' ->> 'id'))
+  WHERE a.task_id IS NULL AND (a.protected_changes ? 'task_id' OR a.protected_changes ? 'task_before')
+    AND a.table_name IN ('task_assignees','task_reviewers','task_links','task_detail_sections','task_checklists',
+      'checklist_nodes','task_timers','daily_task_logs');
 
 CREATE FUNCTION public.mission_history(
   p_task uuid,
