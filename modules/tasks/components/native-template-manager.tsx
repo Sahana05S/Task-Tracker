@@ -1,26 +1,76 @@
 'use client';
-import { buttonVariants } from '@/shared/ui/button';
-import {useState} from 'react';
-import {ExecutionForm} from '@/shared/ui/execution-form';
-import {publishNativeTemplate} from '@/modules/tasks/detail-actions';
-import {DETAIL_FIELDS,type NativeTemplate} from '@/modules/tasks/internal/details-contract';
-import { cn } from '@/shared/utils';
-const input='field w-full';
-export function NativeTemplateManager({templates}:{templates:readonly NativeTemplate[]}) {
- const [selection,setSelection]=useState('');const selected=templates.find(t=>t.id===selection);
- const [nodes,setNodes]=useState<{key:string;title:string;section:string;node_type:string;parent_key:string}[]>([]);
- const latest=templates.filter(t=>!templates.some(other=>other.templateId===t.templateId && other.version>t.version));
- return <div className="grid gap-3"><label>Template to publish<select className={input} value={selection} onChange={e=>{setSelection(e.target.value);setNodes((templates.find(t=>t.id===e.target.value)?.checklistNodes??[]).map(n=>({...n,parent_key:n.parent_key??''})));}}><option value="">New template</option>{latest.map(t=><option key={t.id} value={t.id}>{t.name} · version {t.version}</option>)}</select></label>
- {selected?.requiresReview?<div className="border-border rounded-xl border p-3 text-sm"><p>Legacy template retained for review. Publish a new version with explicit sections; the original stays unchanged.</p><p className="whitespace-pre-wrap">{selected.legacyDescription}</p>{selected.legacyNodes?.map((n,i)=><p key={i}>{n.node_type}: {n.title} {n.description}</p>)}</div>:null}
- <ExecutionForm key={selection} action={publishNativeTemplate} scope={'publishTemplate:'+selection}>
- <input type="hidden" name="templateId" value={selected?.templateId??''}/><input type="hidden" name="templateVersion" value={selected?.version??0}/>
- <label>Name<input name="templateName" className={input} defaultValue={selected?.name??''} readOnly={Boolean(selected)} required/></label>
- <p className="text-sm">Instructions guide editing; they do not populate completed task content. Publishing creates a new version. Existing instances stay independent.</p>
- {DETAIL_FIELDS.map(f=><label key={f.key}>{f.label} instruction<textarea className={input} name={'instruction_'+f.key} defaultValue={selected?.instructions[f.key]??''}/></label>)}
- <input type="hidden" name="checklistNodes" value={JSON.stringify(nodes.map(n=>({...n,parent_key:n.parent_key||null})))}/>
- {nodes.map((n,i)=><div key={n.key} className="border-border grid gap-2 rounded-xl border p-3"><label>Checklist item<input className={input} required value={n.title} onChange={e=>setNodes(nodes.map((x,j)=>j===i?{...x,title:e.target.value}:x))}/></label><label>Section<select className={input} value={n.section} onChange={e=>setNodes(nodes.map((x,j)=>j===i?{...x,section:e.target.value,parent_key:''}:x))}>{['setup','activity','closure'].map(s=><option key={s}>{s}</option>)}</select></label><label>Under<select className={input} value={n.parent_key} onChange={e=>setNodes(nodes.map((x,j)=>j===i?{...x,parent_key:e.target.value}:x))}><option value="">Top level of the section</option>{nodes.slice(0,i).filter(x=>x.section===n.section).map(x=><option key={x.key} value={x.key}>{x.title||'Untitled item'}</option>)}</select></label></div>)}
- <button className={cn(buttonVariants({ variant: 'outline' }), 'justify-self-start')} type="button" onClick={()=>setNodes([...nodes,{key:nextNodeKey(nodes),title:'',section:'activity',node_type:'Item',parent_key:''}])}>Add checklist item</button><button className={cn(buttonVariants(), 'justify-self-start')} type="submit">Publish template version</button>
- </ExecutionForm></div>;
+
+import * as React from 'react';
+import { ListTodoIcon, PencilIcon, PlusIcon } from 'lucide-react';
+
+import { TEMPLATE_SECTIONS, sectionCounts } from '@/modules/tasks/components/templates/nodes';
+import { TemplateEditor } from '@/modules/tasks/components/templates/template-editor';
+import type { NativeTemplate } from '@/modules/tasks/internal/details-contract';
+import { Button } from '@/shared/ui/button';
+import { EmptyState } from '@/shared/ui/mission-ui';
+
+/**
+ * Mission templates on the Tools page: the latest version of each template,
+ * with New and Edit opening the editor in a side panel.
+ */
+export function NativeTemplateManager({ templates }: { templates: readonly NativeTemplate[] }) {
+  // null: closed; 'new': a new template; otherwise the version being built on.
+  const [editing, setEditing] = React.useState<NativeTemplate | 'new' | null>(null);
+  const latest = templates.filter(
+    (template) => !templates.some((other) => other.templateId === template.templateId && other.version > template.version),
+  );
+
+  const newButton = (
+    <Button type="button" variant="outline" size="sm" onClick={() => setEditing('new')}>
+      <PlusIcon aria-hidden="true" />
+      New template
+    </Button>
+  );
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-muted-foreground max-w-prose text-sm">
+          Reusable starting checklists and guidance for new missions.
+        </p>
+        {latest.length > 0 ? newButton : null}
+      </div>
+
+      {latest.length === 0 ? (
+        <EmptyState icon={ListTodoIcon} title="No templates yet" action={newButton}>
+          Create one to give new missions a ready-made checklist.
+        </EmptyState>
+      ) : (
+        <ul className="divide-border grid divide-y">
+          {latest.map((template) => {
+            const counts = sectionCounts(template.checklistNodes);
+            return (
+              <li key={template.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-3 first:pt-0 last:pb-0">
+                <div className="grid min-w-0 flex-1 gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-foreground truncate text-sm font-semibold">{template.name}</span>
+                    <span className="badge-soft badge-neutral">Version {template.version}</span>
+                    {template.requiresReview ? <span className="badge-soft badge-category">Needs review</span> : null}
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {TEMPLATE_SECTIONS.map((section) => `${counts[section.key]} ${section.label}`).join(' · ')}
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => setEditing(template)}>
+                  <PencilIcon aria-hidden="true" />
+                  Edit<span className="sr-only"> {template.name}</span>
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <TemplateEditor
+        open={editing !== null}
+        template={editing === 'new' ? null : editing}
+        onClose={() => setEditing(null)}
+      />
+    </div>
+  );
 }
-/** A key no loaded or added item already uses (a count could repeat one after a loaded template). */
-function nextNodeKey(nodes:readonly {key:string}[]):string{const used=new Set(nodes.map(n=>n.key));let i=nodes.length+1;while(used.has('node'+i))i++;return 'node'+i;}

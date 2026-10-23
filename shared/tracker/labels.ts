@@ -281,4 +281,4 @@ export const MILESTONE_STATUS_MEANINGS = {
   Achieved: 'Reached.',
 } satisfies Record<MilestoneStatus, string>;
 
-export { GLOSSARY, guideHref, type GlossaryKey, type GlossaryTerm, type GuideTopic } from './glossary';
+export { GLOSSARY, GUIDE_STAGES, guideHref, type GlossaryKey, type GlossaryTerm, type GuideStage } from './glossary';

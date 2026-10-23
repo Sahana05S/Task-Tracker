@@ -1,14 +1,11 @@
-// PUBLIC API of the guide module: the help pages' words. Pure data, safe anywhere.
+// PUBLIC API of the guide module: the one-page guide's stages. Pure data, safe anywhere.
 export {
-  GUIDE_ALONG_THE_WAY,
-  GUIDE_FLOW,
-  GUIDE_GROUPS,
-  GUIDE_ICONS,
-  GUIDE_TOPICS,
-  guideTopic,
-  type GuideIcon,
-  type GuideSection,
-  type GuideStep,
-  type GuideTopicContent,
-  type GuideVisual,
-} from './internal/topics';
+  GUIDE_STAGE_CONTENT,
+  GUIDE_STAGES,
+  LEGACY_TOPIC_STAGE,
+  guideStage,
+  type FlowNode,
+  type FlowTone,
+  type GuideStageContent,
+  type GuideStageIcon,
+} from './internal/stages';
