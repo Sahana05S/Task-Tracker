@@ -1,10 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import {
   ArchiveIcon,
   CheckCircle2Icon,
   CopyIcon,
   InfoIcon,
+  PanelTopOpenIcon,
   PencilIcon,
   RefreshCwIcon,
   RotateCcwIcon,
@@ -36,6 +38,11 @@ export interface TaskRowMenuProps {
   /** Manager, or an active assignee of this mission. */
   canEditOwnFields: boolean;
   actions: TaskRowActions;
+  /**
+   * First item: omitted shows "Quick summary" (Missions list); a link shows
+   * "Open mission"; null shows neither (the mission's own page).
+   */
+  openHref?: string | null;
 }
 
 /**
@@ -49,6 +56,7 @@ export function TaskRowMenuItems({
   canManage,
   canEditOwnFields,
   actions,
+  openHref,
 }: TaskRowMenuProps) {
   const onRun = (command: ToolOperation) => actions.onRun(command, task);
   const open = !task.archivedEffectiveDate;
@@ -57,14 +65,23 @@ export function TaskRowMenuItems({
 
   return (
     <>
-      <DropdownMenuItem onSelect={() => actions.onSummary(task)}>
-        <InfoIcon aria-hidden="true" />
-        Quick summary
-      </DropdownMenuItem>
+      {openHref === undefined ? (
+        <DropdownMenuItem onSelect={() => actions.onSummary(task)}>
+          <InfoIcon aria-hidden="true" />
+          Quick summary
+        </DropdownMenuItem>
+      ) : openHref ? (
+        <DropdownMenuItem asChild>
+          <Link href={openHref}>
+            <PanelTopOpenIcon aria-hidden="true" />
+            Open mission
+          </Link>
+        </DropdownMenuItem>
+      ) : null}
 
       {canAct ? (
         <>
-          <DropdownMenuSeparator />
+          {openHref !== null ? <DropdownMenuSeparator /> : null}
           {task.status !== 'Done' ? (
             <DropdownMenuItem onSelect={() => onRun('bulk_done')}>
               <CheckCircle2Icon aria-hidden="true" />

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 
 import { EmptyState, MissionProgress } from '@/shared/ui/mission-ui';
 import { CategoryBadge, FreshnessIndicator, PriorityBadge, StatusBadge } from '@/shared/ui/tracker-badges';
@@ -28,6 +29,7 @@ export function TaskList({ tasks, empty = 'No missions are assigned to this memb
             <th>Due</th>
             <th>Priority</th>
             <th>Freshness</th>
+            <th><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -49,6 +51,7 @@ export function TaskList({ tasks, empty = 'No missions are assigned to this memb
               <td className="text-xs whitespace-nowrap">{task.dueDate ? formatDate(task.dueDate) : 'No due date'}</td>
               <td className="text-xs"><PriorityBadge priority={task.priority} /></td>
               <td className="text-xs"><FreshnessIndicator freshness={task.freshness} /></td>
+              <td className="w-10 text-right"><MissionActionsMenu taskId={task.id} taskTag={task.taskTag} /></td>
             </tr>
           ))}
         </tbody>
