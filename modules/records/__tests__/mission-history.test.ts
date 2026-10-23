@@ -18,6 +18,7 @@ describe('mission change log', () => {
       row({ table_name: 'checklist_nodes', label: 'Site survey', fields: ['completion_state', 'is_complete', 'updated_at'],
         changes: { completion_state: { before: 'No', after: 'Yes' }, is_complete: { before: false, after: true } } }),
       row({ fields: ['progress_percentage', 'metric_version'], changes: { progress_percentage: { before: 40, after: 60 } } }),
+      row({ fields: ['work_revision'], changes: { work_revision: { before: 57, after: 58 } } }),
     ], people);
     expect(change).toMatchObject({
       actor: 'Asha',

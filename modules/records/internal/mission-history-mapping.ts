@@ -49,6 +49,7 @@ const HIDDEN = new Set([
   'credit_anchor', 'provider_asset_key', 'reviewed_revision', 'participant_credit_mode', 'storage_path',
   'task_id', 'checklist_id', 'template_id', 'source_timer_id', 'generated_log_id', 'checklist_node_id', 'owner_node_id',
   'is_complete', 'requested_progress_delta', 'effective_progress_delta', 'task_tag', 'score',
+  'work_revision', 'productivity_available', 'eligibility_reasons', 'freshness_reason', 'timer_segment_number',
 ]);
 const PEOPLE_FIELDS = new Set([
   'user_id', 'assignee_id', 'reviewer_id', 'completed_by', 'created_by', 'assigned_by', 'updated_by', 'validated_by', 'override_by',
@@ -226,7 +227,9 @@ function rowLines(row: MissionHistoryRow, people: ReadonlyMap<string, Person>, i
 /** Rows (newest first) as one entry per action. */
 export function groupMissionHistory(rows: readonly MissionHistoryRow[], people: ReadonlyMap<string, Person>): MissionChange[] {
   const groups = new Map<string, MissionHistoryRow[]>();
-  for (const row of rows) {
+  // An update that changed only bookkeeping says nothing (the database already drops most of these).
+  const telling = rows.filter((row) => row.command !== 'UPDATE' || (row.fields ?? []).some((field) => !HIDDEN.has(field)));
+  for (const row of telling) {
     const group = groups.get(row.occurred_at);
     if (group) group.push(row);
     else groups.set(row.occurred_at, [row]);
