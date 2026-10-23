@@ -11,7 +11,17 @@ const source = (days: Day[], over: Partial<DailyStarSource> = {}): DailyStarSour
 describe('dailyStarHighlight (yesterday\'s M08 daily star as a highlight)', () => {
   it('names the viewer as the winner of a certified completed_winner day', () => {
     const h = dailyStarHighlight(source([day({})]), DATE, 'u1');
-    expect(h).toEqual({ date: DATE, status: 'winner', winnerId: 'u1', isViewer: true, reasons: [], cutoff: { hour: 23, minute: 59 }, policyApproved: true });
+    expect(h).toEqual({ date: DATE, status: 'winner', winnerId: 'u1', isViewer: true, reasons: [], cutoff: { hour: 23, minute: 59 }, policyApproved: true, recalculating: false });
+  });
+
+  it('keeps the last decided star of a stale day, marked recalculating (migration 62)', () => {
+    const stale = { status: 'stale', certified: false, winnerId: null, reasons: [] };
+    const h = dailyStarHighlight(source([day({ ...stale, lastDecided: { status: 'completed_winner', winnerId: 'u1' } })]), DATE, 'u1');
+    expect(h).toMatchObject({ status: 'winner', winnerId: 'u1', isViewer: true, recalculating: true, reasons: [] });
+    const none = dailyStarHighlight(source([day({ ...stale, lastDecided: { status: 'completed_none', winnerId: null } })]), DATE, 'u1');
+    expect(none).toMatchObject({ status: 'none', isViewer: false, recalculating: true });
+    const never = dailyStarHighlight(source([day({ ...stale, lastDecided: null })]), DATE, 'u1');
+    expect(never).toMatchObject({ status: 'blocked', recalculating: false, reasons: ['award_run_uncertified'] });
   });
 
   it('names another member as the winner without marking the viewer', () => {

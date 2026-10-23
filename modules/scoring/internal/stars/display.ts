@@ -28,6 +28,19 @@ export function awardDayLabel(date: string): string {
 /** What a day shows: a star, a decided day without one, a holiday, or why it is open. */
 export type AwardDayKind = 'awarded' | 'no_winner' | 'holiday' | 'waiting' | 'queued' | 'failed';
 
+/**
+ * A day's last decided result (migration 62): the director's override, else
+ * the latest run when it certified a winner or no winner. Kept while the day
+ * is stale, so views can show it until the recheck finishes.
+ */
+export interface LastDecided {
+  status: 'completed_winner' | 'completed_none';
+  winnerId: string | null;
+  runId: string | null;
+  decidedAt: string | null;
+  override: boolean;
+}
+
 /** The fields of an award day these helpers read (a subset of AwardDay). */
 export interface AwardDayFacts {
   date: string;
@@ -35,6 +48,7 @@ export interface AwardDayFacts {
   winnerId: string | null;
   reasons?: readonly string[] | null;
   jobStatus?: string | null;
+  lastDecided?: LastDecided | null;
 }
 
 const NO_WINNER_REASONS = new Set(['no_eligible_candidates', 'exact_highest_score_tie', 'no_regular_attendance_on_award_day']);
@@ -59,4 +73,29 @@ export function awardDayKind(day: AwardDayFacts, holidays?: ReadonlySet<string> 
 export function mondayIndex(date: string): number {
   const value = parse(date);
   return value ? (value.getUTCDay() + 6) % 7 : 0;
+}
+
+/** What a day shows: its kind, the star's winner, and whether it is being rechecked. */
+export interface AwardDayView {
+  kind: AwardDayKind;
+  winnerId: string | null;
+  /** A stale day showing its last decided result until the recheck finishes. */
+  recalculating: boolean;
+}
+
+/**
+ * The view of one day. A stale day with a last decided result keeps showing
+ * that result, marked as recalculating: a change only queues a recheck, and the
+ * stored decision stands until a new run replaces it. Everything else is
+ * `awardDayKind` as before. Monthly selection, the ceremony, month close and
+ * points never read this: they count certified, non-stale days only.
+ */
+export function awardDayView(day: AwardDayFacts, holidays?: ReadonlySet<string> | null): AwardDayView {
+  const last = day.status === 'stale' ? day.lastDecided : null;
+  if (last) {
+    const kind = awardDayKind({ date: day.date, status: last.status, winnerId: last.winnerId }, holidays);
+    return { kind, winnerId: kind === 'awarded' ? last.winnerId : null, recalculating: true };
+  }
+  const kind = awardDayKind(day, holidays);
+  return { kind, winnerId: kind === 'awarded' ? day.winnerId : null, recalculating: false };
 }

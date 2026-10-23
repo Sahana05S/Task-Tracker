@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { ClockIcon, HourglassIcon, MinusIcon, StarIcon, TreePalmIcon, TriangleAlertIcon } from 'lucide-react';
+import { ClockIcon, HourglassIcon, MinusIcon, RefreshCwIcon, StarIcon, TreePalmIcon, TriangleAlertIcon } from 'lucide-react';
 
 import type { AwardDayKind } from '@/modules/scoring/client';
 
@@ -21,3 +21,14 @@ export const AWARD_KIND: Record<AwardDayKind, { label: string; icon: Icon; tone:
 
 /** The order kinds are counted and explained in. */
 export const AWARD_KIND_ORDER: readonly AwardDayKind[] = ['awarded', 'no_winner', 'waiting', 'queued', 'failed', 'holiday'];
+
+/**
+ * The mark on a day that shows its last decided result while a recheck is
+ * queued (`awardDayView(...).recalculating`): an icon and the word, never
+ * colour alone.
+ */
+export const RECALCULATING = {
+  label: 'Recalculating',
+  icon: RefreshCwIcon as Icon,
+  description: 'Records changed after this result; it is shown until the recheck finishes.',
+} as const;

@@ -63,6 +63,8 @@ jobs:
         run: python tools/test_m15_award_invalidation_database.py --psql "$(command -v psql)" --port 15432
       - name: Award invalidation once per transaction (migration 60)
         run: python tools/test_m60_award_invalidation_once_database.py --psql "$(command -v psql)" --port 15432
+      - name: Award read model last decided result (migration 62)
+        run: python tools/test_m62_award_last_decided_database.py --psql "$(command -v psql)" --port 15432
       - name: Conflict errors without PostgREST retries (migration 52)
         run: python tools/test_conflict_sqlstate_database.py --psql "$(command -v psql)" --port 15432
       - name: M16 recognition waypoints (migration 51)

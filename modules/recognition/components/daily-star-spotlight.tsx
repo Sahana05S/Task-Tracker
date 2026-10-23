@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AlertTriangleIcon, ArrowRightIcon, StarIcon } from 'lucide-react';
+import { AlertTriangleIcon, ArrowRightIcon, RefreshCwIcon, StarIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import type { DailyStarHighlight } from '@/modules/recognition/client';
@@ -75,10 +75,14 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
     body = 'Daily star rules are awaiting approval, so no stars are awarded.';
   } else if (h.status === 'winner') {
     title = h.isViewer ? "You earned yesterday's daily star" : `${winnerName} earned yesterday's daily star`;
-    body = `Highest certified score for ${longDate(h.date)}.`;
+    body = h.recalculating
+      ? `Records for ${longDate(h.date)} changed after this star was decided; it stays until the next run rechecks the day.`
+      : `Highest certified score for ${longDate(h.date)}.`;
   } else if (h.status === 'none') {
     title = 'No daily star was awarded yesterday';
-    body = `${longDate(h.date)}: ${noStarSentence(h.reasons)}`;
+    body = h.recalculating
+      ? `Records for ${longDate(h.date)} changed after this was decided; the next run rechecks the day.`
+      : `${longDate(h.date)}: ${noStarSentence(h.reasons)}`;
   } else if (h.status === 'blocked') {
     title = "Yesterday's daily star is waiting for data";
     body = `The run for ${longDate(h.date)} has not reached a certified result.`;
@@ -112,6 +116,12 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
             ) : null}
             <h2 className="text-foreground min-w-0 text-xl font-bold tracking-tight">{title}</h2>
           </div>
+          {h?.recalculating ? (
+            <p className="text-muted-foreground mt-2 inline-flex items-center gap-1.5 text-xs font-medium">
+              <RefreshCwIcon className="size-3.5" aria-hidden="true" />
+              Recalculating
+            </p>
+          ) : null}
           <p className="text-muted-foreground mt-1 text-sm">{body}</p>
           {detail}
           {h?.policyApproved ? (

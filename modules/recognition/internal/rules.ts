@@ -162,8 +162,12 @@ export interface DailyStarHighlight {
    * `winner`: certified `completed_winner`. `none`: certified `completed_none`.
    * `blocked`: a run exists but is not a certified outcome (blocked, failed,
    * stale, missing or uncertified). `pending`: no award slot for the date yet.
+   * A stale day with a last decided result (migration 62) keeps that result as
+   * `winner` or `none`, with `recalculating` set.
    */
   status: DailyStarStatus;
+  /** The day changed after its star was decided; the shown result is the last decided one. */
+  recalculating: boolean;
   winnerId?: string;
   /** The viewer is the winner. */
   isViewer: boolean;
@@ -176,7 +180,10 @@ export interface DailyStarHighlight {
 
 /** The slice of `award_read_model` the highlight needs. */
 export interface DailyStarSource {
-  days: readonly { date: string; status: string; certified: boolean; winnerId: string | null; reasons?: readonly string[] | null }[];
+  days: readonly {
+    date: string; status: string; certified: boolean; winnerId: string | null; reasons?: readonly string[] | null;
+    lastDecided?: { status: string; winnerId: string | null } | null;
+  }[];
   policyApproved: boolean;
   policy: { cutoffHour?: unknown; cutoffMinute?: unknown } | null;
 }
@@ -187,9 +194,14 @@ export function dailyStarHighlight(source: DailyStarSource, date: string, viewer
   const cutoff = policy && typeof policy.cutoffHour === 'number'
     ? { hour: policy.cutoffHour, minute: typeof policy.cutoffMinute === 'number' ? policy.cutoffMinute : 0 }
     : null;
-  const base = { date, cutoff, policyApproved: source.policyApproved === true };
+  const base = { date, cutoff, policyApproved: source.policyApproved === true, recalculating: false };
   const day = source.days.find((d) => d.date === date);
   if (!day) return { ...base, status: 'pending', isViewer: false, reasons: [] };
+  const last = day.status === 'stale' ? day.lastDecided : null;
+  if (last?.status === 'completed_winner' && last.winnerId) {
+    return { ...base, recalculating: true, status: 'winner', winnerId: last.winnerId, isViewer: last.winnerId === viewerId, reasons: [] };
+  }
+  if (last?.status === 'completed_none') return { ...base, recalculating: true, status: 'none', isViewer: false, reasons: [] };
   const reasons = [...(day.reasons ?? [])];
   if (day.certified && day.status === 'completed_winner' && day.winnerId) {
     return { ...base, status: 'winner', winnerId: day.winnerId, isViewer: day.winnerId === viewerId, reasons };

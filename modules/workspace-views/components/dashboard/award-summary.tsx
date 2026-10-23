@@ -1,7 +1,7 @@
 import { TrophyIcon } from 'lucide-react';
 
-import { awardDayKind, awardDayLabel, mondayIndex, type AwardDayKind, type AwardReadModel } from '@/modules/scoring/client';
-import { AWARD_KIND, AWARD_KIND_ORDER } from '@/modules/scoring/components/award-day-kind';
+import { awardDayLabel, awardDayView, mondayIndex, type AwardDayKind, type AwardDayView, type AwardReadModel } from '@/modules/scoring/client';
+import { AWARD_KIND, AWARD_KIND_ORDER, RECALCULATING } from '@/modules/scoring/components/award-day-kind';
 import { GAP_SENTENCE, dataGaps } from '@/modules/reports/client';
 import { cn, getInitials } from '@/shared/utils';
 
@@ -19,6 +19,8 @@ function addDays(date: string, days: number): string {
  * the rest, then one plain sentence on why days are still open. Counts come
  * from the award read model and monthly selection: a day is decided only
  * when it is certified and the monthly selection does not list it as missing.
+ * A day being rechecked after a change keeps showing its last decided result
+ * with the Recalculating mark, and is counted as rechecked, not decided.
  */
 export function AwardSummary({awards,names,availabilityReason,holidays,holidayNames={}}:{
   awards: AwardReadModel;
@@ -35,13 +37,15 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
     return Boolean(day?.certified && ['completed_winner', 'completed_none'].includes(day.status) && !missing.has(date));
   };
   const required = dates.filter(date => missing.has(date) || decided(date));
-  const kindOf = (date: string): AwardDayKind => {
+  const viewOf = (date: string): AwardDayView => {
     const day = byDate.get(date);
-    if (day) return awardDayKind(day, holidays);
-    return holidays?.has(date) ? 'holiday' : 'queued';
+    if (day) return awardDayView(day, holidays);
+    return { kind: holidays?.has(date) ? 'holiday' : 'queued', winnerId: null, recalculating: false };
   };
-  const kinds = new Map(dates.map(date => [date, kindOf(date)]));
+  const views = new Map(dates.map(date => [date, viewOf(date)]));
+  const kinds = new Map(dates.map(date => [date, views.get(date)!.kind]));
   const count = (kind: AwardDayKind) => [...kinds.values()].filter(value => value === kind).length;
+  const rechecking = dates.filter(date => views.get(date)!.recalculating);
 
   // Every calendar day from the first to the last award day, so the strip has no holes.
   const calendar: string[] = [];
@@ -62,18 +66,20 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
   const failed = count('failed');
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
   const explanation = [
+    rechecking.length ? `${plural(rechecking.length, 'day')} ${rechecking.length === 1 ? 'shows its' : 'show their'} last decided result until the next run rechecks ${rechecking.length === 1 ? 'it' : 'them'} after recent changes.` : '',
     waiting.length ? `${plural(waiting.length, 'day')} waiting for data. ${gaps.length ? gaps.map(gap => GAP_SENTENCE[gap]).join(' ') : GAP_SENTENCE.other}` : '',
     failed ? `${plural(failed, 'day')} failed to calculate and will be retried.` : '',
     queued ? `${plural(queued, 'day')} will be calculated in the next nightly run.` : '',
   ].filter(Boolean).join(' ');
 
   const describe = (date: string) => {
-    const kind = kinds.get(date)!;
-    const day = byDate.get(date);
-    if (kind === 'awarded') return `${awardDayLabel(date)}: star awarded to ${names[day?.winnerId ?? ''] ?? 'a team member'}`;
+    const { kind, winnerId, recalculating } = views.get(date)!;
+    const mark = recalculating ? ' (recalculating after a change)' : '';
+    if (kind === 'awarded') return `${awardDayLabel(date)}: star awarded to ${names[winnerId ?? ''] ?? 'a team member'}${mark}`;
     if (kind === 'holiday') return `${awardDayLabel(date)}: ${holidayNames[date] ?? 'team holiday'}`;
-    return `${awardDayLabel(date)}: ${AWARD_KIND[kind].label.toLowerCase()}`;
+    return `${awardDayLabel(date)}: ${AWARD_KIND[kind].label.toLowerCase()}${mark}`;
   };
+  const Recalculating = RECALCULATING.icon;
 
   return (
     <section className="soft-card grid gap-3 p-5 sm:p-6" aria-label="Awards">
@@ -87,7 +93,7 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
       <p className="text-sm">
         {required.length === 0
           ? 'No daily stars are due yet this month.'
-          : <>Daily stars: <span className="tabular font-semibold">{required.filter(decided).length} of {required.length}</span> days decided.</>}
+          : <>Daily stars: <span className="tabular font-semibold">{required.filter(decided).length} of {required.length}</span> days decided{rechecking.length ? <>, <span className="tabular font-semibold">{rechecking.length}</span> being rechecked</> : null}.</>}
       </p>
 
       {calendar.length ? (
@@ -101,7 +107,7 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
             if (!kind) return <span key={date} aria-hidden="true" />;
             const meta = AWARD_KIND[kind];
             const Icon = meta.icon;
-            const winnerId = byDate.get(date)?.winnerId;
+            const { winnerId, recalculating } = views.get(date)!;
             const label = describe(date);
             return (
               <span
@@ -111,6 +117,7 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
                 className={cn('relative flex size-9 flex-col items-center justify-center rounded-lg border sm:size-10', meta.tone)}
               >
                 <span aria-hidden="true" className="absolute top-0.5 left-1 text-[0.5625rem] leading-none font-medium opacity-80">{Number(date.slice(8))}</span>
+                {recalculating ? <Recalculating aria-hidden="true" className="absolute top-0.5 right-0.5 size-2.5 opacity-80" /> : null}
                 {kind === 'awarded' && winnerId ? (
                   <span aria-hidden="true" className="mt-1.5 text-[0.6875rem] font-bold">{getInitials(names[winnerId] ?? '?')}</span>
                 ) : kind === 'holiday' ? (
@@ -139,6 +146,12 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
               </li>
             );
           })}
+          {rechecking.length ? (
+            <li className="inline-flex items-center gap-1" title={RECALCULATING.description}>
+              <span className="border-border inline-flex size-4 items-center justify-center rounded border"><Recalculating aria-hidden="true" className="size-2.5" /></span>
+              {RECALCULATING.label} ({rechecking.length})
+            </li>
+          ) : null}
         </ul>
       ) : null}
 

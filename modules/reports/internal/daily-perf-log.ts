@@ -10,9 +10,10 @@ import type { UserRole } from '@/types/tracker';
  * the sources. PRIVATE (exported through client.ts).
  */
 
-export type DailyPerfStatus = 'calculated' | 'uncertified' | 'not_calculated';
+export type DailyPerfStatus = 'calculated' | 'recalculating' | 'uncertified' | 'not_calculated';
 export const DAILY_PERF_STATUS_LABEL: Record<DailyPerfStatus, string> = {
   calculated: 'Calculated',
+  recalculating: 'Recalculating',
   uncertified: 'Not certified',
   not_calculated: 'Not calculated',
 };
@@ -39,7 +40,7 @@ export interface DailyPerfLog extends DailyPerfFilter {
   /** Everyone a manager may filter by (active members and anyone with a run in the range), by name. */
   options: { id: string; fullName: string }[];
 }
-type RetainedDay = Pick<AwardDay, 'date' | 'certified'> & { candidates: { userId: string; calculation: MemberCalculation }[] };
+type RetainedDay = Pick<AwardDay, 'date' | 'certified'> & Partial<Pick<AwardDay, 'status' | 'lastDecided'>> & { candidates: { userId: string; calculation: MemberCalculation }[] };
 
 const TEAM_DETAIL_ROLES: readonly UserRole[] = ['managing_director', 'project_engineer'];
 
@@ -86,8 +87,9 @@ export function dailyPerfFilter(
 /**
  * One row per member per day, newest day first. A day reads its latest
  * retained award run only: no run (or no candidate for the member) is "Not
- * calculated", and a run that is not certified (stale or uncertified) is
- * marked. Nothing is recalculated here.
+ * calculated", a stale day that still has its last decided result is
+ * "Recalculating" (the figures are that decided run's), and any other run that
+ * is not certified is marked. Nothing is recalculated here.
  */
 export function dailyPerfRows(input: {
   from: string;
@@ -108,7 +110,8 @@ export function dailyPerfRows(input: {
         date,
         userId: member.id,
         fullName: member.fullName,
-        status: !calculation ? 'not_calculated' : day?.certified ? 'calculated' : 'uncertified',
+        status: !calculation ? 'not_calculated' : day?.certified ? 'calculated'
+          : day?.status === 'stale' && day.lastDecided ? 'recalculating' : 'uncertified',
         factors: Object.fromEntries(FACTORS.map((factor) => {
           const result = calculation?.factors[factor];
           return [factor, result?.available && result.deltaExact ? Exact.from(result.deltaExact).display(6) : null];

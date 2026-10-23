@@ -11,6 +11,7 @@ import { cn } from '@/shared/utils';
 
 const STATUS_TONE: Record<DailyPerfRow['status'], string> = {
   calculated: 'text-foreground',
+  recalculating: 'text-muted-foreground border-border rounded-full border px-2 py-0.5',
   uncertified: 'text-attention-foreground bg-attention-subtle rounded-full px-2 py-0.5',
   not_calculated: 'text-muted-foreground',
 };
