@@ -6,7 +6,8 @@ import type { Metadata } from 'next';
 import { AwardSummary } from '@/modules/workspace-views/components/dashboard/award-summary';
 import { CalculationDetails } from '@/modules/workspace-views/components/dashboard/calculation-details';
 import { DataStatusBanner } from '@/modules/workspace-views/components/dashboard/data-status-banner';
-import { canManageAttendance } from '@/modules/attendance';
+import { canManageAttendance, getTeamHolidayDates } from '@/modules/attendance';
+import { getCompanyHolidayNames } from '@/modules/settings';
 import { calculationReasons, dataGaps } from '@/modules/reports/client';
 
 import { AllocationChart } from '@/modules/workspace-views/components/dashboard/allocation-chart';
@@ -46,6 +47,8 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   const logFilter=dailyPerfFilter(query,monthToDate(period,context.asOfLocalDate),profile);
   const log=query.log||query.member||query.from||query.to?getDailyPerfLog(logFilter):null;
   log?.catch(()=>{}); // Rejections are shown by the section; this only stops an unhandled-rejection warning if the page exits early.
+  // Team holidays mark H on the award strip and table; a failed read only drops the marks.
+  const holidaysRead=Promise.all([getTeamHolidayDates(period.startDate,period.endDate),getCompanyHolidayNames(period.startDate,period.endDate)]).catch(()=>[null,{}] as const);
   const presentation=await getLivePresentation(context);
 
   const [dashboardResult, snapshotsResult] = await Promise.allSettled([
@@ -89,6 +92,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   const snapshots = snapshotsResult.value;
   const { analytics, charts } = dashboard;
   const awards=presentation.awards;
+  const [holidays,holidayNames]=await holidaysRead;
   const names=Object.fromEntries(analytics.members.map(member=>[member.userId,member.fullName]));
   const activeMembers=presentation.sources.members.filter(member=>member.active);
   const attendanceMissing={
@@ -139,7 +143,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       </div>
 
       {awards ? (
-        <AwardSummary awards={awards} names={names} availabilityReason={presentation.awardAvailabilityReason} />
+        <AwardSummary awards={awards} names={names} availabilityReason={presentation.awardAvailabilityReason} holidays={holidays} holidayNames={holidayNames} detailsHref="#calculation-details" />
       ) : (
         <StarPerformerCard
           unavailableReason="Awards are not available for this view."
@@ -168,6 +172,8 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         presentation={presentation}
         calculation={analytics.calculation}
         awards={awards}
+        holidays={holidays}
+        holidayNames={holidayNames}
         names={names}
         viewerId={profile.id}
         snapshotCount={snapshots.length}
