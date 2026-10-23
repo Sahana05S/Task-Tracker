@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDownIcon } from 'lucide-react';
 
-import { StellarMark } from '@/shared/ui/stellar-mark';
+import { CompanyBrand, useBrandHomeLabel } from '@/modules/settings/components/company-brand';
 import { MORE_ITEMS, NAV_SECTIONS, activeSection, isMoreActive } from '@/modules/workspace-views/components/shell/nav-items';
 import { TimerPill } from '@/modules/workspace-views/components/shell/timer-pill';
 import { UserMenu } from '@/modules/workspace-views/components/shell/user-menu';
@@ -21,7 +21,7 @@ import { cn } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 
 /**
- * Sticky workspace top bar. Desktop/tablet: brand, the five destination pills
+ * Sticky workspace top bar. Desktop/tablet: the company's brand, the five destination pills
  * and More, then the running-timer pill, the two quick actions (Log time and
  * Post), notifications and account. Below 1280 px the timer pill is compact
  * and the quick actions show icons only, so the bar never overflows. Phones:
@@ -32,13 +32,14 @@ export function TopBar({ profile }: { profile: User }) {
   const pathname = usePathname();
   const section = activeSection(pathname);
   const moreActive = isMoreActive(pathname);
+  const homeLabel = useBrandHomeLabel();
   return (
     <header className="border-border sticky top-0 z-30 border-b bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/75">
       <div className="flex h-(--spacing-header) items-center gap-3 px-4 lg:px-6">
-        <Link href="/today" className="flex shrink-0 items-center gap-2" aria-label="Stellar home">
-          <StellarMark />
-          {/* Wordmark hidden only at tablet width, where the destination pills need the room. */}
-          <span className="text-foreground text-base font-bold tracking-tight md:max-lg:hidden">Stellar</span>
+        {/* The company's own mark and name (Settings > Company > Branding); Stellar's when it has none. */}
+        <Link href="/today" className="flex min-w-0 shrink-0 items-center gap-2" aria-label={homeLabel}>
+          {/* Name hidden only at tablet width, where the destination pills need the room. */}
+          <CompanyBrand nameClassName="max-w-[14rem] md:max-lg:hidden" />
         </Link>
 
         <nav aria-label="Primary" className="bg-muted ml-2 hidden items-center gap-0.5 rounded-full p-1 md:flex">

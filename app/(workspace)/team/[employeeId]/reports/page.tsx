@@ -1,4 +1,5 @@
 import { LiveReport } from '@/modules/reports/components/live-report';
+import { getCompanySettings } from '@/modules/settings';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { monthHistory, monthRevision } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
@@ -83,7 +84,7 @@ export default async function EmployeeReportsPage({
 
       <div className="grid gap-5 lg:gap-6">
         {archiveHistory.revisions.length?<nav aria-label="Employee report revisions" className="flex flex-wrap gap-2">{archiveHistory.revisions.map(r=><Link className="section-tab bg-card" key={r.number} href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}&revision=${r.number}`}>Revision {r.number} · {r.certification==='certified'?'Certified':'Incomplete'}</Link>)}</nav>:null}
-        <LiveReport model={data.presentation}/>
+        <LiveReport model={data.presentation} companyName={(await getCompanySettings()).branding.companyName}/>
         <ItemHoursPanel tasks={itemHours} />
         <h2 className="panel-title mt-2">Retained reports · original rules</h2>
         {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}

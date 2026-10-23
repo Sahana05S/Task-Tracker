@@ -7,6 +7,7 @@ import {
   Building2Icon,
   CalendarDaysIcon,
   CheckIcon,
+  ImageIcon,
   ListOrderedIcon,
   LoaderCircleIcon,
   PlusIcon,
@@ -19,12 +20,15 @@ import {
 
 import { saveCompanySettings, type CompanySettingsActionState } from '@/modules/settings/actions';
 import {
+  BRANDING_URL_FIELDS,
   buildCategoryCatalogue,
   categoryLabelMap,
   formatSheetTag,
+  isBrandUrl,
   renderTitlePattern,
   SCALE_MODE_LABELS,
   STANDING_SCALE_MODES,
+  type BrandingUrlField,
   type CompanySettings,
   type SettingsSection,
   type StandingScaleMode,
@@ -37,6 +41,7 @@ import { MissionPanel } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 import type { TaskCategory, TaskPriority } from '@/types/tracker';
 
+import { ThemedBrandImage } from './company-brand';
 import { MeetingAgenda } from './meeting-agenda';
 
 export interface CompanyMember {
@@ -46,6 +51,7 @@ export interface CompanyMember {
 }
 
 const SECTIONS = [
+  { id: 'branding', label: 'Branding' },
   { id: 'mission-types', label: 'Mission types' },
   { id: 'meeting-types', label: 'Meeting types' },
   { id: 'departments', label: 'Departments' },
@@ -70,6 +76,7 @@ export function CompanySettingsEditor({ settings, members }: { settings: Company
           </a>
         ))}
       </nav>
+      <BrandingSection settings={settings} />
       <MissionTypesSection settings={settings} />
       <MeetingTypesSection settings={settings} />
       <DepartmentsSection settings={settings} />
@@ -479,6 +486,70 @@ function MissionDefaultsSection({ settings }: SectionProps) {
             </select>
           </label>
           <p className="text-muted-foreground self-end text-sm">{SCALE_MODE_HINTS[mode]}</p>
+        </div>
+      </SectionForm>
+    </MissionPanel>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Branding                                                                   */
+/* -------------------------------------------------------------------------- */
+
+const BRANDING_LABELS: Record<BrandingUrlField, { label: string; hint: string }> = {
+  markUrl: { label: 'Mark', hint: 'Square icon for the top bar' },
+  markDarkUrl: { label: 'Mark, dark theme', hint: 'Leave empty to use the mark' },
+  logoUrl: { label: 'Full logo', hint: 'Logo with lettering, for reports' },
+  logoDarkUrl: { label: 'Full logo, dark theme', hint: 'Leave empty to use the full logo' },
+};
+
+function BrandingSection({ settings }: SectionProps) {
+  const initial = Object.fromEntries(BRANDING_URL_FIELDS.map((key) => [key, settings.branding[key] ?? ''])) as Record<BrandingUrlField, string>;
+  const [urls, setUrls, dirty, reset] = useDraft(initial);
+  const invalid = BRANDING_URL_FIELDS.filter((key) => urls[key].trim() && !isBrandUrl(urls[key].trim()));
+  const preview = (key: BrandingUrlField) => (isBrandUrl(urls[key].trim()) ? urls[key].trim() : null);
+  return (
+    <MissionPanel
+      id="branding"
+      icon={ImageIcon}
+      title="Branding"
+      subtitle={`How ${settings.branding.companyName || 'your company'} appears in the workspace: the mark sits in the top bar. Use a file of this site (/brands/...) or an https address.`}
+      className="scroll-mt-20"
+    >
+      <SectionForm section="branding" version={settings.version} dirty={dirty && invalid.length === 0} onDiscard={reset} payload={() => urls}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(['markUrl', 'markDarkUrl', 'logoUrl', 'logoDarkUrl'] as const).map((key) => {
+            const src = preview(key);
+            const dark = key.endsWith('DarkUrl');
+            return (
+              <div key={key} className="grid gap-2">
+                <label className="field-label">
+                  {BRANDING_LABELS[key].label}
+                  <input
+                    type="text"
+                    inputMode="url"
+                    value={urls[key]}
+                    onChange={(event) => setUrls({ ...urls, [key]: event.target.value })}
+                    placeholder={BRANDING_LABELS[key].hint}
+                    aria-invalid={invalid.includes(key) || undefined}
+                    className="field"
+                    maxLength={500}
+                  />
+                </label>
+                {invalid.includes(key) ? (
+                  <p className="text-danger text-xs">Start with / (a file of this site) or https://.</p>
+                ) : null}
+                {/* A dark-theme image is previewed on the dark card whatever theme the director uses. */}
+                <div data-theme={dark ? 'dark' : undefined} className="border-border bg-card flex h-20 items-center justify-center rounded-lg border p-2">
+                  {src ? (
+                    <ThemedBrandImage light={src} dark={null} alt={`${BRANDING_LABELS[key].label} preview`} className="max-h-full max-w-full object-contain" />
+                  ) : (
+                    <span className="text-muted-foreground text-xs">No image</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </SectionForm>
     </MissionPanel>

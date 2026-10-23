@@ -21,7 +21,8 @@ import {
   parseTaskFields,
   readParticipantVersion,
 } from '@/modules/tasks/internal/input';
-import { canManageTasks } from '@/modules/tasks/internal/permissions';
+import { getMissionActionContext, type MissionActionContext } from '@/modules/tasks/internal/action-context';
+import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
 import { commandIdentity } from '@/shared/commands/result';
 import { readString } from '@/shared/forms/form-data';
 import { resolveActor } from '@/shared/session/actor';
@@ -144,6 +145,21 @@ export async function updateTaskStatus(
 ): Promise<TaskActionState> {
   if (!isTaskStatus(status)) return failure('Unrecognised status.');
   return taskCommand(taskId, 'transition', { status, reason: reason ?? null }, version, operationId);
+}
+
+/** Everything a mission's action menu needs, loaded when the menu opens. */
+export async function loadMissionActions(taskId: string): Promise<
+  ActionResponse<MissionActionContext & { canManage: boolean; canEditOwnFields: boolean; currentUserId: string }>
+> {
+  const actor = await resolveActor();
+  if (!actor.ok) return { success: false, error: actor.error };
+  const context = await getMissionActionContext(taskId);
+  if (!context) return { success: false, error: 'This mission could not be loaded.' };
+  const canManage = canManageTasks(actor.profile.role);
+  return {
+    success: true,
+    data: { ...context, canManage, canEditOwnFields: canManage || canUpdateTaskOwnFields(actor.profile, context.task), currentUserId: actor.profile.id },
+  };
 }
 
 /** Tag and status for the "not started yet" prompt; null when unreadable or archived. */

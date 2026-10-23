@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, Rows3Icon, Columns3Icon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
@@ -181,6 +182,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
           <span className="flex flex-wrap items-center gap-3">
             <TimerButton taskId={mission.id} taskLabel={mission.taskTag} />
             <Link href={`/tasks/${encodeURIComponent(mission.taskTag)}`} className={cn('text-primary rounded text-xs font-semibold underline-offset-4 hover:underline', FOCUS)}>Mission details</Link>
+            <MissionActionsMenu taskId={mission.id} taskTag={mission.taskTag} />
           </span>
         </div> : null}
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-5">
