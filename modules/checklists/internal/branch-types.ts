@@ -11,6 +11,9 @@ export interface ChecklistBranchOptions {
 export interface ChecklistBranchRow extends ChecklistNode {
   priority: number;
   childCount: number;
+  /** Set on a sub-mission row: the linked mission's tag and status (migration 71). */
+  linkedTaskTag?: string | null;
+  linkedTaskStatus?: string | null;
   /** Set on a Quest row: the Quest's own checklist (migration 67). */
   ownedChecklistId?: string | null;
   progressPercentage: number | null;

@@ -149,7 +149,8 @@ describe('checklist home', () => {
       managerTools: { linkChoices: [], unmapped: [{ id: 'old-1', title: 'Old row' }] },
     })));
     expect(manager).not.toContain('Progress: manual');
-    expect(manager).toContain('Mission progress, from Activity');
+    expect(manager).toContain('Activity progress (the mission’s progress)');
+    expect(manager).toContain('Open · ');
     expect(manager).toContain('Rows without a section');
     expect(manager).toContain('name="node_id" value="old-1"');
     expect(manager).not.toContain('Structure and linked missions');

@@ -1,5 +1,5 @@
 import type { ChecklistBranchRow } from './branch-types';
-import type { ChecklistNodeProgress, ChecklistSection, CompletionState, SectionProgress } from './progress';
+import { CHECKLIST_SECTIONS, type ChecklistNodeProgress, type ChecklistRollup, type ChecklistSection, type CompletionState, type SectionProgress } from './progress';
 
 /**
  * Pure rules for the checklist tables (the sheet's Checklist Home and "[ChL]"
@@ -90,4 +90,18 @@ export function commandVersion(data: unknown): number | null {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   const version = (data as { version?: unknown }).version;
   return typeof version === 'number' && Number.isFinite(version) ? version : null;
+}
+
+/**
+ * OPEN / CLOSED for a whole checklist (the sheet's Checklist Home): progress
+ * follows Activity only, but the checklist is closed only once every phase is
+ * complete or N/A. Lists the phases still open.
+ */
+export function checklistGate(rollup: Pick<ChecklistRollup, 'sections' | 'isComplete' | 'errors'>): { closed: boolean; openPhases: ChecklistSection[]; label: string } {
+  if (rollup.errors.length) return { closed: false, openPhases: [], label: 'Open · needs attention' };
+  const openPhases = CHECKLIST_SECTIONS.filter((key) => !rollup.sections[key].isComplete);
+  if (rollup.isComplete && openPhases.length === 0) return { closed: true, openPhases, label: 'Closed · every phase done' };
+  const names = openPhases.map((key) => SECTION_TITLES[key].title);
+  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0] ?? 'A phase';
+  return { closed: false, openPhases, label: `Open · ${list} not done` };
 }

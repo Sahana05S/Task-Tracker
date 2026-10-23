@@ -16,6 +16,7 @@ import { SECTION_TITLES, checklistIssues, pageResult, percentText } from '../int
 import { SectionStateIcon } from './section-state-icon';
 import { ChecklistVersionField, ChecklistVersionProvider } from './checklist-state-control';
 import { ChecklistIssues, ChecklistTable } from './checklist-table';
+import { ChecklistGateBadge } from './checklist-gate-badge';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-cards';
 import { ChecklistOutline } from './checklist-outline';
@@ -254,14 +255,15 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
             </span>
             <div className="min-w-0">
               <p className="stat-figure">{percentText(activity) ?? 'Not started'}</p>
-              <p className="text-muted-foreground text-xs">{checklist.ownerNodeId ? 'Quest progress, from its Activity' : 'Mission progress, from Activity'}</p>
+              <p className="text-muted-foreground text-xs">Activity progress{checklist.ownerNodeId ? '' : ' (the mission’s progress)'}</p>
             </div>
           </div>
           <MissionProgress value={activity} label="Activity progress" className="h-1.5" />
+          <ChecklistGateBadge rollup={rollup} className="justify-self-start" />
           <p className="text-muted-foreground text-xs">
-            {checklist.ownerNodeId
-              ? (rollup.isComplete ? 'Every row is complete or N/A, so this Quest is complete.' : 'The Quest completes when every row in its three phases is complete or N/A.')
-              : rollup.isComplete ? 'Every row is complete or N/A. Reviewers approve before Done.' : 'Done waits until every row is complete or N/A.'}
+            {rollup.isComplete
+              ? (checklist.ownerNodeId ? 'This Quest is complete.' : 'Reviewers approve before Done.')
+              : `${checklist.ownerNodeId ? 'The Quest' : 'Done'} waits until Setup, Activity and Closure are complete or N/A.`}
           </p>
         </div>
       </div>

@@ -6,9 +6,9 @@ import { cn } from '@/shared/utils';
 import type { Task } from '@/types/tracker';
 import type { ActionResponse } from '@/types/tracker';
 import type { ChecklistBranchRow } from '../internal/branch-types';
-import { checklistWorkHref, openChecklistRow } from '../internal/location';
+import { rowHref } from '../internal/location';
 import type { CompletionState, SectionProgress } from '../internal/progress';
-import { opensTable, percentText, rowKind, sectionStatus, stateChoices, type ChecklistRowKind } from '../internal/table';
+import { percentText, rowKind, sectionStatus, stateChoices, type ChecklistRowKind } from '../internal/table';
 import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
 import { SectionStateIcon } from './section-state-icon';
 
@@ -37,12 +37,13 @@ export function ChecklistRowCard({ row, ctx, large = false }: { row: ChecklistBr
   const kind = rowKind(row);
   const { label, icon: Icon } = KIND[kind];
   const choices = stateChoices(kind);
-  const href = opensTable(kind) ? checklistWorkHref(ctx.task.taskTag, openChecklistRow(row)) : null;
+  const href = rowHref(ctx.task.taskTag, row);
   const progress = row.applicable ? percentText(row.progressPercentage) : 'N/A';
   const state: CompletionState = row.completionState ?? 'No';
   const done = row.isComplete && row.applicable;
   const detail = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside`
-    : kind === 'quest' ? `${row.childCount} Activity row${row.childCount === 1 ? '' : 's'}` : null;
+    : kind === 'quest' ? `${row.childCount} Activity row${row.childCount === 1 ? '' : 's'}`
+    : kind === 'linked' && row.linkedTaskTag ? `${row.linkedTaskTag}${row.linkedTaskStatus ? ` · ${row.linkedTaskStatus}` : ''}` : null;
 
   return (
     <article className={cn('soft-card grid content-start gap-2.5 p-3.5', large && 'sm:p-4', done && 'bg-success-subtle/40')}>
