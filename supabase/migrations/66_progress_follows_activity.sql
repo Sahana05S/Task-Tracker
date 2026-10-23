@@ -96,7 +96,7 @@ DO $$ DECLARE b record; skipped text:=''; moved int:=0; BEGIN
   END;
  END LOOP;
  PERFORM set_config('taskpulse.organization','',true);
- SELECT count(*) INTO moved FROM m66_before b JOIN public.tasks t ON t.id=b.task_id WHERE t.progress_percentage IS DISTINCT FROM b.before_progress;
+ SELECT count(*) INTO moved FROM m66_before x JOIN public.tasks t ON t.id=x.task_id WHERE t.progress_percentage IS DISTINCT FROM x.before_progress;
  RAISE NOTICE 'Migration 66: % checklists now follow Activity; % missions changed progress', (SELECT count(*) FROM m66_before), moved;
  IF skipped<>'' THEN RAISE NOTICE 'Migration 66: not recalculated now: %', skipped; END IF;
 END $$;
