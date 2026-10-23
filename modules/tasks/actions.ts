@@ -2,12 +2,14 @@
 
 import {
   revalidateAfterCreate,
+  revalidateAfterDetails,
   revalidateAfterEdit,
   revalidateAfterLifecycle,
 } from '@/modules/tasks/internal/cache';
 import {
   createTaskWithScale,
   deleteTaskRow,
+  createSubMissionRow,
   findTaskIdByTag,
   readTaskLifecycle,
   runLifecycleCommand,
@@ -145,6 +147,36 @@ export async function updateTaskStatus(
 ): Promise<TaskActionState> {
   if (!isTaskStatus(status)) return failure('Unrecognised status.');
   return taskCommand(taskId, 'transition', { status, reason: reason ?? null }, version, operationId);
+}
+
+/**
+ * Adds a sub-mission from a checklist's add row: a new mission (people and due
+ * date from the parent unless given) linked as a row of the parent.
+ */
+export async function createSubMission(form: FormData): Promise<ActionResponse<Json>> {
+  const actor = await resolveActor();
+  if (!actor.ok) return { success: false, error: actor.error };
+  if (!canManageTasks(actor.profile.role)) return { success: false, error: 'Only managing directors and project engineers can create sub-missions.' };
+  const title = readString(form, 'title');
+  const taskId = readString(form, 'taskId');
+  const version = Number(readString(form, 'expectedVersion'));
+  const operationId = readString(form, 'operationId');
+  if (!title) return { success: false, error: 'Name the sub-mission.' };
+  if (!taskId || !Number.isFinite(version) || !operationId) return { success: false, error: 'Reload the mission before adding a sub-mission.' };
+  const created = await createSubMissionRow({
+    parentTaskId: taskId,
+    checklistId: readString(form, 'checklist_id') || null,
+    section: readString(form, 'section'),
+    parentNodeId: readString(form, 'parent_id') || null,
+    title,
+    dueDate: readString(form, 'due_date') || null,
+    expectedVersion: version,
+    operationId,
+  });
+  if (!created.ok) return { success: false, error: created.error };
+  revalidateAfterCreate();
+  revalidateAfterDetails();
+  return { success: true, data: created.value };
 }
 
 /** Everything a mission's action menu needs, loaded when the menu opens. */

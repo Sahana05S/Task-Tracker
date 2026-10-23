@@ -57,7 +57,8 @@ export interface ChecklistWorkspaceProps {
     linkChoices: readonly { id: string; taskTag: string; title: string }[];
     unmapped: readonly { id: string; title: string }[];
   };
-  actions: { checklist: Command; start: Command; stop: Command; discard: Command };
+  /** `submission` creates a Sub-mission (managers; supplied by the page from the tasks module). */
+  actions: { checklist: Command; start: Command; stop: Command; discard: Command; submission?: Command };
   /** Beside the breadcrumb: the mission's own actions, supplied by the page. */
   headerActions?: React.ReactNode;
 }
@@ -106,7 +107,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       href: ancestorHref(task.taskTag, ancestor, section),
       hideOnPhone: index < ancestors.length - 2 })),
   ];
-  const tableActions = { checklist: props.actions.checklist, start: props.actions.start, stop: props.actions.stop, discard: props.actions.discard };
+  const tableActions = { checklist: props.actions.checklist, start: props.actions.start, stop: props.actions.stop, discard: props.actions.discard, submission: manager ? props.actions.submission : undefined };
   const shared = { manager, linkChoices: tools?.linkChoices ?? [] };
   const issues = checklistIssues(rollup.errors);
 

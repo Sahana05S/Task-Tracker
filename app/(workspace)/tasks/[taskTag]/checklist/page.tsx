@@ -10,6 +10,7 @@ import { getChecklistBranch, getRunningChecklistTimers, getUnmappedRootRows } fr
 import { CHECKLIST_SECTIONS, checklistWorkHref, parseChecklistLocation, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistItemTime } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistHomeSection } from '@/modules/checklists/components/checklist-workspace';
 import { checklistCommand } from '@/modules/checklists/actions';
+import { createSubMission } from '@/modules/tasks/actions';
 import { getMemberNames } from '@/modules/team';
 import { canStartTimerForTask } from '@/modules/time-tracking/client';
 import { discardTaskTimer, startItemTimer, stopTaskTimer } from '@/modules/time-tracking/timer-actions';
@@ -94,7 +95,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       time={time}
       selectedItem={location.item}
       managerTools={manager ? { linkChoices, unmapped } : undefined}
-      actions={{ checklist: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer }}
+      actions={{ checklist: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer, submission: createSubMission }}
       headerActions={<MissionActionsMenu taskId={task.id} taskTag={task.taskTag} variant="button" />}
     />
   );

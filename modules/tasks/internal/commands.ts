@@ -140,6 +140,36 @@ export async function readTaskLifecycle(taskId: string): Promise<TaskLifecycleSt
   };
 }
 
+export interface SubMissionInput {
+  readonly parentTaskId: string;
+  readonly checklistId: string | null;
+  readonly section: string;
+  readonly parentNodeId: string | null;
+  readonly title: string;
+  readonly dueDate: string | null;
+  readonly expectedVersion: number;
+  readonly operationId: string;
+}
+
+/**
+ * Creates a sub-mission: a real mission, its linked row in the parent's
+ * checklist and the parent link, in one RPC (migration 68).
+ */
+export async function createSubMissionRow(input: SubMissionInput): Promise<CommandResult<Json>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('submission_create', {
+    p_parent_task: input.parentTaskId,
+    p_checklist: input.checklistId,
+    p_section: input.section,
+    p_parent_node: input.parentNodeId,
+    p_payload: { title: input.title, due_date: input.dueDate },
+    p_expected_version: input.expectedVersion,
+    p_operation: input.operationId,
+  });
+  if (error) return { ok: false, error: describeDatabaseError(error) };
+  return { ok: true, value: data as Json };
+}
+
 /** Looks up a task id by its tag, for linked-scale inputs. */
 export async function findTaskIdByTag(taskTag: string): Promise<string | null> {
   const supabase = await createClient();
