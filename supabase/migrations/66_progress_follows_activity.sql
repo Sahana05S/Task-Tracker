@@ -32,6 +32,13 @@ DECLARE def text:=pg_catalog.pg_get_functiondef(p_sig::regprocedure); BEGIN
   RAISE EXCEPTION '% no longer has exactly one "%"; update migration 66',p_sig,left(p_old,120); END IF;
  EXECUTE replace(def,p_old,p_new);
 END $$;
+-- Two replacements in one rebuild, for an IF opened by one and closed by the other.
+CREATE FUNCTION pg_temp.m66_patch2(p_sig text,p_old1 text,p_new1 text,p_old2 text,p_new2 text) RETURNS void LANGUAGE plpgsql AS $$
+DECLARE def text:=pg_catalog.pg_get_functiondef(p_sig::regprocedure); BEGIN
+ IF (length(def)-length(replace(def,p_old1,'')))/length(p_old1)<>1 OR (length(def)-length(replace(def,p_old2,'')))/length(p_old2)<>1 THEN
+  RAISE EXCEPTION '% no longer has exactly one of the two fragments; update migration 66',p_sig; END IF;
+ EXECUTE replace(replace(def,p_old1,p_new1),p_old2,p_new2);
+END $$;
 
 -- 1. Always follow Activity.
 CREATE FUNCTION taskpulse_private.checklist_follows_activity() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$ BEGIN
@@ -56,10 +63,9 @@ SELECT pg_temp.m66_patch('taskpulse_private.refresh_task_metrics(uuid,uuid,date)
 SELECT pg_temp.m66_patch('taskpulse_private.refresh_task_metrics(uuid,uuid,date)',
  $m$IF progress IS NOT NULL AND (delta IS NULL OR (delta<>0 AND t.participant_credit_mode='legacy')) THEN RAISE EXCEPTION 'Checklist credit needs a measured baseline, scale and approved participant shares; reconcile before saving' USING ERRCODE='23514'; END IF;$m$,
  $m$IF delta IS NULL OR (delta<>0 AND t.participant_credit_mode='legacy') THEN delta:=NULL; END IF;$m$);
-SELECT pg_temp.m66_patch('taskpulse_private.refresh_task_metrics(uuid,uuid,date)',
+SELECT pg_temp.m66_patch2('taskpulse_private.refresh_task_metrics(uuid,uuid,date)',
  $m$PERFORM taskpulse_private.apply_credit(tid,coalesce(delta,0),shares,t.assignee_id);$m$,
- $m$IF delta IS NOT NULL THEN PERFORM taskpulse_private.apply_credit(tid,delta,shares,t.assignee_id);$m$);
-SELECT pg_temp.m66_patch('taskpulse_private.refresh_task_metrics(uuid,uuid,date)',
+ $m$IF delta IS NOT NULL THEN PERFORM taskpulse_private.apply_credit(tid,delta,shares,t.assignee_id);$m$,
  $m$VALUES(tid,p_operation,c.credit_anchor,progress,t.task_scale,t.scale_version,t.participant_version,shares,coalesce(delta,0),'prospective_rollup');$m$,
  $m$VALUES(tid,p_operation,c.credit_anchor,progress,t.task_scale,t.scale_version,t.participant_version,shares,delta,'prospective_rollup'); END IF;$m$);
 SELECT pg_temp.m66_patch('taskpulse_private.refresh_task_metrics(uuid,uuid,date)',
