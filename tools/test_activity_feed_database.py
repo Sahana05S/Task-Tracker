@@ -71,12 +71,11 @@ for db in DBS:
         broken_apply(db,MIGRATION59)
         assert definition(db)==read58
         print('PASS',db,'a failing 59 rolls back to the 57 read')
-        # 66 deliberately recalculates open missions' progress, so the
-        # no-write check stops at 65 and 66 onward is applied afterwards.
-        migrate(db,min(LATEST,65),after=58)
+        migrate(db,59,after=58)
         assert counts(db)==before and definition(db)!=read58,'59 replaces the read and writes no rows'
-        print('PASS',db,f'upgrade 58->{min(LATEST,65)} replaces the read without touching retained rows')
-        if LATEST>65: migrate(db,LATEST,after=65)
+        print('PASS',db,'upgrade 58->59 replaces the read without touching retained rows')
+        # Later migrations may audit their own backfills (65 records each default manager).
+        migrate(db,LATEST,after=59)
     else:
         migrate(db,LATEST); sql(db,seed)
         print('PASS',db,f'fresh install 01-{LATEST}')
