@@ -67,7 +67,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
       <h2 className="text-foreground text-base font-bold tracking-tight">Contributions this period</h2>
       <SupportSummaryCards summary={data.supportSummary} />
 
-      <AwardSummary awards={data.awards} holidays={holidays} holidayNames={holidayNames} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))} detailsHref={`/dashboard?period=${context.period.startDate.slice(0,7)}#calculation-details`}/>
+      <AwardSummary awards={data.awards} holidays={holidays} holidayNames={holidayNames} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
       {canManage ? <AwardControls awards={data.awards} members={data.members.map(m=>({id:m.user.id,fullName:m.user.fullName}))} /> : null}
 
       {data.members.length === 0 ? (

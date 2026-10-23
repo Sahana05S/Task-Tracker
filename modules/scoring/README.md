@@ -14,9 +14,9 @@ The one shared scoring contract (AGENTS.md: no second formula):
 | File | What it offers |
 |---|---|
 | `index.ts` | Server reads and jobs: `loadPerformance`, `runPerformanceJobs`, `getAwards`, `calculateAward`, `runAwardJobs`, `handleAwardWorkerRun`, `handleHealthCheck` (`GET /api/internal/health`), `getTeamSummaryInputs`, `parseTeamSummary`, `readTeamAwardModel` (raw team-wide award payload for Today). Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure engine and rules, safe for `'use client'`: `calculatePerformance`, `FACTORS`, `FACTOR_LABELS`, `COEFFICIENTS`, `memberEligibilityReasons` (attendance reasons that keep a member out of rankings), source parse/resolve, `performanceReport`, award `selectDaily`/`selectMonthly`/`awardContext`, award display helpers (`awardDayKind`, `reasonChips`, `groupAwardDays`, `awardGroupLabel`, `awardDayLabel`, `awardDateRanges`, `mondayIndex`, `isReasonCode`), legacy scorer, `computeTeamAnalytics`, dashboard chart and headline builders, and all their types |
+| `client.ts` | Pure engine and rules, safe for `'use client'`: `calculatePerformance`, `FACTORS`, `FACTOR_LABELS`, `COEFFICIENTS`, `memberEligibilityReasons` (attendance reasons that keep a member out of rankings), source parse/resolve, `performanceReport`, award `selectDaily`/`selectMonthly`/`awardContext`, award strip helpers (`awardDayKind`, `awardDayLabel`, `mondayIndex`), legacy scorer, `computeTeamAnalytics`, dashboard chart and headline builders, and all their types |
 | `award-actions.ts` | `'use server'` `calculateDailyStarAction`, `overrideDailyStarAction` |
-| `components/` | `MissionHeadlineStrip` (the `/tasks` headline), `PerformanceBreakdown`, `AwardHistory`, `AwardStatus` (day-by-day daily star table, grouped by status), `award-day-kind` (`AWARD_KIND`, `AwardKindBadge`, `ReasonChipView`: one icon, word and colour per day status, shared with the dashboard's award strip) |
+| `components/` | `MissionHeadlineStrip` (the `/tasks` headline), `PerformanceBreakdown`, `AwardHistory`, `award-day-kind` (`AWARD_KIND`: one icon, word and colour per day status for the award month strip) |
 
 Calendar periods (`currentPeriod`, `resolvePeriod`, `AnalyticsPeriod`) live in
 `shared/time/period`; exact decimal arithmetic (`Exact`) in `shared/math/exact`.
@@ -42,10 +42,10 @@ each job's company in `x-taskpulse-organization` (`shared/supabase/worker.ts`).
 
 ## Depends on
 `shared/*` and the public APIs of `tasks`, `time-tracking`, `attendance` and
-`support` (its inputs). None of those import scoring. `AwardStatus` marks team
-holidays H (company calendar from migration 53, or everyone on Holiday) and
-takes the calendar names as `holidayNames`.
+`support` (its inputs). None of those import scoring. `awardDayKind` marks team
+holidays (company calendar from migration 53, or everyone on Holiday) when the
+caller passes their dates.
 
 The dashboard read (`getTeamAnalytics`, `getWorkbookDashboard`) composes the
 live presentation, so it lives in the reports module. `components/` also holds
-`PerformanceBreakdown`, `AwardHistory` and `AwardStatus`.
+`PerformanceBreakdown` and `AwardHistory`.

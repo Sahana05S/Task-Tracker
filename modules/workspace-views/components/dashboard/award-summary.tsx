@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowRightIcon, TrophyIcon } from 'lucide-react';
+import { TrophyIcon } from 'lucide-react';
 
 import { awardDayKind, awardDayLabel, mondayIndex, type AwardDayKind, type AwardReadModel } from '@/modules/scoring/client';
 import { AWARD_KIND, AWARD_KIND_ORDER } from '@/modules/scoring/components/award-day-kind';
@@ -17,19 +16,16 @@ function addDays(date: string, days: number): string {
 /**
  * The month's daily stars at a glance: a Monday-first calendar strip with the
  * winner's initials on starred days, H on team holidays and a status icon on
- * the rest, then one plain sentence on why days are still open. The
- * day-by-day calculation behind it lives in the dashboard's calculation
- * details (`detailsHref`). Counts come from the same read model and monthly
- * selection: a day is decided only when the monthly selection does not list
- * it as missing.
+ * the rest, then one plain sentence on why days are still open. Counts come
+ * from the award read model and monthly selection: a day is decided only
+ * when it is certified and the monthly selection does not list it as missing.
  */
-export function AwardSummary({awards,names,availabilityReason,holidays,holidayNames={},detailsHref}:{
+export function AwardSummary({awards,names,availabilityReason,holidays,holidayNames={}}:{
   awards: AwardReadModel;
   names: Record<string, string>;
   availabilityReason?: string;
   holidays?: ReadonlySet<string> | null;
   holidayNames?: Record<string, string>;
-  detailsHref?: string;
 }) {
   const missing = new Set(awards.monthly.missingDates);
   const byDate = new Map(awards.days.map(day => [day.date, day]));
@@ -148,12 +144,6 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
 
       {explanation ? <p className="text-sm">{explanation}</p> : null}
       {availabilityReason ? <p role="status" className="text-sm">{availabilityReason}</p> : null}
-      {detailsHref && dates.length ? (
-        <Link href={detailsHref} className="text-primary inline-flex items-center gap-1 justify-self-start text-sm font-medium hover:underline">
-          See the day-by-day calculation
-          <ArrowRightIcon className="size-3.5" aria-hidden="true" />
-        </Link>
-      ) : null}
     </section>
   );
 }

@@ -7,8 +7,8 @@ import { FactorDifferentialsChart } from '@/modules/workspace-views/components/d
  * order, one differences-with-median chart each. Members keep the same
  * (alphabetical) order in every chart so a person can be followed across all
  * ten. Everything comes from the calculation the page already holds; nothing
- * is recalculated. Per-member factor detail follows the Calculation details
- * rule: managers see the team, a member sees only their own bars against the
+ * is recalculated. Per-member factor detail follows the presentation scope:
+ * managers see the team, a member sees only their own bars against the
  * team median (`onlyUserId`).
  */
 export function SubScoresGrid({

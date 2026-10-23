@@ -4,7 +4,6 @@ import { getLivePresentation } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
 import { AwardSummary } from '@/modules/workspace-views/components/dashboard/award-summary';
-import { CalculationDetails } from '@/modules/workspace-views/components/dashboard/calculation-details';
 import { DataStatusBanner } from '@/modules/workspace-views/components/dashboard/data-status-banner';
 import { canManageAttendance, getTeamHolidayDates } from '@/modules/attendance';
 import { getCompanyHolidayNames } from '@/modules/settings';
@@ -19,7 +18,7 @@ import { WorkbookDashboard } from '@/modules/workspace-views/components/dashboar
 import { SubScoresGrid } from '@/modules/workspace-views/components/dashboard/sub-scores-grid';
 import { DailyPerfLogSection } from '@/modules/workspace-views/components/dashboard/daily-perf-log';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
-import { dailyPerfFilter, getDailyPerfLog, getStoredSnapshots, getWorkbookDashboard, monthToDate, seesTeamDetail } from '@/modules/reports';
+import { dailyPerfFilter, getDailyPerfLog, getWorkbookDashboard, monthToDate, seesTeamDetail } from '@/modules/reports';
 import { Suspense } from 'react';
 import { requireProfile } from '@/shared/session/profile';
 import { isMissingSchemaError } from '@/shared/supabase/schema-errors';
@@ -47,14 +46,11 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   const logFilter=dailyPerfFilter(query,monthToDate(period,context.asOfLocalDate),profile);
   const log=query.log||query.member||query.from||query.to?getDailyPerfLog(logFilter):null;
   log?.catch(()=>{}); // Rejections are shown by the section; this only stops an unhandled-rejection warning if the page exits early.
-  // Team holidays mark H on the award strip and table; a failed read only drops the marks.
+  // Team holidays mark H on the award strip; a failed read only drops the marks.
   const holidaysRead=Promise.all([getTeamHolidayDates(period.startDate,period.endDate),getCompanyHolidayNames(period.startDate,period.endDate)]).catch(()=>[null,{}] as const);
   const presentation=await getLivePresentation(context);
 
-  const [dashboardResult, snapshotsResult] = await Promise.allSettled([
-    getWorkbookDashboard(period,context),
-    getStoredSnapshots(period),
-  ]);
+  const [dashboardResult] = await Promise.allSettled([getWorkbookDashboard(period,context)]);
 
   if (dashboardResult.status === 'rejected') {
     if (isMissingSchemaError(dashboardResult.reason)) {
@@ -72,24 +68,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     throw dashboardResult.reason;
   }
 
-  if (snapshotsResult.status === 'rejected') {
-    if (isMissingSchemaError(snapshotsResult.reason)) {
-      return (
-        <MissionPage wide>
-          <MissionPageHeader
-            eyebrow="Team · Analytics"
-            title="Team performance"
-            description={`${period.label} · setup required`}
-          />
-          <TrackerSchemaNotice />
-        </MissionPage>
-      );
-    }
-    throw snapshotsResult.reason;
-  }
-
   const dashboard = dashboardResult.value;
-  const snapshots = snapshotsResult.value;
   const { analytics, charts } = dashboard;
   const awards=presentation.awards;
   const [holidays,holidayNames]=await holidaysRead;
@@ -143,7 +122,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       </div>
 
       {awards ? (
-        <AwardSummary awards={awards} names={names} availabilityReason={presentation.awardAvailabilityReason} holidays={holidays} holidayNames={holidayNames} detailsHref="#calculation-details" />
+        <AwardSummary awards={awards} names={names} availabilityReason={presentation.awardAvailabilityReason} holidays={holidays} holidayNames={holidayNames} />
       ) : (
         <StarPerformerCard
           unavailableReason="Awards are not available for this view."
@@ -168,16 +147,6 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         />
       </Suspense>
 
-      <CalculationDetails
-        presentation={presentation}
-        calculation={analytics.calculation}
-        awards={awards}
-        holidays={holidays}
-        holidayNames={holidayNames}
-        names={names}
-        viewerId={profile.id}
-        snapshotCount={snapshots.length}
-      />
     </MissionPage>
   );
 }
