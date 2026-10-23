@@ -2,7 +2,7 @@ import { settle } from '@/shared/async/settle';
 import { kolkataDate } from '@/shared/time/kolkata';
 
 import { readTeamAwardModel } from '@/modules/scoring';
-import type { AwardReadModel } from '@/modules/scoring/client';
+import { awardDayView, type AwardReadModel } from '@/modules/scoring/client';
 import { getMemberContributionStates, getRecentValidatedContributions } from '@/modules/support';
 import { countAssignedMissionsCompletedBetween, getAssignedMissionBatch } from '@/modules/tasks';
 import { getMemberNames } from '@/modules/team';
@@ -107,8 +107,7 @@ export async function getTodayData(userId: string, now = new Date(), includeFocu
         activeDays: new Set(logDates).size,
         missionsCompleted: completed,
         contributionsRecorded: live(contributions.facts) + live(contributions.ideas) + live(contributions.suggestions),
-        dailyStarsEarned: days.filter((d) => d.date >= weekStart && d.date <= today && d.certified
-          && d.status === 'completed_winner' && d.winnerId === userId).length,
+        dailyStarsEarned: days.filter((d) => d.date >= weekStart && d.date <= today && awardDayView(d).winnerId === userId).length,
       };
     }),
     settle(async () => {

@@ -25,8 +25,8 @@ import {
   SheetTitle,
 } from '@/shared/ui/sheet';
 import { TASK_PRIORITIES } from '@/shared/tracker/enums';
-import { categoryChoices } from '@/modules/settings/client';
-import { useCategoryCatalogue } from '@/modules/settings/components/company-settings-context';
+import { categoryChoices, SCALE_MODE_LABELS, type StandingScaleMode } from '@/modules/settings/client';
+import { useCategoryCatalogue, useDefaultScaleMode } from '@/modules/settings/components/company-settings-context';
 import type { Task, User } from '@/types/tracker';
 
 /** `null` opens the form in create mode; a task opens it in edit mode. */
@@ -41,6 +41,12 @@ export interface TaskDialogProps {
 }
 
 const INITIAL_STATE: TaskActionState | null = null;
+
+const SCALE_MODE_HINTS: Record<StandingScaleMode, string> = {
+  manual: 'A number you type now; it changes only when edited.',
+  hours: 'Grows with every hour logged on the mission.',
+  activity_count: 'Activities counted from the register.',
+};
 
 /**
  * Create and edit form.
@@ -160,6 +166,9 @@ function TaskForm({
   const [priority, setPriority] = React.useState<string>(
     task?.priority ?? 'Medium',
   );
+  // New missions start with the company's default (Settings > Company > New missions).
+  const defaultScaleMode = useDefaultScaleMode();
+  const [scaleMode, setScaleMode] = React.useState<StandingScaleMode>(defaultScaleMode);
   const [operationId, setOperationId] = React.useState('');
   React.useEffect(() => setOperationId(crypto.randomUUID()), []);
   const [assigneeIds, setAssigneeIds] = React.useState<Set<string>>(
@@ -240,23 +249,54 @@ function TaskForm({
           />
         </Field>
 
-        <Field
-          id="task-scale"
-          label="Scale weight"
-          hint="Relative work weight. Zero excludes the task from team metrics."
-        >
-          <Input
+        {isEdit ? (
+          <Field
             id="task-scale"
-            name="taskScale"
-            readOnly={Boolean(task)}
-            type="number"
-            min={0}
-            step="0.01"
-            inputMode="decimal"
-            defaultValue={task?.taskScale ?? ''}
-            placeholder="0.00"
-          />
-        </Field>
+            label="Scale weight"
+            hint="Change it from the mission's Lifecycle and scale panel."
+          >
+            <Input id="task-scale" name="taskScale" readOnly type="number" defaultValue={task.taskScale ?? ''} />
+          </Field>
+        ) : (
+          <>
+            <Field
+              id="task-scale-mode"
+              label="Weighted by"
+              hint={SCALE_MODE_HINTS[scaleMode]}
+            >
+              <NativeSelect
+                id="task-scale-mode"
+                name="scaleMode"
+                value={scaleMode}
+                onChange={(event) => setScaleMode(event.target.value as StandingScaleMode)}
+              >
+                {(['manual', 'hours', 'activity_count'] as const).map((mode) => (
+                  <option key={mode} value={mode}>
+                    {SCALE_MODE_LABELS[mode]}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+            {scaleMode === 'manual' ? (
+              <Field id="task-scale" label="Scale weight" hint="Relative work weight. Zero excludes the mission from team metrics.">
+                <Input id="task-scale" name="taskScale" type="number" min={0} step="0.01" inputMode="decimal" placeholder="0.00" />
+              </Field>
+            ) : scaleMode === 'hours' ? (
+              <Field id="task-scale-multiplier" label="Multiplier" hint="Scale = hours logged x 12.5 x this number." required>
+                <Input id="task-scale-multiplier" name="scaleMultiplier" type="number" min={0} step="any" inputMode="decimal" defaultValue="1" required />
+              </Field>
+            ) : (
+              <>
+                <Field id="task-scale-count" label="Number of activities" hint="A whole number from the activity register." required>
+                  <Input id="task-scale-count" name="scaleActivityCount" type="number" min={0} step="1" inputMode="numeric" required />
+                </Field>
+                <Field id="task-scale-unit" label="Scale per activity" hint="Scale = activities x this number." required>
+                  <Input id="task-scale-unit" name="scaleUnit" type="number" min={0} step="any" inputMode="decimal" defaultValue="1" required />
+                </Field>
+              </>
+            )}
+          </>
+        )}
 
         <LabeledSelect
           id="task-category"

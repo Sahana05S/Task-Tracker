@@ -836,6 +836,7 @@ export interface Database {
       stop_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       discard_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       set_task_participants: { Args: { p_task_id: string; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number; p_accept_legacy?: boolean }; Returns: number };
+      create_task_with_scale: { Args: { p_fields: Json; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_accept_legacy: boolean; p_scale: Json; p_operation_id: string }; Returns: string };
       save_task_with_participants: { Args: { p_task_id: string | null; p_fields: Json; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number | null; p_accept_legacy: boolean; p_operation_id: string }; Returns: string };
       participant_reconciliation: { Args: Record<never, never>; Returns: Json };
       record_task_review: { Args: { p_task_id: string; p_approved: boolean }; Returns: undefined };
@@ -865,7 +866,7 @@ export interface Database {
       /** Migration 53: the caller's company settings (any active member; standing missions for managers). */
       company_settings: { Args: Record<never, never>; Returns: Json };
       /** Migration 53: managing director only; versioned and idempotent per operation. */
-      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
+      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       /** Migration 55: month setup wizard (managing director or project engineer). */
       month_setup_context: { Args: { p_month: string }; Returns: Json };
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };

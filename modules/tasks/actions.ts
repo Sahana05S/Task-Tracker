@@ -6,6 +6,7 @@ import {
   revalidateAfterLifecycle,
 } from '@/modules/tasks/internal/cache';
 import {
+  createTaskWithScale,
   deleteTaskRow,
   findTaskIdByTag,
   runLifecycleCommand,
@@ -15,6 +16,7 @@ import {
   buildScalePayload,
   isValidCommandTarget,
   missingScaleInput,
+  parseNewMissionScale,
   parseTaskFields,
   readParticipantVersion,
 } from '@/modules/tasks/internal/input';
@@ -53,19 +55,28 @@ export async function createTask(_prevState: TaskActionState | null, formData: F
 
   const fields = parseTaskFields(formData);
   if (!fields.ok) return failure(fields.error);
+  const scale = parseNewMissionScale(formData);
+  if (!scale.ok) return failure(scale.error);
 
-  const saved = await saveTaskWithParticipants(fields.value, {
-    taskId: null,
+  const shared = {
     extraFields: {
-      task_scale: fields.value.taskScale,
       description: readString(formData, 'description') || null,
       template_version_id: readString(formData, 'templateVersionId') || null,
       initialize_details: readString(formData, 'initializationMode') !== 'manual',
     },
-    expectedVersion: null,
     acceptLegacyShares: formData.get('acceptLegacyShares') === 'on',
     operationId: readString(formData, 'operationId'),
-  });
+  };
+  // A fixed weight is the plain save; a formula scale is applied in the same transaction.
+  const saved =
+    scale.value.mode === 'manual'
+      ? await saveTaskWithParticipants(fields.value, {
+          ...shared,
+          taskId: null,
+          extraFields: { ...shared.extraFields, task_scale: fields.value.taskScale },
+          expectedVersion: null,
+        })
+      : await createTaskWithScale(fields.value, shared, scale.value);
   if (!saved.ok) return failure(saved.error);
 
   revalidateAfterCreate();

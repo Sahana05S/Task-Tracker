@@ -10,6 +10,7 @@ import {
   LoaderCircleIcon,
   PlusIcon,
   RepeatIcon,
+  ScaleIcon,
   TagsIcon,
   Trash2Icon,
   UsersRoundIcon,
@@ -21,6 +22,8 @@ import {
   categoryLabelMap,
   formatSheetTag,
   renderTitlePattern,
+  SCALE_MODE_LABELS,
+  STANDING_SCALE_MODES,
   type CompanySettings,
   type SettingsSection,
   type StandingScaleMode,
@@ -45,15 +48,10 @@ const SECTIONS = [
   { id: 'mission-types', label: 'Mission types' },
   { id: 'meeting-types', label: 'Meeting types' },
   { id: 'agenda', label: 'Meeting agenda' },
+  { id: 'mission-defaults', label: 'New missions' },
   { id: 'standing-missions', label: 'Standing missions' },
   { id: 'holidays', label: 'Holidays' },
 ] as const;
-
-const SCALE_LABELS: Record<StandingScaleMode, string> = {
-  hours: 'Hours logged',
-  manual: 'Fixed weight',
-  activity_count: 'Activity count',
-};
 
 /**
  * Settings > Company: the workbook's A_Sheet_Attributes, meeting agenda and
@@ -73,6 +71,7 @@ export function CompanySettingsEditor({ settings, members }: { settings: Company
       <MissionTypesSection settings={settings} />
       <MeetingTypesSection settings={settings} />
       <AgendaSection settings={settings} />
+      <MissionDefaultsSection settings={settings} />
       <StandingMissionsSection settings={settings} members={members} />
       <HolidaysSection settings={settings} />
     </div>
@@ -389,6 +388,45 @@ function AgendaSection({ settings }: SectionProps) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* New missions                                                               */
+/* -------------------------------------------------------------------------- */
+
+const SCALE_MODE_HINTS: Record<StandingScaleMode, string> = {
+  manual: 'The creator types a number. It changes only when someone edits it.',
+  hours: 'Hours logged x 12.5 x a multiplier (1 unless changed). The scale grows with every log.',
+  activity_count: 'A whole number of activities x a scale per activity, entered by the creator.',
+};
+
+function MissionDefaultsSection({ settings }: SectionProps) {
+  const [mode, setMode, dirty, reset] = useDraft<StandingScaleMode>(settings.defaultScaleMode);
+  return (
+    <MissionPanel
+      id="mission-defaults"
+      icon={ScaleIcon}
+      title="New missions"
+      subtitle="How the New mission dialog weights a mission unless its creator picks another way. Missions that already exist keep their scale."
+      className="scroll-mt-20"
+    >
+      <SectionForm section="mission_defaults" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => ({ scaleMode: mode })}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="field-label">
+            Weighted by
+            <select value={mode} onChange={(event) => setMode(event.target.value as StandingScaleMode)} className="field">
+              {(['manual', 'hours', 'activity_count'] as const).map((value) => (
+                <option key={value} value={value}>
+                  {SCALE_MODE_LABELS[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-muted-foreground self-end text-sm">{SCALE_MODE_HINTS[mode]}</p>
+        </div>
+      </SectionForm>
+    </MissionPanel>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Standing missions                                                          */
 /* -------------------------------------------------------------------------- */
 
@@ -509,9 +547,9 @@ function StandingMissionsSection({ settings, members }: SectionProps & { members
                   <label className="field-label">
                     Weight from
                     <select value={row.scaleMode} onChange={(event) => update(index, { scaleMode: event.target.value as StandingScaleMode })} className="field">
-                      {(Object.keys(SCALE_LABELS) as StandingScaleMode[]).map((mode) => (
+                      {STANDING_SCALE_MODES.map((mode) => (
                         <option key={mode} value={mode}>
-                          {SCALE_LABELS[mode]}
+                          {SCALE_MODE_LABELS[mode]}
                         </option>
                       ))}
                     </select>

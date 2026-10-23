@@ -109,6 +109,41 @@ export function parseTaskFields(formData: FormData): Parsed<TaskFields> {
   };
 }
 
+/**
+ * How a new mission is weighted (New mission dialog, migration 61). `manual`
+ * keeps the typed Scale weight and the plain save; the two formula modes go
+ * through create_task_with_scale, which applies the same scale command the
+ * Lifecycle and scale panel uses. Linked scales need a source mission and
+ * stay in that panel.
+ */
+export type NewMissionScale =
+  | { mode: 'manual' }
+  | { mode: 'hours'; inputs: { multiplier: number } }
+  | { mode: 'activity_count'; inputs: { activity_count: number; unit_scale: number } };
+
+export function parseNewMissionScale(formData: FormData): Parsed<NewMissionScale> {
+  const mode = readString(formData, 'scaleMode') || 'manual';
+  const count = (key: string, label: string): Parsed<number> => {
+    const value = readNullableNumber(formData, key);
+    if (value === null) return { ok: false, error: `Enter the ${label}.` };
+    if (value === undefined || value < 0) return { ok: false, error: `The ${label} must be a number of 0 or more.` };
+    return { ok: true, value };
+  };
+  if (mode === 'manual') return { ok: true, value: { mode } };
+  if (mode === 'hours') {
+    const multiplier = count('scaleMultiplier', 'multiplier');
+    return multiplier.ok ? { ok: true, value: { mode, inputs: { multiplier: multiplier.value } } } : multiplier;
+  }
+  if (mode === 'activity_count') {
+    const activities = count('scaleActivityCount', 'number of activities');
+    if (!activities.ok) return activities;
+    if (!Number.isInteger(activities.value)) return { ok: false, error: 'The number of activities must be a whole number.' };
+    const unit = count('scaleUnit', 'scale per activity');
+    return unit.ok ? { ok: true, value: { mode, inputs: { activity_count: activities.value, unit_scale: unit.value } } } : unit;
+  }
+  return { ok: false, error: 'Choose how the mission is weighted.' };
+}
+
 /** Reads the participant version an edit was based on. `null` means the form is stale or malformed. */
 export function readParticipantVersion(formData: FormData): number | null {
   const versionText = readString(formData, 'participantVersion');

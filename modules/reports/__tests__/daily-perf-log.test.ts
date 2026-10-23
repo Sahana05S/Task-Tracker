@@ -44,6 +44,14 @@ describe('daily perf log rows', () => {
     ]);
   });
 
+  it('marks a stale day that keeps its last decided result as recalculating (migration 62)', () => {
+    const stale = [{ date: '2026-10-01', certified: false, status: 'stale' as const, lastDecided: { status: 'completed_winner' as const, winnerId: ASHA, runId: 'r', decidedAt: null, override: false },
+      candidates: [{ userId: ASHA, calculation: calc(ASHA, {}, '3') }] }];
+    const [row] = dailyPerfRows({ from: '2026-10-01', to: '2026-10-01', members: [{ id: ASHA, fullName: 'Asha' }], days: stale, hours: new Map() });
+    expect(row.status).toBe('recalculating');
+    expect(row.sum).toBe('3.00');
+  });
+
   it('marks the gap day not calculated, uncertified runs, and members missing from a run', () => {
     expect(rows.map((row) => row.status)).toEqual(['uncertified', 'not_calculated', 'not_calculated', 'not_calculated', 'calculated', 'calculated']);
     expect(rows[2].factors.productivity).toBeNull();

@@ -142,6 +142,7 @@ const COMPANY_SETTINGS: Record<string, { words: string; anchor: string }> = {
   meeting_types: { words: 'Changed the meeting types', anchor: 'meeting-types' },
   standing_missions: { words: 'Changed the standing missions', anchor: 'standing-missions' },
   holidays: { words: 'Changed the holiday calendar', anchor: 'holidays' },
+  mission_defaults: { words: 'Changed how new missions are weighted', anchor: 'mission-defaults' },
 };
 const settingsSection = (action: string) =>
   action.startsWith('company_settings_') ? COMPANY_SETTINGS[action.slice('company_settings_'.length)] : undefined;

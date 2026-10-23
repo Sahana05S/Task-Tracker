@@ -61,9 +61,12 @@ export type { AwardDay, AwardHistory, AwardReadModel } from '@/modules/scoring/i
 export {
   awardDayKind,
   awardDayLabel,
+  awardDayView,
   mondayIndex,
   type AwardDayFacts,
   type AwardDayKind,
+  type AwardDayView,
+  type LastDecided,
 } from '@/modules/scoring/internal/stars/display';
 export type { AwardCommandResponse } from '@/modules/scoring/internal/stars/daily';
 export {

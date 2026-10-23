@@ -7,7 +7,7 @@ import { getTeamSummaryInputs } from '@/modules/scoring';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { canViewEmployeeReports } from '@/modules/team/internal/permissions';
 import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
-import { buildWorkbookDashboardCharts, type MemberPerformance } from '@/modules/scoring/client';
+import { awardDayView, buildWorkbookDashboardCharts, type MemberPerformance } from '@/modules/scoring/client';
 import { getTeamAnalytics } from '@/modules/reports';
 import { ATTENDANCE_COLUMNS } from '@/modules/attendance/client';
 import { summarizeAttendance, type AttendanceSummary } from '@/modules/attendance/client';
@@ -120,8 +120,8 @@ export async function getTeamIndexData(
     members: analytics.members.map((performance) => ({
       user: performanceToUser(performance),
       performance,
-      dailyStarCount: awards.days.filter(day=>day.certified&&day.status==='completed_winner'&&day.winnerId===performance.userId)
-        .length,
+      // Stars being rechecked after a change still count as shown (last decided result).
+      dailyStarCount: awards.days.filter(day=>awardDayView(day).winnerId===performance.userId).length,
       currentPerformanceScore: performance.starScore,
       performanceUnavailableReason:performance.performanceUnavailableReason,
       reportCount: summaryInputs.reportCounts.get(performance.userId) ?? 0,

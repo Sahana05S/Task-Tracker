@@ -14,9 +14,9 @@ The one shared scoring contract (AGENTS.md: no second formula):
 | File | What it offers |
 |---|---|
 | `index.ts` | Server reads and jobs: `loadPerformance`, `runPerformanceJobs`, `getAwards`, `calculateAward`, `runAwardJobs`, `handleAwardWorkerRun`, `handleHealthCheck` (`GET /api/internal/health`), `getTeamSummaryInputs`, `parseTeamSummary`, `readTeamAwardModel` (raw team-wide award payload for Today). Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure engine and rules, safe for `'use client'`: `calculatePerformance`, `FACTORS`, `FACTOR_LABELS`, `COEFFICIENTS`, `memberEligibilityReasons` (attendance reasons that keep a member out of rankings), source parse/resolve, `performanceReport`, award `selectDaily`/`selectMonthly`/`awardContext`, award strip helpers (`awardDayKind`, `awardDayLabel`, `mondayIndex`), legacy scorer, `computeTeamAnalytics`, dashboard chart and headline builders, and all their types |
+| `client.ts` | Pure engine and rules, safe for `'use client'`: `calculatePerformance`, `FACTORS`, `FACTOR_LABELS`, `COEFFICIENTS`, `memberEligibilityReasons` (attendance reasons that keep a member out of rankings), source parse/resolve, `performanceReport`, award `selectDaily`/`selectMonthly`/`awardContext`, award strip helpers (`awardDayKind`, `awardDayView` with the last decided result of a stale day, `awardDayLabel`, `mondayIndex`), legacy scorer, `computeTeamAnalytics`, dashboard chart and headline builders, and all their types |
 | `award-actions.ts` | `'use server'` `calculateDailyStarAction`, `overrideDailyStarAction` |
-| `components/` | `MissionHeadlineStrip` (the `/tasks` headline), `PerformanceBreakdown`, `AwardHistory`, `award-day-kind` (`AWARD_KIND`: one icon, word and colour per day status for the award month strip) |
+| `components/` | `MissionHeadlineStrip` (the `/tasks` headline), `PerformanceBreakdown`, `AwardHistory`, `award-day-kind` (`AWARD_KIND`: one icon, word and colour per day status for the award month strip; `RECALCULATING`: the mark on a day shown from its last decided result) |
 
 Calendar periods (`currentPeriod`, `resolvePeriod`, `AnalyticsPeriod`) live in
 `shared/time/period`; exact decimal arithmetic (`Exact`) in `shared/math/exact`.
@@ -33,7 +33,7 @@ Calendar periods (`currentPeriod`, `resolvePeriod`, `AnalyticsPeriod`) live in
 | Object | Defined in |
 |---|---|
 | `performance_source_context`, `claim_performance_jobs`, `finish_performance_job` | `21_performance_sources_and_recomputation.sql` |
-| `award_command`, `award_read_model`, `award_policy_context`, `claim_award_jobs`, `queue_due_awards` | `22_award_runs_and_atomic_commands.sql`, revised in 23 (`queue_due_awards` also 40) |
+| `award_command`, `award_read_model`, `award_policy_context`, `claim_award_jobs`, `queue_due_awards` | `22_award_runs_and_atomic_commands.sql`, revised in 23 (`queue_due_awards` also 40); `award_read_model` returns each day's `lastDecided` since 62 |
 | `team_summary_inputs` (read through `shared/read-models/team-summary`) | 11, revised in 13 and 16 |
 | `invalidate_awards()` trigger (re-queues open award days when performance inputs change), `queue_award` | 22, company-scoped in 48; since 60 each open day is invalidated at most once per transaction |
 

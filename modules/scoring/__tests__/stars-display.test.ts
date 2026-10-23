@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { awardDayKind, awardDayLabel, mondayIndex } from '@/modules/scoring/client';
+import { awardDayKind, awardDayLabel, awardDayView, mondayIndex, type LastDecided } from '@/modules/scoring/client';
 
 describe('award day labels', () => {
   it('reads a calendar date without a timezone shift', () => {
@@ -32,6 +32,31 @@ describe('award day kinds', () => {
   });
   it('without a holiday list a holiday date reads by its status', () => {
     expect(awardDayKind(day('2026-10-04', 'stale', { reasons: ['no_eligible_candidates'] }))).toBe('no_winner');
+  });
+});
+
+describe('award day views while a day is rechecked (migration 62)', () => {
+  const winner: LastDecided = { status: 'completed_winner', winnerId: 'a', runId: 'r1', decidedAt: '2026-10-06T18:30:00Z', override: false };
+  const none: LastDecided = { status: 'completed_none', winnerId: null, runId: 'r2', decidedAt: null, override: false };
+  const holidays = new Set(['2026-10-04']);
+  it('keeps the last decided star on a stale day, marked recalculating', () => {
+    expect(awardDayView({ ...day('2026-10-05', 'stale', { jobStatus: 'pending' }), lastDecided: winner }))
+      .toEqual({ kind: 'awarded', winnerId: 'a', recalculating: true });
+  });
+  it('keeps a decided day without a winner, and a holiday stays a holiday', () => {
+    expect(awardDayView({ ...day('2026-10-05', 'stale'), lastDecided: none })).toEqual({ kind: 'no_winner', winnerId: null, recalculating: true });
+    expect(awardDayView({ ...day('2026-10-04', 'stale'), lastDecided: none }, holidays)).toEqual({ kind: 'holiday', winnerId: null, recalculating: true });
+  });
+  it('a stale day never decided reads as before', () => {
+    expect(awardDayView({ ...day('2026-10-05', 'stale', { jobStatus: 'pending' }), lastDecided: null }))
+      .toEqual({ kind: 'queued', winnerId: null, recalculating: false });
+    expect(awardDayView(day('2026-10-05', 'stale', { reasons: ['attendance_unavailable'] })).kind).toBe('waiting');
+  });
+  it('a current day ignores lastDecided and shows its own result', () => {
+    expect(awardDayView({ ...day('2026-10-05', 'completed_winner', { winnerId: 'b' }), lastDecided: winner }))
+      .toEqual({ kind: 'awarded', winnerId: 'b', recalculating: false });
+    expect(awardDayView({ ...day('2026-10-05', 'blocked', { reasons: ['attendance_unavailable'] }), lastDecided: winner }))
+      .toEqual({ kind: 'waiting', winnerId: null, recalculating: false });
   });
 });
 
