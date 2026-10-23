@@ -288,6 +288,8 @@ def state_sql(month, fixture, steps, ids_by_email):
  'tags', (SELECT coalesce(jsonb_agg(jsonb_build_object('tag',task_tag,'id',id)),'[]') FROM public.tasks WHERE task_tag = ANY(ARRAY[{','.join(lit(t) for t in tags)}]::text[])),
  'seed_tasks', (SELECT coalesce(jsonb_agg(result),'[]') FROM taskpulse_private.command_receipts WHERE operation_id = ANY({uuid_array(ops)})
    AND command='save_task_with_participants'),
+ 'seed_due', (SELECT coalesce(jsonb_object_agg(r.operation_id, t.due_date),'{{}}') FROM taskpulse_private.command_receipts r JOIN public.tasks t ON t.id=r.result
+   WHERE r.operation_id = ANY({uuid_array(ops)}) AND r.command='save_task_with_participants'),
  'attendance', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'user_id',user_id,'day',attendance_date,'status',status,
    'hours',attendance_hours,'off_hours',off_hours,'check_in',check_in_at,'check_out',check_out_at,'holiday',holiday_name,
    'state',record_state,'version',record_version,'notes',notes,
@@ -367,6 +369,16 @@ UPDATE taskpulse_private.participant_versions SET effective_at=least({lit(ist(st
             record={"mission": key, "tag": tag})
         t = task_of(key)
         prep = {"t": t, "v": version_of(t)}
+        existing = ctx.get("seed_due", {})
+        if op in existing and existing[op] != fields["due_date"]:
+            # A mission an earlier run created with another deadline is corrected the way the app edits one.
+            eop = op_id(org, "due", key, fields["due_date"])
+            edit = {k: v for k, v in fields.items() if k != "task_scale"}
+            edit["initialize_details"] = False
+            add(ctx["through_offset"], "details", m["creator"], eop, f"{tag} deadline set to {fields['due_date']}",
+                f"public.save_task_with_participants({S('t')},{jlit(edit)}||jsonb_build_object('expected_lifecycle_version',{S('v', 'bigint')}),"
+                f"{uuid_array(assignees)},{uuid_array(reviewers)},NULL,{S('pv', 'bigint')},false,{lit(eop)}::uuid)",
+                prep={**prep, "pv": f"(SELECT participant_version FROM public.tasks WHERE id={t})"})
         if m.get("details"):
             dop = op_id(org, "details", key)
             add(m["start"], "details", m["creator"], dop, f"{tag} details",
@@ -698,7 +710,7 @@ def step_sql(step, uid, target):
     return "\n".join(lines)
 
 
-def backdate_sql(month, move_contracts):
+def backdate_sql(month, move_contracts, members=()):
     """Deferred moves for the immutable history tables, once per transaction (short trigger window)."""
     lines = ["SET CONSTRAINTS ALL IMMEDIATE;"]
     for table, column, key, order, trigger in HISTORY_TABLES:
@@ -716,6 +728,13 @@ UPDATE {table} h SET {column}=o.tmin-o.rn*interval '1 millisecond' FROM older o 
         first = f"{lit(ist(month.first, 0).isoformat())}::timestamptz"
         for c in CONTRACTS:
             lines.append(f"UPDATE {c} SET available_from={first} WHERE available_from>{first};")
+        # With the baselines on the 1st, the demo members must exist from then too: their first member
+        # observation moves to the 1st when it is later (accounts made after the month began).
+        lines.append("ALTER TABLE taskpulse_private.performance_observations DISABLE TRIGGER m07_observation_immutable;")
+        lines.append(f"""UPDATE taskpulse_private.performance_observations o SET observed_at={first} FROM (SELECT DISTINCT ON (entity_id) revision
+  FROM taskpulse_private.performance_observations WHERE kind='member' AND entity_id = ANY({uuid_array(list(members))}) ORDER BY entity_id, observed_at, revision) f
+ WHERE o.revision=f.revision AND o.observed_at>{first};""")
+        lines.append("ALTER TABLE taskpulse_private.performance_observations ENABLE TRIGGER m07_observation_immutable;")
     return "\n".join(lines)
 
 
@@ -725,7 +744,7 @@ def batch_sql(batch, uid, targets, month, backdate):
         parts.append(f"-- {step.label}")
         parts.append(step_sql(step, uid[step.actor], targets.get(step.op)))
     if backdate:
-        parts.append(backdate_sql(month, move_contracts=True))
+        parts.append(backdate_sql(month, move_contracts=True, members=uid.values()))
     results = ("(SELECT jsonb_build_object('history_triggers',(SELECT jsonb_object_agg(g.tgname,g.tgenabled) FROM pg_trigger g WHERE g.tgname IN ("
                + ",".join(lit(t[4]) for t in HISTORY_TABLES) + "))))")
     return transaction("\n".join(parts), results)
@@ -832,6 +851,7 @@ def plan(args, backend, fixture, month):
     # The capacity a day needs is the larger of what is logged now and what is logged after this run.
     ctx["planned_hours"] = {k: max(Decimal(0), v) for k, v in pending.items()}
     ctx["attendance"] = state["attendance"]
+    ctx["seed_due"] = state["seed_due"]
     steps = build_steps(fixture, month, ctx)
     for step in steps:
         step.day_date = month.day(step.day)

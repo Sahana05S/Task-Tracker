@@ -174,6 +174,20 @@ again = run_tool("--yes", label="rerun after top-up")
 assert "Steps to run: 0 of" in again and state() == final, state()
 print(f"PASS top-up to today, then rerun changed nothing: {final}")
 
+# A mission an earlier run made without a deadline gets it back through the edit command on a rerun.
+gallery = value(f"id FROM public.tasks WHERE title='Website project gallery update'")
+due = value(f"due_date FROM public.tasks WHERE id='{gallery}'")
+sql(f"ALTER TABLE public.tasks DISABLE TRIGGER m02_task_guard; UPDATE public.tasks SET due_date=NULL WHERE id='{gallery}';"
+    "ALTER TABLE public.tasks ENABLE TRIGGER m02_task_guard;")
+fixed = run_tool("--yes", label="rerun corrects a deadline")
+assert "Steps to run: 1 of" in fixed and value(f"due_date FROM public.tasks WHERE id='{gallery}'") == due, fixed
+final = state()
+# Members exist as of the 1st (their first member observation is moved there), so early "as of" reads have a cohort.
+members = value(f"count(DISTINCT entity_id) FROM taskpulse_private.performance_observations WHERE kind='member' "
+                f"AND entity_id IN ('{uid(1)}','{uid(2)}','{uid(3)}','{uid(4)}') AND observed_at<=('{first} 00:00:00+05:30')::timestamptz")
+assert members == "4", members
+print("PASS a drifted deadline is corrected by a rerun; the four members exist from the 1st")
+
 # Backdated history: each seeded attendance row's latest history row sits on its business day;
 # nothing is recorded in the future; the immutability triggers are back on.
 wrong_day = value(f"""count(*) FROM public.attendance_records a JOIN LATERAL (SELECT recorded_at FROM taskpulse_private.input_history h

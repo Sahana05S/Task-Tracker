@@ -111,7 +111,7 @@
      "description": "Three interior concept options for the phase 1 clubhouse.",
      "notes": ["Reference images collected.", "Concept A mood board."]},
     {"key": "website-gallery", "category": "MKT", "title": "Website project gallery update", "priority": "Low", "creator": "pe",
-     "assignees": ["dm2"], "scale": 2, "start": 16, "due": null, "outcome": "open", "progress": 40, "weight": 1,
+     "assignees": ["dm2"], "scale": 2, "start": 16, "due": 30, "outcome": "open", "progress": 40, "weight": 1,
      "description": "Replace the gallery photos with the latest site and show-flat images.",
      "notes": ["Photos shortlisted.", "Images resized and captioned."]},
     {"key": "soil-test", "category": "SD", "title": "Soil test coordination - Plot 21", "priority": "Medium", "creator": "md",
