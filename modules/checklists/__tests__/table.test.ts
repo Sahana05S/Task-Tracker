@@ -142,7 +142,7 @@ describe('checklist home', () => {
     expect(html).not.toContain('unsectioned:');
   });
 
-  it('gives managers the rows that still need a section, and no manual progress switch (64)', () => {
+  it('gives managers the rows that still need a section, and no manual progress switch (66)', () => {
     const manager = renderToStaticMarkup(createElement(ChecklistWorkspace, props({
       manager: true,
       managerTools: { linkChoices: [], unmapped: [{ id: 'old-1', title: 'Old row' }] },
