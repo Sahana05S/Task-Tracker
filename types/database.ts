@@ -836,6 +836,8 @@ export interface Database {
       stop_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       discard_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       set_task_participants: { Args: { p_task_id: string; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number; p_accept_legacy?: boolean }; Returns: number };
+      /** Migration 68: a sub-mission, its linked row and the parent link in one command. */
+      submission_create: { Args: { p_parent_task: string; p_checklist: string | null; p_section: string; p_parent_node: string | null; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       create_task_with_scale: { Args: { p_fields: Json; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_accept_legacy: boolean; p_scale: Json; p_operation_id: string }; Returns: string };
       save_task_with_participants: { Args: { p_task_id: string | null; p_fields: Json; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number | null; p_accept_legacy: boolean; p_operation_id: string }; Returns: string };
       participant_reconciliation: { Args: Record<never, never>; Returns: Json };

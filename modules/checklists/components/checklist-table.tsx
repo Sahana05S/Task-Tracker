@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import Link from 'next/link';
-import { CheckCircle2Icon, ChevronRightIcon, CircleDashedIcon, CircleDotIcon, CircleMinusIcon, ExternalLinkIcon, TriangleAlertIcon, FlagIcon } from 'lucide-react';
+import { CheckCircle2Icon, ChevronRightIcon, CircleDashedIcon, CircleDotIcon, CircleMinusIcon, ExternalLinkIcon, TriangleAlertIcon, FlagIcon, RocketIcon } from 'lucide-react';
 
 import { MissionProgress } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
@@ -37,7 +37,8 @@ export interface ChecklistTableProps {
   open: boolean;
   canTime: boolean;
   time?: ChecklistItemTime;
-  actions: { checklist: Command; start: Command; stop: Command; discard: Command };
+  /** `submission` creates a Sub-mission (managers; supplied by the page from the tasks module). */
+  actions: { checklist: Command; start: Command; stop: Command; discard: Command; submission?: Command };
   /** A row id whose menu opens on arrival (old `?item=` links). */
   selectedItem?: string;
   /** Where a row of this table may move: other rows here, and the level above (id null = top level). */
@@ -129,7 +130,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                 const elapsed = row.elapsedSeconds > 0 ? formatMinutes(Math.max(1, Math.round(row.elapsedSeconds / 60))) : null;
                 const inside = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside`
                   : kind === 'quest' ? `Quest · ${row.childCount} Activity row${row.childCount === 1 ? '' : 's'}`
-                  : kind === 'linked' ? 'Linked mission' : null;
+                  : kind === 'linked' ? 'Sub-mission' : null;
                 const state: CompletionState = row.completionState ?? 'No';
                 const timerHere = kind === 'item' && time?.available && ((canTime && open) || time.runningByNode.has(row.id));
                 return (
@@ -177,7 +178,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                       {rowMeta(inside, estimate, elapsed) ? <p className="text-muted-foreground mt-0.5 text-xs md:hidden">{rowMeta(inside, estimate, elapsed)}</p> : null}
                       {inside ? (
                         <p className="mt-0.5 text-xs max-md:hidden">
-                          {kind === 'linked' || kind === 'quest' ? <span className={cn('badge-soft', kind === 'quest' ? 'bg-primary-subtle text-primary-subtle-foreground' : 'badge-accent')}>{kind === 'quest' ? <FlagIcon className="size-3" aria-hidden="true" /> : null}{inside}</span> : <span className="text-muted-foreground">{inside}</span>}
+                          {kind === 'linked' || kind === 'quest' ? <span className={cn('badge-soft', kind === 'quest' ? 'bg-primary-subtle text-primary-subtle-foreground' : 'badge-accent')}>{kind === 'quest' ? <FlagIcon className="size-3" aria-hidden="true" /> : <RocketIcon className="size-3" aria-hidden="true" />}{inside}</span> : <span className="text-muted-foreground">{inside}</span>}
                         </p>
                       ) : null}
                     </td>
@@ -241,6 +242,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
             section={section}
             version={version}
             action={actions.checklist}
+            subMissionAction={actions.submission}
             label={title}
           />
         </div>

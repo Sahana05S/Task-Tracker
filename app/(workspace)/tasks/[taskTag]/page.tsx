@@ -8,6 +8,7 @@ import {
   HistoryIcon,
   ListChecksIcon,
   PencilIcon,
+  RocketIcon,
   TimerIcon,
 } from 'lucide-react';
 
@@ -34,6 +35,7 @@ import {
 } from '@/modules/tasks';
 import { ChecklistHero, PhaseProgress } from '@/modules/tasks/components/detail/checklist-summary';
 import { DependencyList } from '@/modules/tasks/components/detail/dependency-list';
+import { SubMissionsPanel, subMissionFamily } from '@/modules/tasks/components/detail/sub-missions-panel';
 import { EffortPanel } from '@/modules/tasks/components/detail/effort-panel';
 import { TaskLogTimeline } from '@/modules/tasks/components/detail/log-timeline';
 import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
@@ -122,6 +124,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const reviewerNames = task.reviewerIds.map((id) => memberNames.get(id) ?? 'Unknown');
 
   const checklistHref = `/tasks/${encodeURIComponent(task.taskTag)}/checklist`;
+  const family = subMissionFamily(task.id, data.dependencies);
   const closed = task.status === 'Done' || task.status === 'Discarded';
   const overdue = isOverdue(task.dueDate) && !closed;
 
@@ -133,6 +136,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             back={{ href: '/tasks', label: 'Back to missions' }}
             items={[
               { label: 'Missions', href: '/tasks' },
+              ...(family.parent ? [{ label: family.parent.taskTag, href: `/tasks/${encodeURIComponent(family.parent.taskTag)}`, tag: true }] : []),
               { label: task.taskTag, tag: true },
               { label: task.title },
             ]}
@@ -150,6 +154,11 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             />
             <PriorityBadge priority={task.priority} />
             <FreshnessIndicator freshness={task.freshness} className="ml-1" />
+            {family.parent ? (
+              <Link href={`/tasks/${encodeURIComponent(family.parent.taskTag)}`} className="badge-soft badge-neutral hover:underline">
+                Part of {family.parent.taskTag}
+              </Link>
+            ) : null}
             {archived ? (
               <span className="badge-soft badge-neutral">
                 <ArchiveIcon className="size-3" aria-hidden="true" />
@@ -246,6 +255,11 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             }>
               <PhaseProgress rollup={data.checklistRollup} href={checklistHref} />
             </MissionPanel>
+            {family.children.length ? (
+              <MissionPanel icon={RocketIcon} title="Sub-missions" subtitle={`${family.children.filter((s) => s.status === 'Done').length} of ${family.children.length} done`}>
+                <SubMissionsPanel subMissions={family.children} />
+              </MissionPanel>
+            ) : null}
             <MissionPanel icon={PencilIcon} title="Manual time entry">
               <ManualTimeForm taskTag={task.taskTag} canUseTimer={canUseTimer} />
             </MissionPanel>

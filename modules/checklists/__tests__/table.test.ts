@@ -113,7 +113,8 @@ describe('checklist home', () => {
     expect(html).toContain('No closure rows yet. An empty section counts as N/A.');
     for (const heading of ['Done', 'Progress', 'Item', 'Links', 'Est.', 'Elapsed']) expect(html).toContain(`>${heading}</th>`);
     expect(html).not.toContain('>Type</th>');
-    expect(html).not.toContain('Sub-mission');
+    // No 'Add sub-mission' choice for a member (68 offers it to managers only).
+    expect(html).not.toContain('>Sub-mission</button>');
     expect(html).not.toContain('<details');
   });
 
@@ -127,7 +128,7 @@ describe('checklist home', () => {
   it('opens a row with rows under it as its own table and shows row details', () => {
     expect(html).toContain(`href="/tasks/Sep26_T5/checklist?checklist=${CHECKLIST}&amp;parent=page-1&amp;section=activity"`);
     expect(html).toContain('3 rows inside');
-    expect(html).toContain('Linked mission');
+    expect(html).toContain('Sub-mission');
     expect(html).toContain('1 h 30 min');
     expect(html).toContain('1 h');
     expect(html).toContain('aria-label="Link 1 for Draw section A"');
