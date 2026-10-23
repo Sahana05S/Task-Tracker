@@ -4,6 +4,7 @@ import * as React from 'react';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  Building2Icon,
   CalendarDaysIcon,
   CheckIcon,
   ListOrderedIcon,
@@ -47,6 +48,7 @@ export interface CompanyMember {
 const SECTIONS = [
   { id: 'mission-types', label: 'Mission types' },
   { id: 'meeting-types', label: 'Meeting types' },
+  { id: 'departments', label: 'Departments' },
   { id: 'agenda', label: 'Meeting agenda' },
   { id: 'mission-defaults', label: 'New missions' },
   { id: 'standing-missions', label: 'Standing missions' },
@@ -70,6 +72,7 @@ export function CompanySettingsEditor({ settings, members }: { settings: Company
       </nav>
       <MissionTypesSection settings={settings} />
       <MeetingTypesSection settings={settings} />
+      <DepartmentsSection settings={settings} />
       <AgendaSection settings={settings} />
       <MissionDefaultsSection settings={settings} />
       <StandingMissionsSection settings={settings} members={members} />
@@ -352,6 +355,62 @@ function MeetingTypesSection({ settings }: SectionProps) {
           ))}
         </ul>
         <AddRowButton label="Add meeting type" onAdd={() => add({ id: crypto.randomUUID(), prefix: '', name: '', active: true })} />
+      </SectionForm>
+    </MissionPanel>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Departments                                                                */
+/* -------------------------------------------------------------------------- */
+
+interface DepartmentRow {
+  /** A saved department's id, or "new:…" for a row added here (sent without an id). */
+  id: string;
+  name: string;
+  active: boolean;
+  members: number;
+}
+
+function DepartmentsSection({ settings }: SectionProps) {
+  const initial = React.useMemo<DepartmentRow[]>(
+    () => settings.departments.map(({ id, name, active, members }) => ({ id, name, active, members })),
+    [settings.departments],
+  );
+  const { rows, dirty, reset, update, remove, add, moveBy } = useRows(initial);
+  return (
+    <MissionPanel
+      id="departments"
+      icon={Building2Icon}
+      title="Departments"
+      subtitle="The choices for Department in Manage people, shown on the org chart. A department that has people can be hidden but not removed."
+      className="scroll-mt-20"
+    >
+      <SectionForm section="departments" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => ({ departments: rows })}>
+        {rows.length === 0 ? <p className="text-muted-foreground text-sm">No departments yet. People show without one on the org chart until you add some.</p> : null}
+        <ul>
+          {rows.map((row, index) => (
+            <li key={row.id} className={cn(ROW, 'grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]', !row.active && 'opacity-60')}>
+              <label className="grid min-w-0">
+                <span className="sr-only">Name</span>
+                <input value={row.name} onChange={(event) => update(index, { name: event.target.value })} maxLength={60} required placeholder="Projects…" autoComplete="off" className="field" />
+              </label>
+              <span className="text-muted-foreground text-xs whitespace-nowrap sm:self-center">
+                {row.members === 1 ? '1 person' : `${row.members} people`}
+              </span>
+              <span className="flex items-center justify-between gap-3 sm:contents">
+                <InUse checked={row.active} label={row.name || 'department'} onChange={(active) => update(index, { active })} />
+                <OrderButtons index={index} count={rows.length} label={row.name || 'department'} onMove={(delta) => moveBy(index, delta)} />
+                {row.members > 0 ? (
+                  <span className="text-muted-foreground text-xs" title="Move its people to another department first, or hide it">Has people</span>
+                ) : (
+                  <RemoveButton label={row.name || 'department'} onRemove={() => remove(index)} />
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <AddRowButton label="Add department" onAdd={() => add({ id: `new:${crypto.randomUUID()}`, name: '', active: true, members: 0 })} />
       </SectionForm>
     </MissionPanel>
   );

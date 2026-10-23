@@ -30,7 +30,7 @@ export default async function ManagePeoplePage() {
       />
       <InviteForm />
       <InvitationList invitations={data.invitations} />
-      <MemberList members={data.members} viewerId={profile.id} />
+      <MemberList members={data.members} viewerId={profile.id} placement={data.placement} departments={data.departments} />
     </MissionPage>
   );
 }

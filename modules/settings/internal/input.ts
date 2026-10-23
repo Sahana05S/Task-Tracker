@@ -86,6 +86,22 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
     return { ok: true, value: { types } };
   },
 
+  departments(raw) {
+    if (!isRecord(raw) || !Array.isArray(raw.departments) || raw.departments.length > 100) return { ok: false, error: 'Up to 100 departments.' };
+    const departments: Json[] = [];
+    const seen = new Set<string>();
+    for (const [index, entry] of raw.departments.entries()) {
+      if (!isRecord(entry)) return { ok: false, error: 'Departments could not be read.' };
+      const name = text(entry.name);
+      if (name.length < 1 || name.length > 60) return { ok: false, error: 'Give every department a name of 1-60 characters.' };
+      if (seen.has(name.toLowerCase())) return { ok: false, error: `Each department needs its own name (${name} is repeated).` };
+      seen.add(name.toLowerCase());
+      // Saved departments keep their id; new rows send none and get one from the database.
+      departments.push({ ...(UUID_PATTERN.test(text(entry.id)) ? { id: text(entry.id) } : {}), name, sort: index, active: entry.active !== false });
+    }
+    return { ok: true, value: { departments } };
+  },
+
   standing_missions(raw) {
     if (!isRecord(raw) || !Array.isArray(raw.missions) || raw.missions.length > 60) return { ok: false, error: 'Up to 60 standing missions.' };
     const missions: Json[] = [];
