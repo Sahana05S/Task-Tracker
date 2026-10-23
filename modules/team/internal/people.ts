@@ -1,5 +1,6 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 
+import { getCompanySettings } from '@/modules/settings';
 import { readString } from '@/shared/forms/form-data';
 import { createClient } from '@/shared/supabase/server';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
@@ -24,9 +25,20 @@ export interface Invitation {
   createdAt: string;
 }
 
+/** Where a person sits on the org chart (migration 65). */
+export interface Placement {
+  reportsTo: string | null;
+  jobTitle: string | null;
+  departmentId: string | null;
+}
+
 export interface PeopleAdminData {
   members: User[];
   invitations: Invitation[];
+  /** By user id; empty on a database before migration 65. */
+  placement: Record<string, Placement>;
+  /** The company's departments, in order, hidden ones included. */
+  departments: { id: string; name: string; active: boolean }[];
 }
 
 type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -38,6 +50,10 @@ export interface MemberUpdateInput {
   isActive?: boolean;
   fullName?: string;
   employeeId?: string;
+  /** Present when the form sent the field; null clears it. */
+  reportsTo?: string | null;
+  jobTitle?: string | null;
+  departmentId?: string | null;
 }
 
 const EMPLOYEE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$/;
@@ -82,6 +98,22 @@ export function parseMemberUpdate(form: FormData): Parsed<MemberUpdateInput> {
     if (!EMPLOYEE_ID.test(employeeId)) return { ok: false, error: 'Employee ID may use letters, digits, - and _ (up to 40).' };
     value.employeeId = employeeId;
   }
+  if (form.has('reportsTo')) {
+    const reportsTo = readString(form, 'reportsTo');
+    if (reportsTo && !UUID.test(reportsTo)) return { ok: false, error: 'Choose who they report to.' };
+    if (reportsTo === userId) return { ok: false, error: 'Nobody can report to themselves.' };
+    value.reportsTo = reportsTo || null;
+  }
+  if (form.has('jobTitle')) {
+    const jobTitle = readString(form, 'jobTitle');
+    if (jobTitle.length > 60) return { ok: false, error: 'Enter a job title of up to 60 characters.' };
+    value.jobTitle = jobTitle || null;
+  }
+  if (form.has('departmentId')) {
+    const departmentId = readString(form, 'departmentId');
+    if (departmentId && !UUID.test(departmentId)) return { ok: false, error: 'Choose a department.' };
+    value.departmentId = departmentId || null;
+  }
   return { ok: true, value };
 }
 
@@ -93,7 +125,7 @@ export function parseInvitationId(form: FormData): Parsed<string> {
 /** Members (active and inactive) and open invitations of the director's company. */
 export async function readPeopleAdminData(): Promise<PeopleAdminData> {
   const supabase = await createClient();
-  const [members, invitations] = await Promise.all([
+  const [members, invitations, placement, settings] = await Promise.all([
     supabase.from('users').select(USER_COLUMNS).order('is_active', { ascending: false }).order('full_name'),
     supabase
       .from('member_invitations')
@@ -101,10 +133,19 @@ export async function readPeopleAdminData(): Promise<PeopleAdminData> {
       .is('accepted_at', null)
       .is('revoked_at', null)
       .order('created_at', { ascending: false }),
+    // A database before migration 65 has no placement columns; the page still works without them.
+    supabase.from('users').select('id, reports_to, job_title, department_id'),
+    getCompanySettings(),
   ]);
   if (members.error) throw new Error(`People could not be loaded: ${members.error.message}`);
   if (invitations.error) throw new Error(`Invitations could not be loaded: ${invitations.error.message}`);
   return {
+    placement: placement.error ? {} : Object.fromEntries(placement.data.map((row) => [row.id, {
+      reportsTo: row.reports_to ?? null,
+      jobTitle: row.job_title ?? null,
+      departmentId: row.department_id ?? null,
+    }])),
+    departments: settings.departments.map(({ id, name, active }) => ({ id, name, active })),
     members: members.data.map(mapUser),
     invitations: invitations.data.map((row) => ({
       id: row.id,
@@ -126,7 +167,7 @@ function describe(error: PostgrestError): string {
 /** Runs one people command; returns an error message, or null on success. */
 export async function runPeopleCommand(
   command: 'invite' | 'revoke' | 'update',
-  payload: Record<string, string | boolean>,
+  payload: Record<string, string | boolean | null>,
 ): Promise<string | null> {
   const supabase = await createClient();
   const { error } = await supabase.rpc('people_command', { p_command: command, p_payload: payload });

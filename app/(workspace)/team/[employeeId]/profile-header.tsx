@@ -1,10 +1,29 @@
 import Link from 'next/link';
+import { Building2Icon } from 'lucide-react';
+
+import { getOrgChart } from '@/modules/team';
 
 import { MissionPageHeader } from '@/shared/ui/mission-ui';
 import { Breadcrumb, PageTabs } from '@/shared/ui/page-nav';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { buttonVariants } from '@/shared/ui/button';
 import type { User } from '@/types/tracker';
+
+/** Where the person sits on the org chart, for the header's meta row. */
+export interface Placement {
+  jobTitle: string | null;
+  department: string | null;
+  manager: string | null;
+}
+
+/** The person's org chart placement; null when the chart can't be read. */
+export async function readPlacement(userId: string): Promise<Placement | null> {
+  const chart = await getOrgChart().catch(() => null);
+  const person = chart?.people.find(entry => entry.id === userId);
+  if (!person) return null;
+  const manager = person.reportsTo ? chart?.people.find(entry => entry.id === person.reportsTo) : undefined;
+  return { jobTitle: person.jobTitle, department: person.department, manager: manager?.fullName ?? null };
+}
 
 export type ProfileTab = 'overview' | 'charts' | 'missions' | 'reports';
 
@@ -20,6 +39,8 @@ export function carriedQuery(query: { period?: string; asOf?: string }): string 
  * Title, breadcrumb and tabs shared by the profile page and its Reports
  * sub-route. Overview, Charts and Missions are `?tab=` views of the profile;
  * Reports is the `/reports` route. The period query is carried across.
+ * The meta row adds the person's org chart placement (job title, department,
+ * manager) when the page passes it.
  */
 export function ProfileHeader({
   employee,
@@ -27,6 +48,7 @@ export function ProfileHeader({
   description,
   query,
   missionCount,
+  placement,
 }: {
   employee: User;
   current: ProfileTab;
@@ -34,6 +56,7 @@ export function ProfileHeader({
   /** `period` (and `asOf`) to keep when switching tabs. */
   query: string;
   missionCount?: number;
+  placement?: Placement | null;
 }) {
   const base = `/team/${encodeURIComponent(employee.employeeId)}`;
   const withQuery = (path: string, tab?: string) => {
@@ -51,7 +74,19 @@ export function ProfileHeader({
         />
       }
       title={employee.fullName}
-      meta={<RoleBadge role={employee.role} />}
+      meta={
+        <>
+          <RoleBadge role={employee.role} />
+          {placement?.department ? (
+            <span className="badge-soft badge-neutral inline-flex items-center gap-1">
+              <Building2Icon aria-hidden="true" className="size-3" />
+              {placement.department}
+            </span>
+          ) : null}
+          {placement?.jobTitle ? <span className="text-muted-foreground text-xs">{placement.jobTitle}</span> : null}
+          {placement?.manager ? <span className="text-muted-foreground text-xs">Reports to {placement.manager}</span> : null}
+        </>
+      }
       description={description}
       actions={
         <Link href={`/reports?member=${encodeURIComponent(employee.employeeId)}`} className={buttonVariants({ variant: 'outline' })}>

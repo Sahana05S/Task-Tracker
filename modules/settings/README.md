@@ -10,9 +10,9 @@ reads them.
 | File | What it offers |
 |---|---|
 | `index.ts` | `getCompanySettings()` (built-in defaults before migration 53), `categoryCatalogue()` (the 13 codes with the company's labels, active flags and order), `getCompanyHolidayNames(from, to)` |
-| `actions.ts` | `saveCompanySettings(prev, form)`: one section per call (`agenda`, `categories`, `meeting_types`, `standing_missions`, `holidays`, `mission_defaults`, `branding`) |
+| `actions.ts` | `saveCompanySettings(prev, form)`: one section per call (`agenda`, `categories`, `meeting_types`, `standing_missions`, `holidays`, `mission_defaults`, `branding`, `departments`) |
 | `client.ts` | Types and pure rules: `buildCategoryCatalogue`, `categoryChoices` (hides inactive codes except the current one), `categoryLabelMap`, `meetingTypeChoices` (keeps a saved value that left the list), `agendaLines`, `renderTitlePattern`, `formatSheetTag`, `canManageCompanySettings`, `STANDING_SCALE_MODES`, `SCALE_MODE_LABELS`, `CompanyBranding`, `BRANDING_URL_FIELDS`, `isBrandUrl` |
-| `components/company-settings.tsx` | `CompanySettingsEditor`: the Company tab (seven sections, each saved on its own) |
+| `components/company-settings.tsx` | `CompanySettingsEditor`: the Company tab (eight sections, each saved on its own) |
 | `components/company-settings-context.tsx` | `CompanySettingsProvider` (in the workspace layout), `useCategoryCatalogue()`, `useCategoryLabels()`, `useMeetingTypes()`, `useDefaultScaleMode()`, `useCompanyBranding()` |
 | `components/company-brand.tsx` | `CompanyBrand` (the top bar's company mark and name, Stellar's when none), `ThemedBrandImage` (light/dark image swap), `useBrandHomeLabel()` |
 | `components/meeting-type-select.tsx` | `MeetingTypeSelect`: the meeting-point Meeting type field (free text while a company has no types) |
@@ -77,6 +77,16 @@ that show a mission type's name use `useCategoryLabels()`; server code uses
 - The top bar shows the mark and name (dark variant in the dark theme, falling
   back to the light one); the copied/exported text report names the company.
 - Company #1 renamed to Arkensys Realtors; its files live in `public/brands/arkensys/`.
+
+## Departments (migration 65, `65_org_chart.sql`)
+- `taskpulse_private.departments` (`organization_id`, `name` unique per company
+  ignoring case, `sort`, `active`). People point at a department through
+  `users.department_id` (owned by team).
+- `company_settings()` returns `departments` (with an active `members` count)
+  to every member; `company_settings_command('departments', {departments})`
+  saves the whole list (up to 100): rows keep their id, so renaming or hiding
+  one keeps its people, and a department that still has people cannot be
+  removed. Settings > Company > Departments edits it.
 
 Tests: `modules/settings/__tests__/settings.test.ts`,
 `tools/test_company_settings_database.py`, `tools/test_mission_scale_mode_database.py`,
