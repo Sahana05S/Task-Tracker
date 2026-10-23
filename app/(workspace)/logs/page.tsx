@@ -8,7 +8,7 @@ import { sumHours } from '@/modules/time-tracking/client';
 import { formatHours } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {
-  title: 'Logs · TaskPulse',
+  title: 'Logs',
 };
 
 /**

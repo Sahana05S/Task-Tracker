@@ -22,7 +22,7 @@ import { canViewEmployeeReports, getEmployeeByEmployeeId } from '@/modules/team'
 import { ISO_DATE_PATTERN } from '@/shared/forms/form-data';
 
 export const metadata: Metadata = {
-  title: 'Reports · TaskPulse',
+  title: 'Reports',
 };
 
 interface ReportsSearchParams {

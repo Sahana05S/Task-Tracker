@@ -9,6 +9,7 @@ import {
   createTaskWithScale,
   deleteTaskRow,
   findTaskIdByTag,
+  readTaskLifecycle,
   runLifecycleCommand,
   saveTaskWithParticipants,
 } from '@/modules/tasks/internal/commands';
@@ -20,7 +21,8 @@ import {
   parseTaskFields,
   readParticipantVersion,
 } from '@/modules/tasks/internal/input';
-import { canManageTasks } from '@/modules/tasks/internal/permissions';
+import { getMissionActionContext, type MissionActionContext } from '@/modules/tasks/internal/action-context';
+import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
 import { commandIdentity } from '@/shared/commands/result';
 import { readString } from '@/shared/forms/form-data';
 import { resolveActor } from '@/shared/session/actor';
@@ -143,6 +145,49 @@ export async function updateTaskStatus(
 ): Promise<TaskActionState> {
   if (!isTaskStatus(status)) return failure('Unrecognised status.');
   return taskCommand(taskId, 'transition', { status, reason: reason ?? null }, version, operationId);
+}
+
+/** Everything a mission's action menu needs, loaded when the menu opens. */
+export async function loadMissionActions(taskId: string): Promise<
+  ActionResponse<MissionActionContext & { canManage: boolean; canEditOwnFields: boolean; currentUserId: string }>
+> {
+  const actor = await resolveActor();
+  if (!actor.ok) return { success: false, error: actor.error };
+  const context = await getMissionActionContext(taskId);
+  if (!context) return { success: false, error: 'This mission could not be loaded.' };
+  const canManage = canManageTasks(actor.profile.role);
+  return {
+    success: true,
+    data: { ...context, canManage, canEditOwnFields: canManage || canUpdateTaskOwnFields(actor.profile, context.task), currentUserId: actor.profile.id },
+  };
+}
+
+/** Tag and status for the "not started yet" prompt; null when unreadable or archived. */
+export async function missionPromptState(taskId: string): Promise<{ taskTag: string; status: TaskStatus } | null> {
+  const actor = await resolveActor();
+  if (!actor.ok || !taskId) return null;
+  const state = await readTaskLifecycle(taskId);
+  if (!state || state.archived || !isTaskStatus(state.status)) return null;
+  return { taskTag: state.taskTag, status: state.status };
+}
+
+/**
+ * Moves a mission on from a prompt (Not Started to In Progress, or on to
+ * Done). It reads the current version itself, so a prompt answered after other
+ * changes still works, but only while the status is still the one the prompt
+ * showed.
+ */
+export async function moveMissionFromPrompt(
+  taskId: string,
+  from: TaskStatus,
+  to: TaskStatus,
+  operationId: string,
+): Promise<TaskActionState> {
+  if (!isTaskStatus(from) || !isTaskStatus(to)) return failure('Unrecognised status.');
+  const state = await readTaskLifecycle(taskId);
+  if (!state) return failure('This mission could not be read. Reload and try again.');
+  if (state.status !== from) return failure(`This mission is already ${state.status}.`);
+  return taskCommand(taskId, 'transition', { status: to, reason: null }, state.version, operationId);
 }
 
 export async function updateTaskProgress(

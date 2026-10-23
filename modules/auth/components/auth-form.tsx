@@ -225,7 +225,7 @@ export function AuthForm({
         /* Accept-invitation form: name, ID and role come from the invitation. */
         <form action={signupAction} className="flex flex-col gap-4">
           <p className="text-xs text-muted-foreground">
-            TaskPulse is invite-only. Use the email your managing director invited; your
+            Stellar is invite-only. Use the email your managing director invited; your
             name, employee ID and role come from that invitation.
           </p>
           <Field

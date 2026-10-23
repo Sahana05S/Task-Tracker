@@ -10,7 +10,7 @@ import { kolkataDate } from '@/shared/time/kolkata';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 
 export const metadata: Metadata = {
-  title: 'Set up a month · TaskPulse',
+  title: 'Set up a month',
 };
 
 /**

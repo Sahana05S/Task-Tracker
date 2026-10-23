@@ -15,7 +15,7 @@ import { getTaskWorkspaceData } from '@/modules/tasks';
 import { buildTaskTimeline } from '@/modules/workspace-views/client';
 
 export const metadata: Metadata = {
-  title: 'Timelines · TaskPulse',
+  title: 'Timelines',
 };
 
 export default async function TimelinesPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {

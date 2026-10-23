@@ -14,7 +14,7 @@ import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 import type { UserRole } from '@/types/tracker';
 
 export const metadata: Metadata = {
-  title: 'Missions · TaskPulse',
+  title: 'Missions',
 };
 
 /**

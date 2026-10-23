@@ -14,7 +14,7 @@ import { buttonVariants } from '@/shared/ui/button';
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { currentPeriod, resolvePeriod } from '@/shared/time/period';
 
-export const metadata: Metadata = { title: 'Awards · TaskPulse' };
+export const metadata: Metadata = { title: 'Awards' };
 
 /** The month before the current one: the ceremony people usually come for. */
 function lastMonth(): string {

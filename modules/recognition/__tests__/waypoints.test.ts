@@ -28,8 +28,8 @@ describe('waypoint names and thresholds (user decision, 20 October 2026)', () =>
     ]);
   });
 
-  it('avoids the words reserved for the mascot, the marketing CTA and missions', () => {
-    for (const w of DEFAULT_WAYPOINTS) expect(w.label).not.toMatch(/orbit|launch|mission/i);
+  it('avoids the words reserved for the marketing CTA and missions', () => {
+    for (const w of DEFAULT_WAYPOINTS) expect(w.label).not.toMatch(/launch|mission/i);
   });
 });
 

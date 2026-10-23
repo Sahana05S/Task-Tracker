@@ -11,6 +11,7 @@ import { computeElapsedSeconds, formatElapsed } from '@/modules/time-tracking/in
 import type { RunningTimer } from '@/modules/time-tracking/internal/timers/running-timers';
 import { startTaskTimer, stopTaskTimer } from '@/modules/time-tracking/timer-actions';
 import { prepareOperation } from '@/shared/commands/client-operation';
+import { announceMissionProgress } from '@/shared/ui/mission-progress-event';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 
@@ -75,7 +76,10 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
       }
       settle();
       if (mine) toast.success(`Timer stopped on ${running.taskTag}`, { description: `${formatElapsed(computeElapsedSeconds(new Date(running.startedAt), new Date()))} saved as a time log.` });
-      else toast.success(`Timer started on ${result.data!.taskTag}`, { description: 'Stop it here or from the running-timer pill.' });
+      else {
+        toast.success(`Timer started on ${result.data!.taskTag}`, { description: 'Stop it here or from the running-timer pill.' });
+        announceMissionProgress(taskId);
+      }
       startRefresh(() => router.refresh());
     } catch {
       toast.error('The timer may not have changed', { description: INTERRUPTED });
