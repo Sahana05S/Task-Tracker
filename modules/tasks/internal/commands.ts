@@ -116,6 +116,30 @@ export async function runLifecycleCommand(
   return error ? { ...executionError(error), data: undefined } : null;
 }
 
+export interface TaskLifecycleState {
+  readonly taskTag: string;
+  readonly status: string;
+  readonly version: number;
+  readonly archived: boolean;
+}
+
+/** A mission's tag, status and lifecycle version as the caller may see them. */
+export async function readTaskLifecycle(taskId: string): Promise<TaskLifecycleState | null> {
+  const supabase = await createClient();
+  const found = await supabase
+    .from('tasks')
+    .select('task_tag, status, lifecycle_version, archived_effective_date')
+    .eq('id', taskId)
+    .maybeSingle();
+  if (found.error || !found.data) return null;
+  return {
+    taskTag: found.data.task_tag,
+    status: found.data.status,
+    version: found.data.lifecycle_version ?? 0,
+    archived: !!found.data.archived_effective_date,
+  };
+}
+
 /** Looks up a task id by its tag, for linked-scale inputs. */
 export async function findTaskIdByTag(taskTag: string): Promise<string | null> {
   const supabase = await createClient();

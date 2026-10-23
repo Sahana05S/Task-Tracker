@@ -16,7 +16,8 @@ export type WaypointTrackVariant = 'full' | 'compact' | 'cell';
  * - `cell` (table): five small dots and the furthest waypoint reached.
  *
  * Reached = stored first crossings plus what current progress covers, so a
- * mission whose progress drops keeps the waypoints it passed. `stopped`
+ * mission whose progress drops keeps the waypoints it passed; those now above
+ * current progress show hollow, as earned earlier. `stopped`
  * (discarded or archived) drops the "Next" prompt.
  */
 export function WaypointTrack({
@@ -38,7 +39,10 @@ export function WaypointTrack({
   const { reached, next } = waypointState(progress, reachedKeys, waypoints);
   const done = new Set(reached.map((w) => w.key));
   const furthest = reached.at(-1) ?? null;
-  const stateOf = (w: Waypoint) => (done.has(w.key) ? 'reached' : !stopped && next?.key === w.key ? 'next' : 'ahead');
+  const above = (w: Waypoint) => progress !== null && w.percent > progress;
+  const earlier = reached.filter(above);
+  const stateOf = (w: Waypoint): DotState =>
+    done.has(w.key) ? (above(w) ? 'earlier' : 'reached') : !stopped && next?.key === w.key ? 'next' : 'ahead';
   const summary = (
     <ol className="sr-only">
       {waypoints.map((w) => (
@@ -96,6 +100,11 @@ export function WaypointTrack({
               {nextLine ? '. ' : '.'}
             </>
           ) : null}
+          {earlier.length ? (
+            <span className="block">
+              Progress has dropped below {earlier.map((w) => w.label).join(' and ')} since; reached waypoints stay earned.
+            </span>
+          ) : null}
           {nextLine}
           {!furthest && !nextLine ? 'No waypoints reached.' : null}
           <span className="block">Waypoints follow overall progress.</span>
@@ -114,13 +123,16 @@ export function WaypointTrack({
   );
 }
 
-function Dot({ state, size }: { state: 'reached' | 'next' | 'ahead'; size: 'xs' | 'sm' }) {
+type DotState = 'reached' | 'earlier' | 'next' | 'ahead';
+
+function Dot({ state, size }: { state: DotState; size: 'xs' | 'sm' }) {
   return (
     <span
       className={cn(
         'block rounded-full',
         size === 'xs' ? 'size-1.5' : 'size-2.5',
         state === 'reached' && (size === 'xs' ? 'bg-success' : 'bg-success ring-card ring-2'),
+        state === 'earlier' && (size === 'xs' ? 'border-success border' : 'bg-card border-success border-2'),
         state === 'next' && (size === 'xs' ? 'bg-primary' : 'bg-card border-primary border-2'),
         state === 'ahead' && (size === 'xs' ? 'bg-muted-foreground/45' : 'bg-card border-muted-foreground/60 border-[1.5px]'),
       )}

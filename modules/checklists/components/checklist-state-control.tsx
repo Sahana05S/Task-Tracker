@@ -6,6 +6,7 @@ import { CheckIcon, LoaderCircleIcon, MinusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { prepareOperation } from '@/shared/commands/client-operation';
+import { announceMissionProgress } from '@/shared/ui/mission-progress-event';
 import { cn } from '@/shared/utils';
 import { commandVersion } from '../internal/table';
 import type { CompletionState } from '../internal/progress';
@@ -129,6 +130,7 @@ export function ChecklistStateControl({
           return null;
         }
         router.refresh();
+        if (next === 'Yes') announceMissionProgress(taskId);
         return commandVersion(result.data);
       } catch {
         // The key stays so tapping again recovers a change that did save.
