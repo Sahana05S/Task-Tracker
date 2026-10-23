@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { GUIDE_TOPICS, guideTopic } from '@/modules/guide';
-import { GuideTopicPage } from '@/modules/guide/components/guide-pages';
+import { GuideTopicPage } from '@/modules/guide/components/guide-topic';
 
 export function generateStaticParams() {
   return GUIDE_TOPICS.map(topic => ({ topic: topic.slug }));
