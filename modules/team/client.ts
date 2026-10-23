@@ -11,4 +11,14 @@ export {
   type EmployeeTrendPoint,
 } from '@/modules/team/internal/employee-charts';
 export { optionalEmployeePerformance } from '@/modules/team/internal/performance-availability';
-export type { Invitation, PeopleAdminData } from '@/modules/team/internal/people';
+export type { Invitation, PeopleAdminData, Placement } from '@/modules/team/internal/people';
+export {
+  buildOrgTree,
+  parseOrgChart,
+  teamSize,
+  TODAY_STATUSES,
+  type OrgChart,
+  type OrgNode,
+  type OrgPerson,
+  type TodayStatus,
+} from '@/modules/team/internal/org-tree';

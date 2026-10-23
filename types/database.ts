@@ -70,6 +70,10 @@ export interface Database {
           email: string;
           role: UserRole;
           is_active: boolean;
+          /** Migration 65: the org chart. Written only through people_command; read only where shown. */
+          reports_to?: string | null;
+          job_title?: string | null;
+          department_id?: string | null;
           created_at: string;
           updated_at: string;
         },
@@ -863,10 +867,12 @@ export interface Database {
       notifications_unread_count: { Args: Record<never, never>; Returns: number };
       notifications_mark_read: { Args: { p_ids?: string[] | null }; Returns: number };
       people_command: { Args: { p_command: 'invite' | 'revoke' | 'update'; p_payload: Json }; Returns: Json };
+      /** Migration 65: the org chart for any active member: people, placement and today's coarse status. */
+      org_chart: { Args: Record<never, never>; Returns: Json };
       /** Migration 53: the caller's company settings (any active member; standing missions for managers). */
       company_settings: { Args: Record<never, never>; Returns: Json };
       /** Migration 53: managing director only; versioned and idempotent per operation. */
-      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults' | 'branding'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
+      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults' | 'branding' | 'departments'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       /** Migration 55: month setup wizard (managing director or project engineer). */
       month_setup_context: { Args: { p_month: string }; Returns: Json };
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };
