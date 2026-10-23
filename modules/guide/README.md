@@ -3,33 +3,32 @@
 See `docs/ARCHITECTURE.md` for the rules.
 
 ## What it does
-The in-app guide (`/guide`): a "How TaskPulse works" path, one page per feature
-(Missions, Checklist, Time, Records, Recognition, Waypoints, Policies, Reports,
-Analytics) and a searchable glossary. Each section leads with an icon, one
-sentence and a picture (a flow, the app's own badges, a formula, a checklist or
-a small diagram); its full text sits under "More detail". The words come from
-the business rules (`docs/plans/RULES.md`); every `HelpTip` "Learn more" link
-points at a section here. It reads no data and adds no rule.
+The in-app guide (`/guide`): one page that explains how TaskPulse works in six
+stages (Missions, Daily work, Records, Scores, Stars, Month close). Each stage
+is a small flowchart (at most four columns, boxes of at most four words) and one
+line. A stage is chosen with a plain link, `/guide?stage=<key>`, so it works
+without JavaScript and every `HelpTip` "Learn more" link opens the page at the
+right stage. The old one-page-per-topic addresses (`/guide/<topic>`) redirect to
+the matching stage. The words restate the business rules
+(`docs/plans/RULES.md`); it reads no data and adds no rule.
 
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `GUIDE_TOPICS`, `guideTopic(slug)`, `GUIDE_FLOW` (the home path), `GUIDE_ALONG_THE_WAY`, `GUIDE_GROUPS`, `GUIDE_ICONS`; types `GuideTopicContent`, `GuideSection`, `GuideStep`, `GuideVisual`, `GuideIcon` (pure data) |
-| `components/` | `GuideIndex` (`guide-index.tsx`, the `/guide` page body), `GuideTopicPage` (`guide-topic.tsx`, `/guide/[topic]`); internal pieces: `guide-visuals.tsx` (one renderer per visual kind), `glossary-search.tsx` (client), `guide-icon.tsx`, `topic-icons.ts` |
+| `index.ts` | `GUIDE_STAGE_CONTENT`, `GUIDE_STAGES`, `guideStage(key)`, `LEGACY_TOPIC_STAGE`; types `GuideStageContent`, `FlowNode`, `FlowTone`, `GuideStageIcon` (pure data) |
+| `components/` | `GuidePage` (`guide-page.tsx`, the `/guide` body), `GuideFlowchart` (`guide-flowchart.tsx`, one stage's chart: left to right from `sm`, top to bottom on phones) |
 
 ## Private (`internal/`)
 | File | Job |
 |---|---|
-| `topics.ts` | The topics, their sections (lead, icon, visual, full text) and the anchors the glossary links to; the home path and groups |
+| `stages.ts` | The six stages: path, optional side branch or either/or ending, caption; where old topic pages now point |
 
 ## Database it owns
 None.
 
 ## Depends on
-`shared/*` (`shared/tracker/labels` for the glossary and enum meanings,
-`shared/tracker/enums`, `shared/ui/mission-ui`, `shared/ui/tracker-badges`,
-`shared/ui/input`) and `@/modules/recognition/client` for `DEFAULT_WAYPOINTS`,
-so the waypoints picture always names the stages the app uses. Tests:
-`modules/guide/__tests__/topics.test.ts` (every glossary link lands on an
-existing section; every section has a short lead, a known icon and a complete
-picture; the home path and groups cover every topic).
+`shared/*` only (`shared/tracker/labels` for the stage keys, `shared/ui/mission-ui`).
+The glossary that help tips read (`shared/tracker/glossary.ts`) names a stage
+per term; `guideHref` builds the link. Tests:
+`modules/guide/__tests__/stages.test.ts` (six stages in order, short boxes and
+captions, every help tip and old topic address lands on a real stage).

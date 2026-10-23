@@ -130,9 +130,9 @@ describe('glossary coverage', () => {
     }
   });
 
-  it('links every glossary term to a guide section', () => {
+  it('links every glossary term to a guide stage', () => {
     for (const term of Object.values(GLOSSARY)) {
-      expect(guideHref(term)).toMatch(/^\/guide\/[a-z]+#[a-z-]+$/);
+      expect(guideHref(term)).toMatch(/^\/guide\?stage=[a-z-]+$/);
       expect(term.meaning).toMatch(/\.$/);
     }
   });
