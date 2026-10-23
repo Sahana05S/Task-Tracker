@@ -12,9 +12,8 @@ import { reportText } from '@/modules/reports/internal/presentation/export';
 import { formatDate } from '@/shared/tracker/format';
 import type { LivePresentation } from '@/modules/reports/internal/presentation/model';
 import { cn } from '@/shared/utils';
-import { getCompanySettings } from '@/modules/settings';
-export async function LiveReport({model}:{model:LivePresentation}){
- const companyName=(await getCompanySettings()).branding.companyName;
+/** `companyName` heads the copied text report (Settings > Company > Branding). */
+export function LiveReport({model,companyName}:{model:LivePresentation;companyName?:string}){
  const query=viewQuery(model.view)+(model.employeeId?'&employee='+encodeURIComponent(model.employeeId):'');
  return <section className="grid gap-5 lg:gap-6">
   <ReportContext model={model}/>
