@@ -7,7 +7,7 @@ import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { requireRole } from '@/shared/session/profile';
 
 export const metadata: Metadata = {
-  title: 'Manage people · TaskPulse',
+  title: 'Manage people',
 };
 
 export default async function ManagePeoplePage() {

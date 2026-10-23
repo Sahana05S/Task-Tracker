@@ -1,4 +1,4 @@
-# TaskPulse operating guide (current local implementation)
+# Stellar operating guide (current local implementation)
 
 These workflows describe the current application code. They need signed-in
 staging verification before production use. Drive automation is disabled;

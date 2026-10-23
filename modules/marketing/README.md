@@ -5,7 +5,7 @@ The public landing page at `/`: header, a space-themed hero (night sky, stars,
 low-poly planet, rocket and a cloud bank that clears into the page on scroll)
 with the tracker mockup, the metric strip, feature rows, feature tabs, FAQ and
 a footer whose call to action sits on a small night sky. It is static content
-with no data access, in the existing TaskPulse palette (no theme switch).
+with no data access, in the existing Stellar palette (no theme switch).
 
 ## Public API (the only files other code may import)
 | File | What it offers |

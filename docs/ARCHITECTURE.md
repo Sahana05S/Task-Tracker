@@ -1,4 +1,4 @@
-# TaskPulse code layout
+# Stellar code layout
 
 This explains where code lives and the rules that keep features independent.
 It is enforced by `__tests__/architecture/boundaries.test.ts`, which runs with

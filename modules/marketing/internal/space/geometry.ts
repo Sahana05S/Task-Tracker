@@ -4,7 +4,7 @@ import { mulberry32 } from './stars';
  * Geometry for the low-poly planet and the cloud bank.
  *
  * Both are generated on the server from fixed seeds, so the markup is the same
- * on every render. Colours come from the TaskPulse palette in `globals.css`:
+ * on every render. Colours come from the Stellar palette in `globals.css`:
  * violet primary for the ocean, success mint for the land, the lavender family
  * for the clouds.
  */

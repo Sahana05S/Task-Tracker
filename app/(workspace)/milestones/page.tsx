@@ -10,7 +10,7 @@ import { getMilestonesPageData, summariseMilestones } from '@/modules/milestones
 import { canManageMilestones } from '@/shared/tracker/enums';
 
 export const metadata: Metadata = {
-  title: 'Milestones · TaskPulse',
+  title: 'Milestones',
 };
 
 /**

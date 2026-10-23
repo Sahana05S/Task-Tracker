@@ -21,7 +21,7 @@ import { UnavailableValue } from '@/shared/ui/unavailable-value';
 import { PeriodPicker } from '@/shared/ui/period-picker';
 
 export const metadata: Metadata = {
-  title: 'Team · TaskPulse',
+  title: 'Team',
 };
 
 export default async function TeamPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string;view?:string}>}) {

@@ -10,7 +10,7 @@ import { MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/missio
 import { requireProfile } from '@/shared/session/profile';
 
 export const metadata: Metadata = {
-  title: 'Task Tools · TaskPulse',
+  title: 'Task Tools',
 };
 
 /**

@@ -20,8 +20,8 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'TaskPulse',
-  description: 'Advanced Multi-Metric Performance Tracker',
+  title: { default: 'Stellar', template: '%s · Stellar' },
+  description: 'Stellar — multi-metric performance tracker for teams',
 };
 
 export default function RootLayout({

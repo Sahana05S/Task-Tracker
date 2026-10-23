@@ -39,6 +39,7 @@ import { EffortPanel } from '@/modules/tasks/components/detail/effort-panel';
 import { TaskLogTimeline } from '@/modules/tasks/components/detail/log-timeline';
 import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
 import { MissionOverview } from '@/modules/tasks/components/detail/mission-overview';
+import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
 import { getMissionWaypoints } from '@/modules/recognition';
 import { WaypointCelebration } from '@/modules/recognition/components/waypoint-celebration';
 import { WaypointTrack } from '@/modules/recognition/components/waypoint-track';
@@ -67,7 +68,7 @@ export async function generateMetadata({
   const normalizedTaskTag = normalizeTaskTagParam(taskTag);
 
   return {
-    title: `${normalizedTaskTag ?? 'Mission'} · TaskPulse`,
+    title: `${normalizedTaskTag ?? 'Mission'}`,
   };
 }
 
@@ -168,6 +169,17 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           </span>
         </p>
       ) : null}
+
+      {archived ? null : (
+        <MissionStatusBanner
+          taskId={task.id}
+          taskTag={task.taskTag}
+          status={task.status}
+          hasWork={(task.progressPercentage ?? 0) > 0 || data.effort.hoursLogged > 0}
+          readyToFinish={data.checklistRollup?.isComplete === true}
+          canChange={canManage || canUpdateTaskOwnFields(currentUser, task)}
+        />
+      )}
 
       {!archived&&task.reviewerIds.includes(currentUser.id) ? (
         <section className="border-primary/20 bg-primary-subtle/60 rounded-2xl border p-4 sm:p-5" aria-label="Your review">

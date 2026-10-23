@@ -216,7 +216,7 @@ function MemberRow({ member, self, members, placement, departments }: {
             <form
               action={toggle}
               onSubmit={(event) => {
-                if (member.isActive && !window.confirm(`Remove ${member.fullName}'s access? They lose access to TaskPulse; their records stay.`)) {
+                if (member.isActive && !window.confirm(`Remove ${member.fullName}'s access? They lose access to Stellar; their records stay.`)) {
                   event.preventDefault();
                 }
               }}

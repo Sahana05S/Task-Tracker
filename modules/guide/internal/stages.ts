@@ -1,7 +1,7 @@
 import { GUIDE_STAGES, type GuideStage } from '@/shared/tracker/labels';
 
 /**
- * The one-page guide: six stages of how TaskPulse works, each a small
+ * The one-page guide: six stages of how Stellar works, each a small
  * flowchart and one line. Every box restates a rule from the business rules
  * (docs/plans/RULES.md); nothing here adds one. Help tips link to a stage
  * through `guideHref` (`/guide?stage=...`).

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { updateTaskProgress } from '@/modules/tasks/actions';
 import { toProgressValue } from '@/shared/tracker/format';
+import { announceMissionProgress } from '@/shared/ui/mission-progress-event';
 import { cn } from '@/shared/utils';
 import { UnavailableValue } from '@/shared/ui/unavailable-value';
 
@@ -125,7 +126,7 @@ export function ProgressInput({
       try {
         const finish=await prepareOperation(form,'progress');
         result=await updateTaskProgress(taskId,rounded,Number(form.get('expectedVersion')),String(form.get('operationId')));
-        if (result.success) finish();
+        if (result.success) { finish(); if (rounded > 0) announceMissionProgress(taskId); }
       } catch { result={success:false,error:'Response unavailable. Retry the same change to recover its result.'}; }
       if (!result.success) {
         setCommitted(previous);

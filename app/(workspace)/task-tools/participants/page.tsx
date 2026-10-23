@@ -6,7 +6,7 @@ import { EmptyState, MissionNotice, MissionPage, MissionPageHeader } from '@/sha
 import { codeLabel } from '@/shared/tracker/labels';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'Participant reconciliation · TaskPulse' };
+export const metadata: Metadata = { title: 'Participant reconciliation' };
 
 
 export default async function ParticipantReconciliationPage() {

@@ -1,6 +1,6 @@
 # team
 
-The people side of TaskPulse: the `/team` index, each employee's profile and
+The people side of Stellar: the `/team` index, each employee's profile and
 reports pages (who may see which), the company org chart (`/team?view=chart`),
 the director's daily-star controls on the team page, the director's People page (`/team/manage`: invite, role, details,
 remove/restore access) and the signed-in member's own Settings (display name).
