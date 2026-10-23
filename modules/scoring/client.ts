@@ -58,7 +58,20 @@ export {
   type DailyStarCandidateScore,
 } from '@/modules/scoring/internal/stars/legacy-scoring';
 export type { AwardDay, AwardHistory, AwardReadModel } from '@/modules/scoring/internal/stars/read-model';
-export { awardDayLabel, awardDateRanges, sharedReasons, isReasonCode } from '@/modules/scoring/internal/stars/display';
+export {
+  awardDayLabel,
+  awardDateRanges,
+  awardDayKind,
+  awardGroupLabel,
+  groupAwardDays,
+  isReasonCode,
+  mondayIndex,
+  reasonChips,
+  type AwardDayGroup,
+  type AwardDayKind,
+  type ReasonChip,
+  type ReasonChipKey,
+} from '@/modules/scoring/internal/stars/display';
 export type { AwardCommandResponse } from '@/modules/scoring/internal/stars/daily';
 export {
   computeTeamAnalytics,

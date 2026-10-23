@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { AwardControls } from '@/modules/team/components/award-controls';
-import { AwardStatus } from '@/modules/scoring/components/award-status';
+import { AwardSummary } from '@/modules/workspace-views/components/dashboard/award-summary';
 import { InitialsAvatar, EmptyState, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { getTeamHolidayDates } from '@/modules/attendance';
@@ -67,7 +67,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
       <h2 className="text-foreground text-base font-bold tracking-tight">Contributions this period</h2>
       <SupportSummaryCards summary={data.supportSummary} />
 
-      <AwardStatus awards={data.awards} holidays={holidays} holidayNames={holidayNames} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
+      <AwardSummary awards={data.awards} holidays={holidays} holidayNames={holidayNames} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))} detailsHref={`/dashboard?period=${context.period.startDate.slice(0,7)}#calculation-details`}/>
       {canManage ? <AwardControls awards={data.awards} members={data.members.map(m=>({id:m.user.id,fullName:m.user.fullName}))} /> : null}
 
       {data.members.length === 0 ? (

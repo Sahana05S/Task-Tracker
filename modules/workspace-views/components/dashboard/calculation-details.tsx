@@ -5,6 +5,8 @@ import { ReportContext } from '@/modules/reports/components/view-context';
 import { AwardStatus } from '@/modules/scoring/components/award-status';
 import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
 
+import { OpenOnHash } from './open-on-hash';
+
 /**
  * Optional diagnostics, collapsed by default: calculation context, award runs
  * with their exact reason codes, and per-member factor inputs. Per-member
@@ -12,10 +14,12 @@ import { PerformanceBreakdown } from '@/modules/scoring/components/performance-b
  * member sees only their own (team_summary_with_own_details), an employee
  * report sees that employee.
  */
-export function CalculationDetails({presentation,calculation,awards,names,viewerId,snapshotCount}:{
+export function CalculationDetails({presentation,calculation,awards,holidays,holidayNames,names,viewerId,snapshotCount}:{
   presentation: LivePresentation;
   calculation: CalculationResult | null | undefined;
   awards?: AwardReadModel;
+  holidays?: ReadonlySet<string> | null;
+  holidayNames?: Record<string, string>;
   names: Record<string, string>;
   viewerId: string;
   snapshotCount: number;
@@ -24,7 +28,8 @@ export function CalculationDetails({presentation,calculation,awards,names,viewer
     || (presentation.scope === 'employee_detail' ? userId === presentation.employeeId : userId === viewerId);
   const members = (calculation?.members ?? []).filter(member => visible(member.userId));
   return (
-    <details id="calculation-details" className="soft-card group p-5 sm:p-6">
+    <details id="calculation-details" className="soft-card group scroll-mt-24 p-5 sm:p-6">
+      <OpenOnHash id="calculation-details" />
       <summary className="cursor-pointer list-none">
         <span className="text-foreground text-base font-bold tracking-tight">Calculation details</span>
         <span className="text-muted-foreground ml-2 text-xs">Award runs and each person's inputs</span>
@@ -32,7 +37,7 @@ export function CalculationDetails({presentation,calculation,awards,names,viewer
       <div className="mt-4 grid gap-4">
         <ReportContext model={presentation} picker={false} />
         <p className="text-muted-foreground text-xs">{snapshotCount} saved monthly figures, kept with the rules they were saved under.</p>
-        {awards ? <AwardStatus awards={awards} names={names} /> : null}
+        {awards ? <AwardStatus awards={awards} names={names} holidays={holidays} holidayNames={holidayNames} /> : null}
         <section className="grid gap-2" aria-label="Performance inputs">
           <h3 className="text-sm font-semibold">Performance inputs</h3>
           {members.length === 0 ? <p className="text-muted-foreground text-sm">No individual inputs are visible to you for this period.</p> : null}
