@@ -137,9 +137,14 @@ export function MissionPageHeader({
   return (
     <header className="grid gap-4">
       {breadcrumb}
-      {/* Phones stack the actions under the title so the title column keeps its width. */}
+      {/*
+        Phones stack the actions under the title. From sm up the title column
+        asks for at least 20rem before it shrinks, so when the actions (a period
+        picker, buttons) leave less than that the row wraps and they move under
+        the title instead of squeezing it to a few letters per line.
+      */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4">
-        <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
+        <div className="flex min-w-0 flex-col gap-1 sm:flex-[1_1_20rem]">
           {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
           {meta ? <div className="mb-2 flex flex-wrap items-center gap-1.5">{meta}</div> : null}
           <div className="flex flex-wrap items-center gap-2">
