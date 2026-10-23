@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import type { PostgrestError } from '@supabase/supabase-js';
 
-import type { TaskFields } from '@/modules/tasks/internal/input';
+import type { NewMissionScale, TaskFields } from '@/modules/tasks/internal/input';
 import { executionError } from '@/shared/commands/result';
 import { createClient } from '@/shared/supabase/server';
 import type { Json } from '@/types/database';
@@ -67,6 +67,30 @@ export async function saveTaskWithParticipants(
     p_share_units: shares,
     p_expected_version: options.expectedVersion,
     p_accept_legacy: options.acceptLegacyShares,
+    p_operation_id: options.operationId || randomUUID(),
+  });
+  if (error) return { ok: false, error: describeDatabaseError(error) };
+  return { ok: true, value: data };
+}
+
+/**
+ * Creates a mission with an hours or activity-count scale in one RPC
+ * (migration 61): the plain save at scale 0, then the versioned scale command.
+ */
+export async function createTaskWithScale(
+  fields: TaskFields,
+  options: Omit<SaveTaskOptions, 'taskId' | 'expectedVersion'>,
+  scale: Exclude<NewMissionScale, { mode: 'manual' }>,
+): Promise<CommandResult<string>> {
+  const { taskTag, title, category, priority, dueDate, assigneeIds, reviewerIds, shares } = fields;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('create_task_with_scale', {
+    p_fields: { task_tag: taskTag, title, category, priority, due_date: dueDate, ...options.extraFields },
+    p_assignees: assigneeIds,
+    p_reviewers: reviewerIds,
+    p_share_units: shares,
+    p_accept_legacy: options.acceptLegacyShares,
+    p_scale: scale,
     p_operation_id: options.operationId || randomUUID(),
   });
   if (error) return { ok: false, error: describeDatabaseError(error) };

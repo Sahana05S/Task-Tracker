@@ -40,6 +40,13 @@ export interface CompanyHoliday {
 export type OwnerMode = 'per_member' | 'single';
 export type StandingScaleMode = 'manual' | 'hours' | 'activity_count';
 export const STANDING_SCALE_MODES = ['hours', 'manual', 'activity_count'] as const satisfies readonly StandingScaleMode[];
+/** How each scale mode is named in Settings and the New mission dialog. */
+export const SCALE_MODE_LABELS: Record<StandingScaleMode, string> = {
+  manual: 'Fixed weight',
+  hours: 'Hours logged',
+  activity_count: 'Activity count',
+};
+const isScaleMode = (value: unknown): value is StandingScaleMode => (STANDING_SCALE_MODES as readonly unknown[]).includes(value);
 
 export interface StandingMission {
   id: string;
@@ -64,9 +71,11 @@ export interface CompanySettings {
   holidays: CompanyHoliday[];
   /** Managers only; empty for other roles. */
   standingMissions: StandingMission[];
+  /** How the New mission dialog weights a mission unless changed (migration 61; 'manual' before it). */
+  defaultScaleMode: StandingScaleMode;
 }
 
-export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays'] as const;
+export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 /** Settings before migration 53 (or a company that saved nothing): built-in labels, no lists. */
@@ -78,6 +87,7 @@ export const EMPTY_COMPANY_SETTINGS: CompanySettings = {
   meetingTypes: [],
   holidays: [],
   standingMissions: [],
+  defaultScaleMode: 'manual',
 };
 
 /** The thirteen codes with the company's labels, flags and order applied (stable by built-in order). */
@@ -185,9 +195,10 @@ export function parseCompanySettings(raw: unknown): CompanySettings {
         priority: (TASK_PRIORITIES as readonly unknown[]).includes(s.priority) ? (s.priority as TaskPriority) : 'Medium',
         ownerMode: s.ownerMode === 'single' ? 'single' : 'per_member',
         ownerId: typeof s.ownerId === 'string' && UUID_PATTERN.test(s.ownerId) ? s.ownerId : null,
-        scaleMode: (STANDING_SCALE_MODES as readonly unknown[]).includes(s.scaleMode) ? (s.scaleMode as StandingScaleMode) : 'hours',
+        scaleMode: isScaleMode(s.scaleMode) ? s.scaleMode : 'hours',
         sort: asNumber(s.sort),
         active: s.active !== false,
       })),
+    defaultScaleMode: isScaleMode(raw.defaultScaleMode) ? raw.defaultScaleMode : 'manual',
   };
 }

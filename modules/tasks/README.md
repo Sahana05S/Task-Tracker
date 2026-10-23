@@ -48,6 +48,7 @@ template versions.
 | `task_assignees`, `task_reviewers`, `task_links`, `task_dependencies` | `07_tracker_replacement_foundation.sql` |
 | `task_detail_templates`, `task_detail_template_versions`, `task_detail_instances`, `task_detail_sections`, `task_detail_review_flags` | `17_native_task_details_and_templates.sql` |
 | `save_task_with_participants` | 10, revised in 12, 16, 17 |
+| `create_task_with_scale` | `61_new_mission_scale_mode.sql` |
 | `task_lifecycle_command` | `16_task_lifecycle_and_scale_contract.sql` |
 | `task_details_command` | 17, revised in 18, 26, 38 |
 | `publish_task_detail_template` | `17_native_task_details_and_templates.sql` |
@@ -66,6 +67,17 @@ the database allocates the next sheet tag (`<Mon><YY>_<TYPE><n>`, migration 53),
 as it does for Task Tools copies. Existing `TT-` tags stay valid. The team headline (scoring's
 `MissionHeadlineStrip`) is shown collapsed on Team > Analytics; `countOpenTasks`
 feeds the navigation badge.
+
+## New mission scale mode (migration 61)
+The New mission dialog asks how the mission is weighted, starting from the
+company default (`useDefaultScaleMode()` from `settings`): Fixed weight (the
+typed Scale weight, saved by `save_task_with_participants` as before), Hours
+logged (multiplier, default 1) or Activity count (a whole number of activities
+and a scale per activity). The two formula modes call `create_task_with_scale`,
+which saves the mission at scale 0 and applies the versioned scale command in
+the same transaction, with its own receipt for retries. Linked scales need a
+source mission and stay in the Lifecycle and scale panel, as do later changes.
+`parseNewMissionScale` (internal/input.ts) checks the inputs first.
 
 ## Missions page rules (DECISIONS "Bulk actions on the Missions table", 21 Oct 2026)
 - The table (from 768px, `?view=table`) has a checkbox column; the header box

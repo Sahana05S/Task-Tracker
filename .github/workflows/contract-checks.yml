@@ -75,6 +75,8 @@ jobs:
         run: python tools/test_policies_database.py --psql "$(command -v psql)" --port 15432
       - name: Month setup wizard (migration 55)
         run: python tools/test_month_setup_database.py --psql "$(command -v psql)" --port 15432
+      - name: New mission scale mode and company default (migration 61)
+        run: python tools/test_mission_scale_mode_database.py --psql "$(command -v psql)" --port 15432
       - name: Demo recognition seed (script only, loopback)
         run: python tools/test_seed_demo_recognition_database.py --psql "$(command -v psql)" --port 15432 --manifest-dir "$RUNNER_TEMP/demo-recognition"
       - name: Install openpyxl for the sheet tools

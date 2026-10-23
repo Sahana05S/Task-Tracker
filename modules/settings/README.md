@@ -10,10 +10,10 @@ reads them.
 | File | What it offers |
 |---|---|
 | `index.ts` | `getCompanySettings()` (built-in defaults before migration 53), `categoryCatalogue()` (the 13 codes with the company's labels, active flags and order), `getCompanyHolidayNames(from, to)` |
-| `actions.ts` | `saveCompanySettings(prev, form)`: one section per call (`agenda`, `categories`, `meeting_types`, `standing_missions`, `holidays`) |
-| `client.ts` | Types and pure rules: `buildCategoryCatalogue`, `categoryChoices` (hides inactive codes except the current one), `categoryLabelMap`, `meetingTypeChoices` (keeps a saved value that left the list), `agendaLines`, `renderTitlePattern`, `formatSheetTag`, `canManageCompanySettings` |
-| `components/company-settings.tsx` | `CompanySettingsEditor`: the Company tab (five sections, each saved on its own) |
-| `components/company-settings-context.tsx` | `CompanySettingsProvider` (in the workspace layout), `useCategoryCatalogue()`, `useCategoryLabels()`, `useMeetingTypes()` |
+| `actions.ts` | `saveCompanySettings(prev, form)`: one section per call (`agenda`, `categories`, `meeting_types`, `standing_missions`, `holidays`, `mission_defaults`) |
+| `client.ts` | Types and pure rules: `buildCategoryCatalogue`, `categoryChoices` (hides inactive codes except the current one), `categoryLabelMap`, `meetingTypeChoices` (keeps a saved value that left the list), `agendaLines`, `renderTitlePattern`, `formatSheetTag`, `canManageCompanySettings`, `STANDING_SCALE_MODES`, `SCALE_MODE_LABELS` |
+| `components/company-settings.tsx` | `CompanySettingsEditor`: the Company tab (six sections, each saved on its own) |
+| `components/company-settings-context.tsx` | `CompanySettingsProvider` (in the workspace layout), `useCategoryCatalogue()`, `useCategoryLabels()`, `useMeetingTypes()`, `useDefaultScaleMode()` |
 | `components/meeting-type-select.tsx` | `MeetingTypeSelect`: the meeting-point Meeting type field (free text while a company has no types) |
 | `components/meeting-agenda.tsx` | `MeetingAgenda`: the agenda box on Meeting points |
 
@@ -55,8 +55,17 @@ that show a mission type's name use `useCategoryLabels()`; server code uses
 - Seeds company #1 from the September 2026 workbook: meeting types DL WL ML QTL
   PRF SCD PP AH, the "Regular Meeting Agenda" and six standing missions.
 
+## New missions default (migration 61, `61_new_mission_scale_mode.sql`)
+- `organization_settings.default_scale_mode` (`manual`, `hours` or
+  `activity_count`; `manual` for every existing company). `company_settings()`
+  returns it as `defaultScaleMode` to every member.
+- `company_settings_command('mission_defaults', {scaleMode})`: same director
+  rule, version, receipt and audit (`company_settings_mission_defaults`) as the
+  other sections. Settings > Company > New missions edits it; the New mission
+  dialog starts from it. Missions that already exist keep their scale.
+
 Tests: `modules/settings/__tests__/settings.test.ts`,
-`tools/test_company_settings_database.py`.
+`tools/test_company_settings_database.py`, `tools/test_mission_scale_mode_database.py`.
 
 ## Depends on
 `shared/*` only. Pages combine it with `team` (members for the owner select).

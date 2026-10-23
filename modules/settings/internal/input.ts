@@ -114,6 +114,13 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
     return { ok: true, value: { missions } };
   },
 
+  mission_defaults(raw) {
+    if (!isRecord(raw) || !(STANDING_SCALE_MODES as readonly unknown[]).includes(raw.scaleMode)) {
+      return { ok: false, error: 'Choose how new missions are weighted.' };
+    }
+    return { ok: true, value: { scaleMode: raw.scaleMode as string } };
+  },
+
   holidays(raw) {
     if (!isRecord(raw) || !Array.isArray(raw.holidays) || raw.holidays.length > 1000) return { ok: false, error: 'Up to 1000 holidays.' };
     const holidays: Json[] = [];

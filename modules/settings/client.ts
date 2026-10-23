@@ -8,6 +8,7 @@ export {
   formatSheetTag,
   meetingTypeChoices,
   renderTitlePattern,
+  SCALE_MODE_LABELS,
   STANDING_SCALE_MODES,
   type CategoryEntry,
   type CategoryOverrides,

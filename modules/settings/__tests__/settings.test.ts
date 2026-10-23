@@ -27,7 +27,7 @@ const TYPES: MeetingType[] = [
 ];
 
 function withSettings(node: ReactNode, overrides = {}, meetingTypes: MeetingType[] = TYPES) {
-  return renderToStaticMarkup(createElement(CompanySettingsProvider, { catalogue: buildCategoryCatalogue(overrides), meetingTypes, children: node }));
+  return renderToStaticMarkup(createElement(CompanySettingsProvider, { catalogue: buildCategoryCatalogue(overrides), meetingTypes, defaultScaleMode: 'manual', children: node }));
 }
 
 function form(entries: Record<string, string>) {
@@ -143,6 +143,17 @@ describe('settings payload', () => {
     const day = { date: '2026-10-20', name: 'Diwali' };
     expect(parseSettingsCommand(form({ ...base, section: 'holidays', payload: JSON.stringify({ holidays: [day, day] }) })).ok).toBe(false);
     expect(parseSettingsCommand(form({ ...base, section: 'holidays', payload: JSON.stringify({ holidays: [day] }) }))).toMatchObject({ ok: true, value: { payload: { holidays: [day] } } });
+  });
+
+  it('reads and saves the default scale mode for new missions', () => {
+    expect(parseCompanySettings(null).defaultScaleMode).toBe('manual');
+    expect(parseCompanySettings({ defaultScaleMode: 'hours' }).defaultScaleMode).toBe('hours');
+    expect(parseCompanySettings({ defaultScaleMode: 'linked' }).defaultScaleMode).toBe('manual');
+    const base = { section: 'mission_defaults', expectedVersion: '4', operationId: OP };
+    expect(parseSettingsCommand(form({ ...base, payload: '{"scaleMode":"activity_count"}' }))).toMatchObject({ ok: true, value: { section: 'mission_defaults', payload: { scaleMode: 'activity_count' } } });
+    for (const payload of ['{"scaleMode":"linked"}', '{}', '{"scaleMode":1}']) {
+      expect(parseSettingsCommand(form({ ...base, payload }))).toEqual({ ok: false, error: 'Choose how new missions are weighted.' });
+    }
   });
 
   it('needs a version and an operation id', () => {

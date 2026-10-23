@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { buildCategoryCatalogue, categoryLabelMap, type CategoryEntry, type MeetingType } from '@/modules/settings/client';
+import { buildCategoryCatalogue, categoryLabelMap, type CategoryEntry, type MeetingType, type StandingScaleMode } from '@/modules/settings/client';
 import type { TaskCategory } from '@/types/tracker';
 
 /**
@@ -13,13 +13,15 @@ import type { TaskCategory } from '@/types/tracker';
 interface CompanyCatalogues {
   catalogue: readonly CategoryEntry[];
   meetingTypes: readonly MeetingType[];
+  /** How a new mission is weighted unless the dialog changes it. */
+  defaultScaleMode: StandingScaleMode;
 }
 
-const DEFAULTS: CompanyCatalogues = { catalogue: buildCategoryCatalogue(), meetingTypes: [] };
+const DEFAULTS: CompanyCatalogues = { catalogue: buildCategoryCatalogue(), meetingTypes: [], defaultScaleMode: 'manual' };
 const CompanyCataloguesContext = React.createContext<CompanyCatalogues>(DEFAULTS);
 
-export function CompanySettingsProvider({ catalogue, meetingTypes, children }: CompanyCatalogues & { children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ catalogue, meetingTypes }), [catalogue, meetingTypes]);
+export function CompanySettingsProvider({ catalogue, meetingTypes, defaultScaleMode, children }: CompanyCatalogues & { children: React.ReactNode }) {
+  const value = React.useMemo(() => ({ catalogue, meetingTypes, defaultScaleMode }), [catalogue, meetingTypes, defaultScaleMode]);
   return <CompanyCataloguesContext.Provider value={value}>{children}</CompanyCataloguesContext.Provider>;
 }
 
@@ -37,4 +39,9 @@ export function useCategoryLabels(): Record<TaskCategory, string> {
 /** The company's meeting types (active and hidden), in order. */
 export function useMeetingTypes(): readonly MeetingType[] {
   return React.useContext(CompanyCataloguesContext).meetingTypes;
+}
+
+/** The company's default scale mode for new missions (Settings > Company). */
+export function useDefaultScaleMode(): StandingScaleMode {
+  return React.useContext(CompanyCataloguesContext).defaultScaleMode;
 }
