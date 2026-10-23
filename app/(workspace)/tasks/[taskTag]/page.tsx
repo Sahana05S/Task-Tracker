@@ -45,6 +45,8 @@ import { WaypointTrack } from '@/modules/recognition/components/waypoint-track';
 import { WorkFilesPanel } from '@/modules/tasks/components/detail/work-files-panel';
 import { TaskLifecyclePanel } from '@/modules/tasks/components/task-lifecycle-panel';
 import { TaskReviewForm } from '@/modules/tasks/components/task-review-form';
+import { getMissionHistory, parseHistoryCursor } from '@/modules/records';
+import { MissionChangeLog } from '@/modules/records/components/mission-change-log';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDate, formatHours, isOverdue } from '@/shared/tracker/format';
 
@@ -95,10 +97,12 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const archived = !!task.archivedEffectiveDate;
   const successor = data.dependencies.find((d) => d.otherTask?.id === task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role) && !archived;
-  const requested = (await searchParams).tab;
+  const query = await searchParams;
+  const requested = query.tab;
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
+  const historyBefore = parseHistoryCursor(query.before);
   const details = tab === 'details';
-  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints] = await Promise.all([
+  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, changeLog] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
@@ -107,6 +111,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
     // A failed read leaves the track on current progress.
     tab === 'work' ? getMissionWaypoints([task]).catch(() => null) : Promise.resolve(null),
+    // A failed read shows a notice in the change log, not an error page.
+    tab === 'history' ? getMissionHistory(task.id, historyBefore).catch(() => null) : Promise.resolve(null),
   ]);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
@@ -261,23 +267,30 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           </aside>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <MissionPanel
-            icon={HistoryIcon}
-            title="Activity & updates"
-            subtitle={`${data.effort.logCount} log ${data.effort.logCount === 1 ? 'entry' : 'entries'} · ${formatHours(data.effort.hoursLogged)} h`}
-          >
-            <TaskLogTimeline logs={execution.logs} memberNames={memberNames} />
-          </MissionPanel>
-          <MissionPanel icon={HistoryIcon} title={canManage ? 'Timer records' : 'My timer records'} className="h-fit">
-            <TimerRecords
-              timers={visibleTimers}
-              memberNames={memberNames}
-              taskTag={task.taskTag}
-              canManage={canManage}
-              currentUserId={currentUser.id}
-            />
-          </MissionPanel>
+        <div className="grid gap-6">
+          <MissionChangeLog
+            page={changeLog}
+            paged={historyBefore !== null}
+            seesEveryone={canManageTasks(currentUser.role) || task.assigneeIds.includes(currentUser.id) || task.reviewerIds.includes(currentUser.id)}
+          />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <MissionPanel
+              icon={HistoryIcon}
+              title="Time logs"
+              subtitle={`${data.effort.logCount} log ${data.effort.logCount === 1 ? 'entry' : 'entries'} · ${formatHours(data.effort.hoursLogged)} h`}
+            >
+              <TaskLogTimeline logs={execution.logs} memberNames={memberNames} />
+            </MissionPanel>
+            <MissionPanel icon={HistoryIcon} title={canManage ? 'Timer records' : 'My timer records'} className="h-fit">
+              <TimerRecords
+                timers={visibleTimers}
+                memberNames={memberNames}
+                taskTag={task.taskTag}
+                canManage={canManage}
+                currentUserId={currentUser.id}
+              />
+            </MissionPanel>
+          </div>
         </div>
       )}
     </MissionPage>

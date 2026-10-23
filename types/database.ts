@@ -873,6 +873,8 @@ export interface Database {
       month_setup_commit: { Args: { p_preview: string; p_operation: string }; Returns: Json };
       /** Migration 54: the activity log read; company-scoped and role-gated in the database. */
       activity_feed: { Args: { p_from: string; p_to: string; p_kind?: string | null; p_member?: string | null; p_before?: Json | null; p_limit?: number | null }; Returns: { id: string; occurred_at: string; kind: string; action: string; actor_id: string | null; subject_user_id: string | null; task_id: string | null; task_tag: string | null; record_kind: string | null; record_id: string | null; fields: string[] | null; reason: string | null; period: string | null }[] };
+      /** Migration 68: one mission's change log, whole transactions newest first; role-gated in the database. */
+      mission_history: { Args: { p_task: string; p_before?: string | null; p_limit?: number | null }; Returns: { id: number; occurred_at: string; actor_id: string | null; command: string; table_name: string; row_id: string | null; fields: string[] | null; changes: Json | null; payload: Json | null; label: string | null; reason: string | null }[] };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
       can_read_employee_details: { Args: { p_user_id: string | null }; Returns: boolean };
