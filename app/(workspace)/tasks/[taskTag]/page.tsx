@@ -6,7 +6,6 @@ import {
   ClipboardCheckIcon,
   GitBranchIcon,
   HistoryIcon,
-  ListChecksIcon,
   PencilIcon,
   RocketIcon,
   TimerIcon,
@@ -33,7 +32,7 @@ import {
   normalizeTaskTagParam,
   resolveTaskDetailRouteState,
 } from '@/modules/tasks';
-import { ChecklistHero, PhaseProgress } from '@/modules/tasks/components/detail/checklist-summary';
+import { ChecklistHero } from '@/modules/tasks/components/detail/checklist-summary';
 import { DependencyList } from '@/modules/tasks/components/detail/dependency-list';
 import { SubMissionsPanel, subMissionFamily } from '@/modules/tasks/components/detail/sub-missions-panel';
 import { EffortPanel } from '@/modules/tasks/components/detail/effort-panel';
@@ -247,22 +246,27 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             {canManage ? <TaskLifecyclePanel task={task} /> : null}
           </section>
           <aside className="grid h-fit min-w-0 gap-6">
-            <MissionPanel icon={TimerIcon} title="Timer">
-              <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
-            </MissionPanel>
-            <MissionPanel icon={ListChecksIcon} title="Checklist phases" action={
-              <Link href={checklistHref} className="link text-xs font-semibold">Open</Link>
-            }>
-              <PhaseProgress rollup={data.checklistRollup} href={checklistHref} />
+            <MissionPanel icon={TimerIcon} title="Time" subtitle={`${formatHours(data.effort.hoursLogged)} h logged`}>
+              <div className="grid gap-5">
+                <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
+                {canUseTimer ? (
+                  <details className="group border-border border-t pt-4">
+                    <summary className="text-foreground flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
+                      <PencilIcon className="text-primary size-4" aria-hidden="true" />
+                      Add time by hand
+                    </summary>
+                    <div className="mt-3">
+                      <ManualTimeForm taskTag={task.taskTag} canUseTimer={canUseTimer} />
+                    </div>
+                  </details>
+                ) : null}
+              </div>
             </MissionPanel>
             {family.children.length ? (
               <MissionPanel icon={RocketIcon} title="Sub-missions" subtitle={`${family.children.filter((s) => s.status === 'Done').length} of ${family.children.length} done`}>
                 <SubMissionsPanel subMissions={family.children} />
               </MissionPanel>
             ) : null}
-            <MissionPanel icon={PencilIcon} title="Manual time entry">
-              <ManualTimeForm taskTag={task.taskTag} canUseTimer={canUseTimer} />
-            </MissionPanel>
           </aside>
         </div>
       ) : details && native ? (
