@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, LocateFixedIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
@@ -317,6 +318,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
           <TimerButton taskId={mission.id} taskLabel={mission.taskTag} />
           <Link className="link" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage items</Link>
           <Link className="link" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
+          <MissionActionsMenu taskId={mission.id} taskTag={mission.taskTag} />
         </span> : null}
       </div> : null}
       {lastLevel?.error ? <p role="alert" className="text-danger mt-2 text-sm">{lastLevel.error} <button type="button" className="link font-semibold" onClick={() => last && fetchLevel(last)}><RotateCcwIcon className="inline size-3.5" aria-hidden="true" /> Retry branch</button></p> : null}

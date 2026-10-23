@@ -42,7 +42,7 @@ export function GuidePage({ stage }: { stage: GuideStageContent }) {
 
   return (
     <MissionPage>
-      <MissionPageHeader title="Guide" description="How TaskPulse works, one step at a time." />
+      <MissionPageHeader title="Guide" description="How Stellar works, one step at a time." />
 
       <nav aria-label="Guide stages">
         <ol className="flex flex-wrap gap-2">

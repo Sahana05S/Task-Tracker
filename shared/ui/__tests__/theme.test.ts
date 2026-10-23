@@ -47,7 +47,7 @@ describe('theme preference', () => {
 
 describe('pre-paint theme script', () => {
   it('stamps the stored choice before the first paint', () => {
-    expect(paint({ stored: 'dark' })).toEqual({ theme: 'dark', colorScheme: 'dark', themeColor: '#0d1020' });
+    expect(paint({ stored: 'dark' })).toEqual({ theme: 'dark', colorScheme: 'dark', themeColor: '#101113' });
     expect(paint({ stored: 'light', systemDark: true })).toEqual({ theme: 'light', colorScheme: 'light', themeColor: '#f7f6fd' });
     expect(paint({ stored: null, systemDark: true })).toEqual({ theme: 'light', colorScheme: 'light', themeColor: '#f7f6fd' });
   });

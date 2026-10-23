@@ -32,6 +32,16 @@ export interface MeetingType {
   active: boolean;
 }
 
+/** A department people can be placed in (migration 65). */
+export interface Department {
+  id: string;
+  name: string;
+  sort: number;
+  active: boolean;
+  /** Active people in it; a department with people can be hidden but not removed. */
+  members: number;
+}
+
 export interface CompanyHoliday {
   date: string;
   name: string;
@@ -61,6 +71,27 @@ export interface StandingMission {
   active: boolean;
 }
 
+/**
+ * The company's own identity inside the workspace (migration 64). Image
+ * addresses are app-relative (`/brands/...`) or https; a missing dark variant
+ * falls back to the light one. The name is platform-owned (read only here).
+ */
+export interface CompanyBranding {
+  companyName: string;
+  logoUrl: string | null;
+  logoDarkUrl: string | null;
+  markUrl: string | null;
+  markDarkUrl: string | null;
+}
+export const BRANDING_URL_FIELDS = ['logoUrl', 'logoDarkUrl', 'markUrl', 'markDarkUrl'] as const;
+export type BrandingUrlField = (typeof BRANDING_URL_FIELDS)[number];
+export const EMPTY_BRANDING: CompanyBranding = { companyName: '', logoUrl: null, logoDarkUrl: null, markUrl: null, markDarkUrl: null };
+
+/** Same rule as taskpulse_private.is_brand_url: a file of this site or an https address, up to 500 characters. */
+export function isBrandUrl(value: string): boolean {
+  return value.length <= 500 && !value.startsWith('//') && /^(?:\/[A-Za-z0-9._~/-]+|https:\/\/[^\s"'<>()\\]+)$/.test(value);
+}
+
 export interface CompanySettings {
   /** Optimistic version; every saved section increments it. */
   version: number;
@@ -68,14 +99,18 @@ export interface CompanySettings {
   meetingAgenda: string;
   categoryOverrides: CategoryOverrides;
   meetingTypes: MeetingType[];
+  /** The org chart's departments (migration 65; empty before it). */
+  departments: Department[];
   holidays: CompanyHoliday[];
   /** Managers only; empty for other roles. */
   standingMissions: StandingMission[];
   /** How the New mission dialog weights a mission unless changed (migration 61; 'manual' before it). */
   defaultScaleMode: StandingScaleMode;
+  /** Company name and logo addresses (migration 64; empty before it). */
+  branding: CompanyBranding;
 }
 
-export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults'] as const;
+export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults', 'branding', 'departments'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 /** Settings before migration 53 (or a company that saved nothing): built-in labels, no lists. */
@@ -85,9 +120,11 @@ export const EMPTY_COMPANY_SETTINGS: CompanySettings = {
   meetingAgenda: '',
   categoryOverrides: {},
   meetingTypes: [],
+  departments: [],
   holidays: [],
   standingMissions: [],
   defaultScaleMode: 'manual',
+  branding: EMPTY_BRANDING,
 };
 
 /** The thirteen codes with the company's labels, flags and order applied (stable by built-in order). */
@@ -185,6 +222,13 @@ export function parseCompanySettings(raw: unknown): CompanySettings {
       sort: asNumber(m.sort),
       active: m.active !== false,
     })),
+    departments: list(raw.departments).map((d) => ({
+      id: asString(d.id),
+      name: asString(d.name),
+      sort: asNumber(d.sort),
+      active: d.active !== false,
+      members: asNumber(d.members),
+    })),
     holidays: list(raw.holidays).map((h) => ({ date: asString(h.date), name: asString(h.name) })),
     standingMissions: list(raw.standingMissions)
       .filter((s) => (TASK_CATEGORIES as readonly unknown[]).includes(s.category))
@@ -200,5 +244,19 @@ export function parseCompanySettings(raw: unknown): CompanySettings {
         active: s.active !== false,
       })),
     defaultScaleMode: isScaleMode(raw.defaultScaleMode) ? raw.defaultScaleMode : 'manual',
+    branding: parseBranding(raw.branding),
+  };
+}
+
+function parseBranding(raw: unknown): CompanyBranding {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return EMPTY_BRANDING;
+  const record = raw as Record<string, unknown>;
+  const url = (key: BrandingUrlField) => (typeof record[key] === 'string' && isBrandUrl(record[key] as string) ? (record[key] as string) : null);
+  return {
+    companyName: typeof record.companyName === 'string' ? record.companyName.trim() : '',
+    logoUrl: url('logoUrl'),
+    logoDarkUrl: url('logoDarkUrl'),
+    markUrl: url('markUrl'),
+    markDarkUrl: url('markDarkUrl'),
   };
 }

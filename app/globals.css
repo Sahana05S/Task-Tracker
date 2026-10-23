@@ -191,38 +191,39 @@
 }
 
 /* ==========================================================================
-   Dark theme: every :root colour token, re-picked for an ink-navy canvas.
+   Dark theme (Graphite): every :root colour token, re-picked for a neutral
+   charcoal canvas with no blue cast.
    ========================================================================== */
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --background: #0d1020;
-  --foreground: #e8e9f5;
-  --card: #161a2e;
-  --card-foreground: #e8e9f5;
-  --popover: #1b2036;
-  --popover-foreground: #e8e9f5;
+  --background: #101113;
+  --foreground: #ececef;
+  --card: #18191c;
+  --card-foreground: #ececef;
+  --popover: #1d1e22;
+  --popover-foreground: #ececef;
 
-  --border: #2a3050;
-  /* Field edges: 3.6:1 on cards. */
-  --input: #6c74a6;
+  --border: #2a2c31;
+  /* Field edges: 3.4:1 on cards. */
+  --input: #6b6e78;
 
-  --muted: #1f2440;
-  --muted-foreground: #a6abc9;
-  --placeholder: #8f95b8;
+  --muted: #1f2024;
+  --muted-foreground: #9a9ca5;
+  --placeholder: #868893;
 
-  /* Brighter violet; dark ink on it (8.5:1). */
-  --primary: #a79bff;
+  /* Violet kept as the one accent; dark ink on it (5.9:1). */
+  --primary: #8f86ff;
   --primary-foreground: #14112e;
-  --primary-hover: #bbb1ff;
-  --primary-subtle: #27264d;
-  --primary-subtle-foreground: #cdc6ff;
+  --primary-hover: #a39cff;
+  --primary-subtle: #25233f;
+  --primary-subtle-foreground: #c9c4ff;
 
-  --secondary: #1f2440;
-  --secondary-foreground: #c9cce4;
-  --accent: #1f2440;
-  --accent-foreground: #c9cce4;
-  --ring: #a79bff;
+  --secondary: #1f2024;
+  --secondary-foreground: #c8c9d0;
+  --accent: #1f2024;
+  --accent-foreground: #c8c9d0;
+  --ring: #8f86ff;
 
   --destructive: #e0244c;
   --destructive-foreground: #ffffff;
@@ -233,8 +234,8 @@
   --danger-foreground: #ffb4c2;
   --overdue: #ff8da1;
 
-  /* Mint/teal progress on a navy track. */
-  --progress-track: #272c4a;
+  /* Mint/teal progress on a graphite track. */
+  --progress-track: #26282d;
   --progress-from: #2dd4bf;
   --progress-to: #6ee7c8;
 
@@ -255,11 +256,11 @@
   --tier-bronze: #dc9a5e;
   --tier-bronze-subtle: #2e2116;
   --tier-silver: #b6bfcf;
-  --tier-silver-subtle: #232938;
+  --tier-silver-subtle: #25272c;
   --tier-diamond: #52d3ea;
   --tier-diamond-subtle: #0f2a33;
 
-  /* Categorical order validated on #161a2e (adjacent CVD ΔE >= 8, normal >= 15, 3:1). */
+  /* Categorical order validated on #161a2e, which matches #18191c in luminance (adjacent CVD ΔE >= 8, normal >= 15, 3:1). */
   --chart-1: #9085e9;
   --chart-2: #199e70;
   --chart-3: #d95926;
@@ -271,31 +272,31 @@
 
   --chart-positive: #34d399;
   --chart-negative: #fb7185;
-  --chart-grid: #232842;
-  --chart-axis: #9097ba;
-  --chart-reference: #e8e9f5;
+  --chart-grid: #24262a;
+  --chart-axis: #8d909a;
+  --chart-reference: #ececef;
 
-  --grid-header: #1a1f36;
-  --hero-from: #221f4a;
-  --hero-via: #1a1d38;
-  --hero-to: #2b2214;
+  --grid-header: #1b1c1f;
+  --hero-from: #1d1b33;
+  --hero-via: #17181b;
+  --hero-to: #2a2216;
   --elevation-overlay: 0 16px 36px -4px rgb(0 0 0 / 0.5), 0 4px 12px -2px rgb(0 0 0 / 0.3);
   --elevation-card: 0 4px 20px -2px rgb(0 0 0 / 0.28), 0 2px 6px -1px rgb(0 0 0 / 0.2);
 
   --badge-progress-bg: #33270f;
   --badge-progress-fg: #fcd06b;
-  --badge-idle-bg: #232842;
-  --badge-idle-fg: #b4b9d6;
-  --badge-discarded-bg: #1c2034;
-  --badge-discarded-fg: #8f95b8;
-  --badge-discarded-line: #6c74a6;
+  --badge-idle-bg: #202126;
+  --badge-idle-fg: #b5b7bf;
+  --badge-discarded-bg: #1b1c1f;
+  --badge-discarded-fg: #8e909a;
+  --badge-discarded-line: #6b6e78;
   --badge-focus-bg: #3a1426;
   --badge-focus-fg: #ffb1c8;
   --badge-high-bg: #3a1719;
   --badge-high-fg: #ffa8a3;
   --badge-medium-bg: #33230f;
   --badge-medium-fg: #fbbf6a;
-  --badge-none-fg: #8f95b8;
+  --badge-none-fg: #8e909a;
 
   --fresh-fg: #5eead4;
   --fresh-dot: #2dd4bf;
@@ -305,8 +306,8 @@
 
   --streak-to: #fdba74;
 
-  --border-strong: #3a4066;
-  --border-muted: #2f3556;
+  --border-strong: #3d4047;
+  --border-muted: #33353b;
   --attention-strong: #8a5a14;
   --halfday-foreground: #5ed8ee;
 
@@ -319,12 +320,12 @@
   --map-hue-2: #2fc4a8;
   --map-hue-3: #d9a43a;
   --map-hue-4: #5fa8e6;
-  --map-road: #2f3556;
+  --map-road: #33353b;
   --map-flag: #fcc54a;
   --map-flag-foreground: #2c210d;
   --map-shadow: rgb(0 0 0 / 0.35);
   --metal-ink: #14112e;
-  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a6abc9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a9ca5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 @theme inline {

@@ -59,6 +59,8 @@ export interface ChecklistWorkspaceProps {
     unmapped: readonly { id: string; title: string }[];
   };
   actions: { checklist: Command; start: Command; stop: Command; discard: Command };
+  /** Beside the breadcrumb: the mission's own actions, supplied by the page. */
+  headerActions?: React.ReactNode;
 }
 
 const PAGE_SIZE = 50;
@@ -109,7 +111,10 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   return (
     <ChecklistVersionProvider version={version}>
       <MissionPage>
-        <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+          <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
+          {props.headerActions ? <div className="flex shrink-0 items-center gap-2">{props.headerActions}</div> : null}
+        </div>
 
         {checklist && props.sections ? (
           <HomeHero {...props} checklist={checklist} tools={tools} />

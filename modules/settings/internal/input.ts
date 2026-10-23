@@ -2,7 +2,7 @@ import { ISO_DATE_PATTERN, readString, UUID_PATTERN } from '@/shared/forms/form-
 import { TASK_CATEGORIES, TASK_PRIORITIES } from '@/shared/tracker/enums';
 import type { Json } from '@/types/database';
 
-import { SETTINGS_SECTIONS, STANDING_SCALE_MODES, type SettingsSection } from './rules';
+import { BRANDING_URL_FIELDS, isBrandUrl, SETTINGS_SECTIONS, STANDING_SCALE_MODES, type SettingsSection } from './rules';
 
 /**
  * Parses a Company settings form: `section`, `expectedVersion`, `operationId`
@@ -86,6 +86,22 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
     return { ok: true, value: { types } };
   },
 
+  departments(raw) {
+    if (!isRecord(raw) || !Array.isArray(raw.departments) || raw.departments.length > 100) return { ok: false, error: 'Up to 100 departments.' };
+    const departments: Json[] = [];
+    const seen = new Set<string>();
+    for (const [index, entry] of raw.departments.entries()) {
+      if (!isRecord(entry)) return { ok: false, error: 'Departments could not be read.' };
+      const name = text(entry.name);
+      if (name.length < 1 || name.length > 60) return { ok: false, error: 'Give every department a name of 1-60 characters.' };
+      if (seen.has(name.toLowerCase())) return { ok: false, error: `Each department needs its own name (${name} is repeated).` };
+      seen.add(name.toLowerCase());
+      // Saved departments keep their id; new rows send none and get one from the database.
+      departments.push({ ...(UUID_PATTERN.test(text(entry.id)) ? { id: text(entry.id) } : {}), name, sort: index, active: entry.active !== false });
+    }
+    return { ok: true, value: { departments } };
+  },
+
   standing_missions(raw) {
     if (!isRecord(raw) || !Array.isArray(raw.missions) || raw.missions.length > 60) return { ok: false, error: 'Up to 60 standing missions.' };
     const missions: Json[] = [];
@@ -119,6 +135,20 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
       return { ok: false, error: 'Choose how new missions are weighted.' };
     }
     return { ok: true, value: { scaleMode: raw.scaleMode as string } };
+  },
+
+  branding(raw) {
+    if (!isRecord(raw) || Object.keys(raw).some((key) => !(BRANDING_URL_FIELDS as readonly string[]).includes(key))) {
+      return { ok: false, error: 'Branding could not be read.' };
+    }
+    const value: Record<string, Json> = {};
+    for (const key of BRANDING_URL_FIELDS) {
+      if (raw[key] !== undefined && raw[key] !== null && typeof raw[key] !== 'string') return { ok: false, error: 'Branding could not be read.' };
+      const url = text(raw[key]);
+      if (url && !isBrandUrl(url)) return { ok: false, error: 'Each logo address must start with / (a file of this site) or https://, up to 500 characters.' };
+      value[key] = url || null;
+    }
+    return { ok: true, value };
   },
 
   holidays(raw) {

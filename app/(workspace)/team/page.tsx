@@ -12,17 +12,19 @@ import { getTeamHolidayDates } from '@/modules/attendance';
 import { getCompanyHolidayNames } from '@/modules/settings';
 import { requireProfile } from '@/shared/session/profile';
 import { canViewTeamModule } from '@/modules/team/client';
-import { getTeamIndexData } from '@/modules/team';
+import { getOrgChart, getTeamIndexData } from '@/modules/team';
+import { OrgChart } from '@/modules/team/components/org-chart';
+import { TeamViewSwitch } from '@/modules/team/components/team-view-switch';
 import { employeeHref, employeeReportsHref } from '@/modules/team/client';
 import { formatNumeric, formatHours } from '@/shared/tracker/format';
 import { UnavailableValue } from '@/shared/ui/unavailable-value';
 import { PeriodPicker } from '@/shared/ui/period-picker';
 
 export const metadata: Metadata = {
-  title: 'Team · TaskPulse',
+  title: 'Team',
 };
 
-export default async function TeamPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string}>}) {
+export default async function TeamPage({searchParams}:{searchParams:Promise<{period?:string;asOf?:string;view?:string}>}) {
   const profile = await requireProfile();
 
   if (!canViewTeamModule(profile)) {
@@ -36,14 +38,37 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
     );
   }
 
-  const query=await searchParams;const context=await liveViewContext(query.period,query.asOf);
+  const query=await searchParams;
+  const canManage = profile.isActive && profile.role === 'managing_director';
+  const manageLink = canManage ? (
+    <Link href="/team/manage" className="text-primary text-sm font-medium hover:underline">
+      Manage people
+    </Link>
+  ) : null;
+
+  if (query.view === 'chart') {
+    const chart = await getOrgChart();
+    const active = chart.people.filter(person => person.active).length;
+    return (
+      <MissionPage>
+        <MissionPageHeader
+          eyebrow="Team"
+          title="Team index"
+          chip={`${active} ${active === 1 ? 'member' : 'members'}`}
+          description="Who reports to whom, and who is in today"
+          actions={<><TeamViewSwitch view="chart" />{manageLink}</>}
+        />
+        <OrgChart people={chart.people} available={chart.available} viewer={profile} canManage={canManage} />
+      </MissionPage>
+    );
+  }
+
+  const context=await liveViewContext(query.period,query.asOf);
   const [data, holidays, holidayNames] = await Promise.all([
     getTeamIndexData(context.period,context),
     getTeamHolidayDates(context.period.startDate, context.period.endDate),
     getCompanyHolidayNames(context.period.startDate, context.period.endDate),
   ]);
-  const canManage = profile.isActive && profile.role === 'managing_director';
-
   return (
     <MissionPage>
       <MissionPageHeader
@@ -53,12 +78,9 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
         description={`${data.period.label} · profiles, reports, charts, and star records`}
         actions={
           <>
+            <TeamViewSwitch view="list" />
             <PeriodPicker month={context.period.startDate.slice(0,7)} asOf={context.asOf} />
-            {canManage ? (
-              <Link href="/team/manage" className="text-primary text-sm font-medium hover:underline">
-                Manage people
-              </Link>
-            ) : null}
+            {manageLink}
           </>
         }
       />

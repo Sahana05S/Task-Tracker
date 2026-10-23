@@ -4,7 +4,7 @@ import * as React from 'react';
 import { LoaderCircleIcon, MailPlusIcon, UsersIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { Invitation } from '@/modules/team/client';
+import type { Invitation, PeopleAdminData, Placement } from '@/modules/team/client';
 import {
   inviteMember,
   revokeInvitation,
@@ -122,7 +122,28 @@ function RevokeButton({ id }: { id: string }) {
   );
 }
 
-export function MemberList({ members, viewerId }: { members: User[]; viewerId: string }) {
+type Departments = PeopleAdminData['departments'];
+const NO_PLACEMENT: Placement = { reportsTo: null, jobTitle: null, departmentId: null };
+
+/** Everyone under a person (any depth), so they can't be chosen as that person's manager. */
+function teamOf(id: string, placement: Record<string, Placement>): Set<string> {
+  const under = new Set<string>();
+  const queue = [id];
+  while (queue.length) {
+    const current = queue.shift()!;
+    for (const [user, place] of Object.entries(placement)) {
+      if (place.reportsTo === current && !under.has(user)) { under.add(user); queue.push(user); }
+    }
+  }
+  return under;
+}
+
+export function MemberList({ members, viewerId, placement = {}, departments = [] }: {
+  members: User[];
+  viewerId: string;
+  placement?: Record<string, Placement>;
+  departments?: Departments;
+}) {
   const active = members.filter((m) => m.isActive);
   const inactive = members.filter((m) => !m.isActive);
   return (
@@ -133,7 +154,7 @@ export function MemberList({ members, viewerId }: { members: User[]; viewerId: s
     >
       <ul className="divide-border divide-y">
         {active.map((m) => (
-          <MemberRow key={m.id} member={m} self={m.id === viewerId} />
+          <MemberRow key={m.id} member={m} self={m.id === viewerId} members={active} placement={placement} departments={departments} />
         ))}
       </ul>
       {inactive.length > 0 ? (
@@ -141,7 +162,7 @@ export function MemberList({ members, viewerId }: { members: User[]; viewerId: s
           <h3 className="eyebrow mt-6 mb-1">No access</h3>
           <ul className="divide-border divide-y">
             {inactive.map((m) => (
-              <MemberRow key={m.id} member={m} self={false} />
+              <MemberRow key={m.id} member={m} self={false} members={active} placement={placement} departments={departments} />
             ))}
           </ul>
         </>
@@ -150,8 +171,22 @@ export function MemberList({ members, viewerId }: { members: User[]; viewerId: s
   );
 }
 
-function MemberRow({ member, self }: { member: User; self: boolean }) {
+function MemberRow({ member, self, members, placement, departments }: {
+  member: User;
+  self: boolean;
+  /** Active members: the choices for Reports to. */
+  members: User[];
+  placement: Record<string, Placement>;
+  departments: Departments;
+}) {
   const [editing, setEditing] = React.useState(false);
+  const place = placement[member.id] ?? NO_PLACEMENT;
+  const hasPlacement = Object.keys(placement).length > 0;
+  const blocked = React.useMemo(() => teamOf(member.id, placement), [member.id, placement]);
+  const managers = members.filter((m) => m.id !== member.id && !blocked.has(m.id));
+  const manager = place.reportsTo ? members.find((m) => m.id === place.reportsTo) : undefined;
+  const department = place.departmentId ? departments.find((d) => d.id === place.departmentId) : undefined;
+  const departmentChoices = departments.filter((d) => d.active || d.id === place.departmentId);
   const [save, saving] = useCommand(updateMember, () => setEditing(false));
   const [toggle, toggling] = useCommand(updateMember);
   return (
@@ -166,6 +201,11 @@ function MemberRow({ member, self }: { member: User; self: boolean }) {
           <p className="text-muted-foreground text-xs break-all">
             <span className="font-mono">{member.employeeId}</span> · {member.email}
           </p>
+          {hasPlacement && (place.jobTitle || department || manager) ? (
+            <p className="text-muted-foreground text-xs">
+              {[place.jobTitle, department?.name, manager ? `Reports to ${manager.fullName}` : null].filter(Boolean).join(' · ')}
+            </p>
+          ) : null}
         </div>
         <RoleBadge role={member.role} />
         <div className="flex gap-2">
@@ -176,7 +216,7 @@ function MemberRow({ member, self }: { member: User; self: boolean }) {
             <form
               action={toggle}
               onSubmit={(event) => {
-                if (member.isActive && !window.confirm(`Remove ${member.fullName}'s access? They lose access to TaskPulse; their records stay.`)) {
+                if (member.isActive && !window.confirm(`Remove ${member.fullName}'s access? They lose access to Stellar; their records stay.`)) {
                   event.preventDefault();
                 }
               }}
@@ -207,7 +247,32 @@ function MemberRow({ member, self }: { member: User; self: boolean }) {
               <RoleOptions />
             </select>
           </label>
-          <Button type="submit" disabled={saving}>
+          {hasPlacement ? (
+            <div className="grid gap-3 sm:col-span-4 sm:grid-cols-3">
+              <label className="field-label">
+                Reports to
+                <select name="reportsTo" defaultValue={place.reportsTo ?? ''} className="field">
+                  <option value="">Nobody (top of the chart)</option>
+                  {managers.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
+                </select>
+              </label>
+              <label className="field-label">
+                Job title
+                <input name="jobTitle" defaultValue={place.jobTitle ?? ''} maxLength={60} placeholder="Site engineer…" className="field" />
+              </label>
+              <label className="field-label">
+                Department
+                <select name="departmentId" defaultValue={place.departmentId ?? ''} className="field">
+                  <option value="">None</option>
+                  {departmentChoices.map((d) => <option key={d.id} value={d.id}>{d.name}{d.active ? '' : ' (hidden)'}</option>)}
+                </select>
+              </label>
+              {departments.length === 0 ? (
+                <p className="text-muted-foreground text-xs sm:col-span-3">Add departments in Settings &gt; Company to choose one here.</p>
+              ) : null}
+            </div>
+          ) : null}
+          <Button type="submit" disabled={saving} className="sm:col-start-4">
             {saving ? <LoaderCircleIcon className="animate-spin" aria-hidden="true" /> : null}
             Save
           </Button>

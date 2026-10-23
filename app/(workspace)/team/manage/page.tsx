@@ -7,7 +7,7 @@ import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { requireRole } from '@/shared/session/profile';
 
 export const metadata: Metadata = {
-  title: 'Manage people · TaskPulse',
+  title: 'Manage people',
 };
 
 export default async function ManagePeoplePage() {
@@ -30,7 +30,7 @@ export default async function ManagePeoplePage() {
       />
       <InviteForm />
       <InvitationList invitations={data.invitations} />
-      <MemberList members={data.members} viewerId={profile.id} />
+      <MemberList members={data.members} viewerId={profile.id} placement={data.placement} departments={data.departments} />
     </MissionPage>
   );
 }

@@ -1,6 +1,0 @@
-.beaver { display: inline-block; flex: 0 0 auto; max-width: 100%; background-repeat: no-repeat; vertical-align: middle; }
-.neutral { background-image: url('/mascot/beaver-neutral.webp'); background-size: contain; background-position: center; }
-.atlas { background-image: url('/mascot/beaver-states.webp'); background-size: 400% 200%; background-position: var(--beaver-x) var(--beaver-y); }
-.celebrate { animation: beaver-celebrate 600ms ease-out 2; transform-origin: 50% 90%; }
-@keyframes beaver-celebrate { 0%,100% { transform: translateY(0) rotate(0); } 45% { transform: translateY(-5px) rotate(-4deg); } 75% { transform: translateY(-2px) rotate(3deg); } }
-@media (prefers-reduced-motion: reduce) { .celebrate { animation: none; } }

@@ -4,8 +4,10 @@ import * as React from 'react';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  Building2Icon,
   CalendarDaysIcon,
   CheckIcon,
+  ImageIcon,
   ListOrderedIcon,
   LoaderCircleIcon,
   PlusIcon,
@@ -18,12 +20,15 @@ import {
 
 import { saveCompanySettings, type CompanySettingsActionState } from '@/modules/settings/actions';
 import {
+  BRANDING_URL_FIELDS,
   buildCategoryCatalogue,
   categoryLabelMap,
   formatSheetTag,
+  isBrandUrl,
   renderTitlePattern,
   SCALE_MODE_LABELS,
   STANDING_SCALE_MODES,
+  type BrandingUrlField,
   type CompanySettings,
   type SettingsSection,
   type StandingScaleMode,
@@ -36,6 +41,7 @@ import { MissionPanel } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 import type { TaskCategory, TaskPriority } from '@/types/tracker';
 
+import { ThemedBrandImage } from './company-brand';
 import { MeetingAgenda } from './meeting-agenda';
 
 export interface CompanyMember {
@@ -45,8 +51,10 @@ export interface CompanyMember {
 }
 
 const SECTIONS = [
+  { id: 'branding', label: 'Branding' },
   { id: 'mission-types', label: 'Mission types' },
   { id: 'meeting-types', label: 'Meeting types' },
+  { id: 'departments', label: 'Departments' },
   { id: 'agenda', label: 'Meeting agenda' },
   { id: 'mission-defaults', label: 'New missions' },
   { id: 'standing-missions', label: 'Standing missions' },
@@ -68,8 +76,10 @@ export function CompanySettingsEditor({ settings, members }: { settings: Company
           </a>
         ))}
       </nav>
+      <BrandingSection settings={settings} />
       <MissionTypesSection settings={settings} />
       <MeetingTypesSection settings={settings} />
+      <DepartmentsSection settings={settings} />
       <AgendaSection settings={settings} />
       <MissionDefaultsSection settings={settings} />
       <StandingMissionsSection settings={settings} members={members} />
@@ -358,6 +368,62 @@ function MeetingTypesSection({ settings }: SectionProps) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Departments                                                                */
+/* -------------------------------------------------------------------------- */
+
+interface DepartmentRow {
+  /** A saved department's id, or "new:…" for a row added here (sent without an id). */
+  id: string;
+  name: string;
+  active: boolean;
+  members: number;
+}
+
+function DepartmentsSection({ settings }: SectionProps) {
+  const initial = React.useMemo<DepartmentRow[]>(
+    () => settings.departments.map(({ id, name, active, members }) => ({ id, name, active, members })),
+    [settings.departments],
+  );
+  const { rows, dirty, reset, update, remove, add, moveBy } = useRows(initial);
+  return (
+    <MissionPanel
+      id="departments"
+      icon={Building2Icon}
+      title="Departments"
+      subtitle="The choices for Department in Manage people, shown on the org chart. A department that has people can be hidden but not removed."
+      className="scroll-mt-20"
+    >
+      <SectionForm section="departments" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => ({ departments: rows })}>
+        {rows.length === 0 ? <p className="text-muted-foreground text-sm">No departments yet. People show without one on the org chart until you add some.</p> : null}
+        <ul>
+          {rows.map((row, index) => (
+            <li key={row.id} className={cn(ROW, 'grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]', !row.active && 'opacity-60')}>
+              <label className="grid min-w-0">
+                <span className="sr-only">Name</span>
+                <input value={row.name} onChange={(event) => update(index, { name: event.target.value })} maxLength={60} required placeholder="Projects…" autoComplete="off" className="field" />
+              </label>
+              <span className="text-muted-foreground text-xs whitespace-nowrap sm:self-center">
+                {row.members === 1 ? '1 person' : `${row.members} people`}
+              </span>
+              <span className="flex items-center justify-between gap-3 sm:contents">
+                <InUse checked={row.active} label={row.name || 'department'} onChange={(active) => update(index, { active })} />
+                <OrderButtons index={index} count={rows.length} label={row.name || 'department'} onMove={(delta) => moveBy(index, delta)} />
+                {row.members > 0 ? (
+                  <span className="text-muted-foreground text-xs" title="Move its people to another department first, or hide it">Has people</span>
+                ) : (
+                  <RemoveButton label={row.name || 'department'} onRemove={() => remove(index)} />
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <AddRowButton label="Add department" onAdd={() => add({ id: `new:${crypto.randomUUID()}`, name: '', active: true, members: 0 })} />
+      </SectionForm>
+    </MissionPanel>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Agenda                                                                     */
 /* -------------------------------------------------------------------------- */
 
@@ -420,6 +486,70 @@ function MissionDefaultsSection({ settings }: SectionProps) {
             </select>
           </label>
           <p className="text-muted-foreground self-end text-sm">{SCALE_MODE_HINTS[mode]}</p>
+        </div>
+      </SectionForm>
+    </MissionPanel>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Branding                                                                   */
+/* -------------------------------------------------------------------------- */
+
+const BRANDING_LABELS: Record<BrandingUrlField, { label: string; hint: string }> = {
+  markUrl: { label: 'Mark', hint: 'Square icon for the top bar' },
+  markDarkUrl: { label: 'Mark, dark theme', hint: 'Leave empty to use the mark' },
+  logoUrl: { label: 'Full logo', hint: 'Logo with lettering, for reports' },
+  logoDarkUrl: { label: 'Full logo, dark theme', hint: 'Leave empty to use the full logo' },
+};
+
+function BrandingSection({ settings }: SectionProps) {
+  const initial = Object.fromEntries(BRANDING_URL_FIELDS.map((key) => [key, settings.branding[key] ?? ''])) as Record<BrandingUrlField, string>;
+  const [urls, setUrls, dirty, reset] = useDraft(initial);
+  const invalid = BRANDING_URL_FIELDS.filter((key) => urls[key].trim() && !isBrandUrl(urls[key].trim()));
+  const preview = (key: BrandingUrlField) => (isBrandUrl(urls[key].trim()) ? urls[key].trim() : null);
+  return (
+    <MissionPanel
+      id="branding"
+      icon={ImageIcon}
+      title="Branding"
+      subtitle={`How ${settings.branding.companyName || 'your company'} appears in the workspace: the mark sits in the top bar. Use a file of this site (/brands/...) or an https address.`}
+      className="scroll-mt-20"
+    >
+      <SectionForm section="branding" version={settings.version} dirty={dirty && invalid.length === 0} onDiscard={reset} payload={() => urls}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(['markUrl', 'markDarkUrl', 'logoUrl', 'logoDarkUrl'] as const).map((key) => {
+            const src = preview(key);
+            const dark = key.endsWith('DarkUrl');
+            return (
+              <div key={key} className="grid gap-2">
+                <label className="field-label">
+                  {BRANDING_LABELS[key].label}
+                  <input
+                    type="text"
+                    inputMode="url"
+                    value={urls[key]}
+                    onChange={(event) => setUrls({ ...urls, [key]: event.target.value })}
+                    placeholder={BRANDING_LABELS[key].hint}
+                    aria-invalid={invalid.includes(key) || undefined}
+                    className="field"
+                    maxLength={500}
+                  />
+                </label>
+                {invalid.includes(key) ? (
+                  <p className="text-danger text-xs">Start with / (a file of this site) or https://.</p>
+                ) : null}
+                {/* A dark-theme image is previewed on the dark card whatever theme the director uses. */}
+                <div data-theme={dark ? 'dark' : undefined} className="border-border bg-card flex h-20 items-center justify-center rounded-lg border p-2">
+                  {src ? (
+                    <ThemedBrandImage light={src} dark={null} alt={`${BRANDING_LABELS[key].label} preview`} className="max-h-full max-w-full object-contain" />
+                  ) : (
+                    <span className="text-muted-foreground text-xs">No image</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </SectionForm>
     </MissionPanel>

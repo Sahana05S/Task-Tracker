@@ -12,7 +12,7 @@ import { buttonVariants } from '@/shared/ui/button';
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { currentPeriod } from '@/shared/time/period';
 
-export const metadata: Metadata = { title: 'Leaderboard · TaskPulse' };
+export const metadata: Metadata = { title: 'Leaderboard' };
 
 /**
  * The month's leaderboard: the shared ten-factor score and each factor, ranked.

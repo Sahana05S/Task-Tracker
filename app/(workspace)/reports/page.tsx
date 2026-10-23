@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { LiveReport } from '@/modules/reports/components/live-report';
+import { getCompanySettings } from '@/modules/settings';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { DailyReportView } from '@/modules/reports/components/daily-report';
 import { MonthArchiveControls } from '@/modules/reports/components/month-archive-controls';
@@ -22,7 +23,7 @@ import { canViewEmployeeReports, getEmployeeByEmployeeId } from '@/modules/team'
 import { ISO_DATE_PATTERN } from '@/shared/forms/form-data';
 
 export const metadata: Metadata = {
-  title: 'Reports · TaskPulse',
+  title: 'Reports',
 };
 
 interface ReportsSearchParams {
@@ -109,7 +110,7 @@ async function MonthClose({ query, tabs }: { query: ReportsSearchParams; tabs: R
         tabs={tabs}
       />
       <MonthArchiveControls period={context.period.startDate} history={history} canClose={profile.role === 'managing_director'} completeMonth={context.period.endDate < kolkataDate(new Date())} operation={randomUUID()} />
-      {archive ? <ArchivedReport archive={archive} previous={previous} employee={null} /> : revision !== null ? <MissionNotice tone="attention" role="status">That revision doesn&apos;t exist for {context.period.label}. <Link className="link" href={`/reports?period=${context.period.startDate.slice(0,7)}`}>Show the live month</Link>.</MissionNotice> : presentation ? <LiveReport model={presentation} /> : null}
+      {archive ? <ArchivedReport archive={archive} previous={previous} employee={null} /> : revision !== null ? <MissionNotice tone="attention" role="status">That revision doesn&apos;t exist for {context.period.label}. <Link className="link" href={`/reports?period=${context.period.startDate.slice(0,7)}`}>Show the live month</Link>.</MissionNotice> : presentation ? <LiveReport model={presentation} companyName={(await getCompanySettings()).branding.companyName} /> : null}
       {data ? (
         <>
           {profile.role === 'managing_director' ? <ReportSnapshotForm period={context.period} members={data.members} /> : null}

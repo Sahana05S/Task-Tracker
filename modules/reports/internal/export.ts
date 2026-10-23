@@ -9,6 +9,7 @@ import { dailyPerfCsv,dailyPerfFilter,monthToDate,seesTeamDetail } from '@/modul
 import { getDailyPerfLog } from '@/modules/reports/internal/team-analytics';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { currentPeriod } from '@/shared/time/period';
+import { getCompanySettings } from '@/modules/settings';
 /**
  * The report export endpoint: the live report, or a retained month revision,
  * as JSON, CSV or text. Employees may export only their own detail. PRIVATE
@@ -28,7 +29,7 @@ export async function handleReportExport(request:Request){
   if(revision!==null&&!archived)return NextResponse.json({error:'Archived revision not found.'},{status:404});
   const model=archived?null:await getLivePresentation(context,employee);
   const body=archived?(format==='csv'?archivedCsv(archived):format==='text'?archivedText(archived):JSON.stringify(archivedReport(archived),null,2)):
-   format==='csv'?reportCsv(model!):format==='text'?reportText(model!):JSON.stringify(liveReport(model!),null,2);
+   format==='csv'?reportCsv(model!):format==='text'?reportText(model!,(await getCompanySettings()).branding.companyName):JSON.stringify(liveReport(model!),null,2);
   return new Response(body,{headers:{'Content-Type':format==='csv'?'text/csv; charset=utf-8':format==='text'?'text/plain; charset=utf-8':'application/json','Content-Disposition':`attachment; filename="taskpulse-${context.period.startDate}${revision!==null?'-revision-'+revision:'-live'}.${format==='text'?'txt':format}"`,'Cache-Control':'private, no-store'}});
  }catch{return NextResponse.json({error:'Report evidence unavailable. Retry after the source or schema issue is resolved.'},{status:503});}
 }

@@ -1,8 +1,8 @@
 {
-  "name": "taskpulse",
+  "name": "stellar",
   "version": "0.1.0",
   "private": true,
-  "description": "TaskPulse - Advanced Multi-Metric Performance Tracker",
+  "description": "Stellar - Advanced Multi-Metric Performance Tracker",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { requireProfile } from '@/shared/session/profile';
+import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { getTaskForChecklist, getTaskWorkspaceData, normalizeTaskTagParam } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
 import { getChecklistBranch, getRunningChecklistTimers, getUnmappedRootRows } from '@/modules/checklists';
@@ -20,7 +21,7 @@ const PAGE_SIZE = 50;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const tag = normalizeTaskTagParam((await params).taskTag);
-  return { title: `${tag ?? 'Mission'} checklist · TaskPulse` };
+  return { title: `${tag ?? 'Mission'} checklist` };
 }
 
 
@@ -94,6 +95,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       selectedItem={location.item}
       managerTools={manager ? { activityDrivesProgress: task.progressOwner === 'checklist', linkChoices, unmapped } : undefined}
       actions={{ checklist: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer }}
+      headerActions={<MissionActionsMenu taskId={task.id} taskTag={task.taskTag} variant="button" />}
     />
   );
 }

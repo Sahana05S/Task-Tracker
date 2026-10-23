@@ -314,7 +314,7 @@ export function PolicyDialog({ open, onOpenChange, policy, members }: {
           <PolicyForm key={template.key} template={template} policy={policy} members={members}
             onBack={policy ? null : () => { dirty.current = false; setPicked(null); }} onSaved={close} onDirty={() => { dirty.current = true; }} />
         ) : policy ? (
-          <p className="text-muted-foreground px-5 text-sm">This policy uses a rule this version of TaskPulse does not know, so it cannot be edited here.</p>
+          <p className="text-muted-foreground px-5 text-sm">This policy uses a rule this version of Stellar does not know, so it cannot be edited here.</p>
         ) : (
           <TemplatePicker onPick={setPicked} />
         )}

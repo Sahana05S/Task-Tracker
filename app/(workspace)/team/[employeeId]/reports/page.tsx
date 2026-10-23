@@ -1,4 +1,5 @@
 import { LiveReport } from '@/modules/reports/components/live-report';
+import { getCompanySettings } from '@/modules/settings';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { monthHistory, monthRevision } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
@@ -22,7 +23,7 @@ import { canViewEmployeeReports } from '@/modules/team/client';
 import { getEmployeeByEmployeeId, getEmployeeReportsData } from '@/modules/team';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
-import { carriedQuery, ProfileHeader } from '../profile-header';
+import { carriedQuery, ProfileHeader, readPlacement } from '../profile-header';
 
 interface EmployeeReportsPageProps {
   params: Promise<{ employeeId: string }>;
@@ -34,7 +35,7 @@ export async function generateMetadata({
 }: EmployeeReportsPageProps): Promise<Metadata> {
   const { employeeId } = await params;
   const normalized = normalizeEmployeeIdParam(employeeId);
-  return { title: `${normalized ?? 'Employee'} Reports · TaskPulse` };
+  return { title: `${normalized ?? 'Employee'} Reports` };
 }
 
 export default async function EmployeeReportsPage({
@@ -64,9 +65,10 @@ export default async function EmployeeReportsPage({
   const data = routeState.data;
   if (!canViewEmployeeReports(viewer, data.employee)) notFound();
   const itemTo = context.asOfLocalDate < context.period.endDate ? context.asOfLocalDate : context.period.endDate;
-  const [archiveHistory, itemHours] = await Promise.all([
+  const [archiveHistory, itemHours, placement] = await Promise.all([
     monthHistory(context.period.startDate),
     getEmployeeItemHours(data.employee.id, context.period.startDate, itemTo),
+    readPlacement(data.employee.id),
   ]);
 
   return (
@@ -77,11 +79,12 @@ export default async function EmployeeReportsPage({
         description={`${data.employee.employeeId} · ${data.period.label} · live report, revisions, stars and saved reports`}
         query={carriedQuery(query)}
         missionCount={data.presentation.tasks.length}
+        placement={placement}
       />
 
       <div className="grid gap-5 lg:gap-6">
         {archiveHistory.revisions.length?<nav aria-label="Employee report revisions" className="flex flex-wrap gap-2">{archiveHistory.revisions.map(r=><Link className="section-tab bg-card" key={r.number} href={`/team/${encodeURIComponent(data.employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}&revision=${r.number}`}>Revision {r.number} · {r.certification==='certified'?'Certified':'Incomplete'}</Link>)}</nav>:null}
-        <LiveReport model={data.presentation}/>
+        <LiveReport model={data.presentation} companyName={(await getCompanySettings()).branding.companyName}/>
         <ItemHoursPanel tasks={itemHours} />
         <h2 className="panel-title mt-2">Retained reports · original rules</h2>
         {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}

@@ -6,7 +6,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { canManageSupportRecords, getSupportModuleData } from '@/modules/support';
 
 export const metadata: Metadata = {
-  title: 'Suggestions · TaskPulse',
+  title: 'Suggestions',
 };
 
 export default async function SuggestionsPage() {
