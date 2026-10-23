@@ -199,37 +199,17 @@ function TaskForm({
       }}
       className="flex min-h-0 flex-1 flex-col"
     >
-      {!isEdit ? (
-        <div className="grid gap-4 px-4 pt-4">
-          <NativeTemplateSelect templates={templates} />
-          <Field id="task-initialization" label="Set up details">
-            <NativeSelect id="task-initialization" name="initializationMode" defaultValue="automatic">
-              <option value="automatic">Automatically after saving</option>
-              <option value="manual">Manually later</option>
-            </NativeSelect>
-          </Field>
-          <Field id="task-description" label="Description">
-            <Textarea id="task-description" name="description" />
-          </Field>
-        </div>
-      ) : null}
       {isEdit ? <input type="hidden" name="taskId" value={task.id} /> : null}
       <input type="hidden" name="lifecycleVersion" value={task?.lifecycleVersion ?? 0} />
       <input type="hidden" name="participantVersion" value={task?.participantVersion ?? 0} />
       <input type="hidden" name="operationId" value={operationId} />
-      <Field id="participant-shares" label="Participant shares" hint="Leave all blank to keep current shares, or use equal shares when changing participants. Explicit percentages must total 100%.">
-        {[...assigneeIds].map((id) => <label key={id} className="flex items-center gap-2 text-sm">
-          {members.find((member) => member.id === id)?.fullName ?? id}
-          <Input name={`sharePercent:${id}`} type="number" min="0" max="100" step="0.0001" placeholder={task?.participantShares?.[id] !== undefined ? `${task.participantShares[id] / 10000}% currently` : 'Equal share'} />
-        </label>)}
-      </Field>
-      {task?.participantCreditMode === 'legacy' ? <div className="grid gap-2 text-sm">
-        <a href="/task-tools/participants" target="_blank" rel="noopener noreferrer" className="link">Review participant reconciliation (opens in a new tab)</a>
-        <label className="flex gap-2"><input type="checkbox" name="acceptLegacyShares" />I reviewed this task's legacy participants and approve configuring these shares.</label>
-        <p className="text-muted-foreground">Share changes apply to future credit. Earlier earned credit and frozen reports stay unchanged.</p>
-      </div> : null}
 
-      <div className="grid gap-4 overflow-y-auto px-4 py-4 sm:grid-cols-2">
+      {/*
+        One scroll region for every field. Anything placed outside it either
+        squeezes the grid to a few pixels or sits unpadded against the sheet
+        edge, which is how the shares block used to overflow the dialog.
+      */}
+      <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-5 py-5 sm:grid-cols-2">
         <Field id="task-title" label="Title" className="sm:col-span-2" required>
           <Input
             id="task-title"
@@ -313,6 +293,30 @@ function TaskForm({
           />
         </Field>
 
+        {!isEdit ? (
+          <>
+            <NativeTemplateSelect templates={templates} />
+            <Field
+              id="task-initialization"
+              label="Set up details"
+              hint="Native detail sections can be created now or from the mission later."
+            >
+              <NativeSelect id="task-initialization" name="initializationMode" defaultValue="automatic">
+                <option value="automatic">Automatically after saving</option>
+                <option value="manual">Manually later</option>
+              </NativeSelect>
+            </Field>
+            <Field id="task-description" label="Description" className="sm:col-span-2">
+              <Textarea
+                id="task-description"
+                name="description"
+                rows={3}
+                placeholder="What the mission delivers and any context the assignee needs."
+              />
+            </Field>
+          </>
+        ) : null}
+
         <Field
           id="task-assignees"
           label="Assignees"
@@ -347,6 +351,84 @@ function TaskForm({
             }
           />
         </Field>
+
+        {/*
+          A single assignee always holds 100%, so the split only appears once
+          there is something to split, or when an existing mission's shares
+          can be revised.
+        */}
+        {isEdit || assigneeIds.size > 1 ? (
+          <Field
+            id="participant-shares"
+            label="Participant shares"
+            className="sm:col-span-2"
+            hint={
+              isEdit
+                ? 'Leave all blank to keep the current shares, or use equal shares when changing participants. Explicit percentages must total 100%.'
+                : 'Leave blank for equal shares. Explicit percentages must total 100%.'
+            }
+          >
+            <div className="border-border divide-border divide-y rounded-md border bg-card">
+              {[...assigneeIds].map((id) => {
+                const member = members.find((entry) => entry.id === id);
+                const current = task?.participantShares?.[id];
+                return (
+                  <label
+                    key={id}
+                    className="flex items-center gap-3 px-3 py-2 text-sm"
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {member?.fullName ?? id}
+                      {member ? (
+                        <span className="text-muted-foreground ml-2 text-xs">
+                          {member.employeeId}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Input
+                        name={`sharePercent:${id}`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.0001"
+                        inputMode="decimal"
+                        placeholder={
+                          current !== undefined
+                            ? `${current / 10000}`
+                            : 'Equal'
+                        }
+                        aria-label={`Share percentage for ${member?.fullName ?? id}`}
+                        className="w-24 text-right tabular-nums"
+                      />
+                      <span className="text-muted-foreground text-sm">%</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </Field>
+        ) : null}
+
+        {task?.participantCreditMode === 'legacy' ? (
+          <div className="border-border bg-muted/40 grid gap-2 rounded-md border p-3 text-sm sm:col-span-2">
+            <a
+              href="/task-tools/participants"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link"
+            >
+              Review participant reconciliation (opens in a new tab)
+            </a>
+            <label className="flex items-start gap-2">
+              <input type="checkbox" name="acceptLegacyShares" className="accent-primary mt-1 size-3.5" />
+              <span>I reviewed this mission&apos;s legacy participants and approve configuring these shares.</span>
+            </label>
+            <p className="text-muted-foreground text-xs">
+              Share changes apply to future credit. Earlier earned credit and frozen reports stay unchanged.
+            </p>
+          </div>
+        ) : null}
 
         <FormError message={error} className="sm:col-span-2" />
       </div>
