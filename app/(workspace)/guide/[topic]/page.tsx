@@ -1,20 +1,9 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 
-import { GUIDE_TOPICS, guideTopic } from '@/modules/guide';
-import { GuideTopicPage } from '@/modules/guide/components/guide-topic';
+import { LEGACY_TOPIC_STAGE } from '@/modules/guide';
 
-export function generateStaticParams() {
-  return GUIDE_TOPICS.map(topic => ({ topic: topic.slug }));
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ topic: string }> }): Promise<Metadata> {
-  const topic = guideTopic((await params).topic);
-  return { title: `${topic?.title ?? 'Guide'} · Guide · TaskPulse` };
-}
-
-export default async function GuideTopicRoute({ params }: { params: Promise<{ topic: string }> }) {
-  const topic = guideTopic((await params).topic);
-  if (!topic) notFound();
-  return <GuideTopicPage topic={topic} />;
+/** The guide used to have one page per topic; old links open the matching stage. */
+export default async function LegacyGuideTopicRoute({ params }: { params: Promise<{ topic: string }> }) {
+  const stage = LEGACY_TOPIC_STAGE[(await params).topic];
+  redirect(stage ? `/guide?stage=${stage}` : '/guide');
 }

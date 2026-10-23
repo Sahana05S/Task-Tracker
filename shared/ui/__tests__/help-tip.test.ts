@@ -21,6 +21,6 @@ describe('HelpTip', () => {
     const html = renderToStaticMarkup(createElement(HelpTipBody, { tip: 'waypoint' }));
     expect(html).toContain('Waypoint');
     expect(html).toContain('30, 50, 70, 90 and 100%');
-    expect(html).toContain('<a class="link mt-2 inline-block font-medium" href="/guide/waypoints#waypoints">Learn more</a>');
+    expect(html).toContain('<a class="link mt-2 inline-block font-medium" href="/guide?stage=missions">Learn more</a>');
   });
 });
