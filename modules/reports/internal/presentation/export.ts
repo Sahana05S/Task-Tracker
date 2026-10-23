@@ -11,9 +11,10 @@ export function reportCsv(model:LivePresentation):string {
  for(const m of model.calculation.members.filter(m=>!model.employeeId||m.userId===model.employeeId))rows.push([m.userId,'Final composite','score',m.compositeExact===null?'Unavailable':Exact.from(m.compositeExact).display(2),'','','','',m.eligibleForRanking?'Eligible':'Ineligible / unavailable',m.reasons.join('; ')]);
  return rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
 }
-export function reportText(model:LivePresentation):string {
+/** Plain-text live report; the header names the company when its name is known (Settings > Company > Branding). */
+export function reportText(model:LivePresentation,companyName?:string):string {
  const exact=(value:Parameters<typeof Exact.from>[0]|null,places=6)=>value===null?'Unavailable':Exact.from(value).display(places);
- const lines=[`Stellar live report — ${model.view.period.label}`,`As of ${model.view.asOf} (Asia/Kolkata date ${model.view.asOfLocalDate})`,`Rule: ${model.calculation.context.ruleVersion}`,`Scope: ${model.scope}`,`Details: ${model.detailsAvailable?'Recorded':'Unavailable before '+model.detailsAvailableFrom}`,`Awards: ${model.awardAvailabilityReason??model.awards?.monthly.status??'Unavailable'}`];
+ const lines=[`${companyName?`${companyName} · `:''}Stellar live report — ${model.view.period.label}`,`As of ${model.view.asOf} (Asia/Kolkata date ${model.view.asOfLocalDate})`,`Rule: ${model.calculation.context.ruleVersion}`,`Scope: ${model.scope}`,`Details: ${model.detailsAvailable?'Recorded':'Unavailable before '+model.detailsAvailableFrom}`,`Awards: ${model.awardAvailabilityReason??model.awards?.monthly.status??'Unavailable'}`];
  for(const m of model.calculation.members.filter(m=>!model.employeeId||m.userId===model.employeeId)){
   lines.push('',model.members.find(u=>u.id===m.userId)?.fullName??m.userId,`Final score: ${exact(m.compositeExact,2)}; ranking: ${m.eligibleForRanking?'eligible':'ineligible / unavailable'}`);
   if(m.compositeExact===null)lines.push(`Available-factor subtotal (partial): ${exact(m.knownSubtotalExact,2)}`);

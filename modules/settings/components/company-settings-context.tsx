@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { buildCategoryCatalogue, categoryLabelMap, type CategoryEntry, type MeetingType, type StandingScaleMode } from '@/modules/settings/client';
+import { buildCategoryCatalogue, categoryLabelMap, type CategoryEntry, type CompanyBranding, type MeetingType, type StandingScaleMode } from '@/modules/settings/client';
 import type { TaskCategory } from '@/types/tracker';
 
 /**
@@ -15,13 +15,15 @@ interface CompanyCatalogues {
   meetingTypes: readonly MeetingType[];
   /** How a new mission is weighted unless the dialog changes it. */
   defaultScaleMode: StandingScaleMode;
+  /** The company's name and logo addresses for the top bar; null shows the Stellar mark. */
+  branding: CompanyBranding | null;
 }
 
-const DEFAULTS: CompanyCatalogues = { catalogue: buildCategoryCatalogue(), meetingTypes: [], defaultScaleMode: 'manual' };
+const DEFAULTS: CompanyCatalogues = { catalogue: buildCategoryCatalogue(), meetingTypes: [], defaultScaleMode: 'manual', branding: null };
 const CompanyCataloguesContext = React.createContext<CompanyCatalogues>(DEFAULTS);
 
-export function CompanySettingsProvider({ catalogue, meetingTypes, defaultScaleMode, children }: CompanyCatalogues & { children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ catalogue, meetingTypes, defaultScaleMode }), [catalogue, meetingTypes, defaultScaleMode]);
+export function CompanySettingsProvider({ catalogue, meetingTypes, defaultScaleMode, branding = null, children }: Omit<CompanyCatalogues, 'branding'> & { branding?: CompanyBranding | null; children: React.ReactNode }) {
+  const value = React.useMemo(() => ({ catalogue, meetingTypes, defaultScaleMode, branding }), [catalogue, meetingTypes, defaultScaleMode, branding]);
   return <CompanyCataloguesContext.Provider value={value}>{children}</CompanyCataloguesContext.Provider>;
 }
 
@@ -44,4 +46,9 @@ export function useMeetingTypes(): readonly MeetingType[] {
 /** The company's default scale mode for new missions (Settings > Company). */
 export function useDefaultScaleMode(): StandingScaleMode {
   return React.useContext(CompanyCataloguesContext).defaultScaleMode;
+}
+
+/** The company's name and logos (Settings > Company > Branding), or null when none is set. */
+export function useCompanyBranding(): CompanyBranding | null {
+  return React.useContext(CompanyCataloguesContext).branding;
 }
