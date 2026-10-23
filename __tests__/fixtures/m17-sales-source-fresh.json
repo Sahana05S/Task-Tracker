@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-10-20T06:55:20.794917+05:30",
+  "asOf": "2026-10-23T14:39:53.559652+05:30",
   "tasks": [
     {
       "id": "10000000-0000-0000-0000-000000000001",
@@ -20,7 +20,7 @@
       "revision": "27",
       "taskHours": "0",
       "creditMode": "configured",
-      "assignedDate": "2026-10-20",
+      "assignedDate": "2026-10-23",
       "participants": [
         "00000000-0000-0000-0000-000000000004"
       ],
@@ -58,7 +58,7 @@
       "revision": "28",
       "taskHours": "0",
       "creditMode": "configured",
-      "assignedDate": "2026-10-20",
+      "assignedDate": "2026-10-23",
       "participants": [
         "00000000-0000-0000-0000-000000000005"
       ],
@@ -229,8 +229,8 @@
       "sourceRevision": "28:16:0"
     }
   ],
-  "periodStart": "2026-10-19",
-  "asOfLocalDate": "2026-10-20",
+  "periodStart": "2026-10-22",
+  "asOfLocalDate": "2026-10-23",
   "contributions": {
     "raw": {
       "fact": 0.0,
@@ -238,7 +238,7 @@
       "sale": 0.14,
       "suggestion": 0.0
     },
-    "asOf": "2026-10-20T06:55:20.794917+05:30",
+    "asOf": "2026-10-23T14:39:53.559652+05:30",
     "factors": {
       "fact": {
         "reasons": [],
@@ -277,12 +277,66 @@
     "reasons": [],
     "sources": [
       {
-        "id": "201c0a3d-0028-41e9-ad39-289696a163f2",
+        "id": "0d8f34fe-9970-416b-a0c3-20deda6880fd",
         "kind": "sale",
         "state": "pending",
         "version": 1,
         "validator": null,
-        "observedAt": "2026-10-20T06:55:11.969928+05:30",
+        "observedAt": "2026-10-23T14:39:13.603241+05:30",
+        "salesFields": {
+          "isNewProject": false,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": true
+        },
+        "validatedAt": null,
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-22",
+        "exclusionReason": null,
+        "provenanceReason": null
+      },
+      {
+        "id": "14e80d3c-b930-4dc0-a161-8d899350f45a",
+        "kind": "sale",
+        "state": "rejected",
+        "version": 2,
+        "validator": "00000000-0000-0000-0000-000000000001",
+        "observedAt": "2026-10-23T14:39:19.760599+05:30",
+        "salesFields": {
+          "isNewProject": true,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": true
+        },
+        "validatedAt": "2026-10-23T14:39:18.75662+05:30",
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-22",
+        "exclusionReason": "rejected",
+        "provenanceReason": null
+      },
+      {
+        "id": "8021f1f3-1f67-40c1-894d-c88afca06ab8",
+        "kind": "sale",
+        "state": "withdrawn",
+        "version": 2,
+        "validator": null,
+        "observedAt": "2026-10-23T14:39:26.072639+05:30",
+        "salesFields": {
+          "isNewProject": true,
+          "builtUpAreaSource": "1,200 sq ft",
+          "basementPaymentReceived": true
+        },
+        "validatedAt": null,
+        "attributedTo": "00000000-0000-0000-0000-000000000004",
+        "businessDate": "2026-10-22",
+        "exclusionReason": "withdrawn",
+        "provenanceReason": null
+      },
+      {
+        "id": "c6410341-8f54-4fa3-86f4-bd369a60d7c6",
+        "kind": "sale",
+        "state": "pending",
+        "version": 1,
+        "validator": null,
+        "observedAt": "2026-10-23T14:39:29.053822+05:30",
         "salesFields": {
           "isNewProject": false,
           "builtUpAreaSource": "1,200 sq ft",
@@ -290,89 +344,35 @@
         },
         "validatedAt": null,
         "attributedTo": "00000000-0000-0000-0000-000000000005",
-        "businessDate": "2026-10-19",
+        "businessDate": "2026-10-22",
         "exclusionReason": null,
         "provenanceReason": null
       },
       {
-        "id": "4c112fd0-23ce-464d-a9b6-4133f81f7573",
+        "id": "c66a6509-a8fa-43af-b0fc-8d7cbd3f7d8f",
         "kind": "sale",
         "state": "validated",
         "version": 2,
         "validator": "00000000-0000-0000-0000-000000000003",
-        "observedAt": "2026-10-20T06:55:08.15604+05:30",
+        "observedAt": "2026-10-23T14:39:15.738346+05:30",
         "salesFields": {
           "isNewProject": true,
           "builtUpAreaSource": "1,200 sq ft",
           "basementPaymentReceived": true
         },
-        "validatedAt": "2026-10-20T06:55:07.931897+05:30",
+        "validatedAt": "2026-10-23T14:39:14.706548+05:30",
         "attributedTo": "00000000-0000-0000-0000-000000000004",
-        "businessDate": "2026-10-19",
+        "businessDate": "2026-10-22",
         "exclusionReason": null,
         "provenanceReason": null
       },
       {
-        "id": "5a042e40-e6d1-4ec2-9540-045f19fd0edc",
+        "id": "ebff38d7-a92d-4517-87f7-a3af680e5f74",
         "kind": "sale",
         "state": "pending",
         "version": 1,
         "validator": null,
-        "observedAt": "2026-10-20T06:55:07.219909+05:30",
-        "salesFields": {
-          "isNewProject": false,
-          "builtUpAreaSource": "1,200 sq ft",
-          "basementPaymentReceived": true
-        },
-        "validatedAt": null,
-        "attributedTo": "00000000-0000-0000-0000-000000000004",
-        "businessDate": "2026-10-19",
-        "exclusionReason": null,
-        "provenanceReason": null
-      },
-      {
-        "id": "74d779af-2e99-4bad-84a0-a411780a9c4e",
-        "kind": "sale",
-        "state": "rejected",
-        "version": 2,
-        "validator": "00000000-0000-0000-0000-000000000001",
-        "observedAt": "2026-10-20T06:55:09.705936+05:30",
-        "salesFields": {
-          "isNewProject": true,
-          "builtUpAreaSource": "1,200 sq ft",
-          "basementPaymentReceived": true
-        },
-        "validatedAt": "2026-10-20T06:55:09.458784+05:30",
-        "attributedTo": "00000000-0000-0000-0000-000000000004",
-        "businessDate": "2026-10-19",
-        "exclusionReason": "rejected",
-        "provenanceReason": null
-      },
-      {
-        "id": "cc73d92c-14c8-4452-8bf8-d77afa22fb89",
-        "kind": "sale",
-        "state": "withdrawn",
-        "version": 2,
-        "validator": null,
-        "observedAt": "2026-10-20T06:55:11.28831+05:30",
-        "salesFields": {
-          "isNewProject": true,
-          "builtUpAreaSource": "1,200 sq ft",
-          "basementPaymentReceived": true
-        },
-        "validatedAt": null,
-        "attributedTo": "00000000-0000-0000-0000-000000000004",
-        "businessDate": "2026-10-19",
-        "exclusionReason": "withdrawn",
-        "provenanceReason": null
-      },
-      {
-        "id": "e40be916-ff6c-48b6-bc8a-f07777acb161",
-        "kind": "sale",
-        "state": "pending",
-        "version": 1,
-        "validator": null,
-        "observedAt": "2026-10-20T06:55:05.28109+05:30",
+        "observedAt": "2026-10-23T14:39:08.090115+05:30",
         "salesFields": {
           "isNewProject": false,
           "builtUpAreaSource": "1,200 sq ft",
@@ -380,13 +380,13 @@
         },
         "validatedAt": null,
         "attributedTo": "00000000-0000-0000-0000-000000000004",
-        "businessDate": "2026-10-19",
+        "businessDate": "2026-10-22",
         "exclusionReason": null,
         "provenanceReason": null
       }
     ],
     "available": true,
-    "periodStart": "2026-10-19",
+    "periodStart": "2026-10-22",
     "populations": [
       {
         "kind": "sale",
@@ -755,11 +755,11 @@
       }
     ],
     "historyAvailable": true,
-    "periodEndExclusive": "2026-10-20",
-    "historyAvailableFrom": "2026-10-20T06:54:46.498222+05:30"
+    "periodEndExclusive": "2026-10-23",
+    "historyAvailableFrom": "2026-10-23T14:38:18.321434+05:30"
   },
   "sourceWatermark": "28:16:0",
   "historyAvailable": true,
-  "periodEndExclusive": "2026-10-20",
-  "historyAvailableFrom": "2026-10-20T06:54:47.224004+05:30"
+  "periodEndExclusive": "2026-10-23",
+  "historyAvailableFrom": "2026-10-23T14:38:21.027855+05:30"
 }

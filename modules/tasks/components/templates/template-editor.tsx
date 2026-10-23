@@ -149,9 +149,6 @@ function EditorBody({ template, onClose }: { template: NativeTemplate | null; on
           <section className="grid gap-4" aria-labelledby={id('checklist')}>
             <div className="grid gap-1">
               <h3 id={id('checklist')} className="text-foreground text-sm font-semibold">Checklist</h3>
-              <p className="text-muted-foreground text-xs">
-                Every item is ticked Yes / No / N/A. Put items inside another item to break it down; that item then shows their average.
-              </p>
             </div>
             {TEMPLATE_SECTIONS.map((section) => (
               <ChecklistSection key={section.key} section={section} nodes={nodes} onChange={setNodes} idPrefix={id(section.key)} />
@@ -196,7 +193,6 @@ function ChecklistSection({
             node={node}
             depth={depth}
             nodes={nodes}
-            sectionLabel={section.label}
             onChange={onChange}
             idPrefix={`${idPrefix}-${node.key}`}
           />
@@ -214,14 +210,12 @@ function ChecklistRow({
   node,
   depth,
   nodes,
-  sectionLabel,
   onChange,
   idPrefix,
 }: {
   node: EditorNode;
   depth: number;
   nodes: readonly EditorNode[];
-  sectionLabel: string;
   onChange: (nodes: EditorNode[]) => void;
   idPrefix: string;
 }) {
@@ -256,13 +250,13 @@ function ChecklistRow({
         </Button>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
-        <Field id={`${idPrefix}-parent`} label="Sits inside">
+        <Field id={`${idPrefix}-parent`} label="Under">
           <NativeSelect
             id={`${idPrefix}-parent`}
             value={node.parent_key}
             onChange={(event) => onChange(updateNode(nodes, node.key, { parent_key: event.target.value }))}
           >
-            <option value="">Top of {sectionLabel}</option>
+            <option value="">Top level of the section</option>
             {parentOptions(nodes, node.key).map((option) => (
               <option key={option.key} value={option.key}>{option.title.trim() || 'Untitled item'}</option>
             ))}

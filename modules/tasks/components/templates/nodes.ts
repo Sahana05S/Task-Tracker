@@ -46,7 +46,7 @@ export function addNode(nodes: readonly EditorNode[], section: TemplateSection):
 export function updateNode(
   nodes: readonly EditorNode[],
   key: string,
-  patch: Partial<Pick<EditorNode, 'title' | 'node_type' | 'parent_key'>>,
+  patch: Partial<Pick<EditorNode, 'title' | 'parent_key'>>,
 ): EditorNode[] {
   return nodes.map((node) => (node.key === key ? { ...node, ...patch } : node));
 }
