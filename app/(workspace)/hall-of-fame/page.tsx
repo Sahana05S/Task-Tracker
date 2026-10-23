@@ -9,7 +9,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { formatDate } from '@/shared/tracker/format';
 import { MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
 
-export const metadata: Metadata = { title: 'Hall of fame · TaskPulse' };
+export const metadata: Metadata = { title: 'Hall of fame' };
 
 const KIND_LABEL = { dailyStar: 'Daily star', categoryAward: 'Category award', monthlyStar: 'Monthly star' } as const;
 const MONTH = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });

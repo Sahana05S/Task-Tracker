@@ -1,8 +1,8 @@
-# TaskPulse
+# Stellar
 
 Advanced multi-metric performance tracker for delivery teams.
 
-TaskPulse weights every task, records the hours worked against it, and measures
+Stellar weights every task, records the hours worked against it, and measures
 each member against the team median for the month. The aim is that a progress
 figure can be defended in a review rather than argued about: scaled progress is
 computed by the database, productivity is derived from logged hours, and stalled

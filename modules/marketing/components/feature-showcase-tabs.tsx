@@ -39,7 +39,7 @@ export function FeatureShowcaseTabs() {
             Explore the core surfaces designed for high output
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg">
-            Click across the views below to see how TaskPulse organizes tasks, measures
+            Click across the views below to see how Stellar organizes tasks, measures
             performance against the median, and makes daily logging seamless.
           </p>
         </div>

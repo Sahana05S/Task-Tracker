@@ -24,7 +24,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { isMissingSchemaError } from '@/shared/supabase/schema-errors';
 
 export const metadata: Metadata = {
-  title: 'Dashboard · TaskPulse',
+  title: 'Dashboard',
 };
 
 /**

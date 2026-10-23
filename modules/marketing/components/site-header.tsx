@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { MenuIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
+import { StellarMark } from '@/shared/ui/stellar-mark';
 import {
   Sheet,
   SheetContent,
@@ -43,11 +44,9 @@ export function SiteHeader() {
           href="/"
           className="focus-visible:ring-primary/30 flex items-center gap-2.5 rounded-md focus-visible:ring-2 focus-visible:outline-none"
         >
-          <span className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold">
-            TP
-          </span>
+          <StellarMark className="rounded-md" />
           <span className="text-sm font-semibold tracking-tight">
-            TaskPulse
+            Stellar
           </span>
         </Link>
 

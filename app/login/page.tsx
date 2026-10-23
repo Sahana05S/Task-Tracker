@@ -5,7 +5,7 @@ import { resolveLoginView, type LoginSearchParams } from '@/modules/auth';
 import { LoginScreen } from '@/modules/auth/components/login-screen';
 
 export const metadata: Metadata = {
-  title: 'Sign in · TaskPulse',
+  title: 'Sign in',
 };
 
 interface LoginPageProps {

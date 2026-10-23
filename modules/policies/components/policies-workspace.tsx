@@ -34,7 +34,7 @@ const runError = (code: string | null) => (code && RUN_ERRORS[code]) ?? 'The eva
 
 function rule(policy: PolicyRow): string {
   const template = templateFor(policy.templateKey);
-  return template ? template.summary(effectiveParameters(policy), policy.periodKind) : 'A rule this version of TaskPulse does not know.';
+  return template ? template.summary(effectiveParameters(policy), policy.periodKind) : 'A rule this version of Stellar does not know.';
 }
 
 function editable(policy: PolicyRow): EditablePolicy {
