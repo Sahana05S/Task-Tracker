@@ -19,7 +19,7 @@ import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/t
 import { formatHours, formatNumeric } from '@/shared/tracker/format';
 import { currentPeriod } from '@/shared/time/period';
 import { UnavailableValue } from '@/shared/ui/unavailable-value';
-import { carriedQuery, ProfileHeader, type ProfileTab } from './profile-header';
+import { carriedQuery, ProfileHeader, readPlacement, type ProfileTab } from './profile-header';
 
 interface EmployeePageProps {
   params: Promise<{ employeeId: string }>;
@@ -50,9 +50,12 @@ export default async function EmployeePage({ params, searchParams }: EmployeePag
   const data = routeState.data;
   if (!canViewEmployeeProfile(viewer, data.employee)) notFound();
   // Recognition only; the database refuses another member's count unless the viewer manages.
-  const waypoints = tab === 'overview'
-    ? await getWaypointCount(data.employee.id, data.period.startDate, data.period.endDate).catch(() => null)
-    : null;
+  const [waypoints, placement] = await Promise.all([
+    tab === 'overview'
+      ? getWaypointCount(data.employee.id, data.period.startDate, data.period.endDate).catch(() => null)
+      : null,
+    readPlacement(data.employee.id),
+  ]);
 
   return (
     <MissionPage>
@@ -62,6 +65,7 @@ export default async function EmployeePage({ params, searchParams }: EmployeePag
         description={`${data.employee.employeeId} · ${data.period.label}`}
         query={carriedQuery(query)}
         missionCount={data.tasks.length}
+        placement={placement}
       />
       {tab === 'charts' ? (
         <>
