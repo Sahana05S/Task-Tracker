@@ -12,11 +12,13 @@ import { reportText } from '@/modules/reports/internal/presentation/export';
 import { formatDate } from '@/shared/tracker/format';
 import type { LivePresentation } from '@/modules/reports/internal/presentation/model';
 import { cn } from '@/shared/utils';
-export function LiveReport({model}:{model:LivePresentation}){
+import { getCompanySettings } from '@/modules/settings';
+export async function LiveReport({model}:{model:LivePresentation}){
+ const companyName=(await getCompanySettings()).branding.companyName;
  const query=viewQuery(model.view)+(model.employeeId?'&employee='+encodeURIComponent(model.employeeId):'');
  return <section className="grid gap-5 lg:gap-6">
   <ReportContext model={model}/>
-  <nav aria-label="Download live report" className="flex flex-wrap items-center gap-2">{['json','text','csv'].map(format=><a className={cn(buttonVariants({ variant: 'outline' }), 'h-9 gap-1.5 px-3')} key={format} href={'/api/reports/export?'+query+'&format='+format}><DownloadIcon className="size-4" aria-hidden="true"/>Download {format.toUpperCase()}</a>)}<CopyReport text={reportText(model)}/></nav>
+  <nav aria-label="Download live report" className="flex flex-wrap items-center gap-2">{['json','text','csv'].map(format=><a className={cn(buttonVariants({ variant: 'outline' }), 'h-9 gap-1.5 px-3')} key={format} href={'/api/reports/export?'+query+'&format='+format}><DownloadIcon className="size-4" aria-hidden="true"/>Download {format.toUpperCase()}</a>)}<CopyReport text={reportText(model,companyName)}/></nav>
   {model.awardAvailabilityReason?<MissionNotice tone="attention" role="status">{model.awardAvailabilityReason}</MissionNotice>:null}
   {model.awards?<AwardHistory awards={model.awards}/>:null}
   <MissionNotice>You see your own detailed rows; managers see everyone&apos;s. Team totals are visible to all. Work files are linked by hand; Drive is not connected yet.</MissionNotice>

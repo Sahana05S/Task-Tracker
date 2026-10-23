@@ -33,7 +33,7 @@ export default async function WorkspaceLayout({
   ]);
 
   return (
-    <CompanySettingsProvider catalogue={catalogue} meetingTypes={settings.meetingTypes} defaultScaleMode={settings.defaultScaleMode}>
+    <CompanySettingsProvider catalogue={catalogue} meetingTypes={settings.meetingTypes} defaultScaleMode={settings.defaultScaleMode} branding={settings.branding}>
       <RunningTimerProvider timers={timers}>
         <AppShell profile={profile} counts={counts}>
           {children}

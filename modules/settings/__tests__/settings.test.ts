@@ -8,6 +8,7 @@ import {
   categoryChoices,
   categoryLabelMap,
   formatSheetTag,
+  isBrandUrl,
   meetingTypeChoices,
   renderTitlePattern,
   type MeetingType,
@@ -17,6 +18,7 @@ import { parseSettingsCommand } from '@/modules/settings/internal/input';
 import { CompanySettingsProvider } from '@/modules/settings/components/company-settings-context';
 import { MeetingTypeSelect } from '@/modules/settings/components/meeting-type-select';
 import { MeetingAgenda } from '@/modules/settings/components/meeting-agenda';
+import { CompanyBrand } from '@/modules/settings/components/company-brand';
 import { CATEGORY_LABELS, TASK_CATEGORIES } from '@/shared/tracker/enums';
 import type { Task } from '@/types/tracker';
 
@@ -159,5 +161,45 @@ describe('settings payload', () => {
   it('needs a version and an operation id', () => {
     expect(parseSettingsCommand(form({ section: 'agenda', expectedVersion: '', operationId: OP, payload: '{"agenda":""}' })).ok).toBe(false);
     expect(parseSettingsCommand(form({ section: 'nope', expectedVersion: '0', operationId: OP, payload: '{}' })).ok).toBe(false);
+  });
+});
+
+describe('company branding (migration 64)', () => {
+  const ARKENSYS = { companyName: 'Arkensys Realtors', logoUrl: '/brands/arkensys/logo.svg', logoDarkUrl: '/brands/arkensys/logo-dark.svg', markUrl: '/brands/arkensys/mark.svg', markDarkUrl: null };
+
+  it('accepts only files of this site and https addresses, like is_brand_url', () => {
+    for (const url of ['/brands/x/logo.svg', 'https://cdn.example.com/a/logo-1.png?v=2']) expect(isBrandUrl(url), url).toBe(true);
+    for (const url of ['javascript:alert(1)', 'data:image/svg+xml,<svg>', '//evil.example/x.svg', 'http://example.com/x.png', '/a b.svg', 'https://x.example/"onload', '/' + 'a'.repeat(500), 'brands/x.svg', '/x\\y.svg']) {
+      expect(isBrandUrl(url), url).toBe(false);
+    }
+  });
+
+  it('reads branding, dropping unsafe addresses; empty before 64', () => {
+    expect(parseCompanySettings(null).branding).toEqual({ companyName: '', logoUrl: null, logoDarkUrl: null, markUrl: null, markDarkUrl: null });
+    expect(parseCompanySettings({ branding: { ...ARKENSYS, markDarkUrl: 'javascript:alert(1)', companyName: ' Arkensys Realtors ' } }).branding).toEqual(ARKENSYS);
+  });
+
+  it('saves the four addresses, trimmed, blank meaning none', () => {
+    const base = { section: 'branding', expectedVersion: '2', operationId: OP };
+    expect(parseSettingsCommand(form({ ...base, payload: JSON.stringify({ markUrl: ' /brands/a/mark.svg ', markDarkUrl: '', logoUrl: null }) }))).toEqual({
+      ok: true,
+      value: { section: 'branding', expectedVersion: 2, operationId: OP, payload: { logoUrl: null, logoDarkUrl: null, markUrl: '/brands/a/mark.svg', markDarkUrl: null } },
+    });
+    for (const payload of [{ markUrl: 'javascript:alert(1)' }, { logoUrl: 5 }, { extra: '/x.svg' }, null]) {
+      expect(parseSettingsCommand(form({ ...base, payload: JSON.stringify(payload) })).ok, JSON.stringify(payload)).toBe(false);
+    }
+  });
+
+  it("shows the company's mark and name, with a dark-theme swap, or Stellar's when none", () => {
+    const html = renderToStaticMarkup(createElement(CompanyBrand, { branding: { ...ARKENSYS, markDarkUrl: '/brands/arkensys/mark-dark.svg' } }));
+    expect(html).toContain('src="/brands/arkensys/mark.svg"');
+    expect(html).toContain('src="/brands/arkensys/mark-dark.svg"');
+    expect(html).toMatch(/dark:hidden/);
+    expect(html).toContain('Arkensys Realtors');
+    const single = renderToStaticMarkup(createElement(CompanyBrand, { branding: ARKENSYS }));
+    expect(single.match(/<img/g)).toHaveLength(1);
+    const fallback = renderToStaticMarkup(createElement(CompanyBrand, { branding: null }));
+    expect(fallback).not.toContain('<img');
+    expect(fallback).toContain('Stellar');
   });
 });
