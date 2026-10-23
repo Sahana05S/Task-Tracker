@@ -16,8 +16,10 @@ describe('checklist command contract (one kind of row)', () => {
     expect(parsed.value.payload).toEqual({ title: 'Check beams', description: null, section: 'activity', parent_id: 'row-1', checklist_id: 'list' });
   });
 
-  it('no longer offers Sub-missions or section reviews', () => {
-    expect(parseChecklistCommand(form('submission', { title: 'x', section: 'activity' }))).toEqual({ ok: false, error: 'Unknown checklist action.' });
+  it('creates Quests through submission (67) and no longer offers section reviews', () => {
+    const quest = parseChecklistCommand(form('submission', { title: 'Site survey', section: 'activity' }));
+    expect(quest.ok && quest.value.command).toBe('submission');
+    expect(quest.ok && quest.value.payload.title).toBe('Site survey');
     expect(parseChecklistCommand(form('section', { section: 'setup', intentional_empty: 'true', reason: 'x' }))).toEqual({ ok: false, error: 'Unknown checklist action.' });
   });
 
