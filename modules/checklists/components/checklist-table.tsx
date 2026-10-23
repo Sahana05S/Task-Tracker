@@ -4,12 +4,12 @@ import { CheckCircle2Icon, ChevronRightIcon, CircleDashedIcon, CircleDotIcon, Ci
 
 import { MissionProgress } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
-import { checklistWorkHref, openChecklistRow } from '../internal/location';
+import { rowHref } from '../internal/location';
 import { formatMinutes } from '../internal/pages';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import type { ChecklistItemTime } from '../internal/item-time';
 import type { ChecklistSection, CompletionState, SectionProgress } from '../internal/progress';
-import { opensTable, percentText, rowKind, sectionStatus, stateChoices } from '../internal/table';
+import { percentText, rowKind, sectionStatus, stateChoices } from '../internal/table';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowActions } from './checklist-row-actions';
 import { ItemTimerControls } from './checklist-rows';
@@ -124,7 +124,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                 const kind = rowKind(row);
                 const choices = stateChoices(kind);
                 const container = choices.length === 0;
-                const href = opensTable(kind) ? checklistWorkHref(task.taskTag, openChecklistRow(row)) : null;
+                const href = rowHref(task.taskTag, row);
                 const progress = row.applicable ? percentText(row.progressPercentage) : 'N/A';
                 const estimate = formatMinutes(row.estimatedMinutes);
                 const elapsed = row.elapsedSeconds > 0 ? formatMinutes(Math.max(1, Math.round(row.elapsedSeconds / 60))) : null;

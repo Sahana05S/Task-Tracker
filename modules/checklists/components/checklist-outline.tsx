@@ -8,7 +8,7 @@ import { loadChecklistRows } from '@/modules/checklists/actions';
 import { cn } from '@/shared/utils';
 import type { ActionResponse, Task } from '@/types/tracker';
 import type { ChecklistBranchRow } from '../internal/branch-types';
-import { checklistWorkHref, openChecklistRow } from '../internal/location';
+import { rowHref } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistSection, type CompletionState } from '../internal/progress';
 import { percentText, rowKind, SECTION_TITLES, stateChoices } from '../internal/table';
 import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
@@ -78,8 +78,8 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
           </button>
         ) : <span className="size-7 shrink-0" aria-hidden="true" />}
         {kind === 'quest' ? <FlagIcon className="text-primary size-4 shrink-0" aria-label="Quest" /> : kind === 'linked' ? <RocketIcon className="text-recognition-foreground size-4 shrink-0" aria-label="Sub-mission" /> : null}
-        {expandable ? (
-          <Link href={checklistWorkHref(ctx.task.taskTag, openChecklistRow(row))} className="text-foreground min-w-0 flex-1 truncate text-sm font-semibold underline-offset-4 hover:underline">{row.title}</Link>
+        {rowHref(ctx.task.taskTag, row) ? (
+          <Link href={rowHref(ctx.task.taskTag, row)!} className="text-foreground min-w-0 flex-1 truncate text-sm font-semibold underline-offset-4 hover:underline">{row.title}</Link>
         ) : (
           <span className={cn('text-foreground min-w-0 flex-1 truncate text-sm', row.isComplete && row.applicable && 'text-muted-foreground line-through decoration-1')}>{row.title}</span>
         )}

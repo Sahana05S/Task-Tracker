@@ -4,6 +4,7 @@ import {
   ClipboardCheckIcon } from 'lucide-react';
 
 import { MissionProgress } from '@/shared/ui/mission-ui';
+import { ChecklistGateBadge } from '@/modules/checklists/components/checklist-gate-badge';
 import { SectionStateIcon } from '@/modules/checklists/components/section-state-icon';
 import type { ChecklistRollup, ChecklistSection, SectionProgress } from '@/modules/checklists/client';
 import { formatPercent } from '@/shared/tracker/format';
@@ -53,8 +54,9 @@ export function ChecklistHero({
             <ClipboardCheckIcon className="size-3.5" aria-hidden="true" />
             Master checklist
           </span>
-          <h2 id="phases-heading" className="text-foreground mt-2.5 text-xl font-bold tracking-tight">
+          <h2 id="phases-heading" className="text-foreground mt-2.5 flex flex-wrap items-center gap-2 text-xl font-bold tracking-tight">
             {title ?? 'No checklist yet'}
+            {title && rollup ? <ChecklistGateBadge rollup={rollup} className="tracking-normal" /> : null}
           </h2>
           <p className="text-muted-foreground mt-0.5 text-sm">
             {title

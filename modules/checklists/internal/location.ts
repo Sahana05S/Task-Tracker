@@ -33,3 +33,10 @@ export type ChecklistView = typeof CHECKLIST_VIEWS[number];
 export function parseChecklistView(value: string | string[] | undefined): ChecklistView | null {
   return typeof value === 'string' && (CHECKLIST_VIEWS as readonly string[]).includes(value) ? value as ChecklistView : null;
 }
+
+/** Where a row opens: a Quest's checklist, a row's table, or a sub-mission's own page; null for a plain item. */
+export function rowHref(taskTag: string, row: Pick<ChecklistBranchRow, 'id' | 'checklistId' | 'section' | 'ownedChecklistId' | 'linkedTaskTag' | 'childCount' | 'linkedTaskId' | 'nodeType'>): string | null {
+  if (row.linkedTaskId) return row.linkedTaskTag ? `/tasks/${encodeURIComponent(row.linkedTaskTag)}` : null;
+  if (row.ownedChecklistId || row.childCount > 0) return checklistWorkHref(taskTag, openChecklistRow(row));
+  return null;
+}

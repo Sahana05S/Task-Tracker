@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { FlagIcon, PlusIcon, RocketIcon } from 'lucide-react';
+import { CircleCheckIcon, FlagIcon, PlusIcon, RocketIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -55,28 +55,36 @@ export function ChecklistAddRow({
       <ChecklistVersionField fallback={version} />
       <input type="hidden" name="section" value={section} />
       <input type="hidden" name="parent_id" value={parentId ?? ''} />
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="radiogroup" aria-label="Kind of row" className="bg-muted inline-flex shrink-0 rounded-lg p-0.5">
-          {kinds.map((entry) => (
-            <button
-              key={entry.key}
-              type="button"
-              role="radio"
-              aria-checked={chosen.key === entry.key}
-              title={entry.hint}
-              onClick={() => setKind(entry.key)}
-              className="text-muted-foreground aria-checked:bg-card aria-checked:text-foreground focus-visible:ring-ring inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-semibold outline-none focus-visible:ring-2 aria-checked:shadow-(--shadow-card)"
-            >
-              {entry.key === 'submission' ? <FlagIcon className="size-3.5" aria-hidden="true" /> : entry.key === 'sub-mission' ? <RocketIcon className="size-3.5" aria-hidden="true" /> : null}
-              {entry.label}
-            </button>
-          ))}
+      <div className="border-primary/35 bg-primary-subtle/30 grid gap-2.5 rounded-xl border border-dashed p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span id={`${titleId}-kind`} className="text-foreground text-sm font-semibold">Add</span>
+          <div role="radiogroup" aria-labelledby={`${titleId}-kind`} className="flex flex-wrap gap-1.5">
+            {kinds.map((entry) => {
+              const Icon = entry.key === 'submission' ? FlagIcon : entry.key === 'sub-mission' ? RocketIcon : CircleCheckIcon;
+              return (
+                <button
+                  key={entry.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={chosen.key === entry.key}
+                  onClick={() => setKind(entry.key)}
+                  className="border-border bg-card text-foreground hover:border-primary/60 aria-checked:border-primary aria-checked:bg-primary aria-checked:text-primary-foreground focus-visible:ring-ring inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-2"
+                >
+                  <Icon className="size-4" aria-hidden="true" />
+                  {entry.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <label htmlFor={titleId} className="sr-only">{label}</label>
-        <Input id={titleId} name="title" required maxLength={500} placeholder={chosen.key === 'add' ? `Add a row to ${label.toLowerCase()}` : chosen.key === 'submission' ? 'Name the Quest' : 'Name the sub-mission (people and due date come from this mission)'} className="h-9 min-w-48 flex-1 basis-56" />
-        <Button type="submit" size="sm" className="h-9">
-          <PlusIcon aria-hidden="true" />Add {chosen.label.toLowerCase()}
-        </Button>
+        <p className="text-muted-foreground text-xs">{chosen.hint}{chosen.key === 'sub-mission' ? '. People and due date come from this mission.' : '.'}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor={titleId} className="sr-only">{`${chosen.label} title`}</label>
+          <Input id={titleId} name="title" required maxLength={500} placeholder={chosen.key === 'add' ? `New ${label.toLowerCase()} item` : chosen.key === 'submission' ? 'Name the Quest' : 'Name the sub-mission'} className="bg-card h-9 min-w-48 flex-1 basis-56" />
+          <Button type="submit" size="sm" className="h-9">
+            <PlusIcon aria-hidden="true" />Add {chosen.label.toLowerCase()}
+          </Button>
+        </div>
       </div>
     </ExecutionForm>
   );

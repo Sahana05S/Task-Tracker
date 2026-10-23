@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { CalendarDaysIcon, CheckCircle2Icon, CircleDotIcon, GaugeIcon } from 'lucide-react';
 
 import { MissionProgress, StatTile } from '@/shared/ui/mission-ui';
+import { ChecklistGateBadge } from '@/modules/checklists/components/checklist-gate-badge';
 import { PeopleTile } from '@/modules/tasks/components/detail/detail-tiles';
 import type { TaskDetailData } from '@/modules/tasks/internal/detail';
 import { CATEGORY_LABELS } from '@/shared/tracker/enums';
@@ -31,7 +32,10 @@ export function MissionOverview({
     <section className="soft-card p-5 sm:p-6" aria-label="Mission overview">
       <p className="eyebrow">{CATEGORY_LABELS[task.category]}</p>
       <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="text-foreground text-sm font-semibold">Progress</span>
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="text-foreground text-sm font-semibold">{task.progressOwner === 'checklist' ? 'Activity progress' : 'Progress'}</span>
+          {data.checklist && data.checklistRollup ? <ChecklistGateBadge rollup={data.checklistRollup} /> : null}
+        </span>
         <span className="text-success-strong text-xl font-bold tabular-nums">
           {formatPercent(task.progressPercentage)}
         </span>
@@ -40,7 +44,7 @@ export function MissionOverview({
       {belowProgress ? <div className="mt-1.5">{belowProgress}</div> : null}
       <p className="text-muted-foreground mt-2 text-xs">
         {task.progressOwner === 'checklist'
-          ? 'From the Activity checklist'
+          ? 'Mission progress follows Activity; Setup and Closure decide Open / Closed'
           : data.checklist
             ? `Set by hand · Activity checklist ${formatPercent(data.checklistProgressPercentage)}`
             : 'Set by hand'}
