@@ -64,8 +64,9 @@ for db in DBS:
         assert counts(db)==before
         print('PASS',db,'a failed migration 64 rolls back completely (no function, no columns, name unchanged)')
         sql(db,M64)
-        for n in [n for n in every if n>64]:migrate(db,[n])
         assert counts(db)==before,'64 adds no rows when company #1 already has a settings row'
+        # Later migrations may audit their own backfills (65 records each default manager).
+        for n in [n for n in every if n>64]:migrate(db,[n])
         s=settings(db,M4)
         assert s['meetingAgenda']=='1. Review' and s['version']==1,'existing settings are kept'
         print('PASS',db,'upgrade 01-63 -> 64 keeps the saved agenda and version; company #1 gets its branding in place')
