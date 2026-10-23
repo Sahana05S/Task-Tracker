@@ -2,7 +2,7 @@ import { ISO_DATE_PATTERN, readString, UUID_PATTERN } from '@/shared/forms/form-
 import { TASK_CATEGORIES, TASK_PRIORITIES } from '@/shared/tracker/enums';
 import type { Json } from '@/types/database';
 
-import { SETTINGS_SECTIONS, STANDING_SCALE_MODES, type SettingsSection } from './rules';
+import { BRANDING_URL_FIELDS, isBrandUrl, SETTINGS_SECTIONS, STANDING_SCALE_MODES, type SettingsSection } from './rules';
 
 /**
  * Parses a Company settings form: `section`, `expectedVersion`, `operationId`
@@ -119,6 +119,20 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
       return { ok: false, error: 'Choose how new missions are weighted.' };
     }
     return { ok: true, value: { scaleMode: raw.scaleMode as string } };
+  },
+
+  branding(raw) {
+    if (!isRecord(raw) || Object.keys(raw).some((key) => !(BRANDING_URL_FIELDS as readonly string[]).includes(key))) {
+      return { ok: false, error: 'Branding could not be read.' };
+    }
+    const value: Record<string, Json> = {};
+    for (const key of BRANDING_URL_FIELDS) {
+      if (raw[key] !== undefined && raw[key] !== null && typeof raw[key] !== 'string') return { ok: false, error: 'Branding could not be read.' };
+      const url = text(raw[key]);
+      if (url && !isBrandUrl(url)) return { ok: false, error: 'Each logo address must start with / (a file of this site) or https://, up to 500 characters.' };
+      value[key] = url || null;
+    }
+    return { ok: true, value };
   },
 
   holidays(raw) {
