@@ -25,3 +25,11 @@ export function openChecklistRow(row: Pick<ChecklistBranchRow, 'id' | 'checklist
   if (row.ownedChecklistId) return { checklistId: row.ownedChecklistId, section: 'activity' };
   return { checklistId: row.checklistId, parentNodeId: row.id, section: row.section ?? 'activity' };
 }
+
+/** Ways to show a checklist: the sheet's table, phase columns, cards, or the whole tree. */
+export const CHECKLIST_VIEWS = ['table', 'board', 'blocks', 'outline'] as const;
+export type ChecklistView = typeof CHECKLIST_VIEWS[number];
+
+export function parseChecklistView(value: string | string[] | undefined): ChecklistView | null {
+  return typeof value === 'string' && (CHECKLIST_VIEWS as readonly string[]).includes(value) ? value as ChecklistView : null;
+}

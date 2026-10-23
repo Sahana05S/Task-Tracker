@@ -2,7 +2,7 @@ import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh() {}, replace() {}, push() {} }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh() {}, replace() {}, push() {} }), usePathname: () => '/tasks/Sep26_T5/checklist', useSearchParams: () => new URLSearchParams() }));
 vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: { href: string; children: ReactNode }) => createElement('a', { href, ...rest }, children),
 }));

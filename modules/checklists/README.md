@@ -27,6 +27,14 @@ is complete only when its own three phases are complete or N/A, so it gates the
 mission's Done. It opens as its own checklist home (`?checklist=<id>`), with
 the Quest chain in the breadcrumb. Quests nest to any depth.
 
+Four views (user decision, 23 October 2026), switched by `ChecklistViewSwitch`
+and kept in `?view=` plus per-device memory (phones start on Blocks): **Table**
+(the sheet), **Board** (Setup / Activity / Closure side by side as columns of
+cards), **Blocks** (card grids per phase; Quests and sub-missions larger) and
+**Outline** (every level as one collapsible list; a level is read only when
+opened, through `loadChecklistRows`). Every view ticks with the same one-tap
+control.
+
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|

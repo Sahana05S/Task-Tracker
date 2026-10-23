@@ -8,7 +8,7 @@ import { Input } from '@/shared/ui/input';
 import { AvatarStack, MissionPage, MissionProgress } from '@/shared/ui/mission-ui';
 import { Breadcrumb, type BreadcrumbItem } from '@/shared/ui/page-nav';
 import { cn } from '@/shared/utils';
-import { checklistWorkHref } from '../internal/location';
+import { checklistWorkHref, type ChecklistView } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistRollup, type ChecklistSection } from '../internal/progress';
 import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-types';
 import type { ChecklistItemTime } from '../internal/item-time';
@@ -16,6 +16,10 @@ import { SECTION_TITLES, checklistIssues, pageResult, percentText } from '../int
 import { SectionStateIcon } from './section-state-icon';
 import { ChecklistVersionField, ChecklistVersionProvider } from './checklist-state-control';
 import { ChecklistIssues, ChecklistTable } from './checklist-table';
+import { ChecklistAddRow } from './checklist-add-row';
+import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-cards';
+import { ChecklistOutline } from './checklist-outline';
+import { ChecklistViewSwitch } from './checklist-view-switch';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -61,6 +65,8 @@ export interface ChecklistWorkspaceProps {
   actions: { checklist: Command; start: Command; stop: Command; discard: Command; submission?: Command };
   /** Beside the breadcrumb: the mission's own actions, supplied by the page. */
   headerActions?: React.ReactNode;
+  /** Table (default), Board, Blocks or Outline. */
+  view?: ChecklistView;
 }
 
 const PAGE_SIZE = 50;
@@ -110,6 +116,20 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const tableActions = { checklist: props.actions.checklist, start: props.actions.start, stop: props.actions.stop, discard: props.actions.discard, submission: manager ? props.actions.submission : undefined };
   const shared = { manager, linkChoices: tools?.linkChoices ?? [] };
   const issues = checklistIssues(rollup.errors);
+  const view: ChecklistView = props.view ?? 'table';
+  const cardCtx = { task, canEdit, version, action: props.actions.checklist };
+  const addRowFor = (section: ChecklistSection, parentId: string | null = null) => canEdit && checklist ? (
+    <ChecklistAddRow
+      taskId={task.id}
+      checklistId={checklist.id}
+      parentId={parentId}
+      section={section}
+      version={version}
+      action={props.actions.checklist}
+      subMissionAction={tableActions.submission}
+      label={SECTION_TITLES[section].title}
+    />
+  ) : null;
 
   return (
     <ChecklistVersionProvider version={version}>
@@ -125,6 +145,11 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
           <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} />
         ) : null}
 
+        {checklist ? (
+          <div className="flex justify-end">
+            <ChecklistViewSwitch view={view} views={props.page ? ['table', 'blocks', 'outline'] : ['table', 'board', 'blocks', 'outline']} />
+          </div>
+        ) : null}
         <ChecklistIssues issues={issues} />
         {checklist && tools?.unmapped.length ? (
           <NeedsMapping task={task} checklistId={checklist.id} rows={tools.unmapped} version={version} action={props.actions.checklist} />
@@ -132,6 +157,8 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
 
         {!checklist ? (
           <NoChecklist task={task} version={version} canCreate={canEdit} action={props.actions.checklist} />
+        ) : props.sections && view !== 'table' ? (
+          <ChecklistAltView view={view} sections={props.sections} rollup={rollup} checklistId={checklist.id} ctx={cardCtx} addRow={addRowFor} />
         ) : props.sections ? (
           props.sections.map((home) => {
             const meta = SECTION_TITLES[home.section];
@@ -162,6 +189,17 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
               />
             );
           })
+        ) : props.page && view !== 'table' ? (
+          <ChecklistAltView
+            view={view === 'board' ? 'blocks' : view}
+            sections={[{ section: props.page.section, rows: props.page.rows, cursor: props.page.cursor, nextCursor: props.page.nextCursor }]}
+            rollup={rollup}
+            checklistId={checklist.id}
+            ctx={cardCtx}
+            addRow={(section) => addRowFor(section, props.page!.nodeId)}
+            title={`Rows under ${current?.title ?? 'this row'}`}
+            parentNodeId={props.page.nodeId}
+          />
         ) : props.page ? (
           <ChecklistTable
             id="rows"
@@ -360,5 +398,57 @@ function NoChecklist({ task, version, canCreate, action }: { task: Task; version
         <p className="text-muted-foreground text-sm">An assignee or a manager can create it.</p>
       )}
     </section>
+  );
+}
+
+/** Board, Blocks and Outline for the home's three phases, or one page of rows. */
+function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, title, parentNodeId }: {
+  view: Exclude<ChecklistView, 'table'>;
+  sections: readonly ChecklistHomeSection[];
+  rollup: ChecklistRollup;
+  checklistId: string;
+  ctx: CardContext;
+  addRow: (section: ChecklistSection) => React.ReactNode;
+  /** A page of rows: its heading instead of the phase name, and the row it is under. */
+  title?: string;
+  parentNodeId?: string;
+}) {
+  if (view === 'outline') return <ChecklistOutline groups={sections} ctx={ctx} />;
+  const heading = (home: ChecklistHomeSection) => (
+    <PhaseHeading id={`${checklistId}-${home.section}`} title={title ?? SECTION_TITLES[home.section].title} summary={title ? undefined : rollup.sections[home.section]} />
+  );
+  const paging = (home: ChecklistHomeSection) => (
+    <Paging taskTag={ctx.task.taskTag} address={{ checklistId, parentNodeId, section: home.section }} cursor={home.cursor} nextCursor={home.nextCursor} />
+  );
+  if (view === 'board') {
+    return (
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        {sections.map((home) => (
+          <section key={home.section} id={home.section} aria-labelledby={`${checklistId}-${home.section}`} className="bg-muted/50 grid gap-3 rounded-2xl p-3 sm:p-4">
+            {heading(home)}
+            {home.rows.length ? home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} />)
+              : <p className="text-muted-foreground text-sm">No rows yet. An empty phase counts as N/A.</p>}
+            {paging(home)}
+            {addRow(home.section)}
+          </section>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="grid gap-6">
+      {sections.map((home) => (
+        <section key={home.section} id={home.section} aria-labelledby={`${checklistId}-${home.section}`} className="grid gap-3">
+          {heading(home)}
+          {home.rows.length ? (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} large={!!row.ownedChecklistId || !!row.linkedTaskId} />)}
+            </div>
+          ) : <p className="text-muted-foreground text-sm">No rows yet. An empty phase counts as N/A.</p>}
+          {paging(home)}
+          {addRow(home.section)}
+        </section>
+      ))}
+    </div>
   );
 }

@@ -7,7 +7,7 @@ import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-m
 import { getTaskForChecklist, getTaskWorkspaceData, normalizeTaskTagParam } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
 import { getChecklistBranch, getRunningChecklistTimers, getUnmappedRootRows } from '@/modules/checklists';
-import { CHECKLIST_SECTIONS, checklistWorkHref, parseChecklistLocation, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistItemTime } from '@/modules/checklists/client';
+import { CHECKLIST_SECTIONS, checklistWorkHref, parseChecklistLocation, parseChecklistView, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistItemTime } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistHomeSection } from '@/modules/checklists/components/checklist-workspace';
 import { checklistCommand } from '@/modules/checklists/actions';
 import { createSubMission } from '@/modules/tasks/actions';
@@ -96,6 +96,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       selectedItem={location.item}
       managerTools={manager ? { linkChoices, unmapped } : undefined}
       actions={{ checklist: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer, submission: createSubMission }}
+      view={parseChecklistView((await searchParams).view) ?? 'table'}
       headerActions={<MissionActionsMenu taskId={task.id} taskTag={task.taskTag} variant="button" />}
     />
   );
