@@ -15,7 +15,9 @@ const COMMAND_FIELDS: Record<string, string[]> = {
   state: ['node_id', 'state'],
   edit: ['node_id', 'title', 'section', 'parent_id', 'linked_task_id', 'node_type', 'reason'],
   map: ['node_id', 'section', 'reason'],
-  delete: ['node_id', 'reason'],
+  delete: ['node_id', 'reason', 'with_children'],
+  // Migration 69: swap with the neighbour shown above or below.
+  reorder: ['node_id', 'direction'],
   duplicate: ['node_id'],
   mode: ['enabled', 'reason', 'preview_progress'],
 };
@@ -23,6 +25,7 @@ const COMMAND_FIELDS: Record<string, string[]> = {
 /** Converts one field to its payload value: booleans, an optional preview, or text/null. */
 function fieldValue(key: string, value: string): Json {
   if (key === 'enabled') return value === 'true';
+  if (key === 'with_children') return value === 'true' || value === 'on';
   if (key === 'preview_progress') return value || null;
   return value || null;
 }

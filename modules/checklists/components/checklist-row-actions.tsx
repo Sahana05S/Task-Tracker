@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { CopyIcon, CornerDownRightIcon, ExternalLinkIcon, Link2Icon, MoreHorizontalIcon, MoveIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { CopyIcon, CornerDownRightIcon, ExternalLinkIcon, Link2Icon, MoreHorizontalIcon, MoveIcon, PencilIcon, PlusIcon, Trash2Icon, ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -108,7 +108,21 @@ export function ChecklistRowActions({
             </ul>
           ) : null}
 
-          {kind !== 'linked' && row.section ? (
+          <div role="group" aria-label="Order" className="flex flex-wrap gap-2">
+            {(['up', 'down'] as const).map((direction) => (
+              <ExecutionForm key={direction} action={action} scope={`reorder:${row.id}:${direction}`}>
+                <input type="hidden" name="command" value="reorder" />
+                {hidden}
+                <input type="hidden" name="direction" value={direction} />
+                <Button type="submit" variant="outline" size="sm">
+                  {direction === 'up' ? <ArrowUpIcon aria-hidden="true" /> : <ArrowDownIcon aria-hidden="true" />}
+                  Move {direction}
+                </Button>
+              </ExecutionForm>
+            ))}
+          </div>
+
+          {kind !== 'linked' && kind !== 'quest' && row.section ? (
             <section aria-labelledby={id('add-heading')} className="grid gap-2">
               <h3 id={id('add-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <PlusIcon className="text-primary size-4" aria-hidden="true" />Add a row under this
@@ -201,19 +215,27 @@ export function ChecklistRowActions({
             <h3 id={id('remove-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Trash2Icon className="text-danger size-4" aria-hidden="true" />Remove
             </h3>
-            {row.childCount === 0 ? (
+            {kind === 'quest' && row.childCount > 0 ? (
+              <p className="text-muted-foreground text-sm">Open the Quest and remove its rows first, then the Quest can be removed.</p>
+            ) : (
               <ExecutionForm action={action} scope={`delete:${row.id}`}>
                 <input type="hidden" name="command" value="delete" />
                 {hidden}
+                {kind === 'parent' ? <input type="hidden" name="with_children" value="true" /> : null}
                 <div className="grid gap-3">
+                  {kind === 'parent' ? (
+                    <p className="text-danger text-sm">
+                      The {row.childCount} row{row.childCount === 1 ? '' : 's'} under it go too. Time logged on them is kept.
+                    </p>
+                  ) : null}
                   <Field id={id('remove-reason')} label="Why remove it?" required>
                     <Input id={id('remove-reason')} name="reason" required maxLength={1000} />
                   </Field>
-                  <Button type="submit" variant="destructive" className="justify-self-start">Remove row</Button>
+                  <Button type="submit" variant="destructive" className="justify-self-start">
+                    {kind === 'parent' ? `Remove row and its ${row.childCount} row${row.childCount === 1 ? '' : 's'}` : kind === 'quest' ? 'Remove Quest' : 'Remove row'}
+                  </Button>
                 </div>
               </ExecutionForm>
-            ) : (
-              <p className="text-muted-foreground text-sm">Remove or move the rows under it first, then this row can be removed.</p>
             )}
           </section>
         </div>
