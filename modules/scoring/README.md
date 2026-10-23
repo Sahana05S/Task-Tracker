@@ -35,6 +35,7 @@ Calendar periods (`currentPeriod`, `resolvePeriod`, `AnalyticsPeriod`) live in
 | `performance_source_context`, `claim_performance_jobs`, `finish_performance_job` | `21_performance_sources_and_recomputation.sql` |
 | `award_command`, `award_read_model`, `award_policy_context`, `claim_award_jobs`, `queue_due_awards` | `22_award_runs_and_atomic_commands.sql`, revised in 23 (`queue_due_awards` also 40) |
 | `team_summary_inputs` (read through `shared/read-models/team-summary`) | 11, revised in 13 and 16 |
+| `invalidate_awards()` trigger (re-queues open award days when performance inputs change), `queue_award` | 22, company-scoped in 48; since 60 each open day is invalidated at most once per transaction |
 
 All objects are company-scoped by migrations 39-40 (M15). Award workers send
 each job's company in `x-taskpulse-organization` (`shared/supabase/worker.ts`).
