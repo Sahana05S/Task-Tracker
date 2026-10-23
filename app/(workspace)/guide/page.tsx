@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { GuideIndex } from '@/modules/guide/components/guide-pages';
+import { GuideIndex } from '@/modules/guide/components/guide-index';
 
 export const metadata: Metadata = { title: 'Guide · TaskPulse' };
 
