@@ -194,10 +194,10 @@ BEGIN
       WHEN 'task_detail_sections' THEN (SELECT x.title FROM public.task_detail_sections x WHERE x.id = s.row_id)::text
       WHEN 'task_assignees' THEN (SELECT u.full_name FROM public.users u WHERE u.id = coalesce(
         (SELECT x.user_id FROM public.task_assignees x WHERE x.id = s.row_id),
-        taskpulse_private.activity_uuid(coalesce(s.protected_changes -> 'user_id' ->> 'after', s.protected_changes -> 'user_id' ->> 'before')))))::text
+        taskpulse_private.activity_uuid(coalesce(s.protected_changes -> 'user_id' ->> 'after', s.protected_changes -> 'user_id' ->> 'before'))))::text
       WHEN 'task_reviewers' THEN (SELECT u.full_name FROM public.users u WHERE u.id = coalesce(
         (SELECT x.user_id FROM public.task_reviewers x WHERE x.id = s.row_id),
-        taskpulse_private.activity_uuid(coalesce(s.protected_changes -> 'user_id' ->> 'after', s.protected_changes -> 'user_id' ->> 'before')))))::text
+        taskpulse_private.activity_uuid(coalesce(s.protected_changes -> 'user_id' ->> 'after', s.protected_changes -> 'user_id' ->> 'before'))))::text
       WHEN 'task_dependencies' THEN (SELECT t.task_tag || ' · ' || t.title FROM public.tasks t WHERE t.id = (
         SELECT CASE WHEN o.successor = p_task THEN o.predecessor ELSE o.successor END FROM (
           SELECT coalesce(d.successor_task_id, taskpulse_private.activity_uuid(coalesce(s.detail -> 'successor_task_id' ->> 'after', s.detail -> 'successor_task_id' ->> 'before'))) AS successor,
