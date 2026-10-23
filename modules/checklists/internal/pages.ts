@@ -1,14 +1,9 @@
 import type { ChecklistNode } from '@/types/tracker';
 
 /**
- * Pure helpers for the structure pages (/tasks/[tag]/checklist/manage and
- * /tasks/[tag]/checklist/[nodeId]); daily work uses /tasks/[tag]/checklist.
- * A node is a container when it is a Page or Group or already has children;
- * containers roll up their direct children in ./progress.
+ * Pure helpers for checklist trees. A row is a container once it has rows
+ * under it; containers roll up their direct children in ./progress.
  */
-
-export const checklistHref = (taskTag: string, nodeId?: string) =>
-  `/tasks/${encodeURIComponent(taskTag)}/checklist/${nodeId ?? 'manage'}`;
 
 export function formatMinutes(minutes: number | null | undefined): string | null {
   if (minutes === null || minutes === undefined) return null;
@@ -18,7 +13,7 @@ export function formatMinutes(minutes: number | null | undefined): string | null
 }
 
 export const isContainer = (n: ChecklistNode, nodes: readonly ChecklistNode[]) =>
-  ['Page', 'Group'].includes(n.nodeType) || nodes.some(c => c.parentNodeId === n.id);
+  nodes.some(c => c.parentNodeId === n.id);
 
 export const childrenOf = (id: string | null, nodes: readonly ChecklistNode[]) =>
   nodes.filter(n => n.parentNodeId === id);

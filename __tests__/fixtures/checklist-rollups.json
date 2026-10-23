@@ -1,0 +1,453 @@
+[
+ {
+  "name": "Yes No NA gives 50",
+  "nodes": [
+   {
+    "id": "yes",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "no",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "na",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "N/A"
+   }
+  ],
+  "expectedProgress": 50,
+  "expectedComplete": false
+ },
+ {
+  "name": "Unequal groups retain equal direct weights",
+  "nodes": [
+   {
+    "id": "g1",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Group",
+    "completionState": "No"
+   },
+   {
+    "id": "g2",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Group",
+    "completionState": "No"
+   },
+   {
+    "id": "0",
+    "parentNodeId": "g1",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "1",
+    "parentNodeId": "g1",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "2",
+    "parentNodeId": "g1",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "3",
+    "parentNodeId": "g1",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "bad",
+    "parentNodeId": "g2",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": 50
+ },
+ {
+  "name": "Setup 0 Activity 80 Closure 0",
+  "nodes": [
+   {
+    "id": "setup",
+    "parentNodeId": null,
+    "section": "setup",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "closure",
+    "parentNodeId": null,
+    "section": "closure",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "0",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "1",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "2",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "3",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "4",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": 80,
+  "expectedComplete": false
+ },
+ {
+  "name": "All NA has no percentage",
+  "nodes": [
+   {
+    "id": "na",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "N/A"
+   }
+  ],
+  "expectedProgress": null,
+  "expectedComplete": true,
+  "expectedActivityState": "not_applicable"
+ },
+ {
+  "name": "Empty sections are N/A and never block Done",
+  "nodes": [],
+  "expectedProgress": null,
+  "expectedComplete": true,
+  "expectedActivityState": "not_applicable"
+ },
+ {
+  "name": "No checklist blocks completion",
+  "nodes": [],
+  "expectedProgress": null,
+  "expectedComplete": false,
+  "expectedActivityState": "missing",
+  "noChecklist": true
+ },
+ {
+  "name": "Linked 50 never complete",
+  "nodes": [
+   {
+    "id": "link",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No",
+    "linkedTaskId": "task",
+    "progressPercentage": 50,
+    "linkedStatus": "In Progress"
+   }
+  ],
+  "expectedProgress": 50,
+  "expectedComplete": false
+ },
+ {
+  "name": "Linked 100 is not automatically Done",
+  "nodes": [
+   {
+    "id": "link",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No",
+    "linkedTaskId": "task",
+    "progressPercentage": 100,
+    "linkedStatus": "In Progress"
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": false
+ },
+ {
+  "name": "Linked Done 100 is complete",
+  "nodes": [
+   {
+    "id": "link",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No",
+    "linkedTaskId": "task",
+    "progressPercentage": 100,
+    "linkedStatus": "Done"
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": true
+ },
+ {
+  "name": "Linked Done 50 surfaces mismatch",
+  "nodes": [
+   {
+    "id": "link",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No",
+    "linkedTaskId": "task",
+    "progressPercentage": 50,
+    "linkedStatus": "Done"
+   }
+  ],
+  "expectedProgress": null,
+  "expectedError": "linked_done_mismatch",
+  "expectedComplete": false
+ },
+ {
+  "name": "Missing linked inputs are unavailable",
+  "nodes": [
+   {
+    "id": "link",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Task",
+    "completionState": "No",
+    "linkedTaskId": "missing",
+    "progressPercentage": null
+   }
+  ],
+  "expectedProgress": null,
+  "expectedError": "linked_unavailable"
+ },
+ {
+  "name": "Rootless cycle is an error",
+  "nodes": [
+   {
+    "id": "a",
+    "parentNodeId": "b",
+    "section": "activity",
+    "nodeType": "Group",
+    "completionState": "No"
+   },
+   {
+    "id": "b",
+    "parentNodeId": "a",
+    "section": "activity",
+    "nodeType": "Group",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": null,
+  "expectedError": "cycle"
+ },
+ {
+  "name": "Missing parent is an error",
+  "nodes": [
+   {
+    "id": "a",
+    "parentNodeId": "missing",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": null,
+  "expectedError": "missing_parent"
+ },
+ {
+  "name": "Unsectioned originals need review",
+  "nodes": [
+   {
+    "id": "a",
+    "parentNodeId": null,
+    "section": null,
+    "nodeType": "Item",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": null,
+  "expectedError": "unsectioned"
+ },
+ {
+  "name": "Retain intermediate thirds",
+  "nodes": [
+   {
+    "id": "yes",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "no",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "no2",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": 33.333333333333336
+ },
+ {
+  "name": "A ticked row with rows under it follows them",
+  "nodes": [
+   {
+    "id": "p",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "c",
+    "parentNodeId": "p",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": 0,
+  "expectedComplete": false
+ },
+ {
+  "name": "An N/A row with rows under it follows them",
+  "nodes": [
+   {
+    "id": "p",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "N/A"
+   },
+   {
+    "id": "c",
+    "parentNodeId": "p",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": true
+ },
+ {
+  "name": "An empty nested row is an open leaf, not an error",
+  "nodes": [
+   {
+    "id": "page",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Page",
+    "completionState": "No"
+   },
+   {
+    "id": "empty",
+    "parentNodeId": "page",
+    "section": "activity",
+    "nodeType": "Page",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": 0,
+  "expectedComplete": false,
+  "expectedNoErrors": true
+ },
+ {
+  "name": "Rows nest under items as deep as needed",
+  "nodes": [
+   {
+    "id": "a",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "b",
+    "parentNodeId": "a",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "c",
+    "parentNodeId": "b",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "d",
+    "parentNodeId": "a",
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "N/A"
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": true,
+  "expectedNoErrors": true
+ },
+ {
+  "name": "Setup and Closure rows gate completion but not progress",
+  "nodes": [
+   {
+    "id": "s",
+    "parentNodeId": null,
+    "section": "setup",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "a",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": false
+ }
+]

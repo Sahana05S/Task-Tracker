@@ -14,9 +14,9 @@ describe('checklist workspace addresses', () => {
   it('rejects malformed query values before requesting a branch', () => {
     expect(parseChecklistLocation({ checklist: ['bad'], parent: 'bad', item: 'bad', section: 'bad', cursor: '-1' })).toEqual({ checklistId: undefined, parentNodeId: undefined, section: 'activity', cursor: 0, limit: 30, item: undefined });
   });
-  it('opens owned Sub-mission checklists and ordinary pages differently', () => {
-    const page = { id: parent, checklistId: checklist, section: 'closure', ownedChecklistId: null } as ChecklistBranchRow;
-    expect(openChecklistRow(page)).toEqual({ checklistId: checklist, parentNodeId: parent, section: 'closure' });
-    expect(openChecklistRow({ ...page, ownedChecklistId: item })).toEqual({ checklistId: item, section: 'activity' });
+  it('opens the rows under any row in that row\'s own section', () => {
+    const row = { id: parent, checklistId: checklist, section: 'closure' } as ChecklistBranchRow;
+    expect(openChecklistRow(row)).toEqual({ checklistId: checklist, parentNodeId: parent, section: 'closure' });
+    expect(openChecklistRow({ ...row, section: null })).toEqual({ checklistId: checklist, parentNodeId: parent, section: 'activity' });
   });
 });

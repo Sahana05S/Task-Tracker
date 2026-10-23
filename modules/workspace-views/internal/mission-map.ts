@@ -4,7 +4,7 @@
 // branches open above or below it); siblings spread wider there because a
 // label is wider than it is tall.
 
-export type MapKind = 'mission' | 'submission' | 'page' | 'item' | 'more';
+export type MapKind = 'mission' | 'page' | 'item' | 'more';
 export type MapOrientation = 'vertical' | 'horizontal';
 export interface MapEntity {
   id: string;

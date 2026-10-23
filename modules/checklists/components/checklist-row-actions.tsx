@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
-import { CopyIcon, ExternalLinkIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { CopyIcon, CornerDownRightIcon, ExternalLinkIcon, Link2Icon, MoreHorizontalIcon, MoveIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -11,7 +10,7 @@ import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/ui/sheet';
 import { formatMinutes } from '../internal/pages';
-import { ROW_KIND_LABELS, rowKind } from '../internal/table';
+import { rowKind } from '../internal/table';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { ChecklistVersionField } from './checklist-state-control';
 import type { ActionResponse } from '@/types/tracker';
@@ -21,13 +20,14 @@ type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 /** The serialisable part of a row the sheet needs. */
 export type ChecklistActionRow = Pick<ChecklistBranchRow,
   'id' | 'checklistId' | 'parentNodeId' | 'nodeType' | 'title' | 'description' | 'section' | 'links'
-  | 'estimatedMinutes' | 'elapsedSeconds' | 'isSubMission' | 'childCount' | 'linkedTaskId'>;
+  | 'estimatedMinutes' | 'elapsedSeconds' | 'childCount' | 'linkedTaskId'>;
+
+const SELECT = 'border-input bg-card text-foreground focus-visible:ring-ring h-10 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-2';
 
 /**
- * The row menu: details, then rename / links / estimate, duplicate and remove.
- * Built on the client from the row itself, so a closed menu adds nothing to
- * the page. Changes that move a row, map it or link a real mission stay on the
- * manager's structure page.
+ * The row menu: add a row under this one, edit, move, link (managers),
+ * duplicate and remove. Built on the client from the row itself, so a closed
+ * menu adds nothing to the page.
  */
 export function ChecklistRowActions({
   row,
@@ -35,15 +35,20 @@ export function ChecklistRowActions({
   version,
   action,
   defaultOpen = false,
-  structureHref,
+  manager,
+  moveTargets,
+  linkChoices,
 }: {
   row: ChecklistActionRow;
   taskId: string;
   version: number;
   action: Command;
   defaultOpen?: boolean;
-  /** Managers only: where mapping and linked missions are changed. */
-  structureHref?: string;
+  manager: boolean;
+  /** Rows in the same section this row may move under, plus the top level (id null). */
+  moveTargets: readonly { id: string | null; title: string }[];
+  /** Missions a manager may link this row to. */
+  linkChoices: readonly { id: string; taskTag: string; title: string }[];
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
   const kind = rowKind(row);
@@ -58,6 +63,19 @@ export function ChecklistRowActions({
       <ChecklistVersionField fallback={version} />
     </>
   );
+  // Every edit resends the row's place, link and type, which the command would otherwise clear.
+  const place = (parentId: string | null, linkedTaskId: string | null) => (
+    <>
+      <input type="hidden" name="command" value="edit" />
+      {hidden}
+      <input type="hidden" name="section" value={row.section ?? ''} />
+      <input type="hidden" name="parent_id" value={parentId ?? ''} />
+      <input type="hidden" name="linked_task_id" value={linkedTaskId ?? ''} />
+      <input type="hidden" name="node_type" value={linkedTaskId || row.nodeType === 'Task' ? 'Item' : row.nodeType} />
+    </>
+  );
+  const targets = moveTargets.filter(target => target.id !== row.parentNodeId);
+  const summary = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside` : kind === 'linked' ? 'Follows a linked mission' : 'Row';
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -68,7 +86,7 @@ export function ChecklistRowActions({
       </SheetTrigger>
       <SheetContent side="right" className="w-full gap-0 sm:max-w-md">
         <SheetHeader className="pr-12">
-          <p className="text-muted-foreground text-xs font-semibold">{ROW_KIND_LABELS[kind]}</p>
+          <p className="text-muted-foreground text-xs font-semibold">{summary}</p>
           <SheetTitle className="text-foreground text-lg font-bold tracking-tight break-words">{row.title}</SheetTitle>
           <SheetDescription className="text-muted-foreground">
             {[estimate ? `Estimated ${estimate}` : null, logged ? `${logged} logged` : 'No time logged yet'].filter(Boolean).join(' · ')}
@@ -90,50 +108,84 @@ export function ChecklistRowActions({
             </ul>
           ) : null}
 
-          {row.linkedTaskId ? (
-            <p className="text-muted-foreground text-sm">
-              This row follows a linked mission, so it is changed on the structure page.
-            </p>
-          ) : (
-            <section aria-labelledby={id('edit-heading')} className="grid gap-3">
-              <h3 id={id('edit-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
-                <PencilIcon className="text-primary size-4" aria-hidden="true" />Edit
+          {kind !== 'linked' && row.section ? (
+            <section aria-labelledby={id('add-heading')} className="grid gap-2">
+              <h3 id={id('add-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
+                <PlusIcon className="text-primary size-4" aria-hidden="true" />Add a row under this
               </h3>
-              <ExecutionForm action={action} scope={`edit:${row.id}`}>
-                <input type="hidden" name="command" value="edit" />
-                {hidden}
-                <input type="hidden" name="section" value={row.section ?? ''} />
-                <input type="hidden" name="parent_id" value={row.parentNodeId ?? ''} />
-                <input type="hidden" name="linked_task_id" value="" />
-                <input type="hidden" name="node_type" value={row.nodeType} />
-                <div className="grid gap-3">
-                  <Field id={id('title')} label="Title" required>
-                    <Input id={id('title')} name="title" defaultValue={row.title} required maxLength={500} />
-                  </Field>
-                  <Field id={id('links')} label="Links" hint="One web address per line, up to ten.">
-                    <Textarea id={id('links')} name="links" defaultValue={row.links.join('\n')} rows={2} placeholder="https://" />
-                  </Field>
-                  {kind === 'item' ? (
-                    <Field id={id('estimate')} label="Estimated minutes">
-                      <Input id={id('estimate')} name="estimated_minutes" type="number" min={0} max={100000} step={1} inputMode="numeric" defaultValue={row.estimatedMinutes ?? ''} className="tabular-nums" />
-                    </Field>
-                  ) : null}
-                  <Field id={id('reason')} label="Why are you changing it?" hint="Kept with the checklist history." required>
-                    <Input id={id('reason')} name="reason" required maxLength={1000} />
-                  </Field>
-                  <Button type="submit" className="justify-self-start">Save changes</Button>
+              <p className="text-muted-foreground text-sm">
+                {kind === 'parent' ? 'Its progress is the average of the rows under it.' : 'Once it has rows under it, its progress becomes their average instead of its own tick.'}
+              </p>
+              <ExecutionForm action={action} scope={`add-under:${row.id}`}>
+                <input type="hidden" name="command" value="add" />
+                <input type="hidden" name="checklist_id" value={row.checklistId} />
+                <input type="hidden" name="taskId" value={taskId} />
+                <ChecklistVersionField fallback={version} />
+                <input type="hidden" name="section" value={row.section} />
+                <input type="hidden" name="parent_id" value={row.id} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <label htmlFor={id('add-title')} className="sr-only">Title of the new row</label>
+                  <Input id={id('add-title')} name="title" required maxLength={500} placeholder="Row title" className="h-9 min-w-40 flex-1" />
+                  <Button type="submit" size="sm" className="h-9"><PlusIcon aria-hidden="true" />Add</Button>
                 </div>
               </ExecutionForm>
             </section>
-          )}
+          ) : null}
 
-          {!row.isSubMission && !row.linkedTaskId ? (
+          <section aria-labelledby={id('edit-heading')} className="soft-divider grid gap-3 pt-5">
+            <h3 id={id('edit-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
+              <PencilIcon className="text-primary size-4" aria-hidden="true" />Edit
+            </h3>
+            <ExecutionForm action={action} scope={`edit:${row.id}`}>
+              {place(row.parentNodeId, row.linkedTaskId)}
+              <div className="grid gap-3">
+                <Field id={id('title')} label="Title" required>
+                  <Input id={id('title')} name="title" defaultValue={row.title} required maxLength={500} />
+                </Field>
+                <Field id={id('links')} label="Links" hint="One web address per line, up to ten.">
+                  <Textarea id={id('links')} name="links" defaultValue={row.links.join('\n')} rows={2} placeholder="https://" />
+                </Field>
+                {kind === 'item' ? (
+                  <Field id={id('estimate')} label="Estimated minutes">
+                    <Input id={id('estimate')} name="estimated_minutes" type="number" min={0} max={100000} step={1} inputMode="numeric" defaultValue={row.estimatedMinutes ?? ''} className="tabular-nums" />
+                  </Field>
+                ) : null}
+                <Field id={id('reason')} label="Why are you changing it?" hint="Kept with the checklist history." required>
+                  <Input id={id('reason')} name="reason" required maxLength={1000} />
+                </Field>
+                <Button type="submit" className="justify-self-start">Save changes</Button>
+              </div>
+            </ExecutionForm>
+          </section>
+
+          {targets.length && row.section ? (
+            <section aria-labelledby={id('move-heading')} className="soft-divider grid gap-3 pt-5">
+              <h3 id={id('move-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
+                <MoveIcon className="text-primary size-4" aria-hidden="true" />Move
+              </h3>
+              <MoveForm row={row} targets={targets} action={action} place={place} id={id} />
+            </section>
+          ) : null}
+
+          {manager && (kind === 'item' || kind === 'linked') ? (
+            <section aria-labelledby={id('link-heading')} className="soft-divider grid gap-3 pt-5">
+              <h3 id={id('link-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
+                <Link2Icon className="text-primary size-4" aria-hidden="true" />{kind === 'linked' ? 'Linked mission' : 'Link to a mission'}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {kind === 'linked' ? 'This row follows that mission’s progress and completes when it is Done.' : 'The row then follows that mission’s progress and completes when it is Done.'}
+              </p>
+              <LinkForm row={row} kind={kind} choices={linkChoices} action={action} place={place} id={id} />
+            </section>
+          ) : null}
+
+          {kind !== 'linked' ? (
             <section aria-labelledby={id('copy-heading')} className="soft-divider grid gap-2 pt-5">
               <h3 id={id('copy-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <CopyIcon className="text-primary size-4" aria-hidden="true" />Duplicate
               </h3>
               <p className="text-muted-foreground text-sm">
-                {row.childCount ? 'Copies this page and every row inside it' : 'Copies this row'}, right after it, as new work set to No.
+                {row.childCount ? 'Copies this row and every row under it' : 'Copies this row'}, right after it, as new work set to No.
               </p>
               <ExecutionForm action={action} scope={`duplicate:${row.id}`}>
                 <input type="hidden" name="command" value="duplicate" />
@@ -157,25 +209,73 @@ export function ChecklistRowActions({
                   <Field id={id('remove-reason')} label="Why remove it?" required>
                     <Input id={id('remove-reason')} name="reason" required maxLength={1000} />
                   </Field>
-                  <Button type="submit" variant="destructive" className="justify-self-start">
-                    Remove {row.isSubMission ? 'Sub-mission' : 'row'}
-                  </Button>
+                  <Button type="submit" variant="destructive" className="justify-self-start">Remove row</Button>
                 </div>
               </ExecutionForm>
             ) : (
-              <p className="text-muted-foreground text-sm">
-                Remove the rows inside first, then this {row.isSubMission ? 'Sub-mission' : 'page'} can be removed.
-              </p>
+              <p className="text-muted-foreground text-sm">Remove or move the rows under it first, then this row can be removed.</p>
             )}
           </section>
-
-          {structureHref ? (
-            <Link href={structureHref} className="link soft-divider pt-5 text-sm font-semibold">
-              Move, map or link this row on the structure page
-            </Link>
-          ) : null}
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+type Place = (parentId: string | null, linkedTaskId: string | null) => React.ReactNode;
+
+function MoveForm({ row, targets, action, place, id }: {
+  row: ChecklistActionRow;
+  targets: readonly { id: string | null; title: string }[];
+  action: Command;
+  place: Place;
+  id: (name: string) => string;
+}) {
+  const [target, setTarget] = React.useState(targets[0]?.id ?? '');
+  return (
+    <ExecutionForm action={action} scope={`move:${row.id}`}>
+      {place(target || null, row.linkedTaskId)}
+      <div className="grid gap-3">
+        <Field id={id('move-target')} label="Move under">
+          <select id={id('move-target')} value={target} onChange={event => setTarget(event.target.value)} className={SELECT}>
+            {targets.map(option => <option key={option.id ?? 'top'} value={option.id ?? ''}>{option.title}</option>)}
+          </select>
+        </Field>
+        <Field id={id('move-reason')} label="Why move it?" hint="Kept with the checklist history." required>
+          <Input id={id('move-reason')} name="reason" required maxLength={1000} />
+        </Field>
+        <Button type="submit" variant="outline" className="justify-self-start"><CornerDownRightIcon aria-hidden="true" />Move row</Button>
+      </div>
+    </ExecutionForm>
+  );
+}
+
+function LinkForm({ row, kind, choices, action, place, id }: {
+  row: ChecklistActionRow;
+  kind: 'item' | 'linked';
+  choices: readonly { id: string; taskTag: string; title: string }[];
+  action: Command;
+  place: Place;
+  id: (name: string) => string;
+}) {
+  const [mission, setMission] = React.useState(row.linkedTaskId ?? choices[0]?.id ?? '');
+  if (kind === 'item' && !choices.length) return <p className="text-muted-foreground text-sm">No other mission is available to link.</p>;
+  return (
+    <ExecutionForm action={action} scope={`link:${row.id}`}>
+      {place(row.parentNodeId, kind === 'linked' ? null : mission || null)}
+      <div className="grid gap-3">
+        {kind === 'item' ? (
+          <Field id={id('link-mission')} label="Mission">
+            <select id={id('link-mission')} value={mission} onChange={event => setMission(event.target.value)} className={SELECT}>
+              {choices.map(choice => <option key={choice.id} value={choice.id}>{choice.taskTag} · {choice.title}</option>)}
+            </select>
+          </Field>
+        ) : null}
+        <Field id={id('link-reason')} label="Why?" hint="Kept with the checklist history." required>
+          <Input id={id('link-reason')} name="reason" required maxLength={1000} />
+        </Field>
+        <Button type="submit" variant="outline" className="justify-self-start">{kind === 'linked' ? 'Unlink mission' : 'Link mission'}</Button>
+      </div>
+    </ExecutionForm>
   );
 }

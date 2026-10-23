@@ -283,23 +283,6 @@ function OperationFields({
         </>
       ) : null}
 
-      {command === 'section' ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field id={id('section')} label="Section">
-            <NativeSelect id={id('section')} name="section" defaultValue="setup">
-              <option value="setup">Setup</option>
-              <option value="activity">Activity</option>
-              <option value="closure">Closure</option>
-            </NativeSelect>
-          </Field>
-          <Field id={id('empty')} label="Confirm as">
-            <NativeSelect id={id('empty')} name="intentionalEmpty" defaultValue="false">
-              <option value="false">Initialized, keep leaf work</option>
-              <option value="true">Intentionally empty</option>
-            </NativeSelect>
-          </Field>
-        </div>
-      ) : null}
     </>
   );
 }
@@ -314,7 +297,6 @@ export function buildPayload(command: ToolOperation, tasks: readonly Task[], for
   for (const [name, value] of form.entries()) {
     if (typeof value !== 'string' || value.trim() === '') continue;
     if (NUMERIC_FIELDS.has(name)) payload[name] = Number(value);
-    else if (name === 'intentionalEmpty') payload[name] = value === 'true';
     else payload[name] = value.trim();
   }
   return payload;

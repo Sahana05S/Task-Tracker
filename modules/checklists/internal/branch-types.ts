@@ -9,8 +9,6 @@ export interface ChecklistBranchOptions {
   limit?: number;
 }
 export interface ChecklistBranchRow extends ChecklistNode {
-  ownedChecklistId: string | null;
-  isSubMission: boolean;
   priority: number;
   childCount: number;
   progressPercentage: number | null;
@@ -20,7 +18,6 @@ export interface ChecklistAncestor {
   nodeId: string;
   checklistId: string;
   title: string;
-  ownedChecklistId: string | null;
 }
 export interface ChecklistBranch {
   taskId: string;

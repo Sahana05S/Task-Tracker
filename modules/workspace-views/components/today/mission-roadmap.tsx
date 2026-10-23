@@ -171,7 +171,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
         <li><button type="button" onClick={overview} className={cn('hover:text-primary rounded px-1 py-1 font-medium', FOCUS)}>My missions</button></li>
         <li aria-hidden="true"><ChevronRightIcon className="size-3.5" /></li>
         <li><button type="button" className={cn('text-foreground hover:text-primary max-w-60 truncate rounded px-1 py-1 font-semibold', FOCUS)} onClick={() => open({ missionId: location.missionId })}>{mission?.taskTag ?? 'Mission'}</button></li>
-        {branch?.ancestors.map(ancestor => <li key={ancestor.nodeId} className="flex min-w-0 items-center gap-1"><ChevronRightIcon className="size-3.5 shrink-0" aria-hidden="true" /><button type="button" onClick={() => open({ missionId: location.missionId, ...branchForRow({ id: ancestor.nodeId, checklistId: ancestor.checklistId, ownedChecklistId: ancestor.ownedChecklistId }) })} className={cn('hover:text-primary max-w-48 truncate rounded px-1 py-1', FOCUS)}>{ancestor.title}</button></li>)}
+        {branch?.ancestors.map(ancestor => <li key={ancestor.nodeId} className="flex min-w-0 items-center gap-1"><ChevronRightIcon className="size-3.5 shrink-0" aria-hidden="true" /><button type="button" onClick={() => open({ missionId: location.missionId, ...branchForRow({ id: ancestor.nodeId, checklistId: ancestor.checklistId, section: branch.section }) })} className={cn('hover:text-primary max-w-48 truncate rounded px-1 py-1', FOCUS)}>{ancestor.title}</button></li>)}
       </ol>
     </nav> : null}
     <div className={cn('mt-4 grid min-w-0 gap-5', selected && 'xl:grid-cols-[minmax(0,1fr)_340px]')}>
@@ -234,7 +234,7 @@ function BranchRow({ row, missionId, view, selectedId, onSelect, onZoom, offset 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const options = branchForRow(row);
-  const expandable = row.childCount > 0 || row.isSubMission || ['Page', 'Group'].includes(row.nodeType);
+  const expandable = row.childCount > 0;
   function load(append = false) {
     setError(null);
     startTransition(async () => {
@@ -250,7 +250,7 @@ function BranchRow({ row, missionId, view, selectedId, onSelect, onZoom, offset 
     <div className={cn('flex min-w-0 items-start gap-1 rounded-xl px-1 py-1', selectedId === row.id ? 'bg-primary-subtle/60' : 'hover:bg-muted/70')}>
       {view === 'roadmap' ? <span aria-hidden="true" className={cn('bg-card text-muted-foreground absolute top-4 left-0 flex size-4 items-center justify-center', row.isComplete && 'text-success-strong')}>{row.isComplete ? <CheckIcon className="size-4" /> : <CircleIcon className="size-3" />}</span> : null}
       {expandable ? <Button variant="ghost" size="icon" className="mt-1 size-8" aria-label={`${expanded ? 'Collapse' : 'Expand'} ${row.title}`} aria-expanded={expanded} disabled={pending} onClick={() => { setExpanded(!expanded); if (!expanded && !branch) load(); }}>{expanded ? <ChevronDownIcon className="size-4" aria-hidden="true" /> : <ChevronRightIcon className="size-4" aria-hidden="true" />}</Button> : <span className="w-8 shrink-0" aria-hidden="true" />}
-      <button type="button" data-roadmap-node={row.id} onClick={event => onSelect(row, event.currentTarget, offset)} aria-pressed={selectedId === row.id} className={cn('grid min-w-0 flex-1 gap-1.5 rounded-lg px-1 py-2 text-left', FOCUS)}><span className="text-foreground break-words text-sm font-medium">{row.title}</span><span className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">{row.isSubMission ? <span className="text-primary-subtle-foreground font-semibold">Sub-mission</span> : null}{row.isSubMission && row.priority > 0 ? <span>Priority {row.priority}</span> : null}<span>{row.applicable ? row.isComplete ? 'Complete' : 'In progress' : 'N/A'}</span><Progress value={row.progressPercentage} />{row.childCount ? <span>{row.childCount} items</span> : null}</span></button>
+      <button type="button" data-roadmap-node={row.id} onClick={event => onSelect(row, event.currentTarget, offset)} aria-pressed={selectedId === row.id} className={cn('grid min-w-0 flex-1 gap-1.5 rounded-lg px-1 py-2 text-left', FOCUS)}><span className="text-foreground break-words text-sm font-medium">{row.title}</span><span className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs"><span>{row.applicable ? row.isComplete ? 'Complete' : 'In progress' : 'N/A'}</span><Progress value={row.progressPercentage} />{row.childCount ? <span>{row.childCount} row{row.childCount === 1 ? '' : 's'} inside</span> : null}</span></button>
       {expandable ? <Button variant="ghost" size="icon" className="mt-1 size-8" aria-label={`Focus ${row.title} branch`} onClick={() => onZoom(options)}><FocusIcon className="size-4" aria-hidden="true" /></Button> : null}
     </div>
     {expanded ? <div className="border-border ml-4 min-w-0 border-l pl-2 sm:pl-3">

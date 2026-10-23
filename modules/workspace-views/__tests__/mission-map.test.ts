@@ -15,7 +15,7 @@ describe('mission map layout', () => {
 
   it('opens each branch on its mission side, through nested levels', () => {
     const { nodes, edges } = layoutMissionMap(missions, [
-      { parentId: 'm1', children: [entity('sub', 'submission'), entity('a')] },
+      { parentId: 'm1', children: [entity('sub', 'page'), entity('a')] },
       { parentId: 'sub', children: [entity('deep')] },
     ]);
     const m1 = nodes.find(n => n.id === 'm1')!, sub = nodes.find(n => n.id === 'sub')!, deep = nodes.find(n => n.id === 'deep')!;
@@ -58,7 +58,7 @@ describe('mission map layout', () => {
 
 describe('horizontal mission map', () => {
   const levels = [
-    { parentId: 'm1', children: [entity('sub', 'submission'), entity('a'), entity('b')] },
+    { parentId: 'm1', children: [entity('sub', 'page'), entity('a'), entity('b')] },
     { parentId: 'sub', children: [entity('deep'), entity('deeper')] },
   ];
   const vertical = layoutMissionMap(missions, levels);

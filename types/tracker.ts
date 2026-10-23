@@ -466,8 +466,6 @@ export interface TaskChecklist {
 /** Row of `public.checklist_nodes` — hierarchical equal-weight checklist item. */
 export interface ChecklistNode {
   id: string;
-  ownedChecklistId?: string | null;
-  isSubMission?: boolean;
   priority?: number;
   checklistId: string;
   parentNodeId: string | null;

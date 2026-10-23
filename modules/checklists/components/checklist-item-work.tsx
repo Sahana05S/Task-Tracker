@@ -16,7 +16,7 @@ export function ChecklistItemWork({ task, node, time, actions, onOpen, onCommitt
   onOpen: () => void;
   onCommitted: () => void;
 }) {
-  const container = node.isSubMission || node.childCount > 0 || ['Page', 'Group'].includes(node.nodeType);
+  const container = node.childCount > 0;
   const wrap = (action: Command): Command => async form => {
     form.set('checklist_id', node.checklistId);
     const result = await action(form);
@@ -32,7 +32,7 @@ export function ChecklistItemWork({ task, node, time, actions, onOpen, onCommitt
       {!container ? <><dt>Logged on this item</dt><dd className="text-right">{time?.available && seconds !== undefined ? `${formatHours(seconds / 3600)} h` : 'Unavailable'}</dd></> : null}
     </dl>
     {node.links.length ? <ul className="grid gap-2 text-sm">{node.links.map((href, index) => <li key={`${href}:${index}`}><a href={href} target="_blank" rel="noopener noreferrer" className="text-primary break-all underline underline-offset-4">Work link {index + 1}</a></li>)}</ul> : null}
-    {container ? <><p className="text-muted-foreground text-sm">{node.isSubMission ? 'This Sub-mission inherits the mission owners and deadline. Its checklist controls progress and completion.' : 'Progress follows the items inside this checklist.'}</p><button type="button" onClick={onOpen} className={cn(buttonVariants(), 'px-4')}>Open checklist</button></> : <>
+    {container ? <><p className="text-muted-foreground text-sm">Progress is the average of the {node.childCount} row{node.childCount === 1 ? '' : 's'} under it.</p><button type="button" onClick={onOpen} className={cn(buttonVariants(), 'px-4')}>Open rows</button></> : <>
       <CompletionForm ctx={{ action: wrap(actions.state), task, checklistId: node.checklistId }} node={node} className="grid gap-2" />
       {time ? <ItemTimerControls ctx={{ task, open: true, time: { info: time, canStart: true, start: wrap(actions.start), stop: wrap(actions.stop), discard: wrap(actions.discard) } }} node={node} /> : <p role="status" className="text-muted-foreground text-xs">Loading item time…</p>}
       {time && !time.available ? <p className="text-muted-foreground text-xs">Time per item isn’t available on this workspace yet.</p> : null}

@@ -20,9 +20,9 @@ export function roadmapSearch(location: RoadmapLocation | null, due: string, vie
   }
   return query.size ? `?${query}` : '/today';
 }
-export function branchForRow(row: { id: string; checklistId: string; ownedChecklistId: string | null }): ChecklistBranchOptions {
-  return row.ownedChecklistId ? { checklistId: row.ownedChecklistId, section: 'activity' }
-    : { checklistId: row.checklistId, parentNodeId: row.id };
+/** The branch of rows under a row, in the row's own section. */
+export function branchForRow(row: { id: string; checklistId: string; section?: ChecklistBranchOptions['section'] | null }): ChecklistBranchOptions {
+  return { checklistId: row.checklistId, parentNodeId: row.id, section: row.section ?? 'activity' };
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

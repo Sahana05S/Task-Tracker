@@ -7,7 +7,6 @@ export function revalidateAfterChecklistChange(): void {
   revalidatePath('/task-tools');
   revalidatePath('/tasks/[taskTag]', 'page');
   revalidatePath('/tasks/[taskTag]/checklist', 'page');
-  revalidatePath('/tasks/[taskTag]/checklist/manage', 'page');
   revalidatePath('/tasks/[taskTag]/checklist/[nodeId]', 'page');
   revalidatePath('/dashboard');
   revalidatePath('/team');

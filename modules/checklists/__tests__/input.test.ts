@@ -1,37 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import { parseChecklistCommand } from '../internal/input';
 
-function submission(priority = '2') {
-  const form = new FormData();
-  Object.entries({ command: 'submission', taskId: 'task', expectedVersion: '4',
-    operationId: 'operation', checklist_id: 'owned', title: 'Prepare handoff',
-    description: 'Review deliverables', section: 'activity', parent_id: '', priority,
-  }).forEach(([key, value]) => form.set(key, value));
-  return form;
+function form(command: string, fields: Record<string, string>) {
+  const data = new FormData();
+  Object.entries({ command, taskId: 'task', expectedVersion: '4', operationId: 'operation', ...fields })
+    .forEach(([key, value]) => data.set(key, value));
+  return data;
 }
 
-describe('Sub-mission command contract', () => {
-  it('sends the owning checklist and priority without unsupported row detail fields', () => {
-    const form = submission();
-    form.set('links', 'https://example.com');
-    form.set('estimated_minutes', '15');
-    const parsed = parseChecklistCommand(form);
+describe('checklist command contract (one kind of row)', () => {
+  it('adds a row under any row with only a title, section and parent', () => {
+    const parsed = parseChecklistCommand(form('add', { checklist_id: 'list', title: 'Check beams', section: 'activity', parent_id: 'row-1', node_type: 'Page', linked_task_id: 'x' }));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.value.payload).toEqual({ title: 'Prepare handoff', description: 'Review deliverables',
-      section: 'activity', parent_id: null, checklist_id: 'owned', priority: 2 });
+    expect(parsed.value.payload).toEqual({ title: 'Check beams', description: null, section: 'activity', parent_id: 'row-1', checklist_id: 'list' });
+  });
+
+  it('no longer offers Sub-missions or section reviews', () => {
+    expect(parseChecklistCommand(form('submission', { title: 'x', section: 'activity' }))).toEqual({ ok: false, error: 'Unknown checklist action.' });
+    expect(parseChecklistCommand(form('section', { section: 'setup', intentional_empty: 'true', reason: 'x' }))).toEqual({ ok: false, error: 'Unknown checklist action.' });
   });
 
   it('rejects priority outside the supported ordering range', () => {
-    expect(parseChecklistCommand(submission('4'))).toEqual({ ok: false, error: 'Choose a priority from 0 to 3.' });
+    expect(parseChecklistCommand(form('add', { title: 'x', section: 'activity', priority: '4' }))).toEqual({ ok: false, error: 'Choose a priority from 0 to 3.' });
   });
 
-  it('preserves ordinary item links and estimates', () => {
-    const form = submission();
-    form.set('command', 'add');
-    form.set('links', 'https://example.com');
-    form.set('estimated_minutes', '15');
-    const parsed = parseChecklistCommand(form);
+  it('keeps a row\'s link and type when it moves or is edited', () => {
+    const parsed = parseChecklistCommand(form('edit', { node_id: 'row-2', section: 'activity', parent_id: 'row-1', linked_task_id: 'mission', node_type: 'Item', reason: 'belongs there' }));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.payload).toEqual({ node_id: 'row-2', title: null, section: 'activity', parent_id: 'row-1', linked_task_id: 'mission', node_type: 'Item', reason: 'belongs there' });
+  });
+
+  it('preserves links and estimates', () => {
+    const parsed = parseChecklistCommand(form('add', { title: 'x', section: 'activity', links: 'https://example.com', estimated_minutes: '15' }));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.value.payload.links).toEqual(['https://example.com']);

@@ -22,7 +22,7 @@ function sectionStateLabel(section: SectionProgress): string {
   switch (section.state) {
     case 'complete': return 'Complete';
     case 'partial': return 'In progress';
-    case 'not_applicable': return 'Not applicable';
+    case 'not_applicable': return 'No rows (N/A)';
     case 'uninitialized': return 'Not initialized';
     case 'missing': return 'Not set up';
     case 'invalid': return 'Needs attention';
@@ -100,7 +100,7 @@ export function PhaseProgress({ rollup, href }: { rollup?: ChecklistRollup; href
               )}
               <span className="text-muted-foreground ml-auto text-xs">{sectionStateLabel(section)}</span>
               <span className="text-foreground w-10 text-right text-xs font-semibold tabular-nums">
-                {section.state === 'not_applicable' ? '—' : formatPercent(section.progressPercentage)}
+                {section.state === 'not_applicable' ? 'N/A' : formatPercent(section.progressPercentage)}
               </span>
             </div>
             <MissionProgress

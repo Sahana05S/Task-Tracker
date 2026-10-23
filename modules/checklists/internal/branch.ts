@@ -20,10 +20,11 @@ export async function getChecklistBranch(taskId: string, options: ChecklistBranc
   return data as unknown as ChecklistBranch;
 }
 
-/** Sub-mission node id → its owned checklist id, so structure pages can route Sub-missions to their own checklist. */
-export async function getOwnedChecklists(taskId: string): Promise<ReadonlyMap<string, string>> {
+/** Top-level rows with no section yet (older checklists), for the manager's "Needs mapping" list. */
+export async function getUnmappedRootRows(checklistId: string): Promise<{ id: string; title: string }[]> {
   const db = await createClient();
-  const { data, error } = await db.from('task_checklists').select('id,owner_node_id').eq('task_id', taskId).not('owner_node_id', 'is', null);
-  if (error) return new Map();
-  return new Map((data ?? []).map(row => [row.owner_node_id as string, row.id]));
+  const { data, error } = await db.from('checklist_nodes').select('id,title')
+    .eq('checklist_id', checklistId).is('detail_section', null).is('parent_node_id', null).order('sort_order');
+  if (error) throw new Error(`Checklist rows unavailable: ${error.message}`);
+  return data ?? [];
 }

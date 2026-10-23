@@ -83,3 +83,10 @@ The M05 follow-up approvals also settle prospective progress ownership switches.
 The M00 verifier's23 NULL examples remain historical metadata, not23 current
 questions or failed M05 cases. No M05 business answer remains pending; native
 Supabase/API/browser and actual legacy reconciliation are still outstanding.
+
+Migration 63 (23 October 2026): `checklist-rollups.json` holds the current rules
+(one kind of row; a row with rows under it takes their average; empty sections are
+N/A and never block Done; no checklist blocks Done). It is checked by
+`modules/checklists/__tests__/progress.test.ts` and in PostgreSQL by
+`tools/test_m63_checklist_rows_database.py`. `m05-rollups.json` stays as the
+historical M05 evidence for migrations up to 62.

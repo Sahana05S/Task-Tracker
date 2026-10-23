@@ -1,40 +1,51 @@
 # checklists
 
-A mission's master checklist: nested pages (Page/Group/Item rows), Setup /
-Activity / Closure sections, Yes/No/N/A states, per-row links and estimates,
-progress rollups, and the time recorded against checklist items (item timers
-save ordinary task logs tagged with the item).
+A mission's master checklist: one kind of row, nested as deep as needed (the
+sheet's Checklist Home and "[ChL]" tabs), in Setup / Activity / Closure
+sections, with Yes/No/N/A states, per-row links and estimates, progress
+rollups, and the time recorded against checklist items (item timers save
+ordinary task logs tagged with the item).
+
+Since migration 63 (user decisions, 23 October 2026) any row that is not linked
+to a mission can have rows added under it. A row with rows under it takes their
+equal average and opens their table; its own tick is cleared when the first row
+goes under it. A section counts once it has a row; an empty section is N/A and
+does not block Done. Sub-missions, the Page/Group/Item choice, the section
+review step and the separate structure page are gone.
 
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`, `getChecklistBranch`, `getFocusedChecklistItemTime`, `getRunningChecklistTimers`. Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, page-tree helpers (`childrenOf`, `ancestry`, `checklistHref`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours`, table rules (`rowKind`, `stateChoices`, `isSectionRoot`, `pageResult`, `sectionStatus`, `checklistIssues`, `SECTION_TITLES`) |
-| `actions.ts` | `'use server'` `checklistCommand` (create, add, submission, edit, state, map, delete, duplicate, section, mode) |
-| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; a Page's own table), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / No / N/A, commands queued so each sends the latest mission version), `ChecklistRowActions` (row menu sheet: edit, duplicate, remove), `ChecklistAddRow`, `checklist-rows.tsx` (structure-page rows and editors, item timer controls), `RunningClock` |
+| `index.ts` | Server reads: `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`, `getChecklistBranch`, `getUnmappedRootRows`, `getFocusedChecklistItemTime`, `getRunningChecklistTimers`. Also re-exports everything in `client.ts`. |
+| `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, tree helpers (`childrenOf`, `ancestry`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours`, table rules (`rowKind`, `stateChoices`, `opensTable`, `pageResult`, `sectionStatus`, `checklistIssues`, `SECTION_TITLES`), addresses (`checklistWorkHref`, `parseChecklistLocation`, `openChecklistRow`) |
+| `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode) |
+| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / No / N/A, commands queued so each sends the latest mission version), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `checklist-rows.tsx` (item timer and completion controls) |
 
 ## Private (`internal/`)
 
-Daily work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist home with three tables in sheet order (Setup, Activity = Checklist Index, Closure), and a template's section-root page is shown as the section itself; with `parent` it is that page's table (the sheet's "[ChL]" tab). `/checklist/manage` is the manager's structure page (progress owner, mapping, linked missions); `/checklist/[nodeId]` and `/checklist/work` redirect into the table view. Server read `getOwnedChecklists` maps Sub-mission rows to their checklists. Client helpers `checklistWorkHref`, `parseChecklistLocation` and `openChecklistRow` preserve section, page, batch and item addresses. This workspace uses authoritative branch rollups and keeps Sub-mission ownership distinct from ordinary Pages.
+Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist home with three tables in sheet order (Setup, Activity = Checklist Index, Closure); with `parent` it is the table of the rows under that row. `/checklist/manage`, `/checklist/[nodeId]` and `/checklist/work` redirect into it. Client helpers `checklistWorkHref`, `parseChecklistLocation` and `openChecklistRow` preserve section, row, batch and item addresses.
 | File | Job |
 |---|---|
 | `input.ts` | Parses a checklist command form into the RPC payload |
 | `commands.ts` | Calls `checklist_command` |
 | `cache.ts` | Revalidates tasks, checklist pages, Task Tools, dashboard and team |
-| `progress.ts` | Section and node progress rules (contract `m05-checklist-v1`) |
-| `pages.ts` | Nested page tree helpers |
+| `progress.ts` | Section and node progress rules (contract `m05-checklist-v1`, rules of migration 63) |
+| `pages.ts` | Tree helpers |
 | `read-model.ts` | Loads rollups through `checklist_rollups` |
+| `branch.ts` | Bounded branch read (`checklist_branch`) and the unmapped top-level rows |
 | `item-time.ts` | Item timers, today's hours and per-employee item hours (`server-only`) |
 | `item-hours.ts` | Groups item-tagged logs by task and item |
-| `table.ts` | Pure rules for the checklist tables (row kinds, completion choices, section-root detection, page result, readable rollup issues) |
+| `table.ts` | Pure rules for the checklist tables (row kinds, completion choices, page result, readable rollup issues) |
 | `focused-time.ts` | Bounded item-time reads: one item's aggregate, or the running timers for a table |
 
 ## Database it owns
 | Object | Defined in |
 |---|---|
-| `task_checklists`, `checklist_nodes` | `07_tracker_replacement_foundation.sql` (pages and row details in 33-35) |
-| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33 and 35 |
-| `checklist_rollups` | `18_checklist_rollups_and_propagation.sql` |
+| `task_checklists`, `checklist_nodes` | `07_tracker_replacement_foundation.sql` (row details in 33-35; one kind of row in 63) |
+| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43 and 63 |
+| `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63 |
+| `checklist_branch` | 41, patched in 63 (opens any non-linked row) |
+| `checklist_sections` | 18; kept for older readers, no longer read by the rollup (63) |
 | `task_effort_breakdown` | `36_task_effort_breakdown.sql` |
 
 It also reads `daily_task_logs` and `task_timers` (time tracking) for item time.
@@ -45,4 +56,4 @@ All objects are company-scoped by migrations 39-40 (M15).
 The checklist pages themselves stay in `app/(workspace)/tasks/[taskTag]/checklist`
 and use the tasks public API to load the mission.
 
-Recursive Sub-missions own separate `task_checklists.owner_node_id` checklists (41); ordinary Pages stay unchanged. `checklist_branch` returns a bounded branch with authoritative progress and ancestry. `checklist_item_seconds` (42) returns a selected item aggregate only; `focused-time.ts` combines it with at most two timer rows. These APIs preserve root mission time/scoring and inherit its owner/deadline.
+`checklist_branch` returns a bounded branch with authoritative progress and ancestry. `checklist_item_seconds` (42) returns a selected item aggregate only; `focused-time.ts` combines it with at most two timer rows. Migration 63 folded every Sub-mission's rows into its mission (Activity rows under the Sub-mission's row; Setup/Closure rows under a row of the same name in the mission's own Setup/Closure) and keeps `task_checklists.owner_node_id` only as a column that must be NULL.
