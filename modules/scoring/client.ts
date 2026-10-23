@@ -59,18 +59,11 @@ export {
 } from '@/modules/scoring/internal/stars/legacy-scoring';
 export type { AwardDay, AwardHistory, AwardReadModel } from '@/modules/scoring/internal/stars/read-model';
 export {
-  awardDayLabel,
-  awardDateRanges,
   awardDayKind,
-  awardGroupLabel,
-  groupAwardDays,
-  isReasonCode,
+  awardDayLabel,
   mondayIndex,
-  reasonChips,
-  type AwardDayGroup,
+  type AwardDayFacts,
   type AwardDayKind,
-  type ReasonChip,
-  type ReasonChipKey,
 } from '@/modules/scoring/internal/stars/display';
 export type { AwardCommandResponse } from '@/modules/scoring/internal/stars/daily';
 export {

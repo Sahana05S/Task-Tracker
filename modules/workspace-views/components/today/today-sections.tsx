@@ -243,7 +243,7 @@ export function AnalyticsTeaser({ monthLabel }: { monthLabel: string }) {
       <div className="min-w-0 flex-1">
         <p className="eyebrow">Team performance &amp; analytics</p>
         <h2 className="text-foreground mt-1 text-lg font-bold tracking-tight">Team analytics for {monthLabel}</h2>
-        <p className="text-muted-foreground text-sm">KPIs, charts, award coverage and calculation details, including any missing data.</p>
+        <p className="text-muted-foreground text-sm">KPIs, charts and award coverage, including any missing data.</p>
       </div>
       <Link href="/dashboard" className="bg-primary text-primary-foreground hover:bg-primary-hover flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors">
         Explore analytics

@@ -4,7 +4,7 @@ import { GAP_SENTENCE, type DataGap } from '@/modules/reports/client';
 
 /**
  * One plain-language notice for an incomplete month. It replaces the raw reason
- * codes at the top of the dashboard; the codes stay in "Calculation details".
+ * codes at the top of the dashboard; per-person codes stay on each profile.
  * It never claims completeness: if the calculation is incomplete it is shown.
  */
 export function DataStatusBanner({periodLabel,month,gaps,attendanceMissing,canRecordAttendance,historyFrom}:{
@@ -37,12 +37,11 @@ export function DataStatusBanner({periodLabel,month,gaps,attendanceMissing,canRe
       <p className="mt-1.5 text-sm">
         Scores, rankings and awards stay unavailable until then. Partial figures below are labelled.
       </p>
-      <div className="mt-2 flex flex-wrap gap-3 text-sm font-medium">
-        {gaps.includes('attendance') ? (
+      {gaps.includes('attendance') ? (
+        <div className="mt-2 flex flex-wrap gap-3 text-sm font-medium">
           <Link href={`/attendance?month=${month}`} className="underline underline-offset-2">{canRecordAttendance ? 'Fill in attendance' : 'Check your attendance'}</Link>
-        ) : null}
-        <a href="#calculation-details" className="underline underline-offset-2">What&apos;s missing</a>
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }

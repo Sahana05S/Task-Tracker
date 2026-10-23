@@ -70,7 +70,7 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true, attendance
       <StatCard
         label="Scaled credit earned"
         // Two decimals on the tile (approved 15 Oct); six-decimal factor values
-        // remain in Calculation details.
+        // remain on each person's profile.
         value={formatNumeric(totals.scaledProgress)}
         detail={`${totals.eligibleTaskCount} eligible ${
           totals.eligibleTaskCount === 1 ? 'task' : 'tasks'
