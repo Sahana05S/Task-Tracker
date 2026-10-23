@@ -101,11 +101,12 @@ REVOKE ALL ON FUNCTION taskpulse_private.default_user_manager() FROM PUBLIC,anon
 CREATE TRIGGER zy_m65_default_manager BEFORE INSERT ON public.users
  FOR EACH ROW EXECUTE FUNCTION taskpulse_private.default_user_manager();
 
-UPDATE public.users u SET reports_to=d.id
-FROM LATERAL (SELECT m.id FROM public.users m
+UPDATE public.users u SET reports_to=(SELECT m.id FROM public.users m
   WHERE m.organization_id=u.organization_id AND m.role='managing_director' AND m.is_active AND m.id<>u.id
-  ORDER BY m.created_at,m.id LIMIT 1) d
-WHERE u.reports_to IS NULL AND u.role<>'managing_director' AND u.organization_id IS NOT NULL;
+  ORDER BY m.created_at,m.id LIMIT 1)
+WHERE u.reports_to IS NULL AND u.role<>'managing_director' AND u.organization_id IS NOT NULL
+  AND EXISTS(SELECT 1 FROM public.users m
+   WHERE m.organization_id=u.organization_id AND m.role='managing_director' AND m.is_active AND m.id<>u.id);
 
 -- ---------------------------------------------------------------------------
 -- 4. Director command: manager, job title and department
