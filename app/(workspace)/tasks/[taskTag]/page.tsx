@@ -19,7 +19,6 @@ import {
   CategoryBadge,
   FreshnessIndicator,
   PriorityBadge,
-  StatusBadge,
 } from '@/shared/ui/tracker-badges';
 import { getTaskEffortBreakdown } from '@/modules/checklists';
 import { canStartTimerForTask, getTaskExecution } from '@/modules/time-tracking';
@@ -39,6 +38,9 @@ import { EffortPanel } from '@/modules/tasks/components/detail/effort-panel';
 import { TaskLogTimeline } from '@/modules/tasks/components/detail/log-timeline';
 import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
 import { MissionOverview } from '@/modules/tasks/components/detail/mission-overview';
+import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
+import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
+import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { getMissionWaypoints } from '@/modules/recognition';
 import { WaypointCelebration } from '@/modules/recognition/components/waypoint-celebration';
 import { WaypointTrack } from '@/modules/recognition/components/waypoint-track';
@@ -67,7 +69,7 @@ export async function generateMetadata({
   const normalizedTaskTag = normalizeTaskTagParam(taskTag);
 
   return {
-    title: `${normalizedTaskTag ?? 'Mission'} · TaskPulse`,
+    title: `${normalizedTaskTag ?? 'Mission'}`,
   };
 }
 
@@ -139,7 +141,13 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         meta={
           <>
             <CategoryBadge category={task.category} />
-            <StatusBadge status={task.status} />
+            <StatusSelect
+              taskId={task.id}
+              taskTag={task.taskTag}
+              status={task.status}
+              version={task.lifecycleVersion}
+              canEdit={!archived && (canManage || canUpdateTaskOwnFields(currentUser, task))}
+            />
             <PriorityBadge priority={task.priority} />
             <FreshnessIndicator freshness={task.freshness} className="ml-1" />
             {archived ? (
@@ -155,6 +163,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           <>
             <QuickPostTrigger presetTaskId={task.id} label="Post about this mission" />
             {canUseTimer && !closed ? <TimerButton taskId={task.id} taskLabel={task.taskTag} size="default" /> : null}
+            <MissionActionsMenu taskId={task.id} taskTag={task.taskTag} openHref={null} variant="button" />
           </>
         )}
       />
@@ -168,6 +177,17 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           </span>
         </p>
       ) : null}
+
+      {archived ? null : (
+        <MissionStatusBanner
+          taskId={task.id}
+          taskTag={task.taskTag}
+          status={task.status}
+          hasWork={(task.progressPercentage ?? 0) > 0 || data.effort.hoursLogged > 0}
+          readyToFinish={data.checklistRollup?.isComplete === true}
+          canChange={canManage || canUpdateTaskOwnFields(currentUser, task)}
+        />
+      )}
 
       {!archived&&task.reviewerIds.includes(currentUser.id) ? (
         <section className="border-primary/20 bg-primary-subtle/60 rounded-2xl border p-4 sm:p-5" aria-label="Your review">

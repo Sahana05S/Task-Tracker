@@ -65,8 +65,10 @@ for db in DBS:
         assert counts(db)==before
         print('PASS',db,'a failed migration 61 rolls back completely (no column, no function, rows unchanged)')
         sql(db,M61)
-        for n in [n for n in every if n>61]:migrate(db,[n])
+        for n in [n for n in every if 61<n<66]:migrate(db,[n])
         assert counts(db)==before,'61 changes no existing rows'
+        # 66 deliberately recalculates open missions' progress, so it runs after the check.
+        for n in [n for n in every if n>=66]:migrate(db,[n])
         t=task(db,manual)
         assert (t['scale_mode'],float(t['task_scale']),t['scale_inputs'])==('manual',8.0,{'value':8})
         print('PASS',db,'upgrade 01-60 -> 61 keeps every row; an existing manual mission is untouched')

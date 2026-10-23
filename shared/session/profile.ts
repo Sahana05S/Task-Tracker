@@ -13,7 +13,7 @@ import type { User, UserRole } from '@/types/tracker';
 export interface AuthState {
   /** `auth.users.id` of the verified caller, or `null` when signed out. */
   authUserId: string | null;
-  /** The caller's TaskPulse profile, or `null` if none is provisioned. */
+  /** The caller's Stellar profile, or `null` if none is provisioned. */
   profile: User | null;
 }
 

@@ -1,5 +1,5 @@
 /**
- * Business-calendar helpers. TaskPulse runs on the Asia/Kolkata calendar for
+ * Business-calendar helpers. Stellar runs on the Asia/Kolkata calendar for
  * launch (AGENTS.md, M15), so every "today" and business date comes from here.
  */
 

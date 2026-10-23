@@ -19,7 +19,7 @@ const KINDS = [
 /**
  * "Create work file" without Google Drive credentials (the sheet tracker's
  * Create Work Files menu, quick option). The new file is created by Google in
- * the person's own account; TaskPulse only saves the link they paste back, and
+ * the person's own account; Stellar only saves the link they paste back, and
  * says so: it never claims to create, rename or share the file.
  */
 export function WorkFileCreator({
@@ -51,7 +51,7 @@ export function WorkFileCreator({
       <div>
         <h3 className="text-foreground text-sm font-bold">Create work file</h3>
         <p className="text-muted-foreground mt-0.5 text-xs">
-          Opens a new file in your own Google account. Name it, then paste its link below. TaskPulse saves the link only; it does not create, rename or share the file.
+          Opens a new file in your own Google account. Name it, then paste its link below. Stellar saves the link only; it does not create, rename or share the file.
         </p>
       </div>
 

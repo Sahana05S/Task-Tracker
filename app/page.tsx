@@ -12,7 +12,7 @@ import {
 import { getAuthState } from '@/shared/session/profile';
 
 export const metadata: Metadata = {
-  title: 'TaskPulse — Multi-Metric Performance Tracker & Capacity Analytics',
+  title: 'Stellar — Multi-Metric Performance Tracker & Capacity Analytics',
   description:
     'Weight every task, log daily effort, and measure individual velocity against the team median. Real-time task progress, productivity rates, and freshness decay in one workspace.',
 };

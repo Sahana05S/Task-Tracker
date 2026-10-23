@@ -25,7 +25,7 @@ export function FeatureFAQ() {
             Frequently Asked Questions
           </h2>
           <p className="text-muted-foreground text-base">
-            Everything you need to know about how TaskPulse organizes and measures work.
+            Everything you need to know about how Stellar organizes and measures work.
           </p>
         </div>
 

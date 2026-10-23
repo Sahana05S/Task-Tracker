@@ -31,7 +31,7 @@ const TABS = new Set<ProfileTab>(['overview', 'charts', 'missions']);
 export async function generateMetadata({ params }: EmployeePageProps): Promise<Metadata> {
   const { employeeId } = await params;
   const normalized = normalizeEmployeeIdParam(employeeId);
-  return { title: `${normalized ?? 'Employee'} · Team · TaskPulse` };
+  return { title: `${normalized ?? 'Employee'} · Team` };
 }
 
 export default async function EmployeePage({ params, searchParams }: EmployeePageProps) {

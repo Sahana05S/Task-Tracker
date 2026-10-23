@@ -16,7 +16,7 @@ import { ROLE_LABELS } from '@/shared/tracker/enums';
 import { formatDate } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {
-  title: 'Settings · TaskPulse',
+  title: 'Settings',
 };
 
 type Tab = 'profile' | 'account' | 'company';
