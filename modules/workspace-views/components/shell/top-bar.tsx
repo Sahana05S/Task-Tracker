@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDownIcon } from 'lucide-react';
 
-import { BrandMark } from '@/modules/workspace-views/components/shell/brand-mark';
+import { StellarMark } from '@/shared/ui/stellar-mark';
 import { MORE_ITEMS, NAV_SECTIONS, activeSection, isMoreActive } from '@/modules/workspace-views/components/shell/nav-items';
 import { TimerPill } from '@/modules/workspace-views/components/shell/timer-pill';
 import { UserMenu } from '@/modules/workspace-views/components/shell/user-menu';
@@ -35,10 +35,10 @@ export function TopBar({ profile }: { profile: User }) {
   return (
     <header className="border-border sticky top-0 z-30 border-b bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/75">
       <div className="flex h-(--spacing-header) items-center gap-3 px-4 lg:px-6">
-        <Link href="/today" className="flex shrink-0 items-center gap-2" aria-label="TaskPulse home">
-          <BrandMark />
+        <Link href="/today" className="flex shrink-0 items-center gap-2" aria-label="Stellar home">
+          <StellarMark />
           {/* Wordmark hidden only at tablet width, where the destination pills need the room. */}
-          <span className="text-foreground text-base font-bold tracking-tight md:max-lg:hidden">TaskPulse</span>
+          <span className="text-foreground text-base font-bold tracking-tight md:max-lg:hidden">Stellar</span>
         </Link>
 
         <nav aria-label="Primary" className="bg-muted ml-2 hidden items-center gap-0.5 rounded-full p-1 md:flex">

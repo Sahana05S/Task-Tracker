@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { ArrowLeftIcon, GaugeIcon } from 'lucide-react';
+import { ArrowLeftIcon } from 'lucide-react';
 
+import { StellarMark } from '@/shared/ui/stellar-mark';
 import type { ResetPasswordView } from '../index';
 import { ForgotPasswordForm, NewPasswordForm } from './password-reset-forms';
 
@@ -16,13 +17,11 @@ export function ResetPasswordScreen({ view }: ResetPasswordScreenProps) {
     <main className="bg-background flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <span className="bg-primary text-primary-foreground flex size-10 items-center justify-center rounded-xl">
-            <GaugeIcon className="size-5" aria-hidden="true" />
-          </span>
+          <StellarMark className="size-10 rounded-xl" />
           <h1 className="text-foreground text-xl font-bold tracking-tight">
             {settingPassword ? 'Set a new password' : 'Reset your password'}
           </h1>
-          <p className="text-sm text-muted-foreground">TaskPulse</p>
+          <p className="text-sm text-muted-foreground">Stellar</p>
         </div>
 
         <div className="soft-card p-6">

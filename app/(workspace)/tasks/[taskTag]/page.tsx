@@ -68,7 +68,7 @@ export async function generateMetadata({
   const normalizedTaskTag = normalizeTaskTagParam(taskTag);
 
   return {
-    title: `${normalizedTaskTag ?? 'Mission'} · TaskPulse`,
+    title: `${normalizedTaskTag ?? 'Mission'}`,
   };
 }
 

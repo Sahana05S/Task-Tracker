@@ -20,7 +20,7 @@ const PAGE_SIZE = 50;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const tag = normalizeTaskTagParam((await params).taskTag);
-  return { title: `${tag ?? 'Mission'} checklist · TaskPulse` };
+  return { title: `${tag ?? 'Mission'} checklist` };
 }
 
 

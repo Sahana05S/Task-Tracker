@@ -3,7 +3,7 @@
 See `docs/ARCHITECTURE.md` for the rules.
 
 ## What it does
-The in-app guide (`/guide`): one page that explains how TaskPulse works in six
+The in-app guide (`/guide`): one page that explains how Stellar works in six
 stages (Missions, Daily work, Records, Scores, Stars, Month close). Each stage
 is a small flowchart (at most four columns, boxes of at most four words) and one
 line. A stage is chosen with a plain link, `/guide?stage=<key>`, so it works

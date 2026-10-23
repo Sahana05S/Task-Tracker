@@ -5,7 +5,7 @@ import { resolveResetPasswordView, type ResetPasswordSearchParams } from '@/modu
 import { ResetPasswordScreen } from '@/modules/auth/components/reset-password-screen';
 
 export const metadata: Metadata = {
-  title: 'Reset password · TaskPulse',
+  title: 'Reset password',
 };
 
 interface ResetPasswordPageProps {

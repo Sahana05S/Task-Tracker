@@ -34,7 +34,7 @@ export async function generateMetadata({
 }: EmployeeReportsPageProps): Promise<Metadata> {
   const { employeeId } = await params;
   const normalized = normalizeEmployeeIdParam(employeeId);
-  return { title: `${normalized ?? 'Employee'} Reports · TaskPulse` };
+  return { title: `${normalized ?? 'Employee'} Reports` };
 }
 
 export default async function EmployeeReportsPage({

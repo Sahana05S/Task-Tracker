@@ -6,7 +6,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { canManageSupportRecords, getSupportModuleData } from '@/modules/support';
 
 export const metadata: Metadata = {
-  title: 'Sales Log · TaskPulse',
+  title: 'Sales Log',
 };
 
 export default async function SalesPage() {

@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { AlertTriangleIcon, ArrowLeftIcon, GaugeIcon } from 'lucide-react';
+import { AlertTriangleIcon, ArrowLeftIcon } from 'lucide-react';
 
 import { logout } from '../actions';
 import type { LoginView } from '../index';
 import { Button } from '@/shared/ui/button';
+import { StellarMark } from '@/shared/ui/stellar-mark';
 import { AuthForm } from './auth-form';
 
 export interface LoginScreenProps {
@@ -16,11 +17,9 @@ export function LoginScreen({ view }: LoginScreenProps) {
     <main className="bg-background flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <span className="bg-primary text-primary-foreground flex size-10 items-center justify-center rounded-xl">
-            <GaugeIcon className="size-5" aria-hidden="true" />
-          </span>
+          <StellarMark className="size-10 rounded-xl" />
           <h1 className="text-foreground text-xl font-bold tracking-tight">
-            TaskPulse
+            Stellar
           </h1>
           <p className="text-sm text-muted-foreground">
             Multi-metric performance tracker
@@ -82,7 +81,7 @@ function OrphanedAccountNotice() {
         <div className="flex flex-col gap-1">
           <span className="font-medium">No workspace profile</span>
           <span>
-            Your sign-in worked, but this account has no TaskPulse profile yet,
+            Your sign-in worked, but this account has no Stellar profile yet,
             so there is nothing to show you.
           </span>
         </div>

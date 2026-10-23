@@ -4,7 +4,7 @@ import { getPoliciesWorkspace } from '@/modules/policies';
 import { PoliciesWorkspace } from '@/modules/policies/components/policies-workspace';
 import { requireProfile } from '@/shared/session/profile';
 
-export const metadata: Metadata = { title: 'Policies · TaskPulse' };
+export const metadata: Metadata = { title: 'Policies' };
 
 /**
  * Company policies: the managing director sets them from templates; members see
