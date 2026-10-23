@@ -11,6 +11,8 @@ export interface ChecklistBranchOptions {
 export interface ChecklistBranchRow extends ChecklistNode {
   priority: number;
   childCount: number;
+  /** Set on a Quest row: the Quest's own checklist (migration 67). */
+  ownedChecklistId?: string | null;
   progressPercentage: number | null;
   applicable: boolean;
 }
@@ -18,6 +20,8 @@ export interface ChecklistAncestor {
   nodeId: string;
   checklistId: string;
   title: string;
+  /** Set when this ancestor is a Quest. */
+  ownedChecklistId?: string | null;
 }
 export interface ChecklistBranch {
   taskId: string;

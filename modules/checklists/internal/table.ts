@@ -6,7 +6,7 @@ import type { ChecklistNodeProgress, ChecklistSection, CompletionState, SectionP
  * tabs). Server-safe and client-safe; no data access.
  */
 
-export type ChecklistRowKind = 'item' | 'parent' | 'linked';
+export type ChecklistRowKind = 'item' | 'parent' | 'linked' | 'quest';
 
 export const SECTION_TITLES: Record<ChecklistSection, { title: string; note: string }> = {
   setup: { title: 'Setup', note: 'Completion gate: done before the work starts' },
@@ -19,14 +19,15 @@ export const SECTION_TITLES: Record<ChecklistSection, { title: string; note: str
  * mission follows that mission and stays a leaf; any other row with rows under
  * it rolls up from them and opens their table; otherwise it is ticked.
  */
-export function rowKind(row: Pick<ChecklistBranchRow, 'nodeType' | 'linkedTaskId' | 'childCount'>): ChecklistRowKind {
+export function rowKind(row: Pick<ChecklistBranchRow, 'nodeType' | 'linkedTaskId' | 'childCount'> & { ownedChecklistId?: string | null }): ChecklistRowKind {
+  if (row.ownedChecklistId) return 'quest';
   if (row.linkedTaskId || row.nodeType === 'Task') return 'linked';
   if (row.childCount > 0) return 'parent';
   return 'item';
 }
 
-/** Rows that open a nested table through the bounded branch read. */
-export const opensTable = (kind: ChecklistRowKind) => kind === 'parent';
+/** Rows that open a nested table (a parent) or their own checklist (a Quest). */
+export const opensTable = (kind: ChecklistRowKind) => kind === 'parent' || kind === 'quest';
 
 /** Completion choices a row offers; rows with rows under them offer none. */
 export function stateChoices(kind: ChecklistRowKind): readonly CompletionState[] {

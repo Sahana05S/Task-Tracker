@@ -20,6 +20,8 @@ export function parseChecklistLocation(query: Record<string, string | string[] |
 }
 
 /** Opens the table of the rows under a row. */
-export function openChecklistRow(row: Pick<ChecklistBranchRow, 'id' | 'checklistId' | 'section'>): ChecklistBranchOptions {
+export function openChecklistRow(row: Pick<ChecklistBranchRow, 'id' | 'checklistId' | 'section' | 'ownedChecklistId'>): ChecklistBranchOptions {
+  // A Quest opens as a master checklist of its own.
+  if (row.ownedChecklistId) return { checklistId: row.ownedChecklistId, section: 'activity' };
   return { checklistId: row.checklistId, parentNodeId: row.id, section: row.section ?? 'activity' };
 }

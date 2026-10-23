@@ -19,6 +19,14 @@ and `mode` refuses to switch it off. Rows added after 100% lower progress at
 once. When a change cannot be credited yet (no scale, no anchor, legacy shares)
 progress still follows and the credit waits, anchor kept, until reconciled.
 
+Since migration 67 (user decision, 23 October 2026) a row can also be a
+**Quest**: a page with its own Setup / Activity / Closure (an owned
+`task_checklists` row, created by the `submission` command from the add row's
+Item / Quest switch). A Quest row's progress is its own Activity progress; it
+is complete only when its own three phases are complete or N/A, so it gates the
+mission's Done. It opens as its own checklist home (`?checklist=<id>`), with
+the Quest chain in the breadcrumb. Quests nest to any depth.
+
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
@@ -50,7 +58,7 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | `task_checklists`, `checklist_nodes` | `07_tracker_replacement_foundation.sql` (row details in 33-35; one kind of row in 63) |
 | `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43, 63 and 66 |
 | `checklist_follows_activity` trigger (`aa_m66_follow_activity`) | `66_progress_follows_activity.sql` (also patches `refresh_task_metrics`) |
-| `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63 |
+| `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63; Quest rows in 67 |
 | `checklist_branch` | 41, patched in 63 (opens any non-linked row) |
 | `checklist_sections` | 18; kept for older readers, no longer read by the rollup (63) |
 | `task_effort_breakdown` | `36_task_effort_breakdown.sql` |

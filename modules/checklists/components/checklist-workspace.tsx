@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ClipboardCheckIcon, FileStackIcon, GaugeIcon } from 'lucide-react';
+import { ClipboardCheckIcon, FileStackIcon, GaugeIcon, FlagIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -38,7 +38,8 @@ export interface ChecklistPageView {
 export interface ChecklistWorkspaceProps {
   task: Task;
   ownerNames: readonly string[];
-  checklist: { id: string; title: string } | null;
+  /** `ownerNodeId` is set when this is a Quest's own checklist. */
+  checklist: { id: string; title: string; ownerNodeId?: string | null } | null;
   ancestors: readonly ChecklistAncestor[];
   rollup: ChecklistRollup;
   version: number;
@@ -64,6 +65,8 @@ export interface ChecklistWorkspaceProps {
 const PAGE_SIZE = 50;
 
 function ancestorHref(taskTag: string, ancestor: ChecklistAncestor, section: ChecklistSection) {
+  // A Quest opens as its own checklist home.
+  if (ancestor.ownedChecklistId) return checklistWorkHref(taskTag, { checklistId: ancestor.ownedChecklistId, section: 'activity' });
   return checklistWorkHref(taskTag, { checklistId: ancestor.checklistId, parentNodeId: ancestor.nodeId, section });
 }
 
@@ -86,11 +89,12 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const missionHref = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const homeHref = checklistWorkHref(task.taskTag);
   const section = props.page?.section ?? 'activity';
-  // On a page the last ancestor is the page itself.
-  const trail = props.page ? ancestors.slice(0, -1) : ancestors;
+  // On a page, or a Quest's home, the last ancestor is that page or Quest itself.
+  const quest = !props.page && !!checklist?.ownerNodeId;
+  const trail = props.page || quest ? ancestors.slice(0, -1) : ancestors;
   const current = props.page ? ancestors.at(-1) : undefined;
   // A row's table goes back to the table that holds it.
-  const backHref = props.page
+  const backHref = props.page || quest
     ? (trail.length ? ancestorHref(task.taskTag, trail[trail.length - 1], section) : homeHref)
     : missionHref;
   const tools = manager && open ? props.managerTools : undefined;
@@ -194,8 +198,8 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
       <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
         <div className="min-w-0 flex-1 basis-72">
           <p className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold">
-            <ClipboardCheckIcon className="size-3.5" aria-hidden="true" />
-            Master checklist
+            {checklist.ownerNodeId ? <FlagIcon className="size-3.5" aria-hidden="true" /> : <ClipboardCheckIcon className="size-3.5" aria-hidden="true" />}
+            {checklist.ownerNodeId ? 'Quest' : 'Master checklist'}
           </p>
           <h1 className="text-foreground mt-3 text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">{checklist.title}</h1>
           <p className="text-muted-foreground mt-1 text-sm break-words">{task.title}</p>
@@ -211,12 +215,14 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
             </span>
             <div className="min-w-0">
               <p className="stat-figure">{percentText(activity) ?? 'Not started'}</p>
-              <p className="text-muted-foreground text-xs">Mission progress, from Activity</p>
+              <p className="text-muted-foreground text-xs">{checklist.ownerNodeId ? 'Quest progress, from its Activity' : 'Mission progress, from Activity'}</p>
             </div>
           </div>
           <MissionProgress value={activity} label="Activity progress" className="h-1.5" />
           <p className="text-muted-foreground text-xs">
-            {rollup.isComplete ? 'Every row is complete or N/A. Reviewers approve before Done.' : 'Done waits until every row is complete or N/A.'}
+            {checklist.ownerNodeId
+              ? (rollup.isComplete ? 'Every row is complete or N/A, so this Quest is complete.' : 'The Quest completes when every row in its three phases is complete or N/A.')
+              : rollup.isComplete ? 'Every row is complete or N/A. Reviewers approve before Done.' : 'Done waits until every row is complete or N/A.'}
           </p>
         </div>
       </div>
