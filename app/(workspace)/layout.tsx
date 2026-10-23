@@ -35,7 +35,7 @@ export default async function WorkspaceLayout({
   return (
     <CompanySettingsProvider catalogue={catalogue} meetingTypes={settings.meetingTypes} defaultScaleMode={settings.defaultScaleMode}>
       <RunningTimerProvider timers={timers}>
-        <AppShell profile={profile} counts={counts} timers={timers}>
+        <AppShell profile={profile} counts={counts}>
           {children}
         </AppShell>
       </RunningTimerProvider>

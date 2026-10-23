@@ -13,7 +13,7 @@ export function reportCsv(model:LivePresentation):string {
 }
 export function reportText(model:LivePresentation):string {
  const exact=(value:Parameters<typeof Exact.from>[0]|null,places=6)=>value===null?'Unavailable':Exact.from(value).display(places);
- const lines=[`TaskPulse live report — ${model.view.period.label}`,`As of ${model.view.asOf} (Asia/Kolkata date ${model.view.asOfLocalDate})`,`Rule: ${model.calculation.context.ruleVersion}`,`Scope: ${model.scope}`,`Details: ${model.detailsAvailable?'Recorded':'Unavailable before '+model.detailsAvailableFrom}`,`Awards: ${model.awardAvailabilityReason??model.awards?.monthly.status??'Unavailable'}`];
+ const lines=[`Stellar live report — ${model.view.period.label}`,`As of ${model.view.asOf} (Asia/Kolkata date ${model.view.asOfLocalDate})`,`Rule: ${model.calculation.context.ruleVersion}`,`Scope: ${model.scope}`,`Details: ${model.detailsAvailable?'Recorded':'Unavailable before '+model.detailsAvailableFrom}`,`Awards: ${model.awardAvailabilityReason??model.awards?.monthly.status??'Unavailable'}`];
  for(const m of model.calculation.members.filter(m=>!model.employeeId||m.userId===model.employeeId)){
   lines.push('',model.members.find(u=>u.id===m.userId)?.fullName??m.userId,`Final score: ${exact(m.compositeExact,2)}; ranking: ${m.eligibleForRanking?'eligible':'ineligible / unavailable'}`);
   if(m.compositeExact===null)lines.push(`Available-factor subtotal (partial): ${exact(m.knownSubtotalExact,2)}`);

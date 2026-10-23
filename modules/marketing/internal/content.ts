@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 /**
- * TaskPulse — Landing Page Content & Feature Showcase Copy
+ * Stellar — Landing Page Content & Feature Showcase Copy
  *
  * Designed to showcase core application capabilities cleanly and dynamically,
  * inspired by high-impact business dashboard platforms (e.g. Zoho Analytics).
@@ -50,7 +50,7 @@ export const HERO: HeroCopy = {
   headline: 'Control your team capacity, task velocity & performance',
   headlineAccent: 'performance',
   subtext:
-    'TaskPulse weights every task, tracks daily logged effort, and benchmarks velocity against the team median. Move from guesswork to clear, transparent delivery insights.',
+    'Stellar weights every task, tracks daily logged effort, and benchmarks velocity against the team median. Move from guesswork to clear, transparent delivery insights.',
 };
 
 export const HERO_STATS = [
@@ -105,7 +105,7 @@ export const SHOWCASE_FEATURES: readonly ShowcaseFeature[] = [
     description:
       'Manage tasks with the speed of a spreadsheet and the power of a relational database. Track categories, assignees, priorities, and custom work weights (scale) that turn arbitrary to-dos into measurable capacity.',
     imageSrc: '/images/marketing/task-grid-preview.jpg',
-    imageAlt: 'TaskPulse Task Tracker Grid View',
+    imageAlt: 'Stellar Task Tracker Grid View',
     imagePosition: 'right',
     icon: LayersIcon,
     highlights: [
@@ -120,9 +120,9 @@ export const SHOWCASE_FEATURES: readonly ShowcaseFeature[] = [
     badge: 'Team Analytics & Medians',
     title: 'Objective performance benchmarks against the team median',
     description:
-      'Stop relying on gut feeling or raw hours. TaskPulse benchmarks productivity rates and workload distributions against the team median, surfacing top contributors and unblocking hidden bottlenecks.',
+      'Stop relying on gut feeling or raw hours. Stellar benchmarks productivity rates and workload distributions against the team median, surfacing top contributors and unblocking hidden bottlenecks.',
     imageSrc: '/images/marketing/dashboard-preview.jpg',
-    imageAlt: 'TaskPulse Team Performance Analytics Dashboard',
+    imageAlt: 'Stellar Team Performance Analytics Dashboard',
     imagePosition: 'left',
     icon: BarChart3Icon,
     highlights: [
@@ -139,7 +139,7 @@ export const SHOWCASE_FEATURES: readonly ShowcaseFeature[] = [
     description:
       'Contributors can log hours and incremental progress in under 30 seconds. A quick slide-out drawer lets team members record updates, link GitHub/Figma deliverables, and immediately see their impact.',
     imageSrc: '/images/marketing/effort-log-preview.jpg',
-    imageAlt: 'TaskPulse Quick Daily Effort Logging Drawer',
+    imageAlt: 'Stellar Quick Daily Effort Logging Drawer',
     imagePosition: 'right',
     icon: ClockIcon,
     highlights: [
@@ -252,9 +252,9 @@ export interface FAQItem {
 
 export const FAQS: readonly FAQItem[] = [
   {
-    question: 'How is TaskPulse different from a standard task or to-do board?',
+    question: 'How is Stellar different from a standard task or to-do board?',
     answer:
-      'Most trackers treat all tasks as simple checkboxes regardless of difficulty. TaskPulse introduces work scale weighting, tracks actual effort in hours, and benchmarks member productivity against the team median for fair, accurate capacity management.',
+      'Most trackers treat all tasks as simple checkboxes regardless of difficulty. Stellar introduces work scale weighting, tracks actual effort in hours, and benchmarks member productivity against the team median for fair, accurate capacity management.',
   },
   {
     question: 'How does automated task freshness decay work?',
@@ -269,7 +269,7 @@ export const FAQS: readonly FAQItem[] = [
   {
     question: 'How do daily logs update task progress?',
     answer:
-      'When logging effort, contributors provide hours worked and an optional progress delta (e.g., +20%). TaskPulse automatically accumulates total hours, applies the progress delta, and recalibrates the task productivity score in real time.',
+      'When logging effort, contributors provide hours worked and an optional progress delta (e.g., +20%). Stellar automatically accumulates total hours, applies the progress delta, and recalibrates the task productivity score in real time.',
   },
   {
     question: 'Can team members update tasks assigned to them?',

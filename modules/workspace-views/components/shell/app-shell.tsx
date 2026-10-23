@@ -1,13 +1,12 @@
 import * as React from 'react';
 
-import { BeaverCompanion } from '@/modules/workspace-views/components/shell/beaver-companion';
 import { MobileBottomNav } from '@/modules/workspace-views/components/shell/mobile-bottom-nav';
 import { NavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer';
 import { NavDrawerProvider } from '@/modules/workspace-views/components/shell/nav-drawer-context';
 import { SectionTabs } from '@/modules/workspace-views/components/shell/section-tabs';
 import { TopBar } from '@/modules/workspace-views/components/shell/top-bar';
 import type { NavCounts } from '@/modules/workspace-views/internal/nav-counts';
-import type { RunningTimer } from '@/modules/time-tracking/client';
+import { StellarMark } from '@/shared/ui/stellar-mark';
 import type { User } from '@/types/tracker';
 
 export interface AppShellProps {
@@ -15,8 +14,6 @@ export interface AppShellProps {
   profile: User;
   /** Badge tallies for the More sheet. */
   counts: NavCounts;
-  /** The user's running timers, for the companion's message (the pill reads `RunningTimerProvider`). */
-  timers: readonly RunningTimer[];
   children: React.ReactNode;
 }
 
@@ -26,7 +23,7 @@ export interface AppShellProps {
  * bar, a "New" menu (Log time, Post) and a More sheet. Each page still renders
  * its own `MissionPageHeader` title row and actions.
  */
-export function AppShell({ profile, counts, timers, children }: AppShellProps) {
+export function AppShell({ profile, counts, children }: AppShellProps) {
   return (
     <NavDrawerProvider>
       <div className="bg-background min-h-dvh">
@@ -36,8 +33,11 @@ export function AppShell({ profile, counts, timers, children }: AppShellProps) {
         <TopBar profile={profile} />
         <SectionTabs />
         <main id="main" tabIndex={-1} className="outline-none">{children}</main>
-        <footer className="mx-auto flex min-h-24 w-full max-w-[1200px] justify-end px-4 pt-3 pb-36 md:pb-6 lg:px-6 [body:has([data-page-width=wide])_&]:max-w-[1440px]">
-          <BeaverCompanion state={timers.length ? 'focused' : 'neutral'} message={timers.length ? 'Your timer is running. One step at a time.' : 'One small step moves your mission forward.'} />
+        <footer className="mx-auto flex w-full max-w-[1200px] items-start justify-end px-4 pt-3 pb-36 md:pb-6 lg:px-6 [body:has([data-page-width=wide])_&]:max-w-[1440px]">
+          <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <StellarMark className="size-4 rounded" />
+            Powered by Stellar
+          </p>
         </footer>
         <MobileBottomNav />
         <NavDrawer counts={counts} profile={profile} />

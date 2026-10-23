@@ -23,7 +23,7 @@ import { StreakCard } from '@/modules/recognition/components/streak-card';
 import { settle } from '@/shared/async/settle';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 
-export const metadata: Metadata = { title: 'Today · TaskPulse' };
+export const metadata: Metadata = { title: 'Today' };
 
 const NEW_MEMBER_MS = 30 * 86_400_000;
 

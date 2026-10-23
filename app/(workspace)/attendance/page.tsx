@@ -5,7 +5,7 @@ import { attendanceMatrix, attendanceMonth, canEditAttendanceRecord, canManageAt
 import { requireProfile } from '@/shared/session/profile';
 import { kolkataDate } from '@/shared/time/kolkata';
 
-export const metadata: Metadata = { title: 'Attendance · TaskPulse' };
+export const metadata: Metadata = { title: 'Attendance' };
 
 export default async function AttendancePage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const user = await requireProfile();

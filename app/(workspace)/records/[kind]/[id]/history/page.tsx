@@ -6,7 +6,7 @@ import { RecordHistory } from '@/modules/records/components/record-history';
 import { requireProfile } from '@/shared/session/profile';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 
-export const metadata: Metadata = { title: 'Record history · TaskPulse' };
+export const metadata: Metadata = { title: 'Record history' };
 
 /** Every saved revision of one dated record (attendance, fact, idea, …). */
 export default async function RecordHistoryPage({ params }: { params: Promise<{ kind: string; id: string }> }) {

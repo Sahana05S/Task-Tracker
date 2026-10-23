@@ -6,7 +6,7 @@ import { MeetingAgenda } from '@/modules/settings/components/meeting-agenda';
 import { requireProfile } from '@/shared/session/profile';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'Meeting points · TaskPulse' };
+export const metadata: Metadata = { title: 'Meeting points' };
 
 export default async function MeetingPointsPage() {
   const [user,{period,members,tasks,entries},settings]=await Promise.all([requireProfile(),getMeetingPointsData(),getCompanySettings()]);
