@@ -120,7 +120,9 @@ export function CheckInForm({ kind, email, office, todayIn, backHref }: {
         const time = CLOCK.format(new Date(data.capturedAt));
         const where = data.outsideOffice ? ` You were about ${data.distanceM} m from the office, so it is marked “outside office”.` : '';
         const message = kind === 'in'
-          ? `Checked in at ${time}. Check out from here when you leave.${where}`
+          ? data.recordExists
+            ? `Checked in at ${time}. Today already had an attendance record, so it was left as it is. Check out from here when you leave.${where}`
+            : `Checked in at ${time}. Today is marked Present (8 h until you check out). Check out from here when you leave.${where}`
           : data.recordExists
             ? `Checked out at ${time}. Today already had an attendance record, so it was left as it is.${where}`
             : `Checked out at ${time}. Today is recorded as Present, ${data.hours} h.${where}`;

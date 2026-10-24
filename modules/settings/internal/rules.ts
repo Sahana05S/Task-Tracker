@@ -103,8 +103,12 @@ export interface AttendanceSettings {
   officeLongitude: number | null;
   officeRadiusM: number;
   photoRetentionDays: number;
+  /** Migration 73: mark ended days without a record (Present after a check-in, Holiday on days off, else Absent). */
+  autoMarkEnabled: boolean;
+  /** 0 = Sunday ... 6 = Saturday. */
+  weeklyOffDays: number[];
 }
-export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90 };
+export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90, autoMarkEnabled: true, weeklyOffDays: [0] };
 
 export interface CompanySettings {
   /** Optimistic version; every saved section increments it. */
@@ -278,6 +282,10 @@ function parseAttendance(raw: unknown): AttendanceSettings {
     officeLongitude: located ? longitude : null,
     officeRadiusM: number('officeRadiusM') ?? DEFAULT_ATTENDANCE_SETTINGS.officeRadiusM,
     photoRetentionDays: number('photoRetentionDays') ?? DEFAULT_ATTENDANCE_SETTINGS.photoRetentionDays,
+    autoMarkEnabled: record.autoMarkEnabled !== false,
+    weeklyOffDays: Array.isArray(record.weeklyOffDays)
+      ? [...new Set(record.weeklyOffDays.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))].sort()
+      : DEFAULT_ATTENDANCE_SETTINGS.weeklyOffDays,
   };
 }
 

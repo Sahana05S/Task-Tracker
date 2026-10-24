@@ -4,3 +4,4 @@ export { getAttendanceModuleData, type AttendanceModuleData, type AttendanceMemb
 export { getTeamHolidayDates } from './internal/holidays';
 export { getCheckIns, getDayCheckIns, type CheckInPhoto, type CheckInResult } from './internal/check-in';
 export { handleAttendancePhotoRetention } from './internal/photo-retention';
+export { handleAttendanceAutofill } from './internal/autofill';

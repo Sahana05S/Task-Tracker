@@ -30,10 +30,12 @@ takes a photo (`capture="user"`, shrunk in the browser to a JPEG of at most
 720 px). The server action uploads it to the private `attendance-photos`
 bucket under `<organization>/<user>/<date>/<in|out>-<uuid>.jpg`, then runs
 `attendance_check_in`, which takes the time from the database clock, flags a
-position farther than the company's office radius (never refuses it) and, on
-check-out, writes the day's record through `dated_record_command`: Present,
-both check times, regular hours = out - in truncated to 2 decimals, off-hours 0.
-A day that already has a record is left alone (`recordExists`). The Today page
+position farther than the company's office radius (never refuses it) and
+writes the day's record through `dated_record_command`: check-in creates it as
+Present, 8 h, off-hours 0 (migration 73); check-out corrects that same record
+to both check times and regular hours = out - in truncated to 2 decimals. A day
+that already had a record at check-in, or one a manager changed afterwards, is
+left alone (`recordExists`). The Today page
 header, the phone's New menu and the attendance page link to it; matrix cells
 show a camera mark and the cell editor shows both photos (10-minute signed
 links), the times, a map link and an "outside office" badge. Before the
@@ -42,10 +44,22 @@ on-time policy sees it. Photos older than the company's retention are removed
 nightly by `POST /api/internal/attendance-photos` (third step of
 `.github/workflows/award-worker.yml`); the times and positions stay.
 
+## End-of-day marking (migration 73)
+Just after midnight, before the award run, the first step of
+`.github/workflows/award-worker.yml` calls `POST /api/internal/attendance-autofill`
+(`attendance_autofill`, service role). For every company with automatic marking
+on (Settings > Company > Check-in), every active member and every ended day since
+the company's start date (at most 14 days back) that has no record becomes
+Present (checked in: 8 h, or out - in with both times), Holiday (a calendar
+holiday's name, or "Weekly off" on the company's weekly off days, Sunday by
+default) or Absent. Rows are written like a dated-record save with no actor and
+the reason "Marked automatically"; frozen days are skipped, and any existing
+record (active or withdrawn) is never changed.
+
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `getAttendanceModuleData()`, `getTeamHolidayDates()`, `getCheckIns()` (a period's check-ins: all for managers, own otherwise), `getDayCheckIns()` (one person's day), types `AttendanceModuleData`, `AttendanceMemberSummary`, `CheckInPhoto`, `CheckInResult`; the photo clean-up worker `handleAttendancePhotoRetention()`; re-exports everything in `client.ts` |
+| `index.ts` | Server reads: `getAttendanceModuleData()`, `getTeamHolidayDates()`, `getCheckIns()` (a period's check-ins: all for managers, own otherwise), `getDayCheckIns()` (one person's day), types `AttendanceModuleData`, `AttendanceMemberSummary`, `CheckInPhoto`, `CheckInResult`; the photo clean-up worker `handleAttendancePhotoRetention()`; the end-of-day marking `handleAttendanceAutofill()`; re-exports everything in `client.ts` |
 | `check-in-actions.ts` | `'use server'` `checkIn()` (upload the photo, then `attendance_check_in`; `operationId` and `photoId` make a retry replay), `loadCheckInPhotos()` (signed links for one person's day: own, or anyone's for MD/PE) |
 | `actions.ts` | `'use server'` `saveAttendanceRecord()` (sets `kind=attendance` and calls the dated-record command); `fillAttendanceDay()` (one new record per listed member for a day, each with an operation id derived from the form's, so a resubmit replays; existing records are never overwritten; reports saved and skipped members) |
 | `client.ts` | Matrix model and editing payload: `attendanceMatrix`, `attendanceMonth`, `monthDates`, `shiftMonth`, `cellValues`, `withStatus`, `hoursBetween`, `cellCommand`, `emptyCells`, `fillCommand`, types `AttendanceMatrixModel`, `MatrixRow`, `MatrixCell`, `CellValues`, `DayFill`; pure helpers and types: `summarizeAttendance`, `EMPTY_ATTENDANCE_SUMMARY`, `AttendanceSummary`, `defaultHoursForStatus`, `computeHoursFromCheckTimes`, `compareRecordedHours`, `dailyAttendanceValidity`, `localCheckTime`, `ATTENDANCE_INPUT_VERSION`, `canManageAttendance`, `canEditAttendanceRecord`, `ATTENDANCE_COLUMNS`, `mapAttendanceRecord(s)`; check-in helpers `compressPhoto`, `mapLink`, `mapEmbed`, `MAX_PHOTO_BYTES`, types `CheckInKind`, `CheckInMark` |
@@ -78,6 +92,7 @@ imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
 | `attendance_check_ins` | table (read: own, or the company for MD/PE) | 72 |
 | `attendance_check_in(text,text,numeric,numeric,numeric,uuid)` | RPC (command) | 72 |
 | `attendance_photos_due(int)`, `attendance_photos_cleared(uuid[])` | RPC (service role) | 72 |
+| `attendance_autofill(date)` | RPC (service role, end-of-day marking) | 73 |
 | `attendance-photos` | storage bucket and its four policies | 72 |
 
 Writes go through `dated_record_command` (migration 19, company-scoped in 40),
