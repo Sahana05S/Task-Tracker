@@ -127,6 +127,8 @@ CREATE POLICY attendance_check_ins_read ON public.attendance_check_ins FOR SELEC
 -- 4. The on-time policy sees the check-in before the day's record exists.
 DO $$
 DECLARE def text; frag text:='''checkIn'',CASE WHEN a.check_in_at IS NOT NULL THEN to_char(a.check_in_at AT TIME ZONE ''Asia/Kolkata'',''HH24:MI'') END,'; BEGIN
+ -- Absent only where 56/58 are applied later (the policies upgrade test); they bring their own facts.
+ IF to_regprocedure('public.policy_period_facts(date,date,uuid)') IS NULL THEN RETURN; END IF;
  def:=pg_catalog.pg_get_functiondef('public.policy_period_facts(date,date,uuid)'::regprocedure);
  IF (length(def)-length(replace(def,frag,'')))/length(frag)<>1 THEN
   RAISE EXCEPTION 'policy_period_facts no longer has exactly one "%"; update migration 72',frag; END IF;
