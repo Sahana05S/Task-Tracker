@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { CalendarDaysIcon, CameraIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
 import type { AttendanceMatrixModel } from '@/modules/attendance/client';
 import { HelpTip } from '@/shared/ui/help-tip';
@@ -39,11 +39,16 @@ export function AttendanceWorkspace({ model, periodLabel, previous, next, editab
         title="Attendance"
         description={`${periodLabel} · ${missing ? `${missing} ${missing === 1 ? 'day' : 'days'} not recorded` : elapsed.length ? 'every day recorded' : 'the month has not started'}`}
         actions={
+          <>
+          <Link href="/attendance/check-in" className="bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:outline-primary inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold">
+            <CameraIcon className="size-4" aria-hidden="true" />Check in / out
+          </Link>
           <nav aria-label="Month" className="flex items-center gap-2">
             <Link href={`/attendance?month=${previous}`} className={nav}><ChevronLeftIcon className="size-4" aria-hidden="true" />{shortMonth(previous)}</Link>
             {next ? <Link href={`/attendance?month=${next}`} className={nav}>{shortMonth(next)}<ChevronRightIcon className="size-4" aria-hidden="true" /></Link>
               : <span className={cn(nav, 'text-muted-foreground pointer-events-none opacity-60')} aria-disabled="true" title="That month has not started yet">{shortMonth(shiftMonth(model.month, 1))}<ChevronRightIcon className="size-4" aria-hidden="true" /></span>}
           </nav>
+          </>
         }
       />
       {monthError ? <MissionNotice tone="attention" role="status">{monthError}</MissionNotice> : null}

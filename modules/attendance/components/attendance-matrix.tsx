@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { CameraIcon } from 'lucide-react';
 
 import { statusHours, type AttendanceMatrixModel, type MatrixCell, type MatrixRow } from '@/modules/attendance/client';
 import { ATTENDANCE_STATUSES } from '@/shared/tracker/enums';
@@ -14,14 +15,22 @@ import { STATUS_STYLE } from './attendance-status-style';
 /** 8 rather than 8.00 inside a small cell. */
 const compactHours = (hours: number) => String(Number(hours.toFixed(2)));
 
+/** The photo check-in part of a cell's name. */
+function photoSummary(cell: MatrixCell): string {
+  const checkIn = cell.checkIns.find(mark => mark.kind === 'in'), checkOut = cell.checkIns.find(mark => mark.kind === 'out');
+  if (!checkIn) return '';
+  const outside = cell.checkIns.some(mark => mark.outsideOffice) ? ', outside office' : '';
+  return `. Photo check-in ${checkIn.time}${checkOut ? `, out ${checkOut.time}` : ''}${outside}`;
+}
+
 /** What a cell says, for its accessible name and the editor's description. */
 function cellSummary(cell: MatrixCell): string {
   if (cell.kind === 'future') return 'Not yet';
-  if (!cell.status) return cell.withdrawn ? 'Withdrawn, needs a record' : 'Not recorded';
+  if (!cell.status) return (cell.withdrawn ? 'Withdrawn, needs a record' : 'Not recorded') + photoSummary(cell);
   const hours = cell.attendanceHours === null ? 'hours need confirming'
     : `${formatHours(cell.attendanceHours)} h${cell.offHours ? ` + ${formatHours(cell.offHours)} h off-hours` : ''}`;
   const check = cell.check === 'fails' ? `. ${codeLabels(cell.reasons)}` : '';
-  return `${cell.status}, ${hours}${check}`;
+  return `${cell.status}, ${hours}${check}${photoSummary(cell)}`;
 }
 
 function Cell({ cell, name, day, editable, onOpen }: { cell: MatrixCell; name: string; day: string; editable: boolean; onOpen: () => void }) {
@@ -36,6 +45,7 @@ function Cell({ cell, name, day, editable, onOpen }: { cell: MatrixCell; name: s
       {hours !== null && hours !== undefined ? <span className="text-xs leading-none font-semibold tabular-nums">{compactHours(hours)}</span> : null}
       {cell.check === 'fails' ? <span className="bg-danger absolute top-1 right-1 size-1.5 rounded-full" aria-hidden="true" /> : null}
       {cell.status && cell.attendanceHours === null ? <span className="bg-recognition absolute top-1 right-1 size-1.5 rounded-full" aria-hidden="true" /> : null}
+      {cell.checkIns.length ? <CameraIcon className={cn('absolute bottom-0.5 left-0.5 size-2.5', cell.checkIns.some(mark => mark.outsideOffice) ? 'text-attention-foreground' : 'opacity-70')} aria-hidden="true" /> : null}
     </>
   );
   const className = cn(

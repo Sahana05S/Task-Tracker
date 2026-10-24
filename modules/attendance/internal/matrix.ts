@@ -2,6 +2,7 @@ import type { AttendanceInputContext } from '@/modules/support/client';
 import { kolkataTime } from '@/shared/time/kolkata';
 import { isMonthKey, monthDates, monthPeriod, shiftMonth, type AnalyticsPeriod } from '@/shared/time/period';
 import type { AttendanceRecord, AttendanceStatus, User } from '@/types/tracker';
+import type { CheckInMark } from './check-in-model';
 import { defaultHoursForStatus, statusHours } from './summary';
 
 /**
@@ -32,6 +33,8 @@ export interface MatrixCell {
   readonly check: 'passes' | 'fails' | 'unavailable' | null;
   readonly effortHours: number | null;
   readonly reasons: readonly string[];
+  /** Photo check-in and check-out of this member and day (migration 72). */
+  readonly checkIns: readonly CheckInMark[];
 }
 
 export interface MatrixRow {
@@ -66,12 +69,13 @@ export function attendanceMonth(value: string | undefined, today: string): { per
 
 const hours = (value: string | number | null | undefined) => (value === null || value === undefined || value === '' ? null : Number(value));
 
-export function attendanceMatrix({ month, today, members, records, contexts }: {
+export function attendanceMatrix({ month, today, members, records, contexts, checkIns = [] }: {
   month: string;
   today: string;
   members: readonly Pick<User, 'id' | 'fullName' | 'employeeId' | 'isActive'>[];
   records: readonly AttendanceRecord[];
   contexts: ReadonlyMap<string, AttendanceInputContext>;
+  checkIns?: readonly CheckInMark[];
 }): AttendanceMatrixModel {
   const dates = monthDates(month);
   const days = dates.map(date => {
@@ -86,6 +90,11 @@ export function attendanceMatrix({ month, today, members, records, contexts }: {
     };
   });
   const byKey = new Map(records.map(record => [`${record.userId}:${record.attendanceDate}`, record]));
+  const checksByKey = new Map<string, CheckInMark[]>();
+  for (const mark of checkIns) {
+    const key = `${mark.userId}:${mark.date}`;
+    checksByKey.set(key, [...(checksByKey.get(key) ?? []), mark]);
+  }
   const recorded = new Set(records.map(record => record.userId));
   const rows = members
     .filter(member => member.isActive || recorded.has(member.id))
@@ -112,6 +121,7 @@ export function attendanceMatrix({ month, today, members, records, contexts }: {
           check: !check ? null : !check.available ? 'unavailable' : check.valid ? 'passes' : 'fails',
           effortHours: hours(check?.effortHours),
           reasons: check?.reasons ?? [],
+          checkIns: checksByKey.get(`${member.id}:${date}`) ?? [],
         };
       });
       return {

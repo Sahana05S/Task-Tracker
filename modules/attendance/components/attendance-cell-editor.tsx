@@ -16,6 +16,7 @@ import { Field } from '@/shared/ui/form-field';
 import { HelpTip } from '@/shared/ui/help-tip';
 import { cn } from '@/shared/utils';
 import { STATUS_STYLE } from './attendance-status-style';
+import { CheckInEvidence } from './check-in-evidence';
 
 /**
  * Record or correct one member's day. The visible controls hold state; the
@@ -49,6 +50,7 @@ export function AttendanceCellEditor({ memberId, cell, onSaved }: { memberId: st
           {logged ? <p>{logged}</p> : null}
         </div>
       ) : logged ? <p className="text-muted-foreground text-sm">{logged}</p> : null}
+      {cell.checkIns.length ? <CheckInEvidence memberId={memberId} date={cell.date} marks={cell.checkIns} /> : null}
       <fieldset className="grid gap-2">
         <legend className="text-foreground mb-2 text-sm font-medium">Status</legend>
         <div className="grid grid-cols-3 gap-1.5">

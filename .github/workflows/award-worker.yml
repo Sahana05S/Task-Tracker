@@ -4,7 +4,8 @@ name: Nightly award run
 # cutoff. Each call queues due award days through yesterday (Asia/Kolkata) and
 # runs up to 10 jobs; this keeps calling until a batch comes back empty. Then it
 # calls the policies worker (POST /api/internal/policies, same token and
-# switch) until no policy period is due.
+# switch) until no policy period is due, and finally removes check-in photos
+# older than each company's retention (POST /api/internal/attendance-photos).
 #
 # Needs repository secrets APP_URL (e.g. https://task-tracker-gules-ten.vercel.app)
 # and TASKPULSE_AWARD_WORKER_TOKEN, plus on Vercel: TASKPULSE_AWARD_WORKER_ENABLED=production,
@@ -113,3 +114,23 @@ jobs:
             echo "::error::${failed} company pass(es) failed: $(jq -c '[.[] | select(.status == "failed") | {organizationId, errorCode}]' <<<"$all")"
             exit 1
           fi
+
+      # Third loop: check-in photos past each company's retention (migration 72).
+      - name: Remove expired check-in photos
+        if: ${{ !cancelled() }}
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          TOKEN: ${{ secrets.TASKPULSE_AWARD_WORKER_TOKEN }}
+        run: |
+          set -euo pipefail
+          removed=0
+          for batch in $(seq 1 10); do
+            code=$(curl -sS -o response.json -w '%{http_code}' -X POST               -H "Authorization: Bearer ${TOKEN}" "${APP_URL%/}/api/internal/attendance-photos")
+            if [ "$code" != "200" ]; then
+              echo "::error::Photo clean-up batch ${batch} returned HTTP ${code}: $(cat response.json)"
+              exit 1
+            fi
+            removed=$((removed + $(jq '.removed // 0' response.json)))
+            [ "$(jq '.remaining // 0' response.json)" -eq 0 ] && break
+          done
+          echo "### Check-in photos removed: ${removed}" >> "$GITHUB_STEP_SUMMARY"

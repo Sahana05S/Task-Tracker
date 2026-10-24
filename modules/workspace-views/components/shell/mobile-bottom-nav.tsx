@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ClockPlusIcon, MessageSquarePlusIcon, MoreHorizontalIcon, PlusIcon } from 'lucide-react';
+import { CameraIcon, ClockPlusIcon, MessageSquarePlusIcon, MoreHorizontalIcon, PlusIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { useNavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer-context';
@@ -23,7 +23,7 @@ const QUICK_ACTIONS = [
 /**
  * Phone navigation (below 768px): Today, Missions, Team and More as tabs.
  * The quick actions are deliberately not tabs: a labelled floating "New"
- * button above the bar opens a two-item menu (Log time, Post), so it reads as
+ * button above the bar opens a short menu (Check in / out, Log time, Post), so it reads as
  * "do something" rather than "go somewhere". The chosen drawer is mounted only
  * while open. More opens the full destination sheet (Records, Reports,
  * Company, Settings and every section tab).
@@ -55,6 +55,15 @@ export function MobileBottomNav() {
           New
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="end" sideOffset={8} className="w-64">
+          <DropdownMenuItem asChild className="min-h-12 gap-3">
+            <Link href="/attendance/check-in">
+              <CameraIcon className="text-primary size-5" aria-hidden="true" />
+              <span className="grid">
+                <span className="font-semibold">Check in / out</span>
+                <span className="text-muted-foreground text-xs">A photo when you arrive and leave</span>
+              </span>
+            </Link>
+          </DropdownMenuItem>
           {QUICK_ACTIONS.map(({ key, label, hint, icon: Icon }) => (
             <DropdownMenuItem key={key} onSelect={() => setDrawer(key)} className="min-h-12 gap-3">
               <Icon className="text-primary size-5" aria-hidden="true" />

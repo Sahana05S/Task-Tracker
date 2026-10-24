@@ -16,6 +16,8 @@ export {
   type CategoryEntry,
   type CategoryOverrides,
   type CompanyBranding,
+  type AttendanceSettings,
+  DEFAULT_ATTENDANCE_SETTINGS,
   type CompanySettings,
   type MeetingType,
   type SettingsSection,

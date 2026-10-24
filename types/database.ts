@@ -541,6 +541,28 @@ export interface Database {
           updated_at?: string;
         }
       >;
+      /** Migration 72: photo check-in/out evidence; written only by attendance_check_in(). */
+      attendance_check_ins: TableDefinition<
+        {
+          id: string;
+          organization_id: string;
+          user_id: string;
+          attendance_date: string;
+          kind: 'in' | 'out';
+          captured_at: string;
+          photo_path: string | null;
+          photo_removed_at: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          accuracy_m: number | null;
+          distance_m: number | null;
+          outside_office: boolean | null;
+          attendance_record_id: string | null;
+          operation_id: string;
+          created_at: string;
+        },
+        never
+      >;
       attendance_records: TableDefinition<
         {
           id: string;
@@ -849,6 +871,11 @@ export interface Database {
       recalculate_task_metrics: { Args: { p_task_id: string; p_progress_delta: number }; Returns: undefined };
       task_effort_summary: { Args: { p_task_id: string }; Returns: { hours_logged: number; log_count: number }[] };
       task_effort_breakdown: { Args: { p_task_id: string }; Returns: Json };
+      /** Migration 72: check in or out now with a photo already uploaded to attendance-photos; check-out completes the day's record. */
+      attendance_check_in: { Args: { p_kind: 'in' | 'out'; p_photo_path: string; p_latitude: number | null; p_longitude: number | null; p_accuracy: number | null; p_operation: string }; Returns: Json };
+      /** Migration 72 (service role): photos older than each company's retention, oldest first. */
+      attendance_photos_due: { Args: { p_limit?: number }; Returns: Json };
+      attendance_photos_cleared: { Args: { p_ids: string[] }; Returns: number };
       current_organization: { Args: Record<never, never>; Returns: string | null };
       team_holiday_dates: { Args: { p_from: string; p_to: string }; Returns: string[] };
       recognition_activity_days: { Args: { p_as_of?: string | null; p_employee?: string | null }; Returns: Json };
@@ -874,7 +901,7 @@ export interface Database {
       /** Migration 53: the caller's company settings (any active member; standing missions for managers). */
       company_settings: { Args: Record<never, never>; Returns: Json };
       /** Migration 53: managing director only; versioned and idempotent per operation. */
-      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults' | 'branding' | 'departments'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
+      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults' | 'branding' | 'departments' | 'attendance'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       /** Migration 55: month setup wizard (managing director or project engineer). */
       month_setup_context: { Args: { p_month: string }; Returns: Json };
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };
@@ -961,6 +988,8 @@ export type ChecklistNodeRow =
 export type TaskTimerRow = Database['public']['Tables']['task_timers']['Row'];
 export type AttendanceRecordRow =
   Database['public']['Tables']['attendance_records']['Row'];
+export type AttendanceCheckInRow =
+  Database['public']['Tables']['attendance_check_ins']['Row'];
 export type DailyStarRecordRow =
   Database['public']['Tables']['daily_star_records']['Row'];
 export type PerformanceScoreComponentRow =
