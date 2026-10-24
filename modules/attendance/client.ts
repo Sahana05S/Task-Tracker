@@ -32,3 +32,11 @@ export {
   type MatrixCell,
   type MatrixRow,
 } from './internal/matrix';
+export {
+  compressPhoto,
+  mapEmbed,
+  mapLink,
+  MAX_PHOTO_BYTES,
+  type CheckInKind,
+  type CheckInMark,
+} from './internal/check-in-model';

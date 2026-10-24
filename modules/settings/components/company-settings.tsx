@@ -6,8 +6,10 @@ import {
   ArrowUpIcon,
   Building2Icon,
   CalendarDaysIcon,
+  CameraIcon,
   CheckIcon,
   ImageIcon,
+  LocateFixedIcon,
   ListOrderedIcon,
   LoaderCircleIcon,
   PlusIcon,
@@ -57,6 +59,7 @@ const SECTIONS = [
   { id: 'departments', label: 'Departments' },
   { id: 'agenda', label: 'Meeting agenda' },
   { id: 'mission-defaults', label: 'New missions' },
+  { id: 'attendance', label: 'Check-in' },
   { id: 'standing-missions', label: 'Standing missions' },
   { id: 'holidays', label: 'Holidays' },
 ] as const;
@@ -82,6 +85,7 @@ export function CompanySettingsEditor({ settings, members }: { settings: Company
       <DepartmentsSection settings={settings} />
       <AgendaSection settings={settings} />
       <MissionDefaultsSection settings={settings} />
+      <AttendanceSection settings={settings} />
       <StandingMissionsSection settings={settings} members={members} />
       <HolidaysSection settings={settings} />
     </div>
@@ -486,6 +490,95 @@ function MissionDefaultsSection({ settings }: SectionProps) {
             </select>
           </label>
           <p className="text-muted-foreground self-end text-sm">{SCALE_MODE_HINTS[mode]}</p>
+        </div>
+      </SectionForm>
+    </MissionPanel>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Photo check-in                                                             */
+/* -------------------------------------------------------------------------- */
+
+function AttendanceSection({ settings }: SectionProps) {
+  const saved = settings.attendance;
+  const [draft, setDraft, dirty, reset] = useDraft({
+    checkInEnabled: saved.checkInEnabled,
+    officeLatitude: saved.officeLatitude === null ? '' : String(saved.officeLatitude),
+    officeLongitude: saved.officeLongitude === null ? '' : String(saved.officeLongitude),
+    officeRadiusM: String(saved.officeRadiusM),
+    photoRetentionDays: String(saved.photoRetentionDays),
+  });
+  const [locating, setLocating] = React.useState<string | null>(null);
+  const set = (patch: Partial<typeof draft>) => setDraft((current) => ({ ...current, ...patch }));
+  const locateHere = () => {
+    if (!navigator.geolocation) return setLocating('This browser cannot share its location.');
+    setLocating('Finding your location…');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        set({ officeLatitude: position.coords.latitude.toFixed(6), officeLongitude: position.coords.longitude.toFixed(6) });
+        setLocating(`Located within about ${Math.round(position.coords.accuracy)} m.`);
+      },
+      () => setLocating('Location was not shared. Allow location for this site, or type the position.'),
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  };
+  return (
+    <MissionPanel
+      id="attendance"
+      icon={CameraIcon}
+      title="Check-in"
+      subtitle="Members check in and out from their phone with a photo; the time and position are recorded by the app, and check-out completes the day's attendance."
+      className="scroll-mt-20"
+    >
+      <SectionForm
+        section="attendance"
+        version={settings.version}
+        dirty={dirty}
+        onDiscard={reset}
+        payload={() => ({
+          checkInEnabled: draft.checkInEnabled,
+          officeLatitude: draft.officeLatitude.trim() === '' ? null : Number(draft.officeLatitude),
+          officeLongitude: draft.officeLongitude.trim() === '' ? null : Number(draft.officeLongitude),
+          officeRadiusM: Number(draft.officeRadiusM),
+          photoRetentionDays: Number(draft.photoRetentionDays),
+        })}
+      >
+        <div className="grid gap-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={draft.checkInEnabled} onChange={(event) => set({ checkInEnabled: event.target.checked })} className="size-4" />
+            Photo check-in is on
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="field-label">
+              Office latitude
+              <input inputMode="decimal" value={draft.officeLatitude} onChange={(event) => set({ officeLatitude: event.target.value })} className="field" placeholder="11.080320" />
+            </label>
+            <label className="field-label">
+              Office longitude
+              <input inputMode="decimal" value={draft.officeLongitude} onChange={(event) => set({ officeLongitude: event.target.value })} className="field" placeholder="76.994221" />
+            </label>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="outline" size="sm" onClick={locateHere}>
+              <LocateFixedIcon className="size-4" aria-hidden="true" />
+              Use my current location
+            </Button>
+            {locating ? <p className="text-muted-foreground text-sm" role="status">{locating}</p> : null}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="field-label">
+              Office radius (metres)
+              <input type="number" min={20} max={5000} step={10} value={draft.officeRadiusM} onChange={(event) => set({ officeRadiusM: event.target.value })} className="field" />
+            </label>
+            <label className="field-label">
+              Keep photos for (days)
+              <input type="number" min={7} max={730} value={draft.photoRetentionDays} onChange={(event) => set({ photoRetentionDays: event.target.value })} className="field" />
+            </label>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            With an office position, check-ins farther than the radius are marked &ldquo;outside office&rdquo; for managers; they are never refused. Leave the position empty to only record where people were.
+          </p>
         </div>
       </SectionForm>
     </MissionPanel>

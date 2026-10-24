@@ -92,6 +92,20 @@ export function isBrandUrl(value: string): boolean {
   return value.length <= 500 && !value.startsWith('//') && /^(?:\/[A-Za-z0-9._~/-]+|https:\/\/[^\s"'<>()\\]+)$/.test(value);
 }
 
+/**
+ * Photo check-in (migration 72): on by default; an optional office position
+ * flags check-ins farther than the radius (never refuses them); photos are
+ * deleted after the retention period.
+ */
+export interface AttendanceSettings {
+  checkInEnabled: boolean;
+  officeLatitude: number | null;
+  officeLongitude: number | null;
+  officeRadiusM: number;
+  photoRetentionDays: number;
+}
+export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90 };
+
 export interface CompanySettings {
   /** Optimistic version; every saved section increments it. */
   version: number;
@@ -108,9 +122,11 @@ export interface CompanySettings {
   defaultScaleMode: StandingScaleMode;
   /** Company name and logo addresses (migration 64; empty before it). */
   branding: CompanyBranding;
+  /** Photo check-in (migration 72; the defaults before it). */
+  attendance: AttendanceSettings;
 }
 
-export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults', 'branding', 'departments'] as const;
+export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults', 'branding', 'departments', 'attendance'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 /** Settings before migration 53 (or a company that saved nothing): built-in labels, no lists. */
@@ -125,6 +141,7 @@ export const EMPTY_COMPANY_SETTINGS: CompanySettings = {
   standingMissions: [],
   defaultScaleMode: 'manual',
   branding: EMPTY_BRANDING,
+  attendance: DEFAULT_ATTENDANCE_SETTINGS,
 };
 
 /** The thirteen codes with the company's labels, flags and order applied (stable by built-in order). */
@@ -245,6 +262,22 @@ export function parseCompanySettings(raw: unknown): CompanySettings {
       })),
     defaultScaleMode: isScaleMode(raw.defaultScaleMode) ? raw.defaultScaleMode : 'manual',
     branding: parseBranding(raw.branding),
+    attendance: parseAttendance(raw.attendance),
+  };
+}
+
+function parseAttendance(raw: unknown): AttendanceSettings {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return DEFAULT_ATTENDANCE_SETTINGS;
+  const record = raw as Record<string, unknown>;
+  const number = (key: string) => (record[key] === null || record[key] === undefined || !Number.isFinite(Number(record[key])) ? null : Number(record[key]));
+  const latitude = number('officeLatitude'), longitude = number('officeLongitude');
+  const located = latitude !== null && longitude !== null;
+  return {
+    checkInEnabled: record.checkInEnabled !== false,
+    officeLatitude: located ? latitude : null,
+    officeLongitude: located ? longitude : null,
+    officeRadiusM: number('officeRadiusM') ?? DEFAULT_ATTENDANCE_SETTINGS.officeRadiusM,
+    photoRetentionDays: number('photoRetentionDays') ?? DEFAULT_ATTENDANCE_SETTINGS.photoRetentionDays,
   };
 }
 

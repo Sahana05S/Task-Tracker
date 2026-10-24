@@ -22,6 +22,7 @@ import { DailyStarSpotlight } from '@/modules/recognition/components/daily-star-
 import { StreakCard } from '@/modules/recognition/components/streak-card';
 import { settle } from '@/shared/async/settle';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { CheckInPrompt } from '@/modules/attendance/components/check-in-prompt';
 
 export const metadata: Metadata = { title: 'Today' };
 
@@ -44,7 +45,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   // New in the last 30 days, until dismissed.
   const firstRun = Date.now() - Date.parse(profile.createdAt) < NEW_MEMBER_MS && (await cookies()).get(FIRST_RUN_COOKIE)?.value !== 'dismissed';
   return <MissionPage>
-    <MissionPageHeader title="Today" description="A clear path through your work." />
+    <MissionPageHeader title="Today" description="A clear path through your work." actions={<Suspense fallback={null}><CheckInPrompt userId={profile.id} /></Suspense>} />
     {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
     <MissionRoadmap key={due} initial={initial} due={due} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLayout={roadmapLayout(query.layout)} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>

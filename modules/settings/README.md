@@ -10,7 +10,7 @@ reads them.
 | File | What it offers |
 |---|---|
 | `index.ts` | `getCompanySettings()` (built-in defaults before migration 53), `categoryCatalogue()` (the 13 codes with the company's labels, active flags and order), `getCompanyHolidayNames(from, to)` |
-| `actions.ts` | `saveCompanySettings(prev, form)`: one section per call (`agenda`, `categories`, `meeting_types`, `standing_missions`, `holidays`, `mission_defaults`, `branding`, `departments`) |
+| `actions.ts` | `saveCompanySettings(prev, form)`: one section per call (`agenda`, `categories`, `meeting_types`, `standing_missions`, `holidays`, `mission_defaults`, `branding`, `departments`, `attendance`) |
 | `client.ts` | Types and pure rules: `buildCategoryCatalogue`, `categoryChoices` (hides inactive codes except the current one), `categoryLabelMap`, `meetingTypeChoices` (keeps a saved value that left the list), `agendaLines`, `renderTitlePattern`, `formatSheetTag`, `canManageCompanySettings`, `STANDING_SCALE_MODES`, `SCALE_MODE_LABELS`, `CompanyBranding`, `BRANDING_URL_FIELDS`, `isBrandUrl` |
 | `components/company-settings.tsx` | `CompanySettingsEditor`: the Company tab (eight sections, each saved on its own) |
 | `components/company-settings-context.tsx` | `CompanySettingsProvider` (in the workspace layout), `useCategoryCatalogue()`, `useCategoryLabels()`, `useMeetingTypes()`, `useDefaultScaleMode()`, `useCompanyBranding()` |
@@ -87,6 +87,18 @@ that show a mission type's name use `useCategoryLabels()`; server code uses
   saves the whole list (up to 100): rows keep their id, so renaming or hiding
   one keeps its people, and a department that still has people cannot be
   removed. Settings > Company > Departments edits it.
+
+## Photo check-in (migration 72, `72_attendance_check_in.sql`)
+- `organization_settings` gains `check_in_enabled` (default on), an optional
+  office position (`office_latitude`/`office_longitude`, both or neither),
+  `office_radius_m` (20-5000, default 200) and `photo_retention_days` (7-730,
+  default 90).
+- `company_settings()` returns `attendance` {checkInEnabled, officeLatitude,
+  officeLongitude, officeRadiusM, photoRetentionDays};
+  `company_settings_command('attendance', {...})` saves it (director only,
+  same version, receipt and audit). Settings > Company > Check-in edits it,
+  with "Use my current location" for the office. The check-ins themselves
+  belong to the attendance module.
 
 Tests: `modules/settings/__tests__/settings.test.ts`,
 `tools/test_company_settings_database.py`, `tools/test_mission_scale_mode_database.py`,

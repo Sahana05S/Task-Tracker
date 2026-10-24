@@ -130,6 +130,19 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
     return { ok: true, value: { missions } };
   },
 
+  attendance(raw) {
+    if (!isRecord(raw) || typeof raw.checkInEnabled !== 'boolean') return { ok: false, error: 'Attendance settings could not be read.' };
+    const coordinate = (value: unknown) => (value === null || value === undefined || value === '' ? null : Number(value));
+    const latitude = coordinate(raw.officeLatitude), longitude = coordinate(raw.officeLongitude);
+    if ((latitude === null) !== (longitude === null)) return { ok: false, error: 'Give both the office latitude and longitude, or neither.' };
+    if (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) return { ok: false, error: 'The office latitude must be between -90 and 90.' };
+    if (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180)) return { ok: false, error: 'The office longitude must be between -180 and 180.' };
+    const radius = Number(raw.officeRadiusM), days = Number(raw.photoRetentionDays);
+    if (!Number.isInteger(radius) || radius < 20 || radius > 5000) return { ok: false, error: 'The office radius must be 20 to 5000 metres.' };
+    if (!Number.isInteger(days) || days < 7 || days > 730) return { ok: false, error: 'Keep photos for 7 to 730 days.' };
+    return { ok: true, value: { checkInEnabled: raw.checkInEnabled, officeLatitude: latitude, officeLongitude: longitude, officeRadiusM: radius, photoRetentionDays: days } };
+  },
+
   mission_defaults(raw) {
     if (!isRecord(raw) || !(STANDING_SCALE_MODES as readonly unknown[]).includes(raw.scaleMode)) {
       return { ok: false, error: 'Choose how new missions are weighted.' };
