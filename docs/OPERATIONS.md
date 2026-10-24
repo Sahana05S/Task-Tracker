@@ -187,6 +187,39 @@ revision; the earlier revision remains selectable and visibly superseded.
 Ordinary edits to unrelated closed records remain blocked. A database backup
 and operational release procedure are in [the release runbook](plans/RELEASE-RUNBOOK.md).
 
+## Demo workspace data
+
+`tools/seed_demo_workspace.py` fills the demo project with a synthetic month for
+the four demo accounts, so every page has something to show: missions with
+checklists, details, links and relations; logs with progress; attendance with
+check-in times; facts, ideas, suggestions, sales and meeting points with
+validations; month setup; Task Tools history; policies; a milestone; draft saved
+reports; and award requests. The data set is `tools/fixtures/demo-workspace.json`
+(days are offsets from the 1st; every name and client is fictional).
+
+Everything goes through the app's own commands, as the person who would do it.
+Each step has a fixed operation id, so a rerun skips finished steps, and running
+it again on a later day adds only the new days. History rows are moved to the
+business day of each step (`--no-backdate` keeps the real time), so trend
+charts, "as of" views and the activity log read the month as it happened.
+
+It refuses to run unless the month is the current, open month, the four demo
+accounts are the only active members, and the migration ledger matches. On the
+demo project it needs `--confirm-production-ref` (the shared tools call that ref
+production); it refuses any other hosted project.
+
+```bash
+python -I tools/seed_demo_workspace.py --target hosted --project-ref sbtxtsisjhuciobxykcm --workdir <linked CLI folder> --allow-ledger 59
+```
+
+Add `--yes --confirm-production-ref sbtxtsisjhuciobxykcm` to apply. Afterwards
+run the award worker workflow once (Actions tab, "award-worker") so the days
+certify and the policies are evaluated. `--undo MANIFEST` deletes the missions
+the run created, withdraws its records and attendance, restores attendance it
+corrected, archives its policies and revokes the invitation; award runs and a
+carried-over mission stay as history. Timers, checklist item-timer hours, Drive
+files, the ceremony publish and month close are left for live testing.
+
 ## Database backups (Supabase Free plan)
 
 The Free plan has no automatic Supabase backups. The GitHub Actions workflow
