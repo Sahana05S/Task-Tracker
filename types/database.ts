@@ -876,6 +876,8 @@ export interface Database {
       /** Migration 72 (service role): photos older than each company's retention, oldest first. */
       attendance_photos_due: { Args: { p_limit?: number }; Returns: Json };
       attendance_photos_cleared: { Args: { p_ids: string[] }; Returns: number };
+      /** Migration 73 (service role): mark ended days without a record (Present after a check-in, Holiday on days off, else Absent). */
+      attendance_autofill: { Args: { p_through?: string | null }; Returns: Json };
       current_organization: { Args: Record<never, never>; Returns: string | null };
       team_holiday_dates: { Args: { p_from: string; p_to: string }; Returns: string[] };
       recognition_activity_days: { Args: { p_as_of?: string | null; p_employee?: string | null }; Returns: Json };

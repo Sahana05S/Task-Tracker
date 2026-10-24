@@ -1,6 +1,7 @@
 name: Nightly award run
 
-# Calls the app's award worker (POST /api/internal/awards) after the daily
+# First marks the ended day's unrecorded attendance (POST /api/internal/attendance-autofill),
+# then calls the app's award worker (POST /api/internal/awards) after the daily
 # cutoff. Each call queues due award days through yesterday (Asia/Kolkata) and
 # runs up to 10 jobs; this keeps calling until a batch comes back empty. Then it
 # calls the policies worker (POST /api/internal/policies, same token and
@@ -31,7 +32,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # First: mark the ended day's unrecorded attendance (migration 73), so missing records do not block the award day.
+      - name: Mark unrecorded attendance
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          TOKEN: ${{ secrets.TASKPULSE_AWARD_WORKER_TOKEN }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o response.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${TOKEN}" "${APP_URL%/}/api/internal/attendance-autofill")
+          if [ "$code" != "200" ]; then
+            echo "::error::Attendance marking returned HTTP ${code}: $(cat response.json)"
+            exit 1
+          fi
+          {
+            echo "### Attendance marked automatically"
+            echo ""
+            jq -r '.result.companies[] | "- \(.organizationId): \(.marked | to_entries | map("\(.key) \(.value)") | join(", ")), skipped \(.skipped)"' response.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run award batches until the queue is empty
+        if: ${{ !cancelled() }}
         env:
           APP_URL: ${{ secrets.APP_URL }}
           TOKEN: ${{ secrets.TASKPULSE_AWARD_WORKER_TOKEN }}

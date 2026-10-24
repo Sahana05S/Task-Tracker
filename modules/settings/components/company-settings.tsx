@@ -500,6 +500,8 @@ function MissionDefaultsSection({ settings }: SectionProps) {
 /* Photo check-in                                                             */
 /* -------------------------------------------------------------------------- */
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
 function AttendanceSection({ settings }: SectionProps) {
   const saved = settings.attendance;
   const [draft, setDraft, dirty, reset] = useDraft({
@@ -508,6 +510,8 @@ function AttendanceSection({ settings }: SectionProps) {
     officeLongitude: saved.officeLongitude === null ? '' : String(saved.officeLongitude),
     officeRadiusM: String(saved.officeRadiusM),
     photoRetentionDays: String(saved.photoRetentionDays),
+    autoMarkEnabled: saved.autoMarkEnabled,
+    weeklyOffDays: saved.weeklyOffDays,
   });
   const [locating, setLocating] = React.useState<string | null>(null);
   const set = (patch: Partial<typeof draft>) => setDraft((current) => ({ ...current, ...patch }));
@@ -542,6 +546,8 @@ function AttendanceSection({ settings }: SectionProps) {
           officeLongitude: draft.officeLongitude.trim() === '' ? null : Number(draft.officeLongitude),
           officeRadiusM: Number(draft.officeRadiusM),
           photoRetentionDays: Number(draft.photoRetentionDays),
+          autoMarkEnabled: draft.autoMarkEnabled,
+          weeklyOffDays: draft.weeklyOffDays,
         })}
       >
         <div className="grid gap-4">
@@ -579,6 +585,32 @@ function AttendanceSection({ settings }: SectionProps) {
           <p className="text-muted-foreground text-sm">
             With an office position, check-ins farther than the radius are marked &ldquo;outside office&rdquo; for managers; they are never refused. Leave the position empty to only record where people were.
           </p>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={draft.autoMarkEnabled} onChange={(event) => set({ autoMarkEnabled: event.target.checked })} className="size-4" />
+            Mark attendance automatically at the end of each day
+          </label>
+          <fieldset className="grid gap-2" disabled={!draft.autoMarkEnabled}>
+            <legend className="text-foreground mb-1 text-sm font-medium">Weekly off days</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {WEEKDAYS.map((label, day) => {
+                const on = draft.weeklyOffDays.includes(day);
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={on}
+                    className={cn('filter-pill', on && 'bg-primary-subtle text-primary-subtle-foreground border-primary/40')}
+                    onClick={() => set({ weeklyOffDays: on ? draft.weeklyOffDays.filter((d) => d !== day) : [...draft.weeklyOffDays, day].sort() })}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-muted-foreground text-sm">
+              Just after midnight, every member without a record for the day that ended is marked: Present if they checked in, Holiday on these days and on calendar holidays, Absent otherwise. A record entered by hand is never changed, and a manager can correct any day.
+            </p>
+          </fieldset>
         </div>
       </SectionForm>
     </MissionPanel>

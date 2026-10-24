@@ -140,7 +140,13 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
     const radius = Number(raw.officeRadiusM), days = Number(raw.photoRetentionDays);
     if (!Number.isInteger(radius) || radius < 20 || radius > 5000) return { ok: false, error: 'The office radius must be 20 to 5000 metres.' };
     if (!Number.isInteger(days) || days < 7 || days > 730) return { ok: false, error: 'Keep photos for 7 to 730 days.' };
-    return { ok: true, value: { checkInEnabled: raw.checkInEnabled, officeLatitude: latitude, officeLongitude: longitude, officeRadiusM: radius, photoRetentionDays: days } };
+    if (typeof raw.autoMarkEnabled !== 'boolean') return { ok: false, error: 'Attendance settings could not be read.' };
+    const off = Array.isArray(raw.weeklyOffDays) ? raw.weeklyOffDays : null;
+    if (!off || off.length > 6 || !off.every((day) => Number.isInteger(day) && (day as number) >= 0 && (day as number) <= 6)) {
+      return { ok: false, error: 'Choose up to six weekly off days.' };
+    }
+    return { ok: true, value: { checkInEnabled: raw.checkInEnabled, officeLatitude: latitude, officeLongitude: longitude, officeRadiusM: radius, photoRetentionDays: days,
+      autoMarkEnabled: raw.autoMarkEnabled, weeklyOffDays: [...new Set(off as number[])].sort() } };
   },
 
   mission_defaults(raw) {
