@@ -424,9 +424,10 @@ function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, ti
   );
   if (view === 'board') {
     return (
-      <div className="grid items-start gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Phase columns share one height, so the board reads as three even lanes. */}
         {sections.map((home) => (
-          <section key={home.section} id={home.section} aria-labelledby={`${checklistId}-${home.section}`} className="bg-muted/50 grid gap-3 rounded-2xl p-3 sm:p-4">
+          <section key={home.section} id={home.section} aria-labelledby={`${checklistId}-${home.section}`} className="bg-muted/50 grid content-start gap-3 rounded-2xl p-3 sm:p-4">
             {heading(home)}
             {home.rows.length ? home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} />)
               : <p className="text-muted-foreground text-sm">No rows yet. An empty phase counts as N/A.</p>}

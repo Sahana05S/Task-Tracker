@@ -81,11 +81,16 @@ export function CompanySettingsEditor({ settings, members }: { settings: Company
       </nav>
       <BrandingSection settings={settings} />
       <MissionTypesSection settings={settings} />
-      <MeetingTypesSection settings={settings} />
-      <DepartmentsSection settings={settings} />
+      {/* Short sections in pairs on wide screens instead of one long column. */}
+      <div className="grid gap-5 lg:gap-6 xl:grid-cols-2">
+        <MeetingTypesSection settings={settings} />
+        <DepartmentsSection settings={settings} />
+      </div>
       <AgendaSection settings={settings} />
-      <MissionDefaultsSection settings={settings} />
-      <AttendanceSection settings={settings} />
+      <div className="grid gap-5 lg:gap-6 xl:grid-cols-2">
+        <MissionDefaultsSection settings={settings} />
+        <AttendanceSection settings={settings} />
+      </div>
       <StandingMissionsSection settings={settings} members={members} />
       <HolidaysSection settings={settings} />
     </div>

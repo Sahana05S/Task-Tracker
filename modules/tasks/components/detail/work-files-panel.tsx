@@ -34,7 +34,7 @@ export function WorkFilesPanel({
         {canCreateWorkFile ? (
           <WorkFileCreator taskId={task.id} taskTag={task.taskTag} title={task.title} version={task.lifecycleVersion ?? 0} />
         ) : null}
-        <div className="grid gap-5 xl:grid-cols-3">
+        <div className="grid gap-5 2xl:grid-cols-3">
           <AssetGroup
             title="Inputs"
             empty="No mission inputs have been linked."

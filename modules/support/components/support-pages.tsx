@@ -60,14 +60,16 @@ export function ReportsModule({
   const memberNames = new Map(members.map((member) => [member.id, member.fullName]));
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[24rem_minmax(0,1fr)]">
+    // The table takes the full width; creating a report opens above it, so the
+    // wide table never shares its row with a form (or a missing one).
+    <div className="grid gap-4">
       {canManage ? (
-        <aside className="soft-card h-fit p-5 sm:p-6">
-          <h2 className="text-foreground text-base font-bold tracking-tight">Create report</h2>
-          <ReportForm members={members} />
-        </aside>
+        <details className="soft-card group p-5 sm:p-6">
+          <summary className="text-foreground cursor-pointer text-base font-bold tracking-tight">Create report</summary>
+          <div className="mt-4"><ReportForm members={members} /></div>
+        </details>
       ) : null}
-      <section className="soft-card-clip xl:col-span-1">
+      <section className="soft-card-clip">
         {reports.length === 0 ? (
           <EmptyState title="No saved reports yet" className="m-4">The managing director saves a month&apos;s report here, with the figures as they were.</EmptyState>
         ) : (

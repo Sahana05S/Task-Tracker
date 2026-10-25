@@ -43,7 +43,7 @@ export default async function TimelinesPage({searchParams}:{searchParams:Promise
         description={`${timeline.groups.length} assignees · ${assignedTaskCount} assignment bars (shared missions repeat by assignee) · ${timeline.totalDays} day range`}
       />
 
-      <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+      <dl className="grid gap-2.5 sm:grid-cols-3 sm:gap-3">
         <StatTile icon={CalendarClockIcon} label="Timeline start" value={timeline.startDate} />
         <StatTile icon={FlagIcon} label="Timeline end" value={timeline.endDate} />
         <StatTile icon={CalendarRangeIcon} label="Visible mission bars" value={String(assignedTaskCount)} />

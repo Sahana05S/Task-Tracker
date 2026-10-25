@@ -103,7 +103,7 @@ export function PayFile({ file, components, employees }: { file: EmployeePayFile
         {line === null ? (
           <MissionNotice tone="attention">Not on this month&apos;s payroll (no attendance and not active, or marked “not on payroll”).</MissionNotice>
         ) : (
-          <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <dl className="grid grid-cols-2 gap-2 lg:grid-cols-5">
             <StatTile label="Monthly salary" value={line.monthlySalary === null ? 'Not set' : formatINR(line.monthlySalary)} tone={line.monthlySalary === null ? 'alert' : 'default'} />
             <StatTile label="Days worked" value={line.daysWorked.toLocaleString('en-IN')} note={`${line.presentDays} P · ${line.udDays} UD · ${line.halfDays} H`} />
             <StatTile label="Fixed deductions" value={formatINR(line.fixedTotal)} />
@@ -180,6 +180,8 @@ export function PayFile({ file, components, employees }: { file: EmployeePayFile
         ) : null}
       </MissionPanel>
 
+      {/* Advances and salary records side by side on wide screens. */}
+      <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
       <MissionPanel icon={HandCoinsIcon} title="Advances" subtitle="Money paid ahead of salary. Repay it with “Advance” monthly deductions.">
         <dl className="mb-4 grid grid-cols-3 gap-2">
           <StatTile label="Taken" value={formatINR(advancesTaken)} />
@@ -218,6 +220,7 @@ export function PayFile({ file, components, employees }: { file: EmployeePayFile
           </ul>
         )}
       </MissionPanel>
+      </div>
     </PayFileContext.Provider>
   );
 }

@@ -82,7 +82,8 @@ export function EmployeeChartsPanel({ charts }: { charts: EmployeeAnalyticsChart
       </div>
 
       <ChartSection title="Mission mix" subtitle="Counts across this member's missions as of the selected day.">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {/* Five charts: three across then two wider at xl; the last spans the row at md. */}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6 md:[&>*:last-child]:col-span-2 xl:[&>*]:col-span-2 xl:[&>*:nth-child(n+4)]:col-span-3">
           <Distribution title="Types" data={charts.taskTypes} />
           <Distribution title="Priorities" data={charts.taskPriorities} />
           <Distribution title="Statuses" data={charts.taskStatuses} />

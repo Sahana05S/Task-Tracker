@@ -70,7 +70,8 @@ export function MissionHeadlineStrip({
         <h2 className="text-foreground text-sm font-bold">Team headline · {monthLabel}</h2>
         <p className="text-muted-foreground text-xs">Live month to date; figures change as work is logged.</p>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      {/* Six figures for managers, three for members: each fills its row. */}
+      <div className={showLeaders ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6' : 'grid gap-3 sm:grid-cols-3'}>
         {showLeaders ? (
           <>
             <Leader icon={FlagIcon} label="Critical team member" leader={headline.critical} unit={v => `Criticality ${two(v)}`} />

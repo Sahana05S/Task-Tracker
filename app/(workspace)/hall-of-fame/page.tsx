@@ -54,8 +54,10 @@ export default async function HallOfFamePage() {
         <MissionNotice tone="attention" icon={TriangleAlertIcon} role="status">Commendation points couldn&apos;t be loaded, so these totals show award points only. Refresh to try again.</MissionNotice>
       ) : null}
 
+      {/* Your points beside your trophy case on wide screens. */}
       {hall && me ? (
-        <section className="soft-card grid gap-5 p-5 sm:grid-cols-[auto_1fr] sm:items-center sm:p-6" aria-label="Your points">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-6">
+        <section className="soft-card grid content-center gap-5 p-5 sm:grid-cols-[auto_1fr] sm:items-center sm:p-6" aria-label="Your points">
           <PointsRing points={me.points} progress={me.progress} />
           <div className="grid gap-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -76,9 +78,6 @@ export default async function HallOfFamePage() {
             </dl>
           </div>
         </section>
-      ) : null}
-
-      {hall && me ? (
         <MissionPanel icon={TrophyIcon} title="Trophy case" subtitle="Earned badges are in colour; the rest say what earns them.">
           <TrophyCase entry={me} streak={streak.status === 'ready' ? streak.data : null} />
           {hall.recent.length ? (
@@ -95,6 +94,7 @@ export default async function HallOfFamePage() {
             </div>
           ) : null}
         </MissionPanel>
+        </div>
       ) : null}
 
       {hall ? (
