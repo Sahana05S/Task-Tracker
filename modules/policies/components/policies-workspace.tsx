@@ -125,6 +125,8 @@ function MemberList({ policies }: { policies: PolicyRow[] }) {
     <ul className="grid gap-3 md:grid-cols-2">
       {policies.map((p) => {
         const reason = p.mine?.reasons[0];
+        // A period that could not be judged reads as not checked yet (no "waiting for data").
+        const judged = p.mine && p.mine.outcome !== 'unavailable' ? p.mine : null;
         return (
           <li key={p.id} className="border-border grid content-start gap-3 rounded-2xl border bg-card p-4">
             <div>
@@ -136,10 +138,10 @@ function MemberList({ policies }: { policies: PolicyRow[] }) {
             <BadgeSeal badge={p.reward.badge} points={p.reward.points} />
             <div className="bg-muted/70 rounded-xl px-3 py-2 text-sm">
               <p className="text-foreground font-semibold">
-                {p.mine ? `You: ${outcomeLabel(p.mine.outcome, p.mine.final)}` : 'You: not checked yet this period'}
+                {judged ? `You: ${outcomeLabel(judged.outcome, judged.final)}` : 'You: not checked yet this period'}
               </p>
-              {reason ? <p className="text-muted-foreground text-xs">{describeReason(reason)}</p>
-                : !p.mine ? <p className="text-muted-foreground text-xs">Results are checked every night.</p> : null}
+              {judged && reason ? <p className="text-muted-foreground text-xs">{describeReason(reason)}</p>
+                : !judged ? <p className="text-muted-foreground text-xs">Results are checked every night.</p> : null}
             </div>
           </li>
         );
@@ -220,17 +222,15 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
           {manager ? (
             <>
               <StatTile icon={CircleCheckIcon} label="Met so far" value={sum('met')} note={`${sum('notMet')} not met · each policy’s current period`} />
-              <StatTile icon={TriangleAlertIcon} label="Can’t be judged" value={sum('unavailable')}
-                note="Usually attendance or check-in times missing" />
               <StatTile icon={CalendarClockIcon} label="Last evaluation" tone={lastStale ? 'alert' : 'default'}
-                value={last ? formatDateTime(last.recordedAt) : runs ? 'Not yet' : 'Unavailable'}
+                value={last ? formatDateTime(last.recordedAt) : '—'}
                 note={last?.status === 'failed' ? `Failed: ${runError(last.errorCode)}` : lastStale ? 'More than 36 hours ago' : undefined} />
             </>
           ) : (
             <>
               <StatTile icon={CircleCheckIcon} label="On track or met" value={policies.filter((p) => p.mine?.outcome === 'met').length} note="This period" />
-              <StatTile icon={AwardIcon} label="Commendations" value={mine ? mine.length : 'Unavailable'} />
-              <StatTile icon={AwardIcon} label="Recognition points" value={mine ? mine.reduce((n, c) => n + c.points, 0) : 'Unavailable'} note="From policies" />
+              <StatTile icon={AwardIcon} label="Commendations" value={mine ? mine.length : '—'} />
+              <StatTile icon={AwardIcon} label="Recognition points" value={mine ? mine.reduce((n, c) => n + c.points, 0) : '—'} note="From policies" />
             </>
           )}
         </dl>

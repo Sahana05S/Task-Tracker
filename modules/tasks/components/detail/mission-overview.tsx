@@ -71,7 +71,7 @@ export function MissionOverview({
           icon={GaugeIcon}
           label="Task freshness"
           value={task.freshness ?? '—'}
-          note={task.freshness ? TASK_FRESHNESS_MEANINGS[task.freshness] : codeLabel(task.freshnessReason, 'Dates needed to work it out are missing')}
+          note={task.freshness ? TASK_FRESHNESS_MEANINGS[task.freshness] : 'Set an assigned and a due date to show it'}
         />
         <PeopleTile label="Assignees" names={assigneeNames} fallback="Unassigned" />
         <PeopleTile label="Reviewers" names={reviewerNames} fallback="No reviewer" />

@@ -6,8 +6,10 @@ import type { Outcome, Reason } from './types';
 
 export const OUTCOME_LABELS: Record<Outcome, { final: string; provisional: string }> = {
   met: { final: 'Met', provisional: 'On track' },
-  not_met: { final: 'Not met', provisional: 'Not yet' },
-  unavailable: { final: 'Cannot be judged', provisional: 'Waiting for data' },
+  not_met: { final: 'Not met', provisional: 'In progress' },
+  // Pages show a period that could not be judged as not checked yet, never "waiting for data"
+  // (user decision, 25 October 2026); this wording remains for exports and history.
+  unavailable: { final: 'Not judged', provisional: 'Checked every night' },
 };
 
 export function outcomeLabel(outcome: Outcome, final: boolean): string {

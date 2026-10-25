@@ -9,17 +9,17 @@ const STYLE: Record<StarDayState, string> = {
   star: 'bg-recognition border-recognition',
   other: 'bg-card border-border-strong',
   none: 'bg-card border-border-strong',
-  waiting: 'bg-attention-subtle border-attention-strong border-dashed',
-  pending: 'bg-muted border-border-muted border-dashed',
+  waiting: 'bg-card border-border-strong border-dashed',
+  pending: 'bg-card border-border-strong border-dashed',
 };
 const LABEL: Record<StarDayState, string> = {
   star: 'Daily star',
   other: 'Another member’s star',
   none: 'No winner',
-  waiting: 'Waiting for data',
-  pending: 'Not calculated',
+  waiting: 'No star yet',
+  pending: 'No star yet',
 };
-const LEGEND: readonly StarDayState[] = ['star', 'other', 'waiting', 'pending'];
+const LEGEND: readonly StarDayState[] = ['star', 'other'];
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 /** Blank cells before the first day so columns are Monday to Sunday. */

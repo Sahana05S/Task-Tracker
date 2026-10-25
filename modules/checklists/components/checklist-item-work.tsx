@@ -27,9 +27,9 @@ export function ChecklistItemWork({ task, node, time, actions, onOpen, onCommitt
   return <div className="mt-4 grid min-w-0 gap-4">
     {node.description ? <p className="text-muted-foreground whitespace-pre-wrap break-words text-sm leading-relaxed">{node.description}</p> : null}
     <dl className="text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-      <dt>Progress</dt><dd className="text-foreground text-right tabular-nums">{node.progressPercentage === null ? 'Unavailable' : `${Math.round(node.progressPercentage)}%`}</dd>
+      <dt>Progress</dt><dd className="text-foreground text-right tabular-nums">{node.progressPercentage === null ? '—' : `${Math.round(node.progressPercentage)}%`}</dd>
       <dt>Estimate</dt><dd className="text-right">{formatMinutes(node.estimatedMinutes) ?? 'Not estimated'}</dd>
-      {!container ? <><dt>Logged on this item</dt><dd className="text-right">{time?.available && seconds !== undefined ? `${formatHours(seconds / 3600)} h` : 'Unavailable'}</dd></> : null}
+      {!container ? <><dt>Logged on this item</dt><dd className="text-right">{time?.available && seconds !== undefined ? `${formatHours(seconds / 3600)} h` : '—'}</dd></> : null}
     </dl>
     {node.links.length ? <ul className="grid gap-2 text-sm">{node.links.map((href, index) => <li key={`${href}:${index}`}><a href={href} target="_blank" rel="noopener noreferrer" className="text-primary break-all underline underline-offset-4">Work link {index + 1}</a></li>)}</ul> : null}
     {container ? <><p className="text-muted-foreground text-sm">Progress is the average of the {node.childCount} row{node.childCount === 1 ? '' : 's'} under it.</p><button type="button" onClick={onOpen} className={cn(buttonVariants(), 'px-4')}>Open rows</button></> : <>

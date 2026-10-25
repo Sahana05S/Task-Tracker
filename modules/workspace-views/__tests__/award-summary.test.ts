@@ -37,11 +37,11 @@ describe('award summary while days are rechecked (migration 62)', () => {
 
   it('keeps the last decided results with the mark and counts them as rechecked', () => {
     expect(html).toContain('Mon 5 Oct: star awarded to Asha Rao<');
-    expect(html).toContain('Tue 6 Oct: star awarded to Ravi Kumar (recalculating after a change)');
-    expect(html).toContain('Wed 7 Oct: no winner (recalculating after a change)');
-    expect(html).toContain('Thu 8 Oct: not calculated yet');
+    expect(html).toContain('Tue 6 Oct: star awarded to Ravi Kumar (last decided result)');
+    expect(html).toContain('Wed 7 Oct: no winner (last decided result)');
+    expect(html).toContain('Thu 8 Oct: no star yet');
     expect(html).toContain('1 of 4</span> days decided, <span class="tabular font-semibold">2</span> being rechecked.');
-    expect(html).toContain('Recalculating (2)</li>');
+    expect(html).toContain('Last decided result (2)</li>');
   });
 
   it('shows the marked days without explanatory warnings (decision 25 Oct 2026)', () => {

@@ -110,7 +110,7 @@ export function FreshnessIndicator({
       {...props}
     >
       <span aria-hidden="true" className="freshness-dot" />
-      {freshness ?? "Unavailable"}
+      {freshness ?? "—"}
     </span>
   );
 }

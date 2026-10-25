@@ -27,13 +27,13 @@ export function EffortPanel({
         <CompactMetric label="Scaled progress" value={formatNumeric(task.scaledProgress)} />
         <CompactMetric label="Activity checklist progress" value={formatPercent(data.checklistProgressPercentage)} />
         <CompactMetric label="Total hours" value={formatHours(data.effort.hoursLogged)} />
-        <CompactMetric label="Hours worked today" value={todayHours !== null ? formatHours(todayHours) : 'Unavailable'} />
+        {todayHours !== null ? <CompactMetric label="Hours worked today" value={formatHours(todayHours)} /> : null}
         <CompactMetric label="Task productivity" value={formatNumeric(task.taskProductivity)} />
         <CompactMetric label="Log entries" value={String(data.effort.logCount)} />
         <CompactMetric label="Metrics eligible" value={task.validForMetrics ? 'Yes' : 'No'} />
       </dl>
       <div className="border-border text-muted-foreground mt-4 grid gap-2 border-t pt-3 text-xs">
-        <p>Counted in performance: {task.validForMetrics ? 'yes' : `not yet (${codeLabels(task.eligibilityReasons ?? [], ', ') || 'reason not recorded'})`}. Productivity also needs logged hours.<HelpTip tip="eligible" /></p>
+        <p>Counted in performance: {task.validForMetrics ? 'yes' : `no (${codeLabels(task.eligibilityReasons ?? [], ', ') || 'not eligible'})`}. Productivity also needs logged hours.<HelpTip tip="eligible" /></p>
         <p>Participant shares: {task.participantShares ? Object.entries(task.participantShares).map(([id,units])=>`${memberNames.get(id) ?? 'Former member'}: ${units/10000}%`).join(", ") : "not set for this older mission yet"}.</p>
       </div>
     </MissionPanel>

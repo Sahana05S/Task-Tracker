@@ -41,7 +41,7 @@ interface Props {
   initialLayout?: MapOrientation | null;
 }
 function Progress({ value }: { value: number | null }) {
-  return <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{value === null ? 'Progress unavailable' : `${Math.round(value)}%`}</span>;
+  return <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{value === null ? '—' : `${Math.round(value)}%`}</span>;
 }
 function LoadingBranch() {
   return <div role="status" className="space-y-3 py-5"><span className="sr-only">Loading checklist…</span>{[1, 2, 3].map(n => <div key={n} className="bg-muted h-16 rounded-xl motion-safe:animate-pulse" />)}</div>;
