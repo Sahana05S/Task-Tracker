@@ -19,17 +19,21 @@ import {
   TrophyIcon,
   TargetIcon,
   UsersIcon,
+  WalletIcon,
   WrenchIcon,
   type LucideIcon,
 } from 'lucide-react';
+
+import type { UserRole } from '@/types/tracker';
 
 /**
  * Workspace navigation (redesign, approved 15 October 2026).
  *
  * Five primary destinations plus a More menu. Every existing route keeps its
- * URL and permissions; grouped routes are reached through section tabs. Role
- * visibility is unchanged: every role sees every destination, and each page and
- * the database keep enforcing what a role may do there.
+ * URL and permissions; grouped routes are reached through section tabs. Every
+ * role sees every destination, and each page and the database keep enforcing
+ * what a role may do there. The one exception is Payroll (M18): salary data is
+ * the managing director's only, so its More item is listed for that role alone.
  */
 export interface NavTab {
   readonly label: string;
@@ -39,6 +43,8 @@ export interface NavTab {
   /** Prefixes inside `match` that belong to another tab. */
   readonly exclude?: readonly string[];
   readonly icon: LucideIcon;
+  /** Listed only for these roles (the page and database still enforce access). */
+  readonly roles?: readonly UserRole[];
 }
 
 export interface NavSection {
@@ -120,9 +126,15 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 /** Low-frequency destinations under More (desktop menu and phone sheet). */
 export const MORE_ITEMS: readonly NavTab[] = [
   { label: 'Company', href: '/milestones', match: ['/milestones'], icon: TargetIcon },
+  { label: 'Payroll', href: '/payroll', match: ['/payroll'], icon: WalletIcon, roles: ['managing_director'] },
   { label: 'Settings', href: '/settings', match: ['/settings'], icon: SettingsIcon },
   { label: 'Guide', href: '/guide', match: ['/guide'], icon: CircleHelpIcon },
 ];
+
+/** The More items a role is shown. */
+export function moreItemsFor(role: UserRole): readonly NavTab[] {
+  return MORE_ITEMS.filter((item) => !item.roles || item.roles.includes(role));
+}
 
 function matches(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);

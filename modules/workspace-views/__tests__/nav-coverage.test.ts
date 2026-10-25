@@ -1,5 +1,5 @@
 import { describe,expect,it } from 'vitest';
-import { MORE_ITEMS,NAV_SECTIONS,activeSection,isMoreActive,isTabActive } from '@/modules/workspace-views/components/shell/nav-items';
+import { MORE_ITEMS,NAV_SECTIONS,activeSection,isMoreActive,isTabActive,moreItemsFor } from '@/modules/workspace-views/components/shell/nav-items';
 import { PROTECTED_PREFIXES } from '@/modules/auth';
 import { weekStartOf } from '@/modules/workspace-views/internal/today';
 
@@ -33,6 +33,11 @@ describe('redesigned navigation keeps every workspace route reachable',()=>{
   expect(activeSection('/policies')?.label).toBe('Policies');
   expect(NAV_SECTIONS.find(s=>s.label==='Policies')?.inBottomNav).toBe(false);
   expect(PROTECTED_PREFIXES).toContain('/policies');
+ });
+ it('lists Payroll under More for the managing director only',()=>{
+  expect(isMoreActive('/payroll/employees')).toBe(true);
+  expect(moreItemsFor('managing_director').map(i=>i.label)).toContain('Payroll');
+  for(const role of ['project_engineer','data_manager','team_member'] as const)expect(moreItemsFor(role).map(i=>i.label)).not.toContain('Payroll');
  });
  it('keeps the master checklist inside Missions, not a separate destination',()=>{
   expect(activeSection('/tasks/M13-X/checklist')?.label).toBe('Missions');

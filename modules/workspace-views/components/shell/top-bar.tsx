@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronDownIcon } from 'lucide-react';
 
 import { CompanyBrand, useBrandHomeLabel } from '@/modules/settings/components/company-brand';
-import { MORE_ITEMS, NAV_SECTIONS, activeSection, isMoreActive } from '@/modules/workspace-views/components/shell/nav-items';
+import { NAV_SECTIONS, activeSection, isMoreActive, moreItemsFor } from '@/modules/workspace-views/components/shell/nav-items';
 import { TimerPill } from '@/modules/workspace-views/components/shell/timer-pill';
 import { UserMenu } from '@/modules/workspace-views/components/shell/user-menu';
 import { QuickLogTrigger } from '@/modules/time-tracking/components/quick-log-trigger';
@@ -68,7 +68,7 @@ export function TopBar({ profile }: { profile: User }) {
                   </Link>
                 </DropdownMenuItem>
               ))}
-              {MORE_ITEMS.map(({ label, href, icon: Icon }) => (
+              {moreItemsFor(profile.role).map(({ label, href, icon: Icon }) => (
                 <DropdownMenuItem key={href} asChild>
                   <Link href={href}>
                     <Icon aria-hidden="true" />

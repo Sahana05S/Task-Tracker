@@ -10,3 +10,5 @@ export { readPayrollSetup as getPayrollSetup } from '@/modules/payroll/internal/
 export { readPayrollMonth as getPayrollMonth } from '@/modules/payroll/internal/queries';
 /** One employee's pay file (the sheet's EMP tab) with that month's line. */
 export { readEmployeePayFile as getEmployeePayFile } from '@/modules/payroll/internal/queries';
+/** GET handler for /api/payroll/export (CSV of a month's Salary Calculation). */
+export { handlePayrollExport } from '@/modules/payroll/internal/export';
