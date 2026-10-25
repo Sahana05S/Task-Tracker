@@ -1,8 +1,5 @@
-import { LockIcon, TriangleAlertIcon } from 'lucide-react';
-
-import { BOARD_LABELS, type Board } from '@/modules/recognition/client';
-import { GAP_SENTENCE, dataGaps, plainReason } from '@/modules/reports/client';
-import { EmptyState, InitialsAvatar, MissionNotice } from '@/shared/ui/mission-ui';
+import type { Board } from '@/modules/recognition/client';
+import { EmptyState, InitialsAvatar } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 
 /** The figure a row's bar shows: the composite itself, or a factor's difference from the median. */
@@ -11,32 +8,6 @@ function barFigure(board: Board, row: Board['rows'][number]): number | null {
   if (text === null) return null;
   const n = Number(text);
   return Number.isFinite(n) ? n : null;
-}
-
-function reasonSentence(reasons: readonly string[]): string {
-  const gaps = dataGaps(reasons).map((gap) => GAP_SENTENCE[gap]);
-  if (gaps.length) return gaps.join(' ');
-  const plain = [...new Set(reasons.map(plainReason))];
-  return plain.length ? `${plain.join('. ')}.` : 'Required data is not available yet.';
-}
-
-/** Why a board has no ranking: the sales lock (pre-46 databases) or the engine's own reasons. */
-export function LeaderboardBoardStatus({ board }: { board: Board }) {
-  if (board.status === 'ready') return null;
-  if (board.status === 'locked') {
-    return (
-      <MissionNotice tone="attention" icon={LockIcon} role="status">
-        <p className="font-semibold">{BOARD_LABELS[board.key]} is locked</p>
-        <p className="mt-0.5">Sales aren&apos;t connected in this workspace yet, so this ranking waits for them. The other factor boards work now.</p>
-      </MissionNotice>
-    );
-  }
-  return (
-    <MissionNotice tone="attention" icon={TriangleAlertIcon} role="status">
-      <p className="font-semibold">No one can be ranked on {BOARD_LABELS[board.key].toLowerCase()} yet</p>
-      <p className="mt-0.5">{reasonSentence(board.reasons)}</p>
-    </MissionNotice>
-  );
 }
 
 /**
@@ -50,7 +21,7 @@ export function LeaderboardList({ board, names, viewerId }: {
   viewerId: string;
 }) {
   if (!board.rows.length) {
-    return board.status === 'ready' ? <EmptyState title="No one ranked yet">Rankings appear once the month has data.</EmptyState> : null;
+    return <EmptyState title="No rankings yet">Rankings appear once the first day of the month has been recorded.</EmptyState>;
   }
   const figures = board.rows.map((row) => barFigure(board, row));
   const scale = Math.max(0, ...figures.map((f) => Math.abs(f ?? 0)));
@@ -110,27 +81,6 @@ export function LeaderboardList({ board, names, viewerId }: {
           );
         })}
       </ol>
-      {board.unranked.length ? <Unranked board={board} names={names} /> : null}
     </div>
-  );
-}
-
-function Unranked({ board, names }: { board: Board; names: Record<string, string> }) {
-  return (
-    <details className="border-t px-4 py-3 text-sm sm:px-5">
-      <summary className="text-muted-foreground cursor-pointer font-medium">
-        {board.unranked.length} not ranked on this board
-      </summary>
-      <ul className="mt-2 grid gap-1.5">
-        {board.unranked.map((entry) => (
-          <li key={entry.userId} className="flex flex-wrap gap-x-2">
-            <span className="text-foreground font-medium">{names[entry.userId] ?? 'Team member'}</span>
-            <span className="text-muted-foreground">
-              {entry.reasons.length ? reasonSentence(entry.reasons) : 'Not ranked this month.'}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </details>
   );
 }
