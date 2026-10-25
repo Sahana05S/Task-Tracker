@@ -9,6 +9,7 @@ import { buildEmployeeAnalyticsCharts } from '@/modules/team/client';
 import { LiveReport } from '@/modules/reports/components/live-report';
 import { PerformanceBreakdown } from '@/modules/scoring/components/performance-breakdown';
 import { TeamStatsGrid } from '@/modules/workspace-views/components/dashboard/team-stats-grid';
+import { liveWindowEnd } from '@/shared/time/period';
 const response=JSON.parse(readFileSync('__tests__/fixtures/m11-fresh-context.json','utf-8'));
 const view=viewContext(response.sources.periodStart.slice(0,7),response.sources.asOf,new Date(response.sources.asOf));
 const employee='00000000-0000-0000-0000-000000000004';
@@ -22,5 +23,6 @@ describe('M11 independent presentation acceptance',()=>{
  it('exports context, units, evidence and unavailable values without spreadsheet commands',()=>{const csv=reportCsv(model());expect(csv).toContain('Asia/Kolkata');expect(csv).toContain('Unavailable');for(const value of ['=SUM(1,2)',' +cmd','\t@cmd','-1+2','\r=cmd'])expect(csvCell(value)).toMatch(/^"'/);expect(csvCell('normal "label"')).toBe('"normal ""label"""');});
  it('renders named selectors, downloads, copy, private scope and stable task links',()=>{const html=renderToStaticMarkup(createElement(LiveReport,{model:model()}));expect(html).toContain('name="period"');expect(html).toContain('Figures as of');expect(html).toContain('Download CSV');expect(html).toContain('Copy report text');expect(html).toContain('Drive is not connected yet');expect(html).toContain('/tasks/');expect(html).toContain('aria-label="Download live report"');});
  it('does not present missing team attendance as healthy zero',()=>{const m=model();const html=renderToStaticMarkup(createElement(TeamStatsGrid,{analytics:m.analytics,attendanceComplete:false}));expect(html).toContain('Attendance hours');expect(html).toContain('Incomplete');expect(html).toContain('no attendance recorded');expect(html).toMatch(/Attendance hours<\/dt><dd[^>]*><span class="stat-figure">Incomplete</);});
+ it('accepts the live window of days that have ended, and still refuses any other window (25 Oct 2026)',()=>{const live=liveWindowEnd(view.period,view.asOf);expect(()=>buildPresentation({...response,sources:{...response.sources,periodEndExclusive:live}},view)).not.toThrow();expect(()=>buildPresentation({...response,sources:{...response.sources,periodEndExclusive:view.period.startDate}},view)).toThrow('mismatch');});
  it('source-contract failures remain failures',()=>{expect(()=>buildPresentation({},view)).toThrow('unavailable');expect(()=>buildPresentation(response,{...view,asOf:'2026-01-01T00:00:00Z'})).toThrow('mismatch');});
 });
