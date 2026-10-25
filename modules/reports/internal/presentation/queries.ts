@@ -2,14 +2,16 @@ import { cache } from 'react';
 import { getAwards } from '@/modules/scoring';
 import { createClient } from '@/shared/supabase/server';
 import { buildPresentation } from './model';
-import { nextDate,type ViewContext } from './context';
+import { liveWindowEnd } from '@/shared/time/period';
+import type { ViewContext } from './context';
 const load=cache(async(start:string,end:string,asOf:string,employee:string|null)=>{
  const db=await createClient();const result=await db.rpc('live_presentation_context',{p_from:start,p_to_exclusive:end,p_as_of:asOf,p_employee:employee});
  if(result.error)throw new Error('Live presentation source read failed: '+result.error.message);
  return result.data;
 });
 export async function getLivePresentation(view:ViewContext,employee:string|null=null){
- const model=buildPresentation(await load(view.period.startDate,nextDate(view.period.endDate),view.asOf,employee),view,employee);
+ // Only days that have ended by the as-of time are read (today's unfinished day never blocks).
+ const model=buildPresentation(await load(view.period.startDate,liveWindowEnd(view.period,view.asOf),view.asOf,employee),view,employee);
  const db=await createClient();
  try{model.awards=await getAwards(db,view.period,model.calculation,employee??undefined);}catch(error){
   if(!(error instanceof Error)||!error.message.startsWith('Award and performance sources changed'))throw error;
