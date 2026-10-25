@@ -8,19 +8,17 @@ import { MilestoneToast } from './milestone-toast';
 import { StreakFlame } from './streak-flame';
 import { StreakStrip } from './streak-strip';
 
-function longDate(date: string): string {
-  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
-}
-
 /** Copy is factual and past tense for losses: no countdowns, no nagging. */
 function headline(s: StreakSummary): { title: string; body: string } {
   if (s.current === 0 && s.longest === 0) {
     return { title: 'No streak yet', body: 'Be present and log something today to start one.' };
   }
   if (s.current === 0) {
+    // The last recorded streak, never an "ended / absent" notice (user decision, 25 October 2026).
+    const days = (n: number) => `${n} ${n === 1 ? 'day' : 'days'}`;
     return {
-      title: 'Streak ended',
-      body: `${s.brokenOn ? `Ended on ${longDate(s.brokenOn)} (absent, or nothing logged). ` : ''}Longest so far: ${s.longest} ${s.longest === 1 ? 'day' : 'days'}. Today starts a new one.`,
+      title: s.previous > 0 ? `Last streak: ${days(s.previous)}` : 'Start a new streak today',
+      body: `Best: ${days(s.longest)}. Be present and log something today to start a new one.`,
     };
   }
   const best = s.current >= 3 && s.current === s.longest ? ' Your longest yet.' : '';

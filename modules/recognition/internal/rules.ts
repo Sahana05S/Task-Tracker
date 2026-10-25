@@ -46,6 +46,8 @@ export interface StreakSummary {
   todayCounted: boolean;
   /** The day that ended the current run, when the current streak is 0. */
   brokenOn: string | null;
+  /** When the streak has ended: the length of the run that ended (0 if none). */
+  previous: number;
   nextMilestone: number | null;
   daysToMilestone: number | null;
   /** Milestones the current streak has reached, lowest first. */
@@ -113,12 +115,17 @@ export function computeStreak(
   let current = 0;
   let lastActiveDate: string | null = null;
   let brokenOn: string | null = null;
+  let previous = 0;
   for (let i = n - 1; i >= 0; i -= 1) {
     const code = days[i] as DayCode;
     if (i === n - 1 && code !== 'c') continue;
     if (code === 's') continue;
     if (code === 'b') {
-      if (current === 0) brokenOn = addDays(from, i);
+      if (current === 0) {
+        brokenOn = addDays(from, i);
+        // The run that ended: counted days before the break, skipping `s`, back to the previous `b`.
+        for (let j = i - 1; j >= 0 && days[j] !== 'b'; j -= 1) if (days[j] === 'c') previous += 1;
+      }
       break;
     }
     current += 1;
@@ -138,7 +145,7 @@ export function computeStreak(
     recentDays.push({ date: addDays(from, i), state });
   }
   return {
-    userId, current, longest, lastActiveDate, todayCounted, brokenOn, nextMilestone,
+    userId, current, longest, lastActiveDate, todayCounted, brokenOn, previous, nextMilestone,
     daysToMilestone: nextMilestone === null ? null : nextMilestone - current, reached, milestones, recentDays, asOf, ruleVersion,
   };
 }
@@ -173,6 +180,8 @@ export interface DailyStarHighlight {
   isViewer: boolean;
   /** The run's own reason codes (empty for a winner); never invented here. */
   reasons: string[];
+  /** The shown result is from an earlier day than the one asked for (the latest decided day). */
+  fromEarlierDay?: boolean;
   /** The approved policy cutoff, or null when no policy is approved. */
   cutoff: { hour: number; minute: number } | null;
   policyApproved: boolean;
@@ -213,4 +222,19 @@ export function dailyStarHighlight(source: DailyStarSource, date: string, viewer
   // without its own reasons is still named by its state, never shown as empty.
   if (reasons.length === 0) reasons.push(day.certified ? `award_run_${day.status}` : 'award_run_uncertified');
   return { ...base, status: 'blocked', isViewer: false, reasons };
+}
+
+/**
+ * The most recent decided daily star on or before `through` (normally yesterday): a certified
+ * winner or no-winner day, or a recalculating day's last decided result. Pages show this
+ * instead of a "waiting for data" state (user decision, 25 October 2026). With no decided day
+ * in `source`, the highlight for `through` comes back as `pending` with no reasons.
+ */
+export function latestDailyStar(source: DailyStarSource, through: string, viewerId: string): DailyStarHighlight {
+  const dates = [...new Set(source.days.map((d) => d.date))].filter((d) => d <= through).sort().reverse();
+  for (const date of dates) {
+    const h = dailyStarHighlight(source, date, viewerId);
+    if (h.status === 'winner' || h.status === 'none') return { ...h, fromEarlierDay: date !== through };
+  }
+  return { ...dailyStarHighlight(source, through, viewerId), status: 'pending', reasons: [], fromEarlierDay: false };
 }
