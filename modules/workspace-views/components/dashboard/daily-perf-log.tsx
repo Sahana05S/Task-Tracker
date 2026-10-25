@@ -12,8 +12,15 @@ import { cn } from '@/shared/utils';
 const STATUS_TONE: Record<DailyPerfRow['status'], string> = {
   calculated: 'text-foreground',
   recalculating: 'text-muted-foreground border-border rounded-full border px-2 py-0.5',
-  uncertified: 'text-attention-foreground bg-attention-subtle rounded-full px-2 py-0.5',
+  uncertified: 'text-muted-foreground',
   not_calculated: 'text-muted-foreground',
+};
+/** On the page: plain words, no "not certified" warning (the CSV keeps DAILY_PERF_STATUS_LABEL). */
+const ROW_LABEL: Record<DailyPerfRow['status'], string> = {
+  calculated: 'Final',
+  recalculating: 'Last decided',
+  uncertified: 'Latest',
+  not_calculated: '',
 };
 
 /**
@@ -100,14 +107,6 @@ export async function DailyPerfLogSection({
           <>
             <p className="text-muted-foreground text-xs">
               Factors are the difference from the team median (six decimals); Sum is the shared score (two decimals).
-              Days without a retained daily run read Not calculated
-              {canRequest ? (
-                <>
-                  {'; fill one with '}
-                  <Link href="/team" className="text-primary font-medium underline-offset-2 hover:underline">Request calculation on Team</Link>
-                </>
-              ) : null}
-              .
             </p>
             {data.rows.length === 0 ? (
               <p className="text-muted-foreground text-sm">No members are in scope for these filters.</p>
@@ -141,8 +140,9 @@ function DailyPerfTable({ log }: { log: DailyPerfLog }) {
             <th scope="col" className="px-3 py-2 text-left font-semibold">Status</th>
           </tr>
         </thead>
-        {groupByDate(log.rows).map(([date, rows]) => {
-          const empty = rows.every((row) => row.status === 'not_calculated');
+        {/* Days and rows with no retained run are left out, never labelled "Not calculated" (decision 25 Oct 2026). */}
+        {groupByDate(log.rows.filter((row) => row.status !== 'not_calculated')).map(([date, rows]) => {
+          const empty = false;
           return (
             <tbody key={date} className="border-border border-t">
               <tr>
@@ -180,7 +180,7 @@ function DailyPerfTable({ log }: { log: DailyPerfLog }) {
                   )}
                   <td className="tabular px-2 py-1.5 text-right">{row.hours}</td>
                   <td className="px-3 py-1.5 whitespace-nowrap">
-                    <span className={STATUS_TONE[row.status]}>{DAILY_PERF_STATUS_LABEL[row.status]}</span>
+                    <span className={STATUS_TONE[row.status]}>{ROW_LABEL[row.status]}</span>
                   </td>
                 </tr>
               ))}

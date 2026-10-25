@@ -69,7 +69,7 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
 
   const describe = (date: string) => {
     const { kind, winnerId, recalculating } = views.get(date)!;
-    const mark = recalculating ? ' (recalculating after a change)' : '';
+    const mark = recalculating ? ' (last decided result)' : '';
     if (kind === 'awarded') return `${awardDayLabel(date)}: star awarded to ${names[winnerId ?? ''] ?? 'a team member'}${mark}`;
     if (kind === 'holiday') return `${awardDayLabel(date)}: ${holidayNames[date] ?? 'team holiday'}`;
     return `${awardDayLabel(date)}: ${AWARD_KIND[kind].label.toLowerCase()}${mark}`;
