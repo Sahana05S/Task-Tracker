@@ -52,3 +52,31 @@ export async function getLeaderboard(
   const canSee = (userId: string) => viewer.isActive && (canManageTasks(viewer.role) || userId === viewer.id);
   return buildLeaderboard(calculation, canSee, Object.fromEntries(sources.members.map((m) => [m.id, m.fullName])));
 }
+
+/** The month before `period`. */
+function previousPeriod(period: AnalyticsPeriod): AnalyticsPeriod {
+  const year = Number(period.startDate.slice(0, 4)), month = Number(period.startDate.slice(5, 7));
+  return month === 1 ? resolvePeriod(year - 1, 12) : resolvePeriod(year, month - 1);
+}
+
+/**
+ * The month's leaderboard plus, for the current month when a board cannot rank anyone yet,
+ * the previous month's leaderboard to show instead (user decision, 25 October 2026: the
+ * last recorded rankings, never a "no one can be ranked" warning). Throws like getLeaderboard.
+ */
+export async function getLeaderboardWithFallback(
+  viewer: Pick<User, 'id' | 'role' | 'isActive'>,
+  period: AnalyticsPeriod,
+): Promise<{ current: LeaderboardModel; previous: { model: LeaderboardModel; period: AnalyticsPeriod } | null }> {
+  const current = await getLeaderboard(viewer, period);
+  const needsFallback = period.startDate === currentPeriod().startDate
+    && Object.values(current.boards).some((board) => board.status !== 'ready' || board.rows.length === 0);
+  if (!needsFallback) return { current, previous: null };
+  const before = previousPeriod(period);
+  try {
+    return { current, previous: { model: await getLeaderboard(viewer, before), period: before } };
+  } catch {
+    return { current, previous: null };
+  }
+}
+

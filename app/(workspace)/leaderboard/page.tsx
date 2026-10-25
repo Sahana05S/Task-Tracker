@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
 import { TriangleAlertIcon } from 'lucide-react';
 
-import { LeaderboardBoardStatus, LeaderboardList } from '@/modules/recognition/components/leaderboard-list';
+import { LeaderboardList } from '@/modules/recognition/components/leaderboard-list';
 import { LeaderboardPodium } from '@/modules/recognition/components/leaderboard-podium';
 import { LeaderboardTabs } from '@/modules/recognition/components/leaderboard-tabs';
-import { BOARD_LABELS, BOARD_SUMMARIES, getLeaderboard, leaderboardPeriod, parseBoardKey } from '@/modules/recognition';
+import { BOARD_LABELS, BOARD_SUMMARIES, getLeaderboardWithFallback, leaderboardPeriod, parseBoardKey } from '@/modules/recognition';
 import { settle } from '@/shared/async/settle';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDateTime } from '@/shared/tracker/format';
+import { AsOfNote } from '@/shared/ui/as-of-note';
 import { buttonVariants } from '@/shared/ui/button';
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { currentPeriod } from '@/shared/time/period';
@@ -31,9 +32,14 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
     monthError = error instanceof Error ? error.message : 'Choose a valid month.';
   }
   const month = period.startDate.slice(0, 7);
-  const model = await settle(() => getLeaderboard(profile, period));
-  const names = model.status === 'ready' ? model.data.names : {};
-  const board = model.status === 'ready' ? model.data.boards[key] : null;
+  const loaded = await settle(() => getLeaderboardWithFallback(profile, period));
+  const model = loaded.status === 'ready' ? { status: 'ready' as const, data: loaded.data.current } : loaded;
+  // A board that cannot rank anyone yet shows last month's ranking instead (decision 25 Oct 2026).
+  const currentBoard = model.status === 'ready' ? model.data.boards[key] : null;
+  const fallback = loaded.status === 'ready' && loaded.data.previous && (!currentBoard || currentBoard.status !== 'ready' || currentBoard.rows.length === 0)
+    && loaded.data.previous.model.boards[key].rows.length > 0 ? loaded.data.previous : null;
+  const names = fallback ? fallback.model.names : model.status === 'ready' ? model.data.names : {};
+  const board = fallback ? fallback.model.boards[key] : currentBoard;
   const you = board?.rows.find((row) => row.userId === profile.id);
 
   return (
@@ -73,13 +79,9 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
               <h2 className="text-foreground text-lg font-bold tracking-tight">{BOARD_LABELS[key]}</h2>
               <p className="text-muted-foreground text-sm">{BOARD_SUMMARIES[key]}</p>
             </div>
-            {board.status === 'ready' ? (
-              <p className="text-foreground text-sm font-medium">
-                {you ? `You're in place ${you.rank} of ${board.rows.length}.` : 'You are not ranked on this board this month.'}
-              </p>
-            ) : null}
+            {you ? <p className="text-foreground text-sm font-medium">You&apos;re in place {you.rank} of {board.rows.length}.</p> : null}
           </div>
-          <LeaderboardBoardStatus board={board} />
+          {fallback ? <AsOfNote label={`Rankings for ${fallback.period.label}`} /> : null}
           <LeaderboardPodium rows={board.rows} names={names} viewerId={profile.id} />
           <LeaderboardList board={board} names={names} viewerId={profile.id} />
           {key !== 'composite' && board.rows.some((row) => row.value === null) ? (

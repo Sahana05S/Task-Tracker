@@ -92,6 +92,8 @@ export function FinaleCard({ star, names, viewerId, celebrate, confettiId }: {
   const winner = star.winnerId ? names[star.winnerId] ?? 'Team member' : null;
   const you = star.winnerId === viewerId;
   const wins = star.winnerId ? star.counts[star.winnerId] ?? 0 : 0;
+  const leadWins = Math.max(0, ...Object.values(star.counts));
+  const leaders = leadWins > 0 ? Object.keys(star.counts).filter((id) => star.counts[id] === leadWins) : [];
   let line: string;
   if (star.status === 'winner') line = `${wins} daily ${wins === 1 ? 'star' : 'stars'} this month, the most on the team.`;
   else if (star.status === 'no_winner') {
@@ -99,9 +101,10 @@ export function FinaleCard({ star, names, viewerId, celebrate, confettiId }: {
       ? `${nameList(star.tiedIds, names)} finished exactly level, so there is no monthly star.`
       : 'No daily stars were awarded this month, so there is no monthly star.';
   } else {
-    line = star.reasons.includes('daily_coverage_incomplete')
-      ? 'Decided once every day of the month has a decided daily star.'
-      : 'Decided at the end of the month.';
+    // Not decided yet: show who leads on daily stars so far, never a "not decided" notice.
+    line = leaders.length
+      ? `${leadWins} daily ${leadWins === 1 ? 'star' : 'stars'} so far this month${leaders.length > 1 ? ', level at the top' : ''}.`
+      : 'Every daily star this month counts towards it.';
   }
   return (
     <section
@@ -125,7 +128,9 @@ export function FinaleCard({ star, names, viewerId, celebrate, confettiId }: {
           </>
         ) : (
           <h2 className="text-foreground text-xl font-bold tracking-tight">
-            {star.status === 'pending' ? 'The monthly star is not decided yet' : 'No monthly star this month'}
+            {star.status === 'pending'
+              ? leaders.length ? `Leading so far: ${nameList(leaders, names)}` : 'The monthly star is decided at month end'
+              : 'No monthly star this month'}
           </h2>
         )}
         <p className="text-muted-foreground max-w-md text-sm text-pretty">{line}</p>
