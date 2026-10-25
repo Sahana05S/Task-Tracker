@@ -25,7 +25,7 @@ describe('activity wording and links', () => {
 
   it('names changed mission fields in plain words and links the mission', () => {
     const entry = mapActivity(row({ record_kind: 'tasks', task_tag: 'Oct26_T3', fields: ['due_date', 'priority'] }), people);
-    expect(entry).toMatchObject({ summary: "Changed the mission's due date, priority", href: '/tasks/Oct26_T3', linkLabel: 'Oct26_T3', about: null });
+    expect(entry).toMatchObject({ summary: "Changed the mission's due date, priority", href: '/tasks/Oct26_T3?tab=history', linkLabel: 'Oct26_T3', about: null });
   });
 
   it('words row changes by table, commands by prefix, and unknown codes readably', () => {
@@ -40,7 +40,7 @@ describe('activity wording and links', () => {
 
   it('words time, month and people rows and links where there is a place to go', () => {
     expect(mapActivity(row({ kind: 'time', action: 'reverse_log', actor_id: ASHA, subject_user_id: ASHA, task_tag: 'T1', record_kind: 'log' }), people))
-      .toMatchObject({ summary: 'Reversed a time log', about: null, href: '/tasks/T1' });
+      .toMatchObject({ summary: 'Reversed a time log', about: null, href: '/tasks/T1?tab=history' });
     expect(mapActivity(row({ kind: 'month', action: 'month_close', period: '2026-09-01' }), people))
       .toMatchObject({ summary: 'Closed the month', href: '/reports?tab=month&period=2026-09' });
     expect(mapActivity(row({ kind: 'people', action: 'deactivate_member', record_kind: 'users', subject_user_id: ASHA }), people))

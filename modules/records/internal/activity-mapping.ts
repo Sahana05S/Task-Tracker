@@ -73,13 +73,13 @@ const RECORD_NOUN: Record<string, string> = {
 };
 const RECORD_VERB: Record<string, string> = { save: 'Saved', correct: 'Corrected', validate: 'Reviewed', withdraw: 'Withdrew' };
 // Command names as the log, lifecycle, checklist and Task Tools commands store them.
-const TIME_WORDS: Record<string, string> = {
+export const TIME_WORDS: Record<string, string> = {
   create_log: 'Logged time',
   correct_log: 'Corrected a time log',
   reverse_log: 'Reversed a time log',
   stop_timer: 'Logged time from a timer',
 };
-const MISSION_WORDS: Record<string, string> = {
+export const MISSION_WORDS: Record<string, string> = {
   save_task_with_participants: 'Saved the mission and its assignees',
   transition: "Changed the mission's status",
   progress: "Updated the mission's progress",
@@ -88,7 +88,7 @@ const MISSION_WORDS: Record<string, string> = {
   initialize_native_details: 'Set up the mission details',
   publish_detail_template: 'Published a details template',
 };
-const CHECKLIST_WORDS: Record<string, string> = {
+export const CHECKLIST_WORDS: Record<string, string> = {
   create: 'Started a checklist',
   add: 'Added a checklist item',
   edit: 'Edited a checklist item',
@@ -100,7 +100,7 @@ const CHECKLIST_WORDS: Record<string, string> = {
   duplicate: 'Copied a checklist item',
   submission: 'Submitted a checklist',
 };
-const TOOL_WORDS: Record<string, string> = {
+export const TOOL_WORDS: Record<string, string> = {
   bulk_done: 'Marked missions done',
   bulk_reopen: 'Reopened missions',
   section: 'Moved missions to another section',
@@ -231,7 +231,7 @@ function link(row: ActivityRow, people: ReadonlyMap<string, Person>): { href: st
     const section = settingsSection(row.action);
     return { href: `/settings?tab=company${section ? `#${section.anchor}` : ''}`, label: 'Company settings' };
   }
-  if (row.task_tag) return { href: `/tasks/${encodeURIComponent(row.task_tag)}`, label: row.task_tag };
+  if (row.task_tag) return { href: `/tasks/${encodeURIComponent(row.task_tag)}?tab=history`, label: row.task_tag };
   const subject = row.subject_user_id ? people.get(row.subject_user_id) : undefined;
   if (row.kind === 'people' && subject?.employeeId) return { href: `/team/${encodeURIComponent(subject.employeeId)}`, label: 'Profile' };
   return null;
