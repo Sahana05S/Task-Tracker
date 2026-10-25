@@ -235,7 +235,7 @@ function MemberRow({ member, self, members, placement, departments }: {
           <input type="hidden" name="userId" value={member.id} />
           <label className="field-label">
             Full name
-            <input name="fullName" defaultValue={member.fullName} required maxLength={120} className="field" />
+            <input name="fullName" defaultValue={member.fullName} required maxLength={120} autoFocus className="field" />
           </label>
           <label className="field-label">
             Employee ID

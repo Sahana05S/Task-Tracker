@@ -53,6 +53,7 @@ export function MonthActions({ month, canFinalize }: { month: PayrollMonth; canF
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             required
+            autoFocus
             maxLength={500}
             placeholder="Why is it being reopened?"
             aria-label="Reason for reopening"

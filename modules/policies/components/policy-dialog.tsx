@@ -201,7 +201,7 @@ function PolicyForm({ template, policy, members, onBack, onSaved, onDirty }: {
         </div>
 
         <Field id={`${formId}-name`} label="Name" required>
-          <input id={`${formId}-name`} name="name" required maxLength={80} autoComplete="off" defaultValue={policy?.name ?? template.label} className="field h-11" />
+          <input id={`${formId}-name`} name="name" required maxLength={80} autoComplete="off" autoFocus defaultValue={policy?.name ?? template.label} className="field h-11" />
         </Field>
 
         <div className="grid gap-1.5">

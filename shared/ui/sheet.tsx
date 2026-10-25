@@ -48,6 +48,46 @@ export interface SheetContentProps
   side?: SheetSide;
   /** Hide the built-in close button when the panel supplies its own. */
   hideCloseButton?: boolean;
+  /**
+   * Put the cursor in the panel's first text field (or the element marked
+   * `data-autofocus`) when it opens. Defaults to on; panels without a text
+   * field keep Radix's default focus.
+   */
+  autoFocusField?: boolean;
+}
+
+/**
+ * Typing fields only: selects, checkboxes and date or time pickers gain nothing
+ * from focus on open (a panel can still mark one with `data-autofocus`).
+ */
+const SKIPPED_TYPES = ['hidden', 'checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'color', 'range', 'date', 'time', 'month', 'week', 'datetime-local'];
+const TEXT_FIELD = [
+  `input${SKIPPED_TYPES.map((type) => `:not([type=${type}])`).join('')}:not([readonly]):not([disabled])`,
+  'textarea:not([readonly]):not([disabled])',
+].join(', ');
+
+function firstField(root: HTMLElement | null): HTMLElement | null {
+  if (!root) return null;
+  const marked = root.querySelector<HTMLElement>('[data-autofocus]');
+  if (marked) return marked;
+  return [...root.querySelectorAll<HTMLElement>(TEXT_FIELD)].find((el) => el.getClientRects().length > 0) ?? null;
+}
+
+/**
+ * Focus now and again after the opening frame and slide-in: a panel opened by
+ * a navigation (e.g. `/tasks?new=1`) mounts while the route is still settling,
+ * which otherwise leaves focus on the page behind it.
+ */
+function focusField(root: HTMLElement, field: HTMLElement) {
+  const settle = () => {
+    if (!root.isConnected || !field.isConnected) return;
+    const active = document.activeElement;
+    if (active === field || (active && active !== document.body && root.contains(active))) return;
+    field.focus({ preventScroll: true });
+  };
+  field.focus({ preventScroll: true });
+  requestAnimationFrame(settle);
+  window.setTimeout(settle, 320);
 }
 
 const sideClasses: Record<SheetSide, string> = {
@@ -65,8 +105,17 @@ function SheetContent({
   children,
   side = 'right',
   hideCloseButton = false,
+  autoFocusField = true,
+  onOpenAutoFocus,
+  ref,
   ...props
 }: SheetContentProps) {
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
+  const setRef = React.useCallback((node: HTMLDivElement | null) => {
+    contentRef.current = node;
+    if (typeof ref === 'function') ref(node);
+    else if (ref) ref.current = node;
+  }, [ref]);
   return (
     <SheetPrimitive.Portal>
       <SheetOverlay />
@@ -79,6 +128,15 @@ function SheetContent({
           sideClasses[side],
           className,
         )}
+        ref={setRef}
+        onOpenAutoFocus={(event) => {
+          onOpenAutoFocus?.(event);
+          if (event.defaultPrevented || !autoFocusField) return;
+          const field = firstField(contentRef.current);
+          if (!field || !contentRef.current) return;
+          event.preventDefault();
+          focusField(contentRef.current, field);
+        }}
         {...props}
       >
         {children}

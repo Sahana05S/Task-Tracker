@@ -189,6 +189,7 @@ export function AuthForm({
             placeholder="you@company.com"
             invalid={Boolean(errorMessage)}
             errorId={FEEDBACK_ID}
+            autoFocus={!email}
             required
           />
           <Field
