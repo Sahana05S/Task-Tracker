@@ -6,7 +6,7 @@ import { loadPerformance } from '@/modules/scoring';
 import { canManageTasks } from '@/modules/tasks/client';
 import { createClient } from '@/shared/supabase/server';
 import { observationInstant } from '@/shared/time/observation-clock';
-import { currentPeriod, resolvePeriod, type AnalyticsPeriod } from '@/shared/time/period';
+import { currentPeriod, liveWindowEnd, resolvePeriod, type AnalyticsPeriod } from '@/shared/time/period';
 import type { User } from '@/types/tracker';
 
 import { buildLeaderboard, type LeaderboardModel } from './leaderboard-rules';
@@ -34,7 +34,9 @@ export async function loadMonth(db: Db, period: AnalyticsPeriod, options: { live
   const asOf = live
     ? (await observationInstant(db)).instant.toISOString()
     : new Date(`${period.endDate}T23:59:59.999+05:30`).toISOString();
-  const { sources, calculation } = await loadPerformance(db, period.startDate, nextDate(period.endDate), asOf);
+  // A live read covers the days that have ended (through yesterday); a past month is read whole.
+  const end = live ? liveWindowEnd(period, asOf) : nextDate(period.endDate);
+  const { sources, calculation } = await loadPerformance(db, period.startDate, end, asOf);
   return { sources, calculation, asOf };
 }
 

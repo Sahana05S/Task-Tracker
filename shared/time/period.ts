@@ -1,5 +1,7 @@
 /** Calendar-month periods on the Asia/Kolkata business calendar. */
 
+import { kolkataDate } from './kolkata';
+
 export interface AnalyticsPeriod {
   /** Four-digit year. */
   year: number;
@@ -58,4 +60,18 @@ export function monthDates(month: string): string[] {
 export function currentPeriod(now: Date = new Date()): AnalyticsPeriod {
   const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit'}).formatToParts(now);
   return resolvePeriod(Number(parts.find(p=>p.type==='year')!.value),Number(parts.find(p=>p.type==='month')!.value));
+}
+
+/**
+ * The exclusive end of a month's live reading window: only days that have ended by `asOf`
+ * (India time) are read, so today's unfinished attendance never makes a score "unavailable"
+ * (user decision, 25 October 2026). A read at the end of a day keeps that day; a read on the
+ * month's first day, before any day has ended, keeps the whole month.
+ */
+export function liveWindowEnd(period: Pick<AnalyticsPeriod, 'startDate' | 'endDate'>, asOf: string): string {
+  const afterMonth = new Date(`${period.endDate}T00:00:00Z`);
+  afterMonth.setUTCDate(afterMonth.getUTCDate() + 1);
+  const monthEnd = afterMonth.toISOString().slice(0, 10);
+  const firstOpenDay = kolkataDate(new Date(new Date(asOf).getTime() + 1));
+  return firstOpenDay > period.startDate && firstOpenDay < monthEnd ? firstOpenDay : monthEnd;
 }
