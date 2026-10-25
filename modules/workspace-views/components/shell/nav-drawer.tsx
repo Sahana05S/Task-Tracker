@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { useNavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer-context';
-import { MORE_ITEMS, NAV_SECTIONS, isTabActive, type NavTab } from '@/modules/workspace-views/components/shell/nav-items';
+import { NAV_SECTIONS, isTabActive, moreItemsFor, type NavTab } from '@/modules/workspace-views/components/shell/nav-items';
 import { UserMenu } from '@/modules/workspace-views/components/shell/user-menu';
 import {
   Sheet,
@@ -85,7 +85,7 @@ export function NavDrawer({ counts, profile }: NavDrawerProps) {
           ))}
           <section className="grid gap-1">
             <h2 className="eyebrow px-3">More</h2>
-            {MORE_ITEMS.map(row)}
+            {moreItemsFor(profile.role).map(row)}
           </section>
         </nav>
         <SheetFooter className="border-border border-t px-2 py-2">
