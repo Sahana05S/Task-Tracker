@@ -119,6 +119,11 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const issues = checklistIssues(rollup.errors);
   const view: ChecklistView = props.view ?? 'table';
   const cardCtx = { task, canEdit, version, action: props.actions.checklist };
+  // A Quest is one list of items (decision 25 Oct 2026): its home shows that list, plus any
+  // Setup or Closure rows a closed mission's Quest still holds from before.
+  const inQuest = !!checklist?.ownerNodeId;
+  const homeSections = quest ? props.sections?.filter((home) => home.section === 'activity' || home.rows.length > 0) : props.sections;
+  const sectionTitle = (key: ChecklistSection) => (inQuest && key === 'activity' ? 'Items' : SECTION_TITLES[key].title);
   const addRowFor = (section: ChecklistSection, parentId: string | null = null) => canEdit && checklist ? (
     <ChecklistAddRow
       taskId={task.id}
@@ -128,7 +133,8 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       version={version}
       action={props.actions.checklist}
       subMissionAction={tableActions.submission}
-      label={SECTION_TITLES[section].title}
+      label={sectionTitle(section)}
+      itemsOnly={inQuest}
     />
   ) : null;
 
@@ -143,7 +149,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
         {checklist && props.sections ? (
           <HomeHero {...props} checklist={checklist} tools={tools} />
         ) : checklist && props.page ? (
-          <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} />
+          <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} inQuest={inQuest} />
         ) : null}
 
         {checklist ? (
@@ -158,11 +164,14 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
 
         {!checklist ? (
           <NoChecklist task={task} version={version} canCreate={canEdit} action={props.actions.checklist} />
-        ) : props.sections && view !== 'table' ? (
-          <ChecklistAltView view={view} sections={props.sections} rollup={rollup} checklistId={checklist.id} ctx={cardCtx} addRow={addRowFor} />
-        ) : props.sections ? (
-          props.sections.map((home) => {
-            const meta = SECTION_TITLES[home.section];
+        ) : homeSections && view !== 'table' ? (
+          <ChecklistAltView view={view} sections={homeSections} rollup={rollup} checklistId={checklist.id} ctx={cardCtx} addRow={addRowFor}
+            title={quest && homeSections.length === 1 ? 'Items' : undefined} />
+        ) : homeSections ? (
+          homeSections.map((home) => {
+            const meta = quest && home.section === 'activity'
+              ? { title: 'Items', note: 'Every item counts equally towards the Quest’s progress.' }
+              : SECTION_TITLES[home.section];
             const address = { checklistId: checklist.id, section: home.section };
             return (
               <ChecklistTable
@@ -185,7 +194,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 selectedItem={props.selectedItem}
                 {...shared}
                 moveTargets={moveTargets(home.rows, null)}
-                emptyText={`No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
+                emptyText={quest && home.section === 'activity' ? 'No items yet. Add the first one below.' : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
                 footer={<Paging taskTag={task.taskTag} address={address} cursor={home.cursor} nextCursor={home.nextCursor} />}
               />
             );
@@ -255,7 +264,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
             </span>
             <div className="min-w-0">
               <p className="stat-figure">{percentText(activity) ?? 'Not started'}</p>
-              <p className="text-muted-foreground text-xs">Activity progress{checklist.ownerNodeId ? '' : ' (the mission’s progress)'}</p>
+              <p className="text-muted-foreground text-xs">{checklist.ownerNodeId ? 'Progress, the average of its items' : 'Activity progress (the mission’s progress)'}</p>
             </div>
           </div>
           <MissionProgress value={activity} label="Activity progress" className="h-1.5" />
@@ -263,11 +272,11 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
           <p className="text-muted-foreground text-xs">
             {rollup.isComplete
               ? (checklist.ownerNodeId ? 'This Quest is complete.' : 'Reviewers approve before Done.')
-              : `${checklist.ownerNodeId ? 'The Quest' : 'Done'} waits until Setup, Activity and Closure are complete or N/A.`}
+              : checklist.ownerNodeId ? 'The Quest is complete when every item is done or N/A.' : 'Done waits until Setup, Activity and Closure are complete or N/A.'}
           </p>
         </div>
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      {checklist.ownerNodeId ? null : <div className="mt-4 flex flex-wrap items-center gap-2">
         {CHECKLIST_SECTIONS.map((key) => {
           const section = rollup.sections[key];
           const value = section.state === 'not_applicable' ? 'N/A' : percentText(section.progressPercentage) ?? 'Not started';
@@ -279,12 +288,12 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
             </a>
           );
         })}
-      </div>
+      </div>}
     </section>
   );
 }
 
-function PageHero({ rollup, page, title, parentTitle }: { rollup: ChecklistRollup; page: ChecklistPageView; title: string; parentTitle: string }) {
+function PageHero({ rollup, page, title, parentTitle, inQuest = false }: { rollup: ChecklistRollup; page: ChecklistPageView; title: string; parentTitle: string; inQuest?: boolean }) {
   const progress = rollup.nodeProgress.find(p => p.id === page.nodeId);
   const result = pageResult(progress);
   const value = progress?.applicable === false ? null : progress?.progressPercentage ?? null;
@@ -297,7 +306,7 @@ function PageHero({ rollup, page, title, parentTitle }: { rollup: ChecklistRollu
             <p className="text-primary-subtle-foreground inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold">
               <FileStackIcon className="size-3.5" aria-hidden="true" />Checklist row
             </p>
-            <span className="badge-soft badge-neutral">{SECTION_TITLES[page.section].title}</span>
+            {inQuest ? null : <span className="badge-soft badge-neutral">{SECTION_TITLES[page.section].title}</span>}
           </div>
           <h1 className="text-foreground mt-3 text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">{title}</h1>
           <p className="text-muted-foreground mt-1 text-sm break-words">Inside {parentTitle}</p>

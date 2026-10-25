@@ -129,7 +129,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                 const estimate = formatMinutes(row.estimatedMinutes);
                 const elapsed = row.elapsedSeconds > 0 ? formatMinutes(Math.max(1, Math.round(row.elapsedSeconds / 60))) : null;
                 const inside = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside`
-                  : kind === 'quest' ? `Quest · ${row.childCount} Activity row${row.childCount === 1 ? '' : 's'}`
+                  : kind === 'quest' ? `Quest · ${row.childCount} item${row.childCount === 1 ? '' : 's'}`
                   : kind === 'linked' ? 'Sub-mission' : null;
                 const state: CompletionState = row.completionState ?? 'No';
                 const timerHere = kind === 'item' && time?.available && ((canTime && open) || time.runningByNode.has(row.id));

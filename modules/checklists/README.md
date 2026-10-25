@@ -20,12 +20,16 @@ once. When a change cannot be credited yet (no scale, no anchor, legacy shares)
 progress still follows and the credit waits, anchor kept, until reconciled.
 
 Since migration 67 (user decision, 23 October 2026) a row can also be a
-**Quest**: a page with its own Setup / Activity / Closure (an owned
-`task_checklists` row, created by the `submission` command from the add row's
-Item / Quest switch). A Quest row's progress is its own Activity progress; it
-is complete only when its own three phases are complete or N/A, so it gates the
-mission's Done. It opens as its own checklist home (`?checklist=<id>`), with
-the Quest chain in the breadcrumb. Quests nest to any depth.
+**Quest**: a page with its own list of items (an owned `task_checklists` row,
+created by the `submission` command from the add row's Item / Quest switch).
+Since migration 77 (user decision, 25 October 2026) a Quest has no Setup /
+Activity / Closure of its own: every row in it is filed in one list (stored as
+its Activity section, which the rollup reads), so a Quest row's progress is the
+equal average of its items and it is complete when every item is done or N/A.
+A Quest holds items only (no Quest or Sub-mission inside a Quest; the
+`quest_items_guard` and `quest_nesting_guard` triggers). It opens as its own
+checklist home (`?checklist=<id>`), titled "Items", with the Quest in the
+breadcrumb. Quests of closed missions keep any Setup / Closure rows they had.
 
 Four views (user decision, 23 October 2026), switched by `ChecklistViewSwitch`
 and kept in `?view=` plus per-device memory (phones start on Blocks): **Table**
