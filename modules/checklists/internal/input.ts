@@ -10,7 +10,7 @@ const read = (form: FormData, key: string) => String(form.get(key) ?? '').trim()
 const COMMAND_FIELDS: Record<string, string[]> = {
   create: ['title'],
   add: ['title', 'description', 'section', 'parent_id'],
-  // A Quest: a page with its own Setup / Activity / Closure (migration 67).
+  // A Quest: a page with its own list of items (migrations 67 and 77).
   submission: ['title', 'description', 'section', 'parent_id'],
   state: ['node_id', 'state'],
   edit: ['node_id', 'title', 'section', 'parent_id', 'linked_task_id', 'node_type', 'reason'],

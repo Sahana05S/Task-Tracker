@@ -12,7 +12,7 @@ import type { ActionResponse } from '@/types/tracker';
 
 const KINDS = [
   { key: 'add', label: 'Item', hint: 'A row you tick Yes, No or N/A' },
-  { key: 'submission', label: 'Quest', hint: 'A page with its own Setup, Activity and Closure' },
+  { key: 'submission', label: 'Quest', hint: 'A page with its own list of items' },
   { key: 'sub-mission', label: 'Sub-mission', hint: 'A real mission of its own, linked here; its progress feeds this row' },
 ] as const;
 
@@ -30,6 +30,7 @@ export function ChecklistAddRow({
   action,
   subMissionAction,
   label,
+  itemsOnly = false,
 }: {
   taskId: string;
   checklistId: string;
@@ -40,10 +41,12 @@ export function ChecklistAddRow({
   /** Present for managers: creates a Sub-mission (a linked real mission). */
   subMissionAction?: (form: FormData) => Promise<ActionResponse<unknown>>;
   label: string;
+  /** Inside a Quest: items only (no Quest or Sub-mission in a Quest). */
+  itemsOnly?: boolean;
 }) {
   const titleId = React.useId();
   const [kind, setKind] = React.useState<(typeof KINDS)[number]['key']>('add');
-  const kinds = KINDS.filter((entry) => entry.key !== 'sub-mission' || subMissionAction);
+  const kinds = KINDS.filter((entry) => itemsOnly ? entry.key === 'add' : entry.key !== 'sub-mission' || subMissionAction);
   const chosen = kinds.find((entry) => entry.key === kind) ?? kinds[0];
   const subMission = chosen.key === 'sub-mission';
 
@@ -57,8 +60,8 @@ export function ChecklistAddRow({
       <input type="hidden" name="parent_id" value={parentId ?? ''} />
       <div className="border-primary/35 bg-primary-subtle/30 grid gap-2.5 rounded-xl border border-dashed p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span id={`${titleId}-kind`} className="text-foreground text-sm font-semibold">Add</span>
-          <div role="radiogroup" aria-labelledby={`${titleId}-kind`} className="flex flex-wrap gap-1.5">
+          <span id={`${titleId}-kind`} className="text-foreground text-sm font-semibold">{kinds.length === 1 ? 'Add an item' : 'Add'}</span>
+          {kinds.length === 1 ? null : <div role="radiogroup" aria-labelledby={`${titleId}-kind`} className="flex flex-wrap gap-1.5">
             {kinds.map((entry) => {
               const Icon = entry.key === 'submission' ? FlagIcon : entry.key === 'sub-mission' ? RocketIcon : CircleCheckIcon;
               return (
@@ -75,7 +78,7 @@ export function ChecklistAddRow({
                 </button>
               );
             })}
-          </div>
+          </div>}
         </div>
         <p className="text-muted-foreground text-xs">{chosen.hint}{chosen.key === 'sub-mission' ? '. People and due date come from this mission.' : '.'}</p>
         <div className="flex flex-wrap items-center gap-2">
