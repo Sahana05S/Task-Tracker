@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
-import { DatabaseIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
+import { DatabaseIcon, TriangleAlertIcon } from 'lucide-react';
 
 import { CeremonyPublish } from '@/modules/recognition/components/ceremony-publish';
 import { CeremonyStage } from '@/modules/recognition/components/ceremony-stage';
 import { getCeremony, leaderboardPeriod } from '@/modules/recognition';
 import { getCeremonyCommendations } from '@/modules/policies';
 import { CommendationsAct } from '@/modules/policies/components/commendations-act';
-import { plainReason } from '@/modules/reports/client';
 import { settle } from '@/shared/async/settle';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDateTime } from '@/shared/tracker/format';
@@ -42,9 +41,8 @@ export default async function AwardsPage({ searchParams }: { searchParams: Promi
     settle(() => getCeremonyCommendations(period.startDate, period.endDate)),
   ]);
   const model = ceremony.status === 'ready' ? ceremony.data : null;
-  const chip = !model ? undefined
-    : model.status === 'official' ? `Official · revision ${model.publication!.revisionNumber}`
-      : model.status === 'ready' ? 'Not published yet' : 'Provisional';
+  // Results show as they stand ("As of" in the description); only the published state gets a chip.
+  const chip = model?.status === 'official' ? `Official · revision ${model.publication!.revisionNumber}` : undefined;
 
   return (
     <MissionPage>
@@ -75,26 +73,16 @@ export default async function AwardsPage({ searchParams }: { searchParams: Promi
         </MissionNotice>
       ) : (
         <>
-          {model.status === 'provisional' ? (
-            <MissionNotice icon={InfoIcon}>
-              Provisional: these results follow the month as it happens and become final once the month ends and the director publishes them.
-            </MissionNotice>
-          ) : null}
-          {model.status === 'ready' && !model.canPublish ? (
-            <MissionNotice icon={InfoIcon}>
-              The month has ended. These are the current results; they become official when the managing director publishes the ceremony.
-            </MissionNotice>
-          ) : null}
           {!model.publishingAvailable ? (
             <MissionNotice tone="attention" icon={DatabaseIcon} role="status">
               Publishing needs a database update that this workspace doesn&apos;t have yet, so the ceremony stays a preview here.
             </MissionNotice>
           ) : null}
+          {/* Categories nobody could be measured on are left out, not shown as "not measured" (decision 25 Oct 2026). */}
           <CeremonyStage
-            model={model}
+            model={{ ...model, categories: model.categories.filter((c) => c.status !== 'unavailable') }}
             viewerId={profile.id}
             commendations={<CommendationsAct section={commendations} monthLabel={period.label} viewerId={profile.id} />}
-            notes={Object.fromEntries(model.categories.filter((c) => c.status === 'unavailable' && c.reasons.length).map((c) => [c.category, plainReason(c.reasons[0])]))}
           />
           {model.canPublish ? <CeremonyPublish month={model.month} expectedRevision={model.expectedRevision} /> : null}
         </>
