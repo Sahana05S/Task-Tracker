@@ -904,6 +904,12 @@ export interface Database {
       company_settings: { Args: Record<never, never>; Returns: Json };
       /** Migration 53: managing director only; versioned and idempotent per operation. */
       company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults' | 'branding' | 'departments' | 'attendance'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
+      /** Migration 74: payroll (M18); managing director only, every call checked in the database. */
+      payroll_setup: { Args: Record<never, never>; Returns: Json };
+      payroll_month: { Args: { p_period: string }; Returns: Json };
+      payroll_employee_file: { Args: { p_user: string; p_period: string }; Returns: Json };
+      payroll_command: { Args: { p_section: 'settings' | 'component' | 'profile' | 'revision' | 'fixed' | 'adjustment' | 'advance' | 'withdraw'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
+      payroll_month_command: { Args: { p_action: 'finalize' | 'reopen'; p_period: string; p_reason: string | null; p_expected_version: number; p_operation: string }; Returns: Json };
       /** Migration 55: month setup wizard (managing director or project engineer). */
       month_setup_context: { Args: { p_month: string }; Returns: Json };
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };
