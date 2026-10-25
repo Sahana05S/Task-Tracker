@@ -10,6 +10,7 @@ import type { MonthHistory } from '@/modules/reports/internal/month/archive';
 import { cn } from '@/shared/utils';
 import { codeLabel } from '@/shared/tracker/labels';
 import { HelpTip } from '@/shared/ui/help-tip';
+import { keepTypedOnRefusal } from '@/shared/forms/submit';
 
 export function MonthArchiveControls({period,history,canClose,completeMonth,operation}:{period:string;history:MonthHistory;canClose:boolean;completeMonth:boolean;operation:string}){
  const [result,action,pending]=useActionState(monthArchiveAction,{ok:false,message:''} as MonthActionState);
@@ -20,7 +21,7 @@ export function MonthArchiveControls({period,history,canClose,completeMonth,oper
   <h2 className="text-foreground flex flex-wrap items-center gap-2 text-base font-bold tracking-tight"><ArchiveIcon className="text-primary size-5 shrink-0" aria-hidden="true"/>Month close · {codeLabel(history.state)}<HelpTip tip="monthClose"/></h2>
   <p className="text-muted-foreground text-sm">Each closed revision keeps its figures as they were. A month closed with missing inputs is marked so, and missing scores stay missing.</p>
   <nav aria-label="Report versions" className="flex flex-wrap gap-2"><Link className="section-tab bg-muted" href={prefix}>Live report</Link>{history.revisions.map(r=><Link className="section-tab bg-muted" key={r.number} href={`${prefix}&revision=${r.number}`}>Revision {r.number} · {codeLabel(r.disposition)} · {codeLabel(r.certification)}</Link>)}</nav>
-  {canClose?<form action={action} className="border-border mt-1 grid gap-3 border-t pt-4 md:grid-cols-2">
+  {canClose?<form action={action} onSubmit={keepTypedOnRefusal(action)} className="border-border mt-1 grid gap-3 border-t pt-4 md:grid-cols-2">
    <input type="hidden" name="period" value={period}/><input type="hidden" name="version" value={history.version}/><input type="hidden" name="operation" value={operation}/>
    <label className="field-label md:col-span-2">Reason<input required minLength={8} name="reason" className="field block w-full" placeholder="Why the month is being closed or corrected"/></label>
    {history.state==='closed'?<><p className="text-muted-foreground text-sm md:col-span-2">Open a correction for one record and its dates. Everything else in the closed month stays locked.</p>

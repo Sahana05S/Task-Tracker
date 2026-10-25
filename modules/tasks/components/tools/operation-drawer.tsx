@@ -222,13 +222,13 @@ function OperationFields({
 
       {counted ? (
         <Field id={id('count')} label="Number of missions" required hint="1 to 100.">
-          <input id={id('count')} name="count" type="number" min={1} max={100} required className="field w-full" />
+          <input id={id('count')} name="count" type="number" inputMode="numeric" min={1} max={100} required className="field w-full" />
         </Field>
       ) : null}
 
       {command === 'day_count' ? (
         <Field id={id('days')} label="Days per phase" required hint="Calendar days, 1 to 366.">
-          <input id={id('days')} name="phaseDays" type="number" min={1} max={366} required className="field w-full" />
+          <input id={id('days')} name="phaseDays" type="number" inputMode="numeric" min={1} max={366} required className="field w-full" />
         </Field>
       ) : null}
 
@@ -272,12 +272,12 @@ function OperationFields({
           </div>
           {splitMode === 'split-uneven' || splitMode === 'absolute' ? (
             <Field id={id('amount')} label="Scale units" required>
-              <input id={id('amount')} name="amount" type="number" step="any" min={0} required className="field w-full" />
+              <input id={id('amount')} name="amount" type="number" inputMode="decimal" step="any" min={0} required className="field w-full" />
             </Field>
           ) : null}
           {splitMode === 'proportional' ? (
             <Field id={id('percent')} label="Source percentage" required hint="0 to 100%.">
-              <input id={id('percent')} name="percentage" type="number" step="any" min={0} max={100} required className="field w-full" />
+              <input id={id('percent')} name="percentage" type="number" inputMode="decimal" step="any" min={0} max={100} required className="field w-full" />
             </Field>
           ) : null}
         </>

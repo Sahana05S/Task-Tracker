@@ -77,13 +77,15 @@ export function MilestoneDialog({
   // returns an id and the toast wants the name.
   const submittedTitle = React.useRef<string>('');
 
-  const succeeded = state?.success === true;
+  // Each save returns a new state object; reacting to each one once (not to
+  // "success" staying true) lets a second milestone be added without a reload.
+  const handled = React.useRef<typeof state>(null);
   React.useEffect(() => {
-    if (!succeeded || !open) return;
-
+    if (state?.success !== true || state === handled.current || !open) return;
+    handled.current = state;
     onOpenChange(false);
     onSaved(isEdit ? 'updated' : 'created', submittedTitle.current);
-  }, [succeeded, open, isEdit, onOpenChange, onSaved]);
+  }, [state, open, isEdit, onOpenChange, onSaved]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -172,6 +174,10 @@ function MilestoneForm({
         // milestone; the action itself only returns an id.
         const field = event.currentTarget.elements.namedItem('title');
         onSubmitTitle(field instanceof HTMLInputElement ? field.value : '');
+        // Dispatched in a transition so React 19 does not clear the form when a save is refused.
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        React.startTransition(() => action(data));
       }}
       className="flex min-h-0 flex-1 flex-col"
     >

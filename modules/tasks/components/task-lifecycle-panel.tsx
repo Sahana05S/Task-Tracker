@@ -13,7 +13,7 @@ const control='field mt-1 block w-full';
 export function TaskLifecyclePanel({ task }: { task: Task }) {
  const [mode,setMode]=useState(task.scaleMode ?? 'manual');
  const identity = <><input type="hidden" name="taskId" value={task.id} /><input type="hidden" name="expectedVersion" value={task.lifecycleVersion ?? 0} /></>;
- const field=(label:string,name:string,value?:number|null)=><label className="text-sm font-medium">{label}<input type="number" name={name} min="0" step="any" defaultValue={value ?? ''} required className={control} /></label>;
+ const field=(label:string,name:string,value?:number|null)=><label className="text-sm font-medium">{label}<input type="number" inputMode="decimal" name={name} min="0" step="any" defaultValue={value ?? ''} required className={control} /></label>;
  return <section className="soft-card grid gap-4 p-5 sm:p-6">
   <h2 className="text-foreground flex items-center gap-2 text-base font-bold tracking-tight"><RefreshCwIcon className="text-primary size-5" aria-hidden="true" />Lifecycle and scale</h2>
   <p className="text-muted-foreground text-sm">Scale: {codeLabel(task.scaleMode ?? 'manual')}{task.scaleProvenance ? ` (${task.scaleProvenance})` : ''}. Credit already earned keeps the scale it was earned at.<HelpTip tip="scale" /></p>

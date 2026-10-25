@@ -194,6 +194,7 @@ export function ManualTimeForm({
           <span className="text-foreground font-medium">Hours</span>
           <input
             type="number"
+            inputMode="decimal"
             name="hoursWorked"
             min={0}
             max={24}

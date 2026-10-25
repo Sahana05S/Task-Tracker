@@ -46,17 +46,18 @@ export function StatementEditor({ statement }: StatementEditorProps) {
   );
 
   const error = state && !state.success ? state.error : undefined;
-  const succeeded = state?.success === true;
   const savedTitle = state?.success === true ? state.data?.title : undefined;
 
+  // Once per save (a repeat save with the same title still closes and confirms).
+  const handled = React.useRef<typeof state>(null);
   React.useEffect(() => {
-    if (!succeeded) return;
-
+    if (state?.success !== true || state === handled.current) return;
+    handled.current = state;
     setOpen(false);
     toast.success(`${savedTitle ?? 'Statement'} updated`, {
       description: 'Everyone on the team sees the new wording.',
     });
-  }, [succeeded, savedTitle]);
+  }, [state, savedTitle]);
 
   const isCoreValues = statement.keyName === CORE_VALUES_KEY;
 
@@ -97,6 +98,12 @@ export function StatementEditor({ statement }: StatementEditorProps) {
           <form
             key={statement.updatedAt}
             action={action}
+            onSubmit={(event) => {
+              // A refused save keeps what was typed (React 19 resets forms after an action).
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              React.startTransition(() => action(data));
+            }}
             className="flex min-h-0 flex-1 flex-col"
           >
             <input type="hidden" name="statementId" value={statement.id} />
