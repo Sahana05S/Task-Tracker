@@ -91,9 +91,10 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true, attendance
 
       <StatCard
         label="Attendance hours"
-        // Recorded hours through yesterday, never an "Incomplete" label (decision 25 Oct 2026).
-        value={formatHours(totals.attendanceHours)}
-        unit="h"
+        // Recorded hours through yesterday, never an "Incomplete" label (decision 25 Oct 2026);
+        // with gaps and nothing recorded it is a dash, never a healthy-looking zero.
+        value={attendanceComplete || Number(totals.attendanceHours) > 0 ? formatHours(totals.attendanceHours) : '—'}
+        unit={attendanceComplete || Number(totals.attendanceHours) > 0 ? 'h' : undefined}
         detail={`${formatNumeric(totals.payableDays)} payable days · ${formatHours(totals.offHours)} off-hours`}
       />
 
