@@ -836,6 +836,8 @@ export interface Database {
       award_command:{Args:{p_command:string;p_payload:Json;p_operation:string};Returns:Json};
       claim_award_jobs:{Args:{p_limit?:number};Returns:Json};
       queue_due_awards:{Args:{p_from:string;p_through:string;p_operation:string};Returns:Json};
+      /** Migration 75: service role; re-queues blocked award days once per night. */
+      requeue_blocked_awards:{Args:{p_from:string;p_through:string};Returns:Json};
       award_policy_context:{Args:Record<string,never>;Returns:Json};
       observation_clock:{Args:Record<string,never>;Returns:string};
       award_read_model:{Args:{p_from:string;p_to_exclusive:string;p_employee?:string|null};Returns:Json};

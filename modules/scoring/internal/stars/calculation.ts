@@ -8,7 +8,11 @@ export async function calculateAward(db:Client,date:string,executionTime:string,
  if(!policy)return {status:'blocked' as const,winnerId:null,reasons:['award_policy_unapproved'],context:{businessDate:date,asOf},candidates:[]};
  const initial=awardContext(date,asOf,policy);
  if(new Date(asOf).getTime()<new Date(initial.cutoff).getTime())return {status:'blocked' as const,winnerId:null,reasons:['award_cutoff_not_reached'],context:initial,candidates:[]};
- const context={...initial,asOf:isRevision?executionTime:initial.cutoff};
+ // Every run reads its sources as of when it runs (user decision, 25 October 2026): the first
+ // nightly run comes after the 00:15 attendance fill, so the day it judges is complete. The
+ // window still ends with the award day; isRevision only names the run for its job record.
+ const context={...initial,asOf:executionTime};
+ void isRevision;
  const {sources,calculation}=await loadPerformance(db,context.periodStart,context.periodEndExclusive,context.asOf);
  // A separate day context resolves participation; scoring/report validity keep the approved window.
  const day=await loadPerformance(db,date,context.periodEndExclusive,context.asOf);

@@ -1,5 +1,6 @@
 import { runAwardJobs } from '@/modules/scoring/internal/stars/jobs';
 import { authorizeWorkerRequest, workerClient, workerConnection } from '@/shared/supabase/worker';
+import { isMissingFunctionError } from '@/shared/supabase/schema-errors';
 import { kolkataDate } from '@/shared/time/kolkata';
 
 /**
@@ -35,8 +36,12 @@ export async function handleAwardWorkerRun(request: Request): Promise<Response> 
       p_operation: crypto.randomUUID(),
     });
     if (queued.error) throw new Error('Schedule queue failed.');
+    // Migration 75: days whose last run was blocked are retried every night. A database
+    // before 75 has no such function; the run carries on without the retry.
+    const retried = await db.rpc('requeue_blocked_awards', { p_from: through.slice(0, 8) + '01', p_through: through });
+    if (retried.error && !isMissingFunctionError(retried.error)) throw new Error('Blocked-day retry failed.');
     const outcomes = await runAwardJobs(db, 10, (org) => workerClient(url, key, org));
-    return Response.json({ schedule: queued.data, outcomes });
+    return Response.json({ schedule: queued.data, retried: retried.data ?? null, outcomes });
   } catch {
     return Response.json({ status: 'failed', reason: 'Award worker could not finish; inspect retained jobs.' }, { status: 503 });
   }
