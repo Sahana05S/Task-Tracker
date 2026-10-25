@@ -3,6 +3,7 @@ import { LiveReport } from '@/modules/reports/components/live-report';
 import { getCompanySettings } from '@/modules/settings';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { DailyReportView } from '@/modules/reports/components/daily-report';
+import { DataChecks } from '@/modules/reports/components/data-checks';
 import { MonthArchiveControls } from '@/modules/reports/components/month-archive-controls';
 import { ReportSnapshotForm } from '@/modules/reports/components/report-snapshot-form';
 import { monthHistory, monthRevision } from '@/modules/reports';
@@ -39,16 +40,21 @@ interface ReportsSearchParams {
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<ReportsSearchParams> }) {
   const query = await searchParams;
-  const month = reportsTab(query) === 'month';
+  const profile = await requireProfile();
+  // Data checks: the managing director's one list of what is missing (decision 25 Oct 2026).
+  const checks = query.tab === 'checks' && profile.role === 'managing_director';
+  const month = !checks && reportsTab(query) === 'month';
   const tabs = (
     <PageTabs
       label="Report views"
       tabs={[
-        { href: '/reports', label: 'Daily report', current: !month },
+        { href: '/reports', label: 'Daily report', current: !month && !checks },
         { href: `/reports?tab=month${query.period ? `&period=${encodeURIComponent(query.period)}` : ''}`, label: 'Month close', current: month },
+        ...(profile.role === 'managing_director' ? [{ href: '/reports?tab=checks', label: 'Data checks', current: checks }] : []),
       ]}
     />
   );
+  if (checks) return <DataChecksView tabs={tabs} />;
   return month ? <MonthClose query={query} tabs={tabs} /> : <DailyReport query={query} tabs={tabs} />;
 }
 
@@ -118,6 +124,18 @@ async function MonthClose({ query, tabs }: { query: ReportsSearchParams; tabs: R
           <ReportsModule reports={data.reports} members={data.members} canManage={canManageReportSnapshots(profile.role)} />
         </>
       ) : null}
+    </MissionPage>
+  );
+}
+
+/** Managing director only: attendance gaps, undecided award days and undated missions this month. */
+async function DataChecksView({ tabs }: { tabs: React.ReactNode }) {
+  const context = await liveViewContext();
+  const presentation = await getLivePresentation(context);
+  return (
+    <MissionPage>
+      <MissionPageHeader title="Reports" description={`${context.period.label} · what is missing for scores and awards`} tabs={tabs} />
+      <DataChecks model={presentation} />
     </MissionPage>
   );
 }
