@@ -24,10 +24,10 @@ export function WorkbookDashboard({
       <div className="grid gap-4 xl:grid-cols-2">
         <SignedBarCard
           title="Performance preview with median"
-          subtitle="Shared ten-factor score; incomplete results are unavailable"
+          subtitle="Shared ten-factor score"
           items={charts.performanceWithMedian.members}
           median={charts.performanceWithMedian.median}
-          empty={charts.performanceUnavailableReason ?? "No member performance has been calculated for this period."}
+          empty="No scores yet for this period."
         />
         <BarListCard
           title="Total progress"
@@ -63,7 +63,7 @@ export function WorkbookDashboard({
           title="Priority loading on team"
           subtitle="Sum of priority weights carried by each assignee"
           items={charts.priorityLoadingOnTeam}
-          empty={charts.priorityLoadingUnavailableReason ?? "No priority loading has been assigned yet."}
+          empty="No priority loading has been assigned yet."
         />
         <TimelineCard
           title="Missions done by date"

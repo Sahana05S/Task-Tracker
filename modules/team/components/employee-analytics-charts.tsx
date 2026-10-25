@@ -54,7 +54,7 @@ export function EmployeeChartsPanel({ charts }: { charts: EmployeeAnalyticsChart
     <div className="grid gap-5 lg:gap-6">
       <ChartSection
         title="Each factor against the team median"
-        subtitle="Month-to-date raw value per dated observation. The dashed line is the team median; gaps are days the value was unavailable."
+        subtitle="Month-to-date raw value per dated observation. The dashed line is the team median."
       >
         <MedianLegend />
         <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-5">
@@ -69,7 +69,7 @@ export function EmployeeChartsPanel({ charts }: { charts: EmployeeAnalyticsChart
             point.date,
             ...FACTORS.map((f) => {
               const p = charts.factorTrends[f][index];
-              return p ? `${p.display ?? 'Unavailable'} / ${p.medianDisplay ?? 'Unavailable'}` : 'Unavailable';
+              return p ? `${p.display ?? '—'} / ${p.medianDisplay ?? '—'}` : '—';
             }),
           ])}
           note="Each cell is the member's value / the team median."
@@ -100,7 +100,7 @@ export function ScoreVsMedianChart({ data }: { data: readonly EmployeeTrendPoint
   return (
     <ChartSection
       title="Score against the team median"
-      subtitle="Composite score per dated observation. Missing inputs leave gaps rather than zeros."
+      subtitle="Composite score per dated observation."
     >
       {empty ? (
         <EmptyState variant="chart">No dated score is available yet this month. Scores appear once every factor has its inputs.</EmptyState>
@@ -112,7 +112,7 @@ export function ScoreVsMedianChart({ data }: { data: readonly EmployeeTrendPoint
           </div>
         </>
       )}
-      <ValueTable caption="Score values" head={['Date', 'Score', 'Team median']} rows={data.map((p) => [p.date, p.display ?? 'Unavailable', p.medianDisplay ?? 'Unavailable'])} />
+      <ValueTable caption="Score values" head={['Date', 'Score', 'Team median']} rows={data.map((p) => [p.date, p.display ?? '—', p.medianDisplay ?? '—'])} />
     </ChartSection>
   );
 }
@@ -124,7 +124,7 @@ function FactorMultiple({ title, data }: { title: string; data: readonly Employe
     <figure className="bg-muted/50 grid min-w-0 gap-1 rounded-xl p-2.5 sm:p-3">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="text-foreground text-sm font-semibold">{title}</span>
-        <span className="text-muted-foreground text-xs">{latest ? latest.display : 'Unavailable'}</span>
+        <span className="text-muted-foreground text-xs">{latest ? latest.display : '—'}</span>
       </figcaption>
       {empty ? (
         <p className="text-muted-foreground flex h-28 items-center justify-center text-center text-xs">No dated values</p>
@@ -154,7 +154,6 @@ function TrendLines({ data, name, compact = false }: { data: readonly EmployeeTr
 
 function HoursChart({ data }: { data: readonly EmployeeDayHours[] }) {
   const logged = data.some((d) => d.taskHours > 0 || d.attendanceHours !== null);
-  const missing = data.filter((d) => d.attendanceHours === null).length;
   return (
     <ChartSection title="Hours per day" subtitle="Task hours logged beside regular attendance hours.">
       {logged ? (
@@ -172,7 +171,6 @@ function HoursChart({ data }: { data: readonly EmployeeDayHours[] }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          {missing ? <p className="text-muted-foreground text-xs">Attendance is not recorded for {missing} of {data.length} days; those days show task hours only.</p> : null}
         </>
       ) : (
         <EmptyState variant="chart">No hours logged and no attendance recorded this month yet.</EmptyState>
@@ -296,8 +294,8 @@ function TrendTooltip({ active, payload, name }: TooltipProps<EmployeeTrendPoint
   if (!active || !point) return null;
   return (
     <TooltipShell title={point.label}>
-      <TooltipRow label={name} value={point.display ?? 'Unavailable'} />
-      <TooltipRow label="Team median" value={point.medianDisplay ?? 'Unavailable'} />
+      <TooltipRow label={name} value={point.display ?? '—'} />
+      <TooltipRow label="Team median" value={point.medianDisplay ?? '—'} />
     </TooltipShell>
   );
 }

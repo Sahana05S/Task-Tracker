@@ -1,16 +1,15 @@
 import { cn } from '@/shared/utils';
 
 /**
- * A figure that cannot be shown: a dash in the cell, with the reason as a
- * tooltip and in the accessible name, instead of the word "Unavailable"
- * crowding a numeric column.
+ * A figure with no value yet: a quiet dash. It no longer says "Not available"
+ * or why (user decision, 25 October 2026: no missing-data warnings on pages).
+ * `reason` is kept for callers and ignored.
  */
-export function UnavailableValue({ reason, className }: { reason?: string; className?: string }) {
-  const description = reason ? `Not available: ${reason}` : 'Not available';
+export function UnavailableValue({ className }: { reason?: string; className?: string }) {
   return (
-    <span title={description} className={cn('text-muted-foreground', className)}>
+    <span className={cn('text-muted-foreground', className)}>
       <span aria-hidden="true">—</span>
-      <span className="sr-only">{description}</span>
+      <span className="sr-only">No value yet</span>
     </span>
   );
 }

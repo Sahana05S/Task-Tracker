@@ -69,7 +69,7 @@ export default async function EmployeePage({ params, searchParams }: EmployeePag
       />
       {tab === 'charts' ? (
         <>
-          <MissionNotice>Dated charts use captured scale and shares and the inputs recorded at each date. Missing history leaves gaps; shared work does not duplicate team credit.</MissionNotice>
+          <MissionNotice>Dated charts use captured scale and shares and the inputs recorded at each date; shared work does not duplicate team credit.</MissionNotice>
           <EmployeeChartsPanel charts={data.charts} />
         </>
       ) : tab === 'missions' ? (
@@ -111,7 +111,7 @@ function Overview({ data, waypoints }: { data: EmployeeProfileData; waypoints: W
         <StarCalendar days={data.charts.starDays} />
       </div>
       <ScoreVsMedianChart data={data.charts.performanceScoreTrend} />
-      {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}
+      
       {data.performance?.calculation ? <PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext} /> : null}
     </>
   );

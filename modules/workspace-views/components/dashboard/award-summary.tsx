@@ -2,10 +2,17 @@ import { TrophyIcon } from 'lucide-react';
 
 import { awardDayLabel, awardDayView, mondayIndex, type AwardDayKind, type AwardDayView, type AwardReadModel } from '@/modules/scoring/client';
 import { AWARD_KIND, AWARD_KIND_ORDER, RECALCULATING } from '@/modules/scoring/components/award-day-kind';
-import { GAP_SENTENCE, dataGaps } from '@/modules/reports/client';
 import { cn, getInitials } from '@/shared/utils';
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
+
+/** Who leads the monthly star on daily stars so far (an undecided month never reads "not available"). */
+function leaderText(counts: Record<string, number>, names: Record<string, string>): string {
+  const top = Math.max(0, ...Object.values(counts));
+  if (top === 0) return 'decided at month end';
+  const leaders = Object.keys(counts).filter((id) => counts[id] === top).map((id) => names[id] ?? 'Team member');
+  return `${leaders.join(' and ')} leading with ${top} daily ${top === 1 ? 'star' : 'stars'}`;
+}
 
 function addDays(date: string, days: number): string {
   const value = new Date(`${date}T00:00:00Z`);
@@ -57,20 +64,8 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
   const monthlyText = monthly.status === 'closed' ? 'month closed; see the archived report'
     : winner ? winner
     : monthly.status === 'complete' ? (monthly.tiedIds.length > 1 ? 'exact tie, no winner' : 'no winner this month')
-    : monthly.status === 'provisional' ? 'provisional while the month is in progress'
-    : 'not available yet';
+    : leaderText(monthly.counts, names);
 
-  const waiting = dates.filter(date => kinds.get(date) === 'waiting');
-  const gaps = dataGaps(waiting.flatMap(date => byDate.get(date)?.reasons ?? []));
-  const queued = count('queued');
-  const failed = count('failed');
-  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-  const explanation = [
-    rechecking.length ? `${plural(rechecking.length, 'day')} ${rechecking.length === 1 ? 'shows its' : 'show their'} last decided result until the next run rechecks ${rechecking.length === 1 ? 'it' : 'them'} after recent changes.` : '',
-    waiting.length ? `${plural(waiting.length, 'day')} waiting for data. ${gaps.length ? gaps.map(gap => GAP_SENTENCE[gap]).join(' ') : GAP_SENTENCE.other}` : '',
-    failed ? `${plural(failed, 'day')} failed to calculate and will be retried.` : '',
-    queued ? `${plural(queued, 'day')} will be calculated in the next nightly run.` : '',
-  ].filter(Boolean).join(' ');
 
   const describe = (date: string) => {
     const { kind, winnerId, recalculating } = views.get(date)!;
@@ -155,8 +150,6 @@ export function AwardSummary({awards,names,availabilityReason,holidays,holidayNa
         </ul>
       ) : null}
 
-      {explanation ? <p className="text-sm">{explanation}</p> : null}
-      {availabilityReason ? <p role="status" className="text-sm">{availabilityReason}</p> : null}
     </section>
   );
 }

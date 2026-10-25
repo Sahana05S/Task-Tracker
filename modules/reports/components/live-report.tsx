@@ -18,7 +18,6 @@ export function LiveReport({model,companyName}:{model:LivePresentation;companyNa
  return <section className="grid gap-5 lg:gap-6">
   <ReportContext model={model}/>
   <nav aria-label="Download live report" className="flex flex-wrap items-center gap-2">{['json','text','csv'].map(format=><a className={cn(buttonVariants({ variant: 'outline' }), 'h-9 gap-1.5 px-3')} key={format} href={'/api/reports/export?'+query+'&format='+format}><DownloadIcon className="size-4" aria-hidden="true"/>Download {format.toUpperCase()}</a>)}<CopyReport text={reportText(model,companyName)}/></nav>
-  {model.awardAvailabilityReason?<MissionNotice tone="attention" role="status">{model.awardAvailabilityReason}</MissionNotice>:null}
   {model.awards?<AwardHistory awards={model.awards}/>:null}
   <MissionNotice>You see your own detailed rows; managers see everyone&apos;s. Team totals are visible to all. Work files are linked by hand; Drive is not connected yet.</MissionNotice>
   {model.calculation.members.filter(m=>!model.employeeId||m.userId===model.employeeId).map(m=><details key={m.userId} className="disclosure"><summary>{model.members.find(u=>u.id===m.userId)?.fullName??'Team member'} · performance inputs</summary><PerformanceBreakdown result={m} context={model.calculation.context}/></details>)}

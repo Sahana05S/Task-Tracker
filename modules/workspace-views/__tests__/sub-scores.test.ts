@@ -57,11 +57,11 @@ describe('SubScoresGrid', () => {
     expect(productivity).toContain('Team median 2.000000');
   });
 
-  it("shows the engine's reasons for an unavailable factor, never zeros", () => {
+  it('shows a quiet empty chart for a factor with no values, never zeros or reason codes (decision 25 Oct 2026)', () => {
     const sales = html.slice(html.indexOf('>Sales<'), html.indexOf('>Facts<'));
-    expect(sales).toContain('Not available for this period');
-    expect(sales).toContain('A sales entry is missing its project flags');
-    expect(sales).toContain('sales_flags_missing');
+    expect(sales).toContain('No values to compare yet.');
+    expect(sales).not.toContain('Not available');
+    expect(sales).not.toContain('sales_flags_missing');
     expect(sales).not.toContain('0.000000');
     expect(sales).not.toContain('<li class="grid');
   });
@@ -75,7 +75,7 @@ describe('SubScoresGrid', () => {
   });
 
   it('shows an empty state when nothing is calculated', () => {
-    expect(renderToStaticMarkup(createElement(SubScoresGrid, { calculation: null, names }))).toContain('No performance has been calculated');
+    expect(renderToStaticMarkup(createElement(SubScoresGrid, { calculation: null, names }))).toContain('No scores yet for this period.');
   });
 });
 
@@ -87,6 +87,6 @@ describe('FactorDifferentialsChart', () => {
     }));
     expect(html).toContain('+0.250000');
     expect(html).not.toContain('Arun');
-    expect(html).toContain('1 not compared');
+    expect(html).not.toContain('not compared');
   });
 });

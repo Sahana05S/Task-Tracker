@@ -87,7 +87,7 @@ export default async function EmployeeReportsPage({
         <LiveReport model={data.presentation} companyName={(await getCompanySettings()).branding.companyName}/>
         <ItemHoursPanel tasks={itemHours} />
         <h2 className="panel-title mt-2">Retained reports · original rules</h2>
-        {data.performanceUnavailableReason ? <MissionNotice tone="attention" role="status">{data.performanceUnavailableReason} Saved reports and effort history remain available.</MissionNotice> : null}
+        
         <section id="charts" aria-label="Chart summary">
           <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <ChartCard
