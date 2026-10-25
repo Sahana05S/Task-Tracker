@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { AlertTriangleIcon, ArrowRightIcon, RefreshCwIcon, StarIcon } from 'lucide-react';
-import type * as React from 'react';
+import { ArrowRightIcon, StarIcon } from 'lucide-react';
 
 import type { DailyStarHighlight } from '@/modules/recognition/client';
-import { GAP_SENTENCE, dataGaps, plainReason } from '@/modules/reports/client';
+import { plainReason } from '@/modules/reports/client';
 import type { Section } from '@/shared/async/settle';
-import { InitialsAvatar, MissionNotice } from '@/shared/ui/mission-ui';
+import { AsOfNote } from '@/shared/ui/as-of-note';
+import { InitialsAvatar } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 
 import { ConfettiBurst } from './confetti-burst';
@@ -30,32 +30,14 @@ function noStarSentence(reasons: readonly string[]): string {
   const known = reasons.map((code) => NO_STAR_REASON[code]).filter((s): s is string => Boolean(s));
   if (known.length) return [...new Set(known)].join(' ');
   if (reasons.length) return `${[...new Set(reasons.map(plainReason))].join('. ')}.`;
-  return 'The run finished without a winner.';
-}
-
-/** Run states the rule names when a slot carries no reasons of its own. */
-const RUN_STATE_SENTENCE: Record<string, string> = {
-  award_run_failed: 'The award run for that day failed.',
-  award_run_stale: 'Records changed after this star was chosen; a director needs to re-check it.',
-  award_run_missing: 'No award run was recorded for that day.',
-  award_run_uncertified: 'This result is not final yet.',
-};
-
-/** Plain wording for a blocked run: the data gaps first, else the run's own reasons. */
-function blockedSentences(reasons: readonly string[]): string[] {
-  const runState = reasons.map((code) => RUN_STATE_SENTENCE[code]).filter((s): s is string => Boolean(s));
-  const codes = reasons.filter((code) => !(code in RUN_STATE_SENTENCE));
-  const gaps = dataGaps(codes).map((gap) => GAP_SENTENCE[gap]);
-  if (gaps.length || runState.length) return [...gaps, ...runState];
-  const plain = [...new Set(codes.map(plainReason))];
-  return plain.length ? plain.map((s) => `${s}.`) : ['Required data not available.'];
+  return 'No one won the star that day.';
 }
 
 /**
- * The Today hero's daily star card: yesterday's certified daily star (M08),
- * today's cutoff and the link to the viewer's performance. A blocked day is
- * stated as waiting for data with its reasons, never as a zero or a fake win.
- * When the viewer is yesterday's star, the card glows and confetti falls once.
+ * The Today hero's daily star card: the latest decided daily star (M08) - yesterday's,
+ * or the most recent decided day with an "As of" date - today's cutoff and the link to
+ * the viewer's performance. It never shows a "waiting for data" state (user decision,
+ * 25 October 2026). When the viewer is the shown star, the card glows and confetti falls once.
  */
 export function DailyStarSpotlight({ highlight, names, profileHref }: {
   highlight: Section<DailyStarHighlight>; names: Record<string, string>; profileHref: string;
@@ -64,9 +46,9 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
   const celebrate = Boolean(h && h.status === 'winner' && h.isViewer);
   const winnerName = h?.winnerId ? names[h.winnerId] ?? 'A team member' : null;
 
+  const earlier = Boolean(h?.fromEarlierDay);
   let title: string;
   let body: string;
-  let detail: React.ReactNode = null;
   if (!h) {
     title = 'Daily star status unavailable';
     body = "Award data couldn't be loaded right now. Refresh to try again.";
@@ -74,26 +56,16 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
     title = 'Daily stars are not active yet';
     body = 'Daily star rules are awaiting approval, so no stars are awarded.';
   } else if (h.status === 'winner') {
-    title = h.isViewer ? "You earned yesterday's daily star" : `${winnerName} earned yesterday's daily star`;
-    body = h.recalculating
-      ? `Records for ${longDate(h.date)} changed after this star was decided; it stays until the next run rechecks the day.`
-      : `Highest certified score for ${longDate(h.date)}.`;
+    title = earlier
+      ? h.isViewer ? 'You are the latest daily star' : `${winnerName} is the latest daily star`
+      : h.isViewer ? "You earned yesterday's daily star" : `${winnerName} earned yesterday's daily star`;
+    body = `Highest score on ${longDate(h.date)}.`;
   } else if (h.status === 'none') {
-    title = 'No daily star was awarded yesterday';
-    body = h.recalculating
-      ? `Records for ${longDate(h.date)} changed after this was decided; the next run rechecks the day.`
-      : `${longDate(h.date)}: ${noStarSentence(h.reasons)}`;
-  } else if (h.status === 'blocked') {
-    title = "Yesterday's daily star is waiting for data";
-    body = `The run for ${longDate(h.date)} has not reached a certified result.`;
-    detail = (
-      <MissionNotice tone="attention" icon={AlertTriangleIcon} className="mt-3" role="status">
-        {blockedSentences(h.reasons).join(' ')}
-      </MissionNotice>
-    );
+    title = earlier ? `No daily star on ${longDate(h.date)}` : 'No daily star was awarded yesterday';
+    body = noStarSentence(h.reasons);
   } else {
-    title = "Yesterday's daily star hasn't been calculated yet";
-    body = `No run has been recorded for ${longDate(h.date)} yet.`;
+    title = 'Daily stars are decided every night';
+    body = "The first star appears after tonight's run.";
   }
 
   return (
@@ -116,14 +88,8 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
             ) : null}
             <h2 className="text-foreground min-w-0 text-xl font-bold tracking-tight">{title}</h2>
           </div>
-          {h?.recalculating ? (
-            <p className="text-muted-foreground mt-2 inline-flex items-center gap-1.5 text-xs font-medium">
-              <RefreshCwIcon className="size-3.5" aria-hidden="true" />
-              Recalculating
-            </p>
-          ) : null}
           <p className="text-muted-foreground mt-1 text-sm">{body}</p>
-          {detail}
+          {h && earlier ? <AsOfNote date={h.date} className="mt-1" /> : null}
           {h?.policyApproved ? (
             <p className="text-foreground mt-2 text-sm font-medium">
               Today&apos;s daily star is decided after {cutoffLabel(h.cutoff)} IST.

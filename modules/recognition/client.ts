@@ -4,6 +4,7 @@
 export {
   computeStreak,
   dailyStarHighlight,
+  latestDailyStar,
   DEFAULT_MILESTONES,
   milestonesReached,
   type DailyStarHighlight,

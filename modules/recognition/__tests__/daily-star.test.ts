@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dailyStarHighlight, type DailyStarSource } from '@/modules/recognition/client';
+import { dailyStarHighlight, latestDailyStar, type DailyStarSource } from '@/modules/recognition/client';
 
 const DATE = '2026-10-18';
 const POLICY = { cutoffHour: 23, cutoffMinute: 59 };
@@ -80,5 +80,31 @@ describe('dailyStarHighlight (yesterday\'s M08 daily star as a highlight)', () =
   it('defaults a missing cutoff minute to 0 and ignores a malformed cutoff', () => {
     expect(dailyStarHighlight(source([], { policy: { cutoffHour: 18 } }), DATE, 'u1').cutoff).toEqual({ hour: 18, minute: 0 });
     expect(dailyStarHighlight(source([], { policy: { cutoffHour: '18' } }), DATE, 'u1').cutoff).toBeNull();
+  });
+});
+
+describe('latestDailyStar (the latest decided day instead of a waiting state)', () => {
+  it("shows yesterday's star when yesterday is decided", () => {
+    const h = latestDailyStar(source([day({ date: '2026-10-17', winnerId: 'u2' }), day({})]), DATE, 'u1');
+    expect(h).toMatchObject({ date: DATE, status: 'winner', winnerId: 'u1', fromEarlierDay: false });
+  });
+
+  it('falls back to the most recent decided day when yesterday is blocked or missing', () => {
+    const blocked = day({ status: 'blocked', certified: false, winnerId: null, reasons: ['attendance_unavailable'] });
+    const h = latestDailyStar(source([day({ date: '2026-10-15', winnerId: 'u3' }), day({ date: '2026-10-16', winnerId: 'u2' }), blocked]), DATE, 'u1');
+    expect(h).toMatchObject({ date: '2026-10-16', status: 'winner', winnerId: 'u2', fromEarlierDay: true });
+    expect(latestDailyStar(source([day({ date: '2026-10-16' })]), DATE, 'u1')).toMatchObject({ date: '2026-10-16', fromEarlierDay: true });
+  });
+
+  it("uses a recalculating day's last decided result and a certified no-winner day", () => {
+    const stale = day({ status: 'stale', certified: false, winnerId: null, lastDecided: { status: 'completed_winner', winnerId: 'u4' } });
+    expect(latestDailyStar(source([stale]), DATE, 'u1')).toMatchObject({ status: 'winner', winnerId: 'u4', fromEarlierDay: false });
+    const none = day({ date: '2026-10-17', status: 'completed_none', winnerId: null, reasons: ['exact_highest_score_tie'] });
+    expect(latestDailyStar(source([none, day({ status: 'blocked', certified: false, winnerId: null })]), DATE, 'u1')).toMatchObject({ date: '2026-10-17', status: 'none', fromEarlierDay: true });
+  });
+
+  it('ignores later days and is pending without reasons when nothing was decided', () => {
+    expect(latestDailyStar(source([day({ date: '2026-10-19' })]), DATE, 'u1')).toMatchObject({ date: DATE, status: 'pending', reasons: [] });
+    expect(latestDailyStar(source([day({ status: 'blocked', certified: false, winnerId: null, reasons: ['x'] })]), DATE, 'u1')).toMatchObject({ status: 'pending', reasons: [] });
   });
 });

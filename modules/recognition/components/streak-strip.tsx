@@ -4,7 +4,7 @@ import { cn } from '@/shared/utils';
 const LABEL: Record<StreakDay['state'], string> = {
   active: 'counted',
   skipped: 'not counted (holiday, leave, off hours or no attendance record)',
-  broken: 'streak broken (absent, or nothing logged)',
+  broken: 'streak reset',
   pending: 'today, not counted yet',
 };
 

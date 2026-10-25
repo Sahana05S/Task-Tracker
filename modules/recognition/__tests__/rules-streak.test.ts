@@ -54,6 +54,13 @@ describe('computeStreak (approved active-day streak, 19 October 2026)', () => {
     expect(s.recentDays[3]).toEqual({ date: '2026-10-04', state: 'broken' });
   });
 
+  it('keeps the length of the streak that ended, skipping skipped days', () => {
+    expect(streak('cccbs').previous).toBe(3);
+    expect(streak('cbcscbs').previous).toBe(2);
+    expect(streak('bbs').previous).toBe(0);
+    expect(streak('ccc').previous).toBe(0);
+  });
+
   it('a window with nothing counted is zero without a broken date when nothing ever counted', () => {
     expect(streak('')).toMatchObject({ current: 0, longest: 0, lastActiveDate: null, brokenOn: null, nextMilestone: 3, daysToMilestone: 3 });
     expect(streak('sss')).toMatchObject({ current: 0, longest: 0, lastActiveDate: null });
