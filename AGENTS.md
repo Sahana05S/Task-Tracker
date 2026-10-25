@@ -23,6 +23,22 @@ change). The refactor is complete on `refactor/base` (not yet merged into
   gitignored (18 October 2026, user request). Read and update them locally; they
   are not in the repository. Test fixtures live in `__tests__/fixtures/`.
 
+## M18 payroll - 25 October 2026
+
+The user asked for the workbook "3_1_c_Employee Management and Info" (salary
+calculation and salary records) inside TaskPulse, visible only to the
+managing director (DECISIONS "M18 payroll", `docs/plans/M18-payroll.md` holds
+every sheet formula). Module `modules/payroll/`, migration 74
+(`74_payroll_foundation.sql`): private tables, one calculation
+(`taskpulse_private.payroll_compute`), MD-only RPCs. Salary: per day =
+monthly / (working days - festival holidays); calculated = per day x (days
+worked + 2 paid days); days worked = P + 0.75 UD (Present under the full-day
+hours) + 0.5 Half Day; in hand = MIN(calculated, monthly) - (fixed + monthly
+deductions - incentives), rounded to the rupee on finalising; advance balance
+= advances - "Advance" deductions. Never put salary data on `public.users`, in
+audit `protected_changes` or in the activity feed. Importing real salary
+figures needs its own go-ahead.
+
 ## Checklist: one kind of row - 23 October 2026
 
 The user found the master checklist confusing and approved going back to the

@@ -1,0 +1,41 @@
+// PUBLIC client-safe exports of the payroll module: types and pure rules only
+// (no server imports), so 'use client' components may use them.
+export {
+  classifyDays,
+  computePayLine,
+  daysWorked,
+  DEFAULT_PAYROLL_SETTINGS,
+  EMPLOYMENT_STATUS_LABELS,
+  EMPLOYMENT_STATUSES,
+  formatINR,
+  HALF_DAY_WEIGHT,
+  maskAccountNumber,
+  monthLabel,
+  monthPeriod,
+  PAY_COMPONENT_KIND_LABELS,
+  PAY_COMPONENT_KINDS,
+  PAYMENT_MODE_LABELS,
+  PAYMENT_MODES,
+  payrollHeader,
+  roundRupee,
+  UD_WEIGHT,
+  type DayCounts,
+  type EmploymentStatus,
+  type PayComponentKind,
+  type PayFigures,
+  type PayInputs,
+  type PaymentMode,
+  type PayrollHeader,
+  type PayrollSection,
+} from '@/modules/payroll/internal/rules';
+export type {
+  EmployeePayFile,
+  PayComponent,
+  PayItem,
+  PayrollEmployee,
+  PayrollLine,
+  PayrollMonth,
+  PayrollMonthSummary,
+  PayrollSetup,
+} from '@/modules/payroll/internal/mappers';
+export { canManagePayroll } from '@/modules/payroll/internal/permissions';

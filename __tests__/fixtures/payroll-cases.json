@@ -1,0 +1,46 @@
+{
+  "description": "M18 payroll: the October 2026 Salary Calculation rows of the workbook (real day counts, fake rupee amounts) plus edge cases. Expected values follow E = D/E3, F = E*(C+extra), H = F-G, I = MIN(F,D), J = I-G (rounded half away from zero).",
+  "header": {
+    "period": "2026-10-01",
+    "weeklyOffDays": [0],
+    "holidayDates": ["2026-10-02", "2026-10-19", "2026-10-20", "2026-10-25"],
+    "expected": { "workingDaysInMonth": 27, "festivalHolidays": 3, "actualWorkingDays": 24 }
+  },
+  "cases": [
+    {
+      "name": "no attendance: only the 2 extra paid days",
+      "input": { "daysWorked": 0, "monthlySalary": 30000, "actualWorkingDays": 24, "extraPaidDays": 2, "fixedTotal": 400, "variableTotal": 0, "incentiveTotal": 0 },
+      "expected": { "perDay": 1250, "calculated": 2500, "deductions": 400, "nonCapped": 2100, "capped": 2500, "inHand": 2100, "inHandRounded": 2100 }
+    },
+    {
+      "name": "17.75 days (17 P + 1 UD)",
+      "input": { "daysWorked": 17.75, "monthlySalary": 24000, "actualWorkingDays": 24, "extraPaidDays": 2, "fixedTotal": 600, "variableTotal": 0, "incentiveTotal": 0 },
+      "expected": { "perDay": 1000, "calculated": 19750, "deductions": 600, "nonCapped": 19150, "capped": 19750, "inHand": 19150, "inHandRounded": 19150 }
+    },
+    {
+      "name": "3.75 days with a monthly deduction",
+      "input": { "daysWorked": 3.75, "monthlySalary": 24000, "actualWorkingDays": 24, "extraPaidDays": 2, "fixedTotal": 0, "variableTotal": 250, "incentiveTotal": 0 },
+      "expected": { "perDay": 1000, "calculated": 5750, "deductions": 250, "nonCapped": 5500, "capped": 5750, "inHand": 5500, "inHandRounded": 5500 }
+    },
+    {
+      "name": "full month hits the cap; incentives larger than deductions",
+      "input": { "daysWorked": 24, "monthlySalary": 24000, "actualWorkingDays": 24, "extraPaidDays": 2, "fixedTotal": 200, "variableTotal": 300, "incentiveTotal": 1000 },
+      "expected": { "perDay": 1000, "calculated": 26000, "deductions": -500, "nonCapped": 26500, "capped": 24000, "inHand": 24500, "inHandRounded": 24500 }
+    },
+    {
+      "name": "half rupee rounds up",
+      "input": { "daysWorked": 10, "monthlySalary": 24000, "actualWorkingDays": 24, "extraPaidDays": 2, "fixedTotal": 0.5, "variableTotal": 0, "incentiveTotal": 0 },
+      "expected": { "perDay": 1000, "calculated": 12000, "deductions": 0.5, "nonCapped": 11999.5, "capped": 12000, "inHand": 11999.5, "inHandRounded": 12000 }
+    },
+    {
+      "name": "no salary set: unknown, never zero",
+      "input": { "daysWorked": 20, "monthlySalary": null, "actualWorkingDays": 24, "extraPaidDays": 2, "fixedTotal": 100, "variableTotal": 0, "incentiveTotal": 0 },
+      "expected": { "perDay": null, "calculated": null, "deductions": 100, "nonCapped": null, "capped": null, "inHand": null, "inHandRounded": null }
+    },
+    {
+      "name": "no working days: unknown, not the monthly salary",
+      "input": { "daysWorked": 0, "monthlySalary": 24000, "actualWorkingDays": 0, "extraPaidDays": 2, "fixedTotal": 0, "variableTotal": 0, "incentiveTotal": 0 },
+      "expected": { "perDay": null, "calculated": null, "deductions": 0, "nonCapped": null, "capped": null, "inHand": null, "inHandRounded": null }
+    }
+  ]
+}
