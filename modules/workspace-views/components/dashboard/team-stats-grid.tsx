@@ -61,9 +61,7 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true, attendance
         }
         unit={medians.productivity === null ? undefined : '/h'}
         detail={
-          medians.productivity === null
-            ? 'Not available: required inputs are missing'
-            : 'Period-earned scaled credit / regular attendance hours'
+          'Period-earned scaled credit / regular attendance hours'
         }
       />
 
@@ -93,9 +91,11 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true, attendance
 
       <StatCard
         label="Attendance hours"
-        value={attendanceComplete ? formatHours(totals.attendanceHours) : 'Incomplete'}
-        unit={attendanceComplete ? 'h' : undefined}
-        detail={attendanceComplete ? `${formatNumeric(totals.payableDays)} payable days · ${formatHours(totals.offHours)} off-hours` : attendanceMissing ? `${attendanceMissing.missing} of ${attendanceMissing.total} members have days without attendance` : 'Some days have no attendance recorded'}
+        // Recorded hours through yesterday, never an "Incomplete" label (decision 25 Oct 2026);
+        // with gaps and nothing recorded it is a dash, never a healthy-looking zero.
+        value={attendanceComplete || Number(totals.attendanceHours) > 0 ? formatHours(totals.attendanceHours) : '—'}
+        unit={attendanceComplete || Number(totals.attendanceHours) > 0 ? 'h' : undefined}
+        detail={`${formatNumeric(totals.payableDays)} payable days · ${formatHours(totals.offHours)} off-hours`}
       />
 
       <StatCard

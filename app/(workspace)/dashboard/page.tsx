@@ -4,10 +4,8 @@ import { getLivePresentation } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
 import { AwardSummary } from '@/modules/workspace-views/components/dashboard/award-summary';
-import { DataStatusBanner } from '@/modules/workspace-views/components/dashboard/data-status-banner';
-import { canManageAttendance, getTeamHolidayDates } from '@/modules/attendance';
+import { getTeamHolidayDates } from '@/modules/attendance';
 import { getCompanyHolidayNames } from '@/modules/settings';
-import { calculationReasons, dataGaps } from '@/modules/reports/client';
 
 import { AllocationChart } from '@/modules/workspace-views/components/dashboard/allocation-chart';
 import { ProductivityChart } from '@/modules/workspace-views/components/dashboard/productivity-chart';
@@ -17,7 +15,9 @@ import { TrackerSchemaNotice } from '@/modules/workspace-views/components/dashbo
 import { WorkbookDashboard } from '@/modules/workspace-views/components/dashboard/workbook-dashboard';
 import { SubScoresGrid } from '@/modules/workspace-views/components/dashboard/sub-scores-grid';
 import { DailyPerfLogSection } from '@/modules/workspace-views/components/dashboard/daily-perf-log';
+import { AsOfNote, shortDay } from '@/shared/ui/as-of-note';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { liveWindowEnd } from '@/shared/time/period';
 import { dailyPerfFilter, getDailyPerfLog, getWorkbookDashboard, monthToDate, seesTeamDetail } from '@/modules/reports';
 import { Suspense } from 'react';
 import { requireProfile } from '@/shared/session/profile';
@@ -78,9 +78,6 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     missing:activeMembers.filter(member=>presentation.sources.attendance.find(a=>a.userId===member.id)?.available!==true).length,
     total:activeMembers.length,
   };
-  const incomplete=analytics.calculation?.status!=='complete'||Boolean(awards&&awards.monthly.status==='incomplete');
-  const gaps=dataGaps([...calculationReasons(analytics.calculation),...(awards?.monthly.reasons??[])]);
-  if(attendanceMissing.missing>0&&!gaps.includes('attendance'))gaps.unshift('attendance');
 
   return (
     <MissionPage wide>
@@ -96,16 +93,8 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         }
       />
 
-      {incomplete ? (
-        <DataStatusBanner
-          periodLabel={analytics.period.label}
-          month={period.startDate.slice(0,7)}
-          gaps={gaps}
-          attendanceMissing={attendanceMissing}
-          canRecordAttendance={profile.isActive&&canManageAttendance(profile.role)}
-          historyFrom={presentation.detailsAvailable?null:presentation.detailsAvailableFrom}
-        />
-      ) : null}
+      {/* No "figures are not final" banner: the figures cover the days that have ended (decision 25 Oct 2026). */}
+      <AsOfNote label={`Through ${shortDay(lastReadDay(liveWindowEnd(context.period,context.asOf)))}`} />
 
       <TeamStatsGrid analytics={analytics} attendanceComplete={attendanceMissing.missing===0} attendanceMissing={attendanceMissing} />
 
@@ -125,7 +114,6 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         <AwardSummary awards={awards} names={names} availabilityReason={presentation.awardAvailabilityReason} holidays={holidays} holidayNames={holidayNames} />
       ) : (
         <StarPerformerCard
-          unavailableReason="Awards are not available for this view."
           performer={analytics.starPerformer}
           periodLabel={analytics.period.label}
           medianProductivity={analytics.medians.productivity}
@@ -149,4 +137,9 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
 
     </MissionPage>
   );
+}
+
+/** The last day a live read covers: the day before its exclusive window end. */
+function lastReadDay(endExclusive:string):string {
+  const d=new Date(`${endExclusive}T00:00:00Z`);d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10);
 }

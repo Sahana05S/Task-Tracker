@@ -36,7 +36,7 @@ export function SubScoresGrid({
         </p>
       </div>
       {members.length === 0 ? (
-        <EmptyState>No performance has been calculated for this period.</EmptyState>
+        <EmptyState>No scores yet for this period.</EmptyState>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {FACTORS.map((factor) => {

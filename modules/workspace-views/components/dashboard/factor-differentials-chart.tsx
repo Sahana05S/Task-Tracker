@@ -1,7 +1,6 @@
 import { Exact, displayPerformance, type ExactInput } from '@/shared/math/exact';
-import { plainReason } from '@/modules/reports/client';
 import { cn } from '@/shared/utils';
-import { ChartShell } from '@/modules/workspace-views/components/dashboard/chart-shell';
+import { ChartShell, EmptyNote } from '@/modules/workspace-views/components/dashboard/chart-shell';
 
 interface FactorDifferentialMember {
   userId: string;
@@ -37,29 +36,19 @@ export function FactorDifferentialsChart({
   members,
   median,
   unit,
-  reasons = [],
   subtitle,
 }: FactorDifferentialsChartProps) {
   const rows = members.flatMap((member) =>
     member.delta === null ? [] : [{ ...member, value: Exact.from(member.delta).number(), text: signed(member.delta) }],
   );
-  const omitted = members.length - rows.length;
   const max = Math.max(0, ...rows.map((row) => Math.abs(row.value)));
   const description = subtitle ?? `Difference from the team median · ${unit}`;
 
+  // No reasons or codes on the page (decision 25 Oct 2026): an empty chart just says so.
   if (rows.length === 0) {
-    const plain = [...new Set((reasons.length ? reasons : ['raw_input_unavailable']).map(plainReason))];
     return (
       <ChartShell title={title} subtitle={description}>
-        <div className="bg-muted/70 grid gap-1.5 rounded-xl px-4 py-3 text-sm" role="note">
-          <p className="text-foreground font-semibold">Not available for this period</p>
-          <ul className="text-muted-foreground grid gap-0.5 text-xs">
-            {plain.map((reason) => <li key={reason}>{reason}</li>)}
-          </ul>
-          {reasons.length ? (
-            <p className="text-muted-foreground font-mono text-[11px] break-words">{[...new Set(reasons)].join(' · ')}</p>
-          ) : null}
-        </div>
+        <EmptyNote>No values to compare yet.</EmptyNote>
       </ChartShell>
     );
   }
@@ -68,7 +57,7 @@ export function FactorDifferentialsChart({
     <ChartShell
       title={title}
       subtitle={description}
-      footer={`Team median ${displayPerformance(median)}${omitted > 0 ? ` · ${omitted} not compared (inputs unavailable)` : ''}`}
+      footer={`Team median ${displayPerformance(median)}`}
     >
       <div className="soft-inset grid gap-2 p-3">
         {/* Phones put the bar under the name and value; wider screens use one line per member. */}

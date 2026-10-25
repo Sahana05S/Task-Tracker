@@ -116,7 +116,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                 </tr>
               </thead>
               <tbody>
-                {data.members.map(({ user, performance, dailyStarCount, currentPerformanceScore, reportCount, performanceUnavailableReason }) => (
+                {data.members.map(({ user, performance, dailyStarCount, currentPerformanceScore, reportCount }) => (
                   <tr key={user.id}>
                     <td className="text-xs">
                       <div className="flex items-start gap-2.5">
@@ -157,14 +157,10 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                       {/* The sheet's "Reports validity": is this member's live report for the month complete? */}
                       {performance?.calculation?.status === 'complete' ? (
                         <span className="badge-soft badge-status-done">Valid</span>
-                      ) : (
-                        <span title={performanceUnavailableReason ?? 'Required performance inputs are unavailable.'} className="badge-soft badge-neutral">
-                          Incomplete
-                        </span>
-                      )}
+                      ) : null}
                     </td>
                     <td className="sheet-numeric text-xs">
-                      {data.presentation.sources.attendance.find(a=>a.userId===user.id)?.available?formatHours(performance?.attendance.attendanceHours??0):<UnavailableValue reason="attendance is not recorded for every day" />}
+                      {formatHours(performance?.attendance.attendanceHours??0)}
                     </td>
                     <td className="sheet-numeric text-xs">
                       {data.presentation.scope==='manager_team_detail'||user.id===profile.id?formatHours(performance?.hoursLogged??0):<UnavailableValue reason="only managers see other members' hours" />}

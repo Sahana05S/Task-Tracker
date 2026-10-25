@@ -44,8 +44,9 @@ describe('award summary while days are rechecked (migration 62)', () => {
     expect(html).toContain('Recalculating (2)</li>');
   });
 
-  it('says why the marked days show an older result, and keeps the not-calculated sentence for the rest', () => {
-    expect(html).toContain('2 days show their last decided result until the next run rechecks them after recent changes.');
-    expect(html).toContain('1 day will be calculated in the next nightly run.');
+  it('shows the marked days without explanatory warnings (decision 25 Oct 2026)', () => {
+    expect(html).not.toContain('until the next run rechecks');
+    expect(html).not.toContain('will be calculated in the next nightly run');
+    expect(html).not.toContain('waiting for data');
   });
 });

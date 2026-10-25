@@ -75,7 +75,7 @@ export function AllocationChart({
         subtitle="Share of total team task scale per member"
       >
         <EmptyNote>
-          Workload shares are unavailable or no eligible workload is assigned in this period.
+          No workload shares to chart yet.
         </EmptyNote>
       </ChartShell>
     );
