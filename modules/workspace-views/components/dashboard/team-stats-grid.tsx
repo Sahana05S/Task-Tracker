@@ -50,7 +50,8 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true, attendance
   // A fragment: the page grid spaces the stats and the headline.
   return (
     <>
-    <dl className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+    {/* Five figures: the headline one spans the first row below xl, so no card sits alone. */}
+    <dl className="grid grid-cols-2 gap-3 xl:grid-cols-5 [&>*:first-child]:col-span-2 xl:[&>*:first-child]:col-span-1">
       <StatCard
         hero
         label="Median employee productivity"

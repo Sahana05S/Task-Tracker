@@ -85,7 +85,7 @@ export function CeremonyStage({ model, viewerId, notes = {}, commendations }: {
         <>
           <section aria-label="Category awards">
             <h2 className="text-foreground mb-3 text-lg font-bold tracking-tight">Category awards</h2>
-            <ol className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
+            <ol className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-5">
               {model.categories.map((award, index) => index < step
                 ? <AwardCard key={award.category} award={award} names={model.names} viewerId={viewerId} reveal={!done && index === step - 1} note={notes[award.category]} />
                 : <HiddenAwardCard key={award.category} category={award.category} />)}

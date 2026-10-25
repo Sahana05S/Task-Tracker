@@ -182,7 +182,7 @@ function SupportSummaryCards({
   summary: Awaited<ReturnType<typeof getTeamIndexData>>['supportSummary'];
 }) {
   return (
-    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-5 [&>*:first-child]:col-span-2 lg:[&>*:first-child]:col-span-1">
       <SupportCard
         href="/reports"
         label="Reports"

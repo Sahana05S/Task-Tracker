@@ -217,7 +217,7 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
       ) : null}
 
       {list ? (
-        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <dl className={manager ? 'grid gap-3 sm:grid-cols-3' : 'grid grid-cols-2 gap-3 lg:grid-cols-4'}>
           <StatTile icon={ScaleIcon} label="Active policies" value={active.length} note={policies.length > active.length ? `${policies.length - active.length} paused` : undefined} />
           {manager ? (
             <>
@@ -246,6 +246,8 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
         </MissionPanel>
       ) : null}
 
+      {/* Commendations beside the managers' run history on wide screens. */}
+      <div className={manager && model.runs ? 'grid gap-5 lg:grid-cols-2 lg:gap-6' : 'grid'}>
       <MissionPanel icon={AwardIcon} title="My commendations" subtitle="Badges you earned by meeting a policy for a whole period">
         {mine ? <Commendations rows={mine} /> : <EmptyState icon={AwardIcon}>Commendations could not be loaded right now.</EmptyState>}
       </MissionPanel>
@@ -255,6 +257,7 @@ export function PoliciesWorkspace({ model, now }: { model: PoliciesWorkspaceMode
           {runs ? <RunsPanel runs={runs} /> : <EmptyState icon={HistoryIcon}>Runs could not be loaded right now.</EmptyState>}
         </MissionPanel>
       ) : null}
+      </div>
     </MissionPage>
   );
 }

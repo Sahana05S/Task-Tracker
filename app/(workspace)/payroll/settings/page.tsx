@@ -12,7 +12,7 @@ export default async function PayrollSettingsPage() {
   await requireRole(['managing_director']);
   const result = await getPayrollSetup();
   return (
-    <MissionPage>
+    <MissionPage wide>
       <MissionPageHeader
         eyebrow="Payroll · managing director only"
         title="Payroll settings"

@@ -38,9 +38,12 @@ export function PayrollSettings({ setup }: { setup: PayrollSetup }) {
           Calculated salary = monthly salary ÷ actual working days × (days worked + extra paid days), never more than the monthly salary.
         </MissionNotice>
       </MissionPanel>
-      {PAY_COMPONENT_KINDS.map((kind) => (
-        <ComponentList key={kind} kind={kind} components={setup.components.filter((c) => c.kind === kind)} version={version} />
-      ))}
+      {/* The three lists side by side on wide screens, one per kind. */}
+      <div className="grid gap-5 lg:grid-cols-3 lg:gap-6">
+        {PAY_COMPONENT_KINDS.map((kind) => (
+          <ComponentList key={kind} kind={kind} components={setup.components.filter((c) => c.kind === kind)} version={version} />
+        ))}
+      </div>
     </>
   );
 }

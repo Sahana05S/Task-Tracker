@@ -67,7 +67,7 @@ export function DailyReportView({ model, memberId, date, from, to, maxDate, canP
       </dl>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-6">
-        <aside className="grid h-fit min-w-0 gap-5 lg:order-last lg:gap-6">
+        <aside className="grid h-fit min-w-0 gap-5 lg:order-last lg:gap-6 lg:sticky lg:top-[calc(var(--spacing-header)+1.5rem)] lg:self-start">
           <MissionPanel icon={MessageCircleIcon} title="Share as text" subtitle={`${member.fullName}’s own day: today, yesterday and open missions.`}>
             <ShareText text={formatDailyReport(report)} title={`Daily report · ${member.fullName}`} />
           </MissionPanel>
