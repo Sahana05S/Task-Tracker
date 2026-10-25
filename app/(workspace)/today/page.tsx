@@ -68,19 +68,30 @@ async function TodayOverview({ profile }: { profile: { id: string; employeeId: s
 
   return (
     <div className="border-border mt-5 border-t pt-8">
-      <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
-        <div className="grid content-start gap-4 lg:col-span-8 lg:gap-6">
+      {/*
+        Rows of equal-height cards, so neither side of the page runs empty while
+        scrolling: the daily star beside the streak, then the week, the star
+        calendar and recognised contributions in three equal columns, then the
+        analytics link across the full width. Each wrapper is a one-cell grid so
+        the card inside stretches to the row's height.
+      */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-12 lg:gap-6">
+        <div className="grid md:col-span-2 lg:col-span-7 xl:col-span-8">
           <DailyStarSpotlight highlight={star} names={data.names} profileHref={`/team/${encodeURIComponent(profile.employeeId)}`} />
         </div>
-        <div className="grid content-start gap-4 md:grid-cols-2 lg:col-span-4 lg:grid-cols-1 lg:gap-6">
+        <div className="grid md:col-span-2 lg:col-span-5 xl:col-span-4">
           <StreakCard streak={streak} />
-          <WeekSummaryCard week={data.week} waypointsReached={waypoints?.total ?? null} />
-          <StarCalendar awards={data.awards} today={data.today} monthStart={data.monthStart} userId={profile.id} />
-          <div className="md:col-span-2 lg:col-span-1">
-            <RecognisedContributions validated={data.validated} />
-          </div>
         </div>
-        <div className="lg:col-span-12">
+        <div className="grid lg:col-span-4">
+          <WeekSummaryCard week={data.week} waypointsReached={waypoints?.total ?? null} />
+        </div>
+        <div className="grid lg:col-span-4">
+          <StarCalendar awards={data.awards} today={data.today} monthStart={data.monthStart} userId={profile.id} />
+        </div>
+        <div className="grid md:col-span-2 lg:col-span-4">
+          <RecognisedContributions validated={data.validated} />
+        </div>
+        <div className="md:col-span-2 lg:col-span-12">
           <AnalyticsTeaser monthLabel={monthLabel} />
         </div>
       </div>

@@ -37,7 +37,7 @@ export function CheckInDay({ email, day, settings }: {
         </MissionPanel>
       ) : (
         <MissionPanel icon={CameraIcon} title={kind === 'in' ? 'Arriving' : 'Leaving'}>
-          <CheckInForm kind={kind} email={email} office={office} todayIn={day.in} backHref="/dashboard" />
+          <CheckInForm kind={kind} email={email} office={office} todayIn={day.in} backHref="/today" />
         </MissionPanel>
       )}
     </MissionPage>

@@ -243,7 +243,7 @@ function LogForm({
   return (
     <form action={action} className="flex min-h-0 flex-1 flex-col">
       {isEdit ? <><input type="hidden" name="taskId" value={log.taskId} /><input type="hidden" name="logId" value={log.id} /><input type="hidden" name="expectedVersion" value={log.executionVersion ?? 0} />
-      <label className="grid gap-1 px-4 pt-3 text-sm">Correction reason<input name="reason" required maxLength={1000} className="border rounded px-2 py-1" /></label></> : null}
+      <label className="field-label px-4 pt-3">Correction reason<input name="reason" required maxLength={1000} autoFocus className="field" /></label></> : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
         {noTasks ? (
@@ -294,6 +294,9 @@ function LogForm({
           >
             <Input
               id="log-hours"
+              // Hours are what people come to type; the form appears after the sheet opens,
+              // once the missions load, so the sheet's own autofocus cannot reach it.
+              autoFocus={!isEdit}
               name="hoursWorked"
               type="number"
               min={0}

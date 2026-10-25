@@ -219,9 +219,19 @@ function useRows<T>(initial: T[]) {
   };
 }
 
+/** Adds a row and puts the cursor in its first field (the list sits just before the button). */
 function AddRowButton({ label, onAdd }: { label: string; onAdd: () => void }) {
+  const ref = React.useRef<HTMLButtonElement>(null);
+  const addAndFocus = () => {
+    onAdd();
+    requestAnimationFrame(() => {
+      const list = ref.current?.previousElementSibling;
+      const row = list?.lastElementChild;
+      row?.querySelector<HTMLElement>('input:not([type=hidden]):not([type=checkbox]), textarea')?.focus();
+    });
+  };
   return (
-    <Button type="button" variant="outline" size="sm" className="justify-self-start" onClick={onAdd}>
+    <Button ref={ref} type="button" variant="outline" size="sm" className="justify-self-start" onClick={addAndFocus}>
       <PlusIcon aria-hidden="true" />
       {label}
     </Button>

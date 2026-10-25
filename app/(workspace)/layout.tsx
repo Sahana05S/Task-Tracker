@@ -8,6 +8,7 @@ import { RunningTimerProvider } from '@/modules/time-tracking/components/running
 import { categoryCatalogue, getCompanySettings } from '@/modules/settings';
 import { CompanySettingsProvider } from '@/modules/settings/components/company-settings-context';
 import { MissionStartToaster } from '@/modules/tasks/components/mission-status-prompt';
+import { DisclosureFocus } from '@/shared/ui/disclosure-focus';
 
 /**
  * Guarded layout for every workspace route.
@@ -39,6 +40,7 @@ export default async function WorkspaceLayout({
         <AppShell profile={profile} counts={counts}>
           {children}
           <MissionStartToaster />
+          <DisclosureFocus />
         </AppShell>
       </RunningTimerProvider>
     </CompanySettingsProvider>

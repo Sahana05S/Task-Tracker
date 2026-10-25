@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useActionState, useRef, useState, useTransition } from 'react';
+import { startTransition, useActionState, useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckIcon } from 'lucide-react';
 
@@ -25,11 +25,20 @@ function expandTaskVersion(form: FormData) {
   form.set('expectedVersion', version);
 }
 
+/** The field quick repeated entry starts from: one marked `data-autofocus`, else the first typing field. */
+const TYPING_FIELD = 'input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not([type=date]):not([type=time]):not([type=month]):not([readonly]), textarea:not([readonly])';
+function entryField(form: HTMLFormElement): HTMLElement | null {
+  return form.querySelector<HTMLElement>('[data-autofocus]')
+    ?? [...form.querySelectorAll<HTMLElement>(TYPING_FIELD)].find((el) => el.getClientRects().length > 0) ?? null;
+}
+
 /**
  * A form for one retained command. It keys each submission with an operation
  * id (so a lost response can be recovered by resubmitting), refreshes the page
  * on success and reports the outcome beside the form. The form stays usable
- * after a save; the confirmation clears as soon as anything changes.
+ * after a save; the confirmation clears as soon as anything changes. Focus
+ * comes back once the save settles: to the first field after a success (so the
+ * next entry can be typed straight away), or to where it was after a refusal.
  */
 export function ExecutionForm({ action, scope, children, className, onSuccess }: {
   action: Command;
@@ -44,6 +53,8 @@ export function ExecutionForm({ action, scope, children, className, onSuccess }:
   const [changed, setChanged] = useState(false);
   // Disabled until the refreshed page lands, so a second click cannot repeat the command.
   const [refreshing, startRefresh] = useTransition();
+  // The element focused when the form was submitted; the disabled fieldset blurs it.
+  const lastFocus = useRef<HTMLElement | null>(null);
   const [state, submit, pending] = useActionState(async (_previous: ActionResponse<unknown> | null, form: FormData) => {
     setChanged(false);
     try {
@@ -62,6 +73,15 @@ export function ExecutionForm({ action, scope, children, className, onSuccess }:
     }
   }, null);
 
+  useEffect(() => {
+    const form = formRef.current;
+    if (pending || refreshing || !state || !form?.isConnected) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && !form.contains(active)) return;
+    const target = state.success ? entryField(form) : lastFocus.current;
+    if (target?.isConnected && !(target as HTMLInputElement).disabled) target.focus({ preventScroll: true });
+  }, [pending, refreshing, state]);
+
   const saved = state?.success === true && !changed;
   const failure = state && !state.success && !changed ? state.error : undefined;
 
@@ -77,6 +97,7 @@ export function ExecutionForm({ action, scope, children, className, onSuccess }:
       onChange={() => setChanged(true)}
       onSubmit={(event) => {
         event.preventDefault();
+        lastFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         const data = new FormData(event.currentTarget, (event.nativeEvent as SubmitEvent).submitter);
         startTransition(() => submit(data));
       }}
