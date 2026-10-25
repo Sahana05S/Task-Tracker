@@ -33,7 +33,15 @@ export function CeremonyPublish({ month, expectedRevision }: { month: string; ex
         <Textarea id="ceremony-reason" name="reason" rows={2} required={republish} minLength={republish ? 8 : undefined} autoComplete="off"
           placeholder={republish ? 'For example: attendance for 12 Sep was corrected…' : 'For example: September awards…'} />
         <div>
-          <Button type="submit">{republish ? 'Publish again' : 'Publish the ceremony'}</Button>
+          <Button
+            type="submit"
+            onClick={(event) => {
+              // Publishing makes the results official and feeds the hall of fame.
+              if (!window.confirm(republish ? 'Publish again and make the current results official?' : 'Publish the ceremony? The results become official for everyone.')) event.preventDefault();
+            }}
+          >
+            {republish ? 'Publish again' : 'Publish the ceremony'}
+          </Button>
         </div>
       </ExecutionForm>
     </MissionPanel>

@@ -575,11 +575,11 @@ function AttendanceSection({ settings }: SectionProps) {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="field-label">
               Office radius (metres)
-              <input type="number" min={20} max={5000} step={10} value={draft.officeRadiusM} onChange={(event) => set({ officeRadiusM: event.target.value })} className="field" />
+              <input type="number" inputMode="numeric" min={20} max={5000} step={10} value={draft.officeRadiusM} onChange={(event) => set({ officeRadiusM: event.target.value })} className="field" />
             </label>
             <label className="field-label">
               Keep photos for (days)
-              <input type="number" min={7} max={730} value={draft.photoRetentionDays} onChange={(event) => set({ photoRetentionDays: event.target.value })} className="field" />
+              <input type="number" inputMode="numeric" min={7} max={730} value={draft.photoRetentionDays} onChange={(event) => set({ photoRetentionDays: event.target.value })} className="field" />
             </label>
           </div>
           <p className="text-muted-foreground text-sm">

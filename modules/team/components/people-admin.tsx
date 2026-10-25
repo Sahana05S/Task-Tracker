@@ -11,6 +11,7 @@ import {
   updateMember,
   type PeopleActionState,
 } from '@/modules/team/people-actions';
+import { keepTypedOnRefusal } from '@/shared/forms/submit';
 import { Button } from '@/shared/ui/button';
 import { InitialsAvatar, EmptyState, MissionPanel } from '@/shared/ui/mission-ui';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
@@ -52,10 +53,10 @@ export function InviteForm() {
       title="Invite a person"
       subtitle="They get access only after they sign up with this exact email (password or Google)."
     >
-      <form ref={formRef} action={run} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_2fr_1fr_1.4fr_auto] lg:items-end">
+      <form ref={formRef} action={run} onSubmit={keepTypedOnRefusal(run)} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_2fr_1fr_1.4fr_auto] lg:items-end">
         <label className="field-label">
           Email
-          <input name="email" type="email" required autoComplete="off" placeholder="name@company.com" className="field" />
+          <input name="email" type="email" inputMode="email" autoCapitalize="none" spellCheck={false} required autoComplete="off" placeholder="name@company.com" className="field" />
         </label>
         <label className="field-label">
           Full name
@@ -231,7 +232,7 @@ function MemberRow({ member, self, members, placement, departments }: {
         </div>
       </div>
       {editing ? (
-        <form action={save} className="mt-3 grid gap-3 sm:grid-cols-[2fr_1fr_1.4fr_auto] sm:items-end">
+        <form action={save} onSubmit={keepTypedOnRefusal(save)} className="mt-3 grid gap-3 sm:grid-cols-[2fr_1fr_1.4fr_auto] sm:items-end">
           <input type="hidden" name="userId" value={member.id} />
           <label className="field-label">
             Full name

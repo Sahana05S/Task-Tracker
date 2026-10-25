@@ -1,5 +1,6 @@
 import type { ContributionInputContext } from '../internal/input-context';
 import { DatedRecordModule, type TaskChoice } from './dated-record-module';
+import { DeleteReportButton, ReportForm } from './report-forms';
 import { canValidateSupportRecord } from '../internal/permissions';
 import Link from 'next/link';
 
@@ -97,41 +98,6 @@ export function ReportsModule({
   );
 }
 
-function ReportForm({
-  members,
-  report,
-}: {
-  members: readonly User[];
-  report?: ReportSnapshot;
-}) {
-  const payload = parseReportPayload(report?.payload);
-
-  return (
-    <form action={asFormAction(saveReportSnapshotAction)} className="mt-3 grid gap-3">
-      {report ? <input type="hidden" name="id" value={report.id} /> : null}
-      <input name="title" defaultValue={report?.title ?? ''} className="field" placeholder="Report title" required />
-      <input name="reportType" defaultValue={report?.reportType ?? 'General Report'} className="field" placeholder="Report type" required />
-      <select name="status" defaultValue={report?.status ?? 'Draft'} className="field">
-        <option value="Draft">Draft</option>
-        <option value="Final">Final</option>
-      </select>
-      <select name="employeeId" defaultValue={report?.employeeId ?? ''} className="field">
-        <option value="">General report</option>
-        {members.map((member) => (
-          <option key={member.id} value={member.id}>{member.fullName}</option>
-        ))}
-      </select>
-      <div className="grid grid-cols-2 gap-2">
-        <input type="date" name="periodStart" defaultValue={report?.periodStart ?? ''} className="field" />
-        <input type="date" name="periodEnd" defaultValue={report?.periodEnd ?? ''} className="field" />
-      </div>
-      <input name="folderUrl" type="url" defaultValue={payload.folderUrl ?? ''} className="field" placeholder="Folder or asset URL" />
-      <textarea name="summary" defaultValue={payload.summary ?? ''} className="field min-h-20" placeholder="Summary" />
-      <Button type="submit" size="sm">{report ? 'Save report' : 'Create report'}</Button>
-    </form>
-  );
-}
-
 function ReportRow({
   report,
   members,
@@ -159,12 +125,9 @@ function ReportRow({
         <td className="min-w-[22rem] text-xs">
           <details>
             <summary className="text-primary cursor-pointer font-medium">Edit</summary>
-            <ReportForm report={report} members={members} />
+            <ReportForm report={report} members={members} folderUrl={payload.folderUrl} summary={payload.summary} />
           </details>
-          <form action={asFormAction(deleteReportSnapshotAction)} className="mt-2">
-            <input type="hidden" name="id" value={report.id} />
-            <Button type="submit" size="sm" variant="destructive">Delete</Button>
-          </form>
+          <DeleteReportButton id={report.id} title={report.title} />
         </td>
       ) : null}
     </tr>

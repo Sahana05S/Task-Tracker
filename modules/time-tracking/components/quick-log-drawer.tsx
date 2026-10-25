@@ -41,6 +41,7 @@ import {
 } from '@/modules/time-tracking/internal/logs/metrics';
 import { formatNumeric } from '@/shared/tracker/format';
 import type { DailyTaskLog } from '@/types/tracker';
+import { keepTypedOnRefusal } from '@/shared/forms/submit';
 
 export interface QuickLogDrawerProps {
   open: boolean;
@@ -241,7 +242,7 @@ function LogForm({
   const noTasks = options.length === 0;
 
   return (
-    <form action={action} className="flex min-h-0 flex-1 flex-col">
+    <form action={action} onSubmit={keepTypedOnRefusal(action)} className="flex min-h-0 flex-1 flex-col">
       {isEdit ? <><input type="hidden" name="taskId" value={log.taskId} /><input type="hidden" name="logId" value={log.id} /><input type="hidden" name="expectedVersion" value={log.executionVersion ?? 0} />
       <label className="grid gap-1 px-4 pt-3 text-sm">Correction reason<input name="reason" required maxLength={1000} className="border rounded px-2 py-1" /></label></> : null}
 

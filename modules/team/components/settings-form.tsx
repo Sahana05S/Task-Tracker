@@ -32,18 +32,26 @@ export function SettingsForm({ profile }: SettingsFormProps) {
   );
 
   const error = state && !state.success ? state.error : undefined;
-  const succeeded = state?.success === true;
-
+  // Confirms every save, not only the first.
+  const handled = React.useRef<typeof state>(null);
   React.useEffect(() => {
-    if (succeeded) {
-      toast.success('Profile updated', {
-        description: 'Your display name has been saved.',
-      });
-    }
-  }, [succeeded]);
+    if (state?.success !== true || state === handled.current) return;
+    handled.current = state;
+    toast.success('Profile updated', {
+      description: 'Your display name has been saved.',
+    });
+  }, [state]);
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <form
+      action={action}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        React.startTransition(() => action(data));
+      }}
+      className="flex flex-col gap-3"
+    >
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="settings-full-name"

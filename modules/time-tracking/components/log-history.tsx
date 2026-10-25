@@ -266,8 +266,9 @@ function DeleteLogConfirmation({
   const [pending, startTransition] = React.useTransition();
   const [reason,setReason]=React.useState('');
 
+  // Each log starts clean: no earlier error and no reason carried over from the last reversal.
   React.useEffect(() => {
-    if (log) setError(null);
+    if (log) { setError(null); setReason(''); }
   }, [log]);
 
   const confirm = () => {
@@ -306,11 +307,14 @@ function DeleteLogConfirmation({
           </SheetDescription>
         </SheetHeader>
 
-        <label className="field-label mx-4">Reason<input className="field block w-full" value={reason} onChange={event=>setReason(event.target.value)} required /></label>
+        {/* A form, so Enter in the reason confirms the reversal. */}
+        <form id="reverse-log-form" className="px-5" onSubmit={(event) => { event.preventDefault(); if (reason.trim() && !pending && log?.effectiveProgressDelta !== null) confirm(); }}>
+          <label className="field-label">Reason<input className="field block w-full" value={reason} onChange={event=>setReason(event.target.value)} required maxLength={1000} placeholder="Logged against the wrong mission" /></label>
+        </form>
         {error ? (
           <div
             role="alert"
-            className="mx-4 flex items-start gap-2 rounded-xl border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger"
+            className="mx-5 flex items-start gap-2 rounded-xl border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger"
           >
             <AlertCircleIcon
               className="mt-0.5 size-4 shrink-0"
@@ -330,9 +334,9 @@ function DeleteLogConfirmation({
             Cancel
           </Button>
           <Button
-            type="button"
+            type="submit"
+            form="reverse-log-form"
             variant="destructive"
-            onClick={confirm}
             disabled={pending || reason.trim()==='' || log?.effectiveProgressDelta === null}
           >
             {pending ? (

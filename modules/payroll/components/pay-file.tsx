@@ -25,6 +25,7 @@ import {
   type PayComponent,
   type PayrollEmployee,
 } from '@/modules/payroll/client';
+import { kolkataDate } from '@/shared/time/kolkata';
 import { Button } from '@/shared/ui/button';
 import { EmptyState, MissionNotice, MissionPanel, StatTile } from '@/shared/ui/mission-ui';
 
@@ -45,7 +46,11 @@ function useEntryForm(section: Parameters<Save>[0], message: string) {
   return async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
-    if (await save(section, file.version, { ...formFields(form), userId: file.userId }, message)) form.reset();
+    if (!(await save(section, file.version, { ...formFields(form), userId: file.userId }, message))) return;
+    // The profile keeps its saved values; entry forms clear and start again at their first field.
+    if (section === 'profile') return;
+    form.reset();
+    form.querySelector<HTMLElement>('input:not([type=hidden]), select, textarea')?.focus();
   };
 }
 
@@ -391,7 +396,7 @@ function AdvanceForm() {
     <form onSubmit={submit} className="border-border mt-4 grid gap-3 border-t pt-4 sm:grid-cols-2 lg:grid-cols-[1fr_2fr_1fr_auto] lg:items-end">
       <label className="field-label">
         Date paid
-        <input type="date" name="paidOn" required className="field" />
+        <input type="date" name="paidOn" required defaultValue={kolkataDate()} className="field" />
       </label>
       <label className="field-label">
         Reason
