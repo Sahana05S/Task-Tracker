@@ -11,6 +11,7 @@ import type { AttendanceInputContext } from '@/modules/support/client';
 import type { CalculationResult } from '@/modules/scoring/client';
 import { nextDate,previousDate,type ViewContext } from './context';
 import type { AwardReadModel } from '@/modules/scoring/client';
+import { liveWindowEnd } from '@/shared/time/period';
 type Row=Record<string,unknown>;
 export interface PresentationResponse {
  contract:'m11-live-presentation-v1';sources:PerformanceSources;presentationAvailable:boolean;presentationAvailableFrom:string;presentationWatermark:string;
@@ -31,7 +32,8 @@ export function buildPresentation(value:unknown,view:ViewContext,employeeId:stri
  const r=value as PresentationResponse;
  if(!r||r.contract!=='m11-live-presentation-v1'||typeof r.presentationAvailable!=='boolean'||!['tasks','logs','assets','relations','checklists','attendance','contributions','series'].every(k=>Array.isArray(r[k as keyof PresentationResponse])))throw new Error('Live presentation response is unavailable.');
  const sources=parsePerformanceSources(r.sources);
- if(sources.asOf!==view.asOf&&new Date(sources.asOf).getTime()!==new Date(view.asOf).getTime()||sources.periodStart!==view.period.startDate||sources.periodEndExclusive!==nextDate(view.period.endDate))throw new Error('Presentation context mismatch.');
+ // The window is the whole month or, for a live read, the days that have ended (shared/time/period.ts liveWindowEnd).
+ if(sources.asOf!==view.asOf&&new Date(sources.asOf).getTime()!==new Date(view.asOf).getTime()||sources.periodStart!==view.period.startDate||(sources.periodEndExclusive!==nextDate(view.period.endDate)&&sources.periodEndExclusive!==liveWindowEnd(view.period,view.asOf)))throw new Error('Presentation context mismatch.');
  const calculation=resolvePerformance(sources);
  const members:User[]=sources.members.map(m=>({id:m.id,fullName:m.fullName,employeeId:m.employeeId,email:'',role:m.role,isActive:m.active,createdAt:'',updatedAt:''}));
  const full=new Map(r.tasks.map(t=>[String(t.id),t]));
