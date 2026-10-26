@@ -3,11 +3,13 @@ name: Nightly encrypted database backup
 # Logical pg_dump of the Supabase database (Free plan has no automatic backups).
 # The plaintext dump never leaves the runner; only the GPG-encrypted file is
 # uploaded. See docs/OPERATIONS.md "Database backups" for secrets and restore.
+# migrate-demo.yml also calls it before applying migrations.
 
 on:
   schedule:
     - cron: '30 20 * * *' # 20:30 UTC = 02:00 Asia/Kolkata
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

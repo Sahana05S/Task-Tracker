@@ -1,0 +1,124 @@
+name: Apply migrations to the demo database
+
+# Applies every migration in supabase/migrations that the demo database
+# (Supabase project sbtxtsisjhuciobxykcm, used by the Vercel site) has not
+# recorded yet, so merging a PR with a migration needs no laptop. Runs when a
+# migration reaches main, and by hand from the Actions tab (Run workflow).
+#
+# 1. plan: refuses unless SUPABASE_DB_URL is the demo project, then lists the
+#    files whose version is missing from supabase_migrations.schema_migrations
+#    (gaps included, like `db push --include-all`). Nothing missing: stops here.
+# 2. backup: the encrypted backup from db-backup.yml, taken before any change.
+# 3. apply: each missing file in version order with psql. The ledger row is
+#    written inside the migration's own BEGIN ... COMMIT, so a failed migration
+#    leaves no row and the run stops at it (GitHub emails the owner).
+#
+# Uses the repository secrets SUPABASE_DB_URL and BACKUP_PASSPHRASE (see
+# docs/OPERATIONS.md "Database backups"). Never rewrite an applied migration:
+# a changed file with a recorded version is not re-run.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - '.github/workflows/migrate-demo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-demo
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      pending: ${{ steps.plan.outputs.pending }}
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      DEMO_REF: sbtxtsisjhuciobxykcm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the target is the demo project
+        run: |
+          set -euo pipefail
+          [ -n "$SUPABASE_DB_URL" ] || { echo "::error::Secret SUPABASE_DB_URL is not set"; exit 1; }
+          case "$SUPABASE_DB_URL" in
+            *"postgres.${DEMO_REF}:"* | *"@db.${DEMO_REF}.supabase.co"*) ;;
+            *) echo "::error::SUPABASE_DB_URL is not the demo project ${DEMO_REF}; refusing"; exit 1 ;;
+          esac
+
+      - name: List migrations the demo has not recorded
+        id: plan
+        run: |
+          set -euo pipefail
+          applied="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 \
+            -c 'SELECT version FROM supabase_migrations.schema_migrations ORDER BY version')"
+          pending=""
+          while IFS= read -r f; do
+            base="$(basename "$f" .sql)"
+            [[ "$base" =~ ^[0-9]+_[a-z0-9_]+$ ]] || { echo "::error::Unexpected migration name: $base"; exit 1; }
+            grep -qxF "${base%%_*}" <<<"$applied" || pending="$pending $base"
+          done < <(printf '%s\n' supabase/migrations/*.sql | sort -V)
+          pending="${pending# }"
+          echo "pending=$pending" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Demo migrations"
+            echo ""
+            echo "Latest recorded version: $(sort -V <<<"$applied" | tail -n 1)"
+            echo ""
+            if [ -z "$pending" ]; then
+              echo "Nothing to apply."
+            else
+              echo "To apply, in this order:"
+              for b in $pending; do echo "- \`$b.sql\`"; done
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  backup:
+    needs: plan
+    if: needs.plan.outputs.pending != ''
+    uses: ./.github/workflows/db-backup.yml
+    secrets: inherit
+
+  apply:
+    needs: [plan, backup]
+    if: needs.plan.outputs.pending != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      PENDING: ${{ needs.plan.outputs.pending }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply
+        run: |
+          set -euo pipefail
+          for base in $PENDING; do
+            src="supabase/migrations/$base.sql"
+            tmp="$RUNNER_TEMP/$base.sql"
+            ins="INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('${base%%_*}', '${base#*_}');"
+            last="$(grep -niE '^[[:space:]]*COMMIT[[:space:]]*;' "$src" | tail -n 1 | cut -d: -f1 || true)"
+            echo "::group::$base"
+            if [ -n "$last" ]; then
+              # Record the version just before the migration's own COMMIT.
+              awk -v n="$last" -v ins="$ins" 'NR == n { print ins } { print }' "$src" > "$tmp"
+              psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 -f "$tmp"
+            else
+              { cat "$src"; echo; echo "$ins"; } > "$tmp"
+              psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 --single-transaction -f "$tmp"
+            fi
+            echo "::endgroup::"
+            echo "- applied \`$base.sql\`" >> "$GITHUB_STEP_SUMMARY"
+          done
+          psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 -c "NOTIFY pgrst, 'reload schema'"
+          latest="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 \
+            -c 'SELECT max(version::int) FROM supabase_migrations.schema_migrations')"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Latest recorded version now: $latest" >> "$GITHUB_STEP_SUMMARY"

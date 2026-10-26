@@ -19,9 +19,41 @@ change). The refactor is complete on `refactor/base` (not yet merged into
   must pass.
 - Planning docs (`docs/plans/`, including PLAN.md, IMPLEMENTATION.md, RULES,
   DECISIONS, STATUS and module evidence) and reference material (`reference/`:
-  steering specs, Stitch designs, the original Apps Scripts) are kept locally and
-  gitignored (18 October 2026, user request). Read and update them locally; they
-  are not in the repository. Test fixtures live in `__tests__/fixtures/`.
+  steering specs, Stitch designs, the original Apps Scripts) are gitignored here
+  because this repository is public (18 October 2026, user request). They live in
+  the private repo `Sahana05S/taskpulse-notes` at the same paths: run
+  `bash tools/notes.sh pull` before reading them and
+  `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
+  `__tests__/fixtures/`.
+
+## Working from the cloud - 26 October 2026
+
+The user works from their phone in Claude Code cloud sessions (claude.ai/code),
+not from the laptop. Vercel deploys `main` to the demo site, Supabase hosts the
+demo database and GitHub Actions run the backup, award and migration jobs. The
+user's standing rules, which earlier lived only in the laptop's Claude memory
+(a snapshot is in the notes repo, `docs/plans/claude-memory/`):
+
+- Start each session with `bash tools/notes.sh pull`. If it cannot reach the
+  private repo, say so and carry on from the code; do not invent plan contents.
+- Merge your own PRs without asking (merge commit, `gh pr merge <n> --merge`)
+  once CI passes, GitHub reports no conflicts and no review feedback is open.
+  Never merge with failing or pending checks.
+- Migrations reach the demo database through
+  `.github/workflows/migrate-demo.yml` when they merge to `main` (backup first,
+  then each unrecorded file in order). Do not apply migrations by hand. After
+  merging a migration, check that run; a failed run means the live site is
+  ahead of its database, so fix it with a new forward migration at once.
+- Testing stays light: `npm run typecheck`, or one focused test file when
+  changing logic; CI runs the full suite and Vercel the build. No disposable
+  test databases or new `tools/test_*_database.py` suites; check the result on
+  the live demo site at the end.
+- One short branch per change, named after the module. Every new migration ends
+  with `SELECT taskpulse_private.m15_secure();` (see M15 below).
+- Never commit secrets, salary figures or other private data to this
+  repository; private notes go in the notes repo.
+- The TaskPulse Atlas is refreshed once a day at 4:00 PM IST, never after each
+  merge or push.
 
 ## M18 payroll - 25 October 2026
 
