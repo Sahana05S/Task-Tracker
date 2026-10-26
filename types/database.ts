@@ -915,6 +915,10 @@ export interface Database {
       /** Migration 80: the company's Code of Conduct (M19); any active member reads, the managing director publishes. */
       code_of_conduct: { Args: Record<never, never>; Returns: Json };
       code_of_conduct_command: { Args: { p_op: 'publish' | 'acknowledge'; p_title: string | null; p_body: string | null; p_version: number; p_operation: string }; Returns: Json };
+      /** Migration 81: performance reviews (M19); the employee and the managing director only. */
+      performance_reviews: { Args: Record<never, never>; Returns: Json };
+      performance_review: { Args: { p_review: string }; Returns: Json };
+      performance_review_command: { Args: { p_op: 'create' | 'self' | 'director' | 'return' | 'withdraw' | 'metric'; p_review: string | null; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       /** Migration 79: salary history (M19); own finalised months for any member, anyone's for the managing director. */
       payroll_my_salary: { Args: Record<never, never>; Returns: Json };
       payroll_salary_history: { Args: { p_user: string }; Returns: Json };
