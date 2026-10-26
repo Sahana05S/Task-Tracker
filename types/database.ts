@@ -912,6 +912,9 @@ export interface Database {
       payroll_employee_file: { Args: { p_user: string; p_period: string }; Returns: Json };
       payroll_command: { Args: { p_section: 'settings' | 'component' | 'profile' | 'revision' | 'fixed' | 'adjustment' | 'advance' | 'withdraw'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       payroll_month_command: { Args: { p_action: 'finalize' | 'reopen'; p_period: string; p_reason: string | null; p_expected_version: number; p_operation: string }; Returns: Json };
+      /** Migration 79: salary history (M19); own finalised months for any member, anyone's for the managing director. */
+      payroll_my_salary: { Args: Record<never, never>; Returns: Json };
+      payroll_salary_history: { Args: { p_user: string }; Returns: Json };
       /** Migration 78: personal records (M19); the member's own, or anyone's for the managing director. */
       personal_records: { Args: { p_user: string }; Returns: Json };
       personal_records_summary: { Args: Record<never, never>; Returns: Json };

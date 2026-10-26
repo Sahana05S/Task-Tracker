@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getEmployeePayFile, getPayrollSetup, monthPeriod } from '@/modules/payroll';
+import { getEmployeePayFile, getPayrollSetup, getSalaryHistory, monthPeriod } from '@/modules/payroll';
 import { PayFile } from '@/modules/payroll/components/pay-file';
 import { MonthPicker, PayrollNav } from '@/modules/payroll/components/payroll-nav';
+import { SalaryTrend } from '@/modules/payroll/components/salary-trend';
 import { UUID_PATTERN } from '@/shared/forms/form-data';
 import { requireRole } from '@/shared/session/profile';
 import { kolkataDate } from '@/shared/time/kolkata';
@@ -23,7 +24,7 @@ export default async function PayFilePage({
   const { userId } = await params;
   if (!UUID_PATTERN.test(userId)) notFound();
   const period = monthPeriod((await searchParams).month) ?? monthPeriod(kolkataDate())!;
-  const [file, setup] = await Promise.all([getEmployeePayFile(userId, period), getPayrollSetup()]);
+  const [file, setup, history] = await Promise.all([getEmployeePayFile(userId, period), getPayrollSetup(), getSalaryHistory(userId)]);
   if (!file.ok && file.reason === 'not_found') notFound();
   const month = period.slice(0, 7);
 
@@ -49,6 +50,9 @@ export default async function PayFilePage({
       ) : (
         <MissionNotice tone="danger">{!file.ok ? file.error : !setup.ok ? setup.error : null}</MissionNotice>
       )}
+      {file.ok && history.ok ? (
+        <SalaryTrend history={history.data} asOfPeriod={monthPeriod(kolkataDate())!} subject={`${file.data.fullName}'s`} />
+      ) : null}
     </MissionPage>
   );
 }

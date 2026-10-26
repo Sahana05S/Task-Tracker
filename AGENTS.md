@@ -69,7 +69,10 @@ hours) + 0.5 Half Day; in hand = MIN(calculated, monthly) - (fixed + monthly
 deductions - incentives), rounded to the rupee on finalising; advance balance
 = advances - "Advance" deductions. Never put salary data on `public.users`, in
 audit `protected_changes` or in the activity feed. Importing real salary
-figures needs its own go-ahead.
+figures needs its own go-ahead. Since M19 (26 October 2026, migration 79)
+each member also reads their own finalised months on My salary
+(`payroll_my_salary`); every other payroll read and write stays managing
+director only. Incentives are entered, never computed.
 
 ## Checklist: one kind of row - 23 October 2026
 
