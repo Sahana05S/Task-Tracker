@@ -1,5 +1,6 @@
 import {
   AwardIcon,
+  BadgeIndianRupeeIcon,
   BarChart3Icon,
   BookOpenIcon,
   CalendarCheckIcon,
@@ -127,6 +128,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 export const MORE_ITEMS: readonly NavTab[] = [
   { label: 'Company', href: '/milestones', match: ['/milestones'], icon: TargetIcon },
   { label: 'Payroll', href: '/payroll', match: ['/payroll'], icon: WalletIcon, roles: ['managing_director'] },
+  // Each member's own finalised months (M19); the managing director has Payroll.
+  { label: 'My salary', href: '/my-salary', match: ['/my-salary'], icon: BadgeIndianRupeeIcon, roles: ['project_engineer', 'data_manager', 'team_member'] },
   { label: 'Settings', href: '/settings', match: ['/settings'], icon: SettingsIcon },
   { label: 'Guide', href: '/guide', match: ['/guide'], icon: CircleHelpIcon },
 ];
