@@ -20,6 +20,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { getEmployeeItemHours } from '@/modules/checklists';
 import type { ItemHourTask } from '@/modules/checklists/client';
 import { canViewEmployeeReports } from '@/modules/team/client';
+import { canViewPersonalRecords } from '@/modules/personnel/client';
 import { getEmployeeByEmployeeId, getEmployeeReportsData } from '@/modules/team';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
 import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
@@ -53,7 +54,7 @@ export default async function EmployeeReportsPage({
     const archive=await monthRevision(context.period.startDate,revision,employee.id);
     if(!archive)notFound();
     const previous=revision>1?await monthRevision(context.period.startDate,revision-1,employee.id):null;
-    return <MissionPage><ProfileHeader employee={employee} current="reports" description={`${context.period.label} · archived revision ${revision}`} query={carriedQuery(query)}/><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="link justify-self-start" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></MissionPage>;
+    return <MissionPage><ProfileHeader employee={employee} current="reports" showPersonal={canViewPersonalRecords(viewer, employee.id)} description={`${context.period.label} · archived revision ${revision}`} query={carriedQuery(query)}/><ArchivedReport archive={archive} previous={previous} employee={employee.id}/><Link className="link justify-self-start" href={`/team/${encodeURIComponent(employee.employeeId)}/reports?period=${context.period.startDate.slice(0,7)}`}>View live employee report</Link></MissionPage>;
   }
   const routeState = await resolveEmployeeRouteState(
     employeeId,
@@ -80,6 +81,7 @@ export default async function EmployeeReportsPage({
         query={carriedQuery(query)}
         missionCount={data.presentation.tasks.length}
         placement={placement}
+        showPersonal={canViewPersonalRecords(viewer, data.employee.id)}
       />
 
       <div className="grid gap-5 lg:gap-6">

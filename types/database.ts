@@ -912,6 +912,10 @@ export interface Database {
       payroll_employee_file: { Args: { p_user: string; p_period: string }; Returns: Json };
       payroll_command: { Args: { p_section: 'settings' | 'component' | 'profile' | 'revision' | 'fixed' | 'adjustment' | 'advance' | 'withdraw'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       payroll_month_command: { Args: { p_action: 'finalize' | 'reopen'; p_period: string; p_reason: string | null; p_expected_version: number; p_operation: string }; Returns: Json };
+      /** Migration 78: personal records (M19); the member's own, or anyone's for the managing director. */
+      personal_records: { Args: { p_user: string }; Returns: Json };
+      personal_records_summary: { Args: Record<never, never>; Returns: Json };
+      personal_record_command: { Args: { p_op: 'add' | 'withdraw'; p_kind: string | null; p_path: string | null; p_file_name: string | null; p_mime_type: string | null; p_size_bytes: number | null; p_record: string | null; p_operation: string }; Returns: Json };
       /** Migration 55: month setup wizard (managing director or project engineer). */
       month_setup_context: { Args: { p_month: string }; Returns: Json };
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };

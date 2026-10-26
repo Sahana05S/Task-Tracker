@@ -25,7 +25,7 @@ export async function readPlacement(userId: string): Promise<Placement | null> {
   return { jobTitle: person.jobTitle, department: person.department, manager: manager?.fullName ?? null };
 }
 
-export type ProfileTab = 'overview' | 'charts' | 'missions' | 'reports';
+export type ProfileTab = 'overview' | 'charts' | 'missions' | 'reports' | 'personal';
 
 /** The `period` and `asOf` given in the URL, kept when switching tabs. */
 export function carriedQuery(query: { period?: string; asOf?: string }): string {
@@ -40,7 +40,8 @@ export function carriedQuery(query: { period?: string; asOf?: string }): string 
  * sub-route. Overview, Charts and Missions are `?tab=` views of the profile;
  * Reports is the `/reports` route. The period query is carried across.
  * The meta row adds the person's org chart placement (job title, department,
- * manager) when the page passes it.
+ * manager) when the page passes it. Personal info (the `/personal` route) is
+ * listed only for the person and the managing director (`showPersonal`).
  */
 export function ProfileHeader({
   employee,
@@ -49,6 +50,7 @@ export function ProfileHeader({
   query,
   missionCount,
   placement,
+  showPersonal,
 }: {
   employee: User;
   current: ProfileTab;
@@ -57,6 +59,7 @@ export function ProfileHeader({
   query: string;
   missionCount?: number;
   placement?: Placement | null;
+  showPersonal?: boolean;
 }) {
   const base = `/team/${encodeURIComponent(employee.employeeId)}`;
   const withQuery = (path: string, tab?: string) => {
@@ -101,6 +104,7 @@ export function ProfileHeader({
             { href: withQuery(base, 'charts'), label: 'Charts', current: current === 'charts' },
             { href: withQuery(base, 'missions'), label: 'Missions', current: current === 'missions', count: missionCount },
             { href: withQuery(`${base}/reports`), label: 'Reports', current: current === 'reports' },
+            ...(showPersonal ? [{ href: `${base}/personal`, label: 'Personal info', current: current === 'personal' }] : []),
           ]}
         />
       }
