@@ -55,6 +55,20 @@ user's standing rules, which earlier lived only in the laptop's Claude memory
 - The TaskPulse Atlas is refreshed once a day at 4:00 PM IST, never after each
   merge or push.
 
+## M19 HR - 26 October 2026
+
+The user asked for personal records, branded HR templates, performance reviews
+and salary graphs (DECISIONS "M19 HR"). Modules `modules/personnel` (Personal
+info tab: 10th/12th marksheets, Aadhaar card, college marksheets; visible to
+the person and the managing director only; private bucket
+`personal-documents`) and `modules/hr` (HR > Documents: letterhead and Code of
+Conduct with acceptance; HR > Performance reviews: MD-defined metrics, the
+employee's self rating, then the director's, pros and cons). My salary
+(`/my-salary`) shows each member their own finalised months; incentives stay
+entered by the MD and are only totalled. Download PDF is the browser's
+print-to-PDF of a `.paper` sheet (no PDF library). Migrations 78-81. Reviews
+never feed a performance score; none of this reaches the activity feed.
+
 ## M18 payroll - 25 October 2026
 
 The user asked for the workbook "3_1_c_Employee Management and Info" (salary
