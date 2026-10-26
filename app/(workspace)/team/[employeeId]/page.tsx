@@ -13,6 +13,7 @@ import { EmployeeChartsPanel, ScoreVsMedianChart } from '@/modules/team/componen
 import { StarCalendar } from '@/modules/team/components/star-calendar';
 import { requireProfile } from '@/shared/session/profile';
 import { canViewEmployeeProfile } from '@/modules/team/client';
+import { canViewPersonalRecords } from '@/modules/personnel/client';
 import { getEmployeeProfileData, type EmployeeProfileData } from '@/modules/team';
 import { getWaypointCount, type WaypointCount } from '@/modules/recognition';
 import { normalizeEmployeeIdParam, resolveEmployeeRouteState } from '@/modules/team';
@@ -66,6 +67,7 @@ export default async function EmployeePage({ params, searchParams }: EmployeePag
         query={carriedQuery(query)}
         missionCount={data.tasks.length}
         placement={placement}
+        showPersonal={canViewPersonalRecords(viewer, data.employee.id)}
       />
       {tab === 'charts' ? (
         <>

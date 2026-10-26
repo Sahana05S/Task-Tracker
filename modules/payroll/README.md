@@ -5,6 +5,11 @@ Employee pay files and monthly salary for the managing director only (M18). It r
 "3_1_c_Employee Management and Info": Salary Calculation, Employee Data, Salary History and one EMP tab per
 employee. The rules are recorded in DECISIONS "M18 payroll" and in `docs/plans/M18-payroll.md`.
 
+Since M19 (26 October 2026, migration 79) every member also sees their own salary history on **My salary**
+(`/my-salary`): finalised months only, with a graph of salary, in-hand pay and incentives, the increments and
+April-to-March totals. Incentives stay entered by the managing director; they are only totalled. Everything
+else stays managing director only.
+
 The salary maths, per employee and month:
 - **Header:**
   - E1 = calendar days − weekly offs
@@ -26,15 +31,16 @@ The salary maths, per employee and month:
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `getPayrollSetup()`, `getPayrollMonth(period)`, `getEmployeePayFile(userId, period)`; everything in `client.ts` |
+| `index.ts` | `getPayrollSetup()`, `getPayrollMonth(period)`, `getEmployeePayFile(userId, period)`, `getSalaryHistory(userId)` (MD), `getMySalary()` (any member, own); everything in `client.ts` |
 | `actions.ts` | `savePayrollEntry` (settings, component, profile, revision, fixed, adjustment, advance, withdraw), `payrollMonthAction` (finalize, reopen) |
-| `client.ts` | Types; `computePayLine`, `classifyDays`, `daysWorked`, `payrollHeader`, `roundRupee`, `formatINR`, `monthPeriod`, `monthLabel`, `maskAccountNumber`, labels; `canManagePayroll` |
-| `components/` | The payroll pages' UI |
+| `client.ts` | Types; `computePayLine`, `classifyDays`, `daysWorked`, `payrollHeader`, `roundRupee`, `formatINR`, `monthPeriod`, `monthLabel`, `maskAccountNumber`, labels; `canManagePayroll`; `salaryTrend` (graph points, increments, financial-year totals) |
+| `components/` | The payroll pages' UI; `SalaryTrend` (My salary and the pay file) |
 
 ## Private (`internal/`)
 | File | Job |
 |---|---|
-| `queries.ts` | `payroll_setup`, `payroll_month`, `payroll_employee_file` |
+| `queries.ts` | `payroll_setup`, `payroll_month`, `payroll_employee_file`, `payroll_my_salary`, `payroll_salary_history` |
+| `trend.ts` | Salary history mapping and the trend arrangement (pure) |
 | `commands.ts` | `payroll_command`, `payroll_month_command` |
 | `rules.ts` | The salary rules (a mirror of `payroll_compute` for previews and tests) |
 | `permissions.ts` | `canManagePayroll` (managing director) |
@@ -61,6 +67,10 @@ Migration 74 (`74_payroll_foundation.sql`).
 - `payroll_director`
 - `payroll_seed_components`
 - **Public RPCs:** `payroll_setup()`, `payroll_month(date)`, `payroll_employee_file(uuid, date)`, `payroll_command(text, jsonb, bigint, uuid)` and `payroll_month_command(text, date, text, bigint, uuid)`. Each refuses anyone but an active managing director (42501).
+
+Migration 79 (`79_payroll_own_salary.sql`): `taskpulse_private.payroll_history(org, user)` (finalised lines and
+revisions, no account number or notes), `payroll_my_salary()` (the caller's own, any active member) and
+`payroll_salary_history(uuid)` (managing director).
 
 ## Depends on
 - Reads `public.users`, `public.attendance_records`, `taskpulse_private.company_holidays`, `organization_settings.weekly_off_days` and `departments`, inside the database only.

@@ -4,6 +4,7 @@ import { createClient } from '@/shared/supabase/server';
 import { isMissingFunctionError } from '@/shared/supabase/schema-errors';
 
 import { mapEmployeePayFile, mapPayrollMonth, mapPayrollSetup, type EmployeePayFile, type PayrollMonth, type PayrollSetup } from './mappers';
+import { mapSalaryHistory, type SalaryHistory } from './trend';
 
 /**
  * Payroll reads (migration 74). PRIVATE. Each function refuses anyone but an
@@ -35,4 +36,24 @@ export async function readEmployeePayFile(userId: string, period: string): Promi
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('payroll_employee_file', { p_user: userId, p_period: period });
   return error ? failure(error) : { ok: true, data: mapEmployeePayFile(data) };
+}
+
+/** M19 (migration 79): a person's finalised months and salary revisions, for the graph. */
+function historyFailure(error: { code?: string; message: string }): PayrollRead<never> {
+  if (isMissingFunctionError(error)) return { ok: false, reason: 'unavailable', error: 'Salary history needs the latest database update (migration 79).' };
+  return failure(error);
+}
+
+/** The signed-in member's own finalised months (any active member). */
+export async function readMySalary(): Promise<PayrollRead<SalaryHistory>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('payroll_my_salary');
+  return error ? historyFailure(error) : { ok: true, data: mapSalaryHistory(data) };
+}
+
+/** Anyone's finalised months in the company (managing director only). */
+export async function readSalaryHistory(userId: string): Promise<PayrollRead<SalaryHistory>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('payroll_salary_history', { p_user: userId });
+  return error ? historyFailure(error) : { ok: true, data: mapSalaryHistory(data) };
 }
