@@ -235,6 +235,19 @@ SHA-256 from the run summary next to the copy. Artifacts count toward the
 repository's Actions storage quota; check usage under Settings → Billing if the
 database grows.
 
+## Demo database migrations
+
+`.github/workflows/migrate-demo.yml` runs when a change under
+`supabase/migrations/` reaches `main`, and by hand from the Actions tab. It
+refuses unless `SUPABASE_DB_URL` points at the demo project
+(`sbtxtsisjhuciobxykcm`), lists the files whose version is missing from
+`supabase_migrations.schema_migrations`, takes an encrypted backup (it calls
+`db-backup.yml`) and applies each missing file in version order with `psql`. The
+ledger row is written just before the migration's own `COMMIT`, so a failed
+migration records nothing and the run stops there. The run summary lists what
+was applied and the latest recorded version. When nothing is missing it stops
+after listing.
+
 ## Health check
 
 `GET /api/internal/health` reports background-job health for monitoring. It
