@@ -8,6 +8,7 @@ import {
   ClockIcon,
   CrownIcon,
   DollarSignIcon,
+  FileBadgeIcon,
   FileTextIcon,
   HistoryIcon,
   LightbulbIcon,
@@ -127,6 +128,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 export const MORE_ITEMS: readonly NavTab[] = [
   { label: 'Company', href: '/milestones', match: ['/milestones'], icon: TargetIcon },
   { label: 'Payroll', href: '/payroll', match: ['/payroll'], icon: WalletIcon, roles: ['managing_director'] },
+  // M19: Code of Conduct, letterhead and performance reviews, for everyone.
+  { label: 'HR', href: '/hr', match: ['/hr'], icon: FileBadgeIcon },
   { label: 'Settings', href: '/settings', match: ['/settings'], icon: SettingsIcon },
   { label: 'Guide', href: '/guide', match: ['/guide'], icon: CircleHelpIcon },
 ];

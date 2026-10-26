@@ -5,6 +5,7 @@ export const PROTECTED_PREFIXES = [
   '/dashboard',
   '/guide',
   '/hall-of-fame',
+  '/hr',
   '/ideas',
   '/leaderboard',
   '/logs',

@@ -1190,3 +1190,66 @@
     transition: none !important;
   }
 }
+
+/* ==========================================================================
+   Printable sheets (M19, 26 October 2026): the company letterhead, the Code
+   of Conduct and the review sheet. A sheet is white paper in both themes, as
+   it will be when printed; "Download PDF" is the browser's Save as PDF, which
+   prints only the sheet (no top bar, tabs, buttons or footer).
+   ========================================================================== */
+@layer components {
+  .paper {
+    color-scheme: light;
+    --paper-ink: #1d1b26;
+    --paper-muted: #5c5776;
+    --paper-rule: #dcd9e6;
+    --paper-accent: #6355e6;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 210mm;
+    min-height: min(297mm, 140vw);
+    margin-inline: auto;
+    padding: 12mm 10mm;
+    background: #ffffff;
+    color: var(--paper-ink);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-shadow: 0 10px 30px -18px rgb(0 0 0 / 0.35);
+    font-size: 10.5pt;
+    line-height: 1.6;
+  }
+  @media (min-width: 640px) {
+    .paper { padding: 16mm 16mm 14mm; }
+  }
+  .paper-muted { color: var(--paper-muted); }
+  .paper-rule { border-color: var(--paper-rule); }
+  .paper-accent { color: var(--paper-accent); }
+  .paper-band { background: var(--paper-accent); }
+  .paper h2 { font-size: 12pt; font-weight: 700; margin: 1.1em 0 0.35em; color: var(--paper-ink); }
+  .paper p { margin: 0 0 0.6em; }
+  .paper ul { margin: 0 0 0.6em; padding-left: 1.3em; list-style: disc; }
+  .paper li { margin: 0.15em 0; }
+  .paper table { width: 100%; border-collapse: collapse; }
+  .paper th, .paper td { border: 1px solid var(--paper-rule); padding: 4px 6px; text-align: left; vertical-align: top; }
+  .paper th { background: #f4f3f8; font-weight: 600; }
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body { background: #ffffff !important; }
+  body:has(.paper) :is(header, nav, aside, .no-print):not(.paper *),
+  body:has(.paper) #main ~ * { display: none !important; }
+  body:has(.paper) #main > * { padding: 0 !important; margin: 0 !important; max-width: none !important; gap: 0 !important; }
+  .paper {
+    max-width: none;
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .paper .paper-avoid-break { break-inside: avoid; }
+}

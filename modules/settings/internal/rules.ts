@@ -87,6 +87,22 @@ export const BRANDING_URL_FIELDS = ['logoUrl', 'logoDarkUrl', 'markUrl', 'markDa
 export type BrandingUrlField = (typeof BRANDING_URL_FIELDS)[number];
 export const EMPTY_BRANDING: CompanyBranding = { companyName: '', logoUrl: null, logoDarkUrl: null, markUrl: null, markDarkUrl: null };
 
+/**
+ * The letterhead's contact lines (migration 80), printed under the logo on the
+ * HR templates. Empty strings are left off the page.
+ */
+export interface CompanyLetterhead {
+  address: string;
+  phone: string;
+  email: string;
+  website: string;
+  /** GSTIN or CIN. */
+  registrationNo: string;
+}
+export const LETTERHEAD_FIELDS = ['address', 'phone', 'email', 'website', 'registrationNo'] as const;
+export const LETTERHEAD_LIMITS: Record<keyof CompanyLetterhead, number> = { address: 300, phone: 40, email: 120, website: 200, registrationNo: 60 };
+export const EMPTY_LETTERHEAD: CompanyLetterhead = { address: '', phone: '', email: '', website: '', registrationNo: '' };
+
 /** Same rule as taskpulse_private.is_brand_url: a file of this site or an https address, up to 500 characters. */
 export function isBrandUrl(value: string): boolean {
   return value.length <= 500 && !value.startsWith('//') && /^(?:\/[A-Za-z0-9._~/-]+|https:\/\/[^\s"'<>()\\]+)$/.test(value);
@@ -128,9 +144,11 @@ export interface CompanySettings {
   branding: CompanyBranding;
   /** Photo check-in (migration 72; the defaults before it). */
   attendance: AttendanceSettings;
+  /** Letterhead contact lines (migration 80; empty before it). */
+  letterhead: CompanyLetterhead;
 }
 
-export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults', 'branding', 'departments', 'attendance'] as const;
+export const SETTINGS_SECTIONS = ['agenda', 'categories', 'meeting_types', 'standing_missions', 'holidays', 'mission_defaults', 'branding', 'departments', 'attendance', 'letterhead'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 /** Settings before migration 53 (or a company that saved nothing): built-in labels, no lists. */
@@ -146,6 +164,7 @@ export const EMPTY_COMPANY_SETTINGS: CompanySettings = {
   defaultScaleMode: 'manual',
   branding: EMPTY_BRANDING,
   attendance: DEFAULT_ATTENDANCE_SETTINGS,
+  letterhead: EMPTY_LETTERHEAD,
 };
 
 /** The thirteen codes with the company's labels, flags and order applied (stable by built-in order). */
@@ -267,6 +286,18 @@ export function parseCompanySettings(raw: unknown): CompanySettings {
     defaultScaleMode: isScaleMode(raw.defaultScaleMode) ? raw.defaultScaleMode : 'manual',
     branding: parseBranding(raw.branding),
     attendance: parseAttendance(raw.attendance),
+    letterhead: parseLetterhead(raw.letterhead),
+  };
+}
+
+function parseLetterhead(raw: unknown): CompanyLetterhead {
+  if (!isRecord(raw)) return EMPTY_LETTERHEAD;
+  return {
+    address: asString(raw.address).trim(),
+    phone: asString(raw.phone).trim(),
+    email: asString(raw.email).trim(),
+    website: asString(raw.website).trim(),
+    registrationNo: asString(raw.registrationNo).trim(),
   };
 }
 
