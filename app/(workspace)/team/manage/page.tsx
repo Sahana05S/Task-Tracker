@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { getPeopleAdminData } from '@/modules/team';
 import { InvitationList, InviteForm, MemberList } from '@/modules/team/components/people-admin';
+import { RecordsOverview } from '@/modules/personnel/components/records-overview';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { requireRole } from '@/shared/session/profile';
 
@@ -31,6 +32,7 @@ export default async function ManagePeoplePage() {
       <InviteForm />
       <InvitationList invitations={data.invitations} />
       <MemberList members={data.members} viewerId={profile.id} placement={data.placement} departments={data.departments} />
+      <RecordsOverview />
     </MissionPage>
   );
 }
