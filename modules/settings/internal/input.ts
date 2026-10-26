@@ -2,7 +2,7 @@ import { ISO_DATE_PATTERN, readString, UUID_PATTERN } from '@/shared/forms/form-
 import { TASK_CATEGORIES, TASK_PRIORITIES } from '@/shared/tracker/enums';
 import type { Json } from '@/types/database';
 
-import { BRANDING_URL_FIELDS, isBrandUrl, SETTINGS_SECTIONS, STANDING_SCALE_MODES, type SettingsSection } from './rules';
+import { BRANDING_URL_FIELDS, isBrandUrl, LETTERHEAD_FIELDS, LETTERHEAD_LIMITS, SETTINGS_SECTIONS, STANDING_SCALE_MODES, type SettingsSection } from './rules';
 
 /**
  * Parses a Company settings form: `section`, `expectedVersion`, `operationId`
@@ -167,6 +167,21 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
       if (url && !isBrandUrl(url)) return { ok: false, error: 'Each logo address must start with / (a file of this site) or https://, up to 500 characters.' };
       value[key] = url || null;
     }
+    return { ok: true, value };
+  },
+
+  letterhead(raw) {
+    if (!isRecord(raw) || Object.keys(raw).some((key) => !(LETTERHEAD_FIELDS as readonly string[]).includes(key))) {
+      return { ok: false, error: 'The letterhead could not be read.' };
+    }
+    const value: Record<string, Json> = {};
+    for (const key of LETTERHEAD_FIELDS) {
+      if (raw[key] !== undefined && raw[key] !== null && typeof raw[key] !== 'string') return { ok: false, error: 'The letterhead could not be read.' };
+      const line = text(raw[key]);
+      if (line.length > LETTERHEAD_LIMITS[key]) return { ok: false, error: `Keep the ${key === 'registrationNo' ? 'registration number' : key} under ${LETTERHEAD_LIMITS[key]} characters.` };
+      value[key] = line;
+    }
+    if (value.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(value.email))) return { ok: false, error: 'The letterhead email is not an email address.' };
     return { ok: true, value };
   },
 

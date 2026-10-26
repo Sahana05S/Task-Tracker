@@ -11,6 +11,7 @@ import {
   ImageIcon,
   LocateFixedIcon,
   ListOrderedIcon,
+  LetterTextIcon,
   LoaderCircleIcon,
   PlusIcon,
   RepeatIcon,
@@ -27,10 +28,12 @@ import {
   categoryLabelMap,
   formatSheetTag,
   isBrandUrl,
+  LETTERHEAD_LIMITS,
   renderTitlePattern,
   SCALE_MODE_LABELS,
   STANDING_SCALE_MODES,
   type BrandingUrlField,
+  type CompanyLetterhead,
   type CompanySettings,
   type SettingsSection,
   type StandingScaleMode,
@@ -54,6 +57,7 @@ export interface CompanyMember {
 
 const SECTIONS = [
   { id: 'branding', label: 'Branding' },
+  { id: 'letterhead', label: 'Letterhead' },
   { id: 'mission-types', label: 'Mission types' },
   { id: 'meeting-types', label: 'Meeting types' },
   { id: 'departments', label: 'Departments' },
@@ -80,6 +84,7 @@ export function CompanySettingsEditor({ settings, members }: { settings: Company
         ))}
       </nav>
       <BrandingSection settings={settings} />
+      <LetterheadSection settings={settings} />
       <MissionTypesSection settings={settings} />
       {/* Short sections in pairs on wide screens instead of one long column. */}
       <div className="grid gap-5 lg:gap-6 xl:grid-cols-2">
@@ -690,6 +695,61 @@ function BrandingSection({ settings }: SectionProps) {
               </div>
             );
           })}
+        </div>
+      </SectionForm>
+    </MissionPanel>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Letterhead                                                                 */
+/* -------------------------------------------------------------------------- */
+
+const LETTERHEAD_LABELS: Record<keyof CompanyLetterhead, { label: string; hint: string; inputMode?: 'tel' | 'email' | 'url' }> = {
+  address: { label: 'Address', hint: 'Office address, one or two lines' },
+  phone: { label: 'Phone', hint: '+91 ...', inputMode: 'tel' },
+  email: { label: 'Email', hint: 'office@company.com', inputMode: 'email' },
+  website: { label: 'Website', hint: 'www.company.com', inputMode: 'url' },
+  registrationNo: { label: 'Registration number', hint: 'GSTIN or CIN' },
+};
+
+function LetterheadSection({ settings }: SectionProps) {
+  const [draft, setDraft, dirty, reset] = useDraft(settings.letterhead);
+  return (
+    <MissionPanel
+      id="letterhead"
+      icon={LetterTextIcon}
+      title="Letterhead"
+      subtitle="The contact lines printed under the full logo on the company letterhead and the Code of Conduct (HR > Documents). Leave a line empty to leave it off."
+      className="scroll-mt-20"
+    >
+      <SectionForm section="letterhead" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => draft}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(Object.keys(LETTERHEAD_LABELS) as (keyof CompanyLetterhead)[]).map((key) => (
+            <label key={key} className={cn('field-label', key === 'address' && 'sm:col-span-2')}>
+              {LETTERHEAD_LABELS[key].label}
+              {key === 'address' ? (
+                <textarea
+                  value={draft.address}
+                  onChange={(event) => setDraft({ ...draft, address: event.target.value })}
+                  placeholder={LETTERHEAD_LABELS[key].hint}
+                  className="field min-h-20"
+                  maxLength={LETTERHEAD_LIMITS[key]}
+                  rows={2}
+                />
+              ) : (
+                <input
+                  type="text"
+                  inputMode={LETTERHEAD_LABELS[key].inputMode}
+                  value={draft[key]}
+                  onChange={(event) => setDraft({ ...draft, [key]: event.target.value })}
+                  placeholder={LETTERHEAD_LABELS[key].hint}
+                  className="field"
+                  maxLength={LETTERHEAD_LIMITS[key]}
+                />
+              )}
+            </label>
+          ))}
         </div>
       </SectionForm>
     </MissionPanel>

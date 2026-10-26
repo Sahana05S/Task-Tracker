@@ -9,6 +9,7 @@ import {
   ClockIcon,
   CrownIcon,
   DollarSignIcon,
+  FileBadgeIcon,
   FileTextIcon,
   HistoryIcon,
   LightbulbIcon,
@@ -130,6 +131,8 @@ export const MORE_ITEMS: readonly NavTab[] = [
   { label: 'Payroll', href: '/payroll', match: ['/payroll'], icon: WalletIcon, roles: ['managing_director'] },
   // Each member's own finalised months (M19); the managing director has Payroll.
   { label: 'My salary', href: '/my-salary', match: ['/my-salary'], icon: BadgeIndianRupeeIcon, roles: ['project_engineer', 'data_manager', 'team_member'] },
+  // M19: Code of Conduct, letterhead and performance reviews, for everyone.
+  { label: 'HR', href: '/hr', match: ['/hr'], icon: FileBadgeIcon },
   { label: 'Settings', href: '/settings', match: ['/settings'], icon: SettingsIcon },
   { label: 'Guide', href: '/guide', match: ['/guide'], icon: CircleHelpIcon },
 ];

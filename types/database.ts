@@ -905,13 +905,16 @@ export interface Database {
       /** Migration 53: the caller's company settings (any active member; standing missions for managers). */
       company_settings: { Args: Record<never, never>; Returns: Json };
       /** Migration 53: managing director only; versioned and idempotent per operation. */
-      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults' | 'branding' | 'departments' | 'attendance'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
+      company_settings_command: { Args: { p_section: 'agenda' | 'categories' | 'meeting_types' | 'standing_missions' | 'holidays' | 'mission_defaults' | 'branding' | 'departments' | 'attendance' | 'letterhead'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       /** Migration 74: payroll (M18); managing director only, every call checked in the database. */
       payroll_setup: { Args: Record<never, never>; Returns: Json };
       payroll_month: { Args: { p_period: string }; Returns: Json };
       payroll_employee_file: { Args: { p_user: string; p_period: string }; Returns: Json };
       payroll_command: { Args: { p_section: 'settings' | 'component' | 'profile' | 'revision' | 'fixed' | 'adjustment' | 'advance' | 'withdraw'; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       payroll_month_command: { Args: { p_action: 'finalize' | 'reopen'; p_period: string; p_reason: string | null; p_expected_version: number; p_operation: string }; Returns: Json };
+      /** Migration 80: the company's Code of Conduct (M19); any active member reads, the managing director publishes. */
+      code_of_conduct: { Args: Record<never, never>; Returns: Json };
+      code_of_conduct_command: { Args: { p_op: 'publish' | 'acknowledge'; p_title: string | null; p_body: string | null; p_version: number; p_operation: string }; Returns: Json };
       /** Migration 79: salary history (M19); own finalised months for any member, anyone's for the managing director. */
       payroll_my_salary: { Args: Record<never, never>; Returns: Json };
       payroll_salary_history: { Args: { p_user: string }; Returns: Json };
