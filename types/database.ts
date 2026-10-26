@@ -915,6 +915,13 @@ export interface Database {
       /** Migration 80: the company's Code of Conduct (M19); any active member reads, the managing director publishes. */
       code_of_conduct: { Args: Record<never, never>; Returns: Json };
       code_of_conduct_command: { Args: { p_op: 'publish' | 'acknowledge'; p_title: string | null; p_body: string | null; p_version: number; p_operation: string }; Returns: Json };
+      /** Migration 79: salary history (M19); own finalised months for any member, anyone's for the managing director. */
+      payroll_my_salary: { Args: Record<never, never>; Returns: Json };
+      payroll_salary_history: { Args: { p_user: string }; Returns: Json };
+      /** Migration 78: personal records (M19); the member's own, or anyone's for the managing director. */
+      personal_records: { Args: { p_user: string }; Returns: Json };
+      personal_records_summary: { Args: Record<never, never>; Returns: Json };
+      personal_record_command: { Args: { p_op: 'add' | 'withdraw'; p_kind: string | null; p_path: string | null; p_file_name: string | null; p_mime_type: string | null; p_size_bytes: number | null; p_record: string | null; p_operation: string }; Returns: Json };
       /** Migration 55: month setup wizard (managing director or project engineer). */
       month_setup_context: { Args: { p_month: string }; Returns: Json };
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };

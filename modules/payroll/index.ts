@@ -1,4 +1,5 @@
-// PUBLIC server-side API of the payroll module (managing director only).
+// PUBLIC server-side API of the payroll module (managing director only, except
+// getMySalary: each member's own finalised months, M19).
 import 'server-only';
 
 export * from '@/modules/payroll/client';
@@ -10,5 +11,9 @@ export { readPayrollSetup as getPayrollSetup } from '@/modules/payroll/internal/
 export { readPayrollMonth as getPayrollMonth } from '@/modules/payroll/internal/queries';
 /** One employee's pay file (the sheet's EMP tab) with that month's line. */
 export { readEmployeePayFile as getEmployeePayFile } from '@/modules/payroll/internal/queries';
+/** The signed-in member's own finalised salary months (M19; any active member). */
+export { readMySalary as getMySalary } from '@/modules/payroll/internal/queries';
+/** One employee's finalised salary months for the pay file's graph (managing director). */
+export { readSalaryHistory as getSalaryHistory } from '@/modules/payroll/internal/queries';
 /** GET handler for /api/payroll/export (CSV of a month's Salary Calculation). */
 export { handlePayrollExport } from '@/modules/payroll/internal/export';

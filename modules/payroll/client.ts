@@ -39,3 +39,15 @@ export type {
   PayrollSetup,
 } from '@/modules/payroll/internal/mappers';
 export { canManagePayroll } from '@/modules/payroll/internal/permissions';
+export {
+  financialYearLabel,
+  financialYearOf,
+  salaryTrend,
+  shortMonthLabel,
+  type FinancialYearTotals,
+  type SalaryHistory,
+  type SalaryIncrement,
+  type SalaryMonth,
+  type SalaryTrend,
+  type TrendPoint,
+} from '@/modules/payroll/internal/trend';

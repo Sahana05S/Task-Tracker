@@ -10,6 +10,7 @@ export const PROTECTED_PREFIXES = [
   '/leaderboard',
   '/logs',
   '/meeting-points',
+  '/my-salary',
   '/payroll',
   '/policies',
   '/milestones',
