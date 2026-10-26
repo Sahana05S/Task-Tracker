@@ -41,3 +41,6 @@ __pycache__/
 /reference/
 /docs/plans/
 /.kiro/
+
+# private planning notes (tools/notes.sh)
+/.notes.git/
