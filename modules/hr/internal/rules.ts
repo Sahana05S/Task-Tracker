@@ -77,3 +77,40 @@ export function conductBlocks(body: string): ConductBlock[] {
   flush();
   return blocks;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Performance reviews (migration 81)                                         */
+/* -------------------------------------------------------------------------- */
+
+export const REVIEW_STATUSES = ['awaiting_self', 'awaiting_md', 'completed'] as const;
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
+
+export const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
+  awaiting_self: 'With the employee',
+  awaiting_md: 'Ready for the director',
+  completed: 'Completed',
+};
+
+export const SCORE_LABELS: Record<number, string> = {
+  1: 'Needs improvement',
+  2: 'Below expectations',
+  3: 'Meets expectations',
+  4: 'Exceeds expectations',
+  5: 'Outstanding',
+};
+
+export const REVIEW_LINES_MAX = 10;
+export const REVIEW_LINE_LENGTH = 300;
+export const REVIEW_COMMENT_MAX = 500;
+export const REVIEW_SUMMARY_MAX = 2000;
+
+/** The average of the given scores to two decimals; null when none is set. */
+export function averageScore(scores: readonly (number | null)[]): number | null {
+  const set = scores.filter((score): score is number => score !== null);
+  return set.length ? Math.round((set.reduce((sum, score) => sum + score, 0) / set.length) * 100) / 100 : null;
+}
+
+/** A textarea's lines -> the pros or cons list the database keeps (trimmed, bullets and empty lines dropped, at most 10). */
+export function toLines(text: string): string[] {
+  return text.split(/\r?\n/).map(line => line.trim().replace(/^[-*•]\s*/, '').trim()).filter(Boolean).slice(0, REVIEW_LINES_MAX);
+}

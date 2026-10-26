@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { CheckCircle2Icon, ChevronRightIcon, CircleDashedIcon, FileTextIcon, ScrollTextIcon } from 'lucide-react';
 
 import { getCodeOfConduct } from '@/modules/hr';
+import { HrTabs } from '@/modules/hr/components/hr-tabs';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDate } from '@/shared/tracker/format';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
@@ -32,6 +33,7 @@ export default async function HrDocumentsPage() {
         eyebrow="HR"
         title="Documents"
         description="Company templates on the branded letterhead. Open one and use Download PDF to save or print it."
+        tabs={<HrTabs current="documents" />}
       />
       <ul className="grid gap-3 md:grid-cols-2">
         <DocumentCard
