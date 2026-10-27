@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { kolkataDate } from '@/shared/time/kolkata';
 import { isMonthKey, monthPeriod } from '@/shared/time/period';
@@ -40,8 +39,8 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, className }: {
   className?: string;
 }) {
   const id = useId();
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  // Set while the next page loads (a plain navigation: the picker also renders outside the app router, e.g. in tests).
+  const [pending, setPending] = useState(false);
   const [selection, setSelection] = useState<PeriodSelection>(() => selectionFromAsOf(month, asOf));
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shown = selectionFromAsOf(month, asOf);
@@ -53,7 +52,9 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, className }: {
     if (timer.current) clearTimeout(timer.current);
     if (!isMonthKey(next.month)) return;
     const search = `?${periodQuery(next, keep)}`;
-    startTransition(() => router.push(search, { scroll: false }));
+    if (search === window.location.search) return;
+    setPending(true);
+    window.location.assign(search);
   };
 
   /** Updates the fields; `now` applies at once (a click), otherwise after a typing pause. */
