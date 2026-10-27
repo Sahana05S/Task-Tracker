@@ -1244,6 +1244,123 @@
 }
 
 /* ==========================================================================
+   Post-sign-in splash (27 October 2026)
+
+   `data-splash="on"` on <html> (set by SPLASH_SCRIPT in the workspace layout)
+   shows the overlay and runs its timeline; "out" fades it early (Skip, Esc);
+   no attribute hides it. About three seconds in all: sparks converge
+   (0-0.8 s), the dot pops and the ring expands (0.7-1.6 s), the wordmark
+   settles (0.9 s), act 1 lifts away (1.8 s), the company's name arrives
+   (2.0 s), the overlay fades (2.6-3.0 s). Never under reduced motion.
+   ========================================================================== */
+
+@keyframes splash-show {
+  to { opacity: 1; }
+}
+
+@keyframes splash-converge {
+  0% { opacity: 0; transform: rotate(var(--a)) translateX(150px) scale(1); }
+  20% { opacity: 1; }
+  to { opacity: 0; transform: rotate(var(--a)) translateX(0) scale(0.4); }
+}
+
+@keyframes splash-core {
+  0% { opacity: 1; transform: scale(0); }
+  55% { opacity: 1; transform: scale(1.7); }
+  to { opacity: 0; transform: scale(0.3); }
+}
+
+@keyframes splash-ring {
+  0% { opacity: 0.9; transform: scale(0.2); }
+  to { opacity: 0; transform: scale(3.2); }
+}
+
+@keyframes splash-word {
+  0% { opacity: 0; letter-spacing: 0.2em; transform: scale(0.86); }
+  to { opacity: 1; letter-spacing: -0.01em; transform: scale(1); }
+}
+
+@keyframes splash-leave {
+  to { opacity: 0; transform: translateY(-16px) scale(0.96); }
+}
+
+@keyframes splash-arrive {
+  0% { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.splash {
+  display: none;
+  pointer-events: none;
+}
+
+:root[data-splash='on'] .splash,
+:root[data-splash='out'] .splash {
+  display: flex;
+}
+
+:root[data-splash='on'] .splash {
+  animation: motion-fade-out 0.4s var(--ease-standard) 2.6s forwards;
+}
+
+:root[data-splash='out'] .splash {
+  animation: motion-fade-out 0.3s var(--ease-standard) forwards;
+}
+
+.splash-skip {
+  pointer-events: auto;
+}
+
+.splash-glow {
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 58%);
+  animation: splash-show 1.4s ease-out 0.6s forwards;
+}
+
+.splash-spark {
+  opacity: 0;
+  animation: splash-converge 0.8s cubic-bezier(0.6, 0, 0.4, 1) both;
+}
+
+.splash-core {
+  opacity: 0;
+  animation: splash-core 0.55s ease-out 0.7s both;
+}
+
+.splash-ring {
+  opacity: 0;
+  animation: splash-ring 0.85s ease-out 0.8s both;
+}
+
+.splash-word {
+  opacity: 0;
+  animation: splash-word 0.6s var(--ease-out) 0.9s forwards;
+}
+
+.splash-tag {
+  opacity: 0;
+  animation: splash-show 0.5s ease-out 1.2s forwards;
+}
+
+.splash-act1 {
+  animation: splash-leave 0.45s var(--ease-standard) 1.8s forwards;
+}
+
+.splash-act2 {
+  opacity: 0;
+  animation: splash-arrive 0.55s var(--ease-out) 2s forwards;
+}
+
+/* Belt and braces: the script already skips it, and so does the stylesheet. */
+@media (prefers-reduced-motion: reduce) {
+  .splash { display: none !important; }
+}
+
+:root[data-motion='reduce'] .splash {
+  display: none !important;
+}
+
+/* ==========================================================================
    Recognition motion (M16)
 
    The streak flame, milestone meter and the small celebrations of the

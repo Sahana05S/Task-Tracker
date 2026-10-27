@@ -14,9 +14,19 @@ import type { AuthActionState, AuthMode } from '../client';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { createClient } from '@/shared/supabase/client';
+import { SPLASH_STORAGE_KEY } from '@/shared/ui/splash-script';
 import { cn } from '@/shared/utils';
 
 const INITIAL_STATE: AuthActionState | null = null;
+
+/** A fresh sign-in opens with the splash, even in a tab that has already seen it. */
+function resetSplash() {
+  try {
+    window.sessionStorage.removeItem(SPLASH_STORAGE_KEY);
+  } catch {
+    // Blocked storage: the splash is skipped anyway.
+  }
+}
 const FEEDBACK_ID = 'auth-feedback';
 /** Email fields: no spellcheck, capitals or autocorrect, and the email keyboard on phones. */
 export const EMAIL_INPUT = { type: 'email', autoComplete: 'email', inputMode: 'email', spellCheck: false, autoCapitalize: 'none' } as const;
@@ -68,6 +78,7 @@ export function AuthForm({
     try {
       setOauthLoading(true);
       setOauthError(undefined);
+      resetSplash();
       const supabase = createClient();
       const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
         redirectTo,
@@ -176,7 +187,7 @@ export function AuthForm({
         </div>
       ) : isLogin ? (
         /* Sign-in Form */
-        <form action={loginAction} className="flex flex-col gap-4">
+        <form action={loginAction} onSubmit={resetSplash} className="flex flex-col gap-4">
           <input type="hidden" name="redirectTo" value={redirectTo} />
 
           <Field
