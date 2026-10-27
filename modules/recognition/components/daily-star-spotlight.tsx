@@ -5,6 +5,7 @@ import type { DailyStarHighlight } from '@/modules/recognition/client';
 import { plainReason } from '@/modules/reports/client';
 import type { Section } from '@/shared/async/settle';
 import { AsOfNote } from '@/shared/ui/as-of-note';
+import { Medal } from '@/shared/ui/medal';
 import { InitialsAvatar } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 
@@ -103,8 +104,8 @@ export function DailyStarSpotlight({ highlight, names, profileHref }: {
             </Link>
           </div>
         </div>
-        <div aria-hidden="true" className={cn('bg-recognition-subtle hidden size-20 shrink-0 items-center justify-center rounded-2xl sm:flex', celebrate && 'anim-pop')}>
-          <StarIcon className={cn('text-recognition size-10', h?.status === 'winner' ? 'fill-current' : 'fill-none')} />
+        <div aria-hidden="true" className={cn('hidden shrink-0 sm:block', celebrate && 'anim-pop', h?.status !== 'winner' && 'opacity-60 grayscale')}>
+          <Medal tier="gold" icon={StarIcon} size="lg" />
         </div>
       </div>
     </section>

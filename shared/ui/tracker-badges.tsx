@@ -1,4 +1,22 @@
 import * as React from 'react';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CheckIcon,
+  CircleDashedIcon,
+  CrownIcon,
+  DatabaseIcon,
+  FlameIcon,
+  MinusIcon,
+  PauseIcon,
+  PlayIcon,
+  RotateCcwIcon,
+  ShieldCheckIcon,
+  SquareIcon,
+  UserRoundIcon,
+  XIcon,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { CATEGORY_LABELS, ROLE_LABELS } from '@/shared/tracker/enums';
 import { cn } from '@/shared/utils';
@@ -20,6 +38,10 @@ import type {
  * Each lookup is `satisfies Record<Enum, string>`, so adding a member to any
  * union in `@/types/tracker` turns the missing badge into a compile error
  * rather than an unstyled badge at runtime.
+ *
+ * Since 27 October 2026 (ported from the Catalyst tracker) status, priority
+ * and role chips lead with a small glyph, so a chip reads at a glance in a
+ * dense row and without its colour. The glyph is decorative; the text stays.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -36,6 +58,16 @@ const STATUS_CLASSES = {
   Discarded: 'badge-status-discarded',
 } satisfies Record<TaskStatus, string>;
 
+const STATUS_GLYPHS = {
+  Done: CheckIcon,
+  'In Progress': PlayIcon,
+  'Not Started': CircleDashedIcon,
+  Stopped: SquareIcon,
+  'On-Hold': PauseIcon,
+  Carryover: RotateCcwIcon,
+  Discarded: XIcon,
+} satisfies Record<TaskStatus, LucideIcon>;
+
 const PRIORITY_CLASSES = {
   Focus: 'badge-priority-focus',
   High: 'badge-priority-high',
@@ -43,6 +75,22 @@ const PRIORITY_CLASSES = {
   Low: 'badge-priority-low',
   No: 'badge-priority-no',
 } satisfies Record<TaskPriority, string>;
+
+/** Unprioritised chips carry no glyph: they are meant to recede. */
+const PRIORITY_GLYPHS = {
+  Focus: FlameIcon,
+  High: ArrowUpIcon,
+  Medium: MinusIcon,
+  Low: ArrowDownIcon,
+  No: null,
+} satisfies Record<TaskPriority, LucideIcon | null>;
+
+const ROLE_GLYPHS = {
+  managing_director: CrownIcon,
+  project_engineer: ShieldCheckIcon,
+  data_manager: DatabaseIcon,
+  team_member: UserRoundIcon,
+} satisfies Record<UserRole, LucideIcon>;
 
 const FRESHNESS_CLASSES = {
   Fresh: 'freshness-fresh',
@@ -62,11 +110,13 @@ export interface StatusBadgeProps extends React.ComponentProps<'span'> {
 }
 
 export function StatusBadge({ status, className, ...props }: StatusBadgeProps) {
+  const Glyph = STATUS_GLYPHS[status];
   return (
     <span
       className={cn('badge-soft', STATUS_CLASSES[status], className)}
       {...props}
     >
+      <Glyph className="size-3 shrink-0" strokeWidth={2.75} aria-hidden="true" />
       {status}
     </span>
   );
@@ -81,11 +131,13 @@ export function PriorityBadge({
   className,
   ...props
 }: PriorityBadgeProps) {
+  const Glyph = PRIORITY_GLYPHS[priority];
   return (
     <span
       className={cn('badge-soft', PRIORITY_CLASSES[priority], className)}
       {...props}
     >
+      {Glyph ? <Glyph className="size-3 shrink-0" strokeWidth={2.75} aria-hidden="true" /> : null}
       {priority}
     </span>
   );
@@ -147,14 +199,17 @@ export interface RoleBadgeProps extends React.ComponentProps<'span'> {
 /**
  * Role indicator for the sidebar profile block. Deliberately neutral: the
  * design spec assigns tints to status, priority and freshness only, so giving
- * roles their own colours would invent meaning the sheet does not have.
+ * roles their own colours would invent meaning the sheet does not have (kept
+ * by user decision, 27 October 2026). A glyph per role tells them apart.
  */
 export function RoleBadge({ role, className, ...props }: RoleBadgeProps) {
+  const Glyph = ROLE_GLYPHS[role];
   return (
     <span
       className={cn('badge-soft badge-neutral', className)}
       {...props}
     >
+      <Glyph className="size-3 shrink-0" strokeWidth={2.5} aria-hidden="true" />
       {ROLE_LABELS[role]}
     </span>
   );

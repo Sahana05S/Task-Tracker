@@ -977,14 +977,11 @@
     @apply text-foreground bg-muted;
   }
 
-  /* Count badge in the expanded drawer. */
+  /* Count pill in the drawer (27 October 2026: solid primary, as the bell's). */
   .nav-count {
-    @apply bg-muted text-muted-foreground ml-auto rounded px-1.5 py-0.5 font-mono
-      text-[10px] font-semibold [font-variant-numeric:tabular-nums];
-  }
-
-  .nav-item-active .nav-count {
-    @apply bg-primary/10 text-primary;
+    @apply bg-primary text-primary-foreground ml-auto inline-flex h-5 min-w-5
+      items-center justify-center rounded-full px-1.5 text-[11px] leading-none
+      font-bold [font-variant-numeric:tabular-nums];
   }
 }
 
