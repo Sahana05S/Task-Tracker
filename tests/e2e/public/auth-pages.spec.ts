@@ -84,7 +84,7 @@ test.describe('password reset', () => {
     await page.locator('form').getByRole('button').last().click();
     // Native type=email validation or the server message; either way no email is sent.
     const invalid = await page.getByLabel('Email').evaluate((el: HTMLInputElement) => !el.validity.valid);
-    if (!invalid) await expect(page.getByRole('alert')).toContainText(/valid email/i);
+    if (!invalid) await expect(page.getByRole('alert').filter({ hasText: /valid email/i })).toBeVisible();
     diagnostics.assertClean();
   });
 
@@ -96,7 +96,7 @@ test.describe('password reset', () => {
   test('a bogus callback code returns to sign-in with a notice', async ({ page }) => {
     await page.goto('/auth/callback?code=qa-invalid-code');
     await expect(page).toHaveURL(/\/login\?error=/);
-    await expect(page.getByRole('alert')).toContainText(/verification failed/i);
+    await expect(page.getByRole('alert').filter({ hasText: /verification failed/i })).toBeVisible();
   });
 });
 
