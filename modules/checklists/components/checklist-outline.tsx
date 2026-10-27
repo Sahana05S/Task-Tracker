@@ -2,16 +2,19 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ChevronRightIcon, FlagIcon, LoaderCircleIcon, RocketIcon } from 'lucide-react';
+import { ChevronRightIcon, FlagIcon, LoaderCircleIcon, PlusIcon, RocketIcon } from 'lucide-react';
 
 import { loadChecklistRows } from '@/modules/checklists/actions';
+import { Button } from '@/shared/ui/button';
+import { ExecutionForm } from '@/shared/ui/execution-form';
+import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/utils';
 import type { ActionResponse, Task } from '@/types/tracker';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { rowHref } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistSection, type CompletionState } from '../internal/progress';
 import { percentText, rowKind, SECTION_TITLES, stateChoices } from '../internal/table';
-import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
+import { ChecklistStateBadge, ChecklistStateControl, ChecklistVersionField } from './checklist-state-control';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 interface Ctx { task: Task; canEdit: boolean; version: number; action: Command }
@@ -20,9 +23,16 @@ type Children = { state: 'loading' } | { state: 'error'; message: string } | { s
 /**
  * Every level of the checklist as one collapsible tree. Only the level you
  * open is read, so a large checklist stays fast. A Quest opens into its own
- * three phases. Rows tick in place, as in the table.
+ * three phases. Rows tick in place, as in the table. Each section ends with
+ * the same add row as the other views, and an open Quest or row ends with a
+ * one-line "Add an item" (user request, 28 Oct 2026: adding works in every view).
  */
-export function ChecklistOutline({ groups, ctx }: { groups: readonly { section: ChecklistSection; rows: readonly ChecklistBranchRow[] }[]; ctx: Ctx }) {
+export function ChecklistOutline({ groups, ctx, addRow }: {
+  groups: readonly { section: ChecklistSection; rows: readonly ChecklistBranchRow[] }[];
+  ctx: Ctx;
+  /** The section's add row (the same one Table, Board and Blocks show). */
+  addRow?: (section: ChecklistSection) => React.ReactNode;
+}) {
   return (
     <div className="grid gap-5">
       {groups.map((group) => (
@@ -33,6 +43,7 @@ export function ChecklistOutline({ groups, ctx }: { groups: readonly { section: 
               {group.rows.map((row) => <OutlineRow key={row.id} row={row} depth={0} ctx={ctx} />)}
             </ul>
           ) : <p className="text-muted-foreground px-1 text-sm">No rows yet. An empty section counts as N/A.</p>}
+          {addRow ? <div className="mt-3">{addRow(group.section)}</div> : null}
         </section>
       ))}
     </div>
@@ -99,7 +110,18 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
                 <ul className="grid gap-0.5">{group.rows.map((child) => <OutlineRow key={child.id} row={child} depth={depth + 1} ctx={ctx} />)}</ul>
               ) : <p className="text-muted-foreground py-1 text-xs" style={{ paddingLeft: `${2.5 + (depth + 1) * 1.25}rem` }}>Nothing here yet.</p>}
             </div>
-          ))
+          )).concat(ctx.canEdit ? [
+            <OutlineAddItem
+              key="add"
+              ctx={ctx}
+              // A Quest holds items in its own list (migration 77); a row takes rows under it.
+              checklistId={kind === 'quest' ? row.ownedChecklistId! : row.checklistId}
+              parentId={kind === 'quest' ? null : row.id}
+              section={kind === 'quest' ? 'activity' : row.section ?? 'activity'}
+              indent={2.5 + (depth + 1) * 1.25}
+              onAdded={() => void load()}
+            />,
+          ] : [])
         ) : children?.state === 'error' ? (
           <p role="alert" className="text-danger py-1 text-xs" style={{ paddingLeft: `${2.5 + (depth + 1) * 1.25}rem` }}>
             {children.message} <button type="button" className="link font-semibold" onClick={() => void load()}>Retry</button>
@@ -111,5 +133,34 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
         )
       ) : null}
     </li>
+  );
+}
+
+/** One line to add an item inside an open Quest or row; the cursor stays for the next one. */
+function OutlineAddItem({ ctx, checklistId, parentId, section, indent, onAdded }: {
+  ctx: Ctx;
+  checklistId: string;
+  parentId: string | null;
+  section: ChecklistSection;
+  indent: number;
+  onAdded: () => void;
+}) {
+  const id = React.useId();
+  return (
+    <div className="py-1 pr-1" style={{ paddingLeft: `${indent}rem` }}>
+      <ExecutionForm action={ctx.action} scope={`outline-add:${checklistId}:${parentId ?? 'root'}`} onSuccess={onAdded}>
+        <input type="hidden" name="command" value="add" />
+        <input type="hidden" name="checklist_id" value={checklistId} />
+        <input type="hidden" name="taskId" value={ctx.task.id} />
+        <ChecklistVersionField fallback={ctx.version} />
+        <input type="hidden" name="section" value={section} />
+        <input type="hidden" name="parent_id" value={parentId ?? ''} />
+        <div className="flex items-center gap-2">
+          <label htmlFor={id} className="sr-only">New item</label>
+          <Input id={id} name="title" required maxLength={500} placeholder="Add an item" className="bg-card h-8 min-w-40 flex-1 text-sm" />
+          <Button type="submit" size="sm" variant="outline" className="h-8"><PlusIcon aria-hidden="true" />Add</Button>
+        </div>
+      </ExecutionForm>
+    </div>
   );
 }
