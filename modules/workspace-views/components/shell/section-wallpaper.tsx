@@ -11,7 +11,7 @@ export function wallpaperFor(pathname: string): WallpaperMotif {
     const tab = section.tabs.find((candidate) => isTabActive(pathname, candidate));
     if (tab) return tab.wallpaper ?? section.wallpaper;
   }
-  return MORE_ITEMS.find((item) => isTabActive(pathname, item))?.wallpaper ?? 'facets';
+  return MORE_ITEMS.find((item) => isTabActive(pathname, item))?.wallpaper ?? 'starfield';
 }
 
 /** The section's line art behind every workspace page; it changes with the section, not with each page. */

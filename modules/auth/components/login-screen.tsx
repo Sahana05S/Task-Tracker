@@ -79,7 +79,7 @@ export function LoginScreen({ view }: LoginScreenProps) {
 function BrandPanel() {
   return (
     <section aria-label="About Stellar" className="bg-brand-panel text-brand-panel-foreground relative isolate overflow-hidden px-6 pt-10 pb-14 lg:flex lg:flex-col lg:justify-center lg:px-14 lg:py-14">
-      <Wallpaper motif="constellation" className="absolute z-0 h-full" />
+      <Wallpaper motif="constellation" fade={false} className="absolute z-0 h-full" />
       <div className="relative mx-auto flex w-full max-w-md flex-col gap-8 lg:mx-0 lg:max-w-lg">
         <div className="flex items-center gap-3">
           <StellarMark className="size-12 rounded-xl" />
