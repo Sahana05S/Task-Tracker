@@ -6,6 +6,9 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
 export const THEME_STORAGE_KEY = 'taskpulse:theme';
+/** Reduce motion for this device (27 October 2026): `data-motion="reduce"` on <html> stops every decorative animation, also on phones that have no OS setting. */
+export const MOTION_STORAGE_KEY = 'taskpulse:motion';
+export type MotionPreference = 'normal' | 'reduce';
 /** Browser UI colour (`<meta name="theme-color">`) per theme: each theme's page background. */
 export const THEME_COLOR: Record<ResolvedTheme, string> = { light: '#f7f6fd', dark: '#101113' };
 /** The public landing page keeps its own light look whatever the device prefers. */
@@ -15,6 +18,10 @@ export function parseThemePreference(value: unknown): ThemePreference {
   return value === 'dark' || value === 'system' ? value : 'light';
 }
 
+export function parseMotionPreference(value: unknown): MotionPreference {
+  return value === 'reduce' ? 'reduce' : 'normal';
+}
+
 export function resolveTheme(preference: ThemePreference, systemDark: boolean, pathname: string): ResolvedTheme {
   if (LIGHT_ONLY_PATHS.includes(pathname)) return 'light';
   return preference === 'dark' || (preference === 'system' && systemDark) ? 'dark' : 'light';
@@ -22,11 +29,13 @@ export function resolveTheme(preference: ThemePreference, systemDark: boolean, p
 
 /**
  * Runs in <head> before the first paint: reads the stored choice and the OS
- * setting and stamps `data-theme` on <html>, so a dark page never flashes light.
+ * setting and stamps `data-theme` on <html>, so a dark page never flashes light,
+ * then `data-motion="reduce"` when the viewer switched animations off here.
  * Any failure (blocked storage, no matchMedia) leaves the light default.
  */
 export const THEME_SCRIPT = `(function(){var e=document.documentElement,t='light';try{var p=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});`
   + `if(p==='dark'||(p==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches))t='dark';`
   + `if(${JSON.stringify(LIGHT_ONLY_PATHS)}.indexOf(location.pathname)>=0)t='light'}catch(_){}`
   + `e.setAttribute('data-theme',t);e.style.colorScheme=t;`
+  + `try{if(localStorage.getItem(${JSON.stringify(MOTION_STORAGE_KEY)})==='reduce')e.setAttribute('data-motion','reduce')}catch(_){}`
   + `var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',${JSON.stringify(THEME_COLOR)}[t])})()`;

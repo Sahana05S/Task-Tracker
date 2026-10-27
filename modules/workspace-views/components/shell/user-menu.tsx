@@ -8,6 +8,7 @@ import { logout } from '@/modules/auth/actions';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -45,7 +46,7 @@ export function UserMenu({
   className,
 }: UserMenuProps) {
   const initials = getInitials(profile.fullName);
-  const { preference, setPreference } = useTheme();
+  const { preference, setPreference, motion, setMotion } = useTheme();
 
   /*
     Radix closes the menu when an item is selected, which unmounts this form.
@@ -150,6 +151,15 @@ export function UserMenu({
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
+
+        {/* Stops every decorative animation on this device (also where the phone has no such setting). */}
+        <DropdownMenuCheckboxItem
+          checked={motion === 'reduce'}
+          onCheckedChange={(checked) => setMotion(checked ? 'reduce' : 'normal')}
+          onSelect={(event) => event.preventDefault()}
+        >
+          Reduce motion
+        </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />
 

@@ -440,6 +440,21 @@
 
   /* Height of the mobile bar, shared by the bar itself and the shell padding. */
   --spacing-bottom-nav: 4.5rem;
+
+  /*
+    Motion system (27 October 2026, ported from the Catalyst tracker): four
+    durations and three curves, used by every transition and keyframe below so
+    the whole app moves at one tempo. `--ease-pop` overshoots slightly, for
+    things that appear; `--ease-out` for things that move; `--ease-standard`
+    for colour and opacity.
+  */
+  --dur-micro: 0.15s;
+  --dur-base: 0.2s;
+  --dur-panel: 0.25s;
+  --dur-sheet: 0.3s;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-pop: cubic-bezier(0.34, 1.36, 0.64, 1);
 }
 
 @layer base {
@@ -553,7 +568,7 @@
 
   /* Interactive cards mark hover with the border, not with elevation. */
   .soft-card-interactive {
-    @apply bg-card border-border rounded-2xl border shadow-(--shadow-card) transition-colors;
+    @apply press bg-card border-border rounded-2xl border shadow-(--shadow-card);
   }
 
   .soft-card-interactive:hover {
@@ -751,8 +766,8 @@
 @layer components {
   /* Resting drawer row: muted, no fill. */
   .nav-item {
-    @apply text-muted-foreground relative flex items-center gap-3 rounded-md px-3
-      py-2 text-sm font-medium transition-colors;
+    @apply press text-muted-foreground relative flex items-center gap-3 rounded-md px-3
+      py-2 text-sm font-medium;
   }
 
   .nav-item:hover {
@@ -801,14 +816,14 @@
 
   /* Square icon button for header actions. Bordered, not floated. */
   .icon-button {
-    @apply text-muted-foreground border-border flex size-9 shrink-0 items-center
-      justify-center rounded-full border bg-card transition-colors;
+    @apply press text-muted-foreground border-border flex size-9 shrink-0 items-center
+      justify-center rounded-full border bg-card;
   }
 
   /* Top-bar destination pills (desktop). */
   .nav-pill {
-    @apply text-muted-foreground flex items-center gap-1.5 rounded-full px-3.5
-      py-1.5 text-sm font-medium whitespace-nowrap transition-colors;
+    @apply press text-muted-foreground flex items-center gap-1.5 rounded-full px-3.5
+      py-1.5 text-sm font-medium whitespace-nowrap;
   }
 
   .nav-pill:hover {
@@ -822,8 +837,8 @@
 
   /* Section tabs under the top bar (Missions, Records, Team). */
   .section-tab {
-    @apply text-muted-foreground rounded-full px-3 py-1 text-sm font-medium
-      whitespace-nowrap transition-colors;
+    @apply press text-muted-foreground rounded-full px-3 py-1 text-sm font-medium
+      whitespace-nowrap;
   }
 
   .section-tab:hover {
@@ -943,8 +958,8 @@
 
   /* Status filter pill on the Missions toolbar. */
   .filter-pill {
-    @apply text-muted-foreground inline-flex items-center gap-1.5 rounded-xl px-3
-      py-1.5 text-sm font-medium whitespace-nowrap transition-colors;
+    @apply press text-muted-foreground inline-flex items-center gap-1.5 rounded-xl px-3
+      py-1.5 text-sm font-medium whitespace-nowrap;
   }
 
   .filter-pill:hover {
@@ -1061,6 +1076,171 @@
   .task-progress::-moz-progress-bar {
     @apply rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
   }
+}
+
+/* ==========================================================================
+   Motion system (27 October 2026)
+
+   Small, consistent movement, ported from the Catalyst tracker: a press
+   squeeze on every control, a short rise for content that arrives, and a
+   few "attention" loops for the bell, live dots and progress rings. All of
+   it is decorative; the surrounding text states the fact. Everything here
+   stops under the OS reduced-motion setting and under the app's own
+   Reduce motion switch (`data-motion="reduce"` on <html>, for phones that
+   have no such setting).
+   ========================================================================== */
+
+@keyframes motion-enter {
+  0% { opacity: 0; transform: translateY(8px); }
+}
+
+@keyframes motion-fade-in {
+  0% { opacity: 0; }
+}
+
+@keyframes motion-fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes motion-pop {
+  0% { transform: scale(0.6); }
+  to { transform: scale(1); }
+}
+
+@keyframes motion-rise {
+  0% { transform: translateY(100%); }
+}
+
+/* A bell ringing: a short wobble, then a long rest, on repeat. */
+@keyframes attn-shake {
+  0%, 62%, to { transform: rotate(0); }
+  66% { transform: rotate(-16deg); }
+  70% { transform: rotate(14deg); }
+  74% { transform: rotate(-11deg); }
+  78% { transform: rotate(8deg); }
+  82% { transform: rotate(-4deg); }
+  86% { transform: rotate(0); }
+}
+
+/* A radar ping behind a live dot. */
+@keyframes attn-ping {
+  70%, to { opacity: 0; transform: scale(2.1); }
+}
+
+/* A progress ring drawing itself from empty; `--ring-from` is the full dash. */
+@keyframes ring-draw {
+  0% { stroke-dashoffset: var(--ring-from); }
+}
+
+/* Press feedback for buttons, links, chips and rows: a 3% squeeze. A utility,
+   so the chrome classes above can `@apply` it. */
+@utility press {
+  transition-property: color, background-color, border-color, transform, opacity;
+  transition-duration: var(--dur-micro);
+  transition-timing-function: var(--ease-out);
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+@layer components {
+  .animate-enter {
+    animation: motion-enter var(--dur-panel) var(--ease-out) both;
+  }
+
+  .animate-fade-in {
+    animation: motion-fade-in var(--dur-base) var(--ease-out) both;
+  }
+
+  .animate-pop {
+    animation: motion-pop var(--dur-micro) var(--ease-pop) both;
+  }
+
+  .animate-rise {
+    animation: motion-rise var(--dur-sheet) var(--ease-out) both;
+  }
+
+  /* Three rings, then still: enough to be noticed, not enough to nag. */
+  .attn-shake {
+    transform-origin: 50% 12%;
+    animation: attn-shake 2.6s var(--ease-standard) 3;
+  }
+
+  .attn-ping {
+    animation: attn-ping 1.8s var(--ease-out) infinite;
+  }
+
+  .ring-draw {
+    animation: ring-draw var(--dur-sheet) var(--ease-out) backwards;
+  }
+
+  /* A row's trailing chevron nudges right while the row (a `.group`) is hovered. */
+  .row-chevron {
+    transition: transform var(--dur-micro) var(--ease-out);
+  }
+
+  .group:hover .row-chevron {
+    transform: translateX(2px);
+  }
+
+  /* An icon that grows a touch while its `.group` is hovered. */
+  .icon-lift {
+    transition: transform var(--dur-micro) var(--ease-out);
+  }
+
+  .group:hover .icon-lift {
+    transform: scale(1.1);
+  }
+
+  /* Horizontal scroller whose ends fade out instead of showing a scrollbar. */
+  .edge-fade {
+    scrollbar-width: none;
+    overflow-x: auto;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px calc(100% - 24px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 16px calc(100% - 24px), transparent);
+  }
+
+  .edge-fade::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* The OS setting and the app's own switch stop the same things. */
+@media (prefers-reduced-motion: reduce) {
+  .press:active:not(:disabled) { transform: none; }
+  .animate-enter, .animate-fade-in, .animate-pop, .animate-rise,
+  .attn-shake, .attn-ping, .ring-draw, .row-chevron, .icon-lift {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+:root[data-motion='reduce'] .press:active:not(:disabled) { transform: none; }
+:root[data-motion='reduce'] .animate-enter,
+:root[data-motion='reduce'] .animate-fade-in,
+:root[data-motion='reduce'] .animate-pop,
+:root[data-motion='reduce'] .animate-rise,
+:root[data-motion='reduce'] .attn-shake,
+:root[data-motion='reduce'] .attn-ping,
+:root[data-motion='reduce'] .ring-draw,
+:root[data-motion='reduce'] .row-chevron,
+:root[data-motion='reduce'] .icon-lift,
+:root[data-motion='reduce'] .animate-in,
+:root[data-motion='reduce'] .animate-out,
+:root[data-motion='reduce'] .animate-pulse,
+:root[data-motion='reduce'] .animate-ping,
+:root[data-motion='reduce'] .flame-flicker,
+:root[data-motion='reduce'] .flame-inner,
+:root[data-motion='reduce'] .anim-pop,
+:root[data-motion='reduce'] .anim-shimmer,
+:root[data-motion='reduce'] .anim-podium,
+:root[data-motion='reduce'] .anim-confetti,
+:root[data-motion='reduce'] .anim-glow {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
 }
 
 /* ==========================================================================

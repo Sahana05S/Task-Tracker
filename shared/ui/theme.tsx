@@ -4,15 +4,18 @@ import * as React from 'react';
 import { usePathname } from 'next/navigation';
 
 import {
+  MOTION_STORAGE_KEY,
   THEME_COLOR,
   THEME_STORAGE_KEY,
+  parseMotionPreference,
   parseThemePreference,
   resolveTheme,
+  type MotionPreference,
   type ResolvedTheme,
   type ThemePreference,
 } from '@/shared/ui/theme-script';
 
-export type { ResolvedTheme, ThemePreference } from '@/shared/ui/theme-script';
+export type { MotionPreference, ResolvedTheme, ThemePreference } from '@/shared/ui/theme-script';
 
 interface ThemeContextValue {
   /** What the viewer chose on this device (Light on the server and until hydration). */
@@ -20,22 +23,27 @@ interface ThemeContextValue {
   /** What is painted now: System resolved against the OS, landing page forced light. */
   resolved: ResolvedTheme;
   setPreference: (preference: ThemePreference) => void;
+  /** Reduce motion on this device (Normal on the server and until hydration). */
+  motion: MotionPreference;
+  setMotion: (motion: MotionPreference) => void;
 }
 
 const ThemeContext = React.createContext<ThemeContextValue>({
   preference: 'light',
   resolved: 'light',
   setPreference: () => undefined,
+  motion: 'normal',
+  setMotion: () => undefined,
 });
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
-// The stored choice is an external store: other tabs change it through the
-// `storage` event, this tab through setPreference, which notifies by hand.
+// Each stored choice is an external store: other tabs change it through the
+// `storage` event, this tab through the setter, which notifies by hand.
 const listeners = new Set<() => void>();
-function subscribePreference(listener: () => void) {
+function subscribeStored(listener: () => void) {
   listeners.add(listener);
-  const onStorage = (event: StorageEvent) => { if (event.key === THEME_STORAGE_KEY) listener(); };
+  const onStorage = (event: StorageEvent) => { if (event.key === THEME_STORAGE_KEY || event.key === MOTION_STORAGE_KEY) listener(); };
   window.addEventListener('storage', onStorage);
   return () => { listeners.delete(listener); window.removeEventListener('storage', onStorage); };
 }
@@ -46,6 +54,21 @@ function readPreference(): ThemePreference {
     return 'light';
   }
 }
+function readMotion(): MotionPreference {
+  try {
+    return parseMotionPreference(window.localStorage.getItem(MOTION_STORAGE_KEY));
+  } catch {
+    return 'normal';
+  }
+}
+function writeStored(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Blocked storage: the reader keeps returning the default, so the choice cannot hold.
+  }
+  listeners.forEach((listener) => listener());
+}
 function subscribeSystem(listener: () => void) {
   const media = window.matchMedia(DARK_QUERY);
   media.addEventListener('change', listener);
@@ -54,6 +77,7 @@ function subscribeSystem(listener: () => void) {
 const systemDark = () => window.matchMedia(DARK_QUERY).matches;
 const serverLight = () => 'light' as const;
 const serverNotDark = () => false;
+const serverNormal = () => 'normal' as const;
 
 /**
  * Keeps `data-theme` on <html> in step with the viewer's choice, the OS setting
@@ -63,7 +87,8 @@ const serverNotDark = () => false;
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const preference = React.useSyncExternalStore(subscribePreference, readPreference, serverLight);
+  const preference = React.useSyncExternalStore(subscribeStored, readPreference, serverLight);
+  const motion = React.useSyncExternalStore(subscribeStored, readMotion, serverNormal);
   const dark = React.useSyncExternalStore(subscribeSystem, systemDark, serverNotDark);
   const resolved = resolveTheme(preference, dark, pathname);
 
@@ -74,16 +99,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[resolved]);
   }, [resolved]);
 
-  const setPreference = React.useCallback((next: ThemePreference) => {
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      // Blocked storage: readPreference keeps returning light, so the choice cannot hold.
-    }
-    listeners.forEach((listener) => listener());
-  }, []);
+  // Same stamp as the inline script; removing the attribute restores animation at once.
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (motion === 'reduce') root.setAttribute('data-motion', 'reduce');
+    else root.removeAttribute('data-motion');
+  }, [motion]);
 
-  const value = React.useMemo<ThemeContextValue>(() => ({ preference, resolved, setPreference }), [preference, resolved, setPreference]);
+  const setPreference = React.useCallback((next: ThemePreference) => writeStored(THEME_STORAGE_KEY, next), []);
+  const setMotion = React.useCallback((next: MotionPreference) => writeStored(MOTION_STORAGE_KEY, next), []);
+
+  const value = React.useMemo<ThemeContextValue>(
+    () => ({ preference, resolved, setPreference, motion, setMotion }),
+    [preference, resolved, setPreference, motion, setMotion],
+  );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 

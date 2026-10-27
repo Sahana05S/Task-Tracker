@@ -10,6 +10,7 @@ import { Building2Icon, IdCardIcon, InfoIcon, PaletteIcon, UserRoundIcon } from 
 import { InitialsAvatar, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
 import { PageTabs } from '@/shared/ui/page-nav';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
+import { MotionChoice } from '@/shared/ui/motion-choice';
 import { ThemeChoice } from '@/shared/ui/theme-choice';
 import { requireProfile } from '@/shared/session/profile';
 import { ROLE_LABELS } from '@/shared/tracker/enums';
@@ -77,9 +78,18 @@ function ProfileTab({ profile }: { profile: Profile }) {
         <SettingsForm profile={profile} />
       </MissionPanel>
       <MissionPanel icon={PaletteIcon} title="Appearance" subtitle="Remembered on this device. System follows your computer or phone setting.">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-foreground text-sm font-medium">Theme</span>
-          <ThemeChoice />
+        <div className="grid gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-foreground text-sm font-medium">Theme</span>
+            <ThemeChoice />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="grid gap-0.5">
+              <span className="text-foreground text-sm font-medium">Motion</span>
+              <span className="text-muted-foreground text-xs">Reduced stops animations, also where the phone has no such setting.</span>
+            </span>
+            <MotionChoice />
+          </div>
         </div>
       </MissionPanel>
     </>

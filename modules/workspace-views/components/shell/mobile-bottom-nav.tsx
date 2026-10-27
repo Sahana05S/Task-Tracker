@@ -91,12 +91,12 @@ export function MobileBottomNav() {
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
+                    'press group flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium',
                     active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   <span className={cn('flex h-7 w-12 items-center justify-center rounded-full', active && 'bg-primary-subtle')}>
-                    <Icon className="size-5" aria-hidden="true" />
+                    <Icon className="icon-lift size-5" aria-hidden="true" />
                   </span>
                   {label}
                 </Link>
@@ -109,12 +109,12 @@ export function MobileBottomNav() {
               onClick={() => setOpen(!open)}
               aria-expanded={open}
               className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
+                'press group flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium',
                 inMore || open ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <span className={cn('flex h-7 w-12 items-center justify-center rounded-full', (inMore || open) && 'bg-primary-subtle')}>
-                <MoreHorizontalIcon className="size-5" aria-hidden="true" />
+                <MoreHorizontalIcon className="icon-lift size-5" aria-hidden="true" />
               </span>
               More
             </button>
