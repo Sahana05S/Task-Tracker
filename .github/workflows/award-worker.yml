@@ -1,7 +1,9 @@
 name: Nightly award run
 
 # First marks the ended day's unrecorded attendance (POST /api/internal/attendance-autofill),
-# then calls the app's award worker (POST /api/internal/awards) after the daily
+# a backup since migration 84: pg_cron in the database marks it on time at 00:15 IST, and
+# GitHub starts this workflow hours late. The call only fills days still without a record.
+# Then it calls the app's award worker (POST /api/internal/awards) after the daily
 # cutoff. Each call queues due award days through yesterday (Asia/Kolkata) and
 # runs up to 10 jobs; this keeps calling until a batch comes back empty. Then it
 # calls the policies worker (POST /api/internal/policies, same token and
@@ -33,6 +35,7 @@ jobs:
     timeout-minutes: 15
     steps:
       # First: mark the ended day's unrecorded attendance (migration 73), so missing records do not block the award day.
+      # Backup since migration 84 (pg_cron marks it at 00:15 IST); normally nothing is left to mark.
       - name: Mark unrecorded attendance
         env:
           APP_URL: ${{ secrets.APP_URL }}
