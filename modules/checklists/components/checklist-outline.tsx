@@ -27,11 +27,14 @@ type Children = { state: 'loading' } | { state: 'error'; message: string } | { s
  * the same add row as the other views, and an open Quest or row ends with a
  * one-line "Add an item" (user request, 28 Oct 2026: adding works in every view).
  */
-export function ChecklistOutline({ groups, ctx, addRow }: {
+export function ChecklistOutline({ groups, ctx, addRows }: {
   groups: readonly { section: ChecklistSection; rows: readonly ChecklistBranchRow[] }[];
   ctx: Ctx;
-  /** The section's add row (the same one Table, Board and Blocks show). */
-  addRow?: (section: ChecklistSection) => React.ReactNode;
+  /**
+   * Each section's add row (the same one Table, Board and Blocks show), already
+   * rendered by the server page: a function cannot cross into this client component.
+   */
+  addRows?: Partial<Record<ChecklistSection, React.ReactNode>>;
 }) {
   return (
     <div className="grid gap-5">
@@ -43,7 +46,7 @@ export function ChecklistOutline({ groups, ctx, addRow }: {
               {group.rows.map((row) => <OutlineRow key={row.id} row={row} depth={0} ctx={ctx} />)}
             </ul>
           ) : <p className="text-muted-foreground px-1 text-sm">No rows yet. An empty section counts as N/A.</p>}
-          {addRow ? <div className="mt-3">{addRow(group.section)}</div> : null}
+          {addRows?.[group.section] ? <div className="mt-3">{addRows[group.section]}</div> : null}
         </section>
       ))}
     </div>
