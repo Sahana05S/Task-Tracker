@@ -9,6 +9,8 @@ export {
   FACTOR_UNITS,
   FACTORS,
   measuredRaw,
+  awaitingAttendance,
+  LAST_CALCULATED_STEPS,
   memberEligibilityReasons,
   PERFORMANCE_RULE_VERSION,
   unavailableRaw,

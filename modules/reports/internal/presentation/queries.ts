@@ -1,5 +1,7 @@
 import { cache } from 'react';
 import { getAwards } from '@/modules/scoring';
+import { awaitingAttendance, LAST_CALCULATED_STEPS } from '@/modules/scoring/client';
+import { previousDate } from './context';
 import { createClient } from '@/shared/supabase/server';
 import { buildPresentation } from './model';
 import { liveWindowEnd } from '@/shared/time/period';
@@ -12,7 +14,16 @@ const load=cache(async(start:string,end:string,asOf:string,employee:string|null,
 });
 export async function getLivePresentation(view:ViewContext,employee:string|null=null,{series=false}:{series?:boolean}={}){
  // Only days that have ended by the as-of time are read (today's unfinished day never blocks).
- const model=buildPresentation(await load(view.period.startDate,liveWindowEnd(view.period,view.asOf),view.asOf,employee,series),view,employee);
+ const start=view.period.startDate;
+ let end=liveWindowEnd(view.period,view.asOf);
+ let model=buildPresentation(await load(start,end,view.asOf,employee,series),view,employee,end);
+ // Until last night's attendance is marked nobody can be scored; show the last calculated
+ // figures (a window one day shorter, up to LAST_CALCULATED_STEPS days) rather than blanks.
+ for(let step=0;step<LAST_CALCULATED_STEPS&&awaitingAttendance(model.calculation)&&previousDate(end)>start;step++){
+  end=previousDate(end);
+  const earlier=buildPresentation(await load(start,end,view.asOf,employee,series),view,employee,end);
+  if(!awaitingAttendance(earlier.calculation)){model=earlier;break;}
+ }
  const db=await createClient();
  try{model.awards=await getAwards(db,view.period,model.calculation,employee??undefined);}catch(error){
   if(!(error instanceof Error)||!error.message.startsWith('Award and performance sources changed'))throw error;

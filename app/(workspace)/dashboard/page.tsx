@@ -18,7 +18,6 @@ import { SubScoresGrid } from '@/modules/workspace-views/components/dashboard/su
 import { DailyPerfLogSection } from '@/modules/workspace-views/components/dashboard/daily-perf-log';
 import { AsOfNote, shortDay } from '@/shared/ui/as-of-note';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
-import { liveWindowEnd } from '@/shared/time/period';
 import { dailyPerfFilter, getDailyPerfLog, getWorkbookDashboard, monthToDate, seesTeamDetail } from '@/modules/reports';
 import { Suspense } from 'react';
 import { requireProfile } from '@/shared/session/profile';
@@ -95,7 +94,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       />
 
       {/* No "figures are not final" banner: the figures cover the days that have ended (decision 25 Oct 2026). */}
-      <AsOfNote label={`Through ${shortDay(lastReadDay(liveWindowEnd(context.period,context.asOf)))}`} />
+      <AsOfNote label={`Through ${shortDay(lastReadDay(presentation.windowEnd))}`} />
 
       <TeamStatsGrid analytics={analytics} attendanceComplete={attendanceMissing.missing===0} attendanceMissing={attendanceMissing} />
 

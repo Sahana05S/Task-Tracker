@@ -1,8 +1,9 @@
 // PRIVATE. Server-side leaderboard read: the shared ten-factor calculation for
 // one month (scoring's public `loadPerformance`), projected to ranks before it
 // leaves the server so members never receive other members' factor details.
-import { nextDate } from '@/modules/reports/client';
+import { nextDate, previousDate } from '@/modules/reports/client';
 import { loadPerformance } from '@/modules/scoring';
+import { awaitingAttendance, LAST_CALCULATED_STEPS } from '@/modules/scoring/client';
 import { canManageTasks } from '@/modules/tasks/client';
 import { createClient } from '@/shared/supabase/server';
 import { observationInstant } from '@/shared/time/observation-clock';
@@ -35,9 +36,16 @@ export async function loadMonth(db: Db, period: AnalyticsPeriod, options: { live
     ? (await observationInstant(db)).instant.toISOString()
     : new Date(`${period.endDate}T23:59:59.999+05:30`).toISOString();
   // A live read covers the days that have ended (through yesterday); a past month is read whole.
-  const end = live ? liveWindowEnd(period, asOf) : nextDate(period.endDate);
-  const { sources, calculation } = await loadPerformance(db, period.startDate, end, asOf);
-  return { sources, calculation, asOf };
+  let end = live ? liveWindowEnd(period, asOf) : nextDate(period.endDate);
+  let read = await loadPerformance(db, period.startDate, end, asOf);
+  // Until last night's attendance is marked nobody can be ranked: rank on the last calculated
+  // days instead (a window one day shorter, up to LAST_CALCULATED_STEPS days; 28 Oct 2026).
+  for (let step = 0; step < LAST_CALCULATED_STEPS && awaitingAttendance(read.calculation) && previousDate(end) > period.startDate; step++) {
+    const shorter = previousDate(end);
+    const earlier = await loadPerformance(db, period.startDate, shorter, asOf);
+    if (!awaitingAttendance(earlier.calculation)) { read = earlier; end = shorter; break; }
+  }
+  return { sources: read.sources, calculation: read.calculation, asOf, end };
 }
 
 /**
@@ -48,11 +56,11 @@ export async function getLeaderboard(
   viewer: Pick<User, 'id' | 'role' | 'isActive'>,
   period: AnalyticsPeriod,
 ): Promise<LeaderboardModel> {
-  const { sources, calculation } = await loadMonth(await createClient(), period);
+  const { sources, calculation, end } = await loadMonth(await createClient(), period);
   // Same rule as a profile: the member themself or a manager (team depends on
   // recognition, so the rule is applied here rather than imported from team).
   const canSee = (userId: string) => viewer.isActive && (canManageTasks(viewer.role) || userId === viewer.id);
-  return buildLeaderboard(calculation, canSee, Object.fromEntries(sources.members.map((m) => [m.id, m.fullName])));
+  return { ...buildLeaderboard(calculation, canSee, Object.fromEntries(sources.members.map((m) => [m.id, m.fullName]))), through: previousDate(end) };
 }
 
 /** The month before `period`. */

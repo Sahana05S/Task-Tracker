@@ -26,14 +26,16 @@ export interface LivePresentation {
  scope:PresentationResponse['scope'];employeeId:string|null;detailsAvailable:boolean;detailsAvailableFrom:string;presentationWatermark:string;
  members:User[];tasks:Task[];logs:DailyTaskLog[];checklists:Row[];assets:Row[];relations:Row[];contributions:PresentationResponse['contributions'];attendance:AttendanceInputContext[];
  series:DatedCalculation[];taskRates:{taskId:string;value:string;reasons:string[]}[];
+ /** The exclusive end of the days read (a live read may stop a day or more short: see getLivePresentation). */
+ windowEnd:string;
  today: {date:string;logs:DailyTaskLog[]};yesterday:{date:string;logs:DailyTaskLog[]};
 }
-export function buildPresentation(value:unknown,view:ViewContext,employeeId:string|null=null):LivePresentation {
+export function buildPresentation(value:unknown,view:ViewContext,employeeId:string|null=null,windowEnd:string=liveWindowEnd(view.period,view.asOf)):LivePresentation {
  const r=value as PresentationResponse;
  if(!r||r.contract!=='m11-live-presentation-v1'||typeof r.presentationAvailable!=='boolean'||!['tasks','logs','assets','relations','checklists','attendance','contributions','series'].every(k=>Array.isArray(r[k as keyof PresentationResponse])))throw new Error('Live presentation response is unavailable.');
  const sources=parsePerformanceSources(r.sources);
  // The window is the whole month or, for a live read, the days that have ended (shared/time/period.ts liveWindowEnd).
- if(sources.asOf!==view.asOf&&new Date(sources.asOf).getTime()!==new Date(view.asOf).getTime()||sources.periodStart!==view.period.startDate||(sources.periodEndExclusive!==nextDate(view.period.endDate)&&sources.periodEndExclusive!==liveWindowEnd(view.period,view.asOf)))throw new Error('Presentation context mismatch.');
+ if(sources.asOf!==view.asOf&&new Date(sources.asOf).getTime()!==new Date(view.asOf).getTime()||sources.periodStart!==view.period.startDate||(sources.periodEndExclusive!==nextDate(view.period.endDate)&&sources.periodEndExclusive!==windowEnd))throw new Error('Presentation context mismatch.');
  const calculation=resolvePerformance(sources);
  const members:User[]=sources.members.map(m=>({id:m.id,fullName:m.fullName,employeeId:m.employeeId,email:'',role:m.role,isActive:m.active,createdAt:'',updatedAt:''}));
  const full=new Map(r.tasks.map(t=>[String(t.id),t]));
@@ -55,7 +57,7 @@ export function buildPresentation(value:unknown,view:ViewContext,employeeId:stri
  const tasks=employeeId?allTasks.filter(t=>t.assigneeIds.includes(employeeId)||loggedIds.has(t.id)||Object.hasOwn(t.earnedProgressCredits??{},employeeId)):allTasks;
  const series=r.series.filter(p=>p.date>=view.period.startDate&&p.date<=view.period.endDate&&p.date<=view.asOfLocalDate).map(p=>({date:p.date,calculation:resolvePerformance(parsePerformanceSources(p.sources))}));
  const taskRates=tasks.map(t=>{const source=sources.tasks.find(s=>s.id===t.id)!,rate=taskProductivity(source.progress,source.taskHours);return {taskId:t.id,value:rate.available&&rate.value!==null?Exact.from(rate.value).display(6):'Unavailable',reasons:rate.reasons};});
- return {view,calculation,sources,analytics,scope:r.scope,employeeId,detailsAvailable:r.presentationAvailable,detailsAvailableFrom:r.presentationAvailableFrom,presentationWatermark:r.presentationWatermark,
+ return {windowEnd:sources.periodEndExclusive,view,calculation,sources,analytics,scope:r.scope,employeeId,detailsAvailable:r.presentationAvailable,detailsAvailableFrom:r.presentationAvailableFrom,presentationWatermark:r.presentationWatermark,
   members,tasks,logs,checklists:r.checklists,assets:r.assets,relations:r.relations,contributions:r.contributions,attendance:r.attendance,series,taskRates,
   today:{date:view.asOfLocalDate,logs:logs.filter(l=>l.logDate===view.asOfLocalDate)},yesterday:{date:previousDate(view.asOfLocalDate),logs:logs.filter(l=>l.logDate===previousDate(view.asOfLocalDate))}};
 }
