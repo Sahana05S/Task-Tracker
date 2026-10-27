@@ -40,7 +40,7 @@ export async function handleAuthCallback(request: Request): Promise<NextResponse
 
   // If code exchange failed or was not provided, redirect back to login with notice
   return NextResponse.redirect(
-    `${origin}/login?error=Authentication%20verification%20failed.%20Please%20try%20signing%20in%20again.`,
+    `${origin}/login?error=callback`,
   );
 }
 

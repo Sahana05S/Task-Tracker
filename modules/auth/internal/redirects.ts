@@ -19,10 +19,13 @@ export const DEFAULT_REDIRECT = '/today';
  *  - `//evil.test`, a protocol-relative URL the browser treats as cross-origin
  *  - `/\evil.test`, which some browsers normalise to a protocol-relative URL
  *  - any value containing `:`, which covers `javascript:` and scheme smuggling
+ *  - whitespace or control characters: browsers drop tabs and newlines while
+ *    parsing, so `/<tab>/evil.test` would become `//evil.test` after this check
  *  - `/login` itself, which would otherwise bounce the user straight back
  */
 export function safeRedirectPath(candidate: string | undefined): string {
   if (!candidate) return DEFAULT_REDIRECT;
+  if (/[\s\u0000-\u001f\u007f]/.test(candidate)) return DEFAULT_REDIRECT;
   if (!candidate.startsWith('/')) return DEFAULT_REDIRECT;
   if (candidate.startsWith('//')) return DEFAULT_REDIRECT;
   if (candidate.startsWith('/\\')) return DEFAULT_REDIRECT;
