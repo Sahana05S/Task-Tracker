@@ -429,7 +429,7 @@ function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, ti
   title?: string;
   parentNodeId?: string;
 }) {
-  if (view === 'outline') return <ChecklistOutline groups={sections} ctx={ctx} addRow={addRow} />;
+  if (view === 'outline') return <ChecklistOutline groups={sections} ctx={ctx} addRows={Object.fromEntries(sections.map((home) => [home.section, addRow(home.section)]))} />;
   const heading = (home: ChecklistHomeSection) => (
     <PhaseHeading id={`${checklistId}-${home.section}`} title={title ?? SECTION_TITLES[home.section].title} summary={title ? undefined : rollup.sections[home.section]} />
   );
