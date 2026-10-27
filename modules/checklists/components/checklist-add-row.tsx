@@ -31,6 +31,7 @@ export function ChecklistAddRow({
   subMissionAction,
   label,
   itemsOnly = false,
+  autoFocus = false,
 }: {
   taskId: string;
   checklistId: string;
@@ -43,8 +44,16 @@ export function ChecklistAddRow({
   label: string;
   /** Inside a Quest: items only (no Quest or Sub-mission in a Quest). */
   itemsOnly?: boolean;
+  /** The page's main add row: the cursor starts in its title box. */
+  autoFocus?: boolean;
 }) {
   const titleId = React.useId();
+  const titleRef = React.useRef<HTMLInputElement>(null);
+  // User request (28 Oct 2026): the cursor waits in the box, so rows are typed one after another
+  // without clicking it. No scroll: the box may sit below the fold on a long checklist.
+  React.useEffect(() => {
+    if (autoFocus && (!document.activeElement || document.activeElement === document.body)) titleRef.current?.focus({ preventScroll: true });
+  }, [autoFocus]);
   const [kind, setKind] = React.useState<(typeof KINDS)[number]['key']>('add');
   const kinds = KINDS.filter((entry) => itemsOnly ? entry.key === 'add' : entry.key !== 'sub-mission' || subMissionAction);
   const chosen = kinds.find((entry) => entry.key === kind) ?? kinds[0];
@@ -70,7 +79,11 @@ export function ChecklistAddRow({
                   type="button"
                   role="radio"
                   aria-checked={chosen.key === entry.key}
-                  onClick={() => setKind(entry.key)}
+                  onClick={() => {
+                    setKind(entry.key);
+                    // Straight back to typing after choosing what to add.
+                    titleRef.current?.focus();
+                  }}
                   className="border-border bg-card text-foreground hover:border-primary/60 aria-checked:border-primary aria-checked:bg-primary aria-checked:text-primary-foreground focus-visible:ring-ring inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-2"
                 >
                   <Icon className="size-4" aria-hidden="true" />
@@ -83,7 +96,16 @@ export function ChecklistAddRow({
         <p className="text-muted-foreground text-xs">{chosen.hint}{chosen.key === 'sub-mission' ? '. People and due date come from this mission.' : '.'}</p>
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor={titleId} className="sr-only">{`${chosen.label} title`}</label>
-          <Input id={titleId} name="title" required maxLength={500} placeholder={chosen.key === 'add' ? `New ${label.toLowerCase()} item` : chosen.key === 'submission' ? 'Name the Quest' : 'Name the sub-mission'} className="bg-card h-9 min-w-48 flex-1 basis-56" />
+          <Input
+            ref={titleRef}
+            id={titleId}
+            name="title"
+            required
+            maxLength={500}
+            data-autofocus=""
+            placeholder={chosen.key === 'add' ? 'New item' : chosen.key === 'submission' ? 'Name the Quest' : 'Name the sub-mission'}
+            className="bg-card h-9 min-w-48 flex-1 basis-56"
+          />
           <Button type="submit" size="sm" className="h-9">
             <PlusIcon aria-hidden="true" />Add {chosen.label.toLowerCase()}
           </Button>

@@ -4,14 +4,15 @@ import { createClient } from '@/shared/supabase/server';
 import { buildPresentation } from './model';
 import { liveWindowEnd } from '@/shared/time/period';
 import type { ViewContext } from './context';
-const load=cache(async(start:string,end:string,asOf:string,employee:string|null)=>{
- const db=await createClient();const result=await db.rpc('live_presentation_context',{p_from:start,p_to_exclusive:end,p_as_of:asOf,p_employee:employee});
+// series: the per-day recomputation only the profile charts use; it is slow, so opt in.
+const load=cache(async(start:string,end:string,asOf:string,employee:string|null,series:boolean)=>{
+ const db=await createClient();const result=await db.rpc('live_presentation_context',{p_from:start,p_to_exclusive:end,p_as_of:asOf,p_employee:employee,p_series:series});
  if(result.error)throw new Error('Live presentation source read failed: '+result.error.message);
  return result.data;
 });
-export async function getLivePresentation(view:ViewContext,employee:string|null=null){
+export async function getLivePresentation(view:ViewContext,employee:string|null=null,{series=false}:{series?:boolean}={}){
  // Only days that have ended by the as-of time are read (today's unfinished day never blocks).
- const model=buildPresentation(await load(view.period.startDate,liveWindowEnd(view.period,view.asOf),view.asOf,employee),view,employee);
+ const model=buildPresentation(await load(view.period.startDate,liveWindowEnd(view.period,view.asOf),view.asOf,employee,series),view,employee);
  const db=await createClient();
  try{model.awards=await getAwards(db,view.period,model.calculation,employee??undefined);}catch(error){
   if(!(error instanceof Error)||!error.message.startsWith('Award and performance sources changed'))throw error;

@@ -8,11 +8,11 @@ import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-co
 export type TeamView = 'list' | 'chart';
 
 const OPTIONS: readonly SegmentedOption<TeamView>[] = [
-  { value: 'list', label: 'List', icon: ListIcon },
   { value: 'chart', label: 'Chart', icon: NetworkIcon },
+  { value: 'list', label: 'List', icon: ListIcon },
 ];
 
-/** The People page's List / Chart switch, kept in the URL as `?view=chart` (List is the default). */
+/** The People page's Chart / List switch, kept in the URL as `?view=list` (the org chart is the default, 28 Oct 2026). */
 export function TeamViewSwitch({ view }: { view: TeamView }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -24,7 +24,7 @@ export function TeamViewSwitch({ view }: { view: TeamView }) {
       options={OPTIONS}
       onValueChange={next => {
         const params = new URLSearchParams(searchParams.toString());
-        if (next === 'chart') params.set('view', 'chart');
+        if (next === 'list') params.set('view', 'list');
         else params.delete('view');
         const search = params.toString();
         router.push(search ? `${pathname}?${search}` : pathname);

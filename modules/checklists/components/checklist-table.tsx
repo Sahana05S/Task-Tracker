@@ -46,6 +46,10 @@ export interface ChecklistTableProps {
   /** Missions a manager may link a row to. */
   linkChoices?: readonly { id: string; taskTag: string; title: string }[];
   manager: boolean;
+  /** Inside a Quest: the add row offers items only (no Quest or Sub-mission). */
+  itemsOnly?: boolean;
+  /** The page's main table: its add row takes the cursor on arrival. */
+  autoFocus?: boolean;
   /** Header control. */
   headerAction?: React.ReactNode;
   /** Paging links under the table. */
@@ -215,7 +219,8 @@ export function ChecklistTable(props: ChecklistTableProps) {
                             version={version}
                             action={actions.checklist}
                             defaultOpen={props.selectedItem === row.id}
-                            manager={props.manager}
+                            // A Quest holds items only, so its rows offer no "Link to a mission" (migration 77).
+                            manager={props.manager && !props.itemsOnly}
                             moveTargets={props.moveTargets?.filter(target => target.id !== row.id) ?? []}
                             linkChoices={props.linkChoices ?? []}
                           />
@@ -235,7 +240,8 @@ export function ChecklistTable(props: ChecklistTableProps) {
       {canEdit ? (
         <div className="border-border border-t px-4 py-3 sm:px-5">
           <ChecklistAddRow
-            key={`${checklistId}:${addParentId ?? 'root'}:${section}:${rows.length}`}
+            // Not keyed on the row count: a remount after each add lost the cursor (user report, 28 Oct 2026).
+            key={`${checklistId}:${addParentId ?? 'root'}:${section}`}
             taskId={task.id}
             checklistId={checklistId}
             parentId={addParentId}
@@ -244,6 +250,8 @@ export function ChecklistTable(props: ChecklistTableProps) {
             action={actions.checklist}
             subMissionAction={actions.submission}
             label={title}
+            itemsOnly={props.itemsOnly}
+            autoFocus={props.autoFocus}
           />
         </div>
       ) : null}
