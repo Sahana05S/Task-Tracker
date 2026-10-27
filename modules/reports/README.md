@@ -36,7 +36,7 @@ analytics read, and plain-language data-gap wording.
 |---|---|
 | `report_snapshots` | `07_tracker_replacement_foundation.sql` |
 | `monthly_performance_snapshots` | `01_init_schema.sql` (read-only history) |
-| `live_presentation_context` | `28_live_presentation_and_report_context.sql` |
+| `live_presentation_context` | `28_live_presentation_and_report_context.sql`, `82_presentation_series_on_demand.sql` (`p_series`) |
 | `month_archive_command`, `month_archive_history`, `month_archive_read` | `29_month_archive_and_revisions.sql` |
 
 All objects are company-scoped by migrations 39-40 (M15).
@@ -49,7 +49,10 @@ All objects are company-scoped by migrations 39-40 (M15).
 `/reports` opens on **Daily report**: `?member=<employee id>&date=YYYY-MM-DD&from=&to=`.
 Members see only themselves; managers pick anyone (the same rule as the profile
 pages). The day's month is read live through `getLivePresentation(view, member)`,
-so logs back-dated to that day show. **Month close** is `?tab=month` and still
+so logs back-dated to that day show. The per-day `series` (one recomputation per
+day of the month) is built only on request, `getLivePresentation(view, member,
+{ series: true })`, which only the team profile charts use; without it `series`
+is empty. **Month close** is `?tab=month` and still
 answers the older `?period=`, `?asOf=` and `?revision=` links; it holds the
 archive controls, live or archived report, downloads and the retained saved
 reports table (`ReportsModule` from support).
