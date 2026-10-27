@@ -42,6 +42,7 @@ DECLARE role text:=public.get_user_role();sources jsonb;cutoff timestamptz;known
  RETURN jsonb_build_object('contract','m11-live-presentation-v1','sources',sources,'presentationAvailable',known,'presentationAvailableFrom',cutoff,'presentationWatermark',watermark,
  'scope',CASE WHEN p_employee IS NOT NULL THEN 'employee_detail' WHEN detail_user IS NULL THEN 'manager_team_detail' ELSE 'team_summary_with_own_details' END,'detailUserId',detail_user,
  'tasks',tasks,'checklists',checklists,'assets',assets,'relations',relations,'logs',logs,'contributions',contributions,'attendance',attendance,'series',series);
+END $$;
 REVOKE ALL ON FUNCTION public.live_presentation_context(date,date,timestamptz,uuid,boolean) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.live_presentation_context(date,date,timestamptz,uuid,boolean) TO authenticated;
 COMMIT;
