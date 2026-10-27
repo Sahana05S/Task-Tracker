@@ -79,7 +79,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/tasks',
     icon: ListChecksIcon,
     inBottomNav: true,
-    wallpaper: 'honeycomb',
+    wallpaper: 'orbits',
     tabs: [
       { label: 'Missions', href: '/tasks', match: ['/tasks'], icon: ListChecksIcon },
       { label: 'Timeline', href: '/timelines', match: ['/timelines'], icon: CalendarRangeIcon },
@@ -92,7 +92,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/attendance',
     icon: CalendarCheckIcon,
     inBottomNav: false,
-    wallpaper: 'facets',
+    wallpaper: 'starfield',
     tabs: [
       { label: 'Attendance', href: '/attendance', match: ['/attendance', '/records/attendance'], icon: CalendarCheckIcon },
       { label: 'Daily facts', href: '/daily-facts', match: ['/daily-facts', '/records/fact'], icon: BookOpenIcon },
@@ -107,9 +107,9 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/dashboard',
     icon: UsersIcon,
     inBottomNav: true,
-    wallpaper: 'bubbles',
+    wallpaper: 'constellation',
     tabs: [
-      { label: 'Analytics', href: '/dashboard', match: ['/dashboard'], icon: BarChart3Icon, wallpaper: 'waves' },
+      { label: 'Analytics', href: '/dashboard', match: ['/dashboard'], icon: BarChart3Icon, wallpaper: 'orbits' },
       { label: 'People', href: '/team', match: ['/team'], exclude: ['/team/activity'], icon: UsersIcon },
       { label: 'Leaderboard', href: '/leaderboard', match: ['/leaderboard'], icon: TrophyIcon, wallpaper: 'sparkles' },
       { label: 'Awards', href: '/awards', match: ['/awards'], icon: AwardIcon, wallpaper: 'sparkles' },
@@ -123,7 +123,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     icon: ScaleIcon,
     inBottomNav: false,
     wideOnly: true,
-    wallpaper: 'facets',
+    wallpaper: 'starfield',
     tabs: [{ label: 'Policies', href: '/policies', match: ['/policies'], icon: ScaleIcon }],
   },
   {
@@ -131,7 +131,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/reports',
     icon: FileTextIcon,
     inBottomNav: false,
-    wallpaper: 'waves',
+    wallpaper: 'starfield',
     tabs: [{ label: 'Reports', href: '/reports', match: ['/reports'], icon: FileTextIcon }],
   },
 ];
