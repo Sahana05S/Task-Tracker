@@ -5,6 +5,7 @@ import { NavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer
 import { NavDrawerProvider } from '@/modules/workspace-views/components/shell/nav-drawer-context';
 import { PageTransition } from '@/modules/workspace-views/components/shell/page-transition';
 import { SectionTabs } from '@/modules/workspace-views/components/shell/section-tabs';
+import { SectionWallpaper } from '@/modules/workspace-views/components/shell/section-wallpaper';
 import { TopBar } from '@/modules/workspace-views/components/shell/top-bar';
 import type { NavCounts } from '@/modules/workspace-views/internal/nav-counts';
 import { StellarMark } from '@/shared/ui/stellar-mark';
@@ -27,7 +28,9 @@ export interface AppShellProps {
 export function AppShell({ profile, counts, children }: AppShellProps) {
   return (
     <NavDrawerProvider>
-      <div className="bg-background min-h-dvh">
+      {/* The canvas colour is the body's, so the section's line art (fixed, behind) shows through. */}
+      <div className="min-h-dvh">
+        <SectionWallpaper />
         <a href="#main" className="bg-primary text-primary-foreground sr-only z-50 rounded-lg px-4 py-2 text-sm font-semibold focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
           Skip to content
         </a>

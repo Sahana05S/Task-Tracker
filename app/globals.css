@@ -119,6 +119,8 @@
   --chart-6: #f43f5e;
   --chart-7: #14b8a6;
   --chart-8: #94a3b8;
+  /* Opacity of the section line art behind pages (shared/ui/wallpaper.tsx). */
+  --wallpaper-strength: 0.5;
 
   --chart-positive: #059669;
   --chart-negative: #f43f5e;
@@ -269,6 +271,7 @@
   --chart-6: #d55181;
   --chart-7: #008300;
   --chart-8: #e66767;
+  --wallpaper-strength: 0.3;
 
   --chart-positive: #34d399;
   --chart-negative: #fb7185;

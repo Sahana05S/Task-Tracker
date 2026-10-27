@@ -26,6 +26,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import type { WallpaperMotif } from '@/shared/ui/wallpaper';
 import type { UserRole } from '@/types/tracker';
 
 /**
@@ -47,6 +48,8 @@ export interface NavTab {
   readonly icon: LucideIcon;
   /** Listed only for these roles (the page and database still enforce access). */
   readonly roles?: readonly UserRole[];
+  /** Line art behind this tab's pages when it differs from the section's. */
+  readonly wallpaper?: WallpaperMotif;
 }
 
 export interface NavSection {
@@ -58,6 +61,8 @@ export interface NavSection {
   readonly inBottomNav: boolean;
   /** Top-bar pill only from 1024 px; below that it is listed under More (the bar has no room at tablet width). */
   readonly wideOnly?: boolean;
+  /** Line art behind the section's pages (`shared/ui/wallpaper.tsx`). */
+  readonly wallpaper: WallpaperMotif;
 }
 
 export const NAV_SECTIONS: readonly NavSection[] = [
@@ -66,6 +71,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/today',
     icon: SparklesIcon,
     inBottomNav: true,
+    wallpaper: 'constellation',
     tabs: [{ label: 'Today', href: '/today', match: ['/today'], icon: SparklesIcon }],
   },
   {
@@ -73,6 +79,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/tasks',
     icon: ListChecksIcon,
     inBottomNav: true,
+    wallpaper: 'honeycomb',
     tabs: [
       { label: 'Missions', href: '/tasks', match: ['/tasks'], icon: ListChecksIcon },
       { label: 'Timeline', href: '/timelines', match: ['/timelines'], icon: CalendarRangeIcon },
@@ -85,6 +92,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/attendance',
     icon: CalendarCheckIcon,
     inBottomNav: false,
+    wallpaper: 'facets',
     tabs: [
       { label: 'Attendance', href: '/attendance', match: ['/attendance', '/records/attendance'], icon: CalendarCheckIcon },
       { label: 'Daily facts', href: '/daily-facts', match: ['/daily-facts', '/records/fact'], icon: BookOpenIcon },
@@ -99,12 +107,13 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/dashboard',
     icon: UsersIcon,
     inBottomNav: true,
+    wallpaper: 'bubbles',
     tabs: [
-      { label: 'Analytics', href: '/dashboard', match: ['/dashboard'], icon: BarChart3Icon },
+      { label: 'Analytics', href: '/dashboard', match: ['/dashboard'], icon: BarChart3Icon, wallpaper: 'waves' },
       { label: 'People', href: '/team', match: ['/team'], exclude: ['/team/activity'], icon: UsersIcon },
-      { label: 'Leaderboard', href: '/leaderboard', match: ['/leaderboard'], icon: TrophyIcon },
-      { label: 'Awards', href: '/awards', match: ['/awards'], icon: AwardIcon },
-      { label: 'Hall of fame', href: '/hall-of-fame', match: ['/hall-of-fame'], icon: CrownIcon },
+      { label: 'Leaderboard', href: '/leaderboard', match: ['/leaderboard'], icon: TrophyIcon, wallpaper: 'sparkles' },
+      { label: 'Awards', href: '/awards', match: ['/awards'], icon: AwardIcon, wallpaper: 'sparkles' },
+      { label: 'Hall of fame', href: '/hall-of-fame', match: ['/hall-of-fame'], icon: CrownIcon, wallpaper: 'sparkles' },
       { label: 'Activity', href: '/team/activity', match: ['/team/activity'], icon: HistoryIcon },
     ],
   },
@@ -114,6 +123,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     icon: ScaleIcon,
     inBottomNav: false,
     wideOnly: true,
+    wallpaper: 'facets',
     tabs: [{ label: 'Policies', href: '/policies', match: ['/policies'], icon: ScaleIcon }],
   },
   {
@@ -121,13 +131,14 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     href: '/reports',
     icon: FileTextIcon,
     inBottomNav: false,
+    wallpaper: 'waves',
     tabs: [{ label: 'Reports', href: '/reports', match: ['/reports'], icon: FileTextIcon }],
   },
 ];
 
 /** Low-frequency destinations under More (desktop menu and phone sheet). */
 export const MORE_ITEMS: readonly NavTab[] = [
-  { label: 'Company', href: '/milestones', match: ['/milestones'], icon: TargetIcon },
+  { label: 'Company', href: '/milestones', match: ['/milestones'], icon: TargetIcon, wallpaper: 'constellation' },
   { label: 'Payroll', href: '/payroll', match: ['/payroll'], icon: WalletIcon, roles: ['managing_director'] },
   // Each member's own finalised months (M19); the managing director has Payroll.
   { label: 'My salary', href: '/my-salary', match: ['/my-salary'], icon: BadgeIndianRupeeIcon, roles: ['project_engineer', 'data_manager', 'team_member'] },
