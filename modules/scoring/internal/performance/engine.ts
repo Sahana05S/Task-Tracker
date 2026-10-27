@@ -32,6 +32,17 @@ export interface CalculationResult {context:CalculationContext;status:'complete'
 export const MEMBER_ELIGIBILITY_REASONS=['attendance_invalid','attendance_unavailable'] as const;
 export type MemberEligibilityReason=typeof MEMBER_ELIGIBILITY_REASONS[number];
 export const memberEligibilityReasons=(member:Pick<MemberCalculation,'reasons'>):string[]=>member.reasons.filter(r=>(MEMBER_ELIGIBILITY_REASONS as readonly string[]).includes(r));
+/**
+ * True when nobody can be scored because attendance is missing for everyone, as happens every
+ * night until yesterday's attendance is marked (the nightly job starts hours after midnight).
+ * Live readers then read a window one day shorter, so pages show the last calculated figures
+ * instead of blanks (user decision, 28 Oct 2026). It changes no rule: the shorter window is a
+ * complete read of the days it covers.
+ */
+export const awaitingAttendance=(calculation:Pick<CalculationResult,'members'>):boolean=>
+  calculation.members.length>0&&calculation.members.every(member=>member.reasons.includes('attendance_unavailable'));
+/** How many days a live read may step back to find the last calculated figures. */
+export const LAST_CALCULATED_STEPS=3;
 export const unavailableRaw=(reason:string,sources:Provenance[]=[]):RawFactor=>({value:null,available:false,reasons:[reason],sources});
 export const measuredRaw=(value:ExactInput,sources:Provenance[]=[]):RawFactor=>({value,available:true,reasons:[],sources});
 

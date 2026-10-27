@@ -8,7 +8,7 @@ import { BOARD_LABELS, BOARD_SUMMARIES, getLeaderboardWithFallback, leaderboardP
 import { settle } from '@/shared/async/settle';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDateTime } from '@/shared/tracker/format';
-import { AsOfNote } from '@/shared/ui/as-of-note';
+import { AsOfNote, shortDay } from '@/shared/ui/as-of-note';
 import { buttonVariants } from '@/shared/ui/button';
 import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { currentPeriod } from '@/shared/time/period';
@@ -81,7 +81,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
             </div>
             {you ? <p className="text-foreground text-sm font-medium">You&apos;re in place {you.rank} of {board.rows.length}.</p> : null}
           </div>
-          {fallback ? <AsOfNote label={`Rankings for ${fallback.period.label}`} /> : null}
+          {fallback ? <AsOfNote label={`Rankings for ${fallback.period.label}`} /> : model.data.through ? <AsOfNote label={`Through ${shortDay(model.data.through)}`} /> : null}
           <LeaderboardPodium rows={board.rows} names={names} viewerId={profile.id} />
           <LeaderboardList board={board} names={names} viewerId={profile.id} />
           {key !== 'composite' && board.rows.some((row) => row.value === null) ? (

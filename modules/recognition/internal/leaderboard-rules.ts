@@ -50,6 +50,8 @@ export interface Board {
 
 export interface LeaderboardModel {
   asOf: string;
+  /** The last day the ranking covers (set by the server read; a live read may stop short while attendance is marked). */
+  through?: string;
   boards: Record<BoardKey, Board>;
   /** Display names of the calculation's members, by user id. */
   names: Record<string, string>;
