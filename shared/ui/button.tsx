@@ -8,11 +8,12 @@ import { cn } from '@/shared/utils';
  * Actions take a 12px radius (DESIGN.md); `shape="pill"` is for chip-like
  * quick actions in the chrome. Violet fills the one primary action on a
  * surface and every other variant stays quieter. No variant carries a shadow:
- * elevation is reserved for overlays that genuinely float. A press scales to
- * 0.96, only where motion is allowed and never while disabled.
+ * elevation is reserved for overlays that genuinely float. A press squeezes
+ * to 0.97 (`.press`, the shared motion system), never while disabled and never
+ * under reduced motion.
  */
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap outline-none transition-[color,background-color,border-color,scale] duration-150 ease-out disabled:pointer-events-none disabled:opacity-50 motion-safe:active:scale-[0.96] [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  "press inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   {
     variants: {
       variant: {

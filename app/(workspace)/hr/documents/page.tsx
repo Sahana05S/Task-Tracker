@@ -59,7 +59,7 @@ function DocumentCard({ href, icon: Icon, title, detail, done }: {
 }) {
   return (
     <li>
-      <Link href={href} className="soft-card hover:border-primary/40 flex h-full items-center gap-4 p-5 transition-colors">
+      <Link href={href} className="soft-card press group hover:border-primary/40 flex h-full items-center gap-4 p-5">
         <span aria-hidden="true" className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
           <Icon className="size-5" />
         </span>
@@ -72,7 +72,7 @@ function DocumentCard({ href, icon: Icon, title, detail, done }: {
           </span>
           <span className="text-muted-foreground mt-0.5 block text-sm">{detail}</span>
         </span>
-        <ChevronRightIcon aria-hidden="true" className="text-muted-foreground size-5 shrink-0" />
+        <ChevronRightIcon aria-hidden="true" className="row-chevron text-muted-foreground size-5 shrink-0" />
       </Link>
     </li>
   );

@@ -14,9 +14,19 @@ import type { AuthActionState, AuthMode } from '../client';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { createClient } from '@/shared/supabase/client';
+import { SPLASH_STORAGE_KEY } from '@/shared/ui/splash-script';
 import { cn } from '@/shared/utils';
 
 const INITIAL_STATE: AuthActionState | null = null;
+
+/** A fresh sign-in opens with the splash, even in a tab that has already seen it. */
+function resetSplash() {
+  try {
+    window.sessionStorage.removeItem(SPLASH_STORAGE_KEY);
+  } catch {
+    // Blocked storage: the splash is skipped anyway.
+  }
+}
 const FEEDBACK_ID = 'auth-feedback';
 /** Email fields: no spellcheck, capitals or autocorrect, and the email keyboard on phones. */
 export const EMAIL_INPUT = { type: 'email', autoComplete: 'email', inputMode: 'email', spellCheck: false, autoCapitalize: 'none' } as const;
@@ -68,6 +78,7 @@ export function AuthForm({
     try {
       setOauthLoading(true);
       setOauthError(undefined);
+      resetSplash();
       const supabase = createClient();
       const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
         redirectTo,
@@ -176,7 +187,7 @@ export function AuthForm({
         </div>
       ) : isLogin ? (
         /* Sign-in Form */
-        <form action={loginAction} className="flex flex-col gap-4">
+        <form action={loginAction} onSubmit={resetSplash} className="flex flex-col gap-4">
           <input type="hidden" name="redirectTo" value={redirectTo} />
 
           <Field
@@ -196,18 +207,21 @@ export function AuthForm({
             id="login-password"
             name="password"
             label="Password"
+            labelEnd={
+              <Link
+                href="/reset-password"
+                className="text-primary rounded-sm text-xs font-semibold underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
+              >
+                Forgot password?
+              </Link>
+            }
             type="password"
+            reveal
             autoComplete="current-password"
             invalid={Boolean(errorMessage)}
             errorId={FEEDBACK_ID}
             required
           />
-          <Link
-            href="/reset-password"
-            className="-mt-2 self-end rounded-sm text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
-          >
-            Forgot password?
-          </Link>
 
           <FormFeedback id={FEEDBACK_ID} error={errorMessage} success={successMessage} />
 
@@ -246,6 +260,7 @@ export function AuthForm({
             name="password"
             label="Password"
             type="password"
+            reveal
             autoComplete="new-password"
             hint="At least 8 characters."
             minLength={8}
@@ -318,23 +333,53 @@ interface FieldProps extends React.ComponentProps<'input'> {
   invalid?: boolean;
   /** The form's message element, read out with the field while it is invalid. */
   errorId?: string;
+  /** A small link or note on the label's row, right-aligned. */
+  labelEnd?: React.ReactNode;
+  /** A password field with a Show / Hide toggle inside it. */
+  reveal?: boolean;
 }
 
-export function Field({ id, label, hint, invalid, errorId, ...props }: FieldProps) {
+export function Field({ id, label, hint, invalid, errorId, labelEnd, reveal, type, className, ...props }: FieldProps) {
   const hintId = hint ? `${id}-hint` : undefined;
   const describedBy = [hintId, invalid ? errorId : undefined].filter(Boolean).join(' ') || undefined;
+  const [shown, setShown] = React.useState(false);
+
+  const input = (
+    <Input
+      id={id}
+      type={reveal && shown ? 'text' : type}
+      aria-invalid={invalid}
+      aria-describedby={describedBy}
+      className={cn(reveal && 'pr-16', className)}
+      {...props}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-foreground">
-        {label}
-      </label>
-      <Input
-        id={id}
-        aria-invalid={invalid}
-        aria-describedby={describedBy}
-        {...props}
-      />
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor={id} className="text-sm font-medium text-foreground">
+          {label}
+        </label>
+        {labelEnd}
+      </div>
+      {reveal ? (
+        <div className="relative">
+          {input}
+          {/* Named "Show" / "Hide" only, so the field keeps the sole "Password" label. */}
+          <button
+            type="button"
+            aria-pressed={shown}
+            aria-controls={id}
+            onClick={() => setShown((value) => !value)}
+            className="press text-muted-foreground hover:bg-muted hover:text-foreground absolute inset-y-1 right-1 inline-flex min-w-14 items-center justify-center rounded-lg px-2.5 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
+          >
+            {shown ? 'Hide' : 'Show'}
+          </button>
+        </div>
+      ) : (
+        input
+      )}
       {hint ? (
         <p id={hintId} className="text-xs text-muted-foreground">
           {hint}

@@ -1,17 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { LIGHT_ONLY_PATHS, THEME_COLOR, THEME_SCRIPT, THEME_STORAGE_KEY, parseThemePreference, resolveTheme } from '../theme-script';
+import { LIGHT_ONLY_PATHS, MOTION_STORAGE_KEY, THEME_COLOR, THEME_SCRIPT, THEME_STORAGE_KEY, parseMotionPreference, parseThemePreference, resolveTheme } from '../theme-script';
 
 /** Runs the pre-paint script against a fake page and returns what it stamped on <html>. */
-function paint({ stored, systemDark = false, pathname = '/today', storageThrows = false }: { stored?: string | null; systemDark?: boolean; pathname?: string; storageThrows?: boolean }) {
+function paint({ stored, motion, systemDark = false, pathname = '/today', storageThrows = false }: { stored?: string | null; motion?: string | null; systemDark?: boolean; pathname?: string; storageThrows?: boolean }) {
   const attrs: Record<string, string> = {};
   const style: Record<string, string> = {};
   const meta: Record<string, string> = {};
   const localStorage = {
     getItem: (key: string) => {
       if (storageThrows) throw new Error('blocked');
-      return key === THEME_STORAGE_KEY ? stored ?? null : null;
+      if (key === THEME_STORAGE_KEY) return stored ?? null;
+      return key === MOTION_STORAGE_KEY ? motion ?? null : null;
     },
   };
   const run = new Function('document', 'localStorage', 'window', 'location', THEME_SCRIPT);
@@ -24,7 +25,7 @@ function paint({ stored, systemDark = false, pathname = '/today', storageThrows 
     { matchMedia: (query: string) => ({ matches: query.includes('dark') && systemDark }) },
     { pathname },
   );
-  return { theme: attrs['data-theme'], colorScheme: style.colorScheme, themeColor: meta.content };
+  return { theme: attrs['data-theme'], colorScheme: style.colorScheme, themeColor: meta.content, motion: attrs['data-motion'] };
 }
 
 describe('theme preference', () => {
@@ -47,9 +48,9 @@ describe('theme preference', () => {
 
 describe('pre-paint theme script', () => {
   it('stamps the stored choice before the first paint', () => {
-    expect(paint({ stored: 'dark' })).toEqual({ theme: 'dark', colorScheme: 'dark', themeColor: '#101113' });
-    expect(paint({ stored: 'light', systemDark: true })).toEqual({ theme: 'light', colorScheme: 'light', themeColor: '#f7f6fd' });
-    expect(paint({ stored: null, systemDark: true })).toEqual({ theme: 'light', colorScheme: 'light', themeColor: '#f7f6fd' });
+    expect(paint({ stored: 'dark' })).toEqual({ theme: 'dark', colorScheme: 'dark', themeColor: '#101113', motion: undefined });
+    expect(paint({ stored: 'light', systemDark: true })).toEqual({ theme: 'light', colorScheme: 'light', themeColor: '#f7f6fd', motion: undefined });
+    expect(paint({ stored: null, systemDark: true })).toEqual({ theme: 'light', colorScheme: 'light', themeColor: '#f7f6fd', motion: undefined });
   });
 
   it('follows the OS only in system mode', () => {
@@ -61,6 +62,15 @@ describe('pre-paint theme script', () => {
     expect(paint({ stored: 'dark', pathname: '/' }).theme).toBe('light');
     expect(paint({ stored: 'dark', pathname: '/reset-password' }).theme).toBe('dark');
     expect(paint({ stored: 'dark', storageThrows: true }).theme).toBe('light');
+  });
+
+  it('stamps data-motion only when the viewer chose Reduced here', () => {
+    expect(parseMotionPreference('reduce')).toBe('reduce');
+    expect(parseMotionPreference('normal')).toBe('normal');
+    expect(parseMotionPreference(null)).toBe('normal');
+    expect(paint({ stored: 'dark', motion: 'reduce' })).toMatchObject({ theme: 'dark', motion: 'reduce' });
+    expect(paint({ stored: 'dark', motion: 'normal' }).motion).toBeUndefined();
+    expect(paint({ stored: 'dark', motion: 'reduce', storageThrows: true }).motion).toBeUndefined();
   });
 
   it('points the browser UI colour at each theme’s page background', () => {

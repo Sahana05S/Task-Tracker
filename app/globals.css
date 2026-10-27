@@ -119,6 +119,8 @@
   --chart-6: #f43f5e;
   --chart-7: #14b8a6;
   --chart-8: #94a3b8;
+  /* Opacity of the section line art behind pages (shared/ui/wallpaper.tsx). */
+  --wallpaper-strength: 0.42;
 
   --chart-positive: #059669;
   --chart-negative: #f43f5e;
@@ -131,6 +133,14 @@
   --hero-from: #ece9ff;
   --hero-via: #f3f0ff;
   --hero-to: #fff4e2;
+
+  /* Sign-in brand panel (27 October 2026): deep ink violet in both themes. */
+  --brand-panel: #171433;
+  --brand-panel-foreground: #f4f2ff;
+  --brand-panel-muted: #b7b2d9;
+  --brand-panel-accent: #a39cff;
+  --brand-panel-card: rgb(255 255 255 / 0.07);
+  --brand-panel-line: rgb(255 255 255 / 0.14);
   --elevation-overlay: 0 16px 36px -4px rgb(99 85 230 / 0.12), 0 4px 12px -2px rgb(26 23 46 / 0.04);
   --elevation-card: 0 4px 20px -2px rgb(99 85 230 / 0.04), 0 2px 6px -1px rgb(26 23 46 / 0.02);
 
@@ -269,6 +279,7 @@
   --chart-6: #d55181;
   --chart-7: #008300;
   --chart-8: #e66767;
+  --wallpaper-strength: 0.3;
 
   --chart-positive: #34d399;
   --chart-negative: #fb7185;
@@ -280,6 +291,7 @@
   --hero-from: #1d1b33;
   --hero-via: #17181b;
   --hero-to: #2a2216;
+  --brand-panel: #0f0d22;
   --elevation-overlay: 0 16px 36px -4px rgb(0 0 0 / 0.5), 0 4px 12px -2px rgb(0 0 0 / 0.3);
   --elevation-card: 0 4px 20px -2px rgb(0 0 0 / 0.28), 0 2px 6px -1px rgb(0 0 0 / 0.2);
 
@@ -401,6 +413,12 @@
   --color-halfday-subtle: var(--halfday-subtle);
   --color-halfday-foreground: var(--halfday-foreground);
   --color-metal-ink: var(--metal-ink);
+  --color-brand-panel: var(--brand-panel);
+  --color-brand-panel-foreground: var(--brand-panel-foreground);
+  --color-brand-panel-muted: var(--brand-panel-muted);
+  --color-brand-panel-accent: var(--brand-panel-accent);
+  --color-brand-panel-card: var(--brand-panel-card);
+  --color-brand-panel-line: var(--brand-panel-line);
   /* Plus Jakarta Sans first, system stack behind it. */
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', Roboto, sans-serif;
@@ -440,6 +458,21 @@
 
   /* Height of the mobile bar, shared by the bar itself and the shell padding. */
   --spacing-bottom-nav: 4.5rem;
+
+  /*
+    Motion system (27 October 2026, ported from the Catalyst tracker): four
+    durations and three curves, used by every transition and keyframe below so
+    the whole app moves at one tempo. `--ease-pop` overshoots slightly, for
+    things that appear; `--ease-out` for things that move; `--ease-standard`
+    for colour and opacity.
+  */
+  --dur-micro: 0.15s;
+  --dur-base: 0.2s;
+  --dur-panel: 0.25s;
+  --dur-sheet: 0.3s;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-pop: cubic-bezier(0.34, 1.36, 0.64, 1);
 }
 
 @layer base {
@@ -553,7 +586,7 @@
 
   /* Interactive cards mark hover with the border, not with elevation. */
   .soft-card-interactive {
-    @apply bg-card border-border rounded-2xl border shadow-(--shadow-card) transition-colors;
+    @apply press bg-card border-border rounded-2xl border shadow-(--shadow-card);
   }
 
   .soft-card-interactive:hover {
@@ -751,8 +784,8 @@
 @layer components {
   /* Resting drawer row: muted, no fill. */
   .nav-item {
-    @apply text-muted-foreground relative flex items-center gap-3 rounded-md px-3
-      py-2 text-sm font-medium transition-colors;
+    @apply press text-muted-foreground relative flex items-center gap-3 rounded-md px-3
+      py-2 text-sm font-medium;
   }
 
   .nav-item:hover {
@@ -801,14 +834,14 @@
 
   /* Square icon button for header actions. Bordered, not floated. */
   .icon-button {
-    @apply text-muted-foreground border-border flex size-9 shrink-0 items-center
-      justify-center rounded-full border bg-card transition-colors;
+    @apply press text-muted-foreground border-border flex size-9 shrink-0 items-center
+      justify-center rounded-full border bg-card;
   }
 
   /* Top-bar destination pills (desktop). */
   .nav-pill {
-    @apply text-muted-foreground flex items-center gap-1.5 rounded-full px-3.5
-      py-1.5 text-sm font-medium whitespace-nowrap transition-colors;
+    @apply press text-muted-foreground flex items-center gap-1.5 rounded-full px-3.5
+      py-1.5 text-sm font-medium whitespace-nowrap;
   }
 
   .nav-pill:hover {
@@ -822,8 +855,8 @@
 
   /* Section tabs under the top bar (Missions, Records, Team). */
   .section-tab {
-    @apply text-muted-foreground rounded-full px-3 py-1 text-sm font-medium
-      whitespace-nowrap transition-colors;
+    @apply press text-muted-foreground rounded-full px-3 py-1 text-sm font-medium
+      whitespace-nowrap;
   }
 
   .section-tab:hover {
@@ -842,6 +875,7 @@
 
   .progress-fill {
     @apply h-full rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
+    transition: width var(--dur-sheet) var(--ease-out);
   }
 
   /* Initials avatar for Missions; letters come from data-initials so they stay
@@ -943,8 +977,8 @@
 
   /* Status filter pill on the Missions toolbar. */
   .filter-pill {
-    @apply text-muted-foreground inline-flex items-center gap-1.5 rounded-xl px-3
-      py-1.5 text-sm font-medium whitespace-nowrap transition-colors;
+    @apply press text-muted-foreground inline-flex items-center gap-1.5 rounded-xl px-3
+      py-1.5 text-sm font-medium whitespace-nowrap;
   }
 
   .filter-pill:hover {
@@ -959,14 +993,11 @@
     @apply text-foreground bg-muted;
   }
 
-  /* Count badge in the expanded drawer. */
+  /* Count pill in the drawer (27 October 2026: solid primary, as the bell's). */
   .nav-count {
-    @apply bg-muted text-muted-foreground ml-auto rounded px-1.5 py-0.5 font-mono
-      text-[10px] font-semibold [font-variant-numeric:tabular-nums];
-  }
-
-  .nav-item-active .nav-count {
-    @apply bg-primary/10 text-primary;
+    @apply bg-primary text-primary-foreground ml-auto inline-flex h-5 min-w-5
+      items-center justify-center rounded-full px-1.5 text-[11px] leading-none
+      font-bold [font-variant-numeric:tabular-nums];
   }
 }
 
@@ -1061,6 +1092,288 @@
   .task-progress::-moz-progress-bar {
     @apply rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
   }
+}
+
+/* ==========================================================================
+   Motion system (27 October 2026)
+
+   Small, consistent movement, ported from the Catalyst tracker: a press
+   squeeze on every control, a short rise for content that arrives, and a
+   few "attention" loops for the bell, live dots and progress rings. All of
+   it is decorative; the surrounding text states the fact. Everything here
+   stops under the OS reduced-motion setting and under the app's own
+   Reduce motion switch (`data-motion="reduce"` on <html>, for phones that
+   have no such setting).
+   ========================================================================== */
+
+@keyframes motion-enter {
+  0% { opacity: 0; transform: translateY(8px); }
+}
+
+@keyframes motion-fade-in {
+  0% { opacity: 0; }
+}
+
+@keyframes motion-fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes motion-pop {
+  0% { transform: scale(0.6); }
+  to { transform: scale(1); }
+}
+
+@keyframes motion-rise {
+  0% { transform: translateY(100%); }
+}
+
+/* A bell ringing: a short wobble, then a long rest, on repeat. */
+@keyframes attn-shake {
+  0%, 62%, to { transform: rotate(0); }
+  66% { transform: rotate(-16deg); }
+  70% { transform: rotate(14deg); }
+  74% { transform: rotate(-11deg); }
+  78% { transform: rotate(8deg); }
+  82% { transform: rotate(-4deg); }
+  86% { transform: rotate(0); }
+}
+
+/* A radar ping behind a live dot. */
+@keyframes attn-ping {
+  70%, to { opacity: 0; transform: scale(2.1); }
+}
+
+/* A progress ring drawing itself from empty; `--ring-from` is the full dash. */
+@keyframes ring-draw {
+  0% { stroke-dashoffset: var(--ring-from); }
+}
+
+/* Press feedback for buttons, links, chips and rows: a 3% squeeze. A utility,
+   so the chrome classes above can `@apply` it. */
+@utility press {
+  transition-property: color, background-color, border-color, transform, opacity;
+  transition-duration: var(--dur-micro);
+  transition-timing-function: var(--ease-out);
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+@layer components {
+  .animate-enter {
+    animation: motion-enter var(--dur-panel) var(--ease-out) both;
+  }
+
+  .animate-fade-in {
+    animation: motion-fade-in var(--dur-base) var(--ease-out) both;
+  }
+
+  .animate-pop {
+    animation: motion-pop var(--dur-micro) var(--ease-pop) both;
+  }
+
+  .animate-rise {
+    animation: motion-rise var(--dur-sheet) var(--ease-out) both;
+  }
+
+  /* Three rings, then still: enough to be noticed, not enough to nag. */
+  .attn-shake {
+    transform-origin: 50% 12%;
+    animation: attn-shake 2.6s var(--ease-standard) 3;
+  }
+
+  .attn-ping {
+    animation: attn-ping 1.8s var(--ease-out) infinite;
+  }
+
+  .ring-draw {
+    animation: ring-draw var(--dur-sheet) var(--ease-out) backwards;
+  }
+
+  /* A row's trailing chevron nudges right while the row (a `.group`) is hovered. */
+  .row-chevron {
+    transition: transform var(--dur-micro) var(--ease-out);
+  }
+
+  .group:hover .row-chevron {
+    transform: translateX(2px);
+  }
+
+  /* An icon that grows a touch while its `.group` is hovered. */
+  .icon-lift {
+    transition: transform var(--dur-micro) var(--ease-out);
+  }
+
+  .group:hover .icon-lift {
+    transform: scale(1.1);
+  }
+
+  /* Horizontal scroller whose ends fade out instead of showing a scrollbar. */
+  .edge-fade {
+    scrollbar-width: none;
+    overflow-x: auto;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px calc(100% - 24px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 16px calc(100% - 24px), transparent);
+  }
+
+  .edge-fade::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* The OS setting and the app's own switch stop the same things. */
+@media (prefers-reduced-motion: reduce) {
+  .press:active:not(:disabled) { transform: none; }
+  .animate-enter, .animate-fade-in, .animate-pop, .animate-rise,
+  .attn-shake, .attn-ping, .ring-draw, .row-chevron, .icon-lift {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+:root[data-motion='reduce'] .press:active:not(:disabled) { transform: none; }
+:root[data-motion='reduce'] .animate-enter,
+:root[data-motion='reduce'] .animate-fade-in,
+:root[data-motion='reduce'] .animate-pop,
+:root[data-motion='reduce'] .animate-rise,
+:root[data-motion='reduce'] .attn-shake,
+:root[data-motion='reduce'] .attn-ping,
+:root[data-motion='reduce'] .ring-draw,
+:root[data-motion='reduce'] .row-chevron,
+:root[data-motion='reduce'] .icon-lift,
+:root[data-motion='reduce'] .animate-in,
+:root[data-motion='reduce'] .animate-out,
+:root[data-motion='reduce'] .animate-pulse,
+:root[data-motion='reduce'] .animate-ping,
+:root[data-motion='reduce'] .flame-flicker,
+:root[data-motion='reduce'] .flame-inner,
+:root[data-motion='reduce'] .anim-pop,
+:root[data-motion='reduce'] .anim-shimmer,
+:root[data-motion='reduce'] .anim-podium,
+:root[data-motion='reduce'] .anim-confetti,
+:root[data-motion='reduce'] .anim-glow {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+/* ==========================================================================
+   Post-sign-in splash (27 October 2026)
+
+   `data-splash="on"` on <html> (set by SPLASH_SCRIPT in the workspace layout)
+   shows the overlay and runs its timeline; "out" fades it early (Skip, Esc);
+   no attribute hides it. About three seconds in all: sparks converge
+   (0-0.8 s), the dot pops and the ring expands (0.7-1.6 s), the wordmark
+   settles (0.9 s), act 1 lifts away (1.8 s), the company's name arrives
+   (2.0 s), the overlay fades (2.6-3.0 s). Never under reduced motion.
+   ========================================================================== */
+
+@keyframes splash-show {
+  to { opacity: 1; }
+}
+
+@keyframes splash-converge {
+  0% { opacity: 0; transform: rotate(var(--a)) translateX(150px) scale(1); }
+  20% { opacity: 1; }
+  to { opacity: 0; transform: rotate(var(--a)) translateX(0) scale(0.4); }
+}
+
+@keyframes splash-core {
+  0% { opacity: 1; transform: scale(0); }
+  55% { opacity: 1; transform: scale(1.7); }
+  to { opacity: 0; transform: scale(0.3); }
+}
+
+@keyframes splash-ring {
+  0% { opacity: 0.9; transform: scale(0.2); }
+  to { opacity: 0; transform: scale(3.2); }
+}
+
+@keyframes splash-word {
+  0% { opacity: 0; letter-spacing: 0.2em; transform: scale(0.86); }
+  to { opacity: 1; letter-spacing: -0.01em; transform: scale(1); }
+}
+
+@keyframes splash-leave {
+  to { opacity: 0; transform: translateY(-16px) scale(0.96); }
+}
+
+@keyframes splash-arrive {
+  0% { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.splash {
+  display: none;
+  pointer-events: none;
+}
+
+:root[data-splash='on'] .splash,
+:root[data-splash='out'] .splash {
+  display: flex;
+}
+
+:root[data-splash='on'] .splash {
+  animation: motion-fade-out 0.4s var(--ease-standard) 2.6s forwards;
+}
+
+:root[data-splash='out'] .splash {
+  animation: motion-fade-out 0.3s var(--ease-standard) forwards;
+}
+
+.splash-skip {
+  pointer-events: auto;
+}
+
+.splash-glow {
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 58%);
+  animation: splash-show 1.4s ease-out 0.6s forwards;
+}
+
+.splash-spark {
+  opacity: 0;
+  animation: splash-converge 0.8s cubic-bezier(0.6, 0, 0.4, 1) both;
+}
+
+.splash-core {
+  opacity: 0;
+  animation: splash-core 0.55s ease-out 0.7s both;
+}
+
+.splash-ring {
+  opacity: 0;
+  animation: splash-ring 0.85s ease-out 0.8s both;
+}
+
+.splash-word {
+  opacity: 0;
+  animation: splash-word 0.6s var(--ease-out) 0.9s forwards;
+}
+
+.splash-tag {
+  opacity: 0;
+  animation: splash-show 0.5s ease-out 1.2s forwards;
+}
+
+.splash-act1 {
+  animation: splash-leave 0.45s var(--ease-standard) 1.8s forwards;
+}
+
+.splash-act2 {
+  opacity: 0;
+  animation: splash-arrive 0.55s var(--ease-out) 2s forwards;
+}
+
+/* Belt and braces: the script already skips it, and so does the stylesheet. */
+@media (prefers-reduced-motion: reduce) {
+  .splash { display: none !important; }
+}
+
+:root[data-motion='reduce'] .splash {
+  display: none !important;
 }
 
 /* ==========================================================================

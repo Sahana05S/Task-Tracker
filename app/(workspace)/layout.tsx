@@ -9,6 +9,8 @@ import { categoryCatalogue, getCompanySettings } from '@/modules/settings';
 import { CompanySettingsProvider } from '@/modules/settings/components/company-settings-context';
 import { MissionStartToaster } from '@/modules/tasks/components/mission-status-prompt';
 import { DisclosureFocus } from '@/shared/ui/disclosure-focus';
+import { Splash } from '@/shared/ui/splash';
+import { SPLASH_SCRIPT } from '@/shared/ui/splash-script';
 
 /**
  * Guarded layout for every workspace route.
@@ -36,6 +38,9 @@ export default async function WorkspaceLayout({
 
   return (
     <CompanySettingsProvider catalogue={catalogue} meetingTypes={settings.meetingTypes} defaultScaleMode={settings.defaultScaleMode} branding={settings.branding}>
+      {/* Decides before the overlay paints whether the splash plays (once per sign-in, never for tests or reduced motion). */}
+      <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
+      <Splash companyName={settings.branding?.companyName} />
       <RunningTimerProvider timers={timers}>
         <AppShell profile={profile} counts={counts}>
           {children}

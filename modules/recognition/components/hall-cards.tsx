@@ -1,7 +1,9 @@
+import type * as React from 'react';
 import { AwardIcon, CrownIcon, FlameIcon, GemIcon, MedalIcon, StarIcon, TrophyIcon, type LucideIcon } from 'lucide-react';
 
 import { BOARD_LABELS, type HallEntry, type StreakSummary, type HallOfFameModel, type Tier, type TierKey, type TierProgress } from '@/modules/recognition/client';
 import { FACTORS } from '@/modules/scoring/client';
+import { Medal } from '@/shared/ui/medal';
 import { EmptyState, InitialsAvatar } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 
@@ -37,7 +39,8 @@ export function PointsRing({ points, progress }: { points: number; progress: Tie
     <div className="relative size-36 shrink-0" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}>
       <svg viewBox="0 0 120 120" className="size-full -rotate-90" aria-hidden="true">
         <circle cx="60" cy="60" r={r} fill="none" strokeWidth="10" className="stroke-progress-track" />
-        <circle cx="60" cy="60" r={r} fill="none" strokeWidth="10" strokeLinecap="round" className={TIER_STYLE[progress.tier.key].ring}
+        <circle cx="60" cy="60" r={r} fill="none" strokeWidth="10" strokeLinecap="round" className={cn('ring-draw', TIER_STYLE[progress.tier.key].ring)}
+          style={{ '--ring-from': c } as React.CSSProperties}
           strokeDasharray={c} strokeDashoffset={c * (1 - progress.percent / 100)} />
       </svg>
       <div className="absolute inset-0 grid place-content-center text-center">
@@ -48,13 +51,17 @@ export function PointsRing({ points, progress }: { points: number; progress: Tie
   );
 }
 
-/** One badge in the trophy case; unearned ones stay grey with what earns them. */
-function Badge({ icon: Icon, title, detail, earned, tone }: { icon: LucideIcon; title: string; detail: string; earned: boolean; tone: string }) {
+/** One badge in the trophy case: a gold medal once earned, grey with what earns it until then. */
+function Badge({ icon: Icon, title, detail, earned }: { icon: LucideIcon; title: string; detail: string; earned: boolean }) {
   return (
     <li className={cn('flex min-w-0 items-center gap-3 rounded-xl border p-3', earned ? 'bg-card' : 'bg-muted/60 border-dashed')}>
-      <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-full', earned ? tone : 'bg-muted text-muted-foreground/60')}>
-        <Icon className="size-5" aria-hidden="true" />
-      </span>
+      {earned ? (
+        <Medal tier="gold" icon={Icon} size="md" className="anim-pop" />
+      ) : (
+        <span className="bg-muted text-muted-foreground/60 flex size-10 shrink-0 items-center justify-center rounded-full">
+          <Icon className="size-5" aria-hidden="true" />
+        </span>
+      )}
       <span className="min-w-0">
         <span className={cn('block text-sm font-semibold', earned ? 'text-foreground' : 'text-muted-foreground')}>{title}</span>
         <span className="text-muted-foreground block text-xs">{detail}</span>
@@ -69,18 +76,18 @@ export function TrophyCase({ entry, streak }: { entry: HallEntry; streak: Pick<S
   const milestone = streak ? [...streak.milestones].reverse().find((m) => streak.longest >= m) ?? null : null;
   return (
     <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-      <Badge icon={CrownIcon} title="Monthly star" earned={entry.monthlyStars > 0} tone="bg-recognition-subtle text-recognition"
+      <Badge icon={CrownIcon} title="Monthly star" earned={entry.monthlyStars > 0}
         detail={entry.monthlyStars ? plural(entry.monthlyStars, 'month') : 'Most daily stars in a month'} />
-      <Badge icon={StarIcon} title="Daily star" earned={entry.dailyStars > 0} tone="bg-recognition-subtle text-recognition"
+      <Badge icon={StarIcon} title="Daily star" earned={entry.dailyStars > 0}
         detail={entry.dailyStars ? plural(entry.dailyStars, 'day') : 'Top certified score of a day'} />
       {streak ? (
-        <Badge icon={FlameIcon} title={milestone ? `${milestone}-day streak` : 'Streak'} earned={milestone !== null} tone="bg-streak-subtle text-streak"
+        <Badge icon={FlameIcon} title={milestone ? `${milestone}-day streak` : 'Streak'} earned={milestone !== null}
           detail={`Longest streak ${plural(streak.longest, 'day')}`} />
       ) : null}
       {FACTORS.map((f) => {
         const n = entry.categories[f] ?? 0;
         return (
-          <Badge key={f} icon={AwardIcon} title={`${BOARD_LABELS[f]} award`} earned={n > 0} tone="bg-primary-subtle text-primary"
+          <Badge key={f} icon={AwardIcon} title={`${BOARD_LABELS[f]} award`} earned={n > 0}
             detail={n ? plural(n, 'month') : 'Best in the month'} />
         );
       })}

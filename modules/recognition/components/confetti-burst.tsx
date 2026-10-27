@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from 'react';
 
-import { REDUCED_MOTION_QUERY, useReducedMotion } from './use-reduced-motion';
+import { motionReduced, useReducedMotion } from './use-reduced-motion';
 
 /** Violet (primary), gold (recognition) and mint (success) from DESIGN.md. */
 const COLOURS = ['var(--primary)', 'var(--recognition)', 'var(--success)'] as const;
@@ -35,7 +35,7 @@ export function ConfettiBurst({ id }: { id: string }) {
 
   useEffect(() => {
     // The hook reports false on first paint; ask the browser directly as well.
-    if (reduced || typeof window === 'undefined' || window.matchMedia?.(REDUCED_MOTION_QUERY).matches) return;
+    if (reduced || motionReduced()) return;
     const key = `tp.confetti.${id}`;
     try {
       if (window.sessionStorage.getItem(key)) return;

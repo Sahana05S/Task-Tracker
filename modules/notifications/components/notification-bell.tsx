@@ -102,7 +102,8 @@ export function NotificationBell({ className }: { className?: string }) {
   return (
     <DropdownMenu onOpenChange={(open) => { if (open) loadInbox(); }}>
       <DropdownMenuTrigger aria-label={bellLabel(unread, bell !== null && bell.status !== 'ready')} className={cn('icon-button relative', className)}>
-        <BellIcon className="size-4" aria-hidden="true" />
+        {/* Rings three times when unread arrive (keyed by the count, so a new one rings again), then rests. */}
+        <BellIcon key={unread ?? 0} className={cn('size-4', badge && 'attn-shake')} aria-hidden="true" />
         {badge ? (
           <span aria-hidden="true"
             className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] leading-none font-bold tabular-nums ring-2 ring-card">

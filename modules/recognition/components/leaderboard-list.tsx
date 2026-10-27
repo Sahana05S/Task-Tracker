@@ -1,6 +1,12 @@
+import { TrophyIcon } from 'lucide-react';
+
 import type { Board } from '@/modules/recognition/client';
+import { Medal, type MedalTier } from '@/shared/ui/medal';
 import { EmptyState, InitialsAvatar } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
+
+/** The top three places wear a medal; everyone else a plain figure. */
+const PLACE_TIER: Record<number, MedalTier> = { 1: 'gold', 2: 'silver', 3: 'bronze' };
 
 /** The figure a row's bar shows: the composite itself, or a factor's difference from the median. */
 function barFigure(board: Board, row: Board['rows'][number]): number | null {
@@ -46,8 +52,13 @@ export function LeaderboardList({ board, names, viewerId }: {
               aria-current={you ? 'true' : undefined}
               className={cn('flex items-center gap-3 border-b px-4 py-2.5 last:border-b-0 sm:px-5', you && 'bg-primary-subtle/60')}
             >
-              <span className={cn('w-10 text-base font-bold tabular-nums', row.rank <= 3 ? 'text-foreground' : 'text-muted-foreground')}>
-                <span className="sr-only">Place </span>{row.rank}
+              <span className={cn('flex w-10 items-center text-base font-bold tabular-nums', row.rank <= 3 ? 'text-foreground' : 'text-muted-foreground')}>
+                <span className="sr-only">Place {row.rank}</span>
+                {PLACE_TIER[row.rank] ? (
+                  <Medal tier={PLACE_TIER[row.rank]} icon={TrophyIcon} number={row.rank} size="md" className="-ml-1" />
+                ) : (
+                  <span aria-hidden="true">{row.rank}</span>
+                )}
               </span>
               <span className="flex min-w-0 flex-1 items-center gap-2.5">
                 <InitialsAvatar name={name} className="shrink-0" />

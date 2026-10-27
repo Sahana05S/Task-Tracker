@@ -167,9 +167,9 @@ export function ChecklistTable(props: ChecklistTableProps) {
                     </td>
                     <td className="max-md:order-1 max-md:border-0 max-md:p-0 md:min-w-64">
                       {href ? (
-                        <Link href={href} className="text-foreground decoration-primary/40 inline-flex items-center gap-1 font-semibold break-words underline-offset-4 hover:underline">
+                        <Link href={href} className="group text-foreground decoration-primary/40 inline-flex items-center gap-1 font-semibold break-words underline-offset-4 hover:underline">
                           {row.title}
-                          <ChevronRightIcon className="text-primary size-3.5 shrink-0" aria-hidden="true" />
+                          <ChevronRightIcon className="row-chevron text-primary size-3.5 shrink-0" aria-hidden="true" />
                         </Link>
                       ) : (
                         <span className="text-foreground font-medium break-words">{row.title}</span>
