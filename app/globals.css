@@ -860,6 +860,7 @@
 
   .progress-fill {
     @apply h-full rounded-full bg-linear-to-r from-(--progress-from) to-(--progress-to);
+    transition: width var(--dur-sheet) var(--ease-out);
   }
 
   /* Initials avatar for Missions; letters come from data-initials so they stay

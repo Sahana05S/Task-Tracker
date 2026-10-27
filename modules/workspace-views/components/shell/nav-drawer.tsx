@@ -55,9 +55,9 @@ export function NavDrawer({ counts, profile }: NavDrawerProps) {
         href={tab.href}
         onClick={() => setOpen(false)}
         aria-current={active ? 'page' : undefined}
-        className={cn('nav-item', active && 'nav-item-active', 'focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none')}
+        className={cn('nav-item group', active && 'nav-item-active', 'focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none')}
       >
-        <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+        <Icon className="icon-lift size-[18px] shrink-0" aria-hidden="true" />
         <span className="truncate">{tab.label}</span>
         {count ? (
           <>

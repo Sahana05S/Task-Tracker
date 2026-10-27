@@ -54,8 +54,8 @@ export function ChecklistRowCard({ row, ctx, large = false }: { row: ChecklistBr
         <div className="min-w-0 flex-1">
           <p className="text-muted-foreground text-[0.6875rem] font-semibold tracking-wide uppercase">{label}</p>
           {href ? (
-            <Link href={href} className={cn('text-foreground inline-flex items-center gap-1 font-semibold break-words underline-offset-4 hover:underline', large ? 'text-base' : 'text-sm')}>
-              {row.title}<ChevronRightIcon className="text-primary size-3.5 shrink-0" aria-hidden="true" />
+            <Link href={href} className={cn('group text-foreground inline-flex items-center gap-1 font-semibold break-words underline-offset-4 hover:underline', large ? 'text-base' : 'text-sm')}>
+              {row.title}<ChevronRightIcon className="row-chevron text-primary size-3.5 shrink-0" aria-hidden="true" />
             </Link>
           ) : (
             <p className={cn('text-foreground font-medium break-words', large ? 'text-base' : 'text-sm')}>{row.title}</p>

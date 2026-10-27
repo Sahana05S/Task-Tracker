@@ -1,3 +1,4 @@
+import type * as React from 'react';
 import { AwardIcon, CrownIcon, FlameIcon, GemIcon, MedalIcon, StarIcon, TrophyIcon, type LucideIcon } from 'lucide-react';
 
 import { BOARD_LABELS, type HallEntry, type StreakSummary, type HallOfFameModel, type Tier, type TierKey, type TierProgress } from '@/modules/recognition/client';
@@ -38,7 +39,8 @@ export function PointsRing({ points, progress }: { points: number; progress: Tie
     <div className="relative size-36 shrink-0" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}>
       <svg viewBox="0 0 120 120" className="size-full -rotate-90" aria-hidden="true">
         <circle cx="60" cy="60" r={r} fill="none" strokeWidth="10" className="stroke-progress-track" />
-        <circle cx="60" cy="60" r={r} fill="none" strokeWidth="10" strokeLinecap="round" className={TIER_STYLE[progress.tier.key].ring}
+        <circle cx="60" cy="60" r={r} fill="none" strokeWidth="10" strokeLinecap="round" className={cn('ring-draw', TIER_STYLE[progress.tier.key].ring)}
+          style={{ '--ring-from': c } as React.CSSProperties}
           strokeDasharray={c} strokeDashoffset={c * (1 - progress.percent / 100)} />
       </svg>
       <div className="absolute inset-0 grid place-content-center text-center">
