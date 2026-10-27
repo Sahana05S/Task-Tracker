@@ -120,7 +120,7 @@
   --chart-7: #14b8a6;
   --chart-8: #94a3b8;
   /* Opacity of the section line art behind pages (shared/ui/wallpaper.tsx). */
-  --wallpaper-strength: 0.5;
+  --wallpaper-strength: 0.42;
 
   --chart-positive: #059669;
   --chart-negative: #f43f5e;
