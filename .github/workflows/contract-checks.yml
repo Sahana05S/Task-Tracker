@@ -47,6 +47,13 @@ jobs:
           python-version: '3.11'
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      # Autovacuum's ANALYZE of the M15 bookkeeping tables can deadlock with
+      # m15_secure() re-applying RLS (seen on migration 63, 27 October 2026).
+      # This server is thrown away after the job, so it never needs vacuuming.
+      - name: Turn off autovacuum on the disposable server
+        run: |
+          psql -h 127.0.0.1 -p 15432 -U postgres -d postgres -v ON_ERROR_STOP=1 -c "ALTER SYSTEM SET autovacuum = off" -c "SELECT pg_reload_conf()"
+          test "$(psql -h 127.0.0.1 -p 15432 -U postgres -d postgres -Atc 'SHOW autovacuum')" = off
       - name: Fresh and upgrade through migration 29 with role-shim checks
         run: python tools/test_m12_database.py --psql "$(command -v psql)" --port 15432
       - name: Disposable logical backup and restore
