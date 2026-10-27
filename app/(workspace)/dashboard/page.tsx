@@ -1,5 +1,6 @@
 import { PeriodPicker } from '@/shared/ui/period-picker';
 import { HelpTip } from '@/shared/ui/help-tip';
+import { formatDateTime } from '@/shared/tracker/format';
 import { getLivePresentation } from '@/modules/reports';
 import { liveViewContext } from '@/modules/reports';
 import type { Metadata } from 'next';
@@ -89,7 +90,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         }`}
         description={<>{analytics.period.label} · compared with the team median <HelpTip tip="medianDifference" /></>}
         actions={
-          <PeriodPicker month={period.startDate.slice(0,7)} asOf={context.asOf} />
+          <PeriodPicker month={period.startDate.slice(0,7)} asOf={context.asOf} asOfLabel={formatDateTime(context.asOf)} />
         }
       />
 

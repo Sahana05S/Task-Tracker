@@ -16,7 +16,7 @@ import { getOrgChart, getTeamIndexData } from '@/modules/team';
 import { OrgChart } from '@/modules/team/components/org-chart';
 import { TeamViewSwitch } from '@/modules/team/components/team-view-switch';
 import { employeeHref, employeeReportsHref } from '@/modules/team/client';
-import { formatNumeric, formatHours } from '@/shared/tracker/format';
+import { formatDateTime, formatNumeric, formatHours } from '@/shared/tracker/format';
 import { UnavailableValue } from '@/shared/ui/unavailable-value';
 import { PeriodPicker } from '@/shared/ui/period-picker';
 
@@ -80,7 +80,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
         actions={
           <>
             <TeamViewSwitch view="list" />
-            <PeriodPicker month={context.period.startDate.slice(0,7)} asOf={context.asOf} />
+            <PeriodPicker month={context.period.startDate.slice(0,7)} asOf={context.asOf} asOfLabel={formatDateTime(context.asOf)} />
             {manageLink}
           </>
         }
