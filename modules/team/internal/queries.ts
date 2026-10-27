@@ -142,7 +142,7 @@ export async function getEmployeeProfileData(
 
   const view=viewContext(period.startDate.slice(0,7),now.toISOString(),now,0); // now: page's validated as-of
   const [presentation, reports, supportData] = await Promise.all([
-    getLivePresentation(view,employee.id),
+    getLivePresentation(view,employee.id,{series:true}), // the profile charts plot the per-day series
     selectOrEmpty(
       supabase
         .from('report_snapshots')

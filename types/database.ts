@@ -823,7 +823,7 @@ export interface Database {
       month_archive_command:{Args:{p_command:string;p_period:string;p_payload:Json;p_operation:string;p_expected_version?:number|null};Returns:Json};
       month_archive_read:{Args:{p_period:string;p_revision?:number|null;p_employee?:string|null};Returns:Json};
       month_archive_history:{Args:{p_period:string};Returns:Json};
-      live_presentation_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string;p_employee?:string|null};Returns:Json};
+      live_presentation_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string;p_employee?:string|null;p_series?:boolean};Returns:Json};
       drive_command:{Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
       drive_read_model:{Args:Record<string,never>;Returns:Json};
       claim_drive_jobs:{Args:{p_limit?:number};Returns:Json};
