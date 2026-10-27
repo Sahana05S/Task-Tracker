@@ -135,6 +135,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       subMissionAction={tableActions.submission}
       label={sectionTitle(section)}
       itemsOnly={inQuest}
+      autoFocus={parentId !== null || section === 'activity'}
     />
   ) : null;
 
@@ -194,6 +195,8 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 selectedItem={props.selectedItem}
                 {...shared}
                 moveTargets={moveTargets(home.rows, null)}
+                itemsOnly={inQuest}
+                autoFocus={home.section === 'activity'}
                 emptyText={quest && home.section === 'activity' ? 'No items yet. Add the first one below.' : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
                 footer={<Paging taskTag={task.taskTag} address={address} cursor={home.cursor} nextCursor={home.nextCursor} />}
               />
@@ -222,6 +225,8 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             section={props.page.section}
             addParentId={props.page.nodeId}
             canEdit={canEdit}
+            itemsOnly={inQuest}
+            autoFocus
             open={open}
             canTime={props.canTime}
             time={props.time}
