@@ -14,6 +14,7 @@ export default async function RecordHistoryPage({ params }: { params: Promise<{ 
   const { kind, id } = await params;
   if (!isRecordReference(kind, id)) notFound();
   const revisions = await getRecordHistory(kind, id);
+  if (!revisions) notFound();
   return (
     <MissionPage className="max-w-[880px]">
       <MissionPageHeader

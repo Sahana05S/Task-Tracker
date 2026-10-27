@@ -22,6 +22,19 @@ export type LoginView =
   | { kind: 'orphaned' }
   | { kind: 'form'; destination: string; initialMode: AuthMode; error?: string };
 
+/**
+ * Messages the login page may show from `?error=`. Only these codes map to
+ * text: echoing the parameter would let any link put its own words ("call
+ * this number") on the sign-in page.
+ */
+export const LOGIN_ERRORS = {
+  callback: 'Authentication verification failed. Please try signing in again.',
+} as const;
+
+function loginError(code: string | undefined): string | undefined {
+  return code && Object.hasOwn(LOGIN_ERRORS, code) ? LOGIN_ERRORS[code as keyof typeof LOGIN_ERRORS] : undefined;
+}
+
 export async function resolveLoginView({
   redirectTo,
   tab,
@@ -34,5 +47,5 @@ export async function resolveLoginView({
   if (profile?.isActive) return { kind: 'signed-in', destination };
   if (profile) return { kind: 'deactivated' };
   if (authUserId !== null) return { kind: 'orphaned' };
-  return { kind: 'form', destination, initialMode, error };
+  return { kind: 'form', destination, initialMode, error: loginError(error) };
 }

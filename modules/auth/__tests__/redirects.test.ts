@@ -35,6 +35,14 @@ describe('safeRedirectPath', () => {
     expect(safeRedirectPath('/\\evil.test')).toBe(DEFAULT_REDIRECT);
   });
 
+  it('rejects tabs, newlines and spaces that browsers strip into //evil.test', () => {
+    for (const hostile of ['/\t/evil.test', '/\n/evil.test', '/\r/evil.test', '/ /evil.test', '/\u0000/evil.test']) {
+      expect(safeRedirectPath(hostile)).toBe(DEFAULT_REDIRECT);
+    }
+    // The real browser reading of the hostile value, for the record.
+    expect(new URL('/\t/evil.test', 'https://app.test').origin).toBe('https://evil.test');
+  });
+
   it('rejects javascript: scheme', () => {
     expect(safeRedirectPath('javascript:alert(1)')).toBe(DEFAULT_REDIRECT);
     expect(safeRedirectPath('/javascript:alert(1)')).toBe(DEFAULT_REDIRECT);

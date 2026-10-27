@@ -9,7 +9,7 @@ company already retains.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `getRecordHistory(kind, id)` (readable revisions), `isRecordReference(kind, id)`, `RECORD_KINDS`, type `RecordRevision`; activity log: `getActivity(filter, before, limit, known?)` (one page, or `{ available: false }` before migration 54), `handleActivityExport` (the CSV route), `activityFilter`, `parseCursor`, `seesAllActivity`, `ACTIVITY_PAGE`, type `ActivityPage` |
+| `index.ts` | `getRecordHistory(kind, id)` (readable revisions, null when missing or not yours), `isRecordReference(kind, id)`, `RECORD_KINDS`, type `RecordRevision`; activity log: `getActivity(filter, before, limit, known?)` (one page, or `{ available: false }` before migration 54), `handleActivityExport` (the CSV route), `activityFilter`, `parseCursor`, `seesAllActivity`, `ACTIVITY_PAGE`, type `ActivityPage` |
 | `components/` | `RecordHistory` (the `/records/[kind]/[id]/history` page body), `ActivityLog` (the `/team/activity` page body: kind pills, member and dates in the URL, day groups, Older / Newest paging, CSV link) |
 | `actions.ts` | `'use server'` `writeDatedRecord` (save, withdraw, validate) |
 
