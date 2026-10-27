@@ -46,7 +46,8 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
     </Link>
   ) : null;
 
-  if (query.view === 'chart') {
+  // The org chart opens first (user request, 28 Oct 2026); `?view=list` shows the table.
+  if (query.view !== 'list') {
     const chart = await getOrgChart();
     const active = chart.people.filter(person => person.active).length;
     return (

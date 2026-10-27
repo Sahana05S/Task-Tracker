@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Building2Icon, NetworkIcon } from 'lucide-react';
+import { Building2Icon, ChevronRightIcon, NetworkIcon } from 'lucide-react';
 
 import { buildOrgTree, canViewEmployeeProfile, employeeHref, teamSize, type OrgNode, type OrgPerson, type TodayStatus } from '@/modules/team/client';
 import { ROLE_LABELS } from '@/shared/tracker/enums';
@@ -37,13 +37,16 @@ function PersonCard({ person, viewer, reports }: { person: OrgPerson; viewer: Vi
     <>
       <span className="flex items-center gap-2.5">
         <InitialsAvatar name={person.fullName} className="size-9 shrink-0" />
-        <span className="grid min-w-0 text-left">
+        <span className="grid min-w-0 flex-1 text-left">
           <span className="text-foreground truncate text-sm font-semibold">
             {person.fullName}
             {person.id === viewer.id ? <span className="text-muted-foreground font-normal"> (you)</span> : null}
           </span>
           <span className="text-muted-foreground truncate text-xs">{person.jobTitle ?? ROLE_LABELS[person.role]}</span>
         </span>
+        {canOpen ? (
+          <ChevronRightIcon aria-hidden="true" className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+        ) : null}
       </span>
       <span className="flex flex-wrap items-center gap-1.5">
         <RoleBadge role={person.role} />
@@ -61,10 +64,17 @@ function PersonCard({ person, viewer, reports }: { person: OrgPerson; viewer: Vi
     </>
   );
   const className = 'bg-card border-border grid w-56 gap-2 rounded-xl border p-3 text-left';
+  // Every card the viewer may open is a link to that profile (user request, 28 Oct 2026); members
+  // open only their own, so the others say why rather than looking broken.
   return canOpen ? (
-    <Link href={employeeHref(person)} className={cn(className, 'hover:border-primary/40 transition-colors')}>{body}</Link>
+    <Link
+      href={employeeHref(person)}
+      className={cn(className, 'group hover:border-primary/50 focus-visible:ring-ring cursor-pointer outline-none transition-[border-color,box-shadow,translate] hover:-translate-y-0.5 hover:shadow-(--shadow-card) focus-visible:ring-2')}
+    >
+      {body}
+    </Link>
   ) : (
-    <div className={className}>{body}</div>
+    <div className={className} title="Only managers open other members' profiles">{body}</div>
   );
 }
 
