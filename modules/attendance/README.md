@@ -44,10 +44,12 @@ on-time policy sees it. Photos older than the company's retention are removed
 nightly by `POST /api/internal/attendance-photos` (third step of
 `.github/workflows/award-worker.yml`); the times and positions stay.
 
-## End-of-day marking (migration 73)
-Just after midnight, before the award run, the first step of
-`.github/workflows/award-worker.yml` calls `POST /api/internal/attendance-autofill`
-(`attendance_autofill`, service role). For every company with automatic marking
+## End-of-day marking (migrations 73 and 84)
+At 00:15 Asia/Kolkata the database runs `attendance_autofill()` itself (pg_cron job
+`taskpulse-attendance-autofill`, migration 84), because GitHub starts scheduled
+workflows hours late. The first step of `.github/workflows/award-worker.yml` still
+calls `POST /api/internal/attendance-autofill` (`attendance_autofill`, service role)
+before the award run, as a backup that finds nothing left to mark. For every company with automatic marking
 on (Settings > Company > Check-in), every active member and every ended day since
 the company's start date (at most 14 days back) that has no record becomes
 Present (checked in: 8 h, or out - in with both times), Holiday (a calendar
@@ -92,7 +94,7 @@ imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
 | `attendance_check_ins` | table (read: own, or the company for MD/PE) | 72 |
 | `attendance_check_in(text,text,numeric,numeric,numeric,uuid)` | RPC (command) | 72 |
 | `attendance_photos_due(int)`, `attendance_photos_cleared(uuid[])` | RPC (service role) | 72 |
-| `attendance_autofill(date)` | RPC (service role, end-of-day marking) | 73 |
+| `attendance_autofill(date)` | RPC (service role, end-of-day marking; pg_cron job at 00:15 IST since 84) | 73, 84 |
 | `attendance-photos` | storage bucket and its four policies | 72 |
 
 Writes go through `dated_record_command` (migration 19, company-scoped in 40),
