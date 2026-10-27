@@ -3,6 +3,7 @@ import * as React from 'react';
 import { MobileBottomNav } from '@/modules/workspace-views/components/shell/mobile-bottom-nav';
 import { NavDrawer } from '@/modules/workspace-views/components/shell/nav-drawer';
 import { NavDrawerProvider } from '@/modules/workspace-views/components/shell/nav-drawer-context';
+import { PageTransition } from '@/modules/workspace-views/components/shell/page-transition';
 import { SectionTabs } from '@/modules/workspace-views/components/shell/section-tabs';
 import { TopBar } from '@/modules/workspace-views/components/shell/top-bar';
 import type { NavCounts } from '@/modules/workspace-views/internal/nav-counts';
@@ -32,7 +33,7 @@ export function AppShell({ profile, counts, children }: AppShellProps) {
         </a>
         <TopBar profile={profile} />
         <SectionTabs />
-        <main id="main" tabIndex={-1} className="outline-none">{children}</main>
+        <main id="main" tabIndex={-1} className="outline-none"><PageTransition>{children}</PageTransition></main>
         <footer className="mx-auto flex w-full max-w-[1200px] items-start justify-end px-4 pt-3 pb-36 md:pb-6 lg:px-6 [body:has([data-page-width=wide])_&]:max-w-[1440px]">
           <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <StellarMark className="size-4 rounded" />
