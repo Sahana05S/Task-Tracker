@@ -7,6 +7,7 @@ import { checklistWorkHref } from '@/modules/checklists/client';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  ChevronRightIcon,
   ChevronsUpDownIcon,
   ListChecksIcon,
   MoreHorizontalIcon,
@@ -14,12 +15,14 @@ import {
 
 import {
   headerState,
+  pruneSelection,
   toggleRow,
   toggleVisible,
   type Selection,
 } from '@/modules/tasks/components/mission-selection';
 import { ProgressInput } from '@/modules/tasks/components/progress-input';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
+import { PartOfChip, SubMissionCount } from '@/modules/tasks/components/sub-mission-chips';
 import type { WaypointSlotComponent } from '@/modules/tasks/components/task-card-list';
 import { TaskRowMenuItems, type TaskRowActions } from '@/modules/tasks/components/task-row-menu';
 import { FreshnessIndicator, PriorityBadge } from '@/shared/ui/tracker-badges';
@@ -36,6 +39,7 @@ import {
   type TaskSortKey,
   type TaskSortState,
 } from '@/modules/tasks/internal/filters';
+import { withoutCollapsed, type MissionNesting } from '@/modules/tasks/internal/grouping';
 import { canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
 import { formatDate, isOverdue, formatHours } from '@/shared/tracker/format';
 import { cn, getInitials } from '@/shared/utils';
@@ -56,6 +60,8 @@ export interface TaskDataGridProps {
   selection: Selection;
   onSelectionChange: (next: Selection) => void;
   actions: TaskRowActions;
+  /** Sub-mission nesting for `tasks`, already ordered parent first (Missions list). */
+  nesting?: ReadonlyMap<string, MissionNesting>;
   /** The Waypoint column's cell; the column is left out without it. */
   WaypointSlot?: WaypointSlotComponent;
 }
@@ -112,13 +118,27 @@ export function TaskDataGrid({
   onSelectionChange,
   actions,
   WaypointSlot,
+  nesting,
 }: TaskDataGridProps) {
   const columns = WaypointSlot ? COLUMNS : COLUMNS.filter((column) => !column.waypointSlot);
+  // Parents start expanded; a collapsed parent hides every row under it.
+  const [collapsed, setCollapsed] = React.useState<ReadonlySet<string>>(() => new Set());
+  const rows = React.useMemo(
+    () => (nesting ? withoutCollapsed(tasks, nesting, collapsed) : [...tasks]),
+    [tasks, nesting, collapsed],
+  );
+  const toggleCollapsed = (id: string) => {
+    const next = new Set(collapsed);
+    if (!next.delete(id)) next.add(id);
+    setCollapsed(next);
+    // A hidden row never stays selected.
+    if (nesting) onSelectionChange(pruneSelection(selection, withoutCollapsed(tasks, nesting, next).map((task) => task.id)));
+  };
   // Only rows the viewer can act on are selectable: open missions, and for
   // members their own. A batch is atomic, so one refused row would fail it all.
   const selectableIds = React.useMemo(
-    () => tasks.filter((task) => canUpdateTaskOwnFields(currentUser, task)).map((task) => task.id),
-    [tasks, currentUser],
+    () => rows.filter((task) => canUpdateTaskOwnFields(currentUser, task)).map((task) => task.id),
+    [rows, currentUser],
   );
   const allState = headerState(selection, selectableIds);
 
@@ -149,7 +169,9 @@ export function TaskDataGrid({
           </tr>
         </thead>
         <tbody>
-          {tasks.map((task) => {
+          {rows.map((task) => {
+            const nest = nesting?.get(task.id);
+            const open = !collapsed.has(task.id);
             const canEditOwnFields = canUpdateTaskOwnFields(currentUser, task);
             const effort = effortByTask.get(task.id) ?? EMPTY_EFFORT;
             const overdue =
@@ -173,9 +195,22 @@ export function TaskDataGrid({
                       disabled={!canEditOwnFields}
                       onChange={() => onSelectionChange(toggleRow(selection, task.id))}
                     />
-                    <Link href={href} className="task-tag whitespace-nowrap hover:underline">
-                      {task.taskTag}
-                    </Link>
+                    <span className="flex items-center gap-1" style={nest?.depth ? { paddingLeft: `${Math.min(nest.depth, 4) * 1.25}rem` } : undefined}>
+                      {nest?.shownChildren ? (
+                        <button
+                          type="button"
+                          aria-expanded={open}
+                          aria-label={`${open ? 'Hide' : 'Show'} the sub-missions of ${task.taskTag}`}
+                          onClick={() => toggleCollapsed(task.id)}
+                          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring -ml-1 inline-flex size-6 items-center justify-center rounded outline-none focus-visible:ring-2"
+                        >
+                          <ChevronRightIcon className={cn('size-4 transition-transform', open && 'rotate-90')} aria-hidden="true" />
+                        </button>
+                      ) : null}
+                      <Link href={href} className="task-tag whitespace-nowrap hover:underline">
+                        {task.taskTag}
+                      </Link>
+                    </span>
                   </div>
                 </td>
 
@@ -185,6 +220,12 @@ export function TaskDataGrid({
                   </span>
                   {task.archivedEffectiveDate ? (
                     <span className="text-muted-foreground block text-xs">Archived, read-only</span>
+                  ) : null}
+                  {nest?.parentTag || nest?.childCount ? (
+                    <span className="mt-1 flex flex-wrap gap-1">
+                      {nest.parentTag ? <PartOfChip parentTag={nest.parentTag} /> : null}
+                      {nest.childCount ? <SubMissionCount count={nest.childCount} /> : null}
+                    </span>
                   ) : null}
                 </td>
 

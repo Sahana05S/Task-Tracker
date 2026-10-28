@@ -170,6 +170,13 @@ export async function createSubMissionRow(input: SubMissionInput): Promise<Comma
   return { ok: true, value: data as Json };
 }
 
+/** A mission's current lifecycle version, for commands started from a list that may be stale. */
+export async function readLifecycleVersion(taskId: string): Promise<number | null> {
+  const supabase = await createClient();
+  const found = await supabase.from('tasks').select('lifecycle_version').eq('id', taskId).maybeSingle();
+  return found.error || !found.data ? null : Number(found.data.lifecycle_version);
+}
+
 /** Looks up a task id by its tag, for linked-scale inputs. */
 export async function findTaskIdByTag(taskTag: string): Promise<string | null> {
   const supabase = await createClient();

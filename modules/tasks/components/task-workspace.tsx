@@ -10,6 +10,7 @@ import { DeleteMissionSheet } from '@/modules/tasks/components/delete-mission-sh
 import { filtersFromParams, missionsHref, viewFromParams, type MissionView } from '@/modules/tasks/components/filter-params';
 import { MissionSummarySheet } from '@/modules/tasks/components/mission-summary-sheet';
 import { EMPTY_SELECTION, pruneSelection, type Selection } from '@/modules/tasks/components/mission-selection';
+import { SubMissionSheet } from '@/modules/tasks/components/sub-mission-sheet';
 import { TaskCardList, type LogHoursActionComponent, type WaypointSlotComponent } from '@/modules/tasks/components/task-card-list';
 import { TaskDataGrid } from '@/modules/tasks/components/task-data-grid';
 import { TaskDialog } from '@/modules/tasks/components/task-dialog';
@@ -28,6 +29,7 @@ import {
   type TaskFilterState,
   type TaskSortState,
 } from '@/modules/tasks/internal/filters';
+import { nestSubMissions } from '@/modules/tasks/internal/grouping';
 import { canManageTasks } from '@/modules/tasks/internal/permissions';
 import type { ToolOperation } from '@/modules/tasks/internal/tools/contract';
 import type { Task, User } from '@/types/tracker';
@@ -94,6 +96,7 @@ export function TaskWorkspace({
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | null>(null);
   const [pendingDelete, setPendingDelete] = React.useState<Task | null>(null);
+  const [subMissionParent, setSubMissionParent] = React.useState<Task | null>(null);
   const [summaryTaskId, setSummaryTaskId] = React.useState<string | null>(null);
   const [operation, setOperation] = React.useState<RunningOperation | null>(null);
 
@@ -132,6 +135,8 @@ export function TaskWorkspace({
       sortTasks(filterTasks(tasks, filters), sort, memberNames, effortByTask),
     [tasks, filters, sort, memberNames, effortByTask],
   );
+  // Sub-missions follow their parent (with a "Part of" chip when the parent is filtered out).
+  const nested = React.useMemo(() => nestSubMissions(visibleTasks, tasks), [visibleTasks, tasks]);
   const visibleIds = React.useMemo(() => visibleTasks.map((task) => task.id), [visibleTasks]);
   // A row that left the list (a refresh removed it) never stays selected.
   const selection = pruneSelection(selected, visibleIds);
@@ -165,6 +170,7 @@ export function TaskWorkspace({
     onRun: (command, task) => setOperation({ command, tasks: [task] }),
     onEdit: openEdit,
     onRequestDelete: setPendingDelete,
+    onAddSubMission: setSubMissionParent,
   }), [openEdit]);
 
   // Re-read from props so the summary reflects edits made while it is open.
@@ -219,7 +225,8 @@ export function TaskWorkspace({
             /* Table from 768px up; cards remain below it. */
             <div className="hidden md:flex md:flex-col md:gap-3">
               <TaskDataGrid
-                tasks={visibleTasks}
+                tasks={nested.tasks}
+                nesting={nested.nesting}
                 memberNames={memberNames}
                 effortByTask={effortByTask}
                 currentUser={currentUser}
@@ -242,7 +249,8 @@ export function TaskWorkspace({
 
           <div className={view === 'table' ? 'md:hidden' : undefined}>
             <TaskCardList
-              tasks={visibleTasks}
+              tasks={nested.tasks}
+              nesting={nested.nesting}
               memberNames={memberNames}
               effortByTask={effortByTask}
               currentUser={currentUser}
@@ -288,6 +296,8 @@ export function TaskWorkspace({
         task={pendingDelete}
         onClose={() => setPendingDelete(null)}
       />
+
+      {canManage ? <SubMissionSheet parent={subMissionParent} onClose={() => setSubMissionParent(null)} /> : null}
     </div>
   );
 }

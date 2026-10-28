@@ -101,6 +101,18 @@ export function withTaskParticipants(
 }
 
 /** Join participant projections in linear time, preserving legacy primary owners. */
+/**
+ * Marks each sub-mission with its parent mission (a `Subtask` dependency,
+ * predecessor = parent; migration 68). A mission has at most one parent.
+ */
+export function attachSubMissionParents(
+  tasks: readonly Task[],
+  links: readonly { predecessor_task_id: string; successor_task_id: string }[],
+): Task[] {
+  const parents = new Map(links.map((link) => [link.successor_task_id, link.predecessor_task_id] as const));
+  return tasks.map((task) => ({ ...task, parentTaskId: parents.get(task.id) ?? null }));
+}
+
 export function attachTaskParticipants(
   tasks: readonly Task[],
   assignees: readonly { task_id: string; user_id: string; is_primary: boolean; share_units: number | null }[],

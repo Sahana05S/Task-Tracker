@@ -10,6 +10,7 @@ import {
   createTaskWithScale,
   deleteTaskRow,
   createSubMissionRow,
+  readLifecycleVersion,
   findTaskIdByTag,
   readTaskLifecycle,
   runLifecycleCommand,
@@ -168,6 +169,40 @@ export async function createSubMission(form: FormData): Promise<ActionResponse<J
     checklistId: readString(form, 'checklist_id') || null,
     section: readString(form, 'section'),
     parentNodeId: readString(form, 'parent_id') || null,
+    title,
+    dueDate: readString(form, 'due_date') || null,
+    expectedVersion: version,
+    operationId,
+  });
+  if (!created.ok) return { success: false, error: created.error };
+  revalidateAfterCreate();
+  revalidateAfterDetails();
+  return { success: true, data: created.value };
+}
+
+/**
+ * Adds a sub-mission from the Missions list: a row in the parent's own
+ * checklist, in the chosen phase. The parent's version is read here, so a list
+ * loaded a while ago does not refuse the change.
+ */
+export async function addSubMission(form: FormData): Promise<ActionResponse<Json>> {
+  const actor = await resolveActor();
+  if (!actor.ok) return { success: false, error: actor.error };
+  if (!canManageTasks(actor.profile.role)) return { success: false, error: 'Only managing directors and project engineers can create sub-missions.' };
+  const title = readString(form, 'title');
+  const taskId = readString(form, 'taskId');
+  const section = readString(form, 'section');
+  const operationId = readString(form, 'operationId');
+  if (!title) return { success: false, error: 'Name the sub-mission.' };
+  if (!['setup', 'activity', 'closure'].includes(section)) return { success: false, error: 'Choose Setup, Activity or Closure.' };
+  if (!taskId || !operationId) return { success: false, error: 'Reload the Missions list and try again.' };
+  const version = await readLifecycleVersion(taskId);
+  if (version === null) return { success: false, error: 'The mission could not be found. Reload the Missions list.' };
+  const created = await createSubMissionRow({
+    parentTaskId: taskId,
+    checklistId: null,
+    section,
+    parentNodeId: null,
     title,
     dueDate: readString(form, 'due_date') || null,
     expectedVersion: version,

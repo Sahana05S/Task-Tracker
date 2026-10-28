@@ -2,6 +2,7 @@ import { createClient } from '@/shared/supabase/server';
 import {
   mapTasks,
   TASK_COLUMNS,
+  attachSubMissionParents,
   attachTaskParticipants,
 } from '@/modules/tasks/internal/mappers';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
@@ -32,7 +33,7 @@ export interface TaskWorkspaceData {
 export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
   const supabase = await createClient();
 
-  const [taskResult, memberResult, assigneeResult, reviewerResult] =
+  const [taskResult, memberResult, assigneeResult, reviewerResult, subtaskResult] =
     await Promise.all([
     supabase
       .from('tasks')
@@ -47,6 +48,8 @@ export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
       .order('full_name', { ascending: true }),
     supabase.from('task_assignees').select('task_id, user_id, is_primary, share_units'),
     supabase.from('task_reviewers').select('task_id, user_id, is_primary'),
+    // Sub-missions, so the list can nest them under their parent.
+    supabase.from('task_dependencies').select('predecessor_task_id, successor_task_id').eq('relation_type', 'Subtask'),
   ]);
 
   if (taskResult.error) {
@@ -57,9 +60,11 @@ export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
   }
   if (assigneeResult.error) throw new Error(`Failed to load participants: ${assigneeResult.error.message}`);
   if (reviewerResult.error) throw new Error(`Failed to load reviewers: ${reviewerResult.error.message}`);
+  if (subtaskResult.error) throw new Error(`Failed to load sub-missions: ${subtaskResult.error.message}`);
 
-  const tasks = attachTaskParticipants(
-    mapTasks(taskResult.data), assigneeResult.data, reviewerResult.data,
+  const tasks = attachSubMissionParents(
+    attachTaskParticipants(mapTasks(taskResult.data), assigneeResult.data, reviewerResult.data),
+    subtaskResult.data,
   );
 
   return {
