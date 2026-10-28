@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, Rows3Icon, Columns3Icon, XIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
@@ -26,10 +26,6 @@ type View = 'roadmap' | 'list';
 const VIEW_OPTIONS: readonly SegmentedOption<View>[] = [
   { value: 'roadmap', label: 'Roadmap', icon: OrbitIcon },
   { value: 'list', label: 'List', icon: ListIcon },
-];
-const LAYOUT_OPTIONS: readonly SegmentedOption<MapOrientation>[] = [
-  { value: 'vertical', label: 'Vertical', icon: Rows3Icon },
-  { value: 'horizontal', label: 'Horizontal', icon: Columns3Icon },
 ];
 interface Props {
   initial: RoadmapMissionBatch | null;
@@ -138,12 +134,6 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><h2 id="mission-path-title" className="text-foreground text-base font-bold tracking-tight">Your mission path</h2><p className="text-muted-foreground mt-1 max-w-prose text-sm">Choose a mission. Open its next item. Keep your work in focus.</p></div>
       <div className="flex flex-wrap items-center gap-2">
-        {view === 'roadmap' ? <SegmentedControl
-          label="Map layout"
-          value={layout}
-          options={LAYOUT_OPTIONS}
-          onValueChange={chooseLayout}
-        /> : null}
         <SegmentedControl
           label="Mission view"
           value={view}
@@ -161,7 +151,7 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
     </nav>
     {view === 'roadmap' ? <>
       {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
-      {batch?.missions.length || location ? <MissionMap missions={batch?.missions ?? []} today={today} initialLocation={location} orientation={layout}
+      {batch?.missions.length || location ? <MissionMap missions={batch?.missions ?? []} today={today} initialLocation={location} orientation={layout} onOrientationChange={chooseLayout}
         onLocation={next => { setLocation(next); remember(next, due, 'roadmap'); }} />
         : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
       {batch?.hasMore ? <Button className="mt-4" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : `Load more missions (${batch.missions.length} shown)`}</Button> : null}
