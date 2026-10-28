@@ -1,0 +1,38 @@
+name: Demo database speed diagnostics
+
+# Read-only: runs tools/diagnostics/db_speed.sql inside BEGIN READ ONLY against
+# the demo database and prints statement timings and table statistics (no
+# rows). Run from the Actions tab, or by pushing a branch named ops/db-diagnostics*.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['ops/db-diagnostics*']
+    paths:
+      - '.github/workflows/db-diagnostics.yml'
+      - 'tools/diagnostics/**'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      DEMO_REF: sbtxtsisjhuciobxykcm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the target is the demo project
+        run: |
+          set -euo pipefail
+          [ -n "$SUPABASE_DB_URL" ] || { echo "::error::Secret SUPABASE_DB_URL is not set"; exit 1; }
+          case "$SUPABASE_DB_URL" in
+            *"postgres.${DEMO_REF}:"* | *"@db.${DEMO_REF}.supabase.co"*) ;;
+            *) echo "::error::SUPABASE_DB_URL is not the demo project ${DEMO_REF}; refusing"; exit 1 ;;
+          esac
+
+      - name: Read speed statistics
+        run: psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=0 -f tools/diagnostics/db_speed.sql
