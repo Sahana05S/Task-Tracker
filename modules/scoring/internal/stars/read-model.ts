@@ -8,13 +8,16 @@ export interface AwardHistory {date:string;runId:string;status:string;recordedSt
 export interface AwardReadModel {days:AwardDay[];history:AwardHistory[];policy:AwardPolicy|null;policyApproved:boolean;scheduleEnabled:boolean;frozen:boolean;sourceWatermark:string;legacy:{date:string;winnerId:string;score:number;ruleVersion:string;certified:boolean}[];monthly:MonthlySelection}
 type Db=Awaited<ReturnType<typeof createClient>>;
 /**
- * Calls award_read_model, asking it to leave the calculations out unless they
- * are wanted. Until migration 86 reaches a database the extra argument is
- * unknown there (PostgREST PGRST202), so the old call is made instead.
+ * Calls award_read_model, asking it to leave out the calculations (migration
+ * 86) and a member's run history (89) unless they are wanted. A database
+ * without those migrations does not know the arguments (PostgREST PGRST202),
+ * so the call falls back to the arguments it does know.
  */
-export async function callAwardReadModel(db:Db,args:{p_from:string;p_to_exclusive:string;p_employee:string|null},withCandidates:boolean) {
- const result=await db.rpc('award_read_model',{...args,p_candidates:withCandidates});
- return result.error?.code==='PGRST202'?db.rpc('award_read_model',args):result;
+export async function callAwardReadModel(db:Db,args:{p_from:string;p_to_exclusive:string;p_employee:string|null},withCandidates:boolean,withHistory=true) {
+ const full=await db.rpc('award_read_model',{...args,p_candidates:withCandidates,p_history:withHistory});
+ if(full.error?.code!=='PGRST202')return full;
+ const without89=await db.rpc('award_read_model',{...args,p_candidates:withCandidates});
+ return without89.error?.code==='PGRST202'?db.rpc('award_read_model',args):without89;
 }
 
 /**
@@ -22,9 +25,9 @@ export async function callAwardReadModel(db:Db,args:{p_from:string;p_to_exclusiv
  * calculation, about 4 MB a month) come back only with `withCandidates`; only
  * the Team daily performance log reads them (migration 86, 28 October 2026).
  */
-export async function getAwards(db:Awaited<ReturnType<typeof createClient>>,period:AnalyticsPeriod,calculation?:CalculationResult,employee?:string,withCandidates=false):Promise<AwardReadModel> {
+export async function getAwards(db:Awaited<ReturnType<typeof createClient>>,period:AnalyticsPeriod,calculation?:CalculationResult,employee?:string,withCandidates=false,withHistory=true):Promise<AwardReadModel> {
  const end=new Date(period.endDate+'T00:00:00Z');end.setUTCDate(end.getUTCDate()+1);
- const result=await callAwardReadModel(db,{p_from:period.startDate,p_to_exclusive:end.toISOString().slice(0,10),p_employee:employee??null},withCandidates);
+ const result=await callAwardReadModel(db,{p_from:period.startDate,p_to_exclusive:end.toISOString().slice(0,10),p_employee:employee??null},withCandidates,withHistory);
  if(result.error)throw new Error(`Award read failed: ${result.error.message}`);
  const model=result.data as unknown as Omit<AwardReadModel,'monthly'>;
  if(!model||!Array.isArray(model.days)||!Array.isArray(model.history)||!Array.isArray(model.legacy))throw new Error('Award read model unavailable.');
