@@ -1,7 +1,6 @@
 -- Read-only: timings of the parts of performance_source_context (28 October 2026).
 -- Plans and timings only; no rows are printed.
 \pset pager off
-	iming on
 BEGIN READ ONLY;
 SET LOCAL statement_timeout = '120s';
 SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM public.users WHERE role='managing_director' AND is_active ORDER BY created_at LIMIT 1), 'role','authenticated')::text, true) IS NOT NULL AS acting;
