@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { calculateDailyStarAction,overrideDailyStarAction } from '@/modules/scoring/award-actions';
 import { prepareOperation } from '@/shared/commands/client-operation';
 import { kolkataDate } from '@/shared/time/kolkata';
-import type { AwardReadModel } from '@/modules/scoring/client';
+import type { AwardDay, AwardReadModel } from '@/modules/scoring/client';
 import { cn } from '@/shared/utils';
 import { keepTypedOnRefusal } from '@/shared/forms/submit';
-export function AwardControls({awards,members}:{awards:AwardReadModel;members:{id:string;fullName:string}[]}) {
+/** The few award facts the controls read; the page passes only these, not the per-member calculations (about 4 MB a month). */
+export type AwardControlFacts = Pick<AwardReadModel,'policyApproved'> & {days:Pick<AwardDay,'date'|'runId'|'reaffirmationRequired'|'certified'|'status'|'version'>[]};
+export function AwardControls({awards,members}:{awards:AwardControlFacts;members:{id:string;fullName:string}[]}) {
  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false);
  const completed=awards.days.filter(d=>d.runId&&(d.reaffirmationRequired||d.certified&&['completed_winner','completed_none'].includes(d.status)));
  const defaultDay=new Date(kolkataDate()+'T00:00:00Z');defaultDay.setUTCDate(defaultDay.getUTCDate()-1);
