@@ -20,7 +20,7 @@ import { ChecklistGateBadge } from './checklist-gate-badge';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-cards';
 import { ChecklistOutline } from './checklist-outline';
-import { ChecklistViewSwitch } from './checklist-view-switch';
+import { ChecklistViewPanes } from './checklist-view-switch';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -68,6 +68,8 @@ export interface ChecklistWorkspaceProps {
   headerActions?: React.ReactNode;
   /** Table (default), Board, Blocks or Outline. */
   view?: ChecklistView;
+  /** The address named the view (otherwise this device's last choice applies). */
+  viewExplicit?: boolean;
 }
 
 const PAGE_SIZE = 50;
@@ -124,6 +126,11 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const inQuest = !!checklist?.ownerNodeId;
   const homeSections = quest ? props.sections?.filter((home) => home.section === 'activity' || home.rows.length > 0) : props.sections;
   const sectionTitle = (key: ChecklistSection) => (inQuest && key === 'activity' ? 'Items' : SECTION_TITLES[key].title);
+  // Said once, instead of an add box that silently is not there (user report, 28 Oct 2026).
+  const addBlocked = canEdit ? null
+    : task.archivedEffectiveDate ? 'This mission is archived, so its checklist is read-only.'
+    : !open ? `This mission is ${task.status}. A manager can reopen it to add or change rows.`
+    : 'Only managers and the people on this mission can add or change rows.';
   const addRowFor = (section: ChecklistSection, parentId: string | null = null) => canEdit && checklist ? (
     <ChecklistAddRow
       taskId={task.id}
@@ -139,34 +146,10 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
     />
   ) : null;
 
-  return (
-    <ChecklistVersionProvider version={version}>
-      <MissionPage>
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-          <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
-          {props.headerActions ? <div className="flex shrink-0 items-center gap-2">{props.headerActions}</div> : null}
-        </div>
-
-        {checklist && props.sections ? (
-          <HomeHero {...props} checklist={checklist} tools={tools} />
-        ) : checklist && props.page ? (
-          <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} inQuest={inQuest} />
-        ) : null}
-
-        {checklist ? (
-          <div className="flex justify-end">
-            <ChecklistViewSwitch view={view} views={props.page ? ['table', 'blocks', 'outline'] : ['table', 'board', 'blocks', 'outline']} />
-          </div>
-        ) : null}
-        <ChecklistIssues issues={issues} />
-        {checklist && tools?.unmapped.length ? (
-          <NeedsMapping task={task} checklistId={checklist.id} rows={tools.unmapped} version={version} action={props.actions.checklist} />
-        ) : null}
-
-        {!checklist ? (
-          <NoChecklist task={task} version={version} canCreate={canEdit} action={props.actions.checklist} />
-        ) : homeSections && view !== 'table' ? (
-          <ChecklistAltView view={view} sections={homeSections} rollup={rollup} checklistId={checklist.id} ctx={cardCtx} addRow={addRowFor}
+  const viewKeys: ChecklistView[] = props.page ? ['table', 'blocks', 'outline'] : ['table', 'board', 'blocks', 'outline'];
+  // Every view is rendered here from the same rows, so the switch changes view without a page load.
+  const contentFor = (v: ChecklistView): React.ReactNode => !checklist ? null : homeSections && v !== 'table' ? (
+          <ChecklistAltView view={v} sections={homeSections} rollup={rollup} checklistId={checklist.id} ctx={cardCtx} addRow={addRowFor}
             title={quest && homeSections.length === 1 ? 'Items' : undefined} />
         ) : homeSections ? (
           homeSections.map((home) => {
@@ -197,14 +180,14 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 moveTargets={moveTargets(home.rows, null)}
                 itemsOnly={inQuest}
                 autoFocus={home.section === 'activity'}
-                emptyText={quest && home.section === 'activity' ? 'No items yet. Add the first one below.' : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
+                emptyText={quest && home.section === 'activity' ? (canEdit ? 'No items yet. Add the first one below.' : 'No items yet.') : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
                 footer={<Paging taskTag={task.taskTag} address={address} cursor={home.cursor} nextCursor={home.nextCursor} />}
               />
             );
           })
-        ) : props.page && view !== 'table' ? (
+        ) : props.page && v !== 'table' ? (
           <ChecklistAltView
-            view={view === 'board' ? 'blocks' : view}
+            view={v === 'board' ? 'blocks' : v}
             sections={[{ section: props.page.section, rows: props.page.rows, cursor: props.page.cursor, nextCursor: props.page.nextCursor }]}
             rollup={rollup}
             checklistId={checklist.id}
@@ -239,7 +222,41 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             emptyText="No rows under this one yet. Once you add one, its progress comes from the rows under it."
             footer={<Paging taskTag={task.taskTag} address={{ checklistId: checklist.id, parentNodeId: props.page.nodeId, section: props.page.section }} cursor={props.page.cursor} nextCursor={props.page.nextCursor} />}
           />
+        ) : null;
+
+  return (
+    <ChecklistVersionProvider version={version}>
+      <MissionPage>
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+          <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
+          {props.headerActions ? <div className="flex shrink-0 items-center gap-2">{props.headerActions}</div> : null}
+        </div>
+
+        {checklist && props.sections ? (
+          <HomeHero {...props} checklist={checklist} tools={tools} />
+        ) : checklist && props.page ? (
+          <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} inQuest={inQuest} />
         ) : null}
+
+        {checklist ? (
+          <ChecklistViewPanes
+            view={view}
+            explicit={!!props.viewExplicit}
+            panes={Object.fromEntries(viewKeys.map((v) => [v, contentFor(v)]))}
+            between={<>
+              <ChecklistIssues issues={issues} />
+              {addBlocked ? <p className="text-muted-foreground border-border rounded-xl border border-dashed px-4 py-3 text-sm">{addBlocked}</p> : null}
+              {tools?.unmapped.length ? (
+                <NeedsMapping task={task} checklistId={checklist.id} rows={tools.unmapped} version={version} action={props.actions.checklist} />
+              ) : null}
+            </>}
+          />
+        ) : (
+          <>
+            <ChecklistIssues issues={issues} />
+            <NoChecklist task={task} version={version} canCreate={canEdit} action={props.actions.checklist} />
+          </>
+        )}
       </MissionPage>
     </ChecklistVersionProvider>
   );

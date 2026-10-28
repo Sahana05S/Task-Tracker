@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { requireProfile } from '@/shared/session/profile';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
-import { getTaskForChecklist, getTaskWorkspaceData, normalizeTaskTagParam } from '@/modules/tasks';
+import { getMissionChoices, getTaskForChecklist, normalizeTaskTagParam } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
 import { getChecklistBranch, getRunningChecklistTimers, getUnmappedRootRows } from '@/modules/checklists';
 import { CHECKLIST_SECTIONS, checklistWorkHref, parseChecklistLocation, parseChecklistView, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistItemTime } from '@/modules/checklists/client';
@@ -39,6 +39,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
   const task = await getTaskForChecklist((await params).taskTag);
   if (!task) notFound();
   const location = parseChecklistLocation(await searchParams);
+  const viewParam = parseChecklistView((await searchParams).view);
   const options: ChecklistBranchOptions = { checklistId: location.checklistId, section: location.section };
 
   let branch: ChecklistBranch;
@@ -75,7 +76,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
     getMemberNames().catch((): Record<string, string> => ({})),
     // A failed timer read hides the timers instead of failing the checklist.
     getRunningChecklistTimers(task.id, user.id, new Map(rows.map(row => [row.id, row.elapsedSeconds]))).catch(() => NO_TIME),
-    manager ? getTaskWorkspaceData().then(w => w.tasks.filter(t => t.id !== task.id).map(t => ({ id: t.id, taskTag: t.taskTag, title: t.title }))) : [],
+    manager ? getMissionChoices().then(choices => choices.filter(t => t.id !== task.id)) : [],
     manager && checklistId && sections ? getUnmappedRootRows(checklistId) : [],
   ]);
 
@@ -96,7 +97,8 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       selectedItem={location.item}
       managerTools={manager ? { linkChoices, unmapped } : undefined}
       actions={{ checklist: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer, submission: createSubMission }}
-      view={parseChecklistView((await searchParams).view) ?? 'table'}
+      view={viewParam ?? 'table'}
+      viewExplicit={viewParam !== null && viewParam !== undefined}
       headerActions={<MissionActionsMenu taskId={task.id} taskTag={task.taskTag} variant="button" />}
     />
   );

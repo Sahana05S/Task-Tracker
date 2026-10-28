@@ -12,7 +12,7 @@ export function NativeTemplateSelect({templates}: {templates:readonly NativeTemp
 export function InitializeDetailsForm({task,templates}: {task:Task;templates:readonly NativeTemplate[]}) {
  return <ExecutionForm action={initializeTaskDetails} scope={'initializeDetails:'+task.id}><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="expectedVersion" value={task.lifecycleVersion??0}/><NativeTemplateSelect templates={templates}/><button className={cn(buttonVariants(), 'justify-self-start')} type="submit">Set up mission details</button></ExecutionForm>;
 }
-export function NativeDetailsEditor({task,sections,tasks,members,reports}: {task:Task;sections:readonly TaskDetailSection[];tasks:readonly Task[];members:readonly User[];reports:readonly {id:string;title:string}[]}) {
+export function NativeDetailsEditor({task,sections,tasks,members,reports}: {task:Task;sections:readonly TaskDetailSection[];tasks:readonly Pick<Task,'id'|'taskTag'|'title'>[];members:readonly User[];reports:readonly {id:string;title:string}[]}) {
  const values=detailValues(sections);
  const identity=<><input type="hidden" name="taskId" value={task.id}/><input type="hidden" name="expectedVersion" value={task.lifecycleVersion??0}/></>;
  return <div className="grid gap-4">

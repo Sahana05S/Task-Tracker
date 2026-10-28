@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useContext, useEffect, useId, useRef, useState, useTransition } from 'react';
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 import { kolkataDate } from '@/shared/time/kolkata';
 import { isMonthKey, monthPeriod } from '@/shared/time/period';
@@ -39,8 +40,12 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, className }: {
   className?: string;
 }) {
   const id = useId();
-  // Set while the next page loads (a plain navigation: the picker also renders outside the app router, e.g. in tests).
-  const [pending, setPending] = useState(false);
+  // Inside the app the router swaps only the page (no full reload of the shell; slow pages, 28 Oct 2026).
+  // Outside it (tests, static views) a plain navigation; the context is null there.
+  const router = useContext(AppRouterContext);
+  const [routing, startRouting] = useTransition();
+  const [reloading, setReloading] = useState(false);
+  const pending = routing || reloading;
   const [selection, setSelection] = useState<PeriodSelection>(() => selectionFromAsOf(month, asOf));
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shown = selectionFromAsOf(month, asOf);
@@ -53,8 +58,11 @@ export function PeriodPicker({ month, asOf, asOfLabel, keep, className }: {
     if (!isMonthKey(next.month)) return;
     const search = `?${periodQuery(next, keep)}`;
     if (search === window.location.search) return;
-    setPending(true);
-    window.location.assign(search);
+    if (router) startRouting(() => router.push(search, { scroll: false }));
+    else {
+      setReloading(true);
+      window.location.assign(search);
+    }
   };
 
   /** Updates the fields; `now` applies at once (a click), otherwise after a typing pause. */
