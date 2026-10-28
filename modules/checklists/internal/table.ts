@@ -9,9 +9,9 @@ import { CHECKLIST_SECTIONS, type ChecklistNodeProgress, type ChecklistRollup, t
 export type ChecklistRowKind = 'item' | 'parent' | 'linked' | 'quest';
 
 export const SECTION_TITLES: Record<ChecklistSection, { title: string; note: string }> = {
-  setup: { title: 'Setup', note: 'Completion gate: done before the work starts' },
-  activity: { title: 'Activity', note: 'Drives mission progress' },
-  closure: { title: 'Closure', note: 'Completion gate: done before the mission closes' },
+  setup: { title: 'Setup', note: '2.5% of progress · done before the work starts' },
+  activity: { title: 'Activity', note: '95% of mission progress' },
+  closure: { title: 'Closure', note: '2.5% of progress · done before the mission closes' },
 };
 
 /**
@@ -94,7 +94,8 @@ export function commandVersion(data: unknown): number | null {
 
 /**
  * OPEN / CLOSED for a whole checklist (the sheet's Checklist Home): progress
- * follows Activity only, but the checklist is closed only once every phase is
+ * weighs Activity 95, Setup 2.5 and Closure 2.5 (migration 85), but the
+ * checklist is closed only once every phase is
  * complete or N/A. Lists the phases still open.
  */
 export function checklistGate(rollup: Pick<ChecklistRollup, 'sections' | 'isComplete' | 'errors'>): { closed: boolean; openPhases: ChecklistSection[]; label: string } {

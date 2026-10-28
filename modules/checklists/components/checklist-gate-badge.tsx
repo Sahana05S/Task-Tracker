@@ -6,7 +6,7 @@ import { checklistGate } from '../internal/table';
 
 /**
  * OPEN / CLOSED beside a progress figure, as on the sheet's Checklist Home:
- * progress follows Activity, but the checklist closes only when Setup,
+ * progress weighs the three phases (migration 85), but the checklist closes only when Setup,
  * Activity and Closure are all complete or N/A.
  */
 export function ChecklistGateBadge({ rollup, className }: { rollup: Pick<ChecklistRollup, 'sections' | 'isComplete' | 'errors'>; className?: string }) {

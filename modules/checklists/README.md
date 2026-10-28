@@ -19,6 +19,15 @@ and `mode` refuses to switch it off. Rows added after 100% lower progress at
 once. When a change cannot be credited yet (no scale, no anchor, legacy shares)
 progress still follows and the credit waits, anchor kept, until reconciled.
 
+Since migration 85 (user decision, 28 October 2026) the progress a checklist
+gives its mission weighs Activity 95%, Setup 2.5% and Closure 2.5%
+(`PROGRESS_WEIGHTS`, `weightedOverall` in `internal/progress.ts`, mirroring
+`checklist_result`). A section with no applicable rows drops out and the
+others share its weight, so Activity alone still reaches 100. No applicable
+Activity gives no figure (progress stays as it was). Done still needs every
+phase complete, which is 100. A sub-mission row reads the sub-mission's own
+weighted progress.
+
 Since migration 67 (user decision, 23 October 2026) a row can also be a
 **Quest**: a page with its own list of items (an owned `task_checklists` row,
 created by the `submission` command from the add row's Item / Quest switch).
@@ -68,9 +77,9 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | Object | Defined in |
 |---|---|
 | `task_checklists`, `checklist_nodes` | `07_tracker_replacement_foundation.sql` (row details in 33-35; one kind of row in 63) |
-| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43, 63 and 66 |
+| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43, 63, 66 and 85 (wording) |
 | `checklist_follows_activity` trigger (`aa_m66_follow_activity`) | `66_progress_follows_activity.sql` (also patches `refresh_task_metrics`) |
-| `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63; Quest rows in 67 |
+| `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63; Quest rows in 67; section weights in 85 |
 | `checklist_branch` | 41, patched in 63 (opens any non-linked row) |
 | `checklist_sections` | 18; kept for older readers, no longer read by the rollup (63) |
 | `task_effort_breakdown` | `36_task_effort_breakdown.sql` |

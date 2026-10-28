@@ -55,6 +55,20 @@ user's standing rules, which earlier lived only in the laptop's Claude memory
 - The TaskPulse Atlas is refreshed once a day at 4:00 PM IST, never after each
   merge or push.
 
+## Mission progress weights - 28 October 2026
+
+The user asked that Setup and Closure count towards a mission's progress
+(DECISIONS "Mission progress weights"). Progress = Activity 95% + Setup 2.5%
++ Closure 2.5%; a section with no applicable rows drops out and the others
+share its weight; no applicable Activity gives no figure. It is the one
+figure in `tasks.progress_percentage` (credit, productivity, reports, awards).
+Migration 85 (`85_progress_weights.sql`) replaces `checklist_result`,
+re-baselines current projections and recalculates open missions whose figure
+changes. TypeScript mirror: `weightedOverall` in
+`modules/checklists/internal/progress.ts`; fixtures in
+`__tests__/fixtures/checklist-rollups.json`. Sub-missions feed their parent
+through their linked row as before.
+
 ## M19 HR - 26 October 2026
 
 The user asked for personal records, branded HR templates, performance reviews

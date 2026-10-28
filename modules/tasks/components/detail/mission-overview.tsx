@@ -33,7 +33,7 @@ export function MissionOverview({
       <p className="eyebrow">{CATEGORY_LABELS[task.category]}</p>
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="text-foreground text-sm font-semibold">{task.progressOwner === 'checklist' ? 'Activity progress' : 'Progress'}</span>
+          <span className="text-foreground text-sm font-semibold">{task.progressOwner === 'checklist' ? 'Checklist progress' : 'Progress'}</span>
           {data.checklist && data.checklistRollup ? <ChecklistGateBadge rollup={data.checklistRollup} /> : null}
         </span>
         <span className="text-success-strong text-xl font-bold tabular-nums">
@@ -44,9 +44,9 @@ export function MissionOverview({
       {belowProgress ? <div className="mt-1.5">{belowProgress}</div> : null}
       <p className="text-muted-foreground mt-2 text-xs">
         {task.progressOwner === 'checklist'
-          ? 'Mission progress follows Activity; Setup and Closure decide Open / Closed'
+          ? 'Activity 95% · Setup 2.5% · Closure 2.5%; Done waits for every phase'
           : data.checklist
-            ? `Set by hand · Activity checklist ${formatPercent(data.checklistProgressPercentage)}`
+            ? `Set by hand · Checklist ${formatPercent(data.checklistProgressPercentage)}`
             : 'Set by hand'}
         {' · '}{formatHours(data.effort.hoursLogged)} h logged
       </p>
