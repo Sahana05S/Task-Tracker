@@ -11,6 +11,10 @@ SELECT public.get_user_role() AS role;
 
 \echo '== award_read_model, this month, all members: time and size'
 SELECT octet_length(public.award_read_model(date_trunc('month',now())::date, (date_trunc('month',now())+interval '1 month')::date)::text) AS bytes;
+\echo '== award_read_model, this month, without calculations (migration 86)'
+SELECT octet_length(public.award_read_model(date_trunc('month',now())::date, (date_trunc('month',now())+interval '1 month')::date, NULL, false)::text) AS bytes;
+\echo '== Today window (month and 31 days back), without calculations'
+SELECT octet_length(public.award_read_model(least(date_trunc('month',now())::date, current_date-31), (date_trunc('month',now())+interval '1 month')::date, NULL, false)::text) AS bytes;
 \echo '== the same for 31 days back (daily star) and this week'
 SELECT octet_length(public.award_read_model(current_date-31, current_date+1)::text) AS bytes;
 
