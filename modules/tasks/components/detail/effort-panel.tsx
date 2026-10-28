@@ -25,7 +25,7 @@ export function EffortPanel({
         <CompactMetric label="Scale" value={formatNumeric(task.taskScale)} />
         <CompactMetric label="Progress" value={formatPercent(task.progressPercentage)} />
         <CompactMetric label="Scaled progress" value={formatNumeric(task.scaledProgress)} />
-        <CompactMetric label="Activity checklist progress" value={formatPercent(data.checklistProgressPercentage)} />
+        <CompactMetric label="Checklist progress" value={formatPercent(data.checklistProgressPercentage)} />
         <CompactMetric label="Total hours" value={formatHours(data.effort.hoursLogged)} />
         {todayHours !== null ? <CompactMetric label="Hours worked today" value={formatHours(todayHours)} /> : null}
         <CompactMetric label="Task productivity" value={formatNumeric(task.taskProductivity)} />

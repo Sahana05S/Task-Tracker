@@ -83,7 +83,7 @@
   "expectedProgress": 50
  },
  {
-  "name": "Setup 0 Activity 80 Closure 0",
+  "name": "Setup 0 Activity 80 Closure 0 weighs 95 / 2.5 / 2.5",
   "nodes": [
    {
     "id": "setup",
@@ -135,7 +135,7 @@
     "completionState": "No"
    }
   ],
-  "expectedProgress": 80,
+  "expectedProgress": 76,
   "expectedComplete": false
  },
  {
@@ -430,7 +430,7 @@
   "expectedNoErrors": true
  },
  {
-  "name": "Setup and Closure rows gate completion but not progress",
+  "name": "Open Setup carries 2.5% when Closure has no rows",
   "nodes": [
    {
     "id": "s",
@@ -447,7 +447,185 @@
     "completionState": "Yes"
    }
   ],
-  "expectedProgress": 100,
+  "expectedProgress": 97.43589743589743,
   "expectedComplete": false
+ },
+ {
+  "name": "All three sections weighted 95 / 2.5 / 2.5",
+  "nodes": [
+   {
+    "id": "s",
+    "parentNodeId": null,
+    "section": "setup",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "a1",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "a2",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "c",
+    "parentNodeId": null,
+    "section": "closure",
+    "nodeType": "Item",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": 50,
+  "expectedComplete": false
+ },
+ {
+  "name": "Activity alone is still 100 when done",
+  "nodes": [
+   {
+    "id": "a",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": true
+ },
+ {
+  "name": "Activity and Closure share the weight when Setup is empty",
+  "nodes": [
+   {
+    "id": "a1",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "a2",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   },
+   {
+    "id": "c",
+    "parentNodeId": null,
+    "section": "closure",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   }
+  ],
+  "expectedProgress": 51.282051282051285,
+  "expectedComplete": false
+ },
+ {
+  "name": "No applicable Activity gives no figure even with Setup done",
+  "nodes": [
+   {
+    "id": "s",
+    "parentNodeId": null,
+    "section": "setup",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "a",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "N/A"
+   }
+  ],
+  "expectedProgress": null,
+  "expectedComplete": true,
+  "expectedActivityState": "not_applicable"
+ },
+ {
+  "name": "A Setup of only N/A rows drops out",
+  "nodes": [
+   {
+    "id": "s",
+    "parentNodeId": null,
+    "section": "setup",
+    "nodeType": "Item",
+    "completionState": "N/A"
+   },
+   {
+    "id": "a1",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "a2",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "No"
+   }
+  ],
+  "expectedProgress": 50,
+  "expectedComplete": false
+ },
+ {
+  "name": "A sub-mission row at 40 in Setup counts 2.5%",
+  "nodes": [
+   {
+    "id": "sub",
+    "parentNodeId": null,
+    "section": "setup",
+    "nodeType": "Task",
+    "linkedTaskId": "child",
+    "progressPercentage": 40,
+    "linkedStatus": "In Progress"
+   },
+   {
+    "id": "a",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   }
+  ],
+  "expectedProgress": 98.46153846153847,
+  "expectedComplete": false
+ },
+ {
+  "name": "Every section complete is 100 and complete",
+  "nodes": [
+   {
+    "id": "s",
+    "parentNodeId": null,
+    "section": "setup",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "a",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "c",
+    "parentNodeId": null,
+    "section": "closure",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": true
  }
 ]

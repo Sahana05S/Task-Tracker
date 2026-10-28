@@ -33,8 +33,8 @@ function sectionStateLabel(section: SectionProgress): string {
 
 /**
  * The mission's checklist at a glance: its title and one block per phase
- * (state, progress, a link into it), with one primary action. Activity is the
- * phase that drives progress; Setup and Closure are the gates before and after.
+ * (state, progress, a link into it), with one primary action. Mission progress
+ * weighs Activity 95, Setup 2.5 and Closure 2.5; all three gate Done.
  */
 export function ChecklistHero({
   href,
@@ -89,7 +89,7 @@ export function ChecklistHero({
                   </span>
                   <MissionProgress value={section.state === 'not_applicable' ? null : section.progressPercentage} label={`${SECTION_LABELS[key]} progress`} className="h-1.5" />
                   <span className="text-muted-foreground text-xs">
-                    {sectionStateLabel(section)}{key === 'activity' ? ' · drives progress' : ' · gates Done'}
+                    {sectionStateLabel(section)}{key === 'activity' ? ' · 95% of progress' : ' · 2.5% of progress'}
                   </span>
                 </Link>
               </li>

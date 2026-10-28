@@ -33,11 +33,39 @@ export interface ChecklistRollup {
   readonly errors: readonly string[];
   readonly nodeProgress: readonly ChecklistNodeProgress[];
 }
+/** Share of mission progress per section (user decision, 28 October 2026). */
+export const PROGRESS_WEIGHTS: Readonly<Record<ChecklistSection, number>> = { setup: 2.5, activity: 95, closure: 2.5 };
+
+/**
+ * Mission progress from its sections (migration 85): Activity 95, Setup 2.5,
+ * Closure 2.5 over the sections that have applicable rows, so a section with
+ * none drops out and the others share its weight. No applicable Activity, or
+ * an applicable section without a figure, gives no figure. Same order and
+ * arithmetic as taskpulse_private.checklist_result.
+ */
+export function weightedOverall(
+  sections: Readonly<Record<ChecklistSection, Pick<SectionProgress, 'applicable' | 'progressPercentage'>>>,
+): number | null {
+  if (!sections.activity.applicable) return null;
+  let total = 0;
+  let weighted = 0;
+  for (const role of CHECKLIST_SECTIONS) {
+    const section = sections[role];
+    if (!section.applicable) continue;
+    if (section.progressPercentage === null) return null;
+    total += PROGRESS_WEIGHTS[role];
+    weighted += PROGRESS_WEIGHTS[role] * section.progressPercentage;
+  }
+  return total === 0 ? null : weighted / total;
+}
+
 /**
  * Equal weighting of applicable direct children (migration 63). Any row may
  * have rows under it; such a row takes their average and its own state is not
  * read. A section is the average of its root rows; an empty section is N/A and
  * complete. Without a checklist every section is missing and Done is blocked.
+ * The mission's progress is the weighted overall of the sections (migration
+ * 85, see `weightedOverall`).
  */
 export function computeChecklistProgress(
   nodes: readonly ChecklistProgressNode[],
@@ -101,7 +129,7 @@ export function computeChecklistProgress(
     sections[role]={...v,state:!v.applicable ? 'not_applicable' : v.isComplete ? 'complete':'partial'};
   }
   if(errors.length) for(const role of CHECKLIST_SECTIONS) sections[role]={...sections[role],state:'invalid',progressPercentage:null,isComplete:false};
-  const taskProgress=sections.activity.progressPercentage;
+  const taskProgress=weightedOverall(sections);
   return {contract:'m05-checklist-v1',sections,taskProgress,overallProgressPercentage:taskProgress,
     isComplete:errors.length===0 && CHECKLIST_SECTIONS.every(s=>sections[s].isComplete),errors,nodeProgress:[...values.values()]};
 }

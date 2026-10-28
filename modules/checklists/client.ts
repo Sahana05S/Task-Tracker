@@ -4,6 +4,8 @@
 export {
   CHECKLIST_SECTIONS,
   computeChecklistProgress,
+  PROGRESS_WEIGHTS,
+  weightedOverall,
   type ChecklistNodeProgress,
   type ChecklistProgressNode,
   type ChecklistRollup,

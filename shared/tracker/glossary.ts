@@ -31,7 +31,7 @@ export const GLOSSARY = {
   waypoint: t('Waypoint', 'A named stage a mission reaches at 30, 50, 70, 90 and 100% progress. It stays reached and never changes a score.', 'missions'),
   commendation: t('Commendation', 'Recognition a policy gives when its conditions are met. It never changes a score.', 'stars'),
   eligible: t('Counted in performance', 'A mission counts once it has a scale, a priority other than No, has started and reached 15%.', 'missions'),
-  sections: t('Setup, Activity, Closure', 'Activity drives progress. All three, plus reviews, must be complete before Done.', 'missions'),
+  sections: t('Setup, Activity, Closure', 'Progress weighs Activity 95%, Setup 2.5% and Closure 2.5%; an empty phase drops out. All three, plus reviews, must be complete before Done.', 'missions'),
   loading: t('Loading', 'Your share of the team’s assigned work, shown as a percentage.', 'scores'),
   productivity: t('Productivity', 'Work done (progress times scale) per attendance hour.', 'scores'),
   offHours: t('Off-hours', 'Work outside the regular day, recorded separately from regular hours.', 'daily-work'),

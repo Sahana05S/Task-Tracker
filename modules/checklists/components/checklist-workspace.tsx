@@ -87,8 +87,8 @@ function moveTargets(rows: readonly ChecklistBranchRow[], up: { id: string | nul
  * The master checklist (the sheet's Checklist Home and "[ChL]" tabs). The
  * home shows Setup, Activity and Closure as three tables; any row with rows
  * under it opens their table with a breadcrumb back. Every figure is the
- * authoritative branch rollup; Activity drives progress and Setup / Closure
- * are completion gates.
+ * authoritative branch rollup; mission progress weighs Activity 95, Setup 2.5
+ * and Closure 2.5, and every phase must be complete before Done.
  */
 export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const { task, checklist, ancestors, rollup, version, manager, executor } = props;
@@ -269,10 +269,10 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
             </span>
             <div className="min-w-0">
               <p className="stat-figure">{percentText(activity) ?? 'Not started'}</p>
-              <p className="text-muted-foreground text-xs">{checklist.ownerNodeId ? 'Progress, the average of its items' : 'Activity progress (the mission’s progress)'}</p>
+              <p className="text-muted-foreground text-xs">{checklist.ownerNodeId ? 'Progress, the average of its items' : 'Mission progress · Activity 95% · Setup 2.5% · Closure 2.5%'}</p>
             </div>
           </div>
-          <MissionProgress value={activity} label="Activity progress" className="h-1.5" />
+          <MissionProgress value={activity} label={checklist.ownerNodeId ? 'Quest progress' : 'Mission progress'} className="h-1.5" />
           <ChecklistGateBadge rollup={rollup} className="justify-self-start" />
           <p className="text-muted-foreground text-xs">
             {rollup.isComplete
