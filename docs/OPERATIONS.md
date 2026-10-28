@@ -167,9 +167,9 @@ adding `organization_settings` to its rules).
   setting. The public landing page always shows its light look.
 - **Today map:** scrolling moves the page; Ctrl (⌘ on a Mac) + scroll or a
   pinch zooms; drag with a mouse or pen to pan. Re-centre brings the focused
-  mission or item back into view. Vertical/Horizontal switches the road's
-  direction; the choice is kept in the link (`?layout=horizontal`) and on the
-  device.
+  mission or item back into view. The two layout icons beside Re-centre switch
+  the road between vertical and horizontal; the choice is kept in the link
+  (`?layout=horizontal`) and on the device. The top-right chip is the zoom level.
 
 ## Reports and closed months
 

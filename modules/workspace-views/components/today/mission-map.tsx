@@ -4,8 +4,9 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
-import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, HouseIcon, LayersIcon, LocateFixedIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, XIcon } from 'lucide-react';
+import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, CircleIcon, Columns3Icon, HouseIcon, LayersIcon, LocateFixedIcon, MinusIcon, OrbitIcon, PlusIcon, RotateCcwIcon, Rows3Icon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
+import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
 import { cn } from '@/shared/utils';
 import { missionDueLabel, type RoadmapMission } from '@/modules/tasks/client';
 import { checklistWorkHref, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistBranchRow, type ChecklistSection } from '@/modules/checklists/client';
@@ -23,6 +24,11 @@ const BATCH = 20;
 
 /** One opened node on the path: the mission, then each opened row with rows under it. */
 interface Step { id: string; title: string; missionId: string; options: ChecklistBranchOptions }
+// On the map itself, where people look for it (user request, 28 October 2026).
+const LAYOUT_OPTIONS: readonly SegmentedOption<MapOrientation>[] = [
+  { value: 'vertical', label: 'Vertical map', icon: Rows3Icon, iconOnly: true },
+  { value: 'horizontal', label: 'Horizontal map', icon: Columns3Icon, iconOnly: true },
+];
 interface Level { branch?: ChecklistBranch; error?: string; loading?: boolean }
 
 function missionStep(m: Pick<RoadmapMission, 'id' | 'title'>, options: ChecklistBranchOptions = { section: 'activity' }): Step {
@@ -54,12 +60,14 @@ const MapHint = forwardRef<{ show: () => void }>(function MapHint(_, ref) {
   </>;
 });
 
-export function MissionMap({ missions, today, initialLocation, onLocation, orientation = 'vertical' }: {
+export function MissionMap({ missions, today, initialLocation, onLocation, orientation = 'vertical', onOrientationChange }: {
   missions: RoadmapMission[];
   today: string;
   initialLocation: RoadmapLocation | null;
   onLocation: (location: RoadmapLocation | null) => void;
   orientation?: MapOrientation;
+  /** Shows the Vertical / Horizontal switch in the map controls. */
+  onOrientationChange?: (orientation: MapOrientation) => void;
 }) {
   const [path, setPath] = useState<Step[]>([]);
   const [leafId, setLeafId] = useState<string | null>(null);
@@ -306,6 +314,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
           <Button size="sm" variant="outline" disabled={!last} onClick={back}><ArrowUpLeftIcon aria-hidden="true" />Back</Button>
           <Button size="sm" variant="outline" onClick={() => { goTo([]); setRecentre(n => n + 1); }}><HouseIcon aria-hidden="true" />Full map</Button>
           <Button size="sm" variant="outline" onClick={() => setRecentre(n => n + 1)}><LocateFixedIcon aria-hidden="true" />Re-centre</Button>
+          {onOrientationChange ? <SegmentedControl label="Map layout" value={orientation} options={LAYOUT_OPTIONS} onValueChange={onOrientationChange} className="p-0.5" /> : null}
           <Button size="icon" variant="outline" className="size-8" aria-label="Zoom in" onClick={() => zoomAt(1.25)}><PlusIcon aria-hidden="true" /></Button>
           <Button size="icon" variant="outline" className="size-8" aria-label="Zoom out" onClick={() => zoomAt(0.8)}><MinusIcon aria-hidden="true" /></Button>
         </div>
@@ -380,7 +389,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
           </div> : null}
         </div>
         <p className={cn(styles.float, styles.left)} aria-live="polite">{status}</p>
-        <p className={cn(styles.float, styles.right)}>{free ? 'Manual' : last ? `Depth ${path.length}` : 'Overview'} · {Math.round(camera.z * 100)}%</p>
+        <p className={cn(styles.float, styles.right)}>{free ? 'Manual' : last ? `Depth ${path.length}` : 'Overview'} · Zoom {Math.round(camera.z * 100)}%</p>
         <MapHint ref={hintRef} />
       </section>
     </div>
