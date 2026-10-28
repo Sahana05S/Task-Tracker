@@ -40,6 +40,32 @@ SELECT calls, round(mean_exec_time::numeric,1) AS mean_ms, round(max_exec_time::
  WHERE calls>=3 AND query NOT ILIKE '%pg_stat_statements%'
  ORDER BY mean_exec_time DESC LIMIT 20;
 
+\echo '== Slowest app calls by function (PostgREST RPCs)'
+SELECT coalesce(substring(query from '"public"\."([a-z_0-9]+)"\('), substring(query from 'FROM "public"\."([a-z_0-9]+)"'), '(other)') AS called,
+       sum(calls) AS calls, round(sum(total_exec_time))::bigint AS total_ms,
+       round((sum(total_exec_time)/nullif(sum(calls),0))::numeric,1) AS mean_ms, round(max(max_exec_time)::numeric) AS max_ms
+ FROM extensions.pg_stat_statements
+ WHERE query LIKE '%pgrst%' OR query LIKE 'SELECT%public%'
+ GROUP BY 1 ORDER BY 3 DESC LIMIT 30;
+
+\echo '== Statements that scan outbox_jobs'
+SELECT calls, round(mean_exec_time::numeric,1) AS mean_ms, left(regexp_replace(query,'\s+',' ','g'),260) AS query
+ FROM extensions.pg_stat_statements WHERE query ILIKE '%outbox_jobs%' AND query NOT ILIKE 'COPY%' AND query NOT ILIKE '%database/query%'
+ ORDER BY total_exec_time DESC LIMIT 8;
+
+\echo '== Outbox jobs by kind and status'
+SELECT kind, status, count(*) FROM taskpulse_private.outbox_jobs GROUP BY 1,2 ORDER BY 3 DESC LIMIT 20;
+
+\echo '== Average stored size per row of the large award tables (bytes)'
+SELECT 'award_runs' tbl, count(*) n, round(avg(pg_column_size(context))) context_b, round(avg(pg_column_size(result))) result_b FROM taskpulse_private.award_runs
+UNION ALL SELECT 'award_receipts', count(*), round(avg(pg_column_size(request))), round(avg(pg_column_size(response))) FROM taskpulse_private.award_receipts
+UNION ALL SELECT 'award_candidates', count(*), round(avg(pg_column_size(calculation))), round(avg(pg_column_size(gate))) FROM taskpulse_private.award_candidates
+UNION ALL SELECT 'presentation_history', count(*), round(avg(pg_column_size(source))), NULL FROM taskpulse_private.presentation_history;
+SELECT status, count(*) FROM taskpulse_private.award_runs GROUP BY 1 ORDER BY 2 DESC;
+
+\echo '== timezone lookups'
+SELECT calls, round(mean_exec_time::numeric,1) mean_ms, left(regexp_replace(query,'\s+',' ','g'),200) q FROM extensions.pg_stat_statements WHERE query ILIKE '%pg_timezone%' LIMIT 5;
+
 \echo '== Tables most read by sequential scan'
 SELECT schemaname||'.'||relname AS tbl, n_live_tup AS live_rows, n_dead_tup AS dead_rows, seq_scan, seq_tup_read, idx_scan,
        pg_size_pretty(pg_total_relation_size(relid)) AS size, last_autoanalyze
