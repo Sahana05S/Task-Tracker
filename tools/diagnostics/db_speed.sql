@@ -16,10 +16,8 @@ BEGIN
  RAISE NOTICE 'part % (%): % ms', 0, 'SELECT available_from INTO cutoff FROM taskpulse_private.per', round(extract(epoch FROM clock_timestamp()-t)*1000);
  t:=clock_timestamp();
  WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,revision,data FROM taskpulse_private.performance_observations WHERE observed_at<=p_as_of ORDER BY kind,source_key,observed_at DESC,revision DESC)
- RAISE NOTICE 'part % (%): % ms', 1, 'WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,rev', round(extract(epoch FROM clock_timestamp()-t)*1000);
- t:=clock_timestamp();
  SELECT coalesce(jsonb_agg(data||jsonb_build_object('revision',revision::text) ORDER BY data->>'id'),'[]') INTO members FROM latest WHERE kind='member' AND data->>'deleted'='false';
- RAISE NOTICE 'part % (%): % ms', 2, 'SELECT coalesce(jsonb_agg(data||jsonb_build_object(revision', round(extract(epoch FROM clock_timestamp()-t)*1000);
+ RAISE NOTICE 'part % (%): % ms', 1, 'WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,rev', round(extract(epoch FROM clock_timestamp()-t)*1000);
  t:=clock_timestamp();
  WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,revision,data FROM taskpulse_private.performance_observations WHERE observed_at<=p_as_of ORDER BY kind,source_key,observed_at DESC,revision DESC),
  effort AS (SELECT data->>'taskId' tid,sum((data->>'hours')::numeric) FILTER(WHERE data->>'reversedAt' IS NULL) hours,
@@ -39,8 +37,6 @@ BEGIN
  ), completions AS (
   SELECT DISTINCT ON(data->>'id') data FROM task_events WHERE data->>'status'='Done' AND prior_status IS NOT NULL AND prior_status<>'Done' ORDER BY data->>'id',observed_at DESC,revision DESC
  )
- RAISE NOTICE 'part % (%): % ms', 3, 'WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,rev', round(extract(epoch FROM clock_timestamp()-t)*1000);
- t:=clock_timestamp();
  SELECT coalesce(jsonb_agg(t.data||jsonb_build_object('revision',t.revision::text,'taskHours',coalesce(e.hours,0)::text,'unknownEffect',coalesce(e.unknown_effect,false),
   'credits',coalesce((SELECT jsonb_object_agg(c.data->>'userId',c.data->>'scaledCredit') FROM latest c WHERE c.kind='credit' AND c.data->>'taskId'=t.data->>'id'),'{}'),
   'periodCredits',coalesce((SELECT jsonb_object_agg(uid,credit::text) FROM period_credits WHERE tid=t.data->>'id'),'{}'),
@@ -49,13 +45,11 @@ BEGIN
   'completionPrimary',(SELECT data->'primaryAssignee' FROM completions WHERE data->>'id'=t.data->>'id')) ORDER BY t.data->>'id'),'[]') INTO tasks
  FROM latest t LEFT JOIN effort e ON e.tid=t.data->>'id' WHERE t.kind='task' AND t.data->>'deleted'='false';
  -- Only aggregate attendance is returned to the team; private days/notes/times/IDs remain in their authorized RPC.
- RAISE NOTICE 'part % (%): % ms', 4, 'SELECT coalesce(jsonb_agg(t.data||jsonb_build_object(revisi', round(extract(epoch FROM clock_timestamp()-t)*1000);
- t:=clock_timestamp();
  SELECT coalesce(jsonb_agg(jsonb_build_object('userId',u->>'id','hours',CASE WHEN (a->>'validityAvailable')::boolean THEN (SELECT sum((d->>'attendanceHours')::numeric)::text FROM jsonb_array_elements(a->'days') d) END,
   'offHours',CASE WHEN (a->>'validityAvailable')::boolean THEN (SELECT sum((d->>'offHours')::numeric)::text FROM jsonb_array_elements(a->'days') d) END,
   'valid',a->'valid','available',a->'validityAvailable','reasons',a->'reasons','sourceRevision',taskpulse_private.performance_watermark(p_as_of)) ORDER BY u->>'id'),'[]') INTO attendance
  FROM jsonb_array_elements(members) u CROSS JOIN LATERAL (SELECT taskpulse_private.attendance_inputs((u->>'id')::uuid,p_from,p_to_exclusive,p_as_of) a) q;
- RAISE NOTICE 'part % (%): % ms', 5, 'SELECT coalesce(jsonb_agg(jsonb_build_object(userId,u->>i', round(extract(epoch FROM clock_timestamp()-t)*1000);
+ RAISE NOTICE 'part % (%): % ms', 2, 'WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,rev', round(extract(epoch FROM clock_timestamp()-t)*1000);
  t:=clock_timestamp(); w:=taskpulse_private.performance_watermark(p_as_of); RAISE NOTICE 'watermark: % ms', round(extract(epoch FROM clock_timestamp()-t)*1000);
  t:=clock_timestamp(); c:=taskpulse_private.contribution_inputs(p_from,p_to_exclusive,p_as_of); RAISE NOTICE 'contributions: % ms', round(extract(epoch FROM clock_timestamp()-t)*1000);
  RAISE NOTICE 'sizes members % tasks % attendance %', octet_length(members::text), octet_length(tasks::text), octet_length(attendance::text);
@@ -70,10 +64,8 @@ BEGIN
  RAISE NOTICE 'part % (%): % ms', 0, 'SELECT available_from INTO cutoff FROM taskpulse_private.per', round(extract(epoch FROM clock_timestamp()-t)*1000);
  t:=clock_timestamp();
  WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,revision,data FROM taskpulse_private.performance_observations WHERE observed_at<=p_as_of ORDER BY kind,source_key,observed_at DESC,revision DESC)
- RAISE NOTICE 'part % (%): % ms', 1, 'WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,rev', round(extract(epoch FROM clock_timestamp()-t)*1000);
- t:=clock_timestamp();
  SELECT coalesce(jsonb_agg(data||jsonb_build_object('revision',revision::text) ORDER BY data->>'id'),'[]') INTO members FROM latest WHERE kind='member' AND data->>'deleted'='false';
- RAISE NOTICE 'part % (%): % ms', 2, 'SELECT coalesce(jsonb_agg(data||jsonb_build_object(revision', round(extract(epoch FROM clock_timestamp()-t)*1000);
+ RAISE NOTICE 'part % (%): % ms', 1, 'WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,rev', round(extract(epoch FROM clock_timestamp()-t)*1000);
  t:=clock_timestamp();
  WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,revision,data FROM taskpulse_private.performance_observations WHERE observed_at<=p_as_of ORDER BY kind,source_key,observed_at DESC,revision DESC),
  effort AS (SELECT data->>'taskId' tid,sum((data->>'hours')::numeric) FILTER(WHERE data->>'reversedAt' IS NULL) hours,
@@ -93,8 +85,6 @@ BEGIN
  ), completions AS (
   SELECT DISTINCT ON(data->>'id') data FROM task_events WHERE data->>'status'='Done' AND prior_status IS NOT NULL AND prior_status<>'Done' ORDER BY data->>'id',observed_at DESC,revision DESC
  )
- RAISE NOTICE 'part % (%): % ms', 3, 'WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,rev', round(extract(epoch FROM clock_timestamp()-t)*1000);
- t:=clock_timestamp();
  SELECT coalesce(jsonb_agg(t.data||jsonb_build_object('revision',t.revision::text,'taskHours',coalesce(e.hours,0)::text,'unknownEffect',coalesce(e.unknown_effect,false),
   'credits',coalesce((SELECT jsonb_object_agg(c.data->>'userId',c.data->>'scaledCredit') FROM latest c WHERE c.kind='credit' AND c.data->>'taskId'=t.data->>'id'),'{}'),
   'periodCredits',coalesce((SELECT jsonb_object_agg(uid,credit::text) FROM period_credits WHERE tid=t.data->>'id'),'{}'),
@@ -103,13 +93,11 @@ BEGIN
   'completionPrimary',(SELECT data->'primaryAssignee' FROM completions WHERE data->>'id'=t.data->>'id')) ORDER BY t.data->>'id'),'[]') INTO tasks
  FROM latest t LEFT JOIN effort e ON e.tid=t.data->>'id' WHERE t.kind='task' AND t.data->>'deleted'='false';
  -- Only aggregate attendance is returned to the team; private days/notes/times/IDs remain in their authorized RPC.
- RAISE NOTICE 'part % (%): % ms', 4, 'SELECT coalesce(jsonb_agg(t.data||jsonb_build_object(revisi', round(extract(epoch FROM clock_timestamp()-t)*1000);
- t:=clock_timestamp();
  SELECT coalesce(jsonb_agg(jsonb_build_object('userId',u->>'id','hours',CASE WHEN (a->>'validityAvailable')::boolean THEN (SELECT sum((d->>'attendanceHours')::numeric)::text FROM jsonb_array_elements(a->'days') d) END,
   'offHours',CASE WHEN (a->>'validityAvailable')::boolean THEN (SELECT sum((d->>'offHours')::numeric)::text FROM jsonb_array_elements(a->'days') d) END,
   'valid',a->'valid','available',a->'validityAvailable','reasons',a->'reasons','sourceRevision',taskpulse_private.performance_watermark(p_as_of)) ORDER BY u->>'id'),'[]') INTO attendance
  FROM jsonb_array_elements(members) u CROSS JOIN LATERAL (SELECT taskpulse_private.attendance_inputs((u->>'id')::uuid,p_from,p_to_exclusive,p_as_of) a) q;
- RAISE NOTICE 'part % (%): % ms', 5, 'SELECT coalesce(jsonb_agg(jsonb_build_object(userId,u->>i', round(extract(epoch FROM clock_timestamp()-t)*1000);
+ RAISE NOTICE 'part % (%): % ms', 2, 'WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,rev', round(extract(epoch FROM clock_timestamp()-t)*1000);
  t:=clock_timestamp(); w:=taskpulse_private.performance_watermark(p_as_of); RAISE NOTICE 'watermark: % ms', round(extract(epoch FROM clock_timestamp()-t)*1000);
  t:=clock_timestamp(); c:=taskpulse_private.contribution_inputs(p_from,p_to_exclusive,p_as_of); RAISE NOTICE 'contributions: % ms', round(extract(epoch FROM clock_timestamp()-t)*1000);
  RAISE NOTICE 'sizes members % tasks % attendance %', octet_length(members::text), octet_length(tasks::text), octet_length(attendance::text);
