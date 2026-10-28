@@ -29,7 +29,8 @@ export function MissionBrief({
   native: NativeDetailState;
   templates: readonly NativeTemplate[];
   canManage: boolean;
-  tasks: readonly Task[];
+  /** Missions for the related-task picker (tag and title). */
+  tasks: readonly Pick<Task, 'id' | 'taskTag' | 'title'>[];
   members: readonly User[];
   reports: readonly ReportChoice[];
 }) {

@@ -22,7 +22,7 @@ const INITIAL_STATE: AuthActionState | null = null;
 /** A fresh sign-in opens with the splash, even in a tab that has already seen it. */
 function resetSplash() {
   try {
-    window.sessionStorage.removeItem(SPLASH_STORAGE_KEY);
+    window.localStorage.removeItem(SPLASH_STORAGE_KEY);
   } catch {
     // Blocked storage: the splash is skipped anyway.
   }

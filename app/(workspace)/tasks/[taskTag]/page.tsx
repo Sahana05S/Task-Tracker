@@ -27,7 +27,7 @@ import {
   canUpdateTaskOwnFields,
   getNativeDetailState,
   getNativeTemplates,
-  getTaskWorkspaceData,
+  getMissionChoices,
   getVisibleReportChoices,
   normalizeTaskTagParam,
   resolveTaskDetailRouteState,
@@ -105,7 +105,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
-    details && canManage ? getTaskWorkspaceData() : Promise.resolve({ tasks: [], members: [] }),
+    details && canManage ? getMissionChoices() : Promise.resolve([]),
     details && canManage ? getVisibleReportChoices() : Promise.resolve([]),
     details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
     // A failed read leaves the track on current progress.
@@ -278,7 +278,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               native={native}
               templates={templates}
               canManage={canManage}
-              tasks={workspace.tasks}
+              tasks={workspace}
               members={data.members}
               reports={reports}
             />

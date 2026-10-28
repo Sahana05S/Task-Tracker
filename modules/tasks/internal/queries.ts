@@ -19,6 +19,26 @@ export interface TaskWorkspaceData {
   members: User[];
 }
 
+/** A mission as a pick-list entry. */
+export interface MissionChoice {
+  readonly id: string;
+  readonly taskTag: string;
+  readonly title: string;
+}
+
+/**
+ * Every mission as tag and title, for "Link to a mission" and related-task
+ * pickers. One narrow read instead of the whole Missions list (with people,
+ * shares and links), which the checklist and mission pages used to load just
+ * for these menus (slow pages, 28 October 2026).
+ */
+export async function getMissionChoices(): Promise<MissionChoice[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('tasks').select('id, task_tag, title').order('task_tag', { ascending: true });
+  if (error) throw new Error(`Failed to load missions: ${error.message}`);
+  return data.map((row) => ({ id: row.id, taskTag: row.task_tag, title: row.title }));
+}
+
 /**
  * Loads the task grid and the member directory it references.
  *

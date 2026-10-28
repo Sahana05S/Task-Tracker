@@ -5,23 +5,23 @@ import { SPLASH_FORCE_QUERY, SPLASH_SCRIPT, SPLASH_STORAGE_KEY } from '../splash
 function open({ webdriver = false, search = '', motion = null as string | null, osReduced = false, seen = false, storageThrows = false } = {}) {
   const attrs: Record<string, string> = {};
   const store = new Map<string, string>(seen ? [[SPLASH_STORAGE_KEY, '1']] : []);
-  const sessionStorage = {
+  const localStorage = {
     getItem: (key: string) => { if (storageThrows) throw new Error('blocked'); return store.get(key) ?? null; },
     setItem: (key: string, value: string) => { store.set(key, value); },
   };
-  const run = new Function('document', 'navigator', 'location', 'window', 'sessionStorage', SPLASH_SCRIPT);
+  const run = new Function('document', 'navigator', 'location', 'window', 'localStorage', SPLASH_SCRIPT);
   run(
     { documentElement: { getAttribute: (name: string) => (name === 'data-motion' ? motion : null), setAttribute: (name: string, value: string) => { attrs[name] = value; } } },
     { webdriver },
     { search },
     { matchMedia: (query: string) => ({ matches: query.includes('reduce') && osReduced }) },
-    sessionStorage,
+    localStorage,
   );
   return { splash: attrs['data-splash'], stored: store.get(SPLASH_STORAGE_KEY) };
 }
 
 describe('post-sign-in splash script', () => {
-  it('plays once per tab session and remembers that it did', () => {
+  it('plays once per sign-in on this device and remembers that it did', () => {
     expect(open()).toEqual({ splash: 'on', stored: '1' });
     expect(open({ seen: true }).splash).toBeUndefined();
   });
