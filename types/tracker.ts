@@ -159,6 +159,8 @@ export interface Task {
   participantShares?: Record<string, number> | null;
   /** UUID primary key. */
   id: string;
+  /** Parent mission of a sub-mission (a `Subtask` dependency, migration 68); read on the Missions list only. */
+  parentTaskId?: string | null;
   /** `task_tag` — unique sheet-style identifier, e.g. `"Sep26_T5"`. */
   taskTag: string;
   /** `title` */

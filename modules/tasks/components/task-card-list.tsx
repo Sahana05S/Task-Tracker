@@ -15,6 +15,7 @@ import {
 
 import { AvatarStack, MissionProgress } from '@/shared/ui/mission-ui';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
+import { PartOfChip, SubMissionCount } from '@/modules/tasks/components/sub-mission-chips';
 import { TaskRowMenuItems, type TaskRowActions } from '@/modules/tasks/components/task-row-menu';
 import {
   CategoryBadge,
@@ -28,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
+import type { MissionNesting } from '@/modules/tasks/internal/grouping';
 import { canUpdateTaskOwnFields, isAssignedToTask } from '@/modules/tasks/internal/permissions';
 import { formatDate, formatPercent, isOverdue, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
@@ -49,6 +51,8 @@ export interface TaskCardListProps {
   LogHoursAction?: LogHoursActionComponent;
   /** The mission's waypoint track under its progress bar (recognition fills it). */
   WaypointSlot?: WaypointSlotComponent;
+  /** Sub-mission nesting for `tasks`, already ordered parent first (Missions list). */
+  nesting?: ReadonlyMap<string, MissionNesting>;
 }
 
 /** A recognition waypoint track for one task; `stopped` is a discarded or archived mission. */
@@ -85,6 +89,7 @@ export const TaskCardList = React.memo(function TaskCardList({
   actions,
   LogHoursAction,
   WaypointSlot,
+  nesting,
 }: TaskCardListProps) {
   return (
     <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -100,6 +105,7 @@ export const TaskCardList = React.memo(function TaskCardList({
             actions={actions}
             LogHoursAction={LogHoursAction}
             WaypointSlot={WaypointSlot}
+            nest={nesting?.get(task.id)}
           />
         </li>
       ))}
@@ -122,6 +128,7 @@ interface MissionCardProps {
   actions: TaskRowActions;
   LogHoursAction?: LogHoursActionComponent;
   WaypointSlot?: WaypointSlotComponent;
+  nest?: MissionNesting;
 }
 
 function MissionCard({
@@ -134,6 +141,7 @@ function MissionCard({
   actions,
   LogHoursAction,
   WaypointSlot,
+  nest,
 }: MissionCardProps) {
   const href = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const archived = Boolean(task.archivedEffectiveDate);
@@ -153,6 +161,8 @@ function MissionCard({
               Archived
             </span>
           ) : null}
+          {nest?.parentTag ? <PartOfChip parentTag={nest.parentTag} /> : null}
+          {nest?.childCount ? <SubMissionCount count={nest.childCount} /> : null}
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

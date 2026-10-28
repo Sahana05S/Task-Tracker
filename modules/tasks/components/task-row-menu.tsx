@@ -9,6 +9,7 @@ import {
   PanelTopOpenIcon,
   PencilIcon,
   RefreshCwIcon,
+  RocketIcon,
   RotateCcwIcon,
   Trash2Icon,
 } from 'lucide-react';
@@ -30,6 +31,8 @@ export interface TaskRowActions {
   onRun: (command: ToolOperation, task: Task) => void;
   onEdit: (task: Task) => void;
   onRequestDelete: (task: Task) => void;
+  /** Missions list only: add a sub-mission under this mission. */
+  onAddSubMission?: (task: Task) => void;
 }
 
 export interface TaskRowMenuProps {
@@ -116,6 +119,12 @@ export function TaskRowMenuItems({
               ))}
             </DropdownMenuSubContent>
           </DropdownMenuSub>
+          {actions.onAddSubMission && task.status !== 'Done' && task.status !== 'Discarded' ? (
+            <DropdownMenuItem onSelect={() => actions.onAddSubMission?.(task)}>
+              <RocketIcon aria-hidden="true" />
+              Add sub-mission…
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem onSelect={() => onRun('archive')}>
             <ArchiveIcon aria-hidden="true" />
             Archive…
