@@ -1,80 +1,83 @@
--- Compares migration 88's attendance_inputs with the deployed one for every
--- member on the demo data, inside a transaction that is rolled back. Prints
--- only counts of equal and different results and timings; no rows.
+-- Compares migration 88 (one attendance calculation per member) and 87 with
+-- the deployed functions on the demo data, inside a transaction that is rolled
+-- back. Prints only equality and timings; no rows.
 \pset pager off
 BEGIN;
 SET LOCAL statement_timeout = '180s';
-CREATE FUNCTION pg_temp.attendance_new(p_user uuid,p_from date,p_to_exclusive date,p_as_of timestamptz) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
-DECLARE cutoff timestamptz;days jsonb;known boolean;ready boolean;period_valid boolean;reasons jsonb; BEGIN
- IF p_from IS NULL OR p_to_exclusive IS NULL OR NOT isfinite(p_from) OR NOT isfinite(p_to_exclusive) OR p_to_exclusive<=p_from OR p_to_exclusive-p_from>366 OR p_as_of IS NULL OR NOT isfinite(p_as_of) OR p_as_of>clock_timestamp() THEN RAISE EXCEPTION 'Explicit valid period and nonfuture as-of instant required' USING ERRCODE='23514'; END IF;
- SELECT available_from INTO cutoff FROM taskpulse_private.input_contract;known:=p_as_of>=cutoff;
- -- Migration 88: the latest version of each record is found from its keys (the
- -- m06_input_history_lookup index); only those versions' sources are read.
- WITH keys AS (
-  SELECT DISTINCT ON(kind,record_id) sequence FROM taskpulse_private.input_history
-  WHERE kind IN ('attendance','effort') AND recorded_at<=p_as_of ORDER BY kind,record_id,recorded_at DESC,sequence DESC
- ), snapshots AS (
-  SELECT h.kind,h.record_id,h.record_version,h.source FROM keys k JOIN taskpulse_private.input_history h ON h.sequence=k.sequence
- ), attendance AS (
-  SELECT record_id,record_version,source FROM snapshots WHERE kind='attendance' AND source->>'user_id'=p_user::text AND source->>'record_state'<>'withdrawn'
- ), effort AS (
-  SELECT (source->>'log_date')::date work_date,
-   CASE WHEN bool_and((source->>'hours_worked')::numeric>=0 AND (source->>'hours_worked')::numeric<'Infinity'::numeric) THEN sum((source->>'hours_worked')::numeric) END hours,
-   bool_and((source->>'hours_worked')::numeric>=0 AND (source->>'hours_worked')::numeric<'Infinity'::numeric) hours_valid,
-   jsonb_agg(jsonb_build_object('id',record_id,'version',record_version,'taskId',source->>'task_id','timerId',source->>'source_timer_id','segmentNumber',source->'segment_number') ORDER BY record_id) ids
-  FROM snapshots WHERE kind='effort' AND source->>'user_id'=p_user::text AND source->>'reversed_at' IS NULL GROUP BY 1
- ), inputs AS (
-  SELECT d.day::date business_date,a.record_id,a.record_version,a.source->>'status' status,
-   CASE WHEN known AND (a.source->>'hours_confirmed')::boolean THEN (a.source->>'attendance_hours')::numeric END regular,
-   CASE WHEN known AND (a.source->>'hours_confirmed')::boolean THEN (a.source->>'off_hours')::numeric END off_hours,
-   CASE WHEN known THEN CASE WHEN e.hours_valid=false THEN NULL ELSE coalesce(e.hours,0) END END logged,
-   coalesce(e.ids,'[]') ids,
-   array_remove(ARRAY[CASE WHEN NOT known THEN 'history_before_input_baseline' END,
-    CASE WHEN a.record_id IS NULL THEN 'attendance_missing' WHEN NOT (a.source->>'hours_confirmed')::boolean THEN 'legacy_hours_unconfirmed' END,
-    CASE WHEN e.hours_valid=false THEN 'effort_hours_invalid' END],NULL) input_reasons
-  FROM generate_series(p_from::timestamp,least(p_to_exclusive-1,(p_as_of AT TIME ZONE 'Asia/Kolkata')::date)::timestamp,interval '1 day') d(day)
-  LEFT JOIN attendance a ON (a.source->>'attendance_date')::date=d.day::date LEFT JOIN effort e ON e.work_date=d.day::date
- ), checked AS (
-  SELECT *,regular BETWEEN 0 AND 24 AND off_hours BETWEEN 0 AND 24 AND regular+off_hours<=24 numeric_ok,
-   CASE WHEN status IN ('Absent','Leave') THEN regular=0 AND off_hours=0
-    WHEN status IN ('Holiday','Off Hours') THEN regular=0
-    WHEN status IN ('Present','Half Day') THEN true ELSE false END state_ok
-  FROM inputs
- ), evaluated AS (
-  SELECT *,cardinality(input_reasons)=0 AND coalesce(numeric_ok,false) AND logged IS NOT NULL available,
-   input_reasons||array_remove(ARRAY[CASE WHEN regular IS NOT NULL AND NOT numeric_ok THEN 'attendance_hours_invalid' END,
-    CASE WHEN numeric_ok AND NOT state_ok THEN 'attendance_state_hours_incompatible' END,
-    CASE WHEN numeric_ok AND state_ok AND logged>regular+off_hours THEN 'effort_exceeds_attendance_capacity' END],NULL) all_reasons
-  FROM checked
- ) SELECT coalesce(jsonb_agg(jsonb_build_object('businessDate',business_date,'attendanceId',record_id,'attendanceVersion',record_version,'status',status,
-  'attendanceHours',regular::text,'offHours',off_hours::text,'capacityHours',CASE WHEN numeric_ok AND state_ok THEN (regular+off_hours)::text END,'effortHours',logged::text,
-  'effortSources',ids,'available',available,'valid',CASE WHEN available THEN state_ok AND logged<=regular+off_hours END,'reasons',all_reasons) ORDER BY business_date),'[]') INTO days FROM evaluated;
- SELECT count(*)>0 AND bool_and((d->>'available')::boolean),bool_and((d->>'valid')::boolean) INTO ready,period_valid FROM jsonb_array_elements(days) d;
- SELECT coalesce(jsonb_agg(reason ORDER BY reason),'[]') INTO reasons FROM (SELECT DISTINCT jsonb_array_elements_text(d->'reasons') reason FROM jsonb_array_elements(days) d) r;
- IF jsonb_array_length(days)=0 THEN reasons:=jsonb_build_array('no_elapsed_days'); END IF;
- RETURN jsonb_build_object('ruleVersion','m06-attendance-inputs-v2','userId',p_user,'periodStart',p_from,'periodEndExclusive',p_to_exclusive,'asOf',p_as_of,
-  'historyAvailableFrom',cutoff,'historyAvailable',known,'validityAvailable',ready,'valid',CASE WHEN ready THEN period_valid END,'reasons',reasons,'days',days);
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM public.users WHERE role='managing_director' AND is_active ORDER BY created_at LIMIT 1), 'role','authenticated')::text, true) IS NOT NULL AS acting;
+DO $do$
+DECLARE def text;
+ frag text:='CROSS JOIN LATERAL (SELECT taskpulse_private.attendance_inputs((u->>''id'')::uuid,p_from,p_to_exclusive,p_as_of) a) q;';
+ repl text:='CROSS JOIN LATERAL (SELECT taskpulse_private.attendance_inputs((u->>''id'')::uuid,p_from,p_to_exclusive,p_as_of) a OFFSET 0) q;';
+BEGIN
+ def:=pg_get_functiondef('public.performance_source_context(date,date,timestamptz)'::regprocedure);
+ IF position(frag IN def)=0 THEN RAISE EXCEPTION 'fragment missing in performance_source_context'; END IF;
+ EXECUTE replace(replace(def,frag,repl),'FUNCTION public.performance_source_context(','FUNCTION pg_temp.psc_new(');
+ def:=pg_get_functiondef('taskpulse_private.presentation_performance_sources(date,date,timestamptz)'::regprocedure);
+ IF position(frag IN def)=0 THEN RAISE EXCEPTION 'fragment missing in presentation_performance_sources'; END IF;
+ EXECUTE replace(replace(def,frag,repl),'FUNCTION taskpulse_private.presentation_performance_sources(','FUNCTION pg_temp.pps_new(');
+END $do$;
+CREATE FUNCTION pg_temp.live_new(p_from date,p_to_exclusive date,p_as_of timestamptz,p_employee uuid DEFAULT NULL,p_series boolean DEFAULT false) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
+DECLARE role text:=public.get_user_role();sources jsonb;cutoff timestamptz;known boolean;tasks jsonb;checklists jsonb;assets jsonb;relations jsonb;logs jsonb;contributions jsonb;attendance jsonb;series jsonb;detail_user uuid;watermark text;task_ids text[];employee_tasks text[];BEGIN
+ IF role IS NULL OR NOT EXISTS(SELECT 1 FROM public.users WHERE id=auth.uid() AND is_active) THEN RAISE EXCEPTION 'Active authenticated viewer required' USING ERRCODE='42501';END IF;
+ IF p_employee IS NOT NULL AND NOT public.can_read_employee_details(p_employee) THEN RAISE EXCEPTION 'Employee/manager detail access required' USING ERRCODE='42501';END IF;
+ IF p_employee IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.users WHERE id=p_employee) THEN RAISE EXCEPTION 'Employee required' USING ERRCODE='23514';END IF;
+ IF p_from IS NULL OR p_to_exclusive IS NULL OR p_to_exclusive<=p_from OR p_to_exclusive-p_from>62 OR p_as_of IS NULL OR p_as_of>clock_timestamp() OR NOT isfinite(p_as_of) THEN RAISE EXCEPTION 'Bounded nonfuture live context required' USING ERRCODE='23514';END IF;
+ sources:=pg_temp.pps_new(p_from,p_to_exclusive,p_as_of);
+ SELECT available_from INTO cutoff FROM taskpulse_private.presentation_contract;known:=p_as_of>=cutoff;
+ detail_user:=CASE WHEN p_employee IS NOT NULL THEN p_employee WHEN role IN ('managing_director','project_engineer') THEN NULL ELSE auth.uid() END;
+ -- Migration 87: the employee's missions are listed once, not re-read for every history row.
+ IF p_employee IS NOT NULL THEN
+  SELECT coalesce(array_agg(s->>'id'),'{}') INTO employee_tasks FROM jsonb_array_elements(sources->'tasks') s
+   WHERE s->'participants'?p_employee::text OR s->'periodCredits'?p_employee::text;
+ END IF;
+ -- Latest version of each row found by its keys first; only those rows' sources are read.
+ WITH keys AS(SELECT DISTINCT ON(kind,row_id) sequence FROM taskpulse_private.presentation_history WHERE recorded_at<=p_as_of ORDER BY kind,row_id,recorded_at DESC,sequence DESC),
+ latest AS(SELECT h.kind,h.row_id,h.task_id,h.sequence,h.source FROM keys k JOIN taskpulse_private.presentation_history h ON h.sequence=k.sequence),selected AS(
+ SELECT t.* FROM latest t WHERE kind='tasks' AND coalesce(source->>'deleted','false')='false' AND
+ (p_employee IS NULL OR t.row_id::text=ANY(employee_tasks))
+ ) SELECT coalesce(jsonb_agg(source ORDER BY row_id),'[]'),coalesce(array_agg(source->>'id'),'{}') INTO tasks,task_ids FROM selected WHERE known;
+ WITH keys AS(SELECT DISTINCT ON(kind,row_id) sequence FROM taskpulse_private.presentation_history WHERE recorded_at<=p_as_of ORDER BY kind,row_id,recorded_at DESC,sequence DESC),
+ latest AS(SELECT h.kind,h.row_id,h.task_id,h.source FROM keys k JOIN taskpulse_private.presentation_history h ON h.sequence=k.sequence)
+ SELECT coalesce(jsonb_agg(source||jsonb_build_object('taskId',task_id) ORDER BY row_id) FILTER(WHERE kind='checklist'),'[]'),
+ coalesce(jsonb_agg(source ORDER BY row_id) FILTER(WHERE kind='task_links' AND (source->>'related_report_id' IS NULL OR EXISTS(SELECT 1 FROM public.report_snapshots r WHERE r.id=(source->>'related_report_id')::uuid AND public.can_read_employee_details(r.employee_id)))),'[]'),
+ coalesce(jsonb_agg(source ORDER BY row_id) FILTER(WHERE kind='task_dependencies'),'[]') INTO checklists,assets,relations
+ FROM latest WHERE known AND coalesce(source->>'deleted','false')='false' AND task_id::text=ANY(task_ids);
+ WITH latest AS(SELECT DISTINCT ON(kind,record_id) kind,record_id,source FROM taskpulse_private.input_history WHERE recorded_at<=p_as_of ORDER BY kind,record_id,recorded_at DESC,sequence DESC)
+ SELECT coalesce(jsonb_agg(source) FILTER(WHERE kind='effort' AND source->>'reversed_at' IS NULL AND (detail_user IS NULL OR source->>'user_id'=detail_user::text) AND (source->>'log_date')::date>=p_from AND (source->>'log_date')::date<p_to_exclusive AND (source->>'log_date')::date<=(p_as_of AT TIME ZONE 'Asia/Kolkata')::date),'[]'),
+ coalesce(jsonb_agg(jsonb_build_object('kind',kind,'source',source)) FILTER(WHERE kind IN ('fact','idea','suggestion','sale','meeting') AND (detail_user IS NULL OR source->>CASE WHEN kind='sale' THEN 'sales_by' WHEN kind='meeting' THEN 'posted_by' ELSE 'posted_by' END=detail_user::text) AND
+ (source->>CASE kind WHEN 'fact' THEN 'fact_date' WHEN 'idea' THEN 'idea_date' WHEN 'suggestion' THEN 'suggestion_date' WHEN 'sale' THEN 'sale_date' ELSE 'meeting_date' END)::date>=p_from AND
+ (source->>CASE kind WHEN 'fact' THEN 'fact_date' WHEN 'idea' THEN 'idea_date' WHEN 'suggestion' THEN 'suggestion_date' WHEN 'sale' THEN 'sale_date' ELSE 'meeting_date' END)::date<least(p_to_exclusive,(p_as_of AT TIME ZONE 'Asia/Kolkata')::date+1)),'[]') INTO logs,contributions FROM latest;
+ SELECT coalesce(jsonb_agg(taskpulse_private.attendance_inputs(u.id,p_from,p_to_exclusive,p_as_of)),'[]') INTO attendance FROM public.users u WHERE (detail_user IS NULL OR u.id=detail_user) AND (u.is_active OR u.id=p_employee);
+ SELECT coalesce(jsonb_agg(jsonb_build_object('date',day::date,'sources',pg_temp.pps_new(p_from,day::date+1,least(p_as_of,((day::date+1)::timestamp AT TIME ZONE 'Asia/Kolkata')-interval '1 millisecond'))) ORDER BY day),'[]') INTO series
+ FROM generate_series(p_from::timestamp,least(p_to_exclusive-1,(p_as_of AT TIME ZONE 'Asia/Kolkata')::date)::timestamp,interval '1 day') day WHERE p_employee IS NOT NULL AND p_series;
+ SELECT coalesce(max(sequence),0)::text INTO watermark FROM taskpulse_private.presentation_history WHERE recorded_at<=p_as_of;
+ RETURN jsonb_build_object('contract','m11-live-presentation-v1','sources',sources,'presentationAvailable',known,'presentationAvailableFrom',cutoff,'presentationWatermark',watermark,
+ 'scope',CASE WHEN p_employee IS NOT NULL THEN 'employee_detail' WHEN detail_user IS NULL THEN 'manager_team_detail' ELSE 'team_summary_with_own_details' END,'detailUserId',detail_user,
+ 'tasks',tasks,'checklists',checklists,'assets',assets,'relations',relations,'logs',logs,'contributions',contributions,'attendance',attendance,'series',series);
 END $$;
 
-\echo '== every member, this month to today, read now'
-SELECT count(*) AS members,
-       count(*) FILTER (WHERE taskpulse_private.attendance_inputs(u.id,date_trunc('month',now())::date,current_date,now()) = pg_temp.attendance_new(u.id,date_trunc('month',now())::date,current_date,now())) AS same
- FROM public.users u;
-\echo '== every member, last month, read now'
-SELECT count(*) AS members,
-       count(*) FILTER (WHERE taskpulse_private.attendance_inputs(u.id,(date_trunc('month',now())::date-interval '1 month')::date,date_trunc('month',now())::date,now()) = pg_temp.attendance_new(u.id,(date_trunc('month',now())::date-interval '1 month')::date,date_trunc('month',now())::date,now())) AS same
- FROM public.users u;
-\echo '== every member, this month, read at the third day'
-SELECT count(*) AS members,
-       count(*) FILTER (WHERE taskpulse_private.attendance_inputs(u.id,date_trunc('month',now())::date,current_date,date_trunc('month',now())::date+interval '3 days') = pg_temp.attendance_new(u.id,date_trunc('month',now())::date,current_date,date_trunc('month',now())::date+interval '3 days')) AS same
- FROM public.users u;
-\echo '== where they differ, does sorting the work-log ids explain it'
-SELECT count(*) FILTER (WHERE taskpulse_private.attendance_inputs(u.id,date_trunc('month',now())::date,current_date,now()) <> pg_temp.attendance_new(u.id,date_trunc('month',now())::date,current_date,now())) AS differ
- FROM public.users u;
-\echo '== time, deployed, every member'
-EXPLAIN (ANALYZE, COSTS OFF) SELECT count(taskpulse_private.attendance_inputs(u.id,date_trunc('month',now())::date,current_date,now())) FROM public.users u;
-\echo '== time, migration 88, every member'
-EXPLAIN (ANALYZE, COSTS OFF) SELECT count(pg_temp.attendance_new(u.id,date_trunc('month',now())::date,current_date,now())) FROM public.users u;
-\echo '== input history size'
-SELECT kind, count(*) AS versions, count(DISTINCT record_id) AS records FROM taskpulse_private.input_history GROUP BY 1 ORDER BY 2 DESC;
+\echo '== this month to today, read now'
+SELECT public.performance_source_context(date_trunc('month',now())::date, current_date, now()) = pg_temp.psc_new(date_trunc('month',now())::date, current_date, now()) AS sources_same,
+       taskpulse_private.presentation_performance_sources(date_trunc('month',now())::date, current_date, now()) = pg_temp.pps_new(date_trunc('month',now())::date, current_date, now()) AS copy_same;
+\echo '== this month whole, read now'
+SELECT public.performance_source_context(date_trunc('month',now())::date, (date_trunc('month',now())::date+interval '1 month')::date, now()) = pg_temp.psc_new(date_trunc('month',now())::date, (date_trunc('month',now())::date+interval '1 month')::date, now()) AS sources_same,
+       taskpulse_private.presentation_performance_sources(date_trunc('month',now())::date, (date_trunc('month',now())::date+interval '1 month')::date, now()) = pg_temp.pps_new(date_trunc('month',now())::date, (date_trunc('month',now())::date+interval '1 month')::date, now()) AS copy_same;
+\echo '== last month, read now'
+SELECT public.performance_source_context((date_trunc('month',now())::date-interval '1 month')::date, date_trunc('month',now())::date, now()) = pg_temp.psc_new((date_trunc('month',now())::date-interval '1 month')::date, date_trunc('month',now())::date, now()) AS sources_same,
+       taskpulse_private.presentation_performance_sources((date_trunc('month',now())::date-interval '1 month')::date, date_trunc('month',now())::date, now()) = pg_temp.pps_new((date_trunc('month',now())::date-interval '1 month')::date, date_trunc('month',now())::date, now()) AS copy_same;
+\echo '== this month, read at the third day'
+SELECT public.performance_source_context(date_trunc('month',now())::date, current_date, date_trunc('month',now())::date+interval '3 days') = pg_temp.psc_new(date_trunc('month',now())::date, current_date, date_trunc('month',now())::date+interval '3 days') AS sources_same,
+       taskpulse_private.presentation_performance_sources(date_trunc('month',now())::date, current_date, date_trunc('month',now())::date+interval '3 days') = pg_temp.pps_new(date_trunc('month',now())::date, current_date, date_trunc('month',now())::date+interval '3 days') AS copy_same;
+
+\echo '== live presentation, director, team: deployed vs 87+88'
+SELECT public.live_presentation_context(date_trunc('month',now())::date, current_date, now(), NULL, false) = pg_temp.live_new(date_trunc('month',now())::date, current_date, now(), NULL, false) AS live_same;
+\echo '== time: sources deployed'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT public.performance_source_context(date_trunc('month',now())::date, current_date, now());
+\echo '== time: sources with 88'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT pg_temp.psc_new(date_trunc('month',now())::date, current_date, now());
+\echo '== time: live presentation deployed'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT public.live_presentation_context(date_trunc('month',now())::date, current_date, now(), NULL, false);
+\echo '== time: live presentation with 87 and 88'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT pg_temp.live_new(date_trunc('month',now())::date, current_date, now(), NULL, false);
 ROLLBACK;
