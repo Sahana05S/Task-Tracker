@@ -11,4 +11,13 @@ EXPLAIN (ANALYZE, COSTS OFF) SELECT public.live_presentation_context(date_trunc(
 EXPLAIN (ANALYZE, COSTS OFF) SELECT public.award_read_model(date_trunc('month',now())::date, (date_trunc('month',now())+interval '1 month')::date, NULL, false);
 \echo '== award_read_model, month, with calculations (Team daily log only)'
 EXPLAIN (ANALYZE, COSTS OFF) SELECT public.award_read_model(date_trunc('month',now())::date, (date_trunc('month',now())+interval '1 month')::date, NULL, true);
+\echo '#### second pass'
+\echo '== performance_source_context'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT public.performance_source_context(date_trunc('month',now())::date, current_date, now());
+\echo '== live_presentation_context, team'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT public.live_presentation_context(date_trunc('month',now())::date, current_date, now(), NULL, false);
+\echo '== award_read_model, month, without calculations'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT public.award_read_model(date_trunc('month',now())::date, (date_trunc('month',now())+interval '1 month')::date, NULL, false);
+\echo '== award_read_model, month, with calculations (Team daily log only)'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT public.award_read_model(date_trunc('month',now())::date, (date_trunc('month',now())+interval '1 month')::date, NULL, true);
 ROLLBACK;
