@@ -6,13 +6,13 @@ SET LOCAL statement_timeout = '120s';
 SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM public.users WHERE role='managing_director' AND is_active ORDER BY created_at LIMIT 1), 'role','authenticated')::text, true) IS NOT NULL AS acting;
 
 \echo '== whole read'
-SELECT octet_length(public.performance_source_context(date_trunc('month',now())::date, current_date, now())::text) AS bytes;
+EXPLAIN (ANALYZE, COSTS OFF) SELECT octet_length(public.performance_source_context(date_trunc('month',now())::date, current_date, now())::text) AS bytes;
 \echo '== watermark'
-SELECT length(taskpulse_private.performance_watermark(now()));
+EXPLAIN (ANALYZE, COSTS OFF) SELECT length(taskpulse_private.performance_watermark(now()));
 \echo '== contribution_inputs'
-SELECT octet_length(taskpulse_private.contribution_inputs(date_trunc('month',now())::date, current_date, now())::text);
+EXPLAIN (ANALYZE, COSTS OFF) SELECT octet_length(taskpulse_private.contribution_inputs(date_trunc('month',now())::date, current_date, now())::text);
 \echo '== attendance_inputs for every member'
-SELECT count(*), sum(octet_length(taskpulse_private.attendance_inputs(u.id, date_trunc('month',now())::date, current_date, now())::text)) FROM public.users u WHERE u.is_active;
+EXPLAIN (ANALYZE, COSTS OFF) SELECT count(*), sum(octet_length(taskpulse_private.attendance_inputs(u.id, date_trunc('month',now())::date, current_date, now())::text)) FROM public.users u WHERE u.is_active;
 \echo '== members query plan'
 EXPLAIN (ANALYZE, COSTS OFF, SUMMARY ON)  WITH latest AS (SELECT DISTINCT ON(kind,source_key) kind,revision,data FROM taskpulse_private.performance_observations WHERE observed_at<=now() ORDER BY kind,source_key,observed_at DESC,revision DESC)
  SELECT coalesce(jsonb_agg(data||jsonb_build_object('revision',revision::text) ORDER BY data->>'id'),'[]') FROM latest WHERE kind='member' AND data->>'deleted'='false';
@@ -42,4 +42,8 @@ EXPLAIN (ANALYZE, COSTS OFF, SUMMARY ON)  WITH latest AS (SELECT DISTINCT ON(kin
   'completionShares',(SELECT data->'shares' FROM completions WHERE data->>'id'=t.data->>'id'),
   'completionPrimary',(SELECT data->'primaryAssignee' FROM completions WHERE data->>'id'=t.data->>'id')) ORDER BY t.data->>'id'),'[]') 
  FROM latest t LEFT JOIN effort e ON e.tid=t.data->>'id' WHERE t.kind='task' AND t.data->>'deleted'='false';
+\echo '== live_presentation_context whole'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT octet_length(public.live_presentation_context(date_trunc('month',now())::date, current_date, now(), NULL, false)::text);
+\echo '== presentation_performance_sources (its copy of the sources read)'
+EXPLAIN (ANALYZE, COSTS OFF) SELECT octet_length(taskpulse_private.presentation_performance_sources(date_trunc('month',now())::date, current_date, now())::text);
 ROLLBACK;
