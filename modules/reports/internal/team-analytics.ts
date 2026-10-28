@@ -104,7 +104,8 @@ export async function getDailyPerfLog(filter: DailyPerfFilter): Promise<DailyPer
     label: `${filter.from} to ${filter.to}`,
   };
   const [awards, users, hours] = await Promise.all([
-    getAwards(db, range, undefined, filter.member ?? undefined),
+    // The daily log shows each member's factors, so this read keeps the calculations.
+    getAwards(db, range, undefined, filter.member ?? undefined, true),
     db.from('users').select('id, full_name, is_active'),
     getMemberDayHours(filter.from, filter.to, filter.member),
   ]);

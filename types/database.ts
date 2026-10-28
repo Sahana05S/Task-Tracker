@@ -840,7 +840,7 @@ export interface Database {
       requeue_blocked_awards:{Args:{p_from:string;p_through:string};Returns:Json};
       award_policy_context:{Args:Record<string,never>;Returns:Json};
       observation_clock:{Args:Record<string,never>;Returns:string};
-      award_read_model:{Args:{p_from:string;p_to_exclusive:string;p_employee?:string|null};Returns:Json};
+      award_read_model:{Args:{p_from:string;p_to_exclusive:string;p_employee?:string|null;p_candidates?:boolean};Returns:Json};
       performance_source_context:{Args:{p_from:string;p_to_exclusive:string;p_as_of:string};Returns:Json};
       claim_performance_jobs:{Args:{p_limit?:number};Returns:Json};
       finish_performance_job:{Args:{p_job:string;p_lease:string;p_result:Json|null;p_error?:string|null};Returns:undefined};

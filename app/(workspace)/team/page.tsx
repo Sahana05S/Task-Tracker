@@ -91,7 +91,7 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
       <SupportSummaryCards summary={data.supportSummary} />
 
       <AwardSummary awards={data.awards} holidays={holidays} holidayNames={holidayNames} names={Object.fromEntries(data.members.map(m=>[m.user.id,m.user.fullName]))}/>
-      {canManage ? <AwardControls awards={data.awards} members={data.members.map(m=>({id:m.user.id,fullName:m.user.fullName}))} /> : null}
+      {canManage ? <AwardControls awards={{ policyApproved: data.awards.policyApproved, days: data.awards.days.map(d => ({ date: d.date, runId: d.runId, reaffirmationRequired: d.reaffirmationRequired, certified: d.certified, status: d.status, version: d.version })) }} members={data.members.map(m=>({id:m.user.id,fullName:m.user.fullName}))} /> : null}
 
       {data.members.length === 0 ? (
         <EmptyShell
