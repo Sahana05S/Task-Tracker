@@ -1,4 +1,5 @@
 // PRIVATE (client-safe via client.ts). Pure helpers for the bell.
+import type { PushStatusState } from './types';
 
 /**
  * Window event that makes the bell read its count again at once, for example
@@ -38,4 +39,26 @@ export function timeAgo(iso: string, now = Date.now()): string {
 /** Only in-app paths are followed from a notification. */
 export function safeHref(href: string | null): string | null {
   return href && href.startsWith('/') && !href.startsWith('//') ? href : null;
+}
+
+/** The Data checks line for phone notifications: healthy, or what needs attention. */
+export function pushHealthLine(state: PushStatusState, now = Date.now()): { attention: boolean; text: string } {
+  if (state.status === 'missing') return { attention: true, text: 'Phone notifications need database migration 91.' };
+  if (state.status === 'unavailable') return { attention: true, text: 'Phone notification health could not be read. Refresh to try again.' };
+  const p = state.push;
+  const phones = `${p.devices} ${p.devices === 1 ? 'phone' : 'phones'} registered`;
+  if (!p.configured) {
+    return {
+      attention: true,
+      text: `Phone notifications are not switched on yet (${phones}, ${p.waiting} waiting). Add the push secrets and run "Configure phone notifications" in GitHub Actions.`,
+    };
+  }
+  const stuck = p.oldestWaitingAt !== null && now - new Date(p.oldestWaitingAt).getTime() > 15 * 60_000;
+  const problems = [
+    stuck ? `${p.waiting} waiting (oldest ${timeAgo(p.oldestWaitingAt!, now)})` : null,
+    p.failed ? `${p.failed} failed in the last day` : null,
+    p.dropped ? `${p.dropped} to phones that no longer accept them (app removed)` : null,
+  ].filter(Boolean);
+  const sent = `${p.sent} sent in the last day, ${phones}`;
+  return problems.length ? { attention: stuck || p.failed > 0, text: `Phone notifications: ${problems.join('; ')}. ${sent}.` } : { attention: false, text: `Phone notifications are working: ${sent}.` };
 }

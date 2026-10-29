@@ -21,3 +21,20 @@ export type InboxState =
   | { status: 'ready'; unread: number; items: NotificationItem[] }
   | { status: 'missing' }
   | { status: 'unavailable' };
+
+/** Phone notification health for Reports > Data checks (migration 91, managing director). */
+export interface PushStatus {
+  /** Vault holds the send-push URL and secret, and pg_net is installed. */
+  configured: boolean;
+  /** Phones registered in the company and not disabled. */
+  devices: number;
+  waiting: number;
+  oldestWaitingAt: string | null;
+  /** Last 24 hours. */
+  sent: number;
+  failed: number;
+  dropped: number;
+  lastSentAt: string | null;
+}
+
+export type PushStatusState = { status: 'ready'; push: PushStatus } | { status: 'missing' } | { status: 'unavailable' };

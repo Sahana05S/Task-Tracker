@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { badgeText, bellLabel, safeHref, timeAgo } from '@/modules/notifications/internal/rules';
+import { badgeText, bellLabel, pushHealthLine, safeHref, timeAgo } from '@/modules/notifications/internal/rules';
 
 describe('notification bell rules', () => {
   it('puts the unread count in the accessible name and the badge', () => {
@@ -30,5 +30,17 @@ describe('notification bell rules', () => {
     expect(safeHref('//evil.test/x')).toBeNull();
     expect(safeHref('https://evil.test')).toBeNull();
     expect(safeHref(null)).toBeNull();
+  });
+  it('says whether phone notifications reach people', () => {
+    const now = Date.parse('2026-10-29T06:00:00Z');
+    const push = { configured: true, devices: 4, waiting: 0, oldestWaitingAt: null, sent: 12, failed: 0, dropped: 0, lastSentAt: '2026-10-29T05:59:00Z' };
+    expect(pushHealthLine({ status: 'ready', push }, now)).toEqual({ attention: false, text: 'Phone notifications are working: 12 sent in the last day, 4 phones registered.' });
+    expect(pushHealthLine({ status: 'ready', push: { ...push, configured: false, devices: 1, waiting: 3 } }, now).text)
+      .toBe('Phone notifications are not switched on yet (1 phone registered, 3 waiting). Add the push secrets and run "Configure phone notifications" in GitHub Actions.');
+    // A fresh queue is normal; one stuck past 15 minutes is not.
+    expect(pushHealthLine({ status: 'ready', push: { ...push, waiting: 2, oldestWaitingAt: '2026-10-29T05:58:00Z' } }, now).attention).toBe(false);
+    expect(pushHealthLine({ status: 'ready', push: { ...push, waiting: 2, oldestWaitingAt: '2026-10-29T05:00:00Z', failed: 1 } }, now))
+      .toEqual({ attention: true, text: 'Phone notifications: 2 waiting (oldest 1 h ago); 1 failed in the last day. 12 sent in the last day, 4 phones registered.' });
+    expect(pushHealthLine({ status: 'missing' }).attention).toBe(true);
   });
 });
