@@ -195,7 +195,7 @@ export function TrackerMockup() {
 function GridPreview() {
   return (
     <div className="border-border w-full min-w-0 max-w-full overflow-x-auto rounded-lg border bg-white">
-      <table className="sheet-grid min-w-[540px] w-full text-[11px]">
+      <table className="sheet-grid w-full text-[11px]">
         <caption className="sr-only">
           Sample task grid showing tag, category, assignee, priority, status,
           freshness, scale, progress, scaled progress, hours and productivity
@@ -206,24 +206,26 @@ function GridPreview() {
               Tag
             </th>
             <th scope="col">Title</th>
-            <th scope="col">Cat</th>
-            <th scope="col">Who</th>
-            <th scope="col">Priority</th>
-            <th scope="col">Status</th>
-            <th scope="col">Freshness</th>
-            <th scope="col" className="text-right">
+            {/* Fewer columns on smaller screens, so the preview fits its frame instead of
+                running past it (layout check, 28 October 2026). */}
+            <th scope="col" className="hidden lg:table-cell">Cat</th>
+            <th scope="col" className="hidden lg:table-cell">Who</th>
+            <th scope="col" className="hidden md:table-cell">Priority</th>
+            <th scope="col" className="hidden sm:table-cell">Status</th>
+            <th scope="col" className="hidden sm:table-cell">Freshness</th>
+            <th scope="col" className="hidden md:table-cell text-right">
               Scale
             </th>
             <th scope="col" className="text-right">
               Progress
             </th>
-            <th scope="col" className="text-right">
+            <th scope="col" className="hidden lg:table-cell text-right">
               Scaled
             </th>
-            <th scope="col" className="text-right">
+            <th scope="col" className="hidden lg:table-cell text-right">
               Hours
             </th>
-            <th scope="col" className="text-right">
+            <th scope="col" className="hidden lg:table-cell text-right">
               Prod/h
             </th>
           </tr>
@@ -234,35 +236,35 @@ function GridPreview() {
               <td className="sheet-grid-frozen">
                 <span className="task-tag">{row.tag}</span>
               </td>
-              <td className="max-w-44">
+              <td className="max-w-24 sm:max-w-44">
                 <span className="block truncate">{row.title}</span>
               </td>
-              <td>
+              <td className="hidden lg:table-cell">
                 <span className="badge-soft badge-category">{row.category}</span>
               </td>
-              <td>
+              <td className="hidden lg:table-cell">
                 <span className="bg-muted text-foreground flex size-6 items-center justify-center rounded font-mono text-[9px] font-semibold">
                   {row.assignee}
                 </span>
               </td>
-              <td>
+              <td className="hidden md:table-cell">
                 <span className={cn('badge-soft', row.priorityClass)}>
                   {row.priorityLabel}
                 </span>
               </td>
-              <td>
+              <td className="hidden sm:table-cell">
                 <span className={cn('badge-soft', row.statusClass)}>
                   {row.statusLabel}
                 </span>
               </td>
-              <td>
+              <td className="hidden sm:table-cell">
                 <span className={cn('freshness-indicator', row.freshnessClass)}>
                   <span className="freshness-dot" aria-hidden="true" />
                   {row.freshnessLabel}
                 </span>
               </td>
-              <td className="sheet-numeric">{row.scale}</td>
-              <td className="w-20">
+              <td className="hidden md:table-cell sheet-numeric">{row.scale}</td>
+              <td className="w-16 sm:w-20">
                 <span className="flex flex-col gap-1">
                   <span className="sheet-numeric">{row.progress}%</span>
                   <progress
@@ -274,9 +276,9 @@ function GridPreview() {
                   />
                 </span>
               </td>
-              <td className="sheet-numeric font-medium">{row.scaled}</td>
-              <td className="sheet-numeric">{row.hours}</td>
-              <td className="sheet-numeric font-medium">{row.rate}</td>
+              <td className="hidden lg:table-cell sheet-numeric font-medium">{row.scaled}</td>
+              <td className="hidden lg:table-cell sheet-numeric">{row.hours}</td>
+              <td className="hidden lg:table-cell sheet-numeric font-medium">{row.rate}</td>
             </tr>
           ))}
         </tbody>

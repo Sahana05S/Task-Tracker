@@ -152,11 +152,12 @@ export function AuthForm({
       </Button>
 
       {/* Divider */}
-      <div className="relative flex items-center justify-center">
-        <div className="w-full border-t border-border" />
-        <span className="shrink-0 bg-card px-3 text-xs font-medium whitespace-nowrap text-placeholder uppercase tracking-wider">
+      <div className="flex items-center gap-3">
+        <div className="flex-1 border-t border-border" />
+        <span className="shrink-0 text-xs font-medium whitespace-nowrap text-placeholder uppercase tracking-wider">
           or with email
         </span>
+        <div className="flex-1 border-t border-border" />
       </div>
 
       {/* Signup verification notice banner if awaiting email confirmation */}

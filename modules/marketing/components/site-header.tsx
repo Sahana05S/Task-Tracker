@@ -23,7 +23,8 @@ import { cn } from '@/shared/utils';
  * Sticky, with a hairline border rather than a shadow so it sits in the same
  * visual language as the workspace chrome. Navigation collapses into a sheet below
  * the `md` breakpoint, which is where the inline links stop fitting alongside both
- * calls to action.
+ * calls to action. Since 28 October 2026 the inline links start at `lg`: between
+ * `md` and `lg` they wrapped onto two lines each.
  *
  * The brand mark is the same `TP` monogram the workspace rail uses, rather than a
  * separate logo glyph — a visitor who signs in should recognise where they landed.
@@ -50,13 +51,13 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav aria-label="Main" className="ml-6 hidden md:block">
+        <nav aria-label="Main" className="ml-6 hidden lg:block">
           <ul className="flex items-center gap-1">
             {MARKETING_NAV.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="focus-visible:ring-primary/40 rounded-md px-3 py-1.5 text-sm font-medium opacity-80 transition-opacity hover:bg-current/10 hover:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+                  className="focus-visible:ring-primary/40 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap opacity-80 transition-opacity hover:bg-current/10 hover:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
                 >
                   {link.label}
                 </a>
@@ -86,7 +87,7 @@ export function SiteHeader() {
               <Button
                 variant="outline"
                 size="icon"
-                className="md:hidden"
+                className="lg:hidden"
                 aria-label="Open navigation"
               >
                 <MenuIcon aria-hidden="true" />

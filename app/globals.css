@@ -487,6 +487,25 @@
   }
 
   /*
+    Line breaking only (layout check, 28 October 2026): headings share their
+    words evenly over their lines, so none ends on one stranded word, and
+    paragraphs avoid a single word on their last line. Browsers without
+    text-wrap keep the usual breaks.
+  */
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  p,
+  li,
+  dd {
+    text-wrap: pretty;
+  }
+
+  /*
     One family for the whole document. Declared on both html and body: html so
     that content Radix portals outside the React tree still inherits it, body so
     that a stray utility on <html> cannot strand the page on a UA default.
@@ -1191,6 +1210,54 @@
     animation: ring-draw var(--dur-sheet) var(--ease-out) backwards;
   }
 
+  /*
+    Stagger (layout check, 28 October 2026): the parts of a block arrive one
+    after another with the same short rise as .animate-enter, 70 ms apart, so
+    a page reads in order instead of appearing as one slab. `.stagger` staggers
+    its own children; `.page-stagger` (the workspace page transition) staggers
+    the top-level sections of the page inside it. From the eighth part on they
+    arrive together. Opacity and transform only.
+  */
+  .stagger > *,
+  .page-stagger > * > * {
+    animation: motion-enter var(--dur-panel) var(--ease-out) both;
+  }
+
+  .stagger > :nth-child(2),
+  .page-stagger > * > :nth-child(2) {
+    animation-delay: 70ms;
+  }
+
+  .stagger > :nth-child(3),
+  .page-stagger > * > :nth-child(3) {
+    animation-delay: 140ms;
+  }
+
+  .stagger > :nth-child(4),
+  .page-stagger > * > :nth-child(4) {
+    animation-delay: 210ms;
+  }
+
+  .stagger > :nth-child(5),
+  .page-stagger > * > :nth-child(5) {
+    animation-delay: 280ms;
+  }
+
+  .stagger > :nth-child(6),
+  .page-stagger > * > :nth-child(6) {
+    animation-delay: 350ms;
+  }
+
+  .stagger > :nth-child(7),
+  .page-stagger > * > :nth-child(7) {
+    animation-delay: 420ms;
+  }
+
+  .stagger > :nth-child(n + 8),
+  .page-stagger > * > :nth-child(n + 8) {
+    animation-delay: 420ms;
+  }
+
   /* A row's trailing chevron nudges right while the row (a `.group`) is hovered. */
   .row-chevron {
     transition: transform var(--dur-micro) var(--ease-out);
@@ -1220,6 +1287,19 @@
   .edge-fade::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* The stagger only stops moving; its parts keep any transform of their own. */
+@media (prefers-reduced-motion: reduce) {
+  .stagger > *,
+  .page-stagger > * > * {
+    animation: none !important;
+  }
+}
+
+:root[data-motion='reduce'] .stagger > *,
+:root[data-motion='reduce'] .page-stagger > * > * {
+  animation: none !important;
 }
 
 /* The OS setting and the app's own switch stop the same things. */
