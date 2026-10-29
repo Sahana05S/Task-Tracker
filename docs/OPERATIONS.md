@@ -248,6 +248,53 @@ migration records nothing and the run stops there. The run summary lists what
 was applied and the latest recorded version. When nothing is missing it stops
 after listing.
 
+## Phone notifications (M20)
+
+Every in-app notification (the bell) is also sent to the phones where a member
+signed in to the Android app. Migration 91 queues one row per notification and
+phone in `taskpulse_private.push_outbox`; the database wakes the `send-push`
+Edge Function through `pg_net`, which sends through Firebase Cloud Messaging
+and records the outcome. A pg_cron job (`taskpulse-push-retry`, every minute)
+retries due rows (1, 2, 4, 8 minutes apart, five attempts), expires rows not
+sent within a day and prunes rows after 30 days. A phone that FCM reports as
+gone is disabled until it registers again. Reports > Data checks shows the
+managing director whether pushes are switched on and how the last day went.
+
+Until the steps below are done nothing is sent: the bell works as before and
+phone rows wait as pending, then expire after a day.
+
+Repository secrets (Settings → Secrets and variables → Actions), added by the
+owner:
+
+- `SUPABASE_ACCESS_TOKEN`: a Supabase personal access token (Account →
+  Access Tokens) for deploying Edge Functions and setting their secrets.
+- `SUPABASE_PROJECT_REF`: the demo project's reference, `sbtxtsisjhuciobxykcm`.
+  Both workflows refuse any other project.
+- `FCM_SERVICE_ACCOUNT_JSON`: the whole JSON key of a Firebase service account
+  (Firebase console → Project settings → Service accounts → Generate new
+  private key) from the Firebase project of the Android app.
+- `PUSH_FUNCTION_SECRET`: a random value of at least 32 characters (for
+  example `openssl rand -hex 32`). The database sends it as the bearer token
+  and `send-push` rejects any other caller. Never commit it.
+
+Then:
+
+1. Actions → **Configure phone notifications** → Run workflow. It stores the
+   two Edge Function secrets, deploys `send-push`, writes the function URL and
+   the same bearer secret into Supabase Vault (`taskpulse_push_url`,
+   `taskpulse_push_secret`, through `taskpulse_push.configure`) and calls the
+   function once; the run summary shows its answer. Run it again after
+   changing any of these secrets.
+2. From then on `.github/workflows/migrate-demo.yml` redeploys `send-push` and
+   `decay-freshness` after every migration or function change on `main`
+   (its `functions` job is skipped with a notice while
+   `SUPABASE_ACCESS_TOKEN` or `SUPABASE_PROJECT_REF` is missing).
+3. Check Reports > Data checks: "Phone notifications are working".
+
+Rotating the bearer secret: change `PUSH_FUNCTION_SECRET` and run step 1.
+Revoking the Firebase key: delete it in Google Cloud, add a new key as
+`FCM_SERVICE_ACCOUNT_JSON` and run step 1; until then pushes wait and retry.
+
 ## Health check
 
 `GET /api/internal/health` reports background-job health for monitoring. It

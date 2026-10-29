@@ -73,7 +73,9 @@ for db in DBS:
     sql(db,bootstrap)
     if db==DBS[1]:
         # The test project's state: everything up to 57 with 56 as applied (d257990), then 58.
-        apply(db,skip={56,58}); sql(db,seed)
+        # Migrations from 91 on build on 56's notifications, so they follow 58 here.
+        later={int(m.name.split('_')[0]) for m in migrations() if int(m.name.split('_')[0])>=91}
+        apply(db,skip={56,58}|later); sql(db,seed)
         before={t:value(db,f"count(*) FROM {t}") for t in ('public.users','public.tasks','public.attendance_records','taskpulse_private.input_history','taskpulse_private.audit_events')}
         broken(db,MIGRATION)
         assert value(db,"count(*) FROM pg_class WHERE relname IN ('policies','policy_evaluations','notifications')")=='0'
@@ -91,6 +93,8 @@ for db in DBS:
         for t,n in before.items():assert value(db,f"count(*) FROM {t}")==n,t
         assert definitions(db)!=at56
         print('PASS',db,'upgrade to 58 replaces the policy functions without touching existing rows')
+        for m in migrations():
+            if int(m.name.split('_')[0]) in later:sql(db,m.read_text(encoding='utf-8'))
     else:
         apply(db); sql(db,seed)
         print('PASS',db,f'fresh install 01-{LATEST}')
