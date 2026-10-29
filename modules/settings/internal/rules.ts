@@ -123,8 +123,13 @@ export interface AttendanceSettings {
   autoMarkEnabled: boolean;
   /** 0 = Sunday ... 6 = Saturday. */
   weeklyOffDays: number[];
+  /** Migration 93: daily "Time to check in" reminder, "HH:MM" Asia/Kolkata; null = off. */
+  checkInReminderTime: string | null;
 }
-export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90, autoMarkEnabled: true, weeklyOffDays: [0] };
+export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90, autoMarkEnabled: true, weeklyOffDays: [0], checkInReminderTime: null };
+
+/** A check-in reminder time: "HH:MM" on the 24-hour clock. */
+export const REMINDER_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export interface CompanySettings {
   /** Optimistic version; every saved section increments it. */
@@ -317,6 +322,7 @@ function parseAttendance(raw: unknown): AttendanceSettings {
     weeklyOffDays: Array.isArray(record.weeklyOffDays)
       ? [...new Set(record.weeklyOffDays.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))].sort()
       : DEFAULT_ATTENDANCE_SETTINGS.weeklyOffDays,
+    checkInReminderTime: typeof record.checkInReminderTime === 'string' && REMINDER_TIME_PATTERN.test(record.checkInReminderTime) ? record.checkInReminderTime : null,
   };
 }
 

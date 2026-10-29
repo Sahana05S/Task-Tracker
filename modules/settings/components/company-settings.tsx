@@ -532,6 +532,7 @@ function AttendanceSection({ settings }: SectionProps) {
     photoRetentionDays: String(saved.photoRetentionDays),
     autoMarkEnabled: saved.autoMarkEnabled,
     weeklyOffDays: saved.weeklyOffDays,
+    checkInReminderTime: saved.checkInReminderTime ?? '',
   });
   const [locating, setLocating] = React.useState<string | null>(null);
   const set = (patch: Partial<typeof draft>) => setDraft((current) => ({ ...current, ...patch }));
@@ -568,6 +569,7 @@ function AttendanceSection({ settings }: SectionProps) {
           photoRetentionDays: Number(draft.photoRetentionDays),
           autoMarkEnabled: draft.autoMarkEnabled,
           weeklyOffDays: draft.weeklyOffDays,
+          checkInReminderTime: draft.checkInReminderTime === '' ? null : draft.checkInReminderTime,
         })}
       >
         <div className="grid gap-4">
@@ -605,6 +607,17 @@ function AttendanceSection({ settings }: SectionProps) {
           <p className="text-muted-foreground text-sm">
             With an office position, check-ins farther than the radius are marked &ldquo;outside office&rdquo; for managers; they are never refused. Leave the position empty to only record where people were.
           </p>
+          <div className="grid gap-2">
+            <label className="field-label sm:max-w-xs">
+              Check-in reminder time
+              <input type="time" step={60} value={draft.checkInReminderTime} onChange={(event) => set({ checkInReminderTime: event.target.value.slice(0, 5) })} className="field" disabled={!draft.checkInEnabled} />
+            </label>
+            <p className="text-muted-foreground text-sm">
+              {draft.checkInReminderTime
+                ? `At ${draft.checkInReminderTime} on working days, everyone who hasn't checked in yet gets a "Time to check in" notification, on their phone too. Weekly off days, calendar holidays, leave and days already recorded are skipped.`
+                : "Leave empty for no reminder. With a time, everyone who hasn't checked in by then gets a notification on working days."}
+            </p>
+          </div>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" checked={draft.autoMarkEnabled} onChange={(event) => set({ autoMarkEnabled: event.target.checked })} className="size-4" />
             Mark attendance automatically at the end of each day

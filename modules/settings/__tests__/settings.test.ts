@@ -202,4 +202,19 @@ describe('company branding (migration 64)', () => {
     expect(fallback).not.toContain('<img');
     expect(fallback).toContain('Stellar');
   });
+
+  it('saves an optional check-in reminder time (migration 93)', () => {
+    const attendance = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90, autoMarkEnabled: true, weeklyOffDays: [0] };
+    const save = (extra: Record<string, unknown>) =>
+      parseSettingsCommand(form({ section: 'attendance', expectedVersion: '4', operationId: OP, payload: JSON.stringify({ ...attendance, ...extra }) }));
+    const on = save({ checkInReminderTime: '09:30' });
+    expect(on.ok && on.value.payload).toMatchObject({ checkInReminderTime: '09:30' });
+    const off = save({ checkInReminderTime: null });
+    expect(off.ok && off.value.payload).toMatchObject({ checkInReminderTime: null });
+    expect(save({}).ok).toBe(true);
+    expect(save({ checkInReminderTime: '9:30' })).toEqual({ ok: false, error: 'Choose a reminder time such as 09:30, or leave it empty for no reminder.' });
+    expect(save({ checkInReminderTime: '24:00' }).ok).toBe(false);
+    expect(parseCompanySettings({ attendance: { checkInReminderTime: '08:45' } }).attendance.checkInReminderTime).toBe('08:45');
+    expect(parseCompanySettings({ attendance: { checkInReminderTime: 'soon' } }).attendance.checkInReminderTime).toBeNull();
+  });
 });
