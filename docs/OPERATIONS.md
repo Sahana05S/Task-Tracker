@@ -248,6 +248,23 @@ migration records nothing and the run stops there. The run summary lists what
 was applied and the latest recorded version. When nothing is missing it stops
 after listing.
 
+## Live site deploys
+
+Vercel deploys `main` to the live site. On the free Hobby plan it publishes
+only commits by the project owner (Sahana05S); a pull request merged from
+another account (for example the one Claude sessions use) is built but shows
+**Blocked**, and Redeploy asks for Pro. `.github/workflows/deploy-production.yml`
+covers this: on every push to `main` not made by Sahana05S it waits for the
+demo migration run on the same commit (and stops if that run failed, so the
+site is never ahead of its database), then calls the project's Deploy Hook,
+which publishes the latest `main`. Run it by hand from the Actions tab to
+redeploy at any time.
+
+It needs the repository secret `VERCEL_DEPLOY_HOOK`: Vercel → task-tracker →
+Settings → Git → Deploy Hooks, name it, branch `main`, Create Hook, and save
+the URL as the secret. Treat the URL like a password; if it leaks, delete the
+hook in Vercel, create a new one and update the secret.
+
 ## Phone notifications (M20)
 
 Every in-app notification (the bell) is also sent to the phones where a member
