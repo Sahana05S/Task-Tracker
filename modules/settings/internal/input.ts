@@ -2,7 +2,7 @@ import { ISO_DATE_PATTERN, readString, UUID_PATTERN } from '@/shared/forms/form-
 import { TASK_CATEGORIES, TASK_PRIORITIES } from '@/shared/tracker/enums';
 import type { Json } from '@/types/database';
 
-import { BRANDING_URL_FIELDS, isBrandUrl, LETTERHEAD_FIELDS, LETTERHEAD_LIMITS, SETTINGS_SECTIONS, STANDING_SCALE_MODES, type SettingsSection } from './rules';
+import { BRANDING_URL_FIELDS, isBrandUrl, LETTERHEAD_FIELDS, LETTERHEAD_LIMITS, REMINDER_TIME_PATTERN, SETTINGS_SECTIONS, STANDING_SCALE_MODES, type SettingsSection } from './rules';
 
 /**
  * Parses a Company settings form: `section`, `expectedVersion`, `operationId`
@@ -145,8 +145,12 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
     if (!off || off.length > 6 || !off.every((day) => Number.isInteger(day) && (day as number) >= 0 && (day as number) <= 6)) {
       return { ok: false, error: 'Choose up to six weekly off days.' };
     }
+    const reminder = raw.checkInReminderTime === undefined || raw.checkInReminderTime === '' ? null : raw.checkInReminderTime;
+    if (reminder !== null && (typeof reminder !== 'string' || !REMINDER_TIME_PATTERN.test(reminder))) {
+      return { ok: false, error: 'Choose a reminder time such as 09:30, or leave it empty for no reminder.' };
+    }
     return { ok: true, value: { checkInEnabled: raw.checkInEnabled, officeLatitude: latitude, officeLongitude: longitude, officeRadiusM: radius, photoRetentionDays: days,
-      autoMarkEnabled: raw.autoMarkEnabled, weeklyOffDays: [...new Set(off as number[])].sort() } };
+      autoMarkEnabled: raw.autoMarkEnabled, weeklyOffDays: [...new Set(off as number[])].sort(), checkInReminderTime: reminder } };
   },
 
   mission_defaults(raw) {

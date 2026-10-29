@@ -44,6 +44,16 @@ on-time policy sees it. Photos older than the company's retention are removed
 nightly by `POST /api/internal/attendance-photos` (third step of
 `.github/workflows/award-worker.yml`); the times and positions stay.
 
+## Check-in reminder (migration 93, M20)
+With a reminder time set in Settings > Company > Check-in (off by default),
+pg_cron runs `taskpulse_private.check_in_reminder_tick()` every 5 minutes
+(job `taskpulse-check-in-reminder`). In the 30 minutes from that time, with
+photo check-in on, every active member except managing directors who has not
+checked in and has no attendance record for today (Leave, Holiday or anything
+a manager entered) gets one "Time to check in" notification linking to
+`/attendance/check-in`; migration 91 sends it to their phone too. Weekly off
+days and company calendar holidays are skipped.
+
 ## End-of-day marking (migrations 73 and 84)
 At 00:15 Asia/Kolkata the database runs `attendance_autofill()` itself (pg_cron job
 `taskpulse-attendance-autofill`, migration 84), because GitHub starts scheduled

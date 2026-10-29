@@ -99,6 +99,9 @@ that show a mission type's name use `useCategoryLabels()`; server code uses
   same version, receipt and audit). Settings > Company > Check-in edits it,
   with "Use my current location" for the office. The check-ins themselves
   belong to the attendance module.
+- Migration 93 adds `check_in_reminder_time` (time, NULL = off), returned as
+  `attendance.checkInReminderTime` ("HH:MM") and saved by the same section
+  (optional key). The reminder itself belongs to the attendance module.
 
 Tests: `modules/settings/__tests__/settings.test.ts`,
 `tools/test_company_settings_database.py`, `tools/test_mission_scale_mode_database.py`,
