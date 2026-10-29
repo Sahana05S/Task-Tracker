@@ -16,7 +16,7 @@ import {
 import { cn } from '@/shared/utils';
 
 import { markNotificationsReadAction, notificationCountAction, notificationInboxAction } from '@/modules/notifications/actions';
-import { badgeText, bellLabel, safeHref, timeAgo, type BellState, type InboxState, type NotificationItem } from '@/modules/notifications/client';
+import { NOTIFICATIONS_CHANGED_EVENT, badgeText, bellLabel, safeHref, timeAgo, type BellState, type InboxState, type NotificationItem } from '@/modules/notifications/client';
 
 /** Page changes within this long reuse the last count, so the bell never queues behind the user's own actions. */
 const REFRESH_AFTER_MS = 60_000;
@@ -49,8 +49,9 @@ function Item({ item, onOpen }: { item: NotificationItem; onOpen: (item: Notific
 /**
  * The top bar's notifications: an unread count on the bell (in its accessible
  * name too) and, when opened, the latest 20 with "Mark all read". The count is
- * read on page changes (at most once a minute) and whenever the tab becomes
- * visible again; a failed read says so instead of showing zero.
+ * read on page changes (at most once a minute), whenever the tab becomes
+ * visible again and on the `stellar:notifications-changed` window event; a
+ * failed read says so instead of showing zero.
  */
 export function NotificationBell({ className }: { className?: string }) {
   const [bell, setBell] = useState<BellState | null>(null);
@@ -72,6 +73,14 @@ export function NotificationBell({ className }: { className?: string }) {
     const onVisible = () => { if (document.visibilityState === 'visible') refreshCount(true); };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [refreshCount]);
+
+  // Something new arrived (a phone notification in the app): read the count now.
+  // The list is read again whenever the menu opens.
+  useEffect(() => {
+    const onChanged = () => refreshCount(true);
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
   }, [refreshCount]);
 
   function loadInbox() {

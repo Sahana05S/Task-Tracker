@@ -1,5 +1,12 @@
 // PRIVATE (client-safe via client.ts). Pure helpers for the bell.
 
+/**
+ * Window event that makes the bell read its count again at once, for example
+ * when the Android app receives a phone notification while it is open
+ * (modules/mobile). `window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT))`.
+ */
+export const NOTIFICATIONS_CHANGED_EVENT = 'stellar:notifications-changed';
+
 /** "Notifications", "Notifications, 1 unread", "Notifications, 99+ unread", or that the count is unavailable. */
 export function bellLabel(unread: number | null, unavailable = false): string {
   if (unavailable) return 'Notifications, count unavailable';
