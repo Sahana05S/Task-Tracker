@@ -899,6 +899,10 @@ export interface Database {
       notifications_list: { Args: { p_limit?: number }; Returns: Json };
       notifications_unread_count: { Args: Record<never, never>; Returns: number };
       notifications_mark_read: { Args: { p_ids?: string[] | null }; Returns: number };
+      /** Migration 91: phone notifications (M20). Own devices for any active member; health for the managing director. */
+      device_register: { Args: { p_token: string; p_platform: 'android' | 'ios' }; Returns: Json };
+      device_unregister: { Args: { p_token: string }; Returns: Json };
+      push_status: { Args: Record<never, never>; Returns: Json };
       people_command: { Args: { p_command: 'invite' | 'revoke' | 'update'; p_payload: Json }; Returns: Json };
       /** Migration 65: the org chart for any active member: people, placement and today's coarse status. */
       org_chart: { Args: Record<never, never>; Returns: Json };

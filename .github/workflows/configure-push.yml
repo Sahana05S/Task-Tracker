@@ -1,0 +1,105 @@
+name: Configure phone notifications
+
+# Run by hand (Actions -> Configure phone notifications -> Run workflow) once
+# the four push secrets exist, and again after changing any of them. It:
+# 1. checks the secrets and that every target is the demo project;
+# 2. stores FCM_SERVICE_ACCOUNT_JSON and PUSH_FUNCTION_SECRET as Edge Function
+#    secrets and deploys send-push (no JWT verification; it checks the bearer);
+# 3. writes the function URL and the same secret into Supabase Vault through
+#    taskpulse_push.configure (migration 91), so the database can wake it;
+# 4. calls send-push once and shows its answer in the run summary.
+# Until this has run, notifications still appear in the bell and phone pushes
+# wait as pending (expired after a day). See docs/OPERATIONS.md, Phone notifications.
+#
+# Repository secrets: SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF,
+# FCM_SERVICE_ACCOUNT_JSON, PUSH_FUNCTION_SECRET, and the existing SUPABASE_DB_URL.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: configure-push
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      FCM_SERVICE_ACCOUNT_JSON: ${{ secrets.FCM_SERVICE_ACCOUNT_JSON }}
+      PUSH_FUNCTION_SECRET: ${{ secrets.PUSH_FUNCTION_SECRET }}
+      DEMO_REF: sbtxtsisjhuciobxykcm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the secrets
+        run: |
+          set -euo pipefail
+          missing=""
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_URL FCM_SERVICE_ACCOUNT_JSON PUSH_FUNCTION_SECRET; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          [ -z "$missing" ] || { echo "::error::Missing repository secrets:$missing"; exit 1; }
+          [ "$SUPABASE_PROJECT_REF" = "$DEMO_REF" ] || { echo "::error::SUPABASE_PROJECT_REF is not the demo project ${DEMO_REF}; refusing"; exit 1; }
+          case "$SUPABASE_DB_URL" in
+            *"postgres.${DEMO_REF}:"* | *"@db.${DEMO_REF}.supabase.co"*) ;;
+            *) echo "::error::SUPABASE_DB_URL is not the demo project ${DEMO_REF}; refusing"; exit 1 ;;
+          esac
+          [ "${#PUSH_FUNCTION_SECRET}" -ge 32 ] || { echo "::error::PUSH_FUNCTION_SECRET must be at least 32 characters"; exit 1; }
+          jq -e 'type == "object" and (.project_id|type) == "string" and (.client_email|type) == "string" and (.private_key|type) == "string"' \
+            <<<"$FCM_SERVICE_ACCOUNT_JSON" > /dev/null \
+            || { echo "::error::FCM_SERVICE_ACCOUNT_JSON is not a Firebase service account key (project_id, client_email, private_key)"; exit 1; }
+          configured="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 \
+            -c "SELECT to_regprocedure('taskpulse_push.configure(text,text)') IS NOT NULL")"
+          [ "$configured" = t ] || { echo "::error::Migration 91 is not applied yet; run 'Apply migrations to the demo database' first"; exit 1; }
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Edge Function secrets and deploy
+        run: |
+          set -euo pipefail
+          fcm="$(jq -c . <<<"$FCM_SERVICE_ACCOUNT_JSON")"
+          echo "::add-mask::$fcm"
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+            "FCM_SERVICE_ACCOUNT_JSON=$fcm" "PUSH_FUNCTION_SECRET=$PUSH_FUNCTION_SECRET" > /dev/null
+          supabase functions deploy send-push --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt --use-api
+
+      - name: Vault entries for the database wake
+        run: |
+          set -euo pipefail
+          export PUSH_URL="https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/send-push"
+          # The secret reaches psql through its environment, never the command line.
+          psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 <<'SQL'
+          \getenv push_url PUSH_URL
+          \getenv push_secret PUSH_FUNCTION_SECRET
+          SELECT taskpulse_push.configure(:'push_url', :'push_secret');
+          SQL
+
+      - name: Call send-push once
+        run: |
+          set -euo pipefail
+          url="https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/send-push"
+          # Give the new deployment a moment to pick up its secrets.
+          for attempt in 1 2 3; do
+            code="$(curl -sS -o "$RUNNER_TEMP/push.json" -w '%{http_code}' -X POST "$url" \
+              -H "Authorization: Bearer $PUSH_FUNCTION_SECRET" -H 'Content-Type: application/json' -d '{"reason":"configure"}')"
+            [ "$code" = 200 ] && break
+            sleep 10
+          done
+          status="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 -c "SELECT taskpulse_push.configured()")"
+          {
+            echo "## Phone notifications"
+            echo ""
+            echo "- send-push answered HTTP $code: \`$(jq -c . "$RUNNER_TEMP/push.json" 2>/dev/null || echo 'no JSON')\`"
+            echo "- database wake configured: $status"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$code" = 200 ] || { echo "::error::send-push answered HTTP $code"; exit 1; }
+          [ "$status" = t ] || { echo "::error::The Vault entries were not readable"; exit 1; }

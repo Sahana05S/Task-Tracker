@@ -4,6 +4,8 @@ import { getCompanySettings } from '@/modules/settings';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { DailyReportView } from '@/modules/reports/components/daily-report';
 import { DataChecks } from '@/modules/reports/components/data-checks';
+import { PushHealth } from '@/modules/notifications/components/push-health';
+import { getPushStatus } from '@/modules/notifications';
 import { MonthArchiveControls } from '@/modules/reports/components/month-archive-controls';
 import { ReportSnapshotForm } from '@/modules/reports/components/report-snapshot-form';
 import { monthHistory, monthRevision } from '@/modules/reports';
@@ -128,13 +130,14 @@ async function MonthClose({ query, tabs }: { query: ReportsSearchParams; tabs: R
   );
 }
 
-/** Managing director only: attendance gaps, undecided award days and undated missions this month. */
+/** Managing director only: attendance gaps, undecided award days, undated missions this month, and phone notification health. */
 async function DataChecksView({ tabs }: { tabs: React.ReactNode }) {
   const context = await liveViewContext();
-  const presentation = await getLivePresentation(context);
+  const [presentation, push] = await Promise.all([getLivePresentation(context), getPushStatus()]);
   return (
     <MissionPage>
       <MissionPageHeader title="Reports" description={`${context.period.label} · what is missing for scores and awards`} tabs={tabs} />
+      <PushHealth state={push} />
       <DataChecks model={presentation} />
     </MissionPage>
   );

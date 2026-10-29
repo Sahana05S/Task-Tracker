@@ -15,18 +15,25 @@ read and follows its in-app link; "Mark all read" clears the rest. A database
 without migration 56 or a failed read says so in the menu (and a small amber
 dot on the bell), never a silent zero.
 
+Phone notifications (M20, migration 91): every new notification is also
+queued for the recipient's registered phones and sent by the `send-push`
+Edge Function (`supabase/functions/send-push`) through Firebase Cloud
+Messaging. `PushHealth` is the managing director's line in Reports > Data
+checks. Setup and secrets: `docs/OPERATIONS.md`, Phone notifications.
+
 ## Public API
 | File | What it offers |
 |---|---|
-| `index.ts` | `getUnreadCount()`, `listNotifications(limit)`, and everything in `client.ts` |
+| `index.ts` | `getUnreadCount()`, `listNotifications(limit)`, `getPushStatus()`, and everything in `client.ts` |
 | `actions.ts` | `notificationCountAction()`, `notificationInboxAction()`, `markNotificationsReadAction(ids \| null)` (the bell's calls) |
-| `client.ts` | Types and `bellLabel`, `badgeText`, `timeAgo`, `safeHref` |
+| `client.ts` | Types and `bellLabel`, `badgeText`, `timeAgo`, `safeHref`, `pushHealthLine` |
 | `components/notification-bell.tsx` | The bell |
+| `components/push-health.tsx` | Phone notification health for Reports > Data checks |
 
 ## Private (`internal/`)
 | File | Job |
 |---|---|
-| `queries.ts` | `notifications_unread_count`, `notifications_list`, `notifications_mark_read` |
+| `queries.ts` | `notifications_unread_count`, `notifications_list`, `notifications_mark_read`, `push_status` |
 | `rules.ts` | Labels, badge text, relative time, link safety |
 | `types.ts` | Shapes |
 
@@ -35,6 +42,14 @@ dot on the bell), never a silent zero.
 `notifications_list`, `notifications_unread_count` and `notifications_mark_read`
 (migration 56, owned by the policies module). The database scopes every call to
 the signed-in account and company.
+
+Migration 91 (owned here): `taskpulse_private.user_devices` and
+`taskpulse_private.push_outbox`; `device_register(token, platform)` and
+`device_unregister(token)` (the signed-in member's own phone; called by
+`modules/mobile`), `push_status()` (managing director), the service-role
+sender RPCs `push_claim(limit)` and `push_complete(results)`, the
+`m91_push_enqueue` trigger on `notifications`, `push_retry_tick()` (pg_cron)
+and the `taskpulse_push` schema (Vault settings, `wake()`, `configure()`).
 
 ## Depends on
 `shared/*` only.
