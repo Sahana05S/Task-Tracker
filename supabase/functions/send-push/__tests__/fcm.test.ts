@@ -26,7 +26,7 @@ describe('send-push FCM helpers', () => {
     expect(message.token).toBe(item.token);
     expect(message.notification).toEqual({ title: 'New mission: T-12' });
     expect(message.data).toEqual({ href: '/tasks/T-12', notificationId: item.notificationId, kind: 'task_assigned' });
-    expect(message.android.notification.channel_id).toBe('stellar-default');
+    expect(message.android.notification.channel_id).toBe('stellar_default');
     expect(fcmMessage({ ...item, body: 'Due Friday' }).message.notification).toEqual({ title: 'New mission: T-12', body: 'Due Friday' });
   });
 

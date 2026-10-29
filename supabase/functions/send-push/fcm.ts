@@ -27,8 +27,8 @@ export interface PushResult {
   error?: string;
 }
 
-/** The Android channel the app creates on start (modules/mobile). */
-export const ANDROID_CHANNEL_ID = 'stellar-default';
+/** The Android channel the app creates on start (stellar-mobile Notifications.java; also Firebase's default). */
+export const ANDROID_CHANNEL_ID = 'stellar_default';
 
 /** In-app paths only, the same rule as notifications.href (migration 56). */
 export function safePath(href: string | null): string {
