@@ -15,7 +15,7 @@ export function ResetPasswordScreen({ view }: ResetPasswordScreenProps) {
 
   return (
     <main className="bg-background flex min-h-dvh items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
+      <div className="stagger w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
           <StellarMark className="size-10 rounded-xl" />
           <h1 className="text-foreground text-xl font-bold tracking-tight">
