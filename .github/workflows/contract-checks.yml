@@ -45,8 +45,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      # Client tools match the postgres:16 service. The runner's default client
+      # moved past 16, and a newer pg_dump writes settings (transaction_timeout,
+      # PostgreSQL 17) that a 16 server rejects on restore (29 October 2026).
+      - name: Install PostgreSQL 16 client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-16
+          echo /usr/lib/postgresql/16/bin >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
       # Autovacuum's ANALYZE of the M15 bookkeeping tables can deadlock with
       # m15_secure() re-applying RLS (seen on migration 63, 27 October 2026).
       # This server is thrown away after the job, so it never needs vacuuming.
