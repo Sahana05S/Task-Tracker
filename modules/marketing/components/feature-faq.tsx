@@ -35,7 +35,7 @@ export function FeatureFAQ() {
               <h3 className="text-foreground text-lg font-semibold tracking-tight">
                 {faq.question}
               </h3>
-              <p className="text-muted-foreground mt-3 max-w-[68ch] text-sm leading-relaxed sm:text-base">
+              <p className="text-muted-foreground mt-3 max-w-[36rem] text-sm leading-relaxed sm:text-base">
                 {faq.answer}
               </p>
             </div>
