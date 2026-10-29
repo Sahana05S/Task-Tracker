@@ -287,7 +287,9 @@ for db in DBS:
     assert inbox['unread']==2 and len(inbox['items'])==2 and inbox['items'][0]['kind']=='policy_met' and inbox['items'][0]['href']=='/policies'
     assert 'Steady logger' in inbox['items'][0]['body'] and '15 recognition points' in inbox['items'][0]['body']
     nid=inbox['items'][0]['id']
-    assert ok(db,A5,"SELECT public.notifications_list(20)")['items']==[] and ok(db,B4,"SELECT public.notifications_list(20)")['items']==[]
+    # Migration 92 also tells A5 about being added to T1 above; only policy notices are checked here.
+    policy_items=lambda who:[i for i in ok(db,who,"SELECT public.notifications_list(20)")['items'] if i['kind'].startswith('policy')]
+    assert policy_items(A5)==[] and policy_items(B4)==[]
     assert ok(db,A5,f"SELECT public.notifications_mark_read(ARRAY['{nid}']::uuid[])")=='0'
     assert ok(db,A4,"SELECT public.notifications_unread_count()")=='2'
     assert ok(db,A4,f"SELECT public.notifications_mark_read(ARRAY['{nid}']::uuid[])")=='1' and ok(db,A4,"SELECT public.notifications_unread_count()")=='1'
@@ -297,7 +299,7 @@ for db in DBS:
     assert failed['status']=='failed' and failed['notified']==1
     assert ok(db,W,command('record_failure',{'trigger':'nightly','errorCode':'facts_read_failed'}))['notified']==0,'one failure notice a day'
     assert ok(db,A_DIR,"SELECT public.notifications_list(5)")['items'][0]['kind']=='policy_run_failed'
-    assert ok(db,A2,"SELECT public.notifications_list(5)")['items']==[]
+    assert policy_items(A2)==[]
     refused(db,W,command('record_failure',{'trigger':'nightly','errorCode':'Bad Code!'}),'23514')
     runs=ok(db,A2,"SELECT public.policy_runs_read(20)")['runs']
     assert runs[0]['status']=='failed' and runs[0]['errorCode']=='facts_read_failed' and any(r['status']=='completed' for r in runs)

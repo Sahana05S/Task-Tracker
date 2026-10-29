@@ -1,7 +1,7 @@
 # notifications
 
-The signed-in account's own notifications and the top bar's bell. Today the
-policies module writes them (migrations 56 and 58): a congratulation when a
+The signed-in account's own notifications and the top bar's bell. Migration
+92's events (below) and the policies module write them (migrations 56 and 58): a congratulation when a
 policy is met for a whole period (once per policy and period, never resent),
 and a notice to the managing directors when a policy evaluation fails (once a
 day).
@@ -21,12 +21,21 @@ Edge Function (`supabase/functions/send-push`) through Firebase Cloud
 Messaging. `PushHealth` is the managing director's line in Reports > Data
 checks. Setup and secrets: `docs/OPERATIONS.md`, Phone notifications.
 
+Migration 92 (owned here) adds `taskpulse_private.notify(...)` and the
+event triggers: mission assigned and reviewer added (`task_assignees`,
+`task_reviewers`), mission status change (`tasks.status`, not the automatic
+Not Started -> In Progress), daily star (`award_runs`), and the published
+ceremony's monthly star, category winners and announcement (M16). Mission
+events come only from a signed-in person's change and never tell people
+about their own change. The bell also re-reads its count on the
+`stellar:notifications-changed` window event (`NOTIFICATIONS_CHANGED_EVENT`).
+
 ## Public API
 | File | What it offers |
 |---|---|
 | `index.ts` | `getUnreadCount()`, `listNotifications(limit)`, `getPushStatus()`, and everything in `client.ts` |
 | `actions.ts` | `notificationCountAction()`, `notificationInboxAction()`, `markNotificationsReadAction(ids \| null)` (the bell's calls) |
-| `client.ts` | Types and `bellLabel`, `badgeText`, `timeAgo`, `safeHref`, `pushHealthLine` |
+| `client.ts` | Types and `bellLabel`, `badgeText`, `timeAgo`, `safeHref`, `pushHealthLine`, `NOTIFICATIONS_CHANGED_EVENT` |
 | `components/notification-bell.tsx` | The bell |
 | `components/push-health.tsx` | Phone notification health for Reports > Data checks |
 
