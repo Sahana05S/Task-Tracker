@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { LogOutIcon, SettingsIcon, SparklesIcon } from 'lucide-react';
 
 import { logout } from '@/modules/auth/actions';
+import { forgetThisDevice } from '@/modules/mobile/client';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import {
   DropdownMenu,
@@ -168,9 +169,10 @@ export function UserMenu({
             variant="destructive"
             onSelect={(event) => {
               // Keep the menu open long enough to submit; the redirect in the
-              // `logout` action unmounts the whole shell a moment later.
+              // `logout` action unmounts the whole shell a moment later. In the
+              // Android app the phone stops getting this account's notifications first.
               event.preventDefault();
-              signOutFormRef.current?.requestSubmit();
+              void forgetThisDevice().finally(() => signOutFormRef.current?.requestSubmit());
             }}
           >
             <LogOutIcon aria-hidden="true" />
