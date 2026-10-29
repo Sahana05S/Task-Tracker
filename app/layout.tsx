@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 
 import { Toaster } from '@/shared/ui/sonner';
@@ -22,6 +22,19 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: { default: 'Stellar', template: '%s · Stellar' },
   description: 'Stellar — multi-metric performance tracker for teams',
+  applicationName: 'Stellar',
+};
+
+/**
+ * `viewport-fit=cover` lets the bottom bar and sheets pad themselves with
+ * `env(safe-area-inset-bottom)` on phones with gesture bars, in the browser and
+ * in the Android app. The theme colour stays the meta tag below, which the theme
+ * script repaints.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
