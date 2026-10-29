@@ -1,0 +1,82 @@
+name: Deploy the live site
+
+# Vercel's free (Hobby) plan publishes only commits by the project owner
+# (Sahana05S). Pull requests merged from another account, such as the one
+# Claude sessions use, are built but "blocked", so the live site would stay
+# behind main. This workflow presses the project's Vercel Deploy Hook, which
+# publishes the latest main whoever merged it (29 October 2026, M20).
+#
+# 1. Skips pushes by Sahana05S: Vercel already deploys those itself.
+# 2. Waits for "Apply migrations to the demo database" on the same commit,
+#    when one runs, and refuses to deploy if it failed, so the site is never
+#    ahead of its database.
+# 3. Calls the hook and shows Vercel's job id in the run summary.
+#
+# Repository secret: VERCEL_DEPLOY_HOOK (Vercel -> task-tracker -> Settings ->
+# Git -> Deploy Hooks, branch main). Also runs by hand from the Actions tab.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'Sahana05S'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+    steps:
+      - name: Check the hook
+        run: |
+          set -euo pipefail
+          [ -n "$HOOK" ] || { echo "::error::Secret VERCEL_DEPLOY_HOOK is not set (Vercel -> Settings -> Git -> Deploy Hooks)"; exit 1; }
+          case "$HOOK" in
+            https://api.vercel.com/*) ;;
+            *) echo "::error::VERCEL_DEPLOY_HOOK is not a Vercel Deploy Hook URL"; exit 1 ;;
+          esac
+
+      - name: Wait for the database migrations on this commit
+        run: |
+          set -euo pipefail
+          # migrate-demo.yml starts at the same push; give it a moment to appear.
+          for attempt in $(seq 1 120); do
+            run="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/migrate-demo.yml/runs?head_sha=$GITHUB_SHA&per_page=1" \
+              --jq '.workflow_runs[0] // empty | "\(.status) \(.conclusion)"')"
+            if [ -z "$run" ]; then
+              [ "$attempt" -ge 4 ] && { echo "No migration run for this commit."; exit 0; }
+            else
+              read -r status conclusion <<<"$run"
+              if [ "$status" = completed ]; then
+                [ "$conclusion" = success ] && { echo "Migrations applied."; exit 0; }
+                echo "::error::The migration run ended '$conclusion'; not deploying a site ahead of its database"; exit 1
+              fi
+              echo "Migration run $status..."
+            fi
+            sleep 15
+          done
+          echo "::error::The migration run did not finish within 30 minutes"; exit 1
+
+      - name: Press the Vercel Deploy Hook
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -o "$RUNNER_TEMP/hook.json" -w '%{http_code}' -X POST "$HOOK")"
+          job="$(jq -r '.job.id // empty' "$RUNNER_TEMP/hook.json" 2>/dev/null || true)"
+          {
+            echo "## Live site deploy"
+            echo ""
+            echo "- commit \`${GITHUB_SHA::7}\`, pushed by $GITHUB_ACTOR"
+            echo "- Vercel answered HTTP $code${job:+, job \`$job\`}"
+            echo "- Follow it in Vercel -> task-tracker -> Deployments"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "${code:0:1}" = 2 ] && [ -n "$job" ] || { echo "::error::Vercel did not accept the deploy (HTTP $code)"; exit 1; }
