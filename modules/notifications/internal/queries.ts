@@ -3,7 +3,7 @@
 import { isMissingFunctionError } from '@/shared/supabase/schema-errors';
 import { createClient } from '@/shared/supabase/server';
 
-import type { BellState, InboxState, NotificationItem } from './types';
+import type { BellState, InboxState, NotificationItem, PushStatus, PushStatusState } from './types';
 
 export async function readUnreadCount(): Promise<BellState> {
   const db = await createClient();
@@ -27,4 +27,13 @@ export async function markRead(ids: string[] | null): Promise<number> {
   const { data, error } = await db.rpc('notifications_mark_read', { p_ids: ids });
   if (error) throw new Error(`Notifications could not be marked read: ${error.message}`);
   return typeof data === 'number' ? data : 0;
+}
+
+/** Phone notification health (managing director; the database refuses anyone else). */
+export async function readPushStatus(): Promise<PushStatusState> {
+  const db = await createClient();
+  const { data, error } = await db.rpc('push_status');
+  if (error) return { status: isMissingFunctionError(error) ? 'missing' : 'unavailable' };
+  const push = data as unknown as PushStatus | null;
+  return push && typeof push.configured === 'boolean' && typeof push.waiting === 'number' ? { status: 'ready', push } : { status: 'unavailable' };
 }
