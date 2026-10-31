@@ -134,6 +134,16 @@ export function dayLabel(kolkataDate: string, phoneNow: number, clockOffsetMs = 
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${kolkataDate}T00:00:00Z`));
 }
 
+/** The line under the "Offline mode (beta)" switch: what the phone has, or what is missing. */
+export function offlineStatusLabel(status: { worker: 'unsupported' | 'none' | 'installing' | 'active'; files: number; savedAt: number | null }, clockOffsetMs = 0): string {
+  if (status.worker === 'unsupported') return 'Not available on this phone';
+  if (status.worker === 'none') return 'Not ready: setting up';
+  if (status.worker === 'installing') return 'Not ready: saving the offline page';
+  if (status.files < 2) return 'Not ready: the offline page is incomplete';
+  if (status.savedAt === null) return 'Not ready: your missions are not saved yet';
+  return `Ready · ${asOfLabel(status.savedAt, clockOffsetMs).replace(/^As of /, 'saved ')} · ${status.files} files`;
+}
+
 export function offlineModeOn(stored: string | null): boolean {
   return stored === 'on';
 }
