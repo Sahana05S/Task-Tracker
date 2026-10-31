@@ -16,7 +16,8 @@ import { getOrgChart, getTeamIndexData } from '@/modules/team';
 import { OrgChart } from '@/modules/team/components/org-chart';
 import { TeamViewSwitch } from '@/modules/team/components/team-view-switch';
 import { employeeHref, employeeReportsHref } from '@/modules/team/client';
-import { formatDateTime, formatNumeric, formatHours } from '@/shared/tracker/format';
+import { formatDateTime, formatHours } from '@/shared/tracker/format';
+import { displayPerformance } from '@/shared/math/exact';
 import { UnavailableValue } from '@/shared/ui/unavailable-value';
 import { PeriodPicker } from '@/shared/ui/period-picker';
 
@@ -150,9 +151,10 @@ export default async function TeamPage({searchParams}:{searchParams:Promise<{per
                     </td>
                     <td className="sheet-numeric text-xs">{dailyStarCount}</td>
                     <td className="sheet-numeric text-xs">
+                      {/* The exact composite, rounded like the leaderboard and daily log (never the float). */}
                       {currentPerformanceScore === null
                         ? '—'
-                        : formatNumeric(currentPerformanceScore)}
+                        : displayPerformance(performance?.calculation?.compositeExact ?? currentPerformanceScore, 2)}
                     </td>
                     <td className="text-xs">
                       {/* The sheet's "Reports validity": is this member's live report for the month complete? */}

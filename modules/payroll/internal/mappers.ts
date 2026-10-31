@@ -112,7 +112,7 @@ export interface EmployeePayFile {
   fixedDeductions: { id: string; componentId: string; component: string; monthlyAmount: number; effectiveFrom: string; effectiveUntil: string | null }[];
   adjustments: { id: string; period: string; componentId: string; component: string; kind: PayComponentKind; isAdvanceRecovery: boolean; amount: number; note: string }[];
   advances: { id: string; paidOn: string; reason: string; amount: number }[];
-  records: { period: string; revision: number; daysWorked: number; monthlySalary: number; deductions: number; inHandRounded: number }[];
+  records: { period: string; revision: number; daysWorked: number; monthlySalary: number | null; deductions: number; inHandRounded: number | null }[];
   line: PayrollLine | null;
 }
 
@@ -265,7 +265,7 @@ export function mapEmployeePayFile(raw: unknown): EmployeePayFile {
     }),
     records: list(r.records).map((v) => {
       const x = obj(v);
-      return { period: str(x.period), revision: num(x.revision), daysWorked: num(x.daysWorked), monthlySalary: num(x.monthlySalary), deductions: num(x.deductions), inHandRounded: num(x.inHandRounded) };
+      return { period: str(x.period), revision: num(x.revision), daysWorked: num(x.daysWorked), monthlySalary: numOrNull(x.monthlySalary), deductions: num(x.deductions), inHandRounded: numOrNull(x.inHandRounded) };
     }),
     line: r.line ? mapPayrollLine(r.line) : null,
   };

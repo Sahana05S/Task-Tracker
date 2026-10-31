@@ -7,7 +7,7 @@ import type { DailyTaskLog, TaskCategory } from '@/types/tracker';
  * Server Actions, the views and the tests share one implementation.
  *
  *   Scaled Progress    = Task Scale x (Progress % / 100)
- *   Task Productivity  = Scaled Progress / Total Hours Worked
+ *   Task Productivity  = Progress % / Total Hours Worked (percentage points per hour)
  *
  * Scaled progress is a generated STORED column, so the database owns it. It is
  * reproduced here only for display, never written back.

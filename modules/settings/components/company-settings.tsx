@@ -610,7 +610,7 @@ function AttendanceSection({ settings }: SectionProps) {
           <div className="grid gap-2">
             <label className="field-label sm:max-w-xs">
               Check-in reminder time
-              <input type="time" step={60} value={draft.checkInReminderTime} onChange={(event) => set({ checkInReminderTime: event.target.value.slice(0, 5) })} className="field" disabled={!draft.checkInEnabled} />
+              <input type="time" step={60} max="23:29" value={draft.checkInReminderTime} onChange={(event) => set({ checkInReminderTime: event.target.value.slice(0, 5) })} className="field" disabled={!draft.checkInEnabled} />
             </label>
             <p className="text-muted-foreground text-sm">
               {draft.checkInReminderTime

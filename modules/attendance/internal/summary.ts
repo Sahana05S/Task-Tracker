@@ -11,6 +11,10 @@ export interface AttendanceSummary {
   readonly holidays: number;
   readonly leaveDays: number;
   readonly offHourDays: number;
+  /**
+   * Present 1, Half Day 0.5, Holiday 1: an attendance count, not payroll's
+   * days worked (P + 0.75 UD + 0.5 HD, migration 74), so it is never labelled payable.
+   */
   readonly payableDays: number;
 }
 
@@ -101,5 +105,6 @@ export function computeHoursFromCheckTimes(
   if (!checkInAt || !checkOutAt) return null;
   const elapsedMs = checkOutAt.getTime() - checkInAt.getTime();
   if (elapsedMs <= 0) return 0;
-  return roundToNumericScale(elapsedMs / (1000 * 60 * 60));
+  // Truncated to 2 places like attendance_check_in (trunc) and the matrix editor (floor).
+  return Math.floor(elapsedMs / (1000 * 60 * 60) * 100) / 100;
 }

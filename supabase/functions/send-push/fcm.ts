@@ -32,7 +32,8 @@ export const ANDROID_CHANNEL_ID = 'stellar_default';
 
 /** In-app paths only, the same rule as notifications.href (migration 56). */
 export function safePath(href: string | null): string {
-  return href && /^\/[A-Za-z0-9/_?=&%.-]{0,199}$/.test(href) && !href.startsWith('//') ? href : '/';
+  // The fallback is the dashboard, never '/', which is the public landing page.
+  return href && /^\/[A-Za-z0-9/_?=&%.-]{0,199}$/.test(href) && !href.startsWith('//') ? href : '/dashboard';
 }
 
 export function fcmMessage(item: PushItem) {

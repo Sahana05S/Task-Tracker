@@ -114,7 +114,7 @@ export default async function EmployeeReportsPage({
           <ChartCard
             label="Attendance"
             value={`${formatHours(data.attendanceSummary.attendanceHours)}h`}
-            detail={`${formatNumeric(data.attendanceSummary.payableDays)} payable days`}
+            detail={`${formatNumeric(data.attendanceSummary.payableDays)} days present, half or holiday`}
           />
           <ChartCard
             label="Legacy daily stars · uncertified"

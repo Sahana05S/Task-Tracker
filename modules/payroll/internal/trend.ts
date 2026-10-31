@@ -87,7 +87,8 @@ export interface FinancialYearTotals {
   label: string;
   startYear: number;
   months: number;
-  inHand: number;
+  /** Null when any month's in-hand figure is unknown: a missing month is not ₹0. */
+  inHand: number | null;
   incentives: number;
   deductions: number;
   incentivesByName: PayItem[];
@@ -166,7 +167,7 @@ export function salaryTrend(history: SalaryHistory, asOfPeriod: string): SalaryT
       label: financialYearLabel(startYear),
       startYear,
       months: yearMonths.length,
-      inHand: money(yearMonths.reduce((sum, month) => sum + (month.inHand ?? 0), 0)),
+      inHand: yearMonths.some((month) => month.inHand === null) ? null : money(yearMonths.reduce((sum, month) => sum + (month.inHand ?? 0), 0)),
       incentives: money(yearMonths.reduce((sum, month) => sum + month.incentiveTotal, 0)),
       deductions: money(yearMonths.reduce((sum, month) => sum + month.fixedTotal + month.variableTotal, 0)),
       incentivesByName: [...named.entries()].map(([name, amount]) => ({ name, amount: money(amount) })).sort((a, b) => b.amount - a.amount),

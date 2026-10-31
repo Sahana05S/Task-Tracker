@@ -96,7 +96,7 @@ function Overview({ data, waypoints }: { data: EmployeeProfileData; waypoints: W
             <StatTile label="Effective daily wins" value={String(data.awards.monthly.counts[data.employee.id] ?? 0)} />
             <StatTile label="Task hours" value={formatHours(data.taskHourSummary.totalHours)} unit="h" />
             <Metric label="Attendance hours" value={attendance ? formatHours(data.attendanceSummary.attendanceHours) : null} unit="h" />
-            <Metric label="Payable days" value={attendance ? formatNumeric(data.attendanceSummary.payableDays) : null} />
+            <Metric label="Days present, half or holiday" value={attendance ? formatNumeric(data.attendanceSummary.payableDays) : null} />
             <Metric label="Off-hours" value={attendance ? formatHours(data.attendanceSummary.offHours) : null} unit="h" />
             <StatTile label="Support posts" value={String(support.length)} note={`${support.filter(c => c.source.validation_state === 'validated').length} validated`} />
             <StatTile label="Sales logs" value={String(data.presentation.contributions.filter(c => c.kind === 'sale').length)} />
