@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { exchangeCodeForSession, verifyRecoveryToken } from './commands';
 import { DEFAULT_REDIRECT, safeRedirectPath } from './redirects';
 import { RESET_PASSWORD_PATH } from './reset-view';
+import { publicOrigin } from '@/shared/security/origin';
 
 /**
  * Universal Authentication Callback Route
@@ -43,11 +44,7 @@ export async function handleAuthCallback(request: Request): Promise<NextResponse
   );
 }
 
-/** Behind a proxy outside development, the forwarded host is the public one. */
+/** The configured public origin, else the request's own. */
 function callbackOrigin(request: Request, origin: string): string {
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  const isLocalEnv = process.env.NODE_ENV === 'development';
-
-  if (!isLocalEnv && forwardedHost) return `https://${forwardedHost}`;
-  return origin;
+  return publicOrigin((name) => request.headers.get(name), origin);
 }

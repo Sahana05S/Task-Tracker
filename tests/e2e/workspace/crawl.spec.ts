@@ -29,10 +29,14 @@ test.describe('workspace crawl', () => {
       const placeholder = /QA_NO_SUCH|00000000-0000-4000-8000-000000000000/.test(route.path);
       if (!mayOpen(role, route.audience)) {
         // Refused: a Not found page or a redirect off the page, never its content.
-        const refused = (await page.getByText(NOT_FOUND).count()) > 0 || !page.url().includes(route.path);
-        expect(refused, `${role} must not open ${route.path}`).toBe(true);
+        // A page-level redirect arrives after the layout has started streaming, so poll.
+        await expect
+          .poll(async () => (await page.getByText(NOT_FOUND).count()) > 0 || !page.url().includes(route.path), {
+            message: `${role} must not open ${route.path}`,
+          })
+          .toBe(true);
       } else if (placeholder) {
-        await expect(page.getByText(NOT_FOUND).or(page.getByRole('heading').first())).toBeVisible();
+        await expect(page.getByText(NOT_FOUND).or(page.getByRole('heading').first()).first()).toBeVisible();
       } else {
         await expect(page.getByText(NOT_FOUND), 'allowed page shows Not found').toHaveCount(0);
         await expect(page.getByRole('heading').first()).toBeVisible();

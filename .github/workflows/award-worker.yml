@@ -45,13 +45,13 @@ jobs:
           code=$(curl -sS -o response.json -w '%{http_code}' -X POST \
             -H "Authorization: Bearer ${TOKEN}" "${APP_URL%/}/api/internal/attendance-autofill")
           if [ "$code" != "200" ]; then
-            echo "::error::Attendance marking returned HTTP ${code}: $(cat response.json)"
+            echo "::error::Attendance marking returned HTTP ${code}: $(jq -r '.status // "error"' response.json 2>/dev/null || echo unreadable)"
             exit 1
           fi
           {
             echo "### Attendance marked automatically"
             echo ""
-            jq -r '.result.companies[] | "- \(.organizationId): \(.marked | to_entries | map("\(.key) \(.value)") | join(", ")), skipped \(.skipped)"' response.json
+            jq -r '.result.companies[] | "- company \(.organizationId[0:8]): \(.marked | to_entries | map("\(.key) \(.value)") | join(", ")), skipped \(.skipped)"' response.json
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run award batches until the queue is empty
@@ -70,7 +70,7 @@ jobs:
             code=$(curl -sS -o response.json -w '%{http_code}' -X POST \
               -H "Authorization: Bearer ${TOKEN}" "${APP_URL%/}/api/internal/awards")
             if [ "$code" != "200" ]; then
-              echo "::error::Batch ${batch} returned HTTP ${code}: $(cat response.json)"
+              echo "::error::Batch ${batch} returned HTTP ${code}: $(jq -r '.status // "error"' response.json 2>/dev/null || echo unreadable)"
               exit 1
             fi
             if [ "$batch" = "1" ] && jq -e '[.schedule.companies[]?.result.enabled] | any(. == false)' response.json >/dev/null; then
@@ -116,7 +116,7 @@ jobs:
             code=$(curl -sS -o response.json -w '%{http_code}' -X POST \
               -H "Authorization: Bearer ${TOKEN}" "${APP_URL%/}/api/internal/policies")
             if [ "$code" != "200" ]; then
-              echo "::error::Policies batch ${batch} returned HTTP ${code}: $(cat response.json)"
+              echo "::error::Policies batch ${batch} returned HTTP ${code}: $(jq -r '.status // "error"' response.json 2>/dev/null || echo unreadable)"
               exit 1
             fi
             outcomes=$(jq -c '.outcomes // []' response.json)
@@ -135,7 +135,7 @@ jobs:
           fi
           failed=$(jq '[.[] | select(.status == "failed")] | length' <<<"$all")
           if [ "$failed" -gt 0 ]; then
-            echo "::error::${failed} company pass(es) failed: $(jq -c '[.[] | select(.status == "failed") | {organizationId, errorCode}]' <<<"$all")"
+            echo "::error::${failed} company pass(es) failed: $(jq -c '[.[] | select(.status == "failed") | {company: .organizationId[0:8], errorCode}]' <<<"$all")"
             exit 1
           fi
 
@@ -151,7 +151,7 @@ jobs:
           for batch in $(seq 1 10); do
             code=$(curl -sS -o response.json -w '%{http_code}' -X POST               -H "Authorization: Bearer ${TOKEN}" "${APP_URL%/}/api/internal/attendance-photos")
             if [ "$code" != "200" ]; then
-              echo "::error::Photo clean-up batch ${batch} returned HTTP ${code}: $(cat response.json)"
+              echo "::error::Photo clean-up batch ${batch} returned HTTP ${code}: $(jq -r '.status // "error"' response.json 2>/dev/null || echo unreadable)"
               exit 1
             fi
             removed=$((removed + $(jq '.removed // 0' response.json)))

@@ -16,7 +16,7 @@ describe('M10 server credential boundary',()=>{
   expect(response.status).toBe(503);expect(await response.json()).toEqual({status:'blocked',errorCode:'credentials_missing'});
   expect((await POST(request)).status).toBe(503);
  });
- it('requires explicit sandbox worker delivery',async()=>{vi.stubEnv('TASKPULSE_DRIVE_WORKER_ENABLED','');expect((await POST(new Request('http://localhost',{method:'POST'}))).status).toBe(503);});
+ it('requires explicit sandbox worker delivery, and tells only the worker so',async()=>{vi.stubEnv('TASKPULSE_DRIVE_WORKER_ENABLED','');vi.stubEnv('TASKPULSE_DRIVE_WORKER_TOKEN','fixture-only');expect((await POST(new Request('http://localhost',{method:'POST'}))).status).toBe(403);expect((await POST(new Request('http://localhost',{method:'POST',headers:{authorization:'Bearer fixture-only'}}))).status).toBe(503);});
  it('rejects forged worker authorization before DB access',async()=>{vi.stubEnv('TASKPULSE_DRIVE_WORKER_ENABLED','sandbox');vi.stubEnv('TASKPULSE_DRIVE_WORKER_TOKEN','fixture-only');expect((await POST(new Request('http://localhost',{method:'POST',headers:{authorization:'Bearer forged'}}))).status).toBe(403);});
  it('does not infer Drive access from Google login or absent credentials',async()=>{const fetcher=vi.fn();await expect(googleToken(policy,{},fetcher)()).rejects.toThrow('credentials_missing');expect(fetcher).not.toHaveBeenCalled();});
  it('uses secure server token exchange and caches without exposing secrets',async()=>{

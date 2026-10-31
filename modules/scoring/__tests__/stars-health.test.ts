@@ -26,10 +26,10 @@ describe('summariseHealth', () => {
 });
 
 describe('GET /api/internal/health boundary', () => {
-  it('is unavailable without a configured token and refuses forged tokens before any read', async () => {
+  it('refuses everyone without a configured token and forged tokens before any read', async () => {
     const read = vi.fn();
     vi.stubEnv('TASKPULSE_AWARD_WORKER_TOKEN', '');
-    expect((await handleHealthCheck(authed(), read)).status).toBe(503);
+    expect((await handleHealthCheck(authed(), read)).status).toBe(403);
     vi.stubEnv('TASKPULSE_AWARD_WORKER_TOKEN', 'fixture-only-token');
     const forged = new Request('http://localhost/api/internal/health', { headers: { authorization: 'Bearer forged' } });
     expect((await handleHealthCheck(forged, read)).status).toBe(403);

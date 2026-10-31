@@ -66,10 +66,8 @@ const noStore = { 'cache-control': 'no-store' };
 
 export async function handleHealthCheck(request: Request, read?: HealthRead): Promise<Response> {
   const token = process.env.TASKPULSE_AWARD_WORKER_TOKEN;
-  if (!token) {
-    return Response.json({ status: 'unavailable', reason: 'Health check token is not configured.' }, { status: 503, headers: noStore });
-  }
-  if (!bearerMatches(request, token)) return Response.json({ status: 'forbidden' }, { status: 403, headers: noStore });
+  // No token, no caller can be the operator; the setup state is not disclosed.
+  if (!token || !bearerMatches(request, token)) return Response.json({ status: 'forbidden' }, { status: 403, headers: noStore });
 
   if (!read) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

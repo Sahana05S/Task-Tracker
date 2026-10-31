@@ -2,6 +2,7 @@
 import { createClient } from '@/shared/supabase/server';
 
 import type { LoginInput, SignupInput } from './input';
+import { publicOrigin } from '@/shared/security/origin';
 
 /** Signs in with email and password; returns a user-facing error, or null. */
 export async function signInWithPassword(
@@ -86,11 +87,9 @@ export async function updatePassword(newPassword: string): Promise<string | null
   return error ? error.message : null;
 }
 
-/** The public origin of the current request, or '' when the host is unknown. */
+/** The site's public origin (configured, else this request's host), or '' when unknown. */
 async function readSiteUrl(): Promise<string> {
   const { headers } = await import('next/headers');
   const headerList = await headers();
-  const host = headerList.get('x-forwarded-host') || headerList.get('host');
-  const protocol = headerList.get('x-forwarded-proto') || 'https';
-  return host ? `${protocol}://${host}` : '';
+  return publicOrigin((name) => headerList.get(name));
 }
