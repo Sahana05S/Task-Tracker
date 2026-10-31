@@ -141,7 +141,8 @@ export function TaskFilters({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Phones: two filters per row, each filling its half. */}
+      <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
         <FacetSelect
           label="Assignee"
           value={filters.assigneeId}
@@ -151,7 +152,7 @@ export function TaskFilters({
             label: member.fullName,
           }))}
           allLabel="All assignees"
-          className="w-40"
+          className="w-full sm:w-40"
         />
 
         <FacetSelect
@@ -170,7 +171,7 @@ export function TaskFilters({
             label: `${entry.code} · ${entry.label}`,
           }))}
           allLabel="All types"
-          className="w-44"
+          className="w-full sm:w-44"
         />
 
         <FacetSelect
@@ -187,7 +188,7 @@ export function TaskFilters({
             label: priority,
           }))}
           allLabel="Any priority"
-          className="w-32"
+          className="w-full sm:w-32"
         />
 
         <FacetSelect
@@ -204,7 +205,7 @@ export function TaskFilters({
             label: status,
           }))}
           allLabel="Any status"
-          className="w-36"
+          className="w-full sm:w-36"
         />
 
         <FacetSelect
@@ -221,7 +222,7 @@ export function TaskFilters({
             label: freshness,
           }))}
           allLabel="Any freshness"
-          className="w-36"
+          className="w-full sm:w-36"
         />
 
         {activeCount > 0 ? (
@@ -240,7 +241,7 @@ export function TaskFilters({
         ) : null}
 
         {/* Result count doubles as the live region announcing filter effects. */}
-        <p className="text-muted-foreground ml-auto text-xs" role="status" aria-live="polite">
+        <p className="text-muted-foreground col-span-full text-right text-xs sm:ml-auto" role="status" aria-live="polite">
           {resultCount === totalCount
             ? `${totalCount} ${totalCount === 1 ? 'mission' : 'missions'}`
             : `${resultCount} of ${totalCount} missions`}

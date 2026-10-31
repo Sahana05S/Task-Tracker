@@ -39,7 +39,8 @@ export function MonthSetupBanner({ month }: { month: MonthKey }) {
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <p>
           <span className="text-foreground font-semibold">{name} has no missions yet.</span>{' '}
-          Set up the standing missions, weekly phases and last month’s follow-ups in one step.
+          {/* Phones keep the banner to one line and the button; the detail is on the setup page. */}
+          <span className="hidden sm:inline">Set up the standing missions, weekly phases and last month’s follow-ups in one step.</span>
         </p>
         <Button asChild size="sm">
           <Link href={setupHref(month)}>Set up {label}</Link>
