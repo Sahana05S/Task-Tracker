@@ -53,7 +53,7 @@ control.
 |---|---|
 | `index.ts` | Server reads: `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`, `getChecklistBranch`, `getUnmappedRootRows`, `getFocusedChecklistItemTime`, `getRunningChecklistTimers`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, tree helpers (`childrenOf`, `ancestry`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours`, table rules (`rowKind`, `stateChoices`, `opensTable`, `pageResult`, `sectionStatus`, `checklistIssues`, `SECTION_TITLES`), addresses (`checklistWorkHref`, `parseChecklistLocation`, `openChecklistRow`) |
-| `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode) |
+| `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode); a version conflict returns `errorCode: 'conflict'` |
 | `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / No / N/A, commands queued so each sends the latest mission version), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `checklist-rows.tsx` (item timer and completion controls) |
 
 ## Private (`internal/`)
