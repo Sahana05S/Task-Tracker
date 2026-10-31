@@ -6,6 +6,8 @@ import { LogOutIcon, SettingsIcon, SparklesIcon } from 'lucide-react';
 
 import { logout } from '@/modules/auth/actions';
 import { forgetThisDevice } from '@/modules/mobile/client';
+import { forgetOfflineData } from '@/modules/offline/client';
+import { OfflineModeItem } from '@/modules/offline/components/offline-mode-item';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import {
   DropdownMenu,
@@ -162,6 +164,9 @@ export function UserMenu({
           Reduce motion
         </DropdownMenuCheckboxItem>
 
+        {/* Android app only: keep a copy of this member's missions on the phone. */}
+        <OfflineModeItem />
+
         <DropdownMenuSeparator />
 
         <form ref={signOutFormRef} action={logout}>
@@ -170,9 +175,10 @@ export function UserMenu({
             onSelect={(event) => {
               // Keep the menu open long enough to submit; the redirect in the
               // `logout` action unmounts the whole shell a moment later. In the
-              // Android app the phone stops getting this account's notifications first.
+              // Android app the phone stops getting this account's notifications
+              // and drops this member's offline copy first.
               event.preventDefault();
-              void forgetThisDevice().finally(() => signOutFormRef.current?.requestSubmit());
+              void Promise.all([forgetThisDevice(), forgetOfflineData()]).finally(() => signOutFormRef.current?.requestSubmit());
             }}
           >
             <LogOutIcon aria-hidden="true" />
