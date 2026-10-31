@@ -111,6 +111,8 @@ Without migration 50 it says the hall of fame needs a database update.
 | `policy.ts` | Parses `recognition_policy.config`; defaults mirror migrations 45 and 51 |
 
 ## Database it owns
+- Since migration 95, `recognition_daily_wins` and `recognition_points` count
+  a director's award override as that day's win, like the award read model.
 - `taskpulse_private.recognition_policy` (migration 45): global singleton
   (points, milestones, lookback). Per-company settings arrive with M15.3.
 - `public.recognition_activity_days(p_as_of, p_employee)` (migration 45):

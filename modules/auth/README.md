@@ -21,7 +21,7 @@ Routes stay in `app/`: `app/login/page.tsx`, `app/reset-password/page.tsx` and
 
 Password reset: the request form emails a recovery link that returns to
 `/reset-password`. That page forwards the link's `code` (or a `token_hash` with
-`type=recovery`, if the email template is customised) to `/auth/callback`,
+`type=recovery`) to `/auth/callback`,
 which opens the recovery session and sends the person back to
 `/reset-password` to choose the new password. A dead link comes back as
 `/reset-password?error=link`.
@@ -48,7 +48,22 @@ Invitations and member changes belong to the team module. There is no Google
 or other social sign-in (removed 31 October 2026, user request): members only
 sign in with the invited email and a password. The Google provider should also
 stay disabled in the Supabase Auth dashboard so the OAuth endpoint cannot be
-reached directly.
+reached directly. Migrations 06 and 49 still mention Google in their headers;
+they predate the removal and are not rewritten.
+
+Supabase Auth settings this module relies on (dashboard, not code):
+
+- **Confirm email stays on.** Since migration 94 an invitation is applied only
+  once the address is confirmed, so someone who merely knows an invited address
+  cannot take the place.
+- **Email templates use `token_hash` links.** The default `{{ .ConfirmationURL }}`
+  uses PKCE, which only works in the browser that asked for the email; on the
+  Android app the email opens in the phone's browser, so the link fails. Use
+  `{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery` for
+  "Reset password" (the confirmation template likewise with `type=signup` to
+  `/auth/callback`).
+- **Site URL** is the live site, and `NEXT_PUBLIC_SITE_URL` (Vercel) matches it:
+  emailed links are built from it, never from request headers.
 
 ## Depends on
 `shared/supabase`, `shared/session` (`getAuthState`), `shared/forms`,

@@ -1,7 +1,7 @@
 // PRIVATE. The /auth/callback route handler.
 import { NextResponse } from 'next/server';
 
-import { exchangeCodeForSession, verifyRecoveryToken } from './commands';
+import { exchangeCodeForSession, verifyEmailToken } from './commands';
 import { DEFAULT_REDIRECT, safeRedirectPath } from './redirects';
 import { RESET_PASSWORD_PATH } from './reset-view';
 import { publicOrigin } from '@/shared/security/origin';
@@ -11,8 +11,9 @@ import { publicOrigin } from '@/shared/security/origin';
  *
  * Handles:
  * 1. Email verification confirmation links clicked from the user's inbox
- * 2. Password-recovery links, forwarded by /reset-password as a `code` or,
- *    with a custom email template, a `token_hash` with `type=recovery`
+ * 2. Password-recovery links, forwarded by /reset-password as a `code` or a
+ *    `token_hash` with `type=recovery`; sign-up confirmations as a
+ *    `token_hash` with `type=signup` or `type=email`
  *
  * Exchanges the temporary authorization `code` for an authenticated session
  * and securely redirects the user to their target destination.
@@ -23,11 +24,16 @@ export async function handleAuthCallback(request: Request): Promise<NextResponse
   const tokenHash = searchParams.get('token_hash');
   const next = safeRedirectPath(searchParams.get('next') ?? DEFAULT_REDIRECT);
 
+  const type = searchParams.get('type');
   const verified = code
     ? await exchangeCodeForSession(code)
-    : tokenHash !== null && searchParams.get('type') === 'recovery'
-      ? await verifyRecoveryToken(tokenHash)
-      : false;
+    : tokenHash === null
+      ? false
+      : type === 'recovery'
+        ? await verifyEmailToken(tokenHash, 'recovery')
+        : type === 'signup' || type === 'email'
+          ? await verifyEmailToken(tokenHash, 'email')
+          : false;
 
   if (verified) {
     return NextResponse.redirect(`${callbackOrigin(request, origin)}${next}`);

@@ -61,7 +61,7 @@ describe('safeRedirectPath', () => {
     expect(safeRedirectPath('/login?redirectTo=/dashboard')).toBe(DEFAULT_REDIRECT);
   });
 
-  it('DEFAULT_REDIRECT is /dashboard', () => {
+  it('DEFAULT_REDIRECT is /today', () => {
     expect(DEFAULT_REDIRECT).toBe('/today');
   });
 });

@@ -99,6 +99,7 @@ imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
 |---|---|---|
 | `attendance_records` | table | created 07; RLS policy 10; numeric hours, versions, `record_state`, history 19; approved policy 20; company scope 39-40 |
 | `attendance_input_context(uuid,date,date,timestamptz)` | RPC (read) | 19, replaced 20 and 21 |
+| `attendance_check_in(...)` | RPC (photo check-in/out) | 72, 73; since 96 a check-out after midnight closes yesterday's open check-in and records the hours on that day (times stay on the check-ins) |
 | `taskpulse_private.attendance_inputs` | private function | 21 |
 | `team_holiday_dates(date,date)` | RPC (read) | 37 |
 | `attendance_check_ins` | table (read: own, or the company for MD/PE) | 72 |
