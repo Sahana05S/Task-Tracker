@@ -51,3 +51,38 @@ export async function finishTimer(
   if (result.error) return executionError(result.error);
   return ok(executionResult(result.data));
 }
+
+/** A timer run entirely offline, sent later under an offline grant (migration 98). */
+export async function recordOfflineTimerFor(input: {
+  taskId: string; nodeId: string | null; startedAt: string; endedAt: string; grantId: string; operationId: string; notes: string | null;
+}): Promise<TimerResult> {
+  const supabase = await createClient();
+  const result = await supabase.rpc('record_offline_timer', {
+    p_task: input.taskId,
+    p_node: input.nodeId,
+    p_started_at: input.startedAt,
+    p_ended_at: input.endedAt,
+    p_grant: input.grantId,
+    p_operation: input.operationId,
+    p_notes: input.notes,
+  });
+  if (result.error) return executionError(result.error);
+  return ok(executionResult(result.data));
+}
+
+/** Stops a server timer at the time the phone stopped it offline (migration 98). */
+export async function stopTimerAtFor(input: {
+  timerId: string; expectedVersion: number; endedAt: string; grantId: string; operationId: string; notes: string | null;
+}): Promise<TimerResult> {
+  const supabase = await createClient();
+  const result = await supabase.rpc('stop_task_timer_at', {
+    p_timer_id: input.timerId,
+    p_payload: { notes: input.notes },
+    p_operation_id: input.operationId,
+    p_expected_version: input.expectedVersion,
+    p_ended_at: input.endedAt,
+    p_grant: input.grantId,
+  });
+  if (result.error) return executionError(result.error);
+  return ok(executionResult(result.data));
+}

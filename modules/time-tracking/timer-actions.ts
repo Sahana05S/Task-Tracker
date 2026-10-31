@@ -3,7 +3,9 @@
 import { normalizeTaskTagParam } from '@/modules/tasks';
 import { createTaskLog } from '@/modules/time-tracking/actions';
 import { revalidateAfterTimer } from '@/modules/time-tracking/internal/cache';
-import { finishTimer, startItemTimerFor, startTimer, taskIdForTag } from '@/modules/time-tracking/internal/timers/commands';
+import {
+  finishTimer, recordOfflineTimerFor, startItemTimerFor, startTimer, stopTimerAtFor, taskIdForTag,
+} from '@/modules/time-tracking/internal/timers/commands';
 import { commandIdentity, type ExecutionResult } from '@/shared/commands/result';
 import { UUID_PATTERN } from '@/shared/forms/form-data';
 import { getCurrentProfile } from '@/shared/session/profile';
@@ -80,6 +82,46 @@ export async function discardTaskTimer(form: FormData) {
 
 export async function discardTimerAsManager(form: FormData) {
   return timerCommand(form, 'discard');
+}
+
+/** A timer the Android app ran offline; replayed by the offline queue with the same operation id. */
+export interface OfflineTimerInput {
+  taskId: string; nodeId?: string | null; startedAt: string; endedAt: string; grantId: string; operationId: string; notes?: string | null;
+}
+
+/** A running server timer the app stopped offline at `endedAt`. */
+export interface StopTimerAtInput {
+  timerId: string; expectedVersion: number; endedAt: string; grantId: string; operationId: string; notes?: string | null;
+}
+
+const INVALID_OFFLINE: TimerActionState = { success: false, error: 'This offline entry is incomplete and cannot be sent.', errorCode: 'validation' };
+const isUuid = (value: unknown): value is string => typeof value === 'string' && UUID_PATTERN.test(value);
+const isTime = (value: unknown): value is string => typeof value === 'string' && !Number.isNaN(Date.parse(value));
+const offlineNotes = (notes: unknown) => (typeof notes === 'string' && notes.trim()) || null;
+
+/** Records a timer run entirely offline (whole mission, or a checklist row with `nodeId`). Migration 98. */
+export async function recordOfflineTimer(input: OfflineTimerInput): Promise<TimerActionState> {
+  const actor = await getCurrentProfile();
+  if (!actor?.isActive) return SIGN_IN_REQUIRED;
+  const nodeId = input?.nodeId ?? null;
+  if (!isUuid(input?.taskId) || (nodeId !== null && !isUuid(nodeId)) || !isTime(input.startedAt) || !isTime(input.endedAt)
+      || !isUuid(input.grantId) || !isUuid(input.operationId)) return INVALID_OFFLINE;
+  return committed(await recordOfflineTimerFor({
+    taskId: input.taskId, nodeId, startedAt: input.startedAt, endedAt: input.endedAt,
+    grantId: input.grantId, operationId: input.operationId, notes: offlineNotes(input.notes),
+  }));
+}
+
+/** Stops the member's own server timer at the time the phone stopped it offline. Migration 98. */
+export async function stopTimerAt(input: StopTimerAtInput): Promise<TimerActionState> {
+  const actor = await getCurrentProfile();
+  if (!actor?.isActive) return SIGN_IN_REQUIRED;
+  if (!isUuid(input?.timerId) || !Number.isSafeInteger(input.expectedVersion) || input.expectedVersion < 0 || !isTime(input.endedAt)
+      || !isUuid(input.grantId) || !isUuid(input.operationId)) return INVALID_OFFLINE;
+  return committed(await stopTimerAtFor({
+    timerId: input.timerId, expectedVersion: input.expectedVersion, endedAt: input.endedAt,
+    grantId: input.grantId, operationId: input.operationId, notes: offlineNotes(input.notes),
+  }));
 }
 
 /** Saves hours typed in by hand as an ordinary task log. */
