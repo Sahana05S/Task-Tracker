@@ -49,7 +49,7 @@ export function MobileBottomNav() {
         <DropdownMenuTrigger
           ref={newButton}
           className="press bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-ring fixed right-4 z-30 flex min-h-12 items-center gap-2 rounded-full px-5 text-sm font-semibold shadow-(--shadow-soft-lg) outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background md:hidden [&>svg]:transition-transform [&>svg]:duration-(--dur-base) data-[state=open]:[&>svg]:rotate-45"
-          style={{ bottom: 'calc(var(--spacing-bottom-nav) + 0.75rem + env(safe-area-inset-bottom))' }}
+          style={{ bottom: 'calc(var(--spacing-bottom-nav) + 0.75rem + var(--safe-area-inset-bottom,env(safe-area-inset-bottom)))' }}
         >
           <PlusIcon className="size-4" aria-hidden="true" />
           New
@@ -80,7 +80,7 @@ export function MobileBottomNav() {
 
       <nav
         aria-label="Primary"
-        className="border-border fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="border-border fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 pb-[var(--safe-area-inset-bottom,env(safe-area-inset-bottom))] backdrop-blur md:hidden"
       >
         <ul className="flex h-(--spacing-bottom-nav) items-stretch justify-around px-2">
           {tabs.map(({ label, href, icon: Icon }) => {

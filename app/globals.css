@@ -455,6 +455,8 @@
     which is why the offset is applied from `sm` upwards only.
   */
   --spacing-header: 4rem;
+  /* Where content below the sticky header starts: the header row plus, in the Android app, the status bar. */
+  --header-offset: calc(var(--spacing-header) + var(--safe-area-inset-top, env(safe-area-inset-top)));
 
   /* Height of the mobile bar, shared by the bar itself and the shell padding. */
   --spacing-bottom-nav: 4.5rem;
@@ -514,7 +516,7 @@
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
     /* Anchor jumps and focused targets park below the sticky top bar. */
-    scroll-padding-top: calc(var(--spacing-header) + 0.5rem);
+    scroll-padding-top: calc(var(--header-offset) + 0.5rem);
   }
 
   /* No double-tap zoom delay on controls. */

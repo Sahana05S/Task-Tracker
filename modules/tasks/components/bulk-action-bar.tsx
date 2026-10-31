@@ -36,7 +36,7 @@ export function BulkActionBar({ selectedCount, canManage, onRun, onClear }: Bulk
   const copyEnabled = canCopy(selectedCount);
 
   return (
-    <div className="pointer-events-none sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex justify-center md:bottom-4">
+    <div className="pointer-events-none sticky bottom-[calc(5rem+var(--safe-area-inset-bottom,env(safe-area-inset-bottom)))] z-20 flex justify-center md:bottom-4">
       <div
         role="toolbar"
         aria-label={`Actions for ${selectedCount} selected ${selectedCount === 1 ? 'mission' : 'missions'}`}

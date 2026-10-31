@@ -27,6 +27,13 @@ and `proxy.ts` sends a signed-out app request for `/` to `/login` through
 after load for shells built before the marker, and `BrowserOnly` hides the
 sign-in page's "Back to taskpulse.com" link inside the app.
 
+**Status bar (Android 15+):** the app is drawn edge to edge under the status
+bar, and Capacitor's SystemBars passes the bar sizes as
+`--safe-area-inset-*` CSS variables. The top bar pads itself with
+`--safe-area-inset-top` and sticky panels start at `--header-offset`; every
+`env(safe-area-inset-*)` reads the variable first. The status-bar colour
+calls in `NativeBridge` have no effect there and only set the icon style.
+
 `printPage()` prints through the shell's `NativePrint` plugin (Android's
 print service, which offers Save as PDF) because Android WebView ignores
 `window.print()`; in a browser it is `window.print()`. `forgetThisDevice()`

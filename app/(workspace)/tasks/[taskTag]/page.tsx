@@ -245,7 +245,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             {waypoints?.recent.length ? <WaypointCelebration tasks={waypoints.recent} waypoints={waypoints.waypoints} /> : null}
             {canManage ? <TaskLifecyclePanel task={task} /> : null}
           </section>
-          <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--spacing-header)+1.5rem)] lg:self-start">
+          <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
             <MissionPanel icon={TimerIcon} title="Time" subtitle={`${formatHours(data.effort.hoursLogged)} h logged`}>
               <div className="grid gap-5">
                 <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
@@ -294,7 +294,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               <DependencyList dependencies={data.dependencies} taskId={task.id} />
             </MissionPanel>
           </section>
-          <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--spacing-header)+1.5rem)] lg:self-start">
+          <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
             <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
           </aside>
         </div>
@@ -307,7 +307,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           >
             <TaskLogTimeline logs={execution.logs} memberNames={memberNames} />
           </MissionPanel>
-          <MissionPanel icon={HistoryIcon} title={canManage ? 'Timer records' : 'My timer records'} className="h-fit lg:sticky lg:top-[calc(var(--spacing-header)+1.5rem)] lg:self-start">
+          <MissionPanel icon={HistoryIcon} title={canManage ? 'Timer records' : 'My timer records'} className="h-fit lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
             <TimerRecords
               timers={visibleTimers}
               memberNames={memberNames}

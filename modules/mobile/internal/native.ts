@@ -2,7 +2,6 @@
 // app (stellar-mobile, a Capacitor shell that loads this site). The Capacitor
 // packages are imported on demand, and only after the shell's bridge is found,
 // so a normal browser never loads or runs them.
-import { unregisterDeviceAction } from '@/modules/mobile/actions';
 
 import { isPushToken, PUSH_TOKEN_STORAGE_KEY } from './rules';
 
@@ -59,7 +58,8 @@ export async function forgetThisDevice(): Promise<void> {
   if (!token) return;
   storePushToken(null);
   await Promise.race([
-    unregisterDeviceAction(token).catch(() => undefined),
+    // Loaded on demand, so the edge proxy's import of this module carries no server action.
+    import('@/modules/mobile/actions').then(({ unregisterDeviceAction }) => unregisterDeviceAction(token)).catch(() => undefined),
     new Promise((resolve) => setTimeout(resolve, 3000)),
   ]);
 }
