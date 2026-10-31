@@ -1,7 +1,7 @@
 # auth
 
 ## What it does
-Email/password sign-in and signup, Google OAuth and email-link callbacks,
+Email/password sign-in and invite-only signup, email-link callbacks,
 password reset by email link, sign-out, safe post-login redirects and the list
 of routes the proxy guards.
 
@@ -44,7 +44,11 @@ the "Accept invitation" form sends just email and password, and the
 `handle_new_user` trigger applies the director's invitation (company, role,
 name, employee ID). An address without an invitation gets an inactive profile
 with no company; if it is invited later, its next sign-in attaches it.
-Invitations and member changes belong to the team module.
+Invitations and member changes belong to the team module. There is no Google
+or other social sign-in (removed 31 October 2026, user request): members only
+sign in with the invited email and a password. The Google provider should also
+stay disabled in the Supabase Auth dashboard so the OAuth endpoint cannot be
+reached directly.
 
 ## Depends on
 `shared/supabase`, `shared/session` (`getAuthState`), `shared/forms`,

@@ -10,8 +10,7 @@ import { RESET_PASSWORD_PATH } from './reset-view';
  *
  * Handles:
  * 1. Email verification confirmation links clicked from the user's inbox
- * 2. OAuth provider redirects (Google OAuth token exchange)
- * 3. Password-recovery links, forwarded by /reset-password as a `code` or,
+ * 2. Password-recovery links, forwarded by /reset-password as a `code` or,
  *    with a custom email template, a `token_hash` with `type=recovery`
  *
  * Exchanges the temporary authorization `code` for an authenticated session
