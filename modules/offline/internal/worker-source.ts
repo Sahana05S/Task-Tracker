@@ -4,7 +4,8 @@
 //
 // What it does, and nothing more:
 // - page navigations go to the network as usual and are never cached; when the
-//   network fails, the member is sent to /offline, served from the cache;
+//   network fails or answers with a server error, the member is sent to
+//   /offline, served from the cache;
 // - /offline itself is fetched from the network when possible, else the cache;
 // - Next.js build files (/_next/static, scripts, styles, fonts) are cached on
 //   first use, so the offline page loads without a connection;
@@ -24,7 +25,9 @@ export function serviceWorkerSource(deploymentId: string): string {
 const CACHE = ${JSON.stringify(cacheName)};
 const PREFIX = ${JSON.stringify(OFFLINE_CACHE_PREFIX)};
 const OFFLINE = ${JSON.stringify(OFFLINE_PATH)};
-const STATIC = /(?:\\/_next\\/)?static\\/(?:chunks|css|media)\\/[A-Za-z0-9_\\-.\\/~%]+/g;
+// Any build file the page names, under /_next/static/ in any layout (production
+// builds use /_next/static/immutable/...), in HTML attributes or flight data.
+const STATIC = /(?:\\/_next\\/)?static\\/[A-Za-z0-9_\\-.\\/~%]+\\.(?:js|css|woff2?|ttf|otf|png|jpe?g|svg|webp|ico)/g;
 
 async function precache() {
   const cache = await caches.open(CACHE);
@@ -63,6 +66,21 @@ async function offlinePage() {
   return (await caches.match(OFFLINE)) || Response.error();
 }
 
+// A page load. The network as usual; when it fails, or answers with a server
+// error (the Android shell can report an unreachable site that way), the
+// offline copy instead.
+async function navigate(request, url) {
+  try {
+    const response = await fetch(request);
+    if (response.status < 500) return response;
+  } catch (error) {
+    // No connection: fall through to the offline copy.
+  }
+  if (url.pathname === OFFLINE) return offlinePage();
+  if (!(await caches.match(OFFLINE))) return Response.error();
+  return Response.redirect(OFFLINE + '?from=' + encodeURIComponent(url.pathname), 302);
+}
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -73,14 +91,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (request.mode !== 'navigate') return;
-  if (url.pathname === OFFLINE) {
-    event.respondWith(fetch(request).catch(offlinePage));
-    return;
-  }
-  event.respondWith(fetch(request).catch(async () => {
-    if (!(await caches.match(OFFLINE))) return Response.error();
-    return Response.redirect(OFFLINE + '?from=' + encodeURIComponent(url.pathname), 302);
-  }));
+  event.respondWith(navigate(request, url));
 });
 `;
 }

@@ -7,6 +7,7 @@ import {
   correctedNow,
   dayLabel,
   OFFLINE_SCHEMA_VERSION,
+  offlineStatusLabel,
   readStoredSnapshot,
   SNAPSHOT_REFRESH_MS,
   snapshotIsDue,
@@ -64,6 +65,13 @@ describe('offline snapshot rules', () => {
     expect(childRows(rows, 'activity', 'a').map(r => r.id)).toEqual(['b']);
   });
 
+  it('says what the phone is missing for offline use', () => {
+    expect(offlineStatusLabel({ worker: 'none', files: 0, savedAt: null })).toBe('Not ready: setting up');
+    expect(offlineStatusLabel({ worker: 'active', files: 1, savedAt: null })).toBe('Not ready: the offline page is incomplete');
+    expect(offlineStatusLabel({ worker: 'active', files: 17, savedAt: null })).toBe('Not ready: your missions are not saved yet');
+    expect(offlineStatusLabel({ worker: 'active', files: 17, savedAt: Date.parse('2026-10-31T04:30:00.000Z') })).toBe('Ready · saved 10:00, 31 Oct · 17 files');
+  });
+
   it('labels the copy in India time', () => {
     expect(asOfLabel(Date.parse('2026-10-31T04:30:00.000Z'))).toBe('As of 10:00, 31 Oct');
     // 19:00 UTC on 31 Oct is already 1 Nov in India.
@@ -74,6 +82,10 @@ describe('offline snapshot rules', () => {
 
 describe('offline service worker source', () => {
   const source = serviceWorkerSource('dpl_abc123');
+
+  it('treats a server error on a page load like no connection', () => {
+    expect(source).toContain('if (response.status < 500) return response;');
+  });
 
   it('names its cache after the deploy and never caches data requests', () => {
     expect(source).toContain('"stellar-offline-dpl_abc123"');
@@ -87,8 +99,15 @@ describe('offline service worker source', () => {
 
   it('finds the build files the offline page names, in both HTML and flight data', () => {
     const pattern = new Function(`${source.split('\n').find(line => line.startsWith('const STATIC'))}; return STATIC;`)() as RegExp;
-    const html = '<script src="/_next/static/chunks/app-1.js"></script> self.__next_f.push("\\"static/chunks/page-2.js\\"") <link href="/_next/static/media/font.woff2">';
+    const html = '<script src="/_next/static/chunks/app-1.js"></script> self.__next_f.push("\\"static/chunks/page-2.js\\"") <link href="/_next/static/media/font.woff2">'
+      // Production builds (Next 16.4) put files under /_next/static/immutable/.
+      + '<script src="/_next/static/immutable/chunks/0l88is54ouli2.js" async></script><link rel="stylesheet" href="/_next/static/immutable/chunks/3wr89ftl9apvm.css">'
+      + '<link rel="preload" href="/_next/static/immutable/media/d8aeca813a9ab546-s.p.08ssgmy_tb90r.woff2" as="font">';
     const found = [...html.matchAll(pattern)].map(match => `/_next/${match[0].replace(/^\/?(_next\/)?/, '')}`);
-    expect(found).toEqual(['/_next/static/chunks/app-1.js', '/_next/static/chunks/page-2.js', '/_next/static/media/font.woff2']);
+    expect(found).toEqual([
+      '/_next/static/chunks/app-1.js', '/_next/static/chunks/page-2.js', '/_next/static/media/font.woff2',
+      '/_next/static/immutable/chunks/0l88is54ouli2.js', '/_next/static/immutable/chunks/3wr89ftl9apvm.css',
+      '/_next/static/immutable/media/d8aeca813a9ab546-s.p.08ssgmy_tb90r.woff2',
+    ]);
   });
 });

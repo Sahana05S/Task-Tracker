@@ -165,7 +165,7 @@ export function UserMenu({
         </DropdownMenuCheckboxItem>
 
         {/* Android app only: keep a copy of this member's missions on the phone. */}
-        <OfflineModeItem />
+        <OfflineModeItem userId={profile.id} />
 
         <DropdownMenuSeparator />
 
