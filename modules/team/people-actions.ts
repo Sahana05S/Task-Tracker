@@ -42,7 +42,7 @@ export async function inviteMember(_prev: PeopleActionState | null, form: FormDa
   refresh();
   return {
     success: true,
-    data: { message: `Invited ${input.value.email}. Ask them to open the sign-in page, choose “Accept invitation” and use this email (or Google with the same address).` },
+    data: { message: `Invited ${input.value.email}. Ask them to open the sign-in page, choose “Accept invitation” and use this email and a password.` },
   };
 }
 

@@ -27,7 +27,8 @@ export const metadata: Metadata = {
 
 /**
  * `viewport-fit=cover` lets the bottom bar and sheets pad themselves with
- * `env(safe-area-inset-bottom)` on phones with gesture bars, in the browser and
+ * `var(--safe-area-inset-*, env(safe-area-inset-*))` on phones with gesture bars and status bars
+ * (the Android app's Capacitor SystemBars sets the variables), in the browser and
  * in the Android app. The theme colour stays the meta tag below, which the theme
  * script repaints.
  */

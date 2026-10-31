@@ -9,6 +9,7 @@ import {
   SiteFooter,
   SiteHeader,
 } from '@/modules/marketing';
+import { NativeLandingRedirect } from '@/modules/mobile/components/native-landing-redirect';
 import { getAuthState } from '@/shared/session/profile';
 
 export const metadata: Metadata = {
@@ -33,6 +34,8 @@ export default async function HomePage() {
 
   return (
     <div className="bg-background flex min-h-dvh w-full max-w-full flex-col overflow-x-clip">
+      {/* Inside the Android app the landing page gives way to sign-in. */}
+      <NativeLandingRedirect />
       <SiteHeader />
 
       {/* Skip link for accessibility */}

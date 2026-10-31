@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 import Link from 'next/link';
 import { ArrowRightIcon } from 'lucide-react';
 
@@ -119,21 +119,6 @@ export function SiteFooter() {
           </p>
         </div>
 
-        {/*
-          Privacy and terms are reachable by email rather than as hosted pages.
-          Linking to routes that do not exist would be worse than saying where the
-          documents actually come from.
-        */}
-        <p className="text-muted-foreground mt-2 text-xs">
-          Privacy notice and terms of service available on request at{' '}
-          <a
-            href="mailto:legal@taskpulse.example"
-            className="hover:text-foreground underline underline-offset-2 transition-colors"
-          >
-            legal@taskpulse.example
-          </a>
-          .
-        </p>
       </div>
     </footer>
   );

@@ -59,7 +59,7 @@ export function photoPath(organizationId: string, userId: string, date: string, 
  * again after a lost response, so it counts as uploaded.
  */
 export async function uploadCheckInPhoto(supabase: Db, path: string, photo: Blob): Promise<string | null> {
-  const { error } = await supabase.storage.from(CHECK_IN_BUCKET).upload(path, photo, { contentType: 'image/jpeg', upsert: false });
+  const { error } = await supabase.storage.from(CHECK_IN_BUCKET).upload(path, photo, { contentType: photo.type || 'image/jpeg', upsert: false });
   if (!error) return null;
   if (/exists|duplicate/i.test(error.message)) return null;
   if (/bucket not found/i.test(error.message)) return 'Photo check-in needs the latest database update (migration 72).';

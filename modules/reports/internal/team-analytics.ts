@@ -52,42 +52,6 @@ export async function getWorkbookDashboard(
   };
 }
 
-export interface StoredSnapshot {
-  userId: string;
-  snapshotMonth: number;
-  snapshotYear: number;
-  isStarPerformer: boolean;
-  createdAt: string;
-}
-
-/**
- * Reads back any frozen snapshot rows for a period, so the dashboard can show
- * whether the month has already been committed.
- */
-export async function getStoredSnapshots(
-  period: AnalyticsPeriod,
-): Promise<StoredSnapshot[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from('monthly_performance_snapshots')
-    .select('user_id, snapshot_month, snapshot_year, is_star_performer, created_at')
-    .eq('snapshot_year', period.year)
-    .eq('snapshot_month', period.month);
-
-  if (error) {
-    throw new Error(`Failed to load snapshots: ${error.message}`);
-  }
-
-  return data.map((row) => ({
-    userId: row.user_id,
-    snapshotMonth: row.snapshot_month,
-    snapshotYear: row.snapshot_year,
-    isStarPerformer: row.is_star_performer ?? false,
-    createdAt: row.created_at,
-  }));
-}
-
 /**
  * The daily perf log for a filter built with `dailyPerfFilter`. Rows cover
  * active members plus anyone with a retained run in the range, or just the

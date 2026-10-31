@@ -3,8 +3,8 @@
 ## Code layout - modules (refactor completed 18 October 2026)
 
 The user asked for a modular codebase (facade per module, one short branch per
-change). The refactor is complete on `refactor/base` (not yet merged into
-`main`). Follow `docs/ARCHITECTURE.md`:
+change). The refactor is complete and merged into `main`. Follow
+`docs/ARCHITECTURE.md`:
 
 - Code lives in `app/` (routing only), `modules/<name>/` and `shared/`. There is
   no `lib/` or `components/` any more; do not recreate them.
@@ -25,6 +25,36 @@ change). The refactor is complete on `refactor/base` (not yet merged into
   `bash tools/notes.sh pull` before reading them and
   `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
   `__tests__/fixtures/`.
+
+## Full audit and fixes - 31 October 2026
+
+The user asked for a check of every aspect of the app (testing, security,
+logic, old features) and for the findings to be fixed. Branches
+`claude/mobile-app-audit-33gcb7` (web) and `shell/user-agent` (stellar-mobile).
+What changed, beyond small fixes:
+
+- No Google sign-in (user request); accounts are invitation-only. Keep the
+  Google provider off in Supabase Auth, Confirm email on, and email templates
+  on `token_hash` links (modules/auth/README.md).
+- No public landing page inside the Android app: the shell appends `StellarApp`
+  to its User-Agent and `proxy.ts` sends a signed-out app request for `/` to
+  `/login`; `NativeLandingRedirect` covers shells built before the marker.
+- Migration 94: phone registration never worked (PostgreSQL rejects regex
+  repetition counts above 255, so 91's `{20,4096}` failed every call);
+  invitations apply only to confirmed addresses; members cannot edit their
+  own `users.email`; deactivation disables phones; one push token, one owner.
+- Migration 95: a director's award override counts as that day's winner
+  everywhere. Migration 96: photo check-out after midnight closes yesterday's
+  check-in.
+- Security headers in `next.config.ts`, Next 16.4.3, worker endpoints check the
+  bearer before revealing setup, emailed links use `NEXT_PUBLIC_SITE_URL`.
+- When rewriting a function in a migration, start from its live definition
+  (`pg_get_functiondef` on a database at the previous migration), not from the
+  file that first created it: migrations 40 and later rewrite bodies in place.
+- Kept on purpose, pending the user's decision: `modules/drive` (deferred, no
+  UI), the legacy tables `daily_star_records`, `performance_score_components`,
+  `monthly_performance_snapshots`, `checklist_templates`(`_nodes`), and the
+  historical `tools/test_m0*`/`test_m13_*` evidence scripts and fixtures.
 
 ## Working from the cloud - 26 October 2026
 
@@ -128,7 +158,7 @@ Pending and validated entries count once; rejected/withdrawn are excluded;
 legacy or unattributed entries leave sales unavailable for that member until
 reconciled. Migration 46 (`46_sales_factor_mapping.sql`) implements it, so the
 composite score, rankings and awards are no longer blocked on sales. The M16
-recognition ceremony therefore uses migration 47 (streaks stay 45). Tests:
+recognition ceremony therefore landed as migration 50 (streaks stay 45). Tests:
 `tools/test_m17_sales_database.py` and the vitest cases in modules/support and
 modules/scoring.
 
@@ -148,7 +178,7 @@ Sales was locked until the BN/BO/BP mapping existed; it is now mapped by
 migration 46 (M17, above), so composite-based features show their normal state
 once 46 is applied and the locked state is only the fallback for older databases. The module is `modules/recognition/`
 (`docs/plans/M16-recognition.md`). Migrations 43-44 belong to the F3
-follow-up, so recognition uses 45 (streaks, done) and 47 (ceremony, pending; 46 is sales).
+follow-up, so recognition uses 45 (streaks) and 50 (ceremony; 46 is sales; there is no 47).
 Disposable databases only; no production apply or deployment.
 
 ## M15 multi-company direction - 17 October 2026

@@ -1,19 +1,7 @@
 import type { ContributionInputContext } from '../internal/input-context';
 import { DatedRecordModule, type TaskChoice } from './dated-record-module';
 import { DeleteReportButton, ReportForm } from './report-forms';
-import { canValidateSupportRecord } from '../internal/permissions';
 import Link from 'next/link';
-
-import {
-  deleteKnowledgeEntryAction,
-  deleteReportSnapshotAction,
-  deleteSalesLogAction,
-  saveKnowledgeEntryAction,
-  saveReportSnapshotAction,
-  saveSalesLogAction,
-  toggleKnowledgeValidationAction,
-} from '../actions';
-import { Button } from '@/shared/ui/button';
 import type { SupportKnowledgeModule } from '../internal/permissions';
 import { formatDate } from '@/shared/tracker/format';
 import type {
@@ -25,8 +13,6 @@ import type {
   User,
 } from '@/types/tracker';
 import { EmptyState } from '@/shared/ui/mission-ui';
-
-type ServerFormAction = (formData: FormData) => void | Promise<void>;
 
 export type KnowledgeEntry = DailyFact | Idea | Suggestion;
 
@@ -162,8 +148,3 @@ function entryBody(entry: KnowledgeEntry): string {
   return entry.suggestion;
 }
 
-function asFormAction(
-  action: (formData: FormData) => Promise<unknown>,
-): ServerFormAction {
-  return action as ServerFormAction;
-}

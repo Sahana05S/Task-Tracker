@@ -2,6 +2,7 @@
 import { createClient } from '@/shared/supabase/server';
 
 import type { LoginInput, SignupInput } from './input';
+import { publicOrigin } from '@/shared/security/origin';
 
 /** Signs in with email and password; returns a user-facing error, or null. */
 export async function signInWithPassword(
@@ -41,7 +42,13 @@ export async function signUpAccount(input: SignupInput): Promise<SignupOutcome> 
     },
   });
 
-  if (error) return { ok: false, error: error.message };
+  // "Already registered" would tell a visitor which addresses have accounts.
+  if (error) {
+    if (/already (registered|exists)/i.test(error.message)) {
+      return { ok: false, error: 'This email cannot be used to accept an invitation. If you already joined, sign in or reset your password.' };
+    }
+    return { ok: false, error: 'The invitation could not be accepted. Check the email and try again.' };
+  }
   return { ok: true, hasSession: Boolean(data.session) };
 }
 
@@ -50,7 +57,7 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
 }
 
-/** Exchanges an email-link or OAuth `code` for a session; true on success. */
+/** Exchanges an email-link `code` for a session; true on success. */
 export async function exchangeCodeForSession(code: string): Promise<boolean> {
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -74,8 +81,17 @@ export async function requestPasswordReset(email: string): Promise<string | null
 
 /** Verifies a recovery `token_hash` (custom email template); true on success. */
 export async function verifyRecoveryToken(tokenHash: string): Promise<boolean> {
+  return verifyEmailToken(tokenHash, 'recovery');
+}
+
+/**
+ * Verifies an emailed `token_hash` link (recovery, or sign-up confirmation).
+ * Unlike a PKCE `code`, it works in any browser, so a link opened from the
+ * phone's mail app still signs the person in.
+ */
+export async function verifyEmailToken(tokenHash: string, type: 'recovery' | 'email'): Promise<boolean> {
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
   return !error;
 }
 
@@ -86,11 +102,9 @@ export async function updatePassword(newPassword: string): Promise<string | null
   return error ? error.message : null;
 }
 
-/** The public origin of the current request, or '' when the host is unknown. */
+/** The site's public origin (configured, else this request's host), or '' when unknown. */
 async function readSiteUrl(): Promise<string> {
   const { headers } = await import('next/headers');
   const headerList = await headers();
-  const host = headerList.get('x-forwarded-host') || headerList.get('host');
-  const protocol = headerList.get('x-forwarded-proto') || 'https';
-  return host ? `${protocol}://${host}` : '';
+  return publicOrigin((name) => headerList.get(name));
 }

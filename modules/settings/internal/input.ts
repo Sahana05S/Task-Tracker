@@ -149,6 +149,8 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
     if (reminder !== null && (typeof reminder !== 'string' || !REMINDER_TIME_PATTERN.test(reminder))) {
       return { ok: false, error: 'Choose a reminder time such as 09:30, or leave it empty for no reminder.' };
     }
+    // The reminder runs in a 30-minute window that must end by midnight (migration 93).
+    if (reminder !== null && reminder > '23:29') return { ok: false, error: 'Choose a reminder time up to 23:29.' };
     return { ok: true, value: { checkInEnabled: raw.checkInEnabled, officeLatitude: latitude, officeLongitude: longitude, officeRadiusM: radius, photoRetentionDays: days,
       autoMarkEnabled: raw.autoMarkEnabled, weeklyOffDays: [...new Set(off as number[])].sort(), checkInReminderTime: reminder } };
   },

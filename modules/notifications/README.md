@@ -59,6 +59,10 @@ Migration 91 (owned here): `taskpulse_private.user_devices` and
 sender RPCs `push_claim(limit)` and `push_complete(results)`, the
 `m91_push_enqueue` trigger on `notifications`, `push_retry_tick()` (pg_cron)
 and the `taskpulse_push` schema (Vault settings, `wake()`, `configure()`).
+Migration 94 fixes the token pattern (PostgreSQL refuses repetition counts
+above 255, so 91's `{20,4096}` failed every registration), makes one token one
+phone with one owner across companies, and disables a member's phones and
+pending pushes when they are deactivated.
 
 ## Depends on
 `shared/*` only.

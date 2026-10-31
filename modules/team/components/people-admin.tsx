@@ -51,7 +51,7 @@ export function InviteForm() {
     <MissionPanel
       icon={MailPlusIcon}
       title="Invite a person"
-      subtitle="They get access only after they sign up with this exact email (password or Google)."
+      subtitle="They get access only after they sign up with this exact email and a password."
     >
       <form ref={formRef} action={run} onSubmit={keepTypedOnRefusal(run)} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_2fr_1fr_1.4fr_auto] lg:items-end">
         <label className="field-label">
@@ -98,7 +98,7 @@ export function InvitationList({ invitations }: { invitations: Invitation[] }) {
                 <p className="text-foreground text-sm font-semibold">{invite.fullName}</p>
                 <p className="text-muted-foreground text-xs break-all">
                   {invite.email} · <span className="font-mono">{invite.employeeId}</span> · invited{' '}
-                  {new Date(invite.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  {new Date(invite.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}
                 </p>
               </div>
               <RoleBadge role={invite.role} />

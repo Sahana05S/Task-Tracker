@@ -143,7 +143,8 @@ function SheetContent({
         {!hideCloseButton ? (
           <SheetPrimitive.Close
             className={cn(
-              'absolute top-4 right-4 rounded-md p-1 text-muted-foreground transition-colors',
+              // A 40px hit area around the 16px glyph, so a thumb finds it on a phone.
+              'absolute top-2 right-2 grid size-10 place-items-center rounded-md text-muted-foreground transition-colors',
               'hover:bg-muted hover:text-foreground',
               'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
             )}

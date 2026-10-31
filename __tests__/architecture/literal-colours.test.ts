@@ -17,10 +17,10 @@ const SCAN = ['app', 'modules', 'shared/ui'];
 const SKIP_DIRS = new Set(['__tests__', 'marketing']);
 const SKIP = [/^app\/page\.tsx$/, /^app\/globals\.css$/];
 const ALLOWED: Record<string, string[]> = {
-  // Google's "G" mark keeps its brand colours in both themes.
-  'modules/auth/components/auth-form.tsx': ['#4285F4', '#34A853', '#FBBC05', '#EA4335'],
   // <meta name="theme-color"> cannot read a CSS variable; shared/ui/__tests__/theme.test.ts ties these to --background.
   'shared/ui/theme-script.ts': ['#f7f6fd', '#101113'],
+  // global-error replaces the root layout, so the theme stylesheet and its tokens are not loaded.
+  'app/global-error.tsx': ['#f7f6fd', '#101113', '#6355e6', '#fff'],
   // The home-screen icon is a PNG rendered once; it shows the light theme's primary in both themes.
   'app/apple-icon.tsx': ['#6355e6', '#ffffff'],
 };

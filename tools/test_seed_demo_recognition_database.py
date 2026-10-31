@@ -84,9 +84,9 @@ print(f"PASS fresh install {migrations[0].name}..{migrations[-1].name} with ledg
 
 # Stand-in for the demo project. Directors 1 (demo) and 11 (old); members 2, 3 (demo), 12-14 (old).
 people = {1: ("md@demo.com", "DEMO-MD", "managing_director"), 2: ("asha@demo.com", "DEMO-2", "team_member"),
-          3: ("ravi@demo.com", "DEMO-3", "project_engineer"), 11: ("harish@sahcon.org", "SRB-1", "managing_director"),
-          12: ("pe@sahcon.org", "SRB-2", "project_engineer"), 13: ("dm@sahcon.org", "SRB-3", "data_manager"),
-          14: ("member@sahcon.org", "SRB-4", "team_member")}
+          3: ("ravi@demo.com", "DEMO-3", "project_engineer"), 11: ("old-md@sahcon.org", "SRB-1", "managing_director"),
+          12: ("old-pe@sahcon.org", "SRB-2", "project_engineer"), 13: ("old-dm@sahcon.org", "SRB-3", "data_manager"),
+          14: ("old-member@sahcon.org", "SRB-4", "team_member")}
 sql("".join(f"INSERT INTO auth.users(id,email,raw_user_meta_data,raw_app_meta_data) VALUES('{uid(n)}','{e}',"
             f"'{{\"employee_id\":\"{emp}\",\"full_name\":\"{e.split('@')[0].title()}\"}}','{{\"taskpulse_provisioned\":true}}');\n"
             for n, (e, emp, _) in people.items())
@@ -129,7 +129,7 @@ assert "Dry run: nothing was written" in plan_text and state() == before
 assert (f"Phase 4 attendance: {3 * days - 2} to create (1 over withdrawn records), 2 kept as recorded "
         "(1 differ from the synthetic plan), for 3 member(s)") in plan_text, plan_text
 assert f"Phase 2 requests: {days} award day(s) without a slot" in plan_text
-assert "- harish@sahcon.org (managing_director)" in plan_text
+assert "- old-md@sahcon.org (managing_director)" in plan_text
 print("PASS dry run: plan only")
 
 applied = run_tool("--yes", label="apply --worker none")

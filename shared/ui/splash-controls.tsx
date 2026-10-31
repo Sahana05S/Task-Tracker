@@ -37,7 +37,7 @@ export function SplashControls() {
       <button
         type="button"
         onClick={dismiss}
-        className="splash-skip press border-border bg-card text-foreground absolute right-4 bottom-[calc(env(safe-area-inset-bottom)+24px)] inline-flex h-11 items-center rounded-full border px-5 text-sm font-medium lg:hidden"
+        className="splash-skip press border-border bg-card text-foreground absolute right-4 bottom-[calc(var(--safe-area-inset-bottom,env(safe-area-inset-bottom))+24px)] inline-flex h-11 items-center rounded-full border px-5 text-sm font-medium lg:hidden"
       >
         Skip
       </button>

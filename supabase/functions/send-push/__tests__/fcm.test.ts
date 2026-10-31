@@ -32,9 +32,9 @@ describe('send-push FCM helpers', () => {
 
   it('opens only in-app paths', () => {
     expect(safePath('/policies')).toBe('/policies');
-    expect(safePath(null)).toBe('/');
-    expect(safePath('https://evil.example')).toBe('/');
-    expect(safePath('//evil.example')).toBe('/');
+    expect(safePath(null)).toBe('/dashboard');
+    expect(safePath('https://evil.example')).toBe('/dashboard');
+    expect(safePath('//evil.example')).toBe('/dashboard');
   });
 
   it('maps FCM replies to outbox outcomes', () => {

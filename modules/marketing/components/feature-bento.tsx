@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 import Image from 'next/image';
 import { CheckCircle2Icon } from 'lucide-react';
 

@@ -3,16 +3,13 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 
 import { getCurrentProfile } from '@/shared/session/profile';
+import { csvCell as cell } from '@/shared/tracker/csv';
 
 import { readPayrollMonth } from './queries';
 import { canManagePayroll } from './permissions';
 import { monthPeriod } from './rules';
 import type { PayrollMonth } from './mappers';
 
-const cell = (value: string | number | null) => {
-  const text = value === null ? '' : String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-};
 const amount = (value: number | null) => (value === null ? '' : value.toFixed(2));
 
 /** The Salary Calculation table as CSV, one row per employee (exact amounts; in hand also rounded). */

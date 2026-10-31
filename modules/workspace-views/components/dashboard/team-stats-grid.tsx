@@ -96,7 +96,7 @@ export function TeamStatsGrid({ analytics, attendanceComplete = true, attendance
         // with gaps and nothing recorded it is a dash, never a healthy-looking zero.
         value={attendanceComplete || Number(totals.attendanceHours) > 0 ? formatHours(totals.attendanceHours) : '—'}
         unit={attendanceComplete || Number(totals.attendanceHours) > 0 ? 'h' : undefined}
-        detail={`${formatNumeric(totals.payableDays)} payable days · ${formatHours(totals.offHours)} off-hours`}
+        detail={`${formatNumeric(totals.payableDays)} days present, half or holiday · ${formatHours(totals.offHours)} off-hours`}
       />
 
       <StatCard

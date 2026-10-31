@@ -185,7 +185,7 @@ or task attribution, exact in-month dates and reason. Only that scope is opened.
 After the correction and recomputation, publishing creates a new retained
 revision; the earlier revision remains selectable and visibly superseded.
 Ordinary edits to unrelated closed records remain blocked. A database backup
-and operational release procedure are in [the release runbook](plans/RELEASE-RUNBOOK.md).
+and operational release procedure are in the release runbook (`docs/plans/RELEASE-RUNBOOK.md` in the private notes repository).
 
 ## Database backups (Supabase Free plan)
 

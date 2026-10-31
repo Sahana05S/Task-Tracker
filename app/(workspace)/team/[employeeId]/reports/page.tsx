@@ -10,12 +10,7 @@ import { notFound } from 'next/navigation';
 
 import { FileTextIcon, HistoryIcon, ListChecksIcon, StarIcon, type LucideIcon } from 'lucide-react';
 
-import {
-  EmptyState,
-  MissionNotice,
-  MissionPage,
-  MissionPanel,
-} from '@/shared/ui/mission-ui';
+import { EmptyState, MissionPage, MissionPanel } from '@/shared/ui/mission-ui';
 import { requireProfile } from '@/shared/session/profile';
 import { getEmployeeItemHours } from '@/modules/checklists';
 import type { ItemHourTask } from '@/modules/checklists/client';
@@ -114,7 +109,7 @@ export default async function EmployeeReportsPage({
           <ChartCard
             label="Attendance"
             value={`${formatHours(data.attendanceSummary.attendanceHours)}h`}
-            detail={`${formatNumeric(data.attendanceSummary.payableDays)} payable days`}
+            detail={`${formatNumeric(data.attendanceSummary.payableDays)} days present, half or holiday`}
           />
           <ChartCard
             label="Legacy daily stars · uncertified"

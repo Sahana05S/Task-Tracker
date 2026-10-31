@@ -21,7 +21,7 @@ export function TimerPill({ compact = false }: { compact?: boolean }) {
       href={`/tasks/${encodeURIComponent(timer.taskTag)}`}
       title={`Timer running on ${timer.taskTag} · ${timer.taskTitle}`}
       className={cn(
-        'bg-success-subtle text-success-strong hover:bg-success-subtle/70 flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+        'bg-success-subtle text-success-strong hover:bg-success-subtle/70 flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors max-md:min-h-10',
         compact && 'px-2.5',
       )}
     >

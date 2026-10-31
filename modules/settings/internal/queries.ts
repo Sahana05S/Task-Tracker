@@ -23,3 +23,17 @@ export const readCompanySettings = cache(async (): Promise<CompanySettings & { a
   }
   return { ...parseCompanySettings(data), available: true };
 });
+
+/**
+ * For the workspace shell only: a failed read shows built-in defaults
+ * (marked unavailable) so one failing read does not take every page down.
+ * Pages that edit settings use readCompanySettings and see the failure.
+ */
+export const readShellCompanySettings = cache(async (): Promise<CompanySettings & { available: boolean }> => {
+  try {
+    return await readCompanySettings();
+  } catch (error) {
+    console.error(error);
+    return { ...EMPTY_COMPANY_SETTINGS, available: false };
+  }
+});

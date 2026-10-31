@@ -9,11 +9,12 @@ import { DriveFailure } from './contract';
 import { DRIVE_INTEGRATION_DEFERRED,DRIVE_UNAVAILABLE_MESSAGE } from './availability';
 import { workerClient } from '@/shared/supabase/worker';
 function authorize(request:Request,mutating:boolean):Response|null{
- if(DRIVE_INTEGRATION_DEFERRED)return Response.json({status:'unavailable',reason:DRIVE_UNAVAILABLE_MESSAGE},{status:503});
+ // The bearer comes first, so an outsider learns nothing about the worker's setup.
  const token=process.env.TASKPULSE_DRIVE_WORKER_TOKEN;
- if(!token||mutating&&process.env.TASKPULSE_DRIVE_WORKER_ENABLED!=='sandbox')return Response.json({status:'unavailable',reason:'Drive sandbox worker is disabled.'},{status:503});
  const digest=(value:string)=>createHash('sha256').update(value).digest();
- if(!timingSafeEqual(digest(request.headers.get('authorization')??''),digest('Bearer '+token)))return Response.json({status:'forbidden'},{status:403});
+ if(!token||!timingSafeEqual(digest(request.headers.get('authorization')??''),digest('Bearer '+token)))return Response.json({status:'forbidden'},{status:403});
+ if(DRIVE_INTEGRATION_DEFERRED)return Response.json({status:'unavailable',reason:DRIVE_UNAVAILABLE_MESSAGE},{status:503});
+ if(mutating&&process.env.TASKPULSE_DRIVE_WORKER_ENABLED!=='sandbox')return Response.json({status:'unavailable',reason:'Drive sandbox worker is disabled.'},{status:503});
  return null;
 }
 export async function handleDriveSetupCheck(request:Request){

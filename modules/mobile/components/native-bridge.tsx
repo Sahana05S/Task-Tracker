@@ -49,7 +49,10 @@ async function setUpPush(open: (path: string) => void): Promise<Handle[]> {
   const handles = await Promise.all([
     PushNotifications.addListener('registration', ({ value }) => {
       storePushToken(value);
-      if (isNativePlatform(platform)) void registerDeviceAction(value, platform);
+      // A refused registration means no phone notifications; say so instead of failing silently.
+      if (isNativePlatform(platform)) void registerDeviceAction(value, platform).then((result) => {
+        if (!result.success) console.warn('Phone notifications could not be registered', result.error);
+      });
     }),
     PushNotifications.addListener('registrationError', (error) => console.warn('Phone notifications could not be set up', error.error)),
     // Shown by the system while the app is in the background; in the foreground the bell updates.

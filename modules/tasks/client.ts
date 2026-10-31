@@ -26,7 +26,6 @@ export { canManageTasks, canUpdateTaskOwnFields, isAssignedToTask } from '@/modu
 export { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
 export { equalParticipantShares, parseSharePercent, TOTAL_SHARE_UNITS } from '@/modules/tasks/internal/shares';
 export { mapTask, mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/internal/mappers';
-export { canUseWorkbookWorkflow, WORKBOOK_WORKFLOWS, type WorkbookWorkflow, type WorkbookWorkflowId } from '@/modules/tasks/internal/tools/workflows';
 export type { ToolOperation, ToolsPreview } from '@/modules/tasks/internal/tools/contract';
 export { addMonths, defaultSetupMonth, monthOf, setupBannerMonth, type MonthKey } from '@/modules/tasks/internal/tools/month-setup';
 export type { SupportSplitMode } from '@/modules/tasks/internal/tools/support-split';

@@ -30,11 +30,12 @@ const ENABLED_MODES = new Set(['sandbox', 'production']);
  */
 export function authorizeWorkerRequest(request: Request, worker = 'Award worker'): Response | null {
   const token = process.env.TASKPULSE_AWARD_WORKER_TOKEN;
-  if (!token || !ENABLED_MODES.has(process.env.TASKPULSE_AWARD_WORKER_ENABLED ?? '')) {
-    return Response.json({ status: 'unavailable', reason: `${worker} is not configured.` }, { status: 503 });
-  }
-  if (!bearerMatches(request, token)) {
+  // Without a token nobody can be the worker; the caller learns nothing about the setup.
+  if (!token || !bearerMatches(request, token)) {
     return Response.json({ status: 'forbidden' }, { status: 403 });
+  }
+  if (!ENABLED_MODES.has(process.env.TASKPULSE_AWARD_WORKER_ENABLED ?? '')) {
+    return Response.json({ status: 'unavailable', reason: `${worker} is not configured.` }, { status: 503 });
   }
   return null;
 }

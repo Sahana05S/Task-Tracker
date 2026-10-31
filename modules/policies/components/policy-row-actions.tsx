@@ -86,7 +86,7 @@ function StateSheet({ command, onOpenChange, policy }: { command: StateCommand |
   const copy = command ? STATE_COPY[command] : null;
   return (
     <Sheet open={command !== null} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="mx-auto w-full gap-0 pb-[env(safe-area-inset-bottom)] sm:bottom-6 sm:max-w-md sm:rounded-3xl">
+      <SheetContent side="bottom" className="mx-auto w-full gap-0 pb-[var(--safe-area-inset-bottom,env(safe-area-inset-bottom))] sm:bottom-6 sm:max-w-md sm:rounded-3xl">
         <SheetHeader>
           <SheetTitle>{copy?.title}</SheetTitle>
           <SheetDescription>{policy.name}. {copy?.body}</SheetDescription>

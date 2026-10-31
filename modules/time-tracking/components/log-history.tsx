@@ -22,7 +22,7 @@ import {
   SheetTitle,
 } from '@/shared/ui/sheet';
 import { groupLogsByDate } from '@/modules/time-tracking/internal/logs/metrics';
-import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
+import { formatDate, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { DailyTaskLog, Task } from '@/types/tracker';
 import Link from 'next/link';
@@ -77,7 +77,7 @@ export function LogHistory({ logs, tasks }: LogHistoryProps) {
                   below that the header wraps to two rows and no fixed offset is
                   correct, and a heading parked behind the header is worse than one
                   that simply scrolls away. */}
-              <div className="bg-background z-10 flex items-center gap-3 py-1.5 sm:sticky sm:top-(--spacing-header)">
+              <div className="bg-background z-10 flex items-center gap-3 py-1.5 sm:sticky sm:top-(--header-offset)">
                 <h3 className="text-foreground text-sm font-bold">
                   {formatDate(group.logDate)}
                 </h3>

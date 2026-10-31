@@ -7,7 +7,7 @@ import { PeopleTile } from '@/modules/tasks/components/detail/detail-tiles';
 import type { TaskDetailData } from '@/modules/tasks/internal/detail';
 import { CATEGORY_LABELS } from '@/shared/tracker/enums';
 import { formatDate, formatHours, formatPercent } from '@/shared/tracker/format';
-import { codeLabel, TASK_FRESHNESS_MEANINGS } from '@/shared/tracker/labels';
+import { TASK_FRESHNESS_MEANINGS } from '@/shared/tracker/labels';
 
 /**
  * The mission's core facts: progress, status, dates and people. This is the

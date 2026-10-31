@@ -8,11 +8,13 @@ const request = (authorization?: string) =>
 afterEach(() => vi.unstubAllEnvs());
 
 describe('authorizeWorkerRequest', () => {
-  it('is unavailable (503) until the switch and token are configured', async () => {
+  it('refuses everyone (403) without a token, and is unavailable (503) to the worker until the switch is on', async () => {
     vi.stubEnv('TASKPULSE_AWARD_WORKER_TOKEN', '');
     vi.stubEnv('TASKPULSE_AWARD_WORKER_ENABLED', 'production');
-    expect(authorizeWorkerRequest(request('Bearer x'))?.status).toBe(503);
+    // No token configured: nothing about the setup is disclosed to a caller.
+    expect(authorizeWorkerRequest(request('Bearer x'))?.status).toBe(403);
     vi.stubEnv('TASKPULSE_AWARD_WORKER_TOKEN', 'secret-token');
+    expect(authorizeWorkerRequest(request('Bearer wrong'))?.status).toBe(403);
     vi.stubEnv('TASKPULSE_AWARD_WORKER_ENABLED', 'on');
     const off = authorizeWorkerRequest(request('Bearer secret-token'), 'Policies worker')!;
     expect(off.status).toBe(503);

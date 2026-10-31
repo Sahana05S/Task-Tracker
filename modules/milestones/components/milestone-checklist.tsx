@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 import { PlusIcon, FlagIcon } from 'lucide-react';
 import { MissionProgress } from '@/shared/ui/mission-ui';
 

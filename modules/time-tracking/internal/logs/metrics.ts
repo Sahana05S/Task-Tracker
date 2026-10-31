@@ -1,13 +1,13 @@
 import { eligibilityReasons, EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/client';
 import type { Task } from '@/types/tracker';
-import type { DailyTaskLog, TaskCategory } from '@/types/tracker';
+import type { DailyTaskLog } from '@/types/tracker';
 
 /**
  * The effort and productivity formulas from `domain-rules.md`, kept pure so the
  * Server Actions, the views and the tests share one implementation.
  *
  *   Scaled Progress    = Task Scale x (Progress % / 100)
- *   Task Productivity  = Scaled Progress / Total Hours Worked
+ *   Task Productivity  = Progress % / Total Hours Worked (percentage points per hour)
  *
  * Scaled progress is a generated STORED column, so the database owns it. It is
  * reproduced here only for display, never written back.

@@ -389,52 +389,10 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
     },
   );
 
-  /* --- Medians ---------------------------------------------------------- */
-
-  // Productivity: only members with logged hours. A member who logged nothing
-  // has an undefined rate, and folding them in as 0 would drag the median down
-  // with people who simply were not working on tracked tasks.
-  const medians: TeamMedians = {
-    productivity: median(
-      primaries
-        .map((p) => p.productivity)
-        .filter((value): value is number => value !== null),
-    ),
-    // Allocation: every active member, including those at 0%. Nobody's share is
-    // undefined, and an idle member genuinely carries none of the workload.
-    allocationPercent: median(primaries.map((p) => p.allocationPercent)),
-    // Criticality: only members holding tasks; the mean of an empty set is
-    // undefined, not zero.
-    criticalityScore: [...accumulators.values()].some(a=>a.unsettledAttribution) ? null : median(
-      primaries
-        .map((p) => p.criticalityScore)
-        .filter((value): value is number => value !== null),
-    ),
-  };
-
   /* --- Differentials and composite score -------------------------------- */
 
   const scored: MemberPerformance[] = primaries.map((primary) => {
     const { accumulator } = primary;
-
-    const productivityDiff =
-      primary.productivity !== null && medians.productivity !== null
-        ? roundToNumericScale(primary.productivity - medians.productivity)
-        : null;
-
-    const loadingDiff =
-      medians.allocationPercent !== null
-        ? roundToNumericScale(
-            primary.allocationPercent - medians.allocationPercent,
-          )
-        : null;
-
-    const criticalityDiff =
-      primary.criticalityScore !== null && medians.criticalityScore !== null
-        ? roundToNumericScale(
-            primary.criticalityScore - medians.criticalityScore,
-          )
-        : null;
 
     const calculation=input.calculation?.members.find(member=>member.userId===accumulator.member.id);
     // Retained shape for old operational fixtures; no competing score arithmetic.

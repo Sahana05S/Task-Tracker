@@ -5,7 +5,7 @@ import { correctLog, createLog, reverseLog } from '@/modules/time-tracking/inter
 import { logPayload, parseLogInput, readId } from '@/modules/time-tracking/internal/logs/input';
 import { getLoggableTasksFor } from '@/modules/time-tracking/internal/logs/queries';
 import { commandIdentity, type ExecutionResult } from '@/shared/commands/result';
-import { readNullableString } from '@/shared/forms/form-data';
+import { readNullableString, UUID_PATTERN } from '@/shared/forms/form-data';
 import { getCurrentProfile } from '@/shared/session/profile';
 import type { ActionResponse } from '@/types/tracker';
 
@@ -65,6 +65,10 @@ export async function deleteTaskLog(
   expectedVersion: number,
   reason: string,
 ): Promise<LogActionState> {
+  if (!(await activeProfile())) return { success: false, error: SIGN_IN_REQUIRED, errorCode: 'forbidden' };
+  if (!UUID_PATTERN.test(logId) || !UUID_PATTERN.test(operationId) || !Number.isInteger(expectedVersion)) {
+    return { success: false, error: 'Reload the page and try again.', errorCode: 'validation' };
+  }
   const result = await reverseLog(logId, reason, operationId, expectedVersion);
   if (result.success) revalidateAfterLog(result.data!.taskTag);
   return result;

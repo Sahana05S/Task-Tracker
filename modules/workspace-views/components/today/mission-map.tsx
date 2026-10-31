@@ -393,7 +393,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
         <MapHint ref={hintRef} />
       </section>
     </div>
-    {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-[calc(var(--spacing-header)+1.5rem)]">
+    {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-[calc(var(--header-offset)+1.5rem)]">
       <div className="flex items-start justify-between gap-3"><h3 ref={panelHeading} id="map-work-title" tabIndex={-1} className="text-foreground min-w-0 text-lg font-semibold break-words outline-none">{leaf.title}</h3>
         <Button variant="ghost" size="icon" className="size-8" aria-label="Close focused work" onClick={() => setLeafId(null)}><XIcon aria-hidden="true" /></Button></div>
       <RoadmapItemWork key={`${leaf.id}:${leafLevel.taskVersion}`} mission={{ ...mission, lifecycleVersion: leafLevel.taskVersion }} node={leaf} onOpen={() => undefined} onCommitted={refreshPath} />

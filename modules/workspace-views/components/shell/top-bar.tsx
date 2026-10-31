@@ -33,8 +33,9 @@ export function TopBar({ profile }: { profile: User }) {
   const section = activeSection(pathname);
   const moreActive = isMoreActive(pathname);
   const homeLabel = useBrandHomeLabel();
+  // In the Android app (edge to edge) the status bar overlays the page; Capacitor passes its height as --safe-area-inset-top.
   return (
-    <header className="border-border sticky top-0 z-30 border-b bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+    <header className="border-border sticky top-0 z-30 border-b bg-card/85 pt-[var(--safe-area-inset-top,env(safe-area-inset-top))] backdrop-blur supports-[backdrop-filter]:bg-card/75">
       <div className="flex h-(--spacing-header) items-center gap-3 px-4 lg:px-6">
         {/* The company's own mark and name (Settings > Company > Branding); Stellar's when it has none. */}
         <Link href="/today" className="flex min-w-0 shrink-0 items-center gap-2" aria-label={homeLabel}>

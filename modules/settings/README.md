@@ -9,7 +9,7 @@ reads them.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `getCompanySettings()` (built-in defaults before migration 53), `categoryCatalogue()` (the 13 codes with the company's labels, active flags and order), `getCompanyHolidayNames(from, to)` |
+| `index.ts` | `getCompanySettings()` (built-in defaults before migration 53), `getShellCompanySettings()` and `shellCategoryCatalogue()` (the workspace layout: a failed read falls back to defaults so pages still render), `categoryCatalogue()` (the 13 codes with the company's labels, active flags and order), `getCompanyHolidayNames(from, to)` |
 | `actions.ts` | `saveCompanySettings(prev, form)`: one section per call (`agenda`, `categories`, `meeting_types`, `standing_missions`, `holidays`, `mission_defaults`, `branding`, `departments`, `attendance`) |
 | `client.ts` | Types and pure rules: `buildCategoryCatalogue`, `categoryChoices` (hides inactive codes except the current one), `categoryLabelMap`, `meetingTypeChoices` (keeps a saved value that left the list), `agendaLines`, `renderTitlePattern`, `formatSheetTag`, `canManageCompanySettings`, `STANDING_SCALE_MODES`, `SCALE_MODE_LABELS`, `CompanyBranding`, `BRANDING_URL_FIELDS`, `isBrandUrl` |
 | `components/company-settings.tsx` | `CompanySettingsEditor`: the Company tab (eight sections, each saved on its own) |

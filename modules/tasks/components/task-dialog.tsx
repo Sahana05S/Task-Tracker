@@ -86,13 +86,24 @@ export function TaskDialog({
   // revalidatePath calls inside the actions.
   const succeeded = state?.success === true;
   const handledState=React.useRef<TaskActionState|null>(null);
+  // Typed but unsaved: an outside tap, Escape or the phone's back button asks before discarding.
+  const dirty = React.useRef(false);
+  React.useEffect(() => { if (open) dirty.current = false; }, [open]);
   React.useEffect(() => {
-    if (succeeded && open && state!==handledState.current) {handledState.current=state;onOpenChange(false);}
+    if (succeeded && open && state!==handledState.current) {handledState.current=state;dirty.current=false;onOpenChange(false);}
   }, [succeeded, open, onOpenChange, state]);
+  const requestOpenChange = (next: boolean) => {
+    if (!next && dirty.current && !window.confirm(isEdit ? 'Discard your changes to this mission?' : 'Discard this new mission? It is not saved.')) return;
+    if (!next) dirty.current = false;
+    onOpenChange(next);
+  };
+  const markDirty = () => { dirty.current = true; };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={requestOpenChange}>
       <SheetContent
+        onInputCapture={markDirty}
+        onChangeCapture={markDirty}
         side="bottom"
         className="max-h-[92dvh] gap-0 sm:mx-auto sm:max-w-2xl sm:rounded-t-xl"
       >
