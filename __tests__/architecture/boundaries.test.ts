@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = process.cwd();
 const SOURCE_DIRS = ['app', 'modules', 'shared'];
-const VIEW_MODULES = new Set(['workspace-views']);
+const VIEW_MODULES = new Set(['workspace-views', 'offline']);
 
 /**
  * Files that still call .from()/.rpc() outside a module. Every page and route

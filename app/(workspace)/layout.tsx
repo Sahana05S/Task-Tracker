@@ -9,6 +9,7 @@ import { getShellCompanySettings, shellCategoryCatalogue } from '@/modules/setti
 import { CompanySettingsProvider } from '@/modules/settings/components/company-settings-context';
 import { MissionStartToaster } from '@/modules/tasks/components/mission-status-prompt';
 import { NativeBridge } from '@/modules/mobile/components/native-bridge';
+import { OfflineSync } from '@/modules/offline/components/offline-sync';
 import { DisclosureFocus } from '@/shared/ui/disclosure-focus';
 import { Splash } from '@/shared/ui/splash';
 import { SPLASH_SCRIPT } from '@/shared/ui/splash-script';
@@ -49,6 +50,8 @@ export default async function WorkspaceLayout({
           <DisclosureFocus />
           {/* Android app only: push registration, notification taps, back button, status bar. */}
           <NativeBridge />
+          {/* Android app with "Offline mode (beta)" on: the offline service worker and the member's offline copy. */}
+          <OfflineSync userId={profile.id} />
         </AppShell>
       </RunningTimerProvider>
     </CompanySettingsProvider>
