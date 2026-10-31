@@ -67,7 +67,7 @@ export function UserMenu({
         className={cn(
           'focus-visible:ring-primary/30 group flex shrink-0 items-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none',
           variant === 'bar'
-            ? 'bg-primary text-primary-foreground hover:bg-primary-hover size-9 justify-center rounded-full text-xs font-bold'
+            ? 'bg-primary text-primary-foreground hover:bg-primary-hover size-9 max-md:size-10 justify-center rounded-full text-xs font-bold'
             : 'hover:bg-muted w-full gap-2.5 px-2 py-1.5 text-left',
           className,
         )}

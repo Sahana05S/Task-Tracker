@@ -1,13 +1,25 @@
 // PUBLIC server-side API of the settings module.
 import 'server-only';
 
-import { readCompanySettings } from '@/modules/settings/internal/queries';
+import { readCompanySettings, readShellCompanySettings } from '@/modules/settings/internal/queries';
 import { buildCategoryCatalogue, type CategoryEntry } from '@/modules/settings/internal/rules';
 
 export * from '@/modules/settings/client';
 
 /** The caller's company settings; built-in defaults on a database before migration 53. */
 export { readCompanySettings as getCompanySettings };
+
+/**
+ * The workspace shell's read: a failure shows built-in defaults (logged) so
+ * one failing read cannot take every page down. Settings pages use
+ * getCompanySettings and show the failure.
+ */
+export { readShellCompanySettings as getShellCompanySettings };
+
+/** The shell's catalogue, from the same non-throwing read. */
+export async function shellCategoryCatalogue(): Promise<CategoryEntry[]> {
+  return buildCategoryCatalogue((await readShellCompanySettings()).categoryOverrides);
+}
 
 /** The thirteen mission codes with the company's labels, active flags and order. */
 export async function categoryCatalogue(): Promise<CategoryEntry[]> {

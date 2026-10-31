@@ -27,8 +27,9 @@ export interface CallToAction {
 }
 
 export const CTA = {
-  launch: { label: 'Launch Workspace', href: '/login?tab=signup' },
-  getStarted: { label: 'Get Started Free', href: '/login?tab=signup' },
+  // Accounts are invitation-only: these open the "Accept invitation" pane.
+  launch: { label: 'Accept your invitation', href: '/login?tab=signup' },
+  getStarted: { label: 'Accept your invitation', href: '/login?tab=signup' },
   signIn: { label: 'Sign In', href: '/login?tab=signin' },
   exploreFeatures: { label: 'Explore Features', href: '#features' },
 } as const satisfies Record<string, CallToAction>;
@@ -302,13 +303,6 @@ export const FOOTER_COLUMNS: readonly FooterColumn[] = [
     links: [
       { label: CTA.launch.label, href: CTA.launch.href },
       { label: CTA.signIn.label, href: CTA.signIn.href },
-    ],
-  },
-  {
-    heading: 'Support',
-    links: [
-      { label: 'Help & Support', href: 'mailto:support@taskpulse.example' },
-      { label: 'Privacy & Terms', href: 'mailto:legal@taskpulse.example' },
     ],
   },
 ];

@@ -161,11 +161,11 @@ export function AttendanceMatrix({ model, editable }: { model: AttendanceMatrixM
 function CalendarView({ row, model, editable, onOpen }: { row: MatrixRow; model: AttendanceMatrixModel; editable: boolean; onOpen: (cell: MatrixCell) => void }) {
   const lead = (new Date(`${model.days[0].date}T00:00:00Z`).getUTCDay() + 6) % 7;
   return (
-    <div className="grid grid-cols-7 gap-1.5" role="grid" aria-label={`${row.member.fullName}'s attendance`}>
-      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => <div key={day} role="columnheader" className="text-muted-foreground text-center text-xs font-medium">{day}</div>)}
+    <div className="grid grid-cols-7 gap-1.5" role="list" aria-label={`${row.member.fullName}'s attendance`}>
+      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => <div key={day} aria-hidden="true" className="text-muted-foreground text-center text-xs font-medium">{day}</div>)}
       {Array.from({ length: lead }, (_, index) => <div key={`lead-${index}`} aria-hidden="true" />)}
       {row.cells.map((cell, index) => (
-        <div key={cell.date} role="gridcell" className="grid gap-0.5">
+        <div key={cell.date} role="listitem" className="grid gap-0.5">
           <span className={cn('text-center text-[11px] tabular-nums', model.days[index].kind === 'today' ? 'text-primary font-bold' : 'text-muted-foreground')}>{model.days[index].day}</span>
           <Cell cell={cell} name={row.member.fullName} day={model.days[index].label} editable={editable} onOpen={() => onOpen(cell)} />
         </div>

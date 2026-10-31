@@ -42,6 +42,7 @@ import {
 import { formatNumeric } from '@/shared/tracker/format';
 import type { DailyTaskLog } from '@/types/tracker';
 import { keepTypedOnRefusal } from '@/shared/forms/submit';
+import { kolkataDate } from '@/shared/time/kolkata';
 
 export interface QuickLogDrawerProps {
   open: boolean;
@@ -54,13 +55,9 @@ export interface QuickLogDrawerProps {
 
 const INITIAL_STATE: LogActionState | null = null;
 
-/** Today in the browser's timezone, which is what the user means by "today". */
+/** Today in Asia/Kolkata, the business day every log belongs to (not the phone's own zone). */
 function localTodayIso(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return kolkataDate();
 }
 
 /**

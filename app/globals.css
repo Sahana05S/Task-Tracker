@@ -874,8 +874,8 @@
 
   /* Section tabs under the top bar (Missions, Records, Team). */
   .section-tab {
-    @apply press text-muted-foreground rounded-full px-3 py-1 text-sm font-medium
-      whitespace-nowrap;
+    @apply press text-muted-foreground inline-flex items-center rounded-full px-3 py-1 text-sm font-medium
+      whitespace-nowrap max-md:min-h-10 max-md:py-2;
   }
 
   .section-tab:hover {

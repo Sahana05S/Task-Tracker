@@ -5,7 +5,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { getNavCounts } from '@/modules/workspace-views';
 import { getRunningTimers } from '@/modules/time-tracking';
 import { RunningTimerProvider } from '@/modules/time-tracking/components/running-timer-context';
-import { categoryCatalogue, getCompanySettings } from '@/modules/settings';
+import { getShellCompanySettings, shellCategoryCatalogue } from '@/modules/settings';
 import { CompanySettingsProvider } from '@/modules/settings/components/company-settings-context';
 import { MissionStartToaster } from '@/modules/tasks/components/mission-status-prompt';
 import { NativeBridge } from '@/modules/mobile/components/native-bridge';
@@ -33,8 +33,8 @@ export default async function WorkspaceLayout({
   const [counts, timers, catalogue, settings] = await Promise.all([
     getNavCounts(profile.id),
     getRunningTimers(profile.id),
-    categoryCatalogue(),
-    getCompanySettings(),
+    shellCategoryCatalogue(),
+    getShellCompanySettings(),
   ]);
 
   return (
