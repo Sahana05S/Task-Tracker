@@ -544,3 +544,5 @@ does not auto-load them. Their UI sections are now **two redesigns behind**:
 `17rem` sidebar), which the soft-card pass and then the current utilitarian pass
 both replaced. A later phase that follows them literally would revert the UI. See
 `.kiro/progress.md`.
+
+
