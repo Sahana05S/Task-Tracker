@@ -100,7 +100,7 @@ export function MissionPage({
     <div
       data-page-width={wide ? 'wide' : undefined}
       className={cn(
-        'mx-auto grid w-full content-start gap-5 px-4 pt-6 pb-10 lg:gap-6 lg:px-6',
+        'mx-auto grid w-full content-start gap-4 px-4 pt-4 pb-10 sm:gap-5 sm:pt-6 lg:gap-6 lg:px-6',
         wide ? 'max-w-[1440px]' : 'max-w-[1200px]',
         className,
       )}
@@ -148,12 +148,12 @@ export function MissionPageHeader({
           {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
           {meta ? <div className="mb-2 flex flex-wrap items-center gap-1.5">{meta}</div> : null}
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight text-balance break-words lg:text-[2rem]">
+            <h1 className="text-foreground text-[1.375rem] leading-tight font-bold tracking-tight text-balance break-words sm:text-[1.625rem] lg:text-[2rem]">
               {title}
             </h1>
             {chip ? <PageChip>{chip}</PageChip> : null}
           </div>
-          {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
+          {description ? <p className="text-muted-foreground text-[0.8125rem] sm:text-sm">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{actions}</div> : null}
       </div>
