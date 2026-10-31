@@ -114,87 +114,91 @@ export function AllocationChart({
           </ResponsiveContainer>
         </div>
 
-        {/* Legend doubles as the numeric table. */}
-        <table className="w-full text-xs">
-          <caption className="sr-only">
-            Task allocation percentage, loading differential and criticality
-            score per member
-          </caption>
-          <thead>
-            <tr className="text-muted-foreground">
-              <th scope="col" className="py-1.5 text-left font-semibold">
-                Member
-              </th>
-              <th scope="col" className="py-1.5 text-right font-semibold">
-                Share
-              </th>
-              <th scope="col" className="py-1.5 text-right font-semibold">
-                vs median
-              </th>
-              <th scope="col" className="py-1.5 text-right font-semibold">
-                Criticality
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((datum) => (
-              <tr key={datum.fullName} className="border-border border-t">
-                <th scope="row" className="py-1.5 text-left font-normal">
-                  <span className="flex items-center gap-2">
-                    {/* Colour key. Recharts fills SVG by prop, so the swatch
-                        takes the same token to stay in step with the ring. */}
-                    <svg
-                      className="size-2.5 shrink-0"
-                      viewBox="0 0 10 10"
-                      aria-hidden="true"
-                    >
-                      <circle cx="5" cy="5" r="5" fill={datum.color} />
-                    </svg>
-                    <span className="text-foreground truncate font-medium">
-                      {datum.fullName}
-                    </span>
-                  </span>
+        {/* Legend doubles as the numeric table. Numbers never wrap and long
+            names shorten, so it fits a phone; very large text (a phone's font
+            size setting) scrolls sideways inside the card instead of off-screen. */}
+        <div className="min-w-0 overflow-x-auto">
+          <table className="w-full text-xs whitespace-nowrap">
+            <caption className="sr-only">
+              Task allocation percentage, loading differential and criticality
+              score per member
+            </caption>
+            <thead>
+              <tr className="text-muted-foreground">
+                <th scope="col" className="w-full py-1.5 text-left font-semibold">
+                  Member
                 </th>
-                <td className="text-foreground py-1.5 text-right font-semibold tabular">
-                  {formatNumeric(datum.allocationPercent)}%
-                </td>
-                <td
-                  className={cn(
-                    'py-1.5 text-right font-medium tabular',
-                    datum.loadingDiff === null
-                      ? 'text-placeholder'
-                      : datum.loadingDiff >= 0
-                        ? 'text-success-strong'
-                        : 'text-danger',
-                  )}
-                >
-                  {datum.loadingDiff === null
+                <th scope="col" className="py-1.5 pl-3 text-right font-semibold">
+                  Share
+                </th>
+                <th scope="col" className="py-1.5 pl-3 text-right font-semibold">
+                  vs median
+                </th>
+                <th scope="col" className="py-1.5 pl-3 text-right font-semibold">
+                  Criticality
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((datum) => (
+                <tr key={datum.fullName} className="border-border border-t">
+                  <th scope="row" className="max-w-0 min-w-24 py-1.5 text-left font-normal">
+                    <span className="flex min-w-0 items-center gap-2">
+                      {/* Colour key. Recharts fills SVG by prop, so the swatch
+                          takes the same token to stay in step with the ring. */}
+                      <svg
+                        className="size-2.5 shrink-0"
+                        viewBox="0 0 10 10"
+                        aria-hidden="true"
+                      >
+                        <circle cx="5" cy="5" r="5" fill={datum.color} />
+                      </svg>
+                      <span className="text-foreground truncate font-medium">
+                        {datum.fullName}
+                      </span>
+                    </span>
+                  </th>
+                  <td className="text-foreground py-1.5 pl-3 text-right font-semibold tabular">
+                    {formatNumeric(datum.allocationPercent)}%
+                  </td>
+                  <td
+                    className={cn(
+                      'py-1.5 pl-3 text-right font-medium tabular',
+                      datum.loadingDiff === null
+                        ? 'text-placeholder'
+                        : datum.loadingDiff >= 0
+                          ? 'text-success-strong'
+                          : 'text-danger',
+                    )}
+                  >
+                    {datum.loadingDiff === null
+                      ? '\u2014'
+                      : `${datum.loadingDiff >= 0 ? '+' : ''}${formatNumeric(datum.loadingDiff*100)} pp`}
+                  </td>
+                  <td className="text-foreground py-1.5 pl-3 text-right tabular">
+                    {displayPerformance(datum.criticalityScore)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-border text-muted-foreground border-t">
+                <th scope="row" className="py-1.5 text-left font-semibold">
+                  Team median
+                </th>
+                <td className="py-1.5 pl-3 text-right tabular">
+                  {medianAllocation === null
                     ? '\u2014'
-                    : `${datum.loadingDiff >= 0 ? '+' : ''}${formatNumeric(datum.loadingDiff*100)} pp`}
+                    : `${formatNumeric(medianAllocation)}%`}
                 </td>
-                <td className="text-foreground py-1.5 text-right tabular">
-                  {displayPerformance(datum.criticalityScore)}
+                <td className="py-1.5 pl-3 text-right">—</td>
+                <td className="py-1.5 pl-3 text-right tabular">
+                  {formatNumeric(medianCriticality)}
                 </td>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="border-border text-muted-foreground border-t">
-              <th scope="row" className="py-1.5 text-left font-semibold">
-                Team median
-              </th>
-              <td className="py-1.5 text-right tabular">
-                {medianAllocation === null
-                  ? '\u2014'
-                  : `${formatNumeric(medianAllocation)}%`}
-              </td>
-              <td className="py-1.5 text-right">—</td>
-              <td className="py-1.5 text-right tabular">
-                {formatNumeric(medianCriticality)}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </ChartShell>
   );
