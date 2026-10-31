@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { backAction, isNativePlatform, isPushToken, tapPath } from '@/modules/mobile/internal/rules';
+import { backAction, isNativeAppRequest, isNativePlatform, isPushToken, NATIVE_APP_USER_AGENT, tapPath } from '@/modules/mobile/internal/rules';
 import { isNativeApp } from '@/modules/mobile/internal/native';
 
 describe('Android app bridge rules', () => {
@@ -29,5 +29,13 @@ describe('Android app bridge rules', () => {
 
   it('is not the app on the server or in a plain browser', () => {
     expect(isNativeApp()).toBe(false);
+  });
+
+  it('recognises an app request by the marker the shell appends to the User-Agent', () => {
+    const chrome = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36';
+    expect(isNativeAppRequest(`${chrome} ${NATIVE_APP_USER_AGENT}`)).toBe(true);
+    expect(isNativeAppRequest(chrome)).toBe(false);
+    expect(isNativeAppRequest(null)).toBe(false);
+    expect(isNativeAppRequest(undefined)).toBe(false);
   });
 });

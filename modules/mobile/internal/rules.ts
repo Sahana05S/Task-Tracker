@@ -2,6 +2,18 @@
 
 export type NativePlatform = 'android' | 'ios';
 
+/**
+ * The Android shell appends this to the WebView's User-Agent
+ * (stellar-mobile, capacitor.config.ts `appendUserAgent`), so the server can
+ * tell an app request from a browser before any page renders.
+ */
+export const NATIVE_APP_USER_AGENT = 'StellarApp';
+
+/** True for a request from the Android app, judged by its User-Agent header. */
+export function isNativeAppRequest(userAgent: string | null | undefined): boolean {
+  return typeof userAgent === 'string' && userAgent.includes(NATIVE_APP_USER_AGENT);
+}
+
 /** An FCM registration token, as migration 91's device_register accepts it. */
 export const PUSH_TOKEN_PATTERN = /^[A-Za-z0-9:_.-]{20,4096}$/;
 

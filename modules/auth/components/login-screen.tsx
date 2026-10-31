@@ -4,6 +4,7 @@ import { AlertTriangleIcon, ArrowLeftIcon, CalendarCheckIcon, CheckCircle2Icon, 
 
 import { logout } from '../actions';
 import type { LoginView } from '../index';
+import { BrowserOnly } from '@/modules/mobile/components/browser-only';
 import { Button } from '@/shared/ui/button';
 import { StellarMark } from '@/shared/ui/stellar-mark';
 import { Wallpaper } from '@/shared/ui/wallpaper';
@@ -59,16 +60,18 @@ export function LoginScreen({ view }: LoginScreenProps) {
             )}
           </div>
 
-          {/* Route back out, since this page is now reachable from the public site. */}
-          <p className="mt-4 text-center">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
-            >
-              <ArrowLeftIcon className="size-3" aria-hidden="true" />
-              Back to taskpulse.com
-            </Link>
-          </p>
+          {/* Route back out, since this page is reachable from the public site; the app has no site to go back to. */}
+          <BrowserOnly>
+            <p className="mt-4 text-center">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
+              >
+                <ArrowLeftIcon className="size-3" aria-hidden="true" />
+                Back to taskpulse.com
+              </Link>
+            </p>
+          </BrowserOnly>
         </div>
       </section>
     </main>

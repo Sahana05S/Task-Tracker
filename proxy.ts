@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { isProtectedPath } from '@/modules/auth';
+import { isNativeAppRequest } from '@/modules/mobile';
 import { updateSession } from '@/shared/supabase/middleware';
 
 /**
@@ -17,6 +18,9 @@ import { updateSession } from '@/shared/supabase/middleware';
  *     Components cannot write cookies, so this is the only place the rotated
  *     access token can be persisted.
  *  2. Turn anonymous requests away from workspace routes.
+ *  3. Keep the public landing page out of the Android app: a signed-out app
+ *     request for `/` goes to sign-in (a signed-in one is sent on to the
+ *     dashboard by the page itself).
  *
  * This is a first line of defence, not the only one. It keeps unauthenticated
  * traffic out cheaply, at the edge, without a database read. Authorisation
@@ -30,12 +34,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   const { pathname, search } = request.nextUrl;
 
-  if (!claims && isProtectedPath(pathname)) {
+  const landingInApp = !claims && pathname === '/' && isNativeAppRequest(request.headers.get('user-agent'));
+
+  if (landingInApp || (!claims && isProtectedPath(pathname))) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
     loginUrl.search = '';
     // Preserve the destination so the login action can return the user to it.
-    loginUrl.searchParams.set('redirectTo', `${pathname}${search}`);
+    if (!landingInApp) loginUrl.searchParams.set('redirectTo', `${pathname}${search}`);
 
     const redirectResponse = NextResponse.redirect(loginUrl);
 

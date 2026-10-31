@@ -20,6 +20,13 @@ shell's `window.Capacitor` and only then loads the Capacitor packages:
 - **Status bar:** below the page, in the Light/Dark theme colour, following
   theme changes.
 
+**No landing page in the app** (31 October 2026, user request): the shell
+appends `StellarApp` to the WebView's User-Agent (`NATIVE_APP_USER_AGENT`),
+and `proxy.ts` sends a signed-out app request for `/` to `/login` through
+`isNativeAppRequest`. `NativeLandingRedirect`, mounted on `/`, does the same
+after load for shells built before the marker, and `BrowserOnly` hides the
+sign-in page's "Back to taskpulse.com" link inside the app.
+
 `printPage()` prints through the shell's `NativePrint` plugin (Android's
 print service, which offers Save as PDF) because Android WebView ignores
 `window.print()`; in a browser it is `window.print()`. `forgetThisDevice()`
@@ -30,8 +37,10 @@ runs before sign-out (`device_unregister`), waiting at most three seconds.
 |---|---|
 | `index.ts` | Everything in `client.ts` (no server reads) |
 | `actions.ts` | `registerDeviceAction(token, platform)`, `unregisterDeviceAction(token)` |
-| `client.ts` | `isNativeApp()`, `printPage()`, `forgetThisDevice()`, `tapPath(data)`, `backAction(...)` |
+| `client.ts` | `isNativeApp()`, `isNativeAppRequest(userAgent)`, `NATIVE_APP_USER_AGENT`, `printPage()`, `forgetThisDevice()`, `tapPath(data)`, `backAction(...)` |
 | `components/native-bridge.tsx` | `NativeBridge` |
+| `components/native-landing-redirect.tsx` | `NativeLandingRedirect` (mounted on `/`) |
+| `components/browser-only.tsx` | `BrowserOnly` (children shown outside the app only) |
 
 ## Private (`internal/`)
 | File | Job |
