@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 
 import { HERO_STATS } from '@/modules/marketing/internal/content';
 

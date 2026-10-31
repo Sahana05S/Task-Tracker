@@ -50,15 +50,6 @@ export {
   type MonthlySelection,
 } from '@/modules/scoring/internal/stars/contract';
 export { performanceForAward } from '@/modules/scoring/internal/stars/scoring';
-export {
-  attendanceIsValidForDailyStar,
-  DAILY_STAR_WEIGHTS,
-  LEGACY_DAILY_STAR_RULE_VERSION,
-  scoreDailyStarCandidate,
-  selectDailyStarWinner,
-  type DailyStarCandidateInput,
-  type DailyStarCandidateScore,
-} from '@/modules/scoring/internal/stars/legacy-scoring';
 export type { AwardDay, AwardHistory, AwardReadModel } from '@/modules/scoring/internal/stars/read-model';
 export {
   awardDayKind,

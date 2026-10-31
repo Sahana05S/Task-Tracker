@@ -1,6 +1,6 @@
 import { eligibilityReasons, EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/client';
 import type { Task } from '@/types/tracker';
-import type { DailyTaskLog, TaskCategory } from '@/types/tracker';
+import type { DailyTaskLog } from '@/types/tracker';
 
 /**
  * The effort and productivity formulas from `domain-rules.md`, kept pure so the

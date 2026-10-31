@@ -12,7 +12,7 @@ import {
   TASK_STATUSES,
 } from '@/shared/tracker/enums';
 import { PRIORITY_WEIGHTS } from '@/modules/tasks/client';
-import type { Task, TaskCategory, TaskPriority, TaskStatus, User } from '@/types/tracker';
+import type { Task, User } from '@/types/tracker';
 
 export interface DashboardBucket {
   key: string;

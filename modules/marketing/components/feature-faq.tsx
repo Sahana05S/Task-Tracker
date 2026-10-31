@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 import { FAQS } from '@/modules/marketing/internal/content';
 
 /**

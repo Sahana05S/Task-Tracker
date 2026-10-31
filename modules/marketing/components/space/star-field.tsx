@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 
 import { seededStars } from '@/modules/marketing/internal/space/stars';
 import { cn } from '@/shared/utils';

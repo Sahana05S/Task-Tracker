@@ -1,15 +1,12 @@
 import { getLivePresentation } from '@/modules/reports';
 import { viewContext, type ViewContext } from '@/modules/reports/client';
 import type { LivePresentation } from '@/modules/reports/client';
-import { optionalEmployeePerformance } from '@/modules/team/internal/performance-availability';
-import { getAwards, type AwardReadModel } from '@/modules/scoring';
+import type { AwardReadModel } from '@/modules/scoring';
 import { getTeamSummaryInputs } from '@/modules/scoring';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { canViewEmployeeReports } from '@/modules/team/internal/permissions';
 import { currentPeriod, type AnalyticsPeriod } from '@/shared/time/period';
 import { awardDayView, buildWorkbookDashboardCharts, type MemberPerformance } from '@/modules/scoring/client';
-import { getTeamAnalytics } from '@/modules/reports';
-import { ATTENDANCE_COLUMNS } from '@/modules/attendance/client';
 import { summarizeAttendance, type AttendanceSummary } from '@/modules/attendance/client';
 import { sumHours } from '@/modules/time-tracking/client';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
@@ -24,7 +21,6 @@ import {
   buildEmployeeAnalyticsCharts,
   type EmployeeAnalyticsCharts,
 } from '@/modules/team/internal/employee-charts';
-import { mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/client';
 import {
   DAILY_STAR_COLUMNS,
   mapDailyStarRecords,
@@ -97,20 +93,13 @@ export async function getTeamIndexData(
   period: AnalyticsPeriod = currentPeriod(),
   context:ViewContext=viewContext(period.startDate.slice(0,7)),
 ): Promise<TeamIndexData> {
-  const supabase = await createClient();
   const presentation=await getLivePresentation(context);
   const [analytics, supportData, summaryInputs] = await Promise.all([
     Promise.resolve(presentation.analytics),
     getSupportModuleData(period,context.asOf),
     getTeamSummaryInputs(period),
   ]);
-  const userIds = analytics.members.map((member) => member.userId);
 
-  const starRows = userIds.length === 0 ? [] : await selectOrEmpty(
-    supabase.from('daily_star_records').select(DAILY_STAR_COLUMNS).in('user_id', userIds)
-      .gte('star_date', period.startDate).lte('star_date', period.endDate),
-  );
-  const stars = mapDailyStarRecords(starRows);
   const awards=presentation.awards!;
 
   return {
@@ -220,7 +209,7 @@ export async function getEmployeeReportsData(
   const presentation=await getLivePresentation(viewContext(period.startDate.slice(0,7),now.toISOString(),now,0),employee.id); // now: page's validated as-of
   const performance=presentation.analytics.members.find(m=>m.userId===employee.id)??null;
   const performanceUnavailableReason=performance?.calculation?.status==='incomplete'?'Required performance inputs are unavailable.':undefined;
-  const [reports, components, stars, attendance] = await Promise.all([
+  const [reports, components, stars] = await Promise.all([
     selectOrEmpty(
       supabase
         .from('report_snapshots')
@@ -245,14 +234,6 @@ export async function getEmployeeReportsData(
         .gte('star_date', period.startDate)
         .lte('star_date', period.endDate)
         .order('star_date', { ascending: false }),
-    ),
-    selectOrEmpty(
-      supabase
-        .from('attendance_records')
-        .select(ATTENDANCE_COLUMNS)
-        .eq('user_id', employee.id)
-        .gte('attendance_date', period.startDate)
-        .lte('attendance_date', period.endDate),
     ),
   ]);
 
@@ -286,22 +267,6 @@ export async function getEmployeeByEmployeeId(
 }
 
 
-async function getTaskLinks(taskIds: readonly string[]): Promise<TaskLink[]> {
-  if (taskIds.length === 0) return [];
-
-  const supabase = await createClient();
-  const rows = await selectOrEmpty(
-    supabase
-      .from('task_links')
-      .select('*')
-      .in('task_id', [...taskIds])
-      .order('link_type')
-      .order('label'),
-  );
-
-  return rows.map(mapTaskLink);
-}
-
 function mapTaskLink(row: TaskLinkRow): TaskLink {
   return {
     id: row.id,
@@ -317,19 +282,6 @@ function mapTaskLink(row: TaskLinkRow): TaskLink {
 }
 
 
-
-function dateInTimeZone(date: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-  const year = parts.find((part) => part.type === 'year')?.value;
-  const month = parts.find((part) => part.type === 'month')?.value;
-  const day = parts.find((part) => part.type === 'day')?.value;
-  return `${year}-${month}-${day}`;
-}
 
 function performanceToUser(performance: MemberPerformance): User {
   return {

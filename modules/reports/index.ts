@@ -16,10 +16,8 @@ export {
 } from '@/modules/reports/internal/month/archive';
 export {
   getDailyPerfLog,
-  getStoredSnapshots,
   getTeamAnalytics,
   getWorkbookDashboard,
-  type StoredSnapshot,
   type WorkbookDashboardData,
 } from '@/modules/reports/internal/team-analytics';
 export { handleReportExport } from '@/modules/reports/internal/export';

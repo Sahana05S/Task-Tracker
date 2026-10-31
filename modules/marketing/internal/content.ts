@@ -1,14 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import {
-  ActivityIcon,
-  BarChart3Icon,
-  CheckCircle2Icon,
-  ClockIcon,
-  LayersIcon,
-  SparklesIcon,
-  TargetIcon,
-  TimerResetIcon,
-} from 'lucide-react';
+import { BarChart3Icon, ClockIcon, LayersIcon } from 'lucide-react';
 
 /**
  * Stellar — Landing Page Content & Feature Showcase Copy

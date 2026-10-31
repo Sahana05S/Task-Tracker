@@ -6,7 +6,7 @@ The one shared scoring contract (AGENTS.md: no second formula):
   parsing and resolution, recomputation jobs and report shape.
 - **Awards (stars)**: daily and monthly award rules (M08), the award command
   and override, award jobs and the sandbox worker endpoint, the award read
-  model, and the retained legacy five-factor daily-star scorer (history only).
+  model.
 - **Analytics**: operational team analytics, dashboard charts and the mission
   headline. These are observations built on the engine, not another engine.
 
@@ -25,7 +25,7 @@ Calendar periods (`currentPeriod`, `resolvePeriod`, `AnalyticsPeriod`) live in
 | Folder | Files |
 |---|---|
 | `performance/` | `engine.ts` (ten factors, coefficients, cohorts), `sources.ts`, `queries.ts`, `jobs.ts`, `report.ts` |
-| `stars/` | `contract.ts` (award policy and selection), `calculation.ts`, `daily.ts` (`award_command`), `jobs.ts`, `read-model.ts`, `team-read-model.ts`, `scoring.ts`, `legacy-scoring.ts`, `worker.ts`, `health.ts` (job-health counts; needs `operations_health()`, not yet migrated) |
+| `stars/` | `contract.ts` (award policy and selection), `calculation.ts`, `daily.ts` (`award_command`), `jobs.ts`, `read-model.ts`, `team-read-model.ts`, `scoring.ts`, `worker.ts`, `health.ts` (job-health counts; needs `operations_health()`, not yet migrated) |
 | `analytics/` | `engine.ts`, `dashboard-charts.ts`, `headline.ts`, `summary-inputs.ts`, `availability.ts` |
 | `cache.ts` | Revalidation after daily star changes |
 

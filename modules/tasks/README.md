@@ -14,7 +14,7 @@ template versions.
 | File | What it offers |
 |---|---|
 | `index.ts` | Server reads: `getTaskWorkspaceData`, `getMissionChoices` (every mission as id, tag and title for pickers; one narrow read), `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`, `getToolLineage` + `buildRecentOperations` (Tools page Recent operations), `getMonthSetupContext` + `countMissionsInMonth` (month setup wizard and the Missions banner), and the Today reads `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`. Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools workflows and types, month helpers (`monthOf`, `addMonths`, `defaultSetupMonth`, `setupBannerMonth`) |
+| `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools types, month helpers (`monthOf`, `addMonths`, `defaultSetupMonth`, `setupBannerMonth`) |
 | `actions.ts` | `'use server'` task commands: `createTask`, `updateTask`, `updateTaskStatus`, `updateTaskProgress`, `missionPromptState`, `loadMissionActions`, `createSubMission` (a sub-mission from a checklist add row: `submission_create`, migration 68), `addSubMission` (the same from the Missions list's row menu, into the parent's root checklist in the chosen phase; reads the parent's current version), `moveMissionFromPrompt` (status prompts: reads the current version and moves only from the status the prompt showed), `changeTaskLifecycle`, `recordTaskReview`, `deleteTask` |
 | `detail-actions.ts` | `'use server'` native-details commands: `initializeTaskDetails`, `saveTaskDetails`, `addTaskAsset`, `addTaskRelation`, `renameNativeLink`, `publishNativeTemplate` |
 | `tool-actions.ts` | `'use server'` Task Tools: `previewTaskTool`, `commitTaskTool`; month setup: `previewMonthSetup`, `commitMonthSetup` |
@@ -38,7 +38,7 @@ template versions.
 | `permissions.ts` | Role/assignment checks (UI messages; RLS and RPCs are the real boundary) |
 | `filters.ts` | Workspace filtering and sorting |
 | `shares.ts` | Participant share units |
-| `mappers.ts`, `credit-summary.ts` | Database row -> domain model, linear participant projection |
+| `mappers.ts` | Database row -> domain model, linear participant projection |
 | `tools/` | Task Tools contract, support split, workbook workflow list, preview/commit RPCs, `recent.ts` (Recent operations rebuilt from copy lineage in `task_dependencies` and task archives; Done/reopen/section/refresh batches are not listed until the activity log can be read), `month-setup.ts` (pure month setup plan: weekly phases, defaults, coverage filter, payload) and `month-setup-commands.ts` (its RPCs) |
 
 ## Database it owns

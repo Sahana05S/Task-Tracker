@@ -154,11 +154,6 @@ function buildTimelineTicks(startDate: string, endDate: string): TimelineTick[] 
   return ticks;
 }
 
-function normalizeEndDate(startDate: string, candidate: string | null): string {
-  if (candidate === null || candidate < startDate) return startDate;
-  return candidate;
-}
-
 function assigneeIdsForTask(task: Task): string[] {
   const ids = task.assigneeIds.length > 0 ? task.assigneeIds : [task.assigneeId];
   return [...new Set(ids)];

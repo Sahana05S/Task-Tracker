@@ -1,8 +1,8 @@
-import Link from 'next/link';
+
 import { Download } from 'lucide-react';
 
 import { COEFFICIENTS, FACTOR_LABELS, FACTORS } from '@/modules/scoring/client';
-import { DAILY_PERF_STATUS_LABEL, type DailyPerfFilter, type DailyPerfLog, type DailyPerfRow } from '@/modules/reports/client';
+import { type DailyPerfFilter, type DailyPerfLog, type DailyPerfRow } from '@/modules/reports/client';
 import { Exact } from '@/shared/math/exact';
 import { buttonVariants } from '@/shared/ui/button';
 import { MissionNotice } from '@/shared/ui/mission-ui';

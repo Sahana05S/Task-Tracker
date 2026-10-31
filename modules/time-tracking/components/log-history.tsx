@@ -22,7 +22,7 @@ import {
   SheetTitle,
 } from '@/shared/ui/sheet';
 import { groupLogsByDate } from '@/modules/time-tracking/internal/logs/metrics';
-import { formatDate, formatNumeric, formatHours } from '@/shared/tracker/format';
+import { formatDate, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { DailyTaskLog, Task } from '@/types/tracker';
 import Link from 'next/link';

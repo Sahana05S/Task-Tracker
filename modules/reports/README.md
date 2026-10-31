@@ -10,7 +10,7 @@ analytics read, and plain-language data-gap wording.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `liveViewContext`, `getLivePresentation`, `monthHistory`, `monthRevision`, archive formatters (`archivedReport`, `archivedText`, `archivedCsv`, `archiveDifferences`, `compareRevisions`), `getTeamAnalytics`, `getDailyPerfLog`, `getWorkbookDashboard`, `getStoredSnapshots`, `handleReportExport`. Also re-exports everything in `client.ts`. |
+| `index.ts` | Server reads: `liveViewContext`, `getLivePresentation`, `monthHistory`, `monthRevision`, archive formatters (`archivedReport`, `archivedText`, `archivedCsv`, `archiveDifferences`, `compareRevisions`), `getTeamAnalytics`, `getDailyPerfLog`, `getWorkbookDashboard`, `handleReportExport`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure, safe for `'use client'`: `viewContext`, `viewQuery`, `nextDate`, `previousDate`, `buildPresentation`, `liveReport`, `reportCsv`, `reportText`, `csvCell`, the daily report (`dailyReport`, `dailyReportText`, `compiledLogs`, `reportsTab`, `shortDate`, `longDate`, `SHARE_LOGS_PER_DAY`), `dataGaps`, `GAP_SENTENCE`, `calculationReasons`, `plainReason`, the daily perf log's pure parts (`dailyPerfFilter`, `dailyPerfRows`, `dailyPerfCsv`, `seesTeamDetail`, `DAILY_PERF_STATUS_LABEL`, `DAILY_PERF_MAX_DAYS`), and types (`ViewContext`, `LivePresentation`, `MonthArchive`, ...) |
 | `month-actions.ts` | `'use server'` `monthArchiveAction` (draft, close, revise, begin correction); the retired `freezeMonthlySnapshot` stub |
 | `report-actions.ts` | `'use server'` `generateReportSnapshotAction` |
