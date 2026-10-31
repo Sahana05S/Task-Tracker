@@ -105,7 +105,11 @@ Start from `modules/_template/` when creating a module.
 | scoring | Ten-factor performance engine, analytics, stars/awards | lib/performance, lib/analytics, lib/stars | Moved |
 | reports | Live reports, exports, month close, report snapshots, dashboard read | lib/presentation, lib/month, lib/analytics/queries, components/reports | Moved |
 | records | Dated records (attendance, facts, ideas, suggestions, sales, meetings): save/validate command and history | app/records | Moved |
-| drive | Google Drive integration (deferred by user) | lib/integrations/drive | Moved |
+| drive | Google Drive integration (deferred by user; no page shows it) | lib/integrations/drive | Moved |
+| guide | In-app guide topics (`/guide`) | — | New |
+| notifications | The bell, notification events and phone push (migrations 91-92) | — | New |
+| payroll | Salary calculation and records, managing director only; My salary (migrations 74, 79) | — | New (25 October 2026) |
+| recognition | Streaks, monthly ceremony, points, leaderboard, hall of fame (migrations 45, 50, 51) | — | New (19 October 2026) |
 | policies | Company policies from templates, their evaluation and commendations (migrations 56 and 58) | — | New (22 October 2026) |
 | settings | Per-company settings: mission-type names, meeting types, agenda, standing missions, holiday calendar, the sheet tag allocator (migration 53) | — | New (21 October 2026) |
 | hr | HR documents (letterhead, Code of Conduct and its acceptance) and performance reviews (migrations 80-81) | — | New (26 October 2026) |
@@ -116,10 +120,10 @@ Start from `modules/_template/` when creating a module.
 
 ## Git workflow
 
-- The refactor into modules was done on `refactor/base` (cut from
-  `m13-verification`), one short branch per module merged back after
-  typecheck, tests and build passed. It is complete; see STATUS.md.
+- The refactor into modules is complete and merged into `main`.
 - Feature work follows the same pattern: one short branch per change, named
   after the module it touches (`tasks/...`, `scoring/...`), merged once the
   checks pass.
-- Nothing is merged into `main` or deployed without the owner's go-ahead.
+- A PR is merged (merge commit) once CI passes, GitHub reports no conflicts
+  and no review is open. Vercel deploys `main` to the demo site, and
+  migrations reach the demo database only through the migration workflow.

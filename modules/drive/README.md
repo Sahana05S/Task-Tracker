@@ -16,10 +16,10 @@ the server environment. Manual asset links remain available elsewhere.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `handleDriveSetupCheck(request)`, `handleDriveWorkerRun(request)` for `app/api/internal/drive/route.ts` (GET = read-only setup check, POST = run one job); `getDriveReadModel()` for Task Tools |
+| `index.ts` | `handleDriveSetupCheck(request)`, `handleDriveWorkerRun(request)` for `app/api/internal/drive/route.ts` (GET = read-only setup check, POST = run one job; both answer "unavailable" while Drive is deferred); `getDriveReadModel()` (no page calls it today) |
 | `actions.ts` | `requestDriveOperation(form)` — queues a Drive job via `drive_command` (blocked while deferred) |
 | `client.ts` | `FAILURE_HELP`, `FailureCode`, `DRIVE_INTEGRATION_DEFERRED`, `DRIVE_UNAVAILABLE_MESSAGE` |
-| `components/` | `DriveOperations` (Task Tools Drive jobs panel; live Drive deferred) |
+| `components/` | `DriveOperations` (a Drive jobs panel; no page renders it while Drive is deferred) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -45,8 +45,9 @@ the server environment. Manual asset links remain available elsewhere.
   `drive_job_plan`, `drive_asset_checkpoint`, `finish_drive_job`,
   `drive_read_model`; private helpers `taskpulse_private.enqueue_drive`,
   `drive_lease` — migration 26 (27 and 40 amend them).
-- `drive_read_model` is still called directly by
-  `app/(workspace)/task-tools/page.tsx` until the tasks module absorbs it.
+- No page reads `drive_read_model` or shows Drive jobs today: Task Tools
+  became a history page, and the owner deferred live Drive (13 October 2026).
+  The module, its tables and RPCs stay for an explicit future resume.
 
 ## Depends on
 `shared/supabase` (server and worker clients), `shared/session`, `types/`. No
