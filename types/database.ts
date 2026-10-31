@@ -196,6 +196,9 @@ export interface Database {
           log_source: TaskLogSource;
           source_timer_id: string | null;
           checklist_node_id?: string | null;
+          /** Migration 98: copied from the source timer; true for time recorded offline in the Android app. */
+          recorded_offline?: boolean;
+          synced_at?: string | null;
           created_at: string;
         },
         {
@@ -527,6 +530,9 @@ export interface Database {
           generated_log_id: string | null;
           notes: string | null;
           checklist_node_id?: string | null;
+          /** Migration 98: run or stopped offline (record_offline_timer, stop_task_timer_at); synced_at is when it reached the server. */
+          recorded_offline?: boolean;
+          synced_at?: string | null;
         } & TimestampColumns,
         OptionalId & {
           task_id: string;
@@ -865,6 +871,10 @@ export interface Database {
       start_task_timer: { Args: { p_task_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
       start_checklist_item_timer: { Args: { p_node_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
       stop_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
+      /** Migration 98: a timer run offline, stopped through the normal stop (Kolkata-midnight segments). p_node NULL = whole mission. */
+      record_offline_timer: { Args: { p_task: string; p_node: string | null; p_started_at: string; p_ended_at: string; p_grant: string; p_operation: string; p_notes?: string | null }; Returns: Json };
+      /** Migration 98: stop_task_timer ending at the phone's offline stop time instead of now. */
+      stop_task_timer_at: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; p_ended_at: string; p_grant: string }; Returns: Json };
       discard_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       set_task_participants: { Args: { p_task_id: string; p_assignees: string[]; p_reviewers: string[]; p_share_units: number[] | null; p_expected_version: number; p_accept_legacy?: boolean }; Returns: number };
       /** Migration 68: a sub-mission, its linked row and the parent link in one command. */

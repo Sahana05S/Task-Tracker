@@ -11,7 +11,7 @@ and the effort and productivity formulas built on logged hours.
 | `index.ts` | Server reads: `getTaskExecution` (a mission's logs and timers), `getMyLogHistory`, `getTaskEffortTotals`, `getLoggableTasksFor`, `getRunningTimers`, `getTeamRunningTimers`, `getMemberLogDates` (Today's active days), `getMemberDayHours` (unreversed hours per member-day, for the daily perf log). Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure formulas and helpers, safe for `'use client'`: `roundToNumericScale`, `computeScaledProgress`, `computeProductivity`, `isMetricsEligible`, `sumHours`, `aggregateEffortByTask`, `groupLogsByDate`, log/timer mappers, timer elapsed-time helpers, `canStartTimerForTask`, `canManageTimerRecord`, and types |
 | `actions.ts` | `'use server'` `createTaskLog`, `updateTaskLog`, `deleteTaskLog`, `loadLoggableTasks` |
-| `timer-actions.ts` | `'use server'` `startTaskTimer` (by `taskId`, or `taskTag` from older forms), `startItemTimer`, `stopTaskTimer`, `discardTaskTimer`, `discardTimerAsManager`, `enterManualTaskTime` |
+| `timer-actions.ts` | `'use server'` `startTaskTimer` (by `taskId`, or `taskTag` from older forms), `startItemTimer`, `stopTaskTimer`, `discardTaskTimer`, `discardTimerAsManager`, `enterManualTaskTime`; for the Android app's offline queue (M21), `recordOfflineTimer` (a timer run offline, whole mission or a checklist row) and `stopTimerAt` (a server timer stopped offline), both taking an object with the offline grant and a persistent operation id |
 | `components/` | `QuickLogTrigger` ("Log time" pill) and `QuickLogDrawer`; `TimerButton` (play/stop pill for one mission) and `RunningTimerProvider`/`useRunningTimer` (`running-timer-context.tsx`, mounted by the workspace layout with `getRunningTimers`); `LogHistory`; `timer-panels.tsx` (`TimerControl`, `TimerRecords`, `ManualTimeForm`) |
 
 ## Private (`internal/`)
@@ -24,7 +24,7 @@ and the effort and productivity formulas built on logged hours.
 | `logs/mappers.ts` | `daily_task_logs` row -> `DailyTaskLog` |
 | `logs/member-log-dates.ts` | A member's unreversed log dates in a range, for Today (throws on error) |
 | `logs/member-day-hours.ts` | Unreversed hours per member-day in a range, exact sums, paged (throws on error) |
-| `timers/commands.ts` | Timer RPCs and the task-tag lookup they need |
+| `timers/commands.ts` | Timer RPCs (including the offline `record_offline_timer` and `stop_task_timer_at`) and the task-tag lookup they need |
 | `timers/*` | Elapsed time, timer log drafts, mappers, permissions, running-timer reads (`running-timers.ts` carries the task id and execution version the timer button needs) |
 | `execution.ts` | A mission's logs and timers for the details page |
 | `cache.ts` | Pages to revalidate after a log or timer change |
@@ -32,10 +32,11 @@ and the effort and productivity formulas built on logged hours.
 ## Database it owns
 | Object | Defined in |
 |---|---|
-| `daily_task_logs` | `01_init_schema.sql` (later columns in 07, 12, 34) |
-| `task_timers` | `07_tracker_replacement_foundation.sql` |
+| `daily_task_logs` | `01_init_schema.sql` (later columns in 07, 12, 34, 98) |
+| `task_timers` | `07_tracker_replacement_foundation.sql` (later columns in 12, 34, 98) |
 | `create_task_log`, `correct_task_log`, `reverse_task_log`, `start_task_timer`, `stop_task_timer`, `discard_task_timer` | `12_atomic_execution_commands.sql` |
 | `start_checklist_item_timer` | `34_checklist_item_timers.sql` |
+| `record_offline_timer`, `stop_task_timer_at` | `98_offline_timers.sql` |
 
 All objects are company-scoped by migrations 39-40 (M15). The timer commands
 also read `tasks.id` by tag.
@@ -54,3 +55,14 @@ One manual entry, "Log time" (`QuickLogDrawer`): the desktop top bar, the phone
 The database allows one running timer per user, so the button shows Stop on the
 running mission and is unavailable elsewhere; the top-bar pill (which reads
 the same provider) links to it.
+
+## Offline timers (M21, migration 98)
+The Android app sends timers recorded offline under an offline grant
+(attendance module, migration 97). Both RPCs reuse the normal stop inside
+`execution_command`, which ends at the time named by the transaction-local
+`taskpulse.timer_end_at` for that timer, so the logs are the usual
+Kolkata-midnight segments with `source_timer_id` and the checklist row tag.
+Timers and their logs carry `recorded_offline` and `synced_at`. An offline
+timer may not overlap the member's own timer still running on the server; the
+one-running-timer index skips offline timers, which run only inside their
+recording transaction.
