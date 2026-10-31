@@ -560,6 +560,9 @@ export interface Database {
           attendance_record_id: string | null;
           operation_id: string;
           created_at: string;
+          /** Migration 97: sent from the phone after being recorded offline (attendance_check_in_at). */
+          recorded_offline: boolean;
+          synced_at: string | null;
         },
         never
       >;
@@ -875,6 +878,10 @@ export interface Database {
       task_effort_breakdown: { Args: { p_task_id: string }; Returns: Json };
       /** Migration 72: check in or out now with a photo already uploaded to attendance-photos; check-out completes the day's record. */
       attendance_check_in: { Args: { p_kind: 'in' | 'out'; p_photo_path: string; p_latitude: number | null; p_longitude: number | null; p_accuracy: number | null; p_operation: string }; Returns: Json };
+      /** Migration 97: an offline check-in/out at the phone's time, sent the same Kolkata day under an offline grant. */
+      attendance_check_in_at: { Args: { p_kind: 'in' | 'out'; p_photo_path: string; p_latitude: number | null; p_longitude: number | null; p_accuracy: number | null; p_captured_at: string; p_grant: string; p_operation: string }; Returns: Json };
+      /** Migration 97: records the phone's offline snapshot; returns { grantId, issuedAt, serverNow, kolkataDate }. */
+      offline_grant_issue: { Args: Record<string, never>; Returns: Json };
       /** Migration 72 (service role): photos older than each company's retention, oldest first. */
       attendance_photos_due: { Args: { p_limit?: number }; Returns: Json };
       attendance_photos_cleared: { Args: { p_ids: string[] }; Returns: number };

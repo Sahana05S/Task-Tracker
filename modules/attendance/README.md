@@ -99,7 +99,10 @@ imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
 |---|---|---|
 | `attendance_records` | table | created 07; RLS policy 10; numeric hours, versions, `record_state`, history 19; approved policy 20; company scope 39-40 |
 | `attendance_input_context(uuid,date,date,timestamptz)` | RPC (read) | 19, replaced 20 and 21 |
-| `attendance_check_in(...)` | RPC (photo check-in/out) | 72, 73; since 96 a check-out after midnight closes yesterday's open check-in and records the hours on that day (times stay on the check-ins) |
+| `attendance_check_in(...)` | RPC (photo check-in/out) | 72, 73; since 96 a check-out after midnight closes yesterday's open check-in and records the hours on that day (times stay on the check-ins); since 97 a thin wrapper over `taskpulse_private.attendance_check_core` with the database clock, and a check-out must be later than its check-in |
+| `attendance_check_in_at(text,text,numeric,numeric,numeric,timestamptz,uuid,uuid)` | RPC (offline check-in/out, M21) | 97: the phone's time under an offline grant (caller's, at most 3 days old, time between the grant less 5 min and now), sent the same Kolkata day; replays settle from the receipt first; rows get `recorded_offline` and `synced_at` |
+| `taskpulse_private.attendance_check_core(...)` | private function (shared body of both check-in RPCs) | 97 |
+| `taskpulse_private.offline_grants`, `offline_grant_issue()` | table and RPC (one grant per offline snapshot; pruned after 7 days) | 97; shared with the M21 offline timers and the offline module |
 | `taskpulse_private.attendance_inputs` | private function | 21 |
 | `team_holiday_dates(date,date)` | RPC (read) | 37 |
 | `attendance_check_ins` | table (read: own, or the company for MD/PE) | 72 |
