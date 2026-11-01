@@ -18,6 +18,8 @@ B_DIR='00000000-0000-0000-0000-0000000000b1'
 MIGRATIONS=sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0]))
 M55=next(p for p in MIGRATIONS if p.name.startswith('55_')).read_text(encoding='utf-8')
 LATEST=int(MIGRATIONS[-1].name.split('_')[0])
+# Later migrations that alter 55's objects; the upgrade path applies them after 55.
+AFTER_55={99}
 TAG=re.compile(r'^[A-Z][a-z]{2}\d{2}_[A-Z][A-Z0-9]*\d+$')
 ACTIVE=[MD,PE,DM,M4,M5,M6,M8]
 
@@ -69,7 +71,7 @@ for db in DBS:
     every=[int(m.name.split('_')[0]) for m in MIGRATIONS]
     if db==DBS[1]:
         # main and the hosted test project have 01-54 and 56-58; 55 arrives later (--include-all).
-        migrate(db,[n for n in every if n!=55]); sql(db,seed)
+        migrate(db,[n for n in every if n!=55 and n not in AFTER_55]); sql(db,seed)
         before=counts(db)
         broken_apply(db)
         assert value(db,"count(*) FROM pg_class WHERE relname='month_setup_items'")=='0'
@@ -79,9 +81,13 @@ for db in DBS:
         sql(db,M55)
         assert counts(db)==before,'55 changes no existing rows'
         print('PASS',db,'upgrade 01-54+56-58 -> +55 keeps every existing row')
+        migrate(db,sorted(AFTER_55))
     else:
         migrate(db,every); sql(db,seed)
         print('PASS',db,f'fresh install 01-{LATEST} including 55')
+    # Migration 99: the commit's own statement_timeout, which PostgREST applies to the request (Supabase caps others at 8 s).
+    assert value(db,"array_to_string(proconfig,',') FROM pg_proc WHERE oid='public.month_setup_commit(uuid,uuid)'::regprocedure")=='search_path="",statement_timeout=60s'
+    print('PASS',db,'month_setup_commit carries statement_timeout=60s (migration 99)')
 
     # ---- ownership, row security, grants ------------------------------------------------------------------
     assert value(db,"taskpulse_private.m15_secure()")=='0 tables and 0 functions moved to taskpulse_definer'
