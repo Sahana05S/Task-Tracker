@@ -1,4 +1,4 @@
-"""Seed a TaskPulse project with the September 2026 Google Sheets tracker as test data.
+"""Seed a TaskPulse project with a monthly Google Sheets tracker (September 2026 test data, October 2026 go-live).
 
 Reads the tracker workbook (an .xlsx file, or the link-shared export downloaded
 into its own empty directory), then plans and, only with --yes, applies:
@@ -15,8 +15,16 @@ director in one transaction, then the director's performance read is checked.
 Managing directors' rows are skipped (user decision, 22 October 2026).
 
 Without --yes the tool only prints the plan (dry run). Hosted mode talks to the
-project through the Supabase CLI query channel and, for Auth users, the Admin
+project through the Supabase CLI query channel (or, with --api, the Management
+API query endpoint using SUPABASE_ACCESS_TOKEN) and, for Auth users, the Admin
 API with a service-role key fetched into memory (never printed or written).
+
+Sheet months the tool knows are listed in EXPECTED; a month's log counts are
+checked against it so a drifted sheet stops the run. Employee IDs written with
+spaces in C_Team Members ("SRB HRC") become hyphenated ("SRB-HRC").
+--move-task-dates-into-month moves task assigned/due dates left in the month
+before the sheet month (a copied template) into the sheet month; a due date on
+that month's last day becomes the sheet month's last day.
 Local mode targets a disposable loopback PostgreSQL with the JWT shim of
 tools/test_m*_database.py. Every write is recorded in a JSON manifest outside
 the repository; --undo MANIFEST removes the rows that run created.
@@ -37,8 +45,9 @@ from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PRODUCTION_REF = "sbtxtsisjhuciobxykcm"
-DEFAULT_LEDGER = 46
+# The live project since the 1 November 2026 go-live (the demo sbtxtsisjhuciobxykcm is retired).
+PRODUCTION_REF = "bdezjektaeqxcntuxqcw"
+DEFAULT_LEDGER = 96
 NS = uuid.UUID("5e3d7f0a-2c41-4b8e-9a51-0d6c1f9e2b77")  # fixed namespace for this tool's operation ids
 TWO = Decimal("0.01")
 
@@ -46,13 +55,30 @@ ROLE_MAP = {"Managing Director": "managing_director", "Proj. Engineer": "project
             "Data Manager": "data_manager", "Team Member": "team_member"}
 STATUSES = {"Not Started", "In Progress", "Discarded"}
 PRIORITIES = {"Low", "Medium", "High", "Focus", "No"}
-# Logs per task in the September 2026 sheet; any drift stops the run.
-EXPECTED_LOGS = {"T6": 128, "T5": 80, "AD22": 61, "PJT27": 57, "AD21": 23, "MKT20": 9, "T25": 9,
-                 "T8": 8, "PJT15": 3, "T26": 3, "T9": 1}
-EXPECTED_TOTAL_LOGS = 382
-EXPECTED_VALID = {"T5", "T6", "T8", "MKT20", "AD21", "AD22"}
-DISCARD_REASON = "Discarded in the September 2026 sheet tracker (imported test data)"
-REPLACE_REASON = "Replaced by the September 2026 sheet seed (test data)"
+# Logs per task (tasks with logs only) and the tasks expected to count for metrics, per sheet
+# month; any drift stops the run.
+EXPECTED = {
+    "2026-09": {"logs": {"T6": 128, "T5": 80, "AD22": 61, "PJT27": 57, "AD21": 23, "MKT20": 9, "T25": 9,
+                         "T8": 8, "PJT15": 3, "T26": 3, "T9": 1},
+                "valid": {"T5", "T6", "T8", "MKT20", "AD21", "AD22"}},
+    "2026-10": {"logs": {"T5": 50, "T8": 4, "MKT20": 19, "AD21": 17, "AD22": 38, "T25": 58, "T26": 1},
+                "valid": {"T5", "T8", "MKT20", "AD21", "AD22"}},
+}
+
+
+def expected_for(period):
+    """EXPECTED entry for a sheet period 'YYYY-MM-DD'."""
+    entry = EXPECTED.get(period[:7])
+    if entry is None:
+        raise Refusal(f"No expected log counts for {period[:7]}; add the month to EXPECTED")
+    return entry
+
+
+def discard_reason(period):
+    return f"Discarded in the {dt.date.fromisoformat(period):%B %Y} sheet tracker (imported)"
+
+
+REPLACE_REASON = "Replaced by a sheet seed"
 UNDO_REASON = "Removed by sheet-seed undo"
 # Rows in these tables belong to people, not to the task; deleting a task must never take them.
 FOREIGN_OWNED = ("public.daily_facts", "public.ideas", "public.suggestions", "public.sales_logs", "public.meeting_points")
@@ -186,12 +212,31 @@ class Backend:
 
 
 class HostedBackend(Backend):
-    def __init__(self, sql_dir, ref, workdir):
+    def __init__(self, sql_dir, ref, workdir, api=False):
         super().__init__(sql_dir)
-        self.ref, self.workdir = ref, workdir
-        self.label = f"hosted project {ref}"
+        self.ref, self.workdir, self.api = ref, workdir, api
+        self.label = f"hosted project {ref}" + (" (Management API)" if api else "")
         self.is_production = ref == PRODUCTION_REF
         self._service_key = None
+
+    def management(self, method, path, payload=None):
+        """Supabase Management API call with SUPABASE_ACCESS_TOKEN (read from the environment, never printed)."""
+        import os
+        token = os.environ.get("SUPABASE_ACCESS_TOKEN")
+        if not token:
+            raise RuntimeError("--api needs SUPABASE_ACCESS_TOKEN in the environment")
+        body = json.dumps(payload).encode() if payload is not None else None
+        headers = {"Authorization": f"Bearer {token}", "Accept": "application/json", "User-Agent": "taskpulse-sheet-seed"}
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(f"https://api.supabase.com/v1{path}", data=body, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=300) as response:
+                content = response.read()
+                return json.loads(content) if content else None
+        except urllib.error.HTTPError as error:
+            raise RuntimeError(f"Management API {method} {path.split('?')[0]} failed: HTTP {error.code} "
+                               f"{redact(error.read().decode('utf-8', 'replace'))[-1500:]}") from None
 
     def cli(self, *arguments):
         executable = "supabase.cmd" if sys.platform == "win32" else "supabase"
@@ -208,6 +253,12 @@ class HostedBackend(Backend):
 
     def query(self, name, sql):
         path = self._file(name, sql)
+        if self.api:
+            rows = self.management("POST", f"/projects/{self.ref}/database/query", {"query": sql})
+            if not rows or "result" not in rows[-1]:
+                raise RuntimeError(f"{name}: query returned no result row")
+            value = rows[-1]["result"]
+            return unwrap(name, sql, json.loads(value) if isinstance(value, str) else value)
         # --output json explicitly: in a console the CLI otherwise defaults to text output.
         data = self.cli("db", "query", "--linked", "--project-ref", self.ref, "--workdir", str(self.workdir),
                         "--output", "json", "--file", str(path))
@@ -218,11 +269,14 @@ class HostedBackend(Backend):
         return unwrap(name, sql, json.loads(value) if isinstance(value, str) else value)
 
     def projects(self):
+        if self.api:
+            return self.management("GET", "/projects")
         return self.cli("projects", "list", "--output", "json")
 
     def _key(self):
         if self._service_key is None:
-            keys = self.cli("projects", "api-keys", "--project-ref", self.ref, "--reveal", "--output", "json")
+            keys = self.management("GET", f"/projects/{self.ref}/api-keys?reveal=true") if self.api else \
+                self.cli("projects", "api-keys", "--project-ref", self.ref, "--reveal", "--output", "json")
             self._service_key = next((k["api_key"] for k in keys if k.get("name") == "service_role"), None)
             if not self._service_key:
                 raise RuntimeError("The project's service_role key is unavailable")
@@ -298,7 +352,7 @@ def load_categories():
     return set(re.findall(r"'([A-Z]+)'", block.group(1)))
 
 
-def read_sheet(path, email_domain=None, shift_months=0):
+def read_sheet(path, email_domain=None, shift_months=0, move_task_dates=False):
     import warnings
     import openpyxl
     warnings.filterwarnings("ignore", module="openpyxl")
@@ -335,7 +389,9 @@ def read_sheet(path, email_domain=None, shift_months=0):
         if blank(row[0]):
             continue
         name, email, employee, role = row[0].strip(), (row[1] or "").strip().lower(), (row[4] or "").strip(), row[5]
-        if role not in ROLE_MAP or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[a-z]+", email) or not employee or len(employee) > 20:
+        employee = re.sub(r"\s+", "-", employee)
+        if role not in ROLE_MAP or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[a-z]+", email) or \
+           not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,19}", employee):
             raise Refusal(f"C_Team Members row for {name!r} has an unusable email/employee id/role")
         if email_domain:
             email = email.split("@")[0] + "@" + email_domain
@@ -384,8 +440,10 @@ def read_sheet(path, email_domain=None, shift_months=0):
         scale, progress = row[4], row[5]
         if not isinstance(scale, (int, float)) or scale < 0 or not isinstance(progress, (int, float)) or not 0 <= progress <= 100:
             raise Refusal(f"{tag}: scale/progress must be numbers (scale >=0, progress 0-100)")
-        assigned = shift_date(as_date(row[13], f"{tag} assigned"), shift_months)
-        due = shift_date(as_date(row[14], f"{tag} due"), shift_months)
+        assigned, due = as_date(row[13], f"{tag} assigned"), as_date(row[14], f"{tag} due")
+        if move_task_dates:
+            assigned, due = into_month(assigned, period), into_month(due, period)
+        assigned, due = shift_date(assigned, shift_months), shift_date(due, shift_months)
         tasks.append({"row": number, "tag": tag, "short": match.group(1) + match.group(2), "category": category,
                       "title": row[2], "comments": None if blank(row[3]) else str(row[3]),
                       "scale": fmt_num(scale), "progress": str(two(progress)), "priority": priority,
@@ -395,10 +453,20 @@ def read_sheet(path, email_domain=None, shift_months=0):
     if len({t["tag"] for t in tasks}) != len(tasks):
         raise Refusal("2_Tasks has duplicate tags")
     counts = {t["short"]: len(t["logs"]) for t in tasks if t["logs"]}
-    if counts != EXPECTED_LOGS or sum(counts.values()) != EXPECTED_TOTAL_LOGS:
-        raise Refusal(f"Task-log counts differ from the expected September sheet: {counts}")
+    if counts != expected_for(period.isoformat())["logs"]:
+        raise Refusal(f"Task-log counts differ from the expected {period:%B %Y} sheet: {counts}")
     return {"period": period.isoformat(), "shifted_period": shift_date(period, shift_months).isoformat(),
             "prefix": prefix, "people": people, "tasks": tasks, "warnings": warnings_out}
+
+
+def into_month(day, period):
+    """A date in the month before `period` moved into `period`; a last-day date stays a last day."""
+    if day.replace(day=1) != shift_date(period, -1):
+        return day
+    moved = shift_date(day, 1)
+    if (day + dt.timedelta(days=1)).day == 1:
+        moved = shift_date(period, 1) - dt.timedelta(days=1)
+    return moved
 
 
 def read_task_page(workbook, tag, shift_months, warnings_out):
@@ -643,8 +711,9 @@ def target_gates(args, backend, gate):
     if isinstance(backend, HostedBackend):
         ref = args.project_ref
         gate(len(ref) == 20 and ref.isalpha() and ref.islower(), "project ref is a 20-letter lowercase ref", ref)
-        link = args.workdir / "supabase" / ".temp" / "project-ref"
-        gate(link.is_file() and link.read_text(encoding="utf-8").strip() == ref, "workdir is linked to that ref", str(link))
+        if not args.api:
+            link = args.workdir / "supabase" / ".temp" / "project-ref"
+            gate(link.is_file() and link.read_text(encoding="utf-8").strip() == ref, "workdir is linked to that ref", str(link))
         project = next((p for p in backend.projects() if p.get("id") == ref), None)
         gate(project and project.get("status") == "ACTIVE_HEALTHY", "project is ACTIVE_HEALTHY",
              f"{project.get('name') if project else 'not listed'} {project.get('status') if project else ''}")
@@ -665,8 +734,9 @@ def plan(args, backend, sheet):
     if isinstance(backend, HostedBackend):
         ref = args.project_ref
         gate(len(ref) == 20 and ref.isalpha() and ref.islower(), "project ref is a 20-letter lowercase ref", ref)
-        link = args.workdir / "supabase" / ".temp" / "project-ref"
-        gate(link.is_file() and link.read_text(encoding="utf-8").strip() == ref, "workdir is linked to that ref", str(link))
+        if not args.api:
+            link = args.workdir / "supabase" / ".temp" / "project-ref"
+            gate(link.is_file() and link.read_text(encoding="utf-8").strip() == ref, "workdir is linked to that ref", str(link))
         project = next((p for p in backend.projects() if p.get("id") == ref), None)
         gate(project and project.get("status") == "ACTIVE_HEALTHY", "project is ACTIVE_HEALTHY",
              f"{project.get('name') if project else 'not listed'} {project.get('status') if project else ''}")
@@ -959,7 +1029,7 @@ def task_script(task, ids, org, mode, save_op, task_id=None, existing_logs=None)
         if task["status"] == "In Progress":
             steps.append((assignee, "transition", {"status": "In Progress"}))
         elif task["status"] == "Discarded":
-            steps.append((director, "transition", {"status": "Discarded", "reason": DISCARD_REASON}))
+            steps.append((director, "transition", {"status": "Discarded", "reason": discard_reason(task["period"])}))
         for actor, command, payload in steps:
             lines.append(AS_OWNER)
             lines.append("SELECT set_config('seed.version', (SELECT lifecycle_version FROM public.tasks "
@@ -997,7 +1067,7 @@ def phase_tasks(backend, result, sheet, args, ids, manifest):
         entry = by_tag[task["tag"]]
         if entry["action"] == "exists-skip":
             continue
-        task = dict(task, director=director)
+        task = dict(task, director=director, period=sheet["period"])
         if entry["action"] == "insert":
             # Receipts outlive deleted tasks; a fresh generation keeps a re-seed after --undo from replaying one.
             generation = next(g for g in range(100) if op_id(result["org"], task["tag"], "save", g) not in receipts)
@@ -1095,7 +1165,7 @@ def phase_verify(backend, result, sheet, args, ids, manifest):
                 failures.append(f"{task['tag']} {key}: {row[key]!r} != {value!r}")
         if Decimal(str(row["progress"])) != Decimal(task["progress"]) or Decimal(str(row["scale"])) != Decimal(task["scale"]):
             failures.append(f"{task['tag']} progress/scale {row['progress']}/{row['scale']} != {task['progress']}/{task['scale']}")
-        if row["valid"] != (task["short"] in EXPECTED_VALID):
+        if row["valid"] != (task["short"] in expected_for(sheet["period"])["valid"]):
             failures.append(f"{task['tag']} valid_for_metrics {row['valid']}")
         if row["other_logs"]:
             failures.append(f"{task['tag']} has {row['other_logs']} live non-Imported log(s)")
@@ -1110,7 +1180,7 @@ def phase_verify(backend, result, sheet, args, ids, manifest):
         if perf_hours is None or Decimal(perf_hours) != sum(Decimal(l["hours"]) for l in task["logs"]):
             failures.append(f"{task['tag']} performance_source_context taskHours {perf_hours}")
     total_logs = sum(d["logs"] for d in digests.values())
-    if len(observed["tasks"] or {}) != len(sheet["tasks"]) or total_logs != EXPECTED_TOTAL_LOGS:
+    if len(observed["tasks"] or {}) != len(sheet["tasks"]) or total_logs != sum(len(t["logs"]) for t in sheet["tasks"]):
         failures.append(f"{len(observed['tasks'] or {})} tasks / {total_logs} live Imported logs")
     if any(v != "O" for v in observed["triggers"].values()) or len(observed["triggers"]) != len(GUARDED_TRIGGERS):
         failures.append(f"triggers {observed['triggers']}")
@@ -1267,7 +1337,7 @@ def sheet_date(value):
         return None
 
 
-def read_attendance(path, month):
+def read_attendance(path, month, absent_drops_times=False):
     """One month tab of the billed attendance workbook: rows of staff, four columns per day."""
     import warnings
     import openpyxl
@@ -1302,7 +1372,7 @@ def read_attendance(path, month):
         if weekday and weekday != day.strftime("%a"):
             raise Refusal(f"{title}: {day} is labelled {weekday!r}, not {day:%a}")
 
-    people, problems = [], []
+    people, problems, dropped = [], [], []
     for r in range(header + 2, page.max_row + 1):
         name = " ".join(str(page.cell(r, 1).value or "").split())
         cells = [page.cell(r, columns[d] + k).value for d in days for k in range(4)]
@@ -1340,6 +1410,11 @@ def read_attendance(path, month):
                     if span < seconds:
                         problems.append(f"{where}: worked {raw_worked} is longer than IN {check_in} to OUT {check_out}")
                         continue
+            elif timed and status == "Absent" and absent_drops_times:
+                # The billed sheet marks a day with an IN but no OUT (or the reverse) as AB; the status wins
+                # and the stray times are reported, not stored.
+                dropped.append(f"{where}: AB kept as Absent; dropped IN {check_in} OUT {check_out} worked {raw_worked}")
+                check_in = check_out = seconds = None
             elif timed:
                 problems.append(f"{where}: {' '.join(tokens) or 'blank status'} with times or worked hours")
                 continue
@@ -1356,7 +1431,7 @@ def read_attendance(path, month):
         problems.append("no staff rows")
     if problems:
         raise Refusal(f"{title}: {len(problems)} problem(s) in the sheet:\n  " + "\n  ".join(problems))
-    return {"month": month.isoformat(), "title": title, "people": people}
+    return {"month": month.isoformat(), "title": title, "people": people, "dropped": dropped}
 
 
 def attendance_state_sql(month):
@@ -1544,6 +1619,8 @@ def print_attendance_plan(args, backend, sheet, result, sha):
     rows = result["rows"]
     print(f"Target: {backend.label}{' (PRODUCTION)' if backend.is_production else ''}")
     print(f"Attendance: sha256 {sha}; tab '{sheet['title']}'; {len(sheet['people'])} staff row(s)")
+    for line in sheet.get("dropped", []):
+        print(f"  note: {line}")
     print("\nPre-flight gates:")
     for ok, label, detail in result["gates"]:
         print(f"  {'PASS' if ok else 'FAIL'}  {label}{(' - ' + detail) if detail else ''}")
@@ -1720,7 +1797,7 @@ def attendance_main(args, backend):
         download(str(args.attendance), args.download_dir, "attendance.xlsx")
     sha = sha256_file(path)
     year, month = map(int, args.attendance_month.split("-"))
-    sheet = read_attendance(path, dt.date(year, month, 1))
+    sheet = read_attendance(path, dt.date(year, month, 1), args.attendance_absent_drops_times)
     result = plan_attendance(args, backend, sheet)
     print_attendance_plan(args, backend, sheet, result, sha)
     if not all(ok for ok, _, _ in result["gates"]):
@@ -1788,12 +1865,18 @@ def parse_args(argv=None):
                         help="match a staff row to a profile when the full names differ (repeatable)")
     parser.add_argument("--attendance-actor", metavar="EMAIL", help="managing director who records the attendance")
     parser.add_argument("--attendance-include-directors", action="store_true", help="also import managing directors' rows")
+    parser.add_argument("--attendance-absent-drops-times", action="store_true",
+                        help="import an AB day that has an IN or OUT time as Absent without the times (listed in the plan)")
     parser.add_argument("--overwrite-attendance", action="store_true",
                         help="correct existing attendance that differs from the sheet (the manifest keeps the old values)")
     parser.add_argument("--download-dir", type=Path)
     parser.add_argument("--target", choices=("hosted", "local"), required=True)
     parser.add_argument("--project-ref")
     parser.add_argument("--workdir", type=Path)
+    parser.add_argument("--api", action="store_true",
+                        help="hosted: use the Management API (SUPABASE_ACCESS_TOKEN) instead of the Supabase CLI; no --workdir")
+    parser.add_argument("--move-task-dates-into-month", action="store_true",
+                        help="move task dates left in the month before the sheet month into the sheet month")
     parser.add_argument("--confirm-production-ref")
     parser.add_argument("--psql")
     parser.add_argument("--port", type=int, default=15432)
@@ -1812,8 +1895,10 @@ def parse_args(argv=None):
     parser.add_argument("--shift-month", help="rehearsal only: move the sheet month to YYYY-MM")
     parser.add_argument("--allow-ledger", type=int, default=DEFAULT_LEDGER)
     args = parser.parse_args(argv)
-    if args.target == "hosted" and not (args.project_ref and args.workdir):
-        parser.error("--target hosted needs --project-ref and --workdir")
+    if args.target == "hosted" and not (args.project_ref and (args.workdir or args.api)):
+        parser.error("--target hosted needs --project-ref and --workdir (or --api)")
+    if args.api and args.target != "hosted":
+        parser.error("--api is for --target hosted")
     if args.target == "local" and not (args.psql and args.db):
         parser.error("--target local needs --psql and --db")
     if not args.undo and not (args.xlsx or args.sheet_url or args.attendance):
@@ -1833,7 +1918,7 @@ def parse_args(argv=None):
         if any("=" not in p or not p.partition("=")[0].strip() or not p.partition("=")[2].strip() for p in args.attendance_person):
             parser.error("--attendance-person must be NAME=EMAIL_OR_EMPLOYEE_ID")
     elif args.attendance_month or args.attendance_person or args.attendance_actor or args.overwrite_attendance \
-            or args.attendance_include_directors:
+            or args.attendance_include_directors or args.attendance_absent_drops_times:
         parser.error("the --attendance-* and --overwrite-attendance options need --attendance")
     if args.target == "hosted" and args.project_ref == PRODUCTION_REF and (args.rehearsal_email_domain or args.shift_month):
         parser.error("--rehearsal-email-domain and --shift-month are refused on production")
@@ -1853,7 +1938,7 @@ def main(argv=None):
     args.manifest_dir.mkdir(parents=True, exist_ok=True)
     sql_dir = args.manifest_dir / f"sql-{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:4]}"
     sql_dir.mkdir()
-    backend = HostedBackend(sql_dir, args.project_ref, args.workdir) if args.target == "hosted" else \
+    backend = HostedBackend(sql_dir, args.project_ref, args.workdir, args.api) if args.target == "hosted" else \
         LocalBackend(sql_dir, args.psql, args.port, args.db)
     try:
         if args.undo:
@@ -1873,7 +1958,7 @@ def main(argv=None):
         if args.shift_month:
             year, month = map(int, args.shift_month.split("-"))
             months = (year * 12 + month) - (2026 * 12 + 9)
-        sheet = read_sheet(path, args.rehearsal_email_domain, months)
+        sheet = read_sheet(path, args.rehearsal_email_domain, months, args.move_task_dates_into_month)
         result = plan(args, backend, sheet)
         print_plan(args, backend, sheet, result, sheet_sha)
         if not all(ok for ok, _, _ in result["gates"]):
