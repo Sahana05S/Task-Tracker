@@ -1,6 +1,7 @@
 name: Nightly encrypted database backup
 
-# Logical pg_dump of the Supabase database (Free plan has no automatic backups).
+# Logical pg_dump of the live Supabase database (project bdezjektaeqxcntuxqcw
+# since the 1 November 2026 go-live; Free plan has no automatic backups).
 # The plaintext dump never leaves the runner; only the GPG-encrypted file is
 # uploaded. See docs/OPERATIONS.md "Database backups" for secrets and restore.
 # migrate-demo.yml also calls it before applying migrations.
@@ -25,6 +26,7 @@ jobs:
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      LIVE_REF: bdezjektaeqxcntuxqcw
     steps:
       - name: Check secrets
         run: |
@@ -32,7 +34,11 @@ jobs:
           missing=0
           [ -n "$SUPABASE_DB_URL" ] || { echo "::error::Secret SUPABASE_DB_URL is not set"; missing=1; }
           [ -n "$BACKUP_PASSPHRASE" ] || { echo "::error::Secret BACKUP_PASSPHRASE is not set"; missing=1; }
-          exit "$missing"
+          [ "$missing" = 0 ] || exit 1
+          case "$SUPABASE_DB_URL" in
+            *"postgres.${LIVE_REF}:"* | *"@db.${LIVE_REF}.supabase.co"*) ;;
+            *) echo "::error::SUPABASE_DB_URL is not the live project ${LIVE_REF}; refusing"; exit 1 ;;
+          esac
 
       - name: Install PostgreSQL 17 client
         run: |

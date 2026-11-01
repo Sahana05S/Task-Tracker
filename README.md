@@ -147,9 +147,10 @@ key in a `NEXT_PUBLIC_` variable.
   one that has been applied anywhere; add a new one.
 - Every new migration ends with `SELECT taskpulse_private.m15_secure();` so new
   tables and functions are re-owned and company-scoped.
-- The demo database receives migrations only through the **Apply migrations to
-  the demo database** workflow when they merge to `main` (backup first). See
-  [docs/OPERATIONS.md](docs/OPERATIONS.md#demo-database-migrations).
+- The live database (Supabase project `bdezjektaeqxcntuxqcw` since the
+  1 November 2026 go-live) receives migrations only through the **Apply
+  migrations to the live database** workflow when they merge to `main` (backup
+  first). See [docs/OPERATIONS.md](docs/OPERATIONS.md#live-database-migrations).
 - CI runs the disposable-PostgreSQL suites listed in
   `.github/workflows/contract-checks.yml`, each applying every migration from
   scratch.

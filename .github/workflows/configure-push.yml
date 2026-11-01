@@ -2,7 +2,8 @@ name: Configure phone notifications
 
 # Run by hand (Actions -> Configure phone notifications -> Run workflow) once
 # the four push secrets exist, and again after changing any of them. It:
-# 1. checks the secrets and that every target is the demo project;
+# 1. checks the secrets and that every target is the live project
+#    (bdezjektaeqxcntuxqcw since the 1 November 2026 go-live);
 # 2. stores FCM_SERVICE_ACCOUNT_JSON and PUSH_FUNCTION_SECRET as Edge Function
 #    secrets and deploys send-push (no JWT verification; it checks the bearer);
 # 3. writes the function URL and the same secret into Supabase Vault through
@@ -34,7 +35,7 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       FCM_SERVICE_ACCOUNT_JSON: ${{ secrets.FCM_SERVICE_ACCOUNT_JSON }}
       PUSH_FUNCTION_SECRET: ${{ secrets.PUSH_FUNCTION_SECRET }}
-      DEMO_REF: sbtxtsisjhuciobxykcm
+      LIVE_REF: bdezjektaeqxcntuxqcw
     steps:
       - uses: actions/checkout@v4
 
@@ -46,10 +47,10 @@ jobs:
             [ -n "${!name}" ] || missing="$missing $name"
           done
           [ -z "$missing" ] || { echo "::error::Missing repository secrets:$missing"; exit 1; }
-          [ "$SUPABASE_PROJECT_REF" = "$DEMO_REF" ] || { echo "::error::SUPABASE_PROJECT_REF is not the demo project ${DEMO_REF}; refusing"; exit 1; }
+          [ "$SUPABASE_PROJECT_REF" = "$LIVE_REF" ] || { echo "::error::SUPABASE_PROJECT_REF is not the live project ${LIVE_REF}; refusing"; exit 1; }
           case "$SUPABASE_DB_URL" in
-            *"postgres.${DEMO_REF}:"* | *"@db.${DEMO_REF}.supabase.co"*) ;;
-            *) echo "::error::SUPABASE_DB_URL is not the demo project ${DEMO_REF}; refusing"; exit 1 ;;
+            *"postgres.${LIVE_REF}:"* | *"@db.${LIVE_REF}.supabase.co"*) ;;
+            *) echo "::error::SUPABASE_DB_URL is not the live project ${LIVE_REF}; refusing"; exit 1 ;;
           esac
           [ "${#PUSH_FUNCTION_SECRET}" -ge 32 ] || { echo "::error::PUSH_FUNCTION_SECRET must be at least 32 characters"; exit 1; }
           jq -e 'type == "object" and (.project_id|type) == "string" and (.client_email|type) == "string" and (.private_key|type) == "string"' \
@@ -57,7 +58,7 @@ jobs:
             || { echo "::error::FCM_SERVICE_ACCOUNT_JSON is not a Firebase service account key (project_id, client_email, private_key)"; exit 1; }
           configured="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 \
             -c "SELECT to_regprocedure('taskpulse_push.configure(text,text)') IS NOT NULL")"
-          [ "$configured" = t ] || { echo "::error::Migration 91 is not applied yet; run 'Apply migrations to the demo database' first"; exit 1; }
+          [ "$configured" = t ] || { echo "::error::Migration 91 is not applied yet; run 'Apply migrations to the live database' first"; exit 1; }
 
       - uses: supabase/setup-cli@v1
         with:

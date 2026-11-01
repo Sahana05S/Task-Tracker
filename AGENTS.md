@@ -69,7 +69,9 @@ user's standing rules, which earlier lived only in the laptop's Claude memory
 - Merge your own PRs without asking (merge commit, `gh pr merge <n> --merge`)
   once CI passes, GitHub reports no conflicts and no review feedback is open.
   Never merge with failing or pending checks.
-- Migrations reach the demo database through
+- Migrations reach the live database (Supabase project
+  `bdezjektaeqxcntuxqcw` since the 1 November 2026 go-live; the old demo
+  project `sbtxtsisjhuciobxykcm` is retired as a target) through
   `.github/workflows/migrate-demo.yml` when they merge to `main` (backup first,
   then each unrecorded file in order). Do not apply migrations by hand. After
   merging a migration, check that run; a failed run means the live site is
