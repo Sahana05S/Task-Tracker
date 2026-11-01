@@ -927,8 +927,11 @@ def phase_people(backend, result, manifest):
     statements = []
     for person in result["people"]:
         if person["action"] in ("create", "exists-update"):
+            # Since migration 94 a profile without an invitation starts inactive with no company,
+            # so a created person is attached to the company here as well.
+            attach = f", organization_id={lit(org)}::uuid, is_active=true" if person["action"] == "create" else ""
             statements.append(f"UPDATE public.users SET role={lit(person['role'])}::public.user_role, full_name={lit(person['name'])},"
-                              f" employee_id={lit(person['employee_id'])} WHERE id={lit(person['id'])}::uuid;")
+                              f" employee_id={lit(person['employee_id'])}{attach} WHERE id={lit(person['id'])}::uuid;")
             if person["action"] == "exists-update":
                 updated.append({"id": person["id"], "before": person["before"]})
     if statements:
@@ -983,14 +986,14 @@ def snapshot_only_sql(snapshot_deletes):
     return transaction(body, f"jsonb_build_object('remaining_tasks',0,'triggers',{TRIGGERS_EXPR})")
 
 
-def task_script(task, ids, org, mode, save_op, task_id=None, existing_logs=None):
+def task_script(task, ids, org, mode, save_op, task_id=None, existing_logs=None, details=True):
     """One transaction for one sheet task. task_id is set only in --repair for an existing task."""
     director, assignee = ids[task["director"]], ids[task["assignee"]]
     lines = []
     if task_id is None:
         fields = {"task_tag": task["tag"], "title": task["title"], "category": task["category"], "priority": task["priority"],
                   "due_date": task["due_date"], "task_scale": task["scale"], "comments": task["comments"],
-                  "initialize_details": True}
+                  "initialize_details": details}
         # Sheet scales are exact binary fractions; float repr round-trips them to the same decimal.
         fields["task_scale"] = float(Decimal(task["scale"]))
         payload = json.dumps(fields, ensure_ascii=False, sort_keys=True)
@@ -1073,7 +1076,8 @@ def phase_tasks(backend, result, sheet, args, ids, manifest):
             generation = next(g for g in range(100) if op_id(result["org"], task["tag"], "save", g) not in receipts)
             save_op = op_id(result["org"], task["tag"], "save", generation)
             task["logs"] = [dict(l, op=log_op(save_op, key, 0)) for l, key in log_keys(task["logs"])]
-            outcome = backend.query(f"task-{task['tag']}", task_script(task, ids, result["org"], args.progress_mode, save_op))
+            outcome = backend.query(f"task-{task['tag']}", task_script(task, ids, result["org"], args.progress_mode, save_op,
+                                                                       details=not args.no_task_details))
             manifest["created"]["tasks"].append({"id": outcome["id"], "tag": task["tag"], "save_op": save_op,
                                                   "log_ops": [l["op"] for l in task["logs"]], "log_ids": outcome["log_ids"]})
         else:
@@ -1875,6 +1879,9 @@ def parse_args(argv=None):
     parser.add_argument("--workdir", type=Path)
     parser.add_argument("--api", action="store_true",
                         help="hosted: use the Management API (SUPABASE_ACCESS_TOKEN) instead of the Supabase CLI; no --workdir")
+    parser.add_argument("--no-task-details", action="store_true",
+                        help="create tasks without the default checklist, so the sheet's progress figure is kept "
+                             "(a task with a synced checklist takes Activity-derived progress and refuses it)")
     parser.add_argument("--move-task-dates-into-month", action="store_true",
                         help="move task dates left in the month before the sheet month into the sheet month")
     parser.add_argument("--confirm-production-ref")
