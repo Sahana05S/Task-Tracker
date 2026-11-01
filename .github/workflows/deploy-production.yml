@@ -7,7 +7,7 @@ name: Deploy the live site
 # publishes the latest main whoever merged it (29 October 2026, M20).
 #
 # 1. Skips pushes by Sahana05S: Vercel already deploys those itself.
-# 2. Waits for "Apply migrations to the demo database" on the same commit,
+# 2. Waits for "Apply migrations to the live database" on the same commit,
 #    when one runs, and refuses to deploy if it failed, so the site is never
 #    ahead of its database.
 # 3. Calls the hook and shows Vercel's job id in the run summary.

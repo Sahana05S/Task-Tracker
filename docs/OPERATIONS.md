@@ -235,14 +235,19 @@ SHA-256 from the run summary next to the copy. Artifacts count toward the
 repository's Actions storage quota; check usage under Settings → Billing if the
 database grows.
 
-## Demo database migrations
+## Live database migrations
 
 `.github/workflows/migrate-demo.yml` runs when a change under
 `supabase/migrations/` reaches `main`, and by hand from the Actions tab. It
-refuses unless `SUPABASE_DB_URL` points at the demo project
-(`sbtxtsisjhuciobxykcm`), lists the files whose version is missing from
-`supabase_migrations.schema_migrations`, takes an encrypted backup (it calls
-`db-backup.yml`) and applies each missing file in version order with `psql`. The
+refuses unless `SUPABASE_DB_URL` points at the live project
+(`bdezjektaeqxcntuxqcw` since the 1 November 2026 go-live; the old demo project
+`sbtxtsisjhuciobxykcm` is no longer a target), lists the files whose version is
+missing from `supabase_migrations.schema_migrations`, takes an encrypted backup
+(it calls `db-backup.yml`) and applies each missing file in version order with
+`psql`. On a new project with no ledger and no tables it creates the ledger and
+installs every migration without a backup (there is nothing to keep); a
+database with tables but no ledger is refused. `db-backup.yml` and
+`configure-push.yml` refuse any project but the live one as well. The
 ledger row is written just before the migration's own `COMMIT`, so a failed
 migration records nothing and the run stops there. The run summary lists what
 was applied and the latest recorded version. When nothing is missing it stops
@@ -285,7 +290,7 @@ owner:
 
 - `SUPABASE_ACCESS_TOKEN`: a Supabase personal access token (Account →
   Access Tokens) for deploying Edge Functions and setting their secrets.
-- `SUPABASE_PROJECT_REF`: the demo project's reference, `sbtxtsisjhuciobxykcm`.
+- `SUPABASE_PROJECT_REF`: the live project's reference, `bdezjektaeqxcntuxqcw`.
   Both workflows refuse any other project.
 - `FCM_SERVICE_ACCOUNT_JSON`: the whole JSON key of a Firebase service account
   (Firebase console → Project settings → Service accounts → Generate new

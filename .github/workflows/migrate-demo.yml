@@ -1,17 +1,23 @@
-name: Apply migrations to the demo database
+name: Apply migrations to the live database
 
-# Applies every migration in supabase/migrations that the demo database
-# (Supabase project sbtxtsisjhuciobxykcm, used by the Vercel site) has not
-# recorded yet, so merging a PR with a migration needs no laptop. Runs when a
-# migration reaches main, and by hand from the Actions tab (Run workflow).
+# Applies every migration in supabase/migrations that the live database
+# (Supabase project bdezjektaeqxcntuxqcw since the 1 November 2026 go-live; the
+# old demo project sbtxtsisjhuciobxykcm is no longer a target) has not recorded
+# yet, so merging a PR with a migration needs no laptop. Runs when a migration
+# reaches main, and by hand from the Actions tab (Run workflow). The file keeps
+# its old name because deploy-production.yml waits for it by name.
 #
-# 1. plan: refuses unless SUPABASE_DB_URL is the demo project, then lists the
+# 1. plan: refuses unless SUPABASE_DB_URL is the live project, then lists the
 #    files whose version is missing from supabase_migrations.schema_migrations
 #    (gaps included, like `db push --include-all`). Nothing missing: stops here.
+#    A new project has no ledger yet: every file is pending and the run is a
+#    fresh install.
 # 2. backup: the encrypted backup from db-backup.yml, taken before any change.
-# 3. apply: each missing file in version order with psql. The ledger row is
-#    written inside the migration's own BEGIN ... COMMIT, so a failed migration
-#    leaves no row and the run stops at it (GitHub emails the owner).
+#    Skipped on a fresh install (an empty database has nothing to keep).
+# 3. apply: creates the ledger if it is missing, then each missing file in
+#    version order with psql. The ledger row is written inside the migration's
+#    own BEGIN ... COMMIT, so a failed migration leaves no row and the run stops
+#    at it (GitHub emails the owner).
 #
 # 4. functions: deploys the Edge Functions in supabase/functions (send-push
 #    without JWT verification, it checks its own bearer secret; decay-freshness
@@ -35,7 +41,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: migrate-demo
+  group: migrate-live
   cancel-in-progress: false
 
 jobs:
@@ -44,27 +50,41 @@ jobs:
     timeout-minutes: 10
     outputs:
       pending: ${{ steps.plan.outputs.pending }}
+      fresh: ${{ steps.plan.outputs.fresh }}
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      DEMO_REF: sbtxtsisjhuciobxykcm
+      LIVE_REF: bdezjektaeqxcntuxqcw
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check the target is the demo project
+      - name: Check the target is the live project
         run: |
           set -euo pipefail
           [ -n "$SUPABASE_DB_URL" ] || { echo "::error::Secret SUPABASE_DB_URL is not set"; exit 1; }
           case "$SUPABASE_DB_URL" in
-            *"postgres.${DEMO_REF}:"* | *"@db.${DEMO_REF}.supabase.co"*) ;;
-            *) echo "::error::SUPABASE_DB_URL is not the demo project ${DEMO_REF}; refusing"; exit 1 ;;
+            *"postgres.${LIVE_REF}:"* | *"@db.${LIVE_REF}.supabase.co"*) ;;
+            *) echo "::error::SUPABASE_DB_URL is not the live project ${LIVE_REF}; refusing"; exit 1 ;;
           esac
 
-      - name: List migrations the demo has not recorded
+      - name: List migrations the database has not recorded
         id: plan
         run: |
           set -euo pipefail
-          applied="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 \
-            -c 'SELECT version FROM supabase_migrations.schema_migrations ORDER BY version')"
+          ledger="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 \
+            -c "SELECT to_regclass('supabase_migrations.schema_migrations') IS NOT NULL")"
+          applied=""
+          if [ "$ledger" = t ]; then
+            applied="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 \
+              -c 'SELECT version FROM supabase_migrations.schema_migrations ORDER BY version')"
+          fi
+          if [ -z "$applied" ]; then
+            tables="$(psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 \
+              -c "SELECT count(*) FROM pg_tables WHERE schemaname IN ('public', 'taskpulse_private')")"
+            [ "$tables" = 0 ] || { echo "::error::No migrations are recorded but the database already has $tables tables; refusing a fresh install over existing data"; exit 1; }
+            echo "fresh=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+          fi
           pending=""
           while IFS= read -r f; do
             base="$(basename "$f" .sql)"
@@ -74,9 +94,13 @@ jobs:
           pending="${pending# }"
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
           {
-            echo "## Demo migrations"
+            echo "## Live database migrations"
             echo ""
-            echo "Latest recorded version: $(sort -V <<<"$applied" | tail -n 1)"
+            if [ -z "$applied" ]; then
+              echo "No migrations recorded yet: fresh install (no backup needed)."
+            else
+              echo "Latest recorded version: $(sort -V <<<"$applied" | tail -n 1)"
+            fi
             echo ""
             if [ -z "$pending" ]; then
               echo "Nothing to apply."
@@ -88,15 +112,18 @@ jobs:
 
   backup:
     needs: plan
-    if: needs.plan.outputs.pending != ''
+    if: needs.plan.outputs.pending != '' && needs.plan.outputs.fresh != 'true'
     uses: ./.github/workflows/db-backup.yml
     secrets: inherit
 
   apply:
     needs: [plan, backup]
-    if: needs.plan.outputs.pending != ''
+    # After a successful backup, or with none on a fresh install; never after a failed one.
+    if: >-
+      always() && needs.plan.result == 'success' && needs.plan.outputs.pending != '' &&
+      (needs.backup.result == 'success' || (needs.backup.result == 'skipped' && needs.plan.outputs.fresh == 'true'))
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       PENDING: ${{ needs.plan.outputs.pending }}
@@ -106,6 +133,12 @@ jobs:
       - name: Apply
         run: |
           set -euo pipefail
+          # Same ledger the Supabase CLI keeps; a new project does not have it yet.
+          psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE SCHEMA IF NOT EXISTS supabase_migrations;
+          CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (
+            version text PRIMARY KEY, statements text[], name text);
+          SQL
           for base in $PENDING; do
             src="supabase/migrations/$base.sql"
             tmp="$RUNNER_TEMP/$base.sql"
@@ -138,7 +171,7 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-      DEMO_REF: sbtxtsisjhuciobxykcm
+      LIVE_REF: bdezjektaeqxcntuxqcw
     steps:
       - uses: actions/checkout@v4
 
@@ -151,7 +184,7 @@ jobs:
             echo "deploy=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          [ "$SUPABASE_PROJECT_REF" = "$DEMO_REF" ] || { echo "::error::SUPABASE_PROJECT_REF is not the demo project ${DEMO_REF}; refusing"; exit 1; }
+          [ "$SUPABASE_PROJECT_REF" = "$LIVE_REF" ] || { echo "::error::SUPABASE_PROJECT_REF is not the live project ${LIVE_REF}; refusing"; exit 1; }
           echo "deploy=true" >> "$GITHUB_OUTPUT"
 
       - uses: supabase/setup-cli@v1
