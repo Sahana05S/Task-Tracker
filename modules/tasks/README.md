@@ -54,7 +54,7 @@ template versions.
 | `publish_task_detail_template` | `17_native_task_details_and_templates.sql` |
 | `task_tools_preview`, `task_tools_command` | 24, revised in 25 (preview also 31, 32, 53 tags, 55 optional Duplicate `title`) |
 | `participant_reconciliation` | `10_permissions_and_participant_contract.sql` |
-| `month_setup_context`, `month_setup_preview`, `month_setup_commit`, `taskpulse_private.month_setup_items` | `55_month_setup.sql` |
+| `month_setup_context`, `month_setup_preview`, `month_setup_commit`, `taskpulse_private.month_setup_items` | `55_month_setup.sql`; `99_month_setup_commit_timeout.sql` gives the commit a 60 s statement timeout (a full month takes about 8.5 s, over the 8 s API cap) |
 
 All of these are company-scoped by migrations 39-40 (M15).
 
