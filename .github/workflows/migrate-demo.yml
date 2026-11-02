@@ -187,10 +187,10 @@ jobs:
           [ "$SUPABASE_PROJECT_REF" = "$LIVE_REF" ] || { echo "::error::SUPABASE_PROJECT_REF is not the live project ${LIVE_REF}; refusing"; exit 1; }
           echo "deploy=true" >> "$GITHUB_OUTPUT"
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3, pinned (CodeQL actions/unpinned-tag)
         if: steps.gate.outputs.deploy == 'true'
         with:
-          version: latest
+          version: 2.122.0 # a fixed CLI, not the newest release at run time
 
       - name: Deploy Edge Functions
         if: steps.gate.outputs.deploy == 'true'
