@@ -147,3 +147,38 @@ export function offlineStatusLabel(status: { worker: 'unsupported' | 'none' | 'i
 export function offlineModeOn(stored: string | null): boolean {
   return stored === 'on';
 }
+
+const AUTH_COOKIE = /^(sb-[A-Za-z0-9_-]+-auth-token)(?:\.(\d+))?$/;
+
+function base64UrlText(value: string): string {
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
+  return new TextDecoder().decode(Uint8Array.from(atob(base64), c => c.charCodeAt(0)));
+}
+
+/**
+ * The member whose Supabase session this browser holds, read from the auth
+ * cookie without the network (the offline page has none); null when signed out.
+ * Every sign-out path clears that cookie, so an offline copy is shown only while
+ * its own member is still the one signed in on this phone.
+ */
+export function sessionUserIdFromCookies(cookieHeader: string): string | null {
+  const chunks = new Map<string, Map<number, string>>();
+  for (const part of cookieHeader.split(';')) {
+    const at = part.indexOf('=');
+    const match = AUTH_COOKIE.exec(part.slice(0, at).trim());
+    if (at < 0 || !match) continue;
+    const parts = chunks.get(match[1]) ?? new Map<number, string>();
+    parts.set(match[2] === undefined ? -1 : Number(match[2]), part.slice(at + 1).trim());
+    chunks.set(match[1], parts);
+  }
+  if (chunks.size !== 1) return null;
+  const parts = [...chunks.values()][0];
+  const raw = parts.has(-1) ? parts.get(-1)! : [...parts.keys()].sort((a, b) => a - b).map(i => parts.get(i)).join('');
+  try {
+    const text = decodeURIComponent(raw);
+    const session = JSON.parse(text.startsWith('base64-') ? base64UrlText(text.slice(7)) : text) as { user?: { id?: unknown } };
+    return typeof session?.user?.id === 'string' && session.user.id !== '' ? session.user.id : null;
+  } catch {
+    return null;
+  }
+}

@@ -31,7 +31,12 @@ queue replayed when the phone is back online) follows in later parts.
   missions (up to 30) with their Setup/Activity/Closure rows (up to 1,500 rows,
   150 reads), running timers, today's check-ins and an **offline grant**
   (migration 97), plus the phone's clock difference to the server. Another
-  member's copy is never shown; sign-out deletes the copy.
+  member's copy is never shown: the offline page has no server, so it reads
+  the member id from the browser's Supabase session cookie
+  (`sessionUserIdFromCookies`) and shows the copy only to that member. Every
+  sign-out clears the cookie, so a signed-out phone shows nothing. The
+  workspace deletes another member's copy before refreshing, and the Sign out
+  menu deletes the copy.
 
 ## Public API
 | File | What it offers |
