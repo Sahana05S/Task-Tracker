@@ -74,6 +74,7 @@ forced on, tables and commands belong to the non-bypass role
 (`taskpulse_private.m15_scope()`, migration 40). Checks in the application only
 produce clearer error messages.
 
+
 The module rules (what may import what) are in
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and
 `__tests__/architecture/boundaries.test.ts` enforces them.
