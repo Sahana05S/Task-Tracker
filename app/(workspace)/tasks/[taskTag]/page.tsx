@@ -29,6 +29,7 @@ import {
   getNativeTemplates,
   getMissionChoices,
   getVisibleReportChoices,
+  getTaskProofs,
   normalizeTaskTagParam,
   resolveTaskDetailRouteState,
 } from '@/modules/tasks';
@@ -39,6 +40,7 @@ import { EffortPanel } from '@/modules/tasks/components/detail/effort-panel';
 import { TaskLogTimeline } from '@/modules/tasks/components/detail/log-timeline';
 import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
 import { MissionOverview } from '@/modules/tasks/components/detail/mission-overview';
+import { ProofsPanel } from '@/modules/tasks/components/detail/proofs-panel';
 import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
@@ -101,7 +103,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const requested = (await searchParams).tab;
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
-  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints] = await Promise.all([
+  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
@@ -110,6 +112,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
     // A failed read leaves the track on current progress.
     tab === 'work' ? getMissionWaypoints([task]).catch(() => null) : Promise.resolve(null),
+    // Null when the caller is not one of the mission's people or a manager: no panel.
+    tab === 'work' ? getTaskProofs(task.id) : Promise.resolve(null),
   ]);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
@@ -262,6 +266,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
                 ) : null}
               </div>
             </MissionPanel>
+            {proofs ? <ProofsPanel taskId={task.id} taskTag={task.taskTag} proofs={proofs} canAdd={!archived} /> : null}
             {family.children.length ? (
               <MissionPanel icon={RocketIcon} title="Sub-missions" subtitle={`${family.children.filter((s) => s.status === 'Done').length} of ${family.children.length} done`}>
                 <SubMissionsPanel subMissions={family.children} />

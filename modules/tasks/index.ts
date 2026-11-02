@@ -32,3 +32,4 @@ export {
 
 export { getAssignedMissionBatch, getAssignedRoadmapMission, countAssignedMissionsCompletedBetween } from '@/modules/tasks/internal/roadmap';
 export { countMissionsInMonth, getMonthSetupContext, type MonthSetupContext } from '@/modules/tasks/internal/tools/month-setup-commands';
+export { readTaskProofs as getTaskProofs } from '@/modules/tasks/internal/proofs/queries';

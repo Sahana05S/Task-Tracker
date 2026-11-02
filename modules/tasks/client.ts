@@ -28,6 +28,15 @@ export { equalParticipantShares, parseSharePercent, TOTAL_SHARE_UNITS } from '@/
 export { mapTask, mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/internal/mappers';
 export type { ToolOperation, ToolsPreview } from '@/modules/tasks/internal/tools/contract';
 export { addMonths, defaultSetupMonth, monthOf, setupBannerMonth, type MonthKey } from '@/modules/tasks/internal/tools/month-setup';
+export {
+  formatProofSize,
+  MAX_PROOF_BYTES,
+  PROOF_ACCEPT,
+  proofFileProblem,
+  proofMimeType,
+  type MissionProof,
+} from '@/modules/tasks/internal/proofs/rules';
+export { uploadProofToTicket } from '@/modules/tasks/internal/proofs/upload';
 export type { SupportSplitMode } from '@/modules/tasks/internal/tools/support-split';
 
 export { MISSION_BATCH_SIZE, compareRoadmapMissions, missionBatchLimit, missionDueFilter, missionDueLabel, type MissionDueFilter, type MissionBatchOptions, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/internal/roadmap-contract';
