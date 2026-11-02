@@ -17,8 +17,11 @@ storage copy deleted. A failed step leaves the file in storage, still viewable,
 and it is retried when the next file moves or the managing director opens
 Reports > Data checks (up to 8 tries, spaced out).
 
-Folders: `Personal documents/<Employee ID> - <Name>/<Kind> - <file name>`.
-Proof folders (`Proofs/<YYYY-MM>/...`) arrive with the proof features.
+Folders: `Personal documents/<Employee ID> - <Name>/<Kind> - <file name>`
+(bucket `personal-documents`, personnel module) and
+`Proofs/<YYYY-MM>/<Task tag> - <Title>/<file name>` (bucket `mission-proofs`,
+tasks module, migration 101; the month the mission is assigned in). Sales
+proofs follow.
 
 ## Public API (the only files other code may import)
 | File | What it offers |
@@ -37,7 +40,7 @@ Proof folders (`Proofs/<YYYY-MM>/...`) arrive with the proof features.
 | `rules.ts` | Buckets, view links, the health line (pure) |
 
 ## Database it owns
-Migration 100 (`100_drive_file_storage.sql`):
+Migration 100 (`100_drive_file_storage.sql`; 101 adds the `mission-proofs` bucket to `file_subject`, `file_access`, `file_move_pending` and `file_storage_status`):
 - `taskpulse_private.file_storage` (the company's Shared Drive id, last check)
 - `taskpulse_private.drive_files` (one row per stored file: pending, moved with its Drive id, trashed)
 - `file_storage_configure(drive_id)` (managing director, audited), `file_storage_status()` (managing director), `file_access(bucket, path)` (every view)

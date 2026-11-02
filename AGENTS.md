@@ -37,11 +37,11 @@ Supabase. This is separate from the deferred M10 mission work-folder module
 Supabase storage stays the upload inbox, the server moves each recorded file
 into the drive after the response and deletes the inbox copy only once the
 Drive id is recorded; every view goes through `/api/files` and `file_access`.
-Nothing in the drive is shared with staff. Decisions for the proof features
-(not built yet): mission proofs visible to the mission's assignees and
-reviewers plus the managing director and project engineers; sales proofs to
-the entry's owner plus those managers; PDF, images and Word/Excel/PowerPoint up
-to 25 MB each.
+Nothing in the drive is shared with staff. Proof decisions (user, 2 November
+2026): mission proofs visible to the mission's assignees and reviewers plus the
+managing director and project engineers (built: migration 101, Proofs panel on
+the mission's Work tab); sales proofs to the entry's owner plus those managers
+(not built yet); PDF, images and Word/Excel/PowerPoint up to 25 MB each.
 
 ## Full audit and fixes - 31 October 2026
 

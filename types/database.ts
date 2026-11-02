@@ -947,6 +947,9 @@ export interface Database {
       personal_records: { Args: { p_user: string }; Returns: Json };
       personal_records_summary: { Args: Record<never, never>; Returns: Json };
       personal_record_command: { Args: { p_op: 'add' | 'withdraw'; p_kind: string | null; p_path: string | null; p_file_name: string | null; p_mime_type: string | null; p_size_bytes: number | null; p_record: string | null; p_operation: string }; Returns: Json };
+      /** Migration 101: mission proofs (tasks module). */
+      task_proofs: { Args: { p_task: string }; Returns: Json };
+      task_proof_command: { Args: { p_op: 'add' | 'withdraw'; p_task: string; p_path: string | null; p_file_name: string | null; p_mime_type: string | null; p_size_bytes: number | null; p_proof: string | null; p_operation: string }; Returns: Json };
       /** Migration 100: company files in the Google Shared Drive (files module). */
       file_storage_configure: { Args: { p_shared_drive_id: string }; Returns: Json };
       file_storage_status: { Args: Record<never, never>; Returns: Json };
