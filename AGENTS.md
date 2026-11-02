@@ -26,6 +26,23 @@ change). The refactor is complete and merged into `main`. Follow
   `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
   `__tests__/fixtures/`.
 
+## Drive file storage (go-live Part F) - 2 November 2026
+
+The user asked for personal documents and proof files to live in the company
+Shared Drive "TaskPulse Files" (Shared Drive `0AAPGxr_KsNNxUk9PVA`, service
+account `stellar-files@stellar-files.iam.gserviceaccount.com`, key in the
+Vercel secret `TASKPULSE_DRIVE_SERVICE_ACCOUNT_JSON`); check-in photos stay in
+Supabase. This is separate from the deferred M10 mission work-folder module
+(`modules/drive`), which stays off. Module `modules/files`, migration 100:
+Supabase storage stays the upload inbox, the server moves each recorded file
+into the drive after the response and deletes the inbox copy only once the
+Drive id is recorded; every view goes through `/api/files` and `file_access`.
+Nothing in the drive is shared with staff. Decisions for the proof features
+(not built yet): mission proofs visible to the mission's assignees and
+reviewers plus the managing director and project engineers; sales proofs to
+the entry's owner plus those managers; PDF, images and Word/Excel/PowerPoint up
+to 25 MB each.
+
 ## Full audit and fixes - 31 October 2026
 
 The user asked for a check of every aspect of the app (testing, security,

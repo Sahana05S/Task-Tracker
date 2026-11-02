@@ -317,6 +317,25 @@ Rotating the bearer secret: change `PUSH_FUNCTION_SECRET` and run step 1.
 Revoking the Firebase key: delete it in Google Cloud, add a new key as
 `FCM_SERVICE_ACCOUNT_JSON` and run step 1; until then pushes wait and retry.
 
+## Company files in Google Drive
+
+Personal documents (and, later, proof files) are stored in the Shared Drive
+"TaskPulse Files" (module `modules/files`, migration 100). Uploads still land
+in Supabase storage first; the website moves each file into the drive right
+after it is saved and deletes the storage copy once the move is recorded. A
+file that cannot move stays in storage, still opens normally, and is retried
+when the next file moves or the managing director opens Reports > Data checks,
+which also shows whether the drive is reachable and how many files wait.
+
+- Key: Vercel secret `TASKPULSE_DRIVE_SERVICE_ACCOUNT_JSON` (the service
+  account's JSON key). To replace it, create a new key in Google Cloud
+  (IAM & Admin -> Service Accounts -> Keys), paste it into the same Vercel
+  variable, redeploy, then delete the old key in Google Cloud.
+- Drive: the service account must stay a Content manager of the Shared Drive.
+  The drive id is stored per company (`file_storage_configure`).
+- Deleted files go to the Shared Drive's trash, where Google keeps them for 30
+  days. Nobody but drive members can browse the drive directly.
+
 ## Health check
 
 `GET /api/internal/health` reports background-job health for monitoring. It

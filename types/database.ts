@@ -947,6 +947,17 @@ export interface Database {
       personal_records: { Args: { p_user: string }; Returns: Json };
       personal_records_summary: { Args: Record<never, never>; Returns: Json };
       personal_record_command: { Args: { p_op: 'add' | 'withdraw'; p_kind: string | null; p_path: string | null; p_file_name: string | null; p_mime_type: string | null; p_size_bytes: number | null; p_record: string | null; p_operation: string }; Returns: Json };
+      /** Migration 100: company files in the Google Shared Drive (files module). */
+      file_storage_configure: { Args: { p_shared_drive_id: string }; Returns: Json };
+      file_storage_status: { Args: Record<never, never>; Returns: Json };
+      file_access: { Args: { p_bucket: string; p_path: string }; Returns: Json };
+      /** Migration 100, service role with x-taskpulse-organization only. */
+      file_move_claim: { Args: { p_bucket: string; p_path: string }; Returns: Json };
+      file_move_finish: { Args: { p_bucket: string; p_path: string; p_drive_file_id: string | null; p_error: string | null }; Returns: Json };
+      file_move_pending: { Args: { p_limit: number }; Returns: Json };
+      file_release: { Args: { p_bucket: string; p_paths: string[] }; Returns: Json };
+      file_storage_checked: { Args: { p_ok: boolean; p_error: string | null }; Returns: undefined };
+      file_storage_drive: { Args: Record<never, never>; Returns: string | null };
       /** Migration 55: month setup wizard (managing director or project engineer). */
       month_setup_context: { Args: { p_month: string }; Returns: Json };
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };

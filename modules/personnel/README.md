@@ -15,7 +15,11 @@ info tab. Only the person and the managing director see them.
 
 Uploads go from the browser straight to storage through a signed upload link,
 so files up to 5 MB never pass through a server request (Vercel caps those at
-4.5 MB); the command then records the file.
+4.5 MB); the command then records the file. Since migration 100 the files
+module then moves it into the company Shared Drive
+(`Personal documents/<Employee ID> - <Name>/`) after the response, and trashes
+the Drive copy of a replaced or removed file. Viewing links go through
+`/api/files`, which checks permission on every open.
 
 ## Private (`internal/`)
 | File | Job |
@@ -35,4 +39,4 @@ Migration 78 (`78_personal_records.sql`):
 Nothing is written to the audit trail's protected changes or the activity feed.
 
 ## Depends on
-`shared/*` only.
+`shared/*` and the files module (`index.ts`, `client.ts`).

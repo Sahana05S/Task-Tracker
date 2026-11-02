@@ -5,6 +5,8 @@ import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { DailyReportView } from '@/modules/reports/components/daily-report';
 import { DataChecks } from '@/modules/reports/components/data-checks';
 import { PushHealth } from '@/modules/notifications/components/push-health';
+import { FileStorageHealthNotice } from '@/modules/files/components/file-storage-health';
+import { getFileStorageHealth } from '@/modules/files';
 import { getPushStatus } from '@/modules/notifications';
 import { MonthArchiveControls } from '@/modules/reports/components/month-archive-controls';
 import { ReportSnapshotForm } from '@/modules/reports/components/report-snapshot-form';
@@ -130,14 +132,15 @@ async function MonthClose({ query, tabs }: { query: ReportsSearchParams; tabs: R
   );
 }
 
-/** Managing director only: attendance gaps, undecided award days, undated missions this month, and phone notification health. */
+/** Managing director only: attendance gaps, undecided award days, undated missions this month, phone notification and file storage health. */
 async function DataChecksView({ tabs }: { tabs: React.ReactNode }) {
   const context = await liveViewContext();
-  const [presentation, push] = await Promise.all([getLivePresentation(context), getPushStatus()]);
+  const [presentation, push, files] = await Promise.all([getLivePresentation(context), getPushStatus(), getFileStorageHealth()]);
   return (
     <MissionPage>
       <MissionPageHeader title="Reports" description={`${context.period.label} · what is missing for scores and awards`} tabs={tabs} />
       <PushHealth state={push} />
+      <FileStorageHealthNotice health={files} />
       <DataChecks model={presentation} />
     </MissionPage>
   );
