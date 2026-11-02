@@ -36,7 +36,7 @@ remove/restore access) and the signed-in member's own Settings (display name).
 | Invitations (`handle_new_user`) | 49; since 94 applied only to a confirmed address, employee IDs checked within the company |
 | `daily_star_records`, `performance_score_components` (legacy history reads) | `01_init_schema.sql` |
 | `member_invitations`, `people_command(text,jsonb)`, invite-only `handle_new_user`, last-director guard | `49_people_admin_invitations.sql` |
-| `users.reports_to`, `job_title`, `department_id` (same company, no loops, active manager; a new non-director starts under the earliest active director), `people_command` placement fields, `org_chart()` (any active member; today's status coarse only: in, half day, away, not recorded) | `65_org_chart.sql` |
+| `users.reports_to`, `job_title`, `department_id` (same company, no loops, active manager; a new non-director starts under the earliest active director, also when the company is attached later: 103), `people_command` placement fields, `org_chart()` (any active member; today's status coarse only: in, half day, away, not recorded) | `65_org_chart.sql`, `103_org_chart_default_manager.sql` |
 
 It also reads tables owned by other modules (`daily_task_logs`,
 `attendance_records`, `report_snapshots`, `task_links`). All objects are
