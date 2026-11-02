@@ -35,11 +35,11 @@ export default async function TaskToolsPage() {
       <MissionPageHeader
         eyebrow="Missions"
         title="Task Tools"
-        description="Copies, splits, carryovers and archives made from the Missions page."
+        description="Copies, splits, carryovers and archives made from the Missions page. To run one, open the Missions table and tick the missions."
         actions={
           <Link href="/tasks?view=table" className={buttonVariants({ variant: 'outline' })}>
             <TableIcon aria-hidden="true" />
-            Run an operation
+            Open Missions table
           </Link>
         }
       />
