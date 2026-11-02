@@ -99,7 +99,7 @@ def main(workdir, recovery, bin_dir):
     print(f"PASS hosted synthetic table capture: {len(names)} app tables, seven Auth IDs, SHA-256 {digest}", flush=True)
     psql("postgres", f"CREATE DATABASE {DATABASE} WITH ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0")
     psql(DATABASE, BOOTSTRAP)
-    migrations = sorted((ROOT / "supabase" / "migrations").glob("*.sql"))
+    migrations = sorted((ROOT / "supabase" / "migrations").glob("*.sql"), key=lambda p: int(p.name.split("_")[0]))
     if len(migrations) != 29:
         raise RuntimeError("Expected local migrations 01–29 only")
     for path in migrations:

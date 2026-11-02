@@ -112,7 +112,7 @@ for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);')
     sql('postgres',f'CREATE DATABASE {db};')
     sql(db,bootstrap)
-    for m in sorted((ROOT/'supabase/migrations').glob('*.sql')):
+    for m in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
         if int(m.name.split('_')[0])>13: continue
         if db==DBS[1] and m.name.startswith('12_'):
             sql(db,seed)

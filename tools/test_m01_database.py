@@ -91,7 +91,7 @@ for db in DBS:
     sql('postgres', f'DROP DATABASE IF EXISTS {db} WITH (FORCE);')
     sql('postgres', f'CREATE DATABASE {db};')
     sql(db, bootstrap)
-    migrations = sorted((ROOT / 'supabase/migrations').glob('*.sql'))
+    migrations = sorted((ROOT / 'supabase/migrations').glob('*.sql'), key=lambda p: int(p.name.split('_')[0]))
     migrations = [m for m in migrations if int(m.name.split('_')[0]) <= 11]
     for migration in migrations:
         if db == DBS[1] and migration.name.startswith('10_'):

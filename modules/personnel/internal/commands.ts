@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { scheduleDriveMove, scheduleDriveRelease } from '@/modules/files';
 import { isConflictCode } from '@/shared/commands/conflict';
 import { createClient } from '@/shared/supabase/server';
 import { isMissingFunctionError } from '@/shared/supabase/schema-errors';
@@ -11,7 +12,9 @@ import { recordPath, RECORDS_BUCKET, type RecordKind } from './rules';
  * from the browser to storage through a signed upload link made here as the
  * signed-in member (the bucket's policies allow only their own folder), so
  * files up to 5 MB never pass through a server request. The command then
- * records it; `personal_record_command` is the permission boundary.
+ * records it; `personal_record_command` is the permission boundary. Once
+ * recorded, the files module moves it into the company Shared Drive after the
+ * response (migration 100) and trashes the Drive copy of a released file.
  */
 
 type Db = Awaited<ReturnType<typeof createClient>>;
@@ -66,7 +69,7 @@ export async function addRecord(input: {
     await discard(supabase, [input.path]);
     return failure(error);
   }
-  await discard(supabase, released(data));
+  await afterRecordChange(supabase, released(data), input.path);
   return { ok: true };
 }
 
@@ -77,8 +80,17 @@ export async function withdrawRecord(recordId: string, operationId: string): Pro
     p_record: recordId, p_operation: operationId,
   });
   if (error) return failure(error);
-  await discard(supabase, released(data));
+  await afterRecordChange(supabase, released(data), null);
   return { ok: true };
+}
+
+/** Clears released inbox copies, then hands the drive work to the files module. */
+async function afterRecordChange(supabase: Db, releasedPaths: string[], addedPath: string | null): Promise<void> {
+  await discard(supabase, releasedPaths);
+  const organizationId = await callerOrganization(supabase);
+  if (!organizationId) return;
+  scheduleDriveRelease(organizationId, RECORDS_BUCKET, releasedPaths);
+  if (addedPath) scheduleDriveMove(organizationId, RECORDS_BUCKET, addedPath);
 }
 
 function released(data: unknown): string[] {

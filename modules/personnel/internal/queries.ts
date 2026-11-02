@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { fileViewHref } from '@/modules/files/client';
 import { createClient } from '@/shared/supabase/server';
 import { isMissingFunctionError } from '@/shared/supabase/schema-errors';
 
@@ -12,9 +13,6 @@ import { RECORDS_BUCKET } from './rules';
  * database predates 78.
  */
 
-/** How long a viewing link to a file works. */
-const LINK_SECONDS = 600;
-
 export type RecordsRead<T> = { ok: true; data: T } | { ok: false; reason: 'unavailable' | 'forbidden' | 'not_found'; error: string };
 
 function failure(error: { code?: string; message: string }): RecordsRead<never> {
@@ -25,7 +23,7 @@ function failure(error: { code?: string; message: string }): RecordsRead<never> 
 }
 
 export interface PersonalRecordsView extends PersonalRecords {
-  /** Short-lived viewing links, by record id. */
+  /** Viewing links by record id: the app's file route, which checks permission on every open (migration 100). */
   readonly links: Readonly<Record<string, string>>;
 }
 
@@ -35,14 +33,7 @@ export async function readPersonalRecords(userId: string): Promise<RecordsRead<P
   if (error) return failure(error);
   const records = mapPersonalRecords(data);
   const links: Record<string, string> = {};
-  if (records.documents.length) {
-    const { data: signed } = await supabase.storage.from(RECORDS_BUCKET)
-      .createSignedUrls(records.documents.map(document => document.path), LINK_SECONDS);
-    for (const document of records.documents) {
-      const url = signed?.find(link => link.path === document.path)?.signedUrl;
-      if (url) links[document.id] = url;
-    }
-  }
+  for (const document of records.documents) links[document.id] = fileViewHref(RECORDS_BUCKET, document.path);
   return { ok: true, data: { ...records, links } };
 }
 

@@ -7,7 +7,7 @@ DBS=('taskpulse_m09_approved_fresh_test','taskpulse_m09_approved_upgrade_test')
 for db in DBS:
     assert db in ('taskpulse_m09_approved_fresh_test','taskpulse_m09_approved_upgrade_test')
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);');sql('postgres',f'CREATE DATABASE {db};');sql(db,bootstrap)
-    for migration in sorted((ROOT/'supabase/migrations').glob('*.sql')):
+    for migration in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
         number=int(migration.name.split('_')[0])
         if number>25:break
         if number==25 and db==DBS[1]:break

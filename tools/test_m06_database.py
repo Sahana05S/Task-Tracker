@@ -128,7 +128,7 @@ def context(db,from_day,to_day,asof=None,uid='4'):
 
 for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);');sql('postgres',f'CREATE DATABASE {db};');sql(db,bootstrap)
-    for migration in sorted((ROOT/'supabase/migrations').glob('*.sql')):
+    for migration in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
         if int(migration.name.split('_')[0])>20:break
         if db==DBS[1] and migration.name.startswith('19_'):
             sql(db,seed)
