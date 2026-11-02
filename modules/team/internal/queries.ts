@@ -1,5 +1,5 @@
 import { getLivePresentation } from '@/modules/reports';
-import { viewContext, type ViewContext } from '@/modules/reports/client';
+import { seesTeamDetail, viewContext, type ViewContext } from '@/modules/reports/client';
 import type { LivePresentation } from '@/modules/reports/client';
 import type { AwardReadModel } from '@/modules/scoring';
 import { getTeamSummaryInputs } from '@/modules/scoring';
@@ -59,6 +59,8 @@ export interface TeamIndexData {
 
 export interface EmployeeProfileData {
   readonly presentation:LivePresentation;
+  /** Day-by-day team figures go to managers only (migration 104), so a member's own profile has no daily scores. */
+  readonly dailyScoresWithheld: boolean;
   readonly awards:AwardReadModel;
   readonly period: AnalyticsPeriod;
   readonly employee: User;
@@ -152,6 +154,7 @@ export async function getEmployeeProfileData(
 
   return {
     presentation,
+    dailyScoresWithheld: !seesTeamDetail(viewer.role),
     awards,
     period,
     employee,

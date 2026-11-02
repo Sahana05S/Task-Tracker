@@ -96,7 +96,7 @@ export function EmployeeChartsPanel({ charts }: { charts: EmployeeAnalyticsChart
 }
 
 /** Overview: the composite score against the team median. */
-export function ScoreVsMedianChart({ data }: { data: readonly EmployeeTrendPoint[] }) {
+export function ScoreVsMedianChart({ data, dailyWithheld = false }: { data: readonly EmployeeTrendPoint[]; dailyWithheld?: boolean }) {
   const empty = data.every((p) => p.value === null && (p.median ?? null) === null);
   return (
     <ChartSection
@@ -104,7 +104,11 @@ export function ScoreVsMedianChart({ data }: { data: readonly EmployeeTrendPoint
       subtitle="Composite score per dated observation."
     >
       {empty ? (
-        <EmptyState variant="chart">No dated score is available yet this month. Scores appear once every factor has its inputs.</EmptyState>
+        <EmptyState variant="chart">
+          {dailyWithheld
+            ? 'Day-by-day scores compare you with each teammate, so they are shown to managers. Your score for the month is above.'
+            : 'No dated score is available yet this month. Scores appear once every factor has its inputs.'}
+        </EmptyState>
       ) : (
         <>
           <MedianLegend />
