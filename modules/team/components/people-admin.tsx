@@ -94,7 +94,8 @@ export function InvitationList({ invitations }: { invitations: Invitation[] }) {
         <ul className="divide-border divide-y">
           {invitations.map((invite) => (
             <li key={invite.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-              <div className="min-w-0 flex-1">
+              {/* At least 12rem for the name and address; on a phone the badge and button wrap below. */}
+              <div className="min-w-0 flex-[1_1_12rem]">
                 <p className="text-foreground text-sm font-semibold">{invite.fullName}</p>
                 <p className="text-muted-foreground text-xs break-all">
                   {invite.email} · <span className="font-mono">{invite.employeeId}</span> · invited{' '}
@@ -194,7 +195,8 @@ function MemberRow({ member, self, members, placement, departments }: {
     <li className="py-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <InitialsAvatar name={member.fullName} />
-        <div className="min-w-0 flex-1">
+        {/* At least 12rem for the name and details; on a phone the badge and buttons wrap below. */}
+        <div className="min-w-0 flex-[1_1_12rem]">
           <p className="text-foreground text-sm font-semibold">
             {member.fullName}
             {self ? <span className="text-muted-foreground font-normal"> (you)</span> : null}
