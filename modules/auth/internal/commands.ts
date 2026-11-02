@@ -1,5 +1,5 @@
 // PRIVATE. Supabase Auth calls. Each returns an error message or the outcome.
-import { createClient } from '@/shared/supabase/server';
+import { createClient, createDetachedClient } from '@/shared/supabase/server';
 
 import type { LoginInput, SignupInput } from './input';
 import { publicOrigin } from '@/shared/security/origin';
@@ -79,20 +79,39 @@ export async function requestPasswordReset(email: string): Promise<string | null
   return error ? error.message : null;
 }
 
-/** Verifies a recovery `token_hash` (custom email template); true on success. */
-export async function verifyRecoveryToken(tokenHash: string): Promise<boolean> {
-  return verifyEmailToken(tokenHash, 'recovery');
-}
+/** What opening an emailed link did to this browser's session. */
+export type EmailTokenOutcome = 'verified' | 'failed' | 'other_account';
 
 /**
  * Verifies an emailed `token_hash` link (recovery, or sign-up confirmation).
  * Unlike a PKCE `code`, it works in any browser, so a link opened from the
  * phone's mail app still signs the person in.
+ *
+ * A browser that is already signed in keeps its own session unless the link is
+ * for that same person: otherwise anyone could send a colleague their own reset
+ * link and have the colleague's browser quietly continue as them. The token is
+ * checked on a client that stores nothing, and its session is adopted only on a
+ * match; a link for another account is used up and its session ended.
  */
-export async function verifyEmailToken(tokenHash: string, type: 'recovery' | 'email'): Promise<boolean> {
+export async function verifyEmailToken(tokenHash: string, type: 'recovery' | 'email'): Promise<EmailTokenOutcome> {
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-  return !error;
+  const { data: current } = await supabase.auth.getUser();
+  if (!current.user) {
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    return error ? 'failed' : 'verified';
+  }
+  const detached = createDetachedClient();
+  const { data, error } = await detached.auth.verifyOtp({ token_hash: tokenHash, type });
+  if (error || !data.session || !data.user) return 'failed';
+  if (data.user.id !== current.user.id) {
+    await detached.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    return 'other_account';
+  }
+  const { error: adoptError } = await supabase.auth.setSession({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  });
+  return adoptError ? 'failed' : 'verified';
 }
 
 /** Sets the signed-in user's password; returns a user-facing error, or null. */
