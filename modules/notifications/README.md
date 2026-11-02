@@ -63,6 +63,12 @@ Migration 94 fixes the token pattern (PostgreSQL refuses repetition counts
 above 255, so 91's `{20,4096}` failed every registration), makes one token one
 phone with one owner across companies, and disables a member's phones and
 pending pushes when they are deactivated.
+Migration 106 makes that cross-company rule hold: 94's delete could not see
+another company's rows. `taskpulse_private.push_token_owners` (owned here; no
+API grants, no `organization_id`, so every company's commands can read it)
+records each token's current owner, set by `device_register` and cleared by
+`device_unregister`; `push_enqueue` and `push_claim` skip device rows that are
+not the owner.
 
 ## Depends on
 `shared/*` only.

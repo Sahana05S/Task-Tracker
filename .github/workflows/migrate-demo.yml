@@ -16,8 +16,15 @@ name: Apply migrations to the live database
 #    Skipped on a fresh install (an empty database has nothing to keep).
 # 3. apply: creates the ledger if it is missing, then each missing file in
 #    version order with psql. The ledger row is written inside the migration's
-#    own BEGIN ... COMMIT, so a failed migration leaves no row and the run stops
-#    at it (GitHub emails the owner).
+#    own BEGIN ... COMMIT, so a failed migration body leaves no row and the run
+#    stops at it (GitHub emails the owner). Migrations 41-103 call m15_secure()
+#    after that COMMIT, so a failure there is recorded as applied: step 3b
+#    covers it.
+# 3b. secure: after apply (whether it ran, failed or had nothing to do), lists
+#    tables and functions m15_secure() would still change
+#    (supabase/checks/m15_unsecured.sql), runs it only if there are any, and
+#    fails the run if any remain. A re-run therefore repairs a gap left by an
+#    earlier failure even when no migration is pending.
 #
 # 4. functions: deploys the Edge Functions in supabase/functions (send-push
 #    without JWT verification, it checks its own bearer secret; decay-freshness
@@ -162,6 +169,39 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Latest recorded version now: $latest" >> "$GITHUB_STEP_SUMMARY"
 
+  secure:
+    needs: [plan, apply]
+    # Also after a failed or skipped apply: that is when a gap can exist.
+    if: always() && needs.plan.result == 'success' && needs.apply.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every table and function is company-scoped
+        run: |
+          set -euo pipefail
+          check() { psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 -f supabase/checks/m15_unsecured.sql; }
+          gap="$(check)"
+          if [ -z "$gap" ]; then echo "Nothing to secure."; exit 0; fi
+          echo "::warning::Not yet secured by m15_secure():"; echo "$gap"
+          found="$gap"
+          # m15_secure() locks every table in turn; retry if live traffic holds a lock.
+          for attempt in 1 2 3; do
+            if psql "$SUPABASE_DB_URL" -XAtq -v ON_ERROR_STOP=1 -c "SET lock_timeout = '10s'" -c 'SELECT taskpulse_private.m15_secure()'; then break; fi
+            echo "::warning::m15_secure() attempt $attempt failed; retrying"; sleep 20
+          done
+          gap="$(check)"
+          if [ -n "$gap" ]; then echo "::error::Still not secured:"; echo "$gap"; exit 1; fi
+          {
+            echo ""
+            echo "Secured objects that a failed run had left without company scope:"
+            echo '```'; echo "$found"; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Secured."
+
   functions:
     needs: [plan, apply]
     # After the migrations (or when none were missing); never after a failed apply.
@@ -187,10 +227,10 @@ jobs:
           [ "$SUPABASE_PROJECT_REF" = "$LIVE_REF" ] || { echo "::error::SUPABASE_PROJECT_REF is not the live project ${LIVE_REF}; refusing"; exit 1; }
           echo "deploy=true" >> "$GITHUB_OUTPUT"
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3, pinned (CodeQL actions/unpinned-tag)
         if: steps.gate.outputs.deploy == 'true'
         with:
-          version: latest
+          version: 2.122.0 # a fixed CLI, not the newest release at run time
 
       - name: Deploy Edge Functions
         if: steps.gate.outputs.deploy == 'true'
