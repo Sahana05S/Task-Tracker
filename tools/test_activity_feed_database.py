@@ -240,4 +240,25 @@ for db in DBS:
     assert presentation(M4,month_start,after,M4,True)['series']==[] and len(presentation(MD,month_start,after,M4,True)['series'])>0
     print('PASS',db,'104: a member gets no colleague attendance for a one-day window and no per-day series; managers and whole months unchanged')
 
+    # Migration 105: direct writes to users change only a display name, for directors too.
+    for uid,statement in ((MD,f"UPDATE public.users SET email='b4@beta.test' WHERE id='{MD}'"),
+                          (MD,f"UPDATE public.users SET email='squat@example.test' WHERE id='{M4}'"),
+                          (MD,f"UPDATE public.users SET role='managing_director' WHERE id='{M4}'"),
+                          (MD,f"INSERT INTO public.users(id,employee_id,full_name,email,organization_id) SELECT gen_random_uuid(),'X-9','X','squat@example.test',organization_id FROM public.users WHERE id='{MD}'")):
+        expect_code(db,uid,statement,'42501')
+    assert run(db,MD,f"UPDATE public.users SET full_name='Renamed by director' WHERE id='{M4}'").returncode==0
+    assert run(db,M4,f"UPDATE public.users SET full_name='Asha' WHERE id='{M4}'").returncode==0
+    print('PASS',db,'105: no direct email, role or insert on users, even for a director; display names still editable')
+
+    # Migration 106: one push token, one owner, across companies.
+    token='token106AAAAAAAAAAAAAAAAAAAAA'
+    assert run(db,B4,f"SELECT public.device_register('{token}','android')").returncode==0
+    assert run(db,M4,f"SELECT public.device_register('{token}','android')").returncode==0
+    assert value(db,f"right(owner_user::text,12) FROM taskpulse_private.push_token_owners WHERE token='{token}'")==M4[-12:]
+    for who,label in ((B4,'old'),(M4,'new')):
+        sql(db,f"INSERT INTO taskpulse_private.notifications(organization_id,recipient_id,kind,title,dedupe_key) SELECT organization_id,id,'policy','{label} owner probe','p106-{label}' FROM public.users WHERE id='{who}'")
+    queued=value(db,f"coalesce(string_agg(n.title,',' ORDER BY n.title),'') FROM taskpulse_private.push_outbox x JOIN taskpulse_private.notifications n ON n.id=x.notification_id JOIN taskpulse_private.user_devices d ON d.id=x.device_id WHERE d.token='{token}' AND n.dedupe_key LIKE 'p106-%'")
+    assert queued=='new owner probe',queued
+    print('PASS',db,'106: a phone signed in to another company stops receiving the previous company\'s notifications')
+
 print('ALL PASS')
