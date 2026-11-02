@@ -1,0 +1,10 @@
+# gitleaks configuration for .github/workflows/security.yml.
+# Starts from the default rules; the only exceptions are the SHA-256 file
+# digests in the preservation fixtures, which the generic-api-key rule
+# mistakes for keys (each value is a 64-hex hash of a migration file).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Migration file digests in test fixtures"
+paths = ['''__tests__/fixtures/m[0-9]+-(preservation|followup)[a-z-]*\.json''']
