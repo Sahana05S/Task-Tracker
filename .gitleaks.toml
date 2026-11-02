@@ -6,5 +6,5 @@
 useDefault = true
 
 [allowlist]
-description = "Migration file digests in test fixtures"
-paths = ['''__tests__/fixtures/m[0-9]+-(preservation|followup)[a-z-]*\.json''']
+description = "Migration file digests in test fixtures (also at their earlier path, docs/plans/fixtures)"
+paths = ['''(__tests__|docs/plans)/fixtures/m[0-9]+-(preservation|followup)[a-z-]*\.json''']
