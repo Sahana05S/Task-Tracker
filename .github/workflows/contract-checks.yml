@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Pull-request code runs here: the token can only read.
+permissions:
+  contents: read
+
 jobs:
   app:
     runs-on: ubuntu-latest

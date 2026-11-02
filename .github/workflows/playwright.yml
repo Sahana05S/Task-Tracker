@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [main]
 
+# Pull-request code runs here: the token can only read.
+permissions:
+  contents: read
+
 jobs:
   public:
     timeout-minutes: 30
