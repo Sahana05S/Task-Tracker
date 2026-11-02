@@ -37,7 +37,7 @@ jobs:
       PUSH_FUNCTION_SECRET: ${{ secrets.PUSH_FUNCTION_SECRET }}
       LIVE_REF: bdezjektaeqxcntuxqcw
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check the secrets
         run: |
@@ -60,7 +60,7 @@ jobs:
             -c "SELECT to_regprocedure('taskpulse_push.configure(text,text)') IS NOT NULL")"
           [ "$configured" = t ] || { echo "::error::Migration 91 is not applied yet; run 'Apply migrations to the live database' first"; exit 1; }
 
-      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3, pinned (CodeQL actions/unpinned-tag)
+      - uses: supabase/setup-cli@d239d1052f6f024a8d746d7e5aeddead63b9cb53 # v1.7.3, pinned (CodeQL actions/unpinned-tag)
         with:
           version: 2.122.0 # a fixed CLI, not the newest release at run time
 

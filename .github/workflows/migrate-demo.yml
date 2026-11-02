@@ -62,7 +62,7 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       LIVE_REF: bdezjektaeqxcntuxqcw
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check the target is the live project
         run: |
@@ -135,7 +135,7 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       PENDING: ${{ needs.plan.outputs.pending }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Apply
         run: |
@@ -178,7 +178,7 @@ jobs:
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Every table and function is company-scoped
         run: |
@@ -213,7 +213,7 @@ jobs:
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       LIVE_REF: bdezjektaeqxcntuxqcw
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check the deploy secrets
         id: gate
@@ -227,7 +227,7 @@ jobs:
           [ "$SUPABASE_PROJECT_REF" = "$LIVE_REF" ] || { echo "::error::SUPABASE_PROJECT_REF is not the live project ${LIVE_REF}; refusing"; exit 1; }
           echo "deploy=true" >> "$GITHUB_OUTPUT"
 
-      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3, pinned (CodeQL actions/unpinned-tag)
+      - uses: supabase/setup-cli@d239d1052f6f024a8d746d7e5aeddead63b9cb53 # v1.7.3, pinned (CodeQL actions/unpinned-tag)
         if: steps.gate.outputs.deploy == 'true'
         with:
           version: 2.122.0 # a fixed CLI, not the newest release at run time
