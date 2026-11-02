@@ -132,7 +132,7 @@ def source(db,start,end,asof=None,uid='00000000-0000-0000-0000-000000000002',rol
 
 for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);');sql('postgres',f'CREATE DATABASE {db};');sql(db,bootstrap)
-    for migration in sorted((ROOT/'supabase/migrations').glob('*.sql')):
+    for migration in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
         if int(migration.name.split('_')[0])>20:break
         sql(db,migration.read_text(encoding='utf-8'))
     sql(db,seed)

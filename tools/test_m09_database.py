@@ -175,7 +175,7 @@ DRAFT_POLICY={'id':'m09-draft-fixture-only','unevenMaximum':'whole','copies':'re
 for db in DBS:
     assert db in ('taskpulse_m09_fresh_test','taskpulse_m09_upgrade_test')
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);');sql('postgres',f'CREATE DATABASE {db};');sql(db,bootstrap)
-    for migration in sorted((ROOT/'supabase/migrations').glob('*.sql')):
+    for migration in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
         if int(migration.name.split('_')[0])>23:break
         sql(db,migration.read_text(encoding='utf-8'))
     if db==DBS[0]:sql(db,(ROOT/'supabase/migrations/24_task_tools_atomic_previews.sql').read_text())

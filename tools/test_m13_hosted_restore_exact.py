@@ -107,7 +107,7 @@ def main(workdir, recovery, bin_dir):
 
     psql("postgres", f"CREATE DATABASE {CLONE} WITH ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0", session=False)
     psql(CLONE, BOOTSTRAP)
-    migrations = sorted((ROOT / "supabase" / "migrations").glob("*.sql"))
+    migrations = sorted((ROOT / "supabase" / "migrations").glob("*.sql"), key=lambda p: int(p.name.split("_")[0]))
     if len(migrations) != 29:
         raise RuntimeError("Expected local migrations 01–29 only")
     for path in migrations:
