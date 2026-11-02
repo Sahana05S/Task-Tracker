@@ -20,8 +20,12 @@ Reports > Data checks (up to 8 tries, spaced out).
 Folders: `Personal documents/<Employee ID> - <Name>/<Kind> - <file name>`
 (bucket `personal-documents`, personnel module) and
 `Proofs/<YYYY-MM>/<Task tag> - <Title>/<file name>` (bucket `mission-proofs`,
-tasks module, migration 101; the month the mission is assigned in). Sales
-proofs follow.
+tasks module, migration 101; the month the mission is assigned in) and
+`Proofs/<YYYY-MM>/Sales/<date> - <client> - <salesperson>/<file name>` (bucket
+`sales-proofs`, support module, migration 102). `components/proof-files.tsx`
+(`ProofFiles`) is the shared add/open/remove list; `client.ts` has the shared
+proof file rules (`proofFileProblem`, `proofMimeType`, `PROOF_ACCEPT`, 25 MB)
+and `uploadToSignedLink`.
 
 ## Public API (the only files other code may import)
 | File | What it offers |

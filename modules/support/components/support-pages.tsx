@@ -1,5 +1,7 @@
 import type { ContributionInputContext } from '../internal/input-context';
 import { DatedRecordModule, type TaskChoice } from './dated-record-module';
+import { SaleProofs } from './sale-proofs';
+import type { SaleProofState } from '../internal/sales-proofs';
 import { DeleteReportButton, ReportForm } from './report-forms';
 import Link from 'next/link';
 import type { SupportKnowledgeModule } from '../internal/permissions';
@@ -31,8 +33,9 @@ export function KnowledgeModule({config,entries,members,currentUser,tasks=[],inp
  return <DatedRecordModule kind={kind} members={members} user={currentUser} tasks={tasks} inputContext={inputContext} entries={entries.map(e=>({...e,businessDate:entryDate(e),authorId:e.postedBy,content:entryBody(e),assetUrl:e.folderUrl}))}/>;
 }
 
-export function SalesLogModule({salesLogs,members,currentUser,tasks=[],inputContext}:{salesLogs:readonly SalesLog[];members:readonly User[];currentUser:User;canManage:boolean;tasks?:readonly TaskChoice[];inputContext?:ContributionInputContext}) {
- return <DatedRecordModule kind="sale" members={members} user={currentUser} tasks={tasks} inputContext={inputContext} entries={salesLogs.map(e=>({...e,businessDate:e.saleDate,authorId:e.salesBy,content:e.notes,assetUrl:e.projectFolderUrl,extras:{project_built_up_area:e.projectBuiltUpArea,project_location:e.projectLocation,client_name:e.clientName,is_new_project:e.isNewProject,basement_payment_received:e.basementPaymentReceived}}))}/>;
+export function SalesLogModule({salesLogs,members,currentUser,tasks=[],inputContext,proofs={}}:{salesLogs:readonly SalesLog[];members:readonly User[];currentUser:User;canManage:boolean;tasks?:readonly TaskChoice[];inputContext?:ContributionInputContext;proofs?:Readonly<Record<string,SaleProofState>>}) {
+ const extras=Object.fromEntries(Object.entries(proofs).map(([id,state])=>[id,<SaleProofs key={id} saleId={id} canAdd={state.canAdd} proofs={state.proofs}/>]));
+ return <DatedRecordModule kind="sale" extras={extras} members={members} user={currentUser} tasks={tasks} inputContext={inputContext} entries={salesLogs.map(e=>({...e,businessDate:e.saleDate,authorId:e.salesBy,content:e.notes,assetUrl:e.projectFolderUrl,extras:{project_built_up_area:e.projectBuiltUpArea,project_location:e.projectLocation,client_name:e.clientName,is_new_project:e.isNewProject,basement_payment_received:e.basementPaymentReceived}}))}/>;
 }
 
 export function ReportsModule({

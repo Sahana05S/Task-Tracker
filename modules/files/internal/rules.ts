@@ -4,7 +4,7 @@
  */
 
 /** Supabase storage buckets whose files move into the Shared Drive. */
-export const FILE_BUCKETS = ['personal-documents', 'mission-proofs'] as const;
+export const FILE_BUCKETS = ['personal-documents', 'mission-proofs', 'sales-proofs'] as const;
 export type FileBucket = (typeof FILE_BUCKETS)[number];
 
 export function isFileBucket(value: string): value is FileBucket {

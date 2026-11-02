@@ -19,4 +19,5 @@ export {
   getRecentValidatedContributions,
   type RecentValidatedContribution,
 } from './internal/today-queries';
+export { readSaleProofs as getSaleProofs, type SaleProofState } from './internal/sales-proofs';
 export * from './client';

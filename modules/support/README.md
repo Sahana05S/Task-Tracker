@@ -8,10 +8,11 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `getSupportModuleData()`, `getMeetingPointsData()`, `summarizeSupport()`, `summarizeEmployeeSupport()`, `loadContributionContext()`, `loadAttendanceContext()`, `parseInputContext()`, the Today reads `getMemberContributionStates()` and `getRecentValidatedContributions()`, summary types, and everything in `client.ts` |
+| `index.ts` | `getSupportModuleData()`, `getMeetingPointsData()`, `summarizeSupport()`, `summarizeEmployeeSupport()`, `loadContributionContext()`, `loadAttendanceContext()`, `parseInputContext()`, the Today reads `getMemberContributionStates()` and `getRecentValidatedContributions()`, summary types, and everything in `client.ts`; `getSaleProofs(saleIds)` (sales proofs of the entries the caller may see them on, migration 102) |
 | `actions.ts` | `'use server'` `loadPostChoices` (members and open missions for the quick Post drawer) and the commands `saveReportSnapshotAction`, `deleteReportSnapshotAction`, and the knowledge/sales wrappers (`saveKnowledgeEntryAction`, `deleteKnowledgeEntryAction`, `toggleKnowledgeValidationAction`, `saveSalesLogAction`, `deleteSalesLogAction`) that forward to `writeDatedRecord` |
+| `sales-proof-actions.ts` | `'use server'` sales proofs (migration 102): `startSaleProofUpload`, `saveSaleProof`, `removeSaleProof` |
 | `client.ts` | Contribution contract (`rawContribution`, `contributionFromStates`, sales `rawSales`/`salesFromStates`/`SALES_COEFFICIENTS`, coefficients, `RecordKind`, `ValidationState`, `DatedRecordMetadata`), input-context types, permission helpers, `DatedEntry`/`TaskChoice` |
-| `components/` | `support-pages.tsx` (`KnowledgeModule`, `SalesLogModule`, `ReportsModule`), `dated-record-module.tsx` (`DatedRecordModule`, `DatedRecordEditor`), `quick-post-drawer.tsx` (`QuickPostDrawer`: one drawer for all five kinds, last-used kind per device, `presetKind`/`presetTaskId`) and `quick-post-trigger.tsx` (`QuickPostTrigger`, the "Post" pill in the top bar and on mission pages; the phone "New" menu opens the drawer directly) |
+| `components/` | `support-pages.tsx` (`KnowledgeModule`, `SalesLogModule` with each entry's proofs block, `ReportsModule`), `sale-proofs.tsx` (`SaleProofs`), `dated-record-module.tsx` (`DatedRecordModule`, `DatedRecordEditor`), `quick-post-drawer.tsx` (`QuickPostDrawer`: one drawer for all five kinds, last-used kind per device, `presetKind`/`presetTaskId`) and `quick-post-trigger.tsx` (`QuickPostTrigger`, the "Post" pill in the top bar and on mission pages; the phone "New" menu opens the drawer directly) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -28,6 +29,7 @@ source inputs that scoring reads. See `docs/ARCHITECTURE.md` for the rules.
 | `contract.ts` | Raw contribution coefficients and arithmetic (business rule; unchanged) |
 | `mappers.ts` | Database row -> domain model, column lists |
 | `cache.ts` | Revalidates the support pages after a write |
+| `sales-proofs.ts` | Sales proofs read, signed upload links and `sale_proof_command` (migration 102); hands moves and releases to the files module |
 
 ## Database it owns
 | Object | Kind | Defined in |
@@ -41,6 +43,9 @@ editor and command as the Records tabs, so they stay pending and are validated
 there. Record writes for facts, ideas,
 suggestions, sales and meetings go through `dated_record_command` (migration
 19/20), through the `records` module (`writeDatedRecord`).
+
+
+Migration 102 (`102_sales_proofs.sql`): `taskpulse_private.sale_proofs`, bucket `sales-proofs` (private, 25 MB, PDF/images/Office) and its policies, `sale_proofs(sales[])`, `sale_proof_command(...)`, `sale_proof_folder_allowed`, `sale_proof_in_use`. The entry's salesperson, the managing director and project engineers see and add proofs; the uploader or one of those managers removes one. Files move to `Proofs/<YYYY-MM>/Sales/<date> - <client> - <salesperson>/` in the Shared Drive.
 
 ## Depends on
 `shared/*` (Kolkata dates, calendar periods, the observation clock, the shared
