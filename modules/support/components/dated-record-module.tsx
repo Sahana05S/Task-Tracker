@@ -54,7 +54,8 @@ export function DatedRecordEditor({kind,entry,members,user,tasks=[],presetTaskId
 
 const ADD_LABEL: Record<RecordKind, string> = { fact: 'a fact', idea: 'an idea', suggestion: 'a suggestion', sale: 'a sale', meeting: 'a meeting point' };
 
-export function DatedRecordModule({kind,entries,members,user,tasks=[],inputContext}:{kind:RecordKind;entries:readonly DatedEntry[];members:readonly User[];user:User;tasks?:readonly TaskChoice[];inputContext?:ContributionInputContext}) {
+/** `extras`: per-entry blocks shown at the end of an entry (sales proofs, migration 102). */
+export function DatedRecordModule({kind,entries,members,user,tasks=[],inputContext,extras}:{kind:RecordKind;entries:readonly DatedEntry[];members:readonly User[];user:User;tasks?:readonly TaskChoice[];inputContext?:ContributionInputContext;extras?:Readonly<Record<string,React.ReactNode>>}) {
   const admin=canManageSupportRecords(user.role),names=new Map(members.map(m=>[m.id,m.fullName]));
   return <div className="grid gap-5 lg:gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]"><aside className="grid h-fit content-start gap-5"><MissionPanel icon={PlusIcon} title={`Add ${ADD_LABEL[kind]}`}><DatedRecordEditor kind={kind} members={members} user={user} tasks={tasks}/></MissionPanel></aside><section aria-label="Records" className="grid min-w-0 content-start gap-4">
     <MissionNotice icon={InfoIcon}>{kind==='meeting'?'Meeting points keep the team’s decisions and owners; they are not part of the score.':<>{kind==='sale'?'Each sale counts, with extra for new projects and basement payments; rejected and withdrawn entries do not.':'Entries count once saved and count more once someone else validates them; rejected and withdrawn entries do not.'} <HelpTip tip="pending"/></>}</MissionNotice>
@@ -69,6 +70,7 @@ export function DatedRecordModule({kind,entries,members,user,tasks=[],inputConte
       {(admin||e.authorId===user.id&&e.validationState==='pending')&&e.validationState!=='withdrawn'?<ExecutionForm action={writeDatedRecord} scope={`withdraw:${kind}:${e.id}`}><div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><input type="hidden" name="kind" value={kind}/><input type="hidden" name="command" value="withdraw"/><input type="hidden" name="recordId" value={e.id}/><input type="hidden" name="expectedVersion" value={e.recordVersion??0}/><input name="reason" required placeholder="Why withdraw it? (kept with the history)" aria-label="Why withdraw it? (kept with the history)" className="field"/><Button type="submit" size="sm" variant="destructive">Withdraw record</Button></div></ExecutionForm>:null}
       {admin&&['validated','rejected'].includes(e.validationState??'')?<p className="text-muted-foreground text-xs">Saving a correction resets this reviewed entry to Pending. Its earlier content and review remain in history.</p>:null}
       {e.authorId===user.id||admin?<Link href={`/records/${kind}/${e.id}/history`} className="link justify-self-start text-sm">View history</Link>:null}
+      {extras?.[e.id]??null}
     </article>)}
   </section></div>;
 }
