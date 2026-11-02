@@ -40,8 +40,8 @@ Drive id is recorded; every view goes through `/api/files` and `file_access`.
 Nothing in the drive is shared with staff. Proof decisions (user, 2 November
 2026): mission proofs visible to the mission's assignees and reviewers plus the
 managing director and project engineers (built: migration 101, Proofs panel on
-the mission's Work tab); sales proofs to the entry's owner plus those managers
-(not built yet); PDF, images and Word/Excel/PowerPoint up to 25 MB each.
+the mission's Work tab); sales proofs to the entry's salesperson plus those managers
+(built: migration 102, a Proofs block on each Sales log entry); PDF, images and Word/Excel/PowerPoint up to 25 MB each.
 
 ## Full audit and fixes - 31 October 2026
 
