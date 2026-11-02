@@ -14,7 +14,7 @@ import { Button } from '@/shared/ui/button';
 import { StellarMark } from '@/shared/ui/stellar-mark';
 import { cn } from '@/shared/utils';
 
-import { asOfLabel, childRows, dayLabel, OFFLINE_SECTIONS, type OfflineMission, type OfflineRow, type OfflineSection, type StoredSnapshot } from '@/modules/offline/internal/rules';
+import { asOfLabel, childRows, dayLabel, OFFLINE_SECTIONS, sessionUserIdFromCookies, type OfflineMission, type OfflineRow, type OfflineSection, type StoredSnapshot } from '@/modules/offline/internal/rules';
 import { readSnapshot } from '@/modules/offline/internal/store';
 
 const SECTION_LABEL: Record<OfflineSection, string> = { setup: 'Setup', activity: 'Activity', closure: 'Closure' };
@@ -122,7 +122,10 @@ export function OfflineApp() {
   }, []);
 
   useEffect(() => {
-    void readSnapshot().then(setSnapshot);
+    // Only the copy of the member still signed in on this phone (never a previous member's).
+    const owner = sessionUserIdFromCookies(document.cookie);
+    if (owner === null) setSnapshot(null);
+    else void readSnapshot(owner).then(setSnapshot);
     const onOnline = () => void tryAgain();
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);

@@ -222,4 +222,22 @@ for db in DBS:
     assert len(feed(db,MD,'2026-10-20','2026-10-21',limit=1000))==200 and len(feed(db,MD,'2026-10-20','2026-10-21',limit=0))==1
     print('PASS',db,f'keyset pages of 7 return all {len(everything)} rows once, in order, across 205 tied timestamps; limit is clamped to 1..200')
 
+    # Migration 104: a team member reads team attendance at month level only (security audit, 2 November 2026).
+    def presentation(uid,start,end,employee=None,series=False):
+        r=run(db,uid,f"SELECT public.live_presentation_context('{start}','{end}',clock_timestamp(),{literal(employee)+'::uuid' if employee else 'NULL'},{str(series).lower()})")
+        assert r.returncode==0,r.stderr[:300]
+        return json.loads(next(x for x in r.stdout.splitlines() if x.startswith('{')))
+    day=value(db,"((clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date-10)"); after=value(db,f"'{day}'::date+1")
+    record(db,'attendance',{'business_date':day,'author_id':M5,'attendance_status':'Present','attendance_hours':'7.5','off_hours':'0',
+        'check_in_at':day+'T09:00:00+05:30','check_out_at':day+'T16:30:00+05:30','reason':'Month-level fixture for a past day'},uid='1')
+    colleague=lambda uid:next((a['hours'],a['reasons']) for a in presentation(uid,day,after)['sources']['attendance'] if a['userId']==M5)
+    assert colleague(MD)==('7.5',[]),colleague(MD)
+    assert colleague(M4)==(None,['team_month_level_only']),colleague(M4)
+    month_start=value(db,f"date_trunc('month','{day}'::date)::date"); month_end=value(db,f"('{month_start}'::date+interval '1 month')::date")
+    if month_end<=value(db,"(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date"):  # a whole ended month stays readable to members
+        whole=presentation(M4,month_start,month_end)['sources']['attendance']
+        assert 'team_month_level_only' not in next(a for a in whole if a['userId']==M5)['reasons']
+    assert presentation(M4,month_start,after,M4,True)['series']==[] and len(presentation(MD,month_start,after,M4,True)['series'])>0
+    print('PASS',db,'104: a member gets no colleague attendance for a one-day window and no per-day series; managers and whole months unchanged')
+
 print('ALL PASS')

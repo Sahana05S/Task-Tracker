@@ -25,18 +25,21 @@ export async function handleAuthCallback(request: Request): Promise<NextResponse
   const next = safeRedirectPath(searchParams.get('next') ?? DEFAULT_REDIRECT);
 
   const type = searchParams.get('type');
-  const verified = code
-    ? await exchangeCodeForSession(code)
-    : tokenHash === null
-      ? false
-      : type === 'recovery'
-        ? await verifyEmailToken(tokenHash, 'recovery')
-        : type === 'signup' || type === 'email'
-          ? await verifyEmailToken(tokenHash, 'email')
-          : false;
+  const tokenType = type === 'recovery' ? 'recovery' : type === 'signup' || type === 'email' ? 'email' : null;
+  const outcome = code
+    ? ((await exchangeCodeForSession(code)) ? 'verified' : 'failed')
+    : tokenHash === null || tokenType === null
+      ? 'failed'
+      : await verifyEmailToken(tokenHash, tokenType);
 
-  if (verified) {
+  if (outcome === 'verified') {
     return NextResponse.redirect(`${callbackOrigin(request, origin)}${next}`);
+  }
+
+  // A link for another account, opened in a signed-in browser: that browser
+  // stays signed in as itself and goes to its usual start page.
+  if (outcome === 'other_account') {
+    return NextResponse.redirect(`${callbackOrigin(request, origin)}${DEFAULT_REDIRECT}`);
   }
 
   // A dead recovery link goes back to the reset page, which offers a new one.

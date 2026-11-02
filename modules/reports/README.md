@@ -36,7 +36,7 @@ analytics read, and plain-language data-gap wording.
 |---|---|
 | `report_snapshots` | `07_tracker_replacement_foundation.sql` |
 | `monthly_performance_snapshots` | `01_init_schema.sql` (read-only history) |
-| `live_presentation_context` | `28_live_presentation_and_report_context.sql`, `82_presentation_series_on_demand.sql` (`p_series`), `87_live_presentation_read_once.sql` (history read by keys, mission ids collected once; same result) |
+| `live_presentation_context` | `28_live_presentation_and_report_context.sql`, `82_presentation_series_on_demand.sql` (`p_series`), `87_live_presentation_read_once.sql` (history read by keys, mission ids collected once; same result), `104_member_presentation_month_level.sql` (team members get colleagues' attendance and other missions' hours only for month-level windows; the per-day `series` is for managers) |
 | `month_archive_command`, `month_archive_history`, `month_archive_read` | `29_month_archive_and_revisions.sql` |
 
 All objects are company-scoped by migrations 39-40 (M15).

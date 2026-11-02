@@ -112,7 +112,7 @@ function Overview({ data, waypoints }: { data: EmployeeProfileData; waypoints: W
         </section>
         <StarCalendar days={data.charts.starDays} />
       </div>
-      <ScoreVsMedianChart data={data.charts.performanceScoreTrend} />
+      <ScoreVsMedianChart data={data.charts.performanceScoreTrend} dailyWithheld={data.dailyScoresWithheld} />
       
       {data.performance?.calculation ? <PerformanceBreakdown result={data.performance.calculation} context={data.performance.calculationContext} /> : null}
     </>

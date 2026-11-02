@@ -6,7 +6,7 @@ import { isNativeApp } from '@/modules/mobile/client';
 
 import { offlineSnapshotAction } from '@/modules/offline/actions';
 import { OFFLINE_MODE_EVENT, snapshotIsDue, storeSnapshot } from '@/modules/offline/internal/rules';
-import { readOfflineMode, readSnapshot, requestPersistentStorage, saveSnapshot } from '@/modules/offline/internal/store';
+import { clearOfflineData, readOfflineMode, readSnapshot, requestPersistentStorage, saveSnapshot } from '@/modules/offline/internal/store';
 import { registerOfflineWorker, unregisterOfflineWorker } from '@/modules/offline/internal/worker-client';
 
 /**
@@ -41,8 +41,10 @@ export function OfflineSync({ userId }: { readonly userId: string }) {
       if (busy || document.visibilityState !== 'visible') return;
       busy = true;
       try {
-        // Another member's copy, or none, counts as due: it is replaced, never shown.
-        if (!snapshotIsDue(await readSnapshot(userId), Date.now())) return;
+        // Another member's copy is removed at once, even if the refresh below fails.
+        const own = await readSnapshot(userId);
+        if (own === null) await clearOfflineData();
+        if (!snapshotIsDue(own, Date.now())) return;
         const result = await offlineSnapshotAction();
         if (result.success && result.data) await saveSnapshot(storeSnapshot(result.data, Date.now()));
         else console.warn('Offline copy not refreshed', result.error);

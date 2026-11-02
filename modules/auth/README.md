@@ -62,6 +62,12 @@ Supabase Auth settings this module relies on (dashboard, not code):
   `{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery` for
   "Reset password" (the confirmation template likewise with `type=signup` to
   `/auth/callback`).
+  Because a `token_hash` link works in any browser, the callback binds it to
+  the browser's current session (`verifyEmailToken`): a signed-out browser is
+  signed in as before, but a signed-in browser adopts the link's session only
+  when it is the same person. A link for another account is used up and that
+  browser stays signed in as itself, so nobody can move a colleague's browser
+  onto their own account by sending them their reset link.
 - **Site URL** is the live site, and `NEXT_PUBLIC_SITE_URL` (Vercel) matches it:
   emailed links are built from it, never from request headers.
 

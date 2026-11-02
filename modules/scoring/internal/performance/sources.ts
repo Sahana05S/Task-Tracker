@@ -9,7 +9,7 @@ export interface SourceMember {id:string;fullName:string;employeeId:string;role:
 export interface SourceTask {
   id:string;tag:string;category:Task['category'];priority:Task['priority'];status:Task['status'];assignedDate:string;dueDate:string|null;completedDate:string|null;
   progress:string|null;scale:string|null;scaleVersion:string;shareVersion:string;creditMode:string;primaryAssignee:string;participants:string[];
-  shares:Record<string,number|null>|null;credits:Record<string,string>;taskHours:string;unknownEffect:boolean;revision:string;
+  shares:Record<string,number|null>|null;credits:Record<string,string>;taskHours:string|null;unknownEffect:boolean;revision:string;
   archivedEffectiveDate?:string|null;handoffSuccessorId?:string|null;
   periodCredits?:Record<string,string>;periodCreditUnknown?:boolean;completionShares?:Record<string,number>|null;completionPrimary?:string|null;
 }

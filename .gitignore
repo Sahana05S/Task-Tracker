@@ -35,6 +35,8 @@ __pycache__/
 
 # local tooling (Claude sessions, worktrees, launch config) and editor workspaces
 /.claude/
+/.agents/
+/skills-lock.json
 *.code-workspace
 
 # reference material and planning docs: kept locally, not in the repository
