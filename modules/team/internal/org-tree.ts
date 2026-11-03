@@ -108,6 +108,33 @@ export function buildOrgTree(people: readonly OrgPerson[]): OrgNode[] {
   return roots;
 }
 
+/** The chart's two tiers when a company has more than one top-level managing director. */
+export interface OrgTiers {
+  /** Top-level managing directors, shown side by side as one row; empty when there is only one. */
+  leaders: OrgNode[];
+  /** Everyone under that row: the leaders' reports and any other top-level person, or the roots unchanged. */
+  below: OrgNode[];
+  /** Who each person directly under the leadership row reports to (id -> manager's name). */
+  managerOf: Map<string, string>;
+}
+
+/**
+ * Two or more managing directors without a manager would otherwise be drawn
+ * as separate trees side by side, unconnected (user report, 3 November 2026).
+ * They become one leadership row, and their reports plus any other top-level
+ * person become one level under it, each still naming their own manager. With
+ * a single director the roots are returned unchanged.
+ */
+export function orgTiers(roots: readonly OrgNode[]): OrgTiers {
+  const leaders = roots.filter(node => node.person.role === 'managing_director');
+  if (leaders.length < 2) return { leaders: [], below: [...roots], managerOf: new Map() };
+  const managerOf = new Map<string, string>();
+  for (const leader of leaders) for (const report of leader.reports) managerOf.set(report.person.id, leader.person.fullName);
+  const others = roots.filter(node => node.person.role !== 'managing_director');
+  const below = [...leaders.flatMap(leader => leader.reports), ...others].sort(byRoleThenName);
+  return { leaders: [...leaders].sort(byRoleThenName), below, managerOf };
+}
+
 /** How many people are in a subtree, the person included. */
 export function teamSize(node: OrgNode): number {
   return 1 + node.reports.reduce((sum, child) => sum + teamSize(child), 0);

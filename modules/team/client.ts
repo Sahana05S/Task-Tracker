@@ -14,11 +14,13 @@ export { optionalEmployeePerformance } from '@/modules/team/internal/performance
 export type { Invitation, PeopleAdminData, Placement } from '@/modules/team/internal/people';
 export {
   buildOrgTree,
+  orgTiers,
   parseOrgChart,
   teamSize,
   TODAY_STATUSES,
   type OrgChart,
   type OrgNode,
   type OrgPerson,
+  type OrgTiers,
   type TodayStatus,
 } from '@/modules/team/internal/org-tree';
