@@ -953,6 +953,9 @@ export interface Database {
       /** Migration 101: mission proofs (tasks module). */
       task_proofs: { Args: { p_task: string }; Returns: Json };
       task_proof_command: { Args: { p_op: 'add' | 'withdraw'; p_task: string; p_path: string | null; p_file_name: string | null; p_mime_type: string | null; p_size_bytes: number | null; p_proof: string | null; p_operation: string }; Returns: Json };
+      /** Migration 111: Mistakes and learning on the mission page (learning module). */
+      mission_learnings: { Args: { p_task: string }; Returns: Json };
+      mission_learning_command: { Args: { p_op: 'add' | 'edit' | 'withdraw'; p_task: string; p_learning: string | null; p_kind: 'mistake' | 'learning' | null; p_body: string | null; p_operation: string }; Returns: Json };
       /** Migration 100: company files in the Google Shared Drive (files module). */
       file_storage_configure: { Args: { p_shared_drive_id: string }; Returns: Json };
       file_storage_status: { Args: Record<never, never>; Returns: Json };
