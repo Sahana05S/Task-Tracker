@@ -862,6 +862,8 @@ export interface Database {
       checklist_branch: {Args:{p_task:string;p_checklist:string|null;p_parent:string|null;p_section:string;p_offset:number;p_limit:number};Returns:Json};
       checklist_rollups: {Args:{p_task_ids:string[]};Returns:Json};
       task_details_command: {Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
+      /** Migration 108: add/remove collaborator or observer, transfer owner. MD, PE or the mission's Owner. */
+      task_people_command: { Args: { p_task: string; p_command: string; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };
       publish_task_detail_template: {Args:{p_template:string|null;p_name:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
       team_task_effort_totals: { Args: Record<string, never>; Returns: {task_id: string; hours_logged: number; log_count: number}[] };
       task_credit_summary: { Args: Record<string, never>; Returns: Json };
@@ -975,6 +977,8 @@ export interface Database {
       activity_feed: { Args: { p_from: string; p_to: string; p_kind?: string | null; p_member?: string | null; p_before?: Json | null; p_limit?: number | null }; Returns: { id: string; occurred_at: string; kind: string; action: string; actor_id: string | null; subject_user_id: string | null; task_id: string | null; task_tag: string | null; record_kind: string | null; record_id: string | null; fields: string[] | null; reason: string | null; period: string | null }[] };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
+      /** Migration 108: an assignee with shares (or the legacy assignee); collaborators are not workers. */
+      is_task_worker: { Args: { p_task_id: string }; Returns: boolean };
       can_read_employee_details: { Args: { p_user_id: string | null }; Returns: boolean };
       get_user_role: {
         Args: Record<never, never>;

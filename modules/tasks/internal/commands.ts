@@ -97,6 +97,25 @@ export async function createTaskWithScale(
   return { ok: true, value: data };
 }
 
+/** Adds or removes a collaborator or observer, or transfers ownership (migration 108). */
+export async function runTaskPeopleCommand(
+  taskId: string,
+  command: string,
+  userId: string,
+  version: number,
+  operationId: string,
+): Promise<ActionResponse<never> | null> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('task_people_command', {
+    p_task: taskId,
+    p_command: command,
+    p_payload: { user_id: userId },
+    p_expected_version: version,
+    p_operation: operationId,
+  });
+  return error ? { ...executionError(error), data: undefined } : null;
+}
+
 /** Runs a lifecycle command (transition, progress, scale, review) through its RPC. */
 export async function runLifecycleCommand(
   taskId: string,

@@ -14,6 +14,7 @@ import {
   findTaskIdByTag,
   readTaskLifecycle,
   runLifecycleCommand,
+  runTaskPeopleCommand,
   saveTaskWithParticipants,
 } from '@/modules/tasks/internal/commands';
 import {
@@ -27,9 +28,9 @@ import {
 import { getMissionActionContext, type MissionActionContext } from '@/modules/tasks/internal/action-context';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
 import { commandIdentity } from '@/shared/commands/result';
-import { readString } from '@/shared/forms/form-data';
+import { readString, UUID_PATTERN } from '@/shared/forms/form-data';
 import { resolveActor } from '@/shared/session/actor';
-import { isTaskStatus } from '@/shared/tracker/enums';
+import { isTaskStatus, TASK_PEOPLE_COMMANDS, type TaskPeopleCommand } from '@/shared/tracker/enums';
 import type { Json } from '@/types/database';
 import type { ActionResponse, TaskStatus } from '@/types/tracker';
 
@@ -305,6 +306,33 @@ export async function recordTaskReview(previous: TaskActionState | null, formDat
   formData.set('command', 'review');
   if (!['true', 'false'].includes(readString(formData, 'approved'))) return failure('Choose a review decision.');
   return changeTaskLifecycle(previous, formData);
+}
+
+/* People: collaborators, observers, ownership (migration 108) --------------- */
+
+/**
+ * One people command. The managing director, project engineers and the
+ * mission's Owner may run it; `task_people_command` enforces that.
+ */
+export async function changeTaskPeople(_previous: TaskActionState | null, formData: FormData): Promise<TaskActionState> {
+  const actor = await resolveActor();
+  if (!actor.ok) return failure(actor.error);
+  const identity = commandIdentity(formData);
+  const taskId = readString(formData, 'taskId');
+  const command = readString(formData, 'command');
+  const userId = readString(formData, 'userId');
+  if (!identity.operationId || identity.version === null || !UUID_PATTERN.test(taskId)) {
+    return failure('Reload the mission before changing its people.');
+  }
+  if (!(TASK_PEOPLE_COMMANDS as readonly string[]).includes(command)) return failure('Unrecognised people change.');
+  if (!UUID_PATTERN.test(userId)) return failure('Choose a member.');
+
+  const refused = await runTaskPeopleCommand(taskId, command as TaskPeopleCommand, userId, identity.version, identity.operationId);
+  if (refused) return refused;
+
+  revalidateAfterLifecycle();
+  revalidateAfterDetails();
+  return { success: true, data: { taskId } };
 }
 
 /* Delete ------------------------------------------------------------------ */

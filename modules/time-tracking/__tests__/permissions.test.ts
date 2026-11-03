@@ -24,6 +24,13 @@ describe('timer permissions', () => {
     ).toBe(true);
   });
 
+  it('keeps collaborators off the timer (D-A3, migration 108)', () => {
+    const shared = { ...task, assigneeIds: [...task.assigneeIds, 'helper'], collaboratorIds: ['helper'] };
+    expect(canStartTimerForTask({ id: 'helper', role: 'team_member', isActive: true }, shared)).toBe(false);
+    expect(canStartTimerForTask({ id: 'support-user', role: 'team_member', isActive: true }, shared)).toBe(true);
+    expect(canStartTimerForTask({ id: 'helper', role: 'managing_director', isActive: true }, shared)).toBe(true);
+  });
+
   it('blocks unrelated users and terminal tasks', () => {
     expect(
       canStartTimerForTask({ id: 'other-user', role: 'team_member', isActive: true }, task),

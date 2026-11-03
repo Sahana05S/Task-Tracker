@@ -4,9 +4,9 @@ import type { TaskEffort } from '@/modules/tasks/internal/effort';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
 import { createClient } from '@/shared/supabase/server';
 import {
+  attachTaskParticipants,
   mapTask,
   TASK_COLUMNS,
-  withTaskParticipants,
 } from '@/modules/tasks/internal/mappers';
 import type {
   ChecklistNodeRow,
@@ -89,15 +89,17 @@ export async function getTaskForChecklist(rawTaskTag: string): Promise<Task | nu
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('tasks')
-    .select(`${TASK_COLUMNS}, task_assignees(user_id, is_primary)`)
+    .select(`${TASK_COLUMNS}, task_assignees(user_id, is_primary, share_units)`)
     .eq('task_tag', taskTag)
     .maybeSingle();
   if (error) throw new Error(`Failed to load task: ${error.message}`);
   if (!data) return null;
   const { task_assignees: assignees, ...row } = data as unknown as TaskRow & {
-    task_assignees: { user_id: string; is_primary: boolean }[] | null;
+    task_assignees: { user_id: string; is_primary: boolean; share_units: number | null }[] | null;
   };
-  return withTaskParticipants(mapTask(row), { assigneeIds: uniquePrimaryFirst(assignees ?? []) });
+  const [task] = attachTaskParticipants([mapTask(row)], (assignees ?? []).map((a) => ({ ...a, task_id: row.id })), []);
+  // No reviewer rows were read here: keep the legacy primary reviewer projection only.
+  return task;
 }
 
 export async function getTaskDetailData(
@@ -132,8 +134,8 @@ export async function getTaskDetailData(
     rollups,
   ] = await Promise.all([
     supabase.from('users').select(USER_COLUMNS).order('full_name'),
-    selectOrEmpty(supabase.from('task_assignees').select('task_id, user_id, is_primary').eq('task_id', task.id)),
-    selectOrEmpty(supabase.from('task_reviewers').select('task_id, user_id, is_primary').eq('task_id', task.id)),
+    selectOrEmpty(supabase.from('task_assignees').select('task_id, user_id, is_primary, share_units').eq('task_id', task.id)),
+    selectOrEmpty(supabase.from('task_reviewers').select('task_id, user_id, is_primary, reviewer_role').eq('task_id', task.id)),
     selectOrEmpty(supabase.from('task_detail_sections').select('*').eq('task_id', task.id).order('key_name')),
     selectOrEmpty(supabase.from('task_links').select('*').eq('task_id', task.id).order('link_type').order('label')),
     selectOrEmpty(
@@ -155,13 +157,8 @@ export async function getTaskDetailData(
     throw new Error(`Failed to load members: ${memberResult.error.message}`);
   }
 
-  const assigneeIds = uniquePrimaryFirst(assigneeRows);
-  const reviewerIds = uniquePrimaryFirst(reviewerRows);
-
-  task = withTaskParticipants(task, {
-    assigneeIds,
-    reviewerIds,
-  });
+  // Collaborators (zero share) and observers are told apart here (migration 108).
+  [task] = attachTaskParticipants([task], assigneeRows, reviewerRows);
 
   const checklist = checklistRow ? mapTaskChecklist(checklistRow) : null;
   const checklistNodeRows = checklist
@@ -268,17 +265,6 @@ async function selectOneOrNull<T>(
     throw new Error(error.message);
   }
   return data;
-}
-
-function uniquePrimaryFirst(
-  rows: readonly { readonly user_id: string; readonly is_primary: boolean }[],
-): string[] {
-  const sortedRows = [...rows].sort((a, b) => {
-    if (a.is_primary === b.is_primary) return 0;
-    return a.is_primary ? -1 : 1;
-  });
-
-  return [...new Set(sortedRows.map((row) => row.user_id))];
 }
 
 function mapTaskDetailSection(row: TaskDetailSectionRow): TaskDetailSection {

@@ -22,7 +22,7 @@ export {
   type NativeTemplate,
   type TemplateNode,
 } from '@/modules/tasks/internal/details-contract';
-export { canManageTasks, canUpdateTaskOwnFields, isAssignedToTask } from '@/modules/tasks/internal/permissions';
+export { canEditTaskDetails, canManageTaskPeople, canManageTasks, canUpdateTaskOwnFields, isAssignedToTask, isTaskWorker, missionRelationship } from '@/modules/tasks/internal/permissions';
 export { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
 export { equalParticipantShares, parseSharePercent, TOTAL_SHARE_UNITS } from '@/modules/tasks/internal/shares';
 export { mapTask, mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/internal/mappers';

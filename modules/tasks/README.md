@@ -14,8 +14,8 @@ template versions.
 | File | What it offers |
 |---|---|
 | `index.ts` | Server reads: `getTaskWorkspaceData`, `getMissionChoices` (every mission as id, tag and title for pickers; one narrow read), `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`, `getToolLineage` + `buildRecentOperations` (Tools page Recent operations), `getMonthSetupContext` + `countMissionsInMonth` (month setup wizard and the Missions banner), and the Today reads `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`; `getTaskProofs` (a mission's proofs and Input / Process / Output documents, each with its `kind`; null for anyone outside its people and managers). Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools types, month helpers (`monthOf`, `addMonths`, `defaultSetupMonth`, `setupBannerMonth`), proof rules (`proofFileProblem`, `proofMimeType`, `PROOF_ACCEPT`, `MAX_PROOF_BYTES`, `formatProofSize`, `MissionProof`, and for migration 113 `MISSION_FILE_KINDS`, `MISSION_DOCUMENT_KINDS`, `isMissionFileKind`, `missionFilesOfKind`, `missionFileFolder`) and `uploadProofToTicket` (browser half of a proof upload) |
-| `actions.ts` | `'use server'` task commands: `createTask`, `updateTask`, `updateTaskStatus`, `updateTaskProgress`, `missionPromptState`, `loadMissionActions`, `createSubMission` (a sub-mission from a checklist add row: `submission_create`, migration 68), `addSubMission` (the same from the Missions list's row menu, into the parent's root checklist in the chosen phase; reads the parent's current version), `moveMissionFromPrompt` (status prompts: reads the current version and moves only from the status the prompt showed), `changeTaskLifecycle`, `recordTaskReview`, `deleteTask` |
+| `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`, `isTaskWorker`, `canEditTaskDetails`, `canManageTaskPeople`, `missionRelationship`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools types, month helpers (`monthOf`, `addMonths`, `defaultSetupMonth`, `setupBannerMonth`), proof rules (`proofFileProblem`, `proofMimeType`, `PROOF_ACCEPT`, `MAX_PROOF_BYTES`, `formatProofSize`, `MissionProof`, and for migration 113 `MISSION_FILE_KINDS`, `MISSION_DOCUMENT_KINDS`, `isMissionFileKind`, `missionFilesOfKind`, `missionFileFolder`) and `uploadProofToTicket` (browser half of a proof upload) |
+| `actions.ts` | `'use server'` task commands: `createTask`, `updateTask`, `updateTaskStatus`, `updateTaskProgress`, `missionPromptState`, `loadMissionActions`, `createSubMission` (a sub-mission from a checklist add row: `submission_create`, migration 68), `addSubMission` (the same from the Missions list's row menu, into the parent's root checklist in the chosen phase; reads the parent's current version), `moveMissionFromPrompt` (status prompts: reads the current version and moves only from the status the prompt showed), `changeTaskLifecycle`, `recordTaskReview`, `changeTaskPeople` (collaborators, observers, ownership: `task_people_command`), `deleteTask` |
 | `detail-actions.ts` | `'use server'` native-details commands: `initializeTaskDetails`, `saveTaskDetails`, `addTaskAsset`, `addTaskRelation`, `renameNativeLink`, `publishNativeTemplate` |
 | `tool-actions.ts` | `'use server'` Task Tools: `previewTaskTool`, `commitTaskTool`; month setup: `previewMonthSetup`, `commitMonthSetup` |
 | `proof-actions.ts` | `'use server'` mission proofs (migration 101): `startProofUpload` (signed link in the mission's upload folder), `saveProof`, `removeProof`. The files module moves each proof into the Shared Drive at `Proofs/<YYYY-MM>/<Task tag> - <Title>/` after the response. With a `kind` of `input`, `process` or `output` (migration 113) the same actions add a mission document, filed at `Missions/<YYYY-MM>/<Task tag> - <Title>/{Input,Process,Output}/`; the Work files panel (Details tab) shows them beside the pasted links of the same IPO role, the Proofs panel (Work tab) only proofs |
@@ -49,16 +49,39 @@ template versions.
 | `taskpulse_private.task_proofs`, bucket `mission-proofs` (private, 25 MB, PDF/images/Office) and its policies, `task_proofs(task)`, `task_proof_command(...)`, `task_proof_folder_allowed`, `task_proof_in_use`: the mission's assignees and reviewers plus the managing director and project engineers see and add proofs; the uploader or a manager removes one. `task_proofs.kind` (proof / input / process / output) and `task_proof_command(..., p_kind)` add Input / Process / Output documents on the same rules | `101_mission_proofs.sql`, `113_mission_ipo_documents.sql` |
 | `task_assignees`, `task_reviewers`, `task_links`, `task_dependencies` | `07_tracker_replacement_foundation.sql` |
 | `task_detail_templates`, `task_detail_template_versions`, `task_detail_instances`, `task_detail_sections`, `task_detail_review_flags` | `17_native_task_details_and_templates.sql` |
-| `save_task_with_participants` | 10, revised in 12, 16, 17 |
+| `save_task_with_participants` | 10, revised in 12, 16, 17, 108 (compares credited assignees and non-observer reviewers only) |
+| `task_people_command`, `is_task_worker` (public and `taskpulse_private`), `taskpulse_private.task_people_snapshot` | `108_mission_people.sql` |
 | `create_task_with_scale` | `61_new_mission_scale_mode.sql` |
 | `task_lifecycle_command` | `16_task_lifecycle_and_scale_contract.sql` |
-| `task_details_command` | 17, revised in 18, 26, 38 |
+| `task_details_command` | 17, revised in 18, 26, 38, 108 (the mission's people save details, relations and link labels) |
 | `publish_task_detail_template` | `17_native_task_details_and_templates.sql` |
 | `task_tools_preview`, `task_tools_command` | 24, revised in 25 (preview also 31, 32, 53 tags, 55 optional Duplicate `title`) |
 | `participant_reconciliation` | `10_permissions_and_participant_contract.sql` |
 | `month_setup_context`, `month_setup_preview`, `month_setup_commit`, `taskpulse_private.month_setup_items` | `55_month_setup.sql`; `99_month_setup_commit_timeout.sql` gives the commit a 60 s statement timeout (a full month takes about 8.5 s, over the 8 s API cap) |
 
 All of these are company-scoped by migrations 39-40 (M15).
+
+## Mission people (migration 108, update plan Workstream A, 3 November 2026)
+
+| Relationship | Stored as | May |
+|---|---|---|
+| Owner | `task_assignees` `assignment_role='Owner'`, `is_primary`, = `tasks.assignee_id` | everything an assignee may, plus manage collaborators and observers and hand ownership to another credited assignee |
+| Assignee | `task_assignees` with `share_units > 0` (non-first rows are stored as 'Collaborator' with shares; they stay assignees) | log time, tick and build the checklist, edit details, earn credit |
+| Collaborator | `task_assignees` with `share_units = 0` | tick and build the checklist and edit details; no credit and no time (D-A3) |
+| Reviewer | `task_reviewers` Primary / Secondary | review; their approval gates Done |
+| Observer | `task_reviewers` `reviewer_role='Observer'` | read and get notifications; never tick, edit, review or block Done |
+
+`task_people_command(task, command, {user_id}, lifecycle_version, operation)`
+runs `add_collaborator`, `remove_collaborator`, `add_observer`, `remove_observer`
+and `transfer_owner` for the managing director, project engineers and the
+current Owner (D-A4). It bumps `lifecycle_version`, writes `audit_events`
+(`task_people_<command>`) and a command receipt, and never touches shares or
+`participant_version`. The edit form (`TaskDialog`) has an Owner picker and keeps
+collaborators and observers it does not list. `Task.collaboratorIds` and
+`Task.observerIds` carry them; `reviewerIds` excludes observers.
+`getAssignedMissionBatch` sets `relationship` on each mission and returns
+reviewer and observer missions only with `{ watching: true }`.
+Tests: `tools/test_task_people_database.py`.
 
 ## Depends on
 `shared/*`, the public API of `checklists` (rollups and checklist types),

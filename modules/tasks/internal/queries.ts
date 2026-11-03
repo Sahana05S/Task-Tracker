@@ -67,7 +67,7 @@ export async function getTaskWorkspaceData(): Promise<TaskWorkspaceData> {
       .select(USER_COLUMNS)
       .order('full_name', { ascending: true }),
     supabase.from('task_assignees').select('task_id, user_id, is_primary, share_units'),
-    supabase.from('task_reviewers').select('task_id, user_id, is_primary'),
+    supabase.from('task_reviewers').select('task_id, user_id, is_primary, reviewer_role'),
     // Sub-missions, so the list can nest them under their parent.
     supabase.from('task_dependencies').select('predecessor_task_id, successor_task_id').eq('relation_type', 'Subtask'),
   ]);

@@ -20,6 +20,7 @@ export function MissionBrief({
   native,
   templates,
   canManage,
+  canEditDetails = canManage,
   tasks,
   members,
   reports,
@@ -29,6 +30,8 @@ export function MissionBrief({
   native: NativeDetailState;
   templates: readonly NativeTemplate[];
   canManage: boolean;
+  /** Managers and the mission's people (D-A2, migration 108); initialization stays with managers. */
+  canEditDetails?: boolean;
   /** Missions for the related-task picker (tag and title). */
   tasks: readonly Pick<Task, 'id' | 'taskTag' | 'title'>[];
   members: readonly User[];
@@ -92,7 +95,7 @@ export function MissionBrief({
           </div>
         ) : null}
 
-        {canManage ? (
+        {canEditDetails ? (
           <Disclosure summary="Edit structured details and links" icon={PencilIcon}>
             <NativeDetailsEditor task={task} sections={sections} tasks={tasks} members={members} reports={reports}/>
           </Disclosure>

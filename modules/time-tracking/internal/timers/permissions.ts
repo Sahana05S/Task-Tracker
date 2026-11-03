@@ -1,15 +1,16 @@
-import { canManageTasks, isAssignedToTask } from '@/modules/tasks/client';
+import { canManageTasks, isTaskWorker } from '@/modules/tasks/client';
 import type { Task, User } from '@/types/tracker';
 
 export function canStartTimerForTask(
   user: Pick<User, 'id' | 'role' | 'isActive'>,
-  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'status' | 'archivedEffectiveDate'>,
+  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'collaboratorIds' | 'status' | 'archivedEffectiveDate'>,
 ): boolean {
+  // Collaborators and observers do not log time (D-A3, migration 108).
   return (
     user.isActive && !task.archivedEffectiveDate &&
     task.status !== 'Done' &&
     task.status !== 'Discarded' &&
-    (canManageTasks(user.role) || isAssignedToTask(task, user.id))
+    (canManageTasks(user.role) || isTaskWorker(task, user.id))
   );
 }
 
