@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ExternalLinkIcon, FileCheckIcon, LoaderCircleIcon, Trash2Icon, UploadIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { formatProofSize, PROOF_ACCEPT, proofFileProblem, proofMimeType, uploadProofToTicket, type MissionProof } from '@/modules/tasks/client';
+import { formatProofSize, missionFilesOfKind, PROOF_ACCEPT, proofFileProblem, proofMimeType, uploadProofToTicket, type MissionProof } from '@/modules/tasks/client';
 import { removeProof, saveProof, startProofUpload } from '@/modules/tasks/proof-actions';
 import { formatDate } from '@/shared/tracker/format';
 import { Button } from '@/shared/ui/button';
@@ -22,13 +22,15 @@ function formData(values: Record<string, string>): FormData {
  * the company Shared Drive. The mission's people and managers see and add
  * them; the uploader or a manager removes one.
  */
-export function ProofsPanel({ taskId, taskTag, proofs, canAdd }: {
+export function ProofsPanel({ taskId, taskTag, proofs: files, canAdd }: {
   taskId: string;
   taskTag: string;
+  /** Every mission file; only proofs show here (Input / Process / Output documents are on the Details tab). */
   proofs: readonly MissionProof[];
   /** False for an archived mission. */
   canAdd: boolean;
 }) {
+  const proofs = missionFilesOfKind(files, 'proof');
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);

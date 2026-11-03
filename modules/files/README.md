@@ -21,9 +21,13 @@ Folders: `Personal documents/<Employee ID> - <Name>/<Kind> - <file name>`
 (bucket `personal-documents`, personnel module) and
 `Proofs/<YYYY-MM>/<Task tag> - <Title>/<file name>` (bucket `mission-proofs`,
 tasks module, migration 101; the month the mission is assigned in) and
+`Missions/<YYYY-MM>/<Task tag> - <Title>/{Input,Process,Output}/<file name>`
+(the same bucket, a mission's Input / Process / Output documents by
+`task_proofs.kind`, migration 113) and
 `Proofs/<YYYY-MM>/Sales/<date> - <client> - <salesperson>/<file name>` (bucket
 `sales-proofs`, support module, migration 102). `components/proof-files.tsx`
-(`ProofFiles`) is the shared add/open/remove list; `client.ts` has the shared
+(`ProofFiles`) is the shared add/open/remove list (sales proofs and mission
+documents; its wording is set by `label`, `addLabel`, `noun` and `empty`); `client.ts` has the shared
 proof file rules (`proofFileProblem`, `proofMimeType`, `PROOF_ACCEPT`, 25 MB)
 and `uploadToSignedLink`.
 
@@ -44,7 +48,7 @@ and `uploadToSignedLink`.
 | `rules.ts` | Buckets, view links, the health line (pure) |
 
 ## Database it owns
-Migration 100 (`100_drive_file_storage.sql`; 101 adds the `mission-proofs` bucket to `file_subject`, `file_access`, `file_move_pending` and `file_storage_status`):
+Migration 100 (`100_drive_file_storage.sql`; 101 adds the `mission-proofs` bucket to `file_subject`, `file_access`, `file_move_pending` and `file_storage_status`, 102 the `sales-proofs` bucket; 113 files mission documents under `Missions/` in `file_subject`):
 - `taskpulse_private.file_storage` (the company's Shared Drive id, last check)
 - `taskpulse_private.drive_files` (one row per stored file: pending, moved with its Drive id, trashed)
 - `file_storage_configure(drive_id)` (managing director, audited), `file_storage_status()` (managing director), `file_access(bucket, path)` (every view)
@@ -54,6 +58,7 @@ Migration 100 (`100_drive_file_storage.sql`; 101 adds the `mission-proofs` bucke
 - Vercel secret `TASKPULSE_DRIVE_SERVICE_ACCOUNT_JSON`: the service account's JSON key (go-live F7). Never in the repository or chat.
 - The Shared Drive id is stored per company by `file_storage_configure` (managing director). The service account must be a Content manager of that drive.
 - Without the key or a connected drive, files simply stay in Supabase storage and Data checks says so.
+- The service account opens only files inside the Shared Drive. A link someone pastes (`task_links`) is stored as a link; the app cannot open, check or share it.
 
 ## Depends on
 `shared/supabase` (server and worker clients), `shared/session`. No other modules.
