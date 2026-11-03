@@ -5,8 +5,8 @@
 consolidated plan written from them ("TaskPulse / Stellar Consolidated Update &
 Implementation Plan"); an audit of this codebase at migration 106 (`main` at
 `ab7583a`).
-**Status:** Proposed. Open decisions are listed in section 14; the ones marked
-*ask first* block the work that depends on them.
+**Status:** Proposed. Decisions are listed in section 14. The user answered
+D-A3, D-B1, D-D2, D12 and D13 on 3 November 2026; D15 (icon) is postponed.
 
 ## Why this second plan exists
 
@@ -30,7 +30,7 @@ Two answers were taken from the user while writing it:
 ## Rules that bind every item
 
 - One short branch per change, named after the module (`docs/ARCHITECTURE.md`).
-- Migrations are forward only, numbered from **107** (106 is the latest; 47 and
+- Migrations are forward only, numbered from **107** in merge order (106 is the latest; 47 and
   70 are intentional gaps). Each ends with
   `SELECT taskpulse_private.m15_secure();`. A new company-owned table has an
   `organization_id` column and a row in `taskpulse_private.m15_tenant_tables`.
@@ -66,8 +66,8 @@ What the code already settles, and what that means for the work.
 | 9 | Hashtag labels | No label concept exists. "Tag" already means the mission identifier `tasks.task_tag` (`<Mon><YY>_<TYPE><n>`, migration 53). | Call the new feature **labels** in code and copy; `#` is only how you type one. |
 | 10 | Labels in the Mistakes and Learning section | That section does not exist. The nearest thing is the meeting-point type "Lessons Learned". | New, on the mission page (section 7). |
 | 11 | Connect IPO documents to Google Drive; Drive was deferred | Two separate things exist. `modules/drive` is the M10 work-folder outbox, still switched off (`DRIVE_INTEGRATION_DEFERRED = true`). `modules/files` has been live since 2 November: uploads move into the company Shared Drive through the service account (`taskpulse_private.drive_files`, `/api/files`, `file_access`). Links already carry an IPO role: `task_links.ipo_role` is input / process / output / reference, grouped by `WorkFilesPanel` with `ipoLinks()`. Uploaded proofs (`task_proofs`, migration 101) have no IPO category. | Build IPO uploads on the `modules/files` pattern (section 10). `modules/drive` stays off. |
-| 12 | WhatsApp after check-in | Nothing opens WhatsApp today. `modules/reports/components/share-text.tsx` already offers Copy and the phone's share sheet for the daily report. No phone numbers are stored. How the Android app handles external links is decided in the separate `stellar-mobile` repository. | Prefilled message from company templates, plus a check in the Android shell (section 11). |
-| 13 | Add or fix the organisation chart | It exists: the default `/team` view (`OrgChart`, `org_chart()`, `users.reports_to` / `job_title` / `department_id`, migrations 65 and 103). | The user needs to name what is wrong (D13). Two candidates found (section 12). |
+| 12 | WhatsApp after check-in | Nothing opens WhatsApp today. `modules/reports/components/share-text.tsx` already offers Copy and the phone's share sheet for the daily report. No phone numbers are stored. How the Android app handles external links is decided in the separate `stellar-mobile` repository. | A drafted message the person sends to whoever they choose, plus a check in the Android shell (section 11). |
+| 13 | Add or fix the organisation chart | It exists: the default `/team` view (`OrgChart`, `org_chart()`, `users.reports_to` / `job_title` / `department_id`, migrations 65 and 103). | A second managing director splits it into two unconnected trees (D13); fix in section 12. |
 | 14 | Find every place the icon is used | One glyph source, `shared/ui/stellar-mark.tsx` (`STELLAR_STAR_PATHS`, `StellarMark`), plus `app/icon.svg` and `app/apple-icon.tsx`. There is no web manifest. Android icons live in `stellar-mobile`. | Small, once the asset arrives (section 13). |
 | 15 | Navigation is Today · Missions · Records · Team · Reports | Also Policies (wide screens) and a More menu (`modules/workspace-views/components/shell/nav-items.ts`, checked by `nav-coverage.test.ts`). | No new primary section; new pages go under existing sections or More. |
 | 16 | Infrastructure ownership (GitHub, Supabase, Azure) | This app uses GitHub `Sahana05S/task-tracker`, Vercel, the Supabase project named in AGENTS.md, a Google service account for the Shared Drive and FCM for push. No Azure. | A separate assessment; out of scope here. |
@@ -94,7 +94,7 @@ What the code already settles, and what that means for the work.
 
 ## 3. Workstream A: mission people and permissions
 
-**Module:** `tasks`. **Migration:** 107. **Branch:** `tasks/people`.
+**Module:** `tasks`. **Migration:** 108. **Branch:** `tasks/people`.
 
 - **Owner** is shown and chosen explicitly. `TaskDialog` gets an Owner picker
   (default: the first assignee) that writes `assignment_role = 'Owner'` and
@@ -106,9 +106,13 @@ What the code already settles, and what that means for the work.
   Existing non-first assignees are already stored as "Collaborator" **with**
   shares; the migration rewrites none of them. The TypeScript mappers treat a
   Collaborator row with shares as an assignee, and only zero-share rows show as
-  collaborators. Because `is_task_assignee()` is true for a collaborator, they
-  could log time today; if that is not wanted (D-A3), `execution_command` and
-  the `m01_own_work` policy must exclude zero-share collaborators.
+  collaborators. **Collaborators do not log time** (D-A3, user, 3 November
+  2026). Because `is_task_assignee()` is true for any `task_assignees` row,
+  migration 108 adds `taskpulse_private.is_task_worker(task)` (an assignee with
+  shares, or the legacy single assignee) and uses it in `execution_command`
+  (logs and timers, including the offline timer RPCs) and the `m01_own_work`
+  policy; `TimerButton` and "Log time" hide the mission for a collaborator
+  (`canStartTimerForTask`, `getLoggableTasksFor`).
 - **Observer** is a `task_reviewers` row with `reviewer_role = 'Observer'`. An
   observer sees the mission on Today and the graph and gets its notifications,
   but cannot tick, edit or review. Needed changes: `assert_checklist_done`
@@ -139,7 +143,7 @@ next RPC fails.
 
 ## 4. Workstream B: Objectives and sub-quests
 
-**Module:** `checklists` (and `tasks` for sub-missions). **Migration:** 108.
+**Module:** `checklists` (and `tasks` for sub-missions). **Migration:** 109.
 **Branch:** `checklists/objectives-subquests`.
 
 - **Rename in the interface only.** "Item" becomes "Objective" in
@@ -153,7 +157,8 @@ next RPC fails.
   payload values (`node_type: 'Item'`) and `rowKind()` values stay.
 - **Quests may hold Quests and Sub-missions.** Migration 108 drops the triggers
   `aa_m77_quest_nesting` and `aa_m77_quest_items` and adds
-  `quest_depth_guard` (maximum depth D-B1, recommended 3). Rows in a Quest stay
+  `quest_depth_guard`: **at most 3 levels of Quest** (a Quest, its sub-quest,
+  and one more; D-B1, user, 3 November 2026). Rows in a Quest stay
   filed in its `activity` section, and `submission_guard` stays.
   `checklist_node_result` already recurses through a Quest's own checklist with
   a path argument that stops cycles; prove it with a nested case in
@@ -178,7 +183,7 @@ next RPC fails.
 ## 5. Workstream C: one mission timer and the session report
 
 **Module:** `time-tracking` (UI changes in `checklists` and `workspace-views`).
-**Migration:** 109 (read-only function). **Branch:**
+**Migration:** 110 (read-only function). **Branch:**
 `time-tracking/mission-timer`.
 
 - **Retire the per-row timer in the interface.** Remove `ItemTimerControls`
@@ -207,7 +212,7 @@ next RPC fails.
 
 ## 6. Workstream D: objective verification and "Work needed"
 
-**Modules:** `checklists` and `tasks`. **Migration:** 110. **Branch:**
+**Modules:** `checklists` and `tasks`. **Migration:** 111. **Branch:**
 `checklists/objective-review`.
 
 - New columns on `checklist_nodes`: `review_state` (`none`, `pending`,
@@ -226,7 +231,7 @@ next RPC fails.
   **Acknowledged** changes no progress.
 - The version check (`p_expected_version`) stops two reviewers deciding at once.
 - `assert_checklist_done` also refuses while any row is `pending` or
-  `work_needed` (D-D2). The mission-level approval stays the last step. Once
+  `work_needed` (D-D2, user, 3 November 2026: yes, these block Done). The mission-level approval stays the last step. Once
   objectives are reviewed one by one, D-D3 asks whether a time log should still
   clear mission approvals.
 - **Interface:** a review chip beside `ChecklistStateControl` (Pending /
@@ -242,7 +247,7 @@ vitest for the chip rules.
 ## 7. Workstream E: mission page, SMART goals, Mistakes and learning
 
 **Modules:** `tasks` and a new `modules/learning` (from `modules/_template/`).
-**Migration:** 111. **Branches:** `tasks/mission-brief`,
+**Migration:** 112. **Branches:** `tasks/mission-brief`,
 `learning/mission-learnings`.
 
 - Keep the three tabs (Work / Details / History); the call settled on not
@@ -294,7 +299,7 @@ in `tests/`.
 
 ## 9. Workstream G: workspace labels
 
-**Module:** new `modules/labels`. **Migration:** 112. **Branch:**
+**Module:** new `modules/labels`. **Migration:** 113. **Branch:**
 `labels/foundation`.
 
 - Tables `public.labels(id, organization_id, name, slug unique per company,
@@ -320,7 +325,7 @@ company isolation.
 
 ## 10. Workstream H: Input / Process / Output documents in the Shared Drive
 
-**Modules:** `files` and `tasks`. **Migration:** 113. **Branch:**
+**Modules:** `files` and `tasks`. **Migration:** 114. **Branch:**
 `files/ipo-documents`.
 
 - Reuse the proofs pipeline that already moves uploads into the Shared Drive.
@@ -345,52 +350,143 @@ company isolation.
 
 ## 11. Workstream I: WhatsApp after check-in and check-out
 
-**Modules:** `attendance`, `settings`, and the `stellar-mobile` repository.
-**Migration:** 114. **Branch:** `attendance/whatsapp`.
+**Modules:** `attendance` (with the check-in page composing a `reports` read),
+and the `stellar-mobile` repository. **No migration.** **Branch:**
+`attendance/whatsapp`.
 
-- **Prefilled message, sent by the person** (option A of the first plan). Company
-  settings gain `check_in_message_template`, `check_out_message_template` and an
-  optional `attendance_whatsapp_number`, edited by the managing director in
-  Settings > Company > Check-in (the `company_settings_command` section patch,
-  as migration 64 did). Placeholders: `{name}`, `{employee_id}`, `{date}`,
-  `{time}`, `{status}`, `{hours}`, `{where}`.
-- After a successful check-in or check-out, the done state in `CheckInForm`
-  shows **Send on WhatsApp** (`https://wa.me/?text=…`, or
-  `https://wa.me/<number>?text=…` when a number is set) and **Copy**. A
-  WhatsApp **group cannot be opened by link**; with no number, WhatsApp asks the
-  person where to send it.
+User decision D12 (3 November 2026): draft the messages in the app; the share
+opens WhatsApp on the phone and on the laptop, and **the person chooses whom to
+send it to**. Check-in sends a greeting with the check-in time and a positive
+note; check-out sends the daily report message. No fixed number, no template
+settings, no automatic sending.
+
+**Check-in message** (built by a pure `checkInMessage(name, capturedAt, date)`
+in `modules/attendance/internal/check-in-model.ts`, exported through
+`client.ts`):
+
+```
+Good morning, team! ☀️
+Sahana checked in at 9:12 AM · Mon, 3 Nov.
+Small steps, big progress. Let's make today count!
+```
+
+- The greeting follows the Asia/Kolkata check-in time: "Good morning" before
+  12:00, "Good afternoon" before 17:00, "Good evening" after; the emoji changes
+  with it (☀️ / 🌤️ / 🌙).
+- The first name is the member's display name up to the first space.
+- The positive note is one of a short fixed list, picked by the date so the
+  same day always gives the same note and consecutive days differ: "Small
+  steps, big progress. Let's make today count!", "Ready to give today my best.",
+  "Here's to a productive day!", "One mission at a time. Let's go!",
+  "Grateful for this team. Let's make it a great day!", "Focused, fresh and
+  ready to work."
+- A check-in recorded outside the office radius adds nothing to the message;
+  that stays a matter for the attendance record.
+
+**Check-out message:** the daily report text the Reports page already shares
+(`dailyReport` and `dailyReportText` in `modules/reports/client.ts`, built on
+`formatDailyReport`), with one line on top:
+
+```
+Checked out at 6:40 PM · 9.47 h today.
+
+*Daily report · Sahana S*
+Monday, 3 November 2026
+…
+```
+
+`attendance` must not import `reports` (reports already reads attendance, so
+that would create a cycle the boundary test refuses). Instead
+`app/(workspace)/attendance/check-in/page.tsx` reads the member's daily report
+through `reports`' public API and passes the text to `CheckInDay` as a prop.
+`CheckInForm` already calls `router.refresh()` after a check-out, so the text
+is re-read with the logs the member made that day.
+
+**Share controls** in the done state of `CheckInForm` (and on "All done for
+today", so the message can be sent later):
+
+- **Send on WhatsApp**: a link to `https://wa.me/?text=<encoded message>`
+  (`target="_blank"`, `rel="noopener noreferrer"`). With no number in the link,
+  WhatsApp opens its own chat picker: the app on the phone, WhatsApp Desktop or
+  WhatsApp Web on the laptop.
+- **Share…** where `navigator.share` exists (phones): the system share sheet,
+  for anyone who prefers it or uses another app.
+- **Copy**, with the existing preview of WhatsApp `*bold*` runs.
 - Reuse `ShareText` by moving it from
-  `modules/reports/components/share-text.tsx` to `shared/ui/share-text.tsx`.
-- Attendance is saved first and on its own (it already is: `attendance_check_in`
-  commits before the screen changes). The button is shown from the result and
-  never fires by itself, so a retry cannot send a second message.
-- **Android app:** confirm in `stellar-mobile` that `wa.me` and `whatsapp://`
-  links leave the WebView for the WhatsApp app. If they do not, add a launcher
-  plugin using the same `registerPlugin` pattern as `NativePrint`
-  (`modules/mobile/internal/native.ts`).
-- The template text was shared in the WhatsApp group, not on the calls (D12).
-  It must be supplied; nothing is invented.
+  `modules/reports/components/share-text.tsx` to `shared/ui/share-text.tsx`
+  (reports imports it from there) and adding the WhatsApp link to it, so the
+  Reports page gains the same button.
+- Attendance is saved first and on its own (it already is:
+  `attendance_check_in` commits before the screen changes). The buttons are
+  shown from the saved result and never fire by themselves, so a retry or a
+  WhatsApp failure cannot lose a check-in or send a message twice.
+
+**Android app:** confirm in `stellar-mobile` that a `wa.me` link opened from
+the WebView leaves the app for WhatsApp (Capacitor's external-link handling or a
+`shouldOverrideUrlLoading` rule), and that `navigator.share` reaches the system
+sheet. If either does not, add a small launcher/share plugin using the same
+`registerPlugin` pattern as `NativePrint` (`modules/mobile/internal/native.ts`).
+
+**Tests:** vitest for `checkInMessage` (greeting boundaries at 11:59 / 12:00
+and 16:59 / 17:00 IST, the note changing day to day, first-name extraction) and
+for the WhatsApp link encoding (newlines, `&`, `#`, emoji).
+
+Editable message templates in Settings can follow later if the managing
+director wants to change the wording; that would need a migration.
 
 ## 12. Workstream J: organisation chart
 
-**Module:** `team`. **Migration:** 115 only if `org_chart()` changes.
+**Module:** `team`. **Migration:** 107 (the small `org_chart()` fix below).
 **Branch:** `team/org-chart`.
 
-The chart exists. Ask what is wrong on the live site (D13). Fixes worth
-including either way:
+**What breaks** (D13, user, 3 November 2026, with a screenshot of the live
+`/team` chart): adding a second managing director broke the chart. Both
+directors have no manager, so `buildOrgTree` (`modules/team/internal/org-tree.ts`)
+returns two roots and `OrgChart` (`modules/team/components/org-chart.tsx`)
+draws them as two separate trees side by side. Each tree is as wide as its
+team, so the new director (no reports yet) sits alone at the far left, the
+first director sits centred over their five reports far to the right, nothing
+joins them, and the five report cards do not fit the panel, so the chart
+scrolls sideways with the last card cut off.
 
-- `org_chart()` joins `attendance_records` without `record_state = 'active'`, so
-  a withdrawn record can still show as today's status.
-- Several top-level people (two directors, or someone whose manager was
-  cleared) render side by side; group them under one company node.
-- Optional grouping by department (`taskpulse_private.departments` exists).
+**Fix:**
+
+- **One leadership row.** A new pure helper `orgTiers(roots)` in
+  `internal/org-tree.ts` returns `{ leaders, below }`: `leaders` are the root
+  managing directors (ordered by name), `below` is the union of their reports
+  plus any other root (someone whose manager was cleared). `OrgChart` draws the
+  leaders side by side as one centred top row joined by a single line, and
+  everyone in `below` as one tree level under that row, so the chart reads as
+  "the directors, then the company". With one director it looks exactly as it
+  does today.
+- **People shown once.** Each person keeps their own `reports_to`; a report of
+  either director appears once under the shared row. The card of each director
+  still says how many people report to them.
+- **Fit before scrolling.** Report cards get a narrower layout from the medium
+  breakpoint (name, title, status; the role chip moves into the title line), and
+  a level with more than four people wraps onto a second row instead of
+  widening the chart. The box still scrolls sideways only for very wide
+  companies, and starts centred on the leadership row.
+- **Phones** keep the indented list; the leadership row becomes the first group
+  of the list.
+- **Today's status:** migration 107 makes `org_chart()` read only active
+  attendance records (`record_state = 'active'`), so a withdrawn record no
+  longer shows as today's status. Start from the live definition.
+- New directors: migration 103 already puts new non-director members under the
+  earliest active director; that stays. Moving people under the second director
+  is done in Manage people as before.
 - The organisation chart stays separate from mission people; nothing in
   `task_assignees` feeds it.
+
+**Tests:** extend `modules/team/__tests__/org-tree.test.ts` for `orgTiers`: one
+director (unchanged shape), two directors with and without reports, a cleared
+manager, and an inactive director whose reports move up.
 
 ## 13. Workstream K: Stellar icon
 
 **Where:** `shared/ui`, `app/`, marketing, `stellar-mobile`. **Branch:**
-`shared/icon`. Waits for the approved asset (D15).
+`shared/icon`. Postponed by the user (3 November 2026) until the asset is ready
+(D15).
 
 - Replace `STELLAR_STAR_PATHS` in `shared/ui/stellar-mark.tsx` (the one glyph
   source), `app/icon.svg` and `app/apple-icon.tsx` (and its colour allow-list in
@@ -415,46 +511,45 @@ including either way:
 | D08 | How mission time affects scoring | As before: hours only; productivity uses attendance hours. |
 | D14 | Do labels draw graph edges? | No, not initially. |
 | D17 | Which per-row time fields go | Hide the per-row timer, Est. and Elapsed; keep their data. |
+| D-A3 | May a zero-share Collaborator log time? | No (user, 3 Nov 2026). |
+| D-B1 | Maximum Quest depth | 3 (user, 3 Nov 2026). |
+| D-D2 | Do pending or Work-needed objectives block Done? | Yes (user, 3 Nov 2026). |
+| D11, D12 | WhatsApp: prefilled or automatic; message text and recipient | Prefilled, drafted in the app; the person picks the chat in WhatsApp on phone or laptop. Check-in: greeting, check-in time, positive note. Check-out: the daily report message (user, 3 Nov 2026). |
+| D13 | What is wrong with the org chart | Adding a second managing director splits it into two unconnected trees and overflows the panel (user, 3 Nov 2026, with screenshot). |
 
 ### Still open (recommended answer in brackets)
 
-| ID | Question | Ask first? |
+| ID | Question | Status |
 |---|---|---|
 | D-A1 | Scale editable by MD only, or MD and project engineers? (keep MD and PE) | |
 | D-A2 | May the Owner and Collaborators edit mission Details? (yes) | |
-| D-A3 | May a zero-share Collaborator log time? (no) | Yes |
 | D-A4 | Who may transfer ownership? (MD, PE, current Owner) | |
 | D-A5 | Should anyone's read access narrow? Today every member reads every mission. (no change) | |
-| D-B1 | Maximum Quest depth (3) | Yes |
 | D-C1 | Keep the per-row Links column? (yes) | |
 | D-C2 | Show the session note in the Stop sheet? (yes) | |
 | D-D1 | Can a reviewer acknowledge their own objective? (no) | |
-| D-D2 | Do pending or Work-needed objectives block Done? (yes) | Yes |
 | D-D3 | Stop clearing mission approval on every time log once objectives are reviewed? (yes) | |
 | D-F1 | `d3-force` or a hand-written layout? (`d3-force`) | |
 | D-G1 | Which records take labels first? (missions, learnings, meeting points) | |
 | D09, D10 | IPO documents at mission level, in the existing Shared Drive? (yes) | |
-| D11 | Prefilled WhatsApp message rather than automatic sending? (prefilled) | |
-| D12 | The check-in and check-out message text, and the number to send to | Yes |
-| D13 | What is wrong with the organisation chart today? | Yes |
-| D15 | The new icon asset | Yes |
+| D15 | The new icon asset | Postponed by the user |
 | D16 | Infrastructure ownership review | Separate assessment |
 
 ## 15. Order of work
 
 | Step | Branch | Migration | Needs |
 |---|---|---|---|
-| A | `tasks/people` | 107 | D-A3 |
-| B | `checklists/objectives-subquests` | 108 | D-B1 |
-| C | `time-tracking/mission-timer` | 109 | — |
-| D | `checklists/objective-review` | 110 | A (Observer excluded), D-D2 |
-| E | `tasks/mission-brief`, `learning/mission-learnings` | 111 | A |
-| G | `labels/foundation` | 112 | E (learnings ship first without labels) |
+| J | `team/org-chart` | 107 | — (quick fix, can go first) |
+| I | `attendance/whatsapp` + `stellar-mobile` | — | — (can go first) |
+| A | `tasks/people` | 108 | — |
+| B | `checklists/objectives-subquests` | 109 | — |
+| C | `time-tracking/mission-timer` | 110 | — |
+| D | `checklists/objective-review` | 111 | A (Observer excluded) |
+| E | `tasks/mission-brief`, `learning/mission-learnings` | 112 | A |
+| G | `labels/foundation` | 113 | E (learnings ship first without labels) |
 | F | `workspace-views/constellation` | — | A (relationships), B (sub-quests) |
-| H | `files/ipo-documents` | 113 | A |
-| I | `attendance/whatsapp` + `stellar-mobile` | 114 | D12 |
-| J | `team/org-chart` | 115 if needed | D13 |
-| K | `shared/icon` | — | D15 |
+| H | `files/ipo-documents` | 114 | A |
+| K | `shared/icon` | — | D15 (postponed) |
 
 For each branch: open a PR, wait for CI, merge, then check the
 `migrate-demo.yml` run before the next migration merges. A failed run is fixed
@@ -465,7 +560,7 @@ live demo site.
 
 | Risk | Mitigation |
 |---|---|
-| An Observer reviewer row blocks Done | Gate change ships in the same migration that gives Observer meaning (107). |
+| An Observer reviewer row blocks Done | Gate change ships in the same migration that gives Observer meaning (108). |
 | Collaborators receive credit | Zero `share_units`; the harness checks credit shares are unchanged. |
 | Nested Quests loop or double-count | Depth guard, the rollup's path argument, a nested fixture. |
 | "Label" confused with mission "tag" | Separate words in code and copy; `#` only as input. |
