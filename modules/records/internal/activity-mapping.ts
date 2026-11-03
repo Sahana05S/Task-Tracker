@@ -99,19 +99,13 @@ const CHECKLIST_WORDS: Record<string, string> = {
   map: 'Linked a checklist objective',
   section: 'Moved a checklist objective',
   mode: 'Changed how a checklist works',
-<<<<<<< HEAD
   delete: 'Removed a checklist objective',
   duplicate: 'Copied a checklist objective',
   reorder: 'Reordered a checklist objective',
   // 'submission' creates a Quest (migration 67).
   submission: 'Added a Quest',
-=======
-  delete: 'Removed a checklist item',
-  duplicate: 'Copied a checklist item',
-  submission: 'Submitted a checklist',
   // Migration 114: the decision and its note arrive as the entry's reason.
-  review: 'Reviewed an objective',
->>>>>>> 75f0b4a (checklists: objective review chip, review sheet and pending list; activity wording)
+  review: 'Reviewed a checklist objective',
 };
 const TOOL_WORDS: Record<string, string> = {
   bulk_done: 'Marked missions done',
