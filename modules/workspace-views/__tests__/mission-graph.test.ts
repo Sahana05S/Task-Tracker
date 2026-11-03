@@ -16,7 +16,7 @@ function overlapping(nodes: GraphNode[]): string[] {
 const at = (layout: { nodes: GraphNode[] }) => Object.fromEntries(layout.nodes.map(n => [n.id, [n.x, n.y]]));
 
 describe('constellation layout', () => {
-  const sky = ids(12).map(mission);
+  const sky = ids(12).map(id => mission(id));
   const links: GraphLink[] = [
     { from: sky[0].id, to: sky[1].id, relation: 'Subtask' },
     { from: sky[0].id, to: sky[2].id, relation: 'Subtask' },
@@ -32,7 +32,7 @@ describe('constellation layout', () => {
   });
 
   it('leaves no two nodes or labels overlapping at rest', () => {
-    for (const n of [1, 2, 5, 20, 50]) expect(overlapping(layoutMissionGraph(ids(n).map(mission), []).nodes)).toEqual([]);
+    for (const n of [1, 2, 5, 20, 50]) expect(overlapping(layoutMissionGraph(ids(n).map(id => mission(id)), []).nodes)).toEqual([]);
     const opened = layoutMissionGraph(sky, links, { levels: [
       { parentId: sky[0].id, children: [row('q', 'quest'), ...Array.from({ length: 30 }, (_, i) => row(`o${i}`)), row('more', 'more')] },
       { parentId: 'q', children: Array.from({ length: 8 }, (_, i) => row(`q${i}`)) },
@@ -109,7 +109,7 @@ describe('constellation layout', () => {
   });
 
   it('keeps every coordinate positive inside the world', () => {
-    const layout = layoutMissionGraph(ids(50).map(mission), []);
+    const layout = layoutMissionGraph(ids(50).map(id => mission(id)), []);
     for (const n of layout.nodes) {
       const box = graphFootprint(n);
       expect(box.left).toBeGreaterThan(0); expect(box.top).toBeGreaterThan(0);

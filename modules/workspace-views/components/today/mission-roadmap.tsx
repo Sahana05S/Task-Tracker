@@ -4,17 +4,17 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, XIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CircleIcon, FocusIcon, ListIcon, OrbitIcon, RotateCcwIcon, UserIcon, UsersIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
 import { cn } from '@/shared/utils';
 import { missionDueLabel, type MissionDueFilter, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/client';
 import type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow } from '@/modules/checklists/client';
-import { branchForRow, readMapLayout, rememberMapLayout, roadmapSearch, type MapOrientation, type RoadmapLocation } from '@/modules/workspace-views/client';
+import { branchForRow, roadmapSearch, type GraphLink, type RoadmapLocation, type RoadmapScope } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch, loadRoadmapMissions } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
-import { MissionMap } from './mission-map';
+import { MissionGraph, type GraphMission } from './mission-graph-view';
 
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
   loading: () => <p role="status" className="text-muted-foreground py-4 text-sm">Preparing work controls…</p>,
@@ -27,14 +27,22 @@ const VIEW_OPTIONS: readonly SegmentedOption<View>[] = [
   { value: 'roadmap', label: 'Roadmap', icon: OrbitIcon },
   { value: 'list', label: 'List', icon: ListIcon },
 ];
+const SCOPE_OPTIONS: readonly SegmentedOption<RoadmapScope>[] = [
+  { value: 'mine', label: 'My missions', icon: UserIcon },
+  { value: 'team', label: 'Whole team', icon: UsersIcon },
+];
+/** A batch as the graph reads it: missions may carry the viewer's relationship, plus relations between them. */
+type GraphBatch = Omit<RoadmapMissionBatch, 'missions'> & { missions: GraphMission[]; links?: GraphLink[] };
 interface Props {
-  initial: RoadmapMissionBatch | null;
+  initial: GraphBatch | null;
   due: MissionDueFilter;
+  /** Whose missions are shown; `team` only for the managing director and project engineers. */
+  scope?: RoadmapScope;
+  /** Shows the My missions / Whole team switch. */
+  canSeeTeam?: boolean;
   today: string;
   initialView?: View;
   initialLocation?: RoadmapLocation | null;
-  /** From `?layout=`; null leaves the choice to this device's last one. */
-  initialLayout?: MapOrientation | null;
 }
 function Progress({ value }: { value: number | null }) {
   return <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{value === null ? '—' : `${Math.round(value)}%`}</span>;
@@ -44,10 +52,9 @@ function LoadingBranch() {
 }
 
 /** The map view and a keyboard-first list over the same bounded data, actions and URL location. */
-export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', initialLocation = null, initialLayout = null }: Props) {
+export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = false, today, initialView = 'roadmap', initialLocation = null }: Props) {
   const [batch, setBatch] = useState(initial);
   const [view, setView] = useState<View>(initialView);
-  const [layout, setLayout] = useState<MapOrientation>(initialLayout ?? 'vertical');
   const [location, setLocation] = useState<RoadmapLocation | null>(initialLocation);
   const [mission, setMission] = useState<RoadmapMission | null>(null);
   const [branch, setBranch] = useState<ChecklistBranch | null>(null);
@@ -59,23 +66,9 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
   const [revision, setRevision] = useState(0);
   const request = useRef(0);
   const panelHeading = useRef<HTMLHeadingElement>(null);
-  // The map reports locations from an effect that holds an older `onLocation`, so `remember` reads
-  // the layout through a ref rather than the render it was created in.
-  const layoutRef = useRef(layout);
   function remember(location: RoadmapLocation | null, due: string, view: View) {
-    window.history.replaceState(null, '', roadmapSearch(location, due, view, layoutRef.current));
+    window.history.replaceState(null, '', roadmapSearch(location, due, view, scope));
   }
-  function chooseLayout(next: MapOrientation) {
-    setLayout(next);
-    layoutRef.current = next;
-    rememberMapLayout(next);
-    remember(location, due, view);
-  }
-  // No layout in the URL: use the one last chosen on this device (vertical until switched).
-  useEffect(() => {
-    const stored = readMapLayout();
-    if (!initialLayout && stored !== 'vertical') chooseLayout(stored);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function open(path: RoadmapLocation, append = false) {
     const sequence = ++request.current;
@@ -123,17 +116,25 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
   function loadMoreMissions(retry = false) {
     setBatchError(null);
     startMore(async () => {
-      const result = await loadRoadmapMissions({ due, cursor: retry ? null : batch?.nextCursor });
+      const result = await loadRoadmapMissions({ due, scope, cursor: retry ? null : batch?.nextCursor });
       if (!result.success || !result.data) { setBatchError(result.error ?? 'This batch could not be loaded. Retry.'); return; }
-      setBatch(previous => ({ ...result.data!, missions: retry ? result.data!.missions : [...new Map([...(previous?.missions ?? []), ...result.data!.missions].map(m => [m.id, m])).values()] }));
+      setBatch(previous => ({ ...result.data!,
+        missions: retry ? result.data!.missions : [...new Map([...(previous?.missions ?? []), ...result.data!.missions].map(m => [m.id, m])).values()],
+        links: retry ? result.data!.links : [...new Map([...(previous?.links ?? []), ...(result.data!.links ?? [])].map(l => [`${l.relation}:${l.from}:${l.to}`, l])).values()] }));
       setError(null);
     });
   }
 
   return <section aria-labelledby="mission-path-title" className="min-w-0">
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div><h2 id="mission-path-title" className="text-foreground text-base font-bold tracking-tight">Your mission path</h2><p className="text-muted-foreground mt-1 max-w-prose text-sm">Choose a mission. Open its next item. Keep your work in focus.</p></div>
+      <div><h2 id="mission-path-title" className="text-foreground text-base font-bold tracking-tight">{scope === 'team' ? 'The team\u2019s missions' : 'Your missions'}</h2><p className="text-muted-foreground mt-1 max-w-prose text-sm">Choose a mission. Open its next objective. Lines show sub-missions, dependencies and related missions.</p></div>
       <div className="flex flex-wrap items-center gap-2">
+        {canSeeTeam ? <SegmentedControl
+          label="Whose missions"
+          value={scope}
+          options={SCOPE_OPTIONS}
+          onValueChange={(next) => { window.location.assign(roadmapSearch(null, due, view, next)); }}
+        /> : null}
         <SegmentedControl
           label="Mission view"
           value={view}
@@ -147,11 +148,11 @@ export function MissionRoadmap({ initial, due, today, initialView = 'roadmap', i
       </div>
     </div>
     <nav aria-label="Mission deadline filters" className="mt-5 flex flex-wrap gap-2">
-      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view, layout)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
+      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view, scope)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
     </nav>
     {view === 'roadmap' ? <>
       {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
-      {batch?.missions.length || location ? <MissionMap missions={batch?.missions ?? []} today={today} initialLocation={location} orientation={layout} onOrientationChange={chooseLayout}
+      {batch?.missions.length || location ? <MissionGraph missions={batch?.missions ?? []} links={batch?.links} today={today} initialLocation={location}
         onLocation={next => { setLocation(next); remember(next, due, 'roadmap'); }} />
         : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
       {batch?.hasMore ? <Button className="mt-4" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : `Load more missions (${batch.missions.length} shown)`}</Button> : null}

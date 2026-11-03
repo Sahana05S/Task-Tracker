@@ -250,3 +250,13 @@ export function graphCamera(layout: MissionGraphLayout, focusId: string | null, 
   // A selected row: the row and the 250 px card beside it.
   return fit([graphFootprint(focus)], 1.25, 0.45, 290);
 }
+
+/**
+ * Zoom factor for one wheel event, or null when it should scroll the page instead. Only Ctrl/Cmd + wheel
+ * zooms (a trackpad pinch arrives as ctrl + wheel): a mouse wheel steps, a pinch's small deltas glide.
+ */
+export function wheelZoomFactor(e: { deltaY: number; deltaMode: number; ctrlKey: boolean; metaKey: boolean }): number | null {
+  if (!e.ctrlKey && !e.metaKey) return null;
+  const delta = e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1);
+  return Math.min(1.25, Math.max(0.8, Math.exp(-delta * 0.002)));
+}
