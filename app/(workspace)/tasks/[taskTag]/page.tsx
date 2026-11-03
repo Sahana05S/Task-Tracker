@@ -5,6 +5,7 @@ import {
   ArchiveIcon,
   ClipboardCheckIcon,
   GitBranchIcon,
+  HashIcon,
   HistoryIcon,
   PencilIcon,
   RocketIcon,
@@ -44,6 +45,8 @@ import { ProofsPanel } from '@/modules/tasks/components/detail/proofs-panel';
 import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
+import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
+import { LabelInput } from '@/modules/labels/components/label-input';
 import { getMissionLearnings } from '@/modules/learning';
 import { LearningCountChip } from '@/modules/learning/components/learning-count-chip';
 import { LearningPanel } from '@/modules/learning/components/learning-panel';
@@ -121,6 +124,15 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     // Mistakes and learning (migration 111): the panel on Details, its count on Work. Null hides both.
     tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
   ]);
+  // Labels (migration 112) on the Details tab: the mission's own and each learning note's. Null hides them.
+  const [labelCatalogue, missionLabels, noteLabels] = details
+    ? await Promise.all([
+        getLabelCatalogue(),
+        getLabelsFor('task', [task.id]),
+        getLabelsFor('mission_learning', learnings?.items.map((note) => note.id) ?? []),
+      ])
+    : [null, null, null];
+  const canLabelMission = !archived && (canManage || task.assigneeIds.includes(currentUser.id));
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
     ? execution.timers
@@ -302,12 +314,42 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               canCreateWorkFile={!archived && !closed && canUpdateTaskOwnFields(currentUser, task)}
               providerState={native.instance?.providerState ?? 'not_requested'}
             />
-            {learnings ? <LearningPanel taskId={task.id} taskTag={task.taskTag} learnings={learnings} /> : null}
+            {learnings ? (
+              <LearningPanel
+                taskId={task.id}
+                taskTag={task.taskTag}
+                learnings={learnings}
+                noteExtras={labelCatalogue && noteLabels ? Object.fromEntries(learnings.items.map((note) => [note.id, (
+                  <LabelInput
+                    key={note.id}
+                    kind="mission_learning"
+                    subjectId={note.id}
+                    labels={noteLabels[note.id] ?? []}
+                    catalogue={labelCatalogue.labels}
+                    canEdit={note.canEdit}
+                    canCreate={labelCatalogue.canManage}
+                    hideEmpty
+                  />
+                )])) : undefined}
+              />
+            ) : null}
             <MissionPanel icon={GitBranchIcon} title="Dependency missions">
               <DependencyList dependencies={data.dependencies} taskId={task.id} />
             </MissionPanel>
           </section>
           <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
+            {labelCatalogue && missionLabels ? (
+              <MissionPanel icon={HashIcon} title="Labels" subtitle="Group this mission with related work">
+                <LabelInput
+                  kind="task"
+                  subjectId={task.id}
+                  labels={missionLabels[task.id] ?? []}
+                  catalogue={labelCatalogue.labels}
+                  canEdit={canLabelMission}
+                  canCreate={labelCatalogue.canManage}
+                />
+              </MissionPanel>
+            ) : null}
             <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
           </aside>
         </div>

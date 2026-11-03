@@ -9,7 +9,7 @@ mission's assignees, project engineers and the managing director add notes; the
 author (while still one of those) or a manager edits or withdraws one. An
 archived mission's notes are read-only. Not a dated record and never part of a
 score; each change is one `mission_learning_<op>` line in Team > Activity.
-Labels attach once the labels module lands (workstream G).
+Labels attach through the labels module (migration 112), passed in by the page.
 
 ## Public API (the only files other code may import)
 | File | What it offers |
@@ -17,7 +17,7 @@ Labels attach once the labels module lands (workstream G).
 | `index.ts` | `getMissionLearnings(taskId)` (null before migration 111 or on a failed read); everything in `client.ts` |
 | `actions.ts` | `saveLearning(form)` (add, or edit with `learningId`), `withdrawLearning(form)` |
 | `client.ts` | Types `MissionLearning`, `MissionLearnings`, `LearningKind`; `LEARNING_KINDS`, `LEARNING_KIND_LABEL`, `LEARNING_MAX_LENGTH`, `learningCounts` |
-| `components/learning-panel.tsx` | `LearningPanel`, the Details tab panel (list, add, edit, withdraw) |
+| `components/learning-panel.tsx` | `LearningPanel`, the Details tab panel (list, add, edit, withdraw); `noteExtras` slot per note (the page puts each note's labels there) |
 | `components/learning-count-chip.tsx` | `LearningCountChip`, the Work tab link with the count |
 
 ## Private (`internal/`)
