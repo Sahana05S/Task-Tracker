@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
@@ -389,10 +389,11 @@ export function MissionGraph({ missions, links = [], today, initialLocation, onL
         onPointerUp={() => { drag.current = null; setDragging(false); }} onPointerCancel={() => { drag.current = null; setDragging(false); }}>
         <div className={cn(styles.world, (dragging || free) && styles.free)} style={{ width: layout.width, height: layout.height, transform: `translate3d(${w / 2 - camera.x * camera.z}px,${h / 2 - camera.y * camera.z}px,0) scale(${camera.z})` }}>
           <svg className={styles.lines} width={layout.width} height={layout.height} aria-hidden="true">
-            {layout.edges.map(edge => <line key={edge.id} x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2}
+            {layout.edges.map(edge => { const d = `M ${edge.x1} ${edge.y1} L ${edge.x2} ${edge.y2}`; return <path key={edge.id} d={d}
               className={cn(styles.edge, !edge.relation && styles.row, edge.stroke === 'dashed' && styles.dashed, edge.stroke === 'dotted' && styles.dotted,
                 path.length > 0 && !(visible(edge.from) && visible(edge.to)) && styles.muted)}
-              style={{ ['--edge' as string]: `var(--map-hue-${edge.hue})` }} />)}
+              // The CSS `d` lets a line glide with its stars where supported; the attribute is the fallback.
+              style={{ ['--edge' as string]: `var(--map-hue-${edge.hue})`, d: `path("${d}")` } as CSSProperties} />; })}
           </svg>
           {ordered.map(node => {
             const row = rows.get(node.id);

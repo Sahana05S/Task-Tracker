@@ -74,11 +74,18 @@ describe('constellation layout', () => {
     expect(graphRadius(row('q', 'quest'))).toBeGreaterThan(graphRadius(row('o')));
   });
 
-  it('keeps existing nodes still when a branch opens or more rows load', () => {
-    const closed = at(layoutMissionGraph(sky, links));
+  it('holds the opened mission still, moves only missions under its rows, and keeps rows still as more load', () => {
+    const closed = layoutMissionGraph(sky, links);
     const page = (n: number) => [{ parentId: sky[2].id, children: Array.from({ length: n }, (_, i) => row(`c${i}`)) }];
-    const first = at(layoutMissionGraph(sky, links, { levels: page(20) }));
-    for (const m of sky) expect(first[m.id]).toEqual(closed[m.id]);
+    const opened = layoutMissionGraph(sky, links, { levels: page(20) });
+    const first = at(opened);
+    expect(first[sky[2].id]).toEqual(at(closed)[sky[2].id]);
+    const rows = opened.nodes.filter(n => n.parentId);
+    for (const m of closed.nodes) {
+      const box = graphFootprint(m);
+      const underRows = rows.some(r => { const b = graphFootprint(r); return box.left < b.right + 14 && b.left < box.right + 14 && box.top < b.bottom + 14 && b.top < box.bottom + 14; });
+      if (!underRows) expect(first[m.id]).toEqual([m.x, m.y]);
+    }
     const more = at(layoutMissionGraph(sky, links, { levels: page(40) }));
     for (let i = 0; i < 20; i++) expect(more[`c${i}`]).toEqual(first[`c${i}`]);
   });

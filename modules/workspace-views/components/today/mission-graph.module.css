@@ -21,7 +21,7 @@
 }
 .free { transition: none; }
 .lines { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
-.edge { stroke: var(--edge); stroke-width: 2; stroke-linecap: round; opacity: .55; transition: opacity .4s; animation: fade .6s ease-out both; }
+.edge { fill: none; stroke: var(--edge); stroke-width: 2; stroke-linecap: round; opacity: .55; transition: opacity .4s, d .5s cubic-bezier(.22,.82,.18,1); animation: fade .6s ease-out both; }
 .row { stroke: var(--map-road); stroke-width: 1.5; opacity: .9; }
 .dashed { stroke-dasharray: 9 7; }
 .dotted { stroke-dasharray: 1 6; stroke-width: 2.6; }
@@ -31,7 +31,8 @@
   position: absolute; z-index: 3; pointer-events: auto; padding: 0; border: 0; background: transparent;
   color: var(--foreground); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
   transform: translate(-50%, calc(var(--r) * -1px)); font: inherit; cursor: pointer;
-  transition: opacity .4s, filter .4s;
+  /* Missions that step aside for opened rows glide there. */
+  transition: opacity .4s, filter .4s, left .5s cubic-bezier(.22,.82,.18,1), top .5s cubic-bezier(.22,.82,.18,1);
   /* The settle: a node flies out from where its parent (or the sky's centre) is. */
   animation: settle .7s cubic-bezier(.2,.9,.2,1) both;
 }

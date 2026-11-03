@@ -191,7 +191,12 @@ export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], 
     ? { x: nodes.reduce((s, n) => s + n.x, 0) / nodes.length, y: nodes.reduce((s, n) => s + n.y, 0) / nodes.length }
     : { x: 0, y: 0 };
 
-  // Opened branches fan outwards, away from the sky's centre (or from the node's own parent).
+  // Opened rows sit close around their node, fanning away from the sky's centre (or from the node's own
+  // parent). They are placed against the opened path only; unrelated missions in the way step aside below.
+  const missionNodes = [...nodes];
+  const opened = new Set(levels.map(l => l.parentId));
+  const held = missionNodes.filter(n => opened.has(n.id));
+  const children: GraphNode[] = [];
   for (const level of levels) {
     const parent = byId.get(level.parentId);
     if (!parent) break;
@@ -213,9 +218,19 @@ export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], 
       const angle = dir + offset + (ring % 2 ? step / 2 : 0);
       const node: GraphNode = { ...child, x: parent.x + radius * Math.cos(angle), y: parent.y + radius * Math.sin(angle),
         r: graphRadius(child), depth: parent.depth + 1, hue: parent.hue, parentId: parent.id };
-      placeFree(node, nodes, parent.x, parent.y);
-      nodes.push(node); byId.set(node.id, node);
+      placeFree(node, held, parent.x, parent.y);
+      held.push(node); children.push(node); nodes.push(node); byId.set(node.id, node);
     });
+  }
+  if (children.length) {
+    // Missions that would sit under the opened rows move straight out from the opened mission, nearest
+    // first, until they are clear; every other mission stays exactly where it was.
+    const anchor = held[0];
+    const clash = (n: GraphNode) => held.some(h => overlaps(graphFootprint(n), graphFootprint(h)));
+    const others = missionNodes.filter(n => !opened.has(n.id));
+    const placed = [...held, ...others.filter(n => !clash(n))];
+    const moved = others.filter(clash).sort((a, b) => Math.hypot(a.x - anchor.x, a.y - anchor.y) - Math.hypot(b.x - anchor.x, b.y - anchor.y) || (a.id < b.id ? -1 : 1));
+    for (const n of moved) { placeFree(n, placed, anchor.x, anchor.y); placed.push(n); }
   }
 
   for (const n of nodes) { n.x = r1(n.x + GRAPH_ORIGIN); n.y = r1(n.y + GRAPH_ORIGIN); }
