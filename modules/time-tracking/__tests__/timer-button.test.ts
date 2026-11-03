@@ -47,4 +47,8 @@ describe('timer button', () => {
     expect(Object.fromEntries(timerCommandForm(null, 'task-b'))).toEqual({ taskId: 'task-b' });
     expect(Object.fromEntries(timerCommandForm(timer, 'task-a'))).toEqual({ timerId: 'timer-1', expectedVersion: '3' });
   });
+
+  it('sends the session note from the Stop sheet (D-C2)', () => {
+    expect(Object.fromEntries(timerCommandForm(timer, 'task-a', 'Drew the elevation'))).toEqual({ timerId: 'timer-1', expectedVersion: '3', notes: 'Drew the elevation' });
+  });
 });

@@ -22,3 +22,4 @@ export type { RunningTimer } from '@/modules/time-tracking/internal/timers/runni
 export type { TeamRunningTimer } from '@/modules/time-tracking/internal/timers/queries';
 export type { TaskExecution } from '@/modules/time-tracking/internal/execution';
 export type { LogHistoryData } from '@/modules/time-tracking/internal/logs/queries';
+export { describeSessionEvent, mapSessionActivity, sessionSummary, type TimerSessionActivity, type TimerSessionEvent } from '@/modules/time-tracking/internal/timers/session-wording';

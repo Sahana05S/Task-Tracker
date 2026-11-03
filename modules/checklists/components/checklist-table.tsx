@@ -7,12 +7,10 @@ import { cn } from '@/shared/utils';
 import { rowHref } from '../internal/location';
 import { formatMinutes } from '../internal/pages';
 import type { ChecklistBranchRow } from '../internal/branch-types';
-import type { ChecklistItemTime } from '../internal/item-time';
 import type { ChecklistSection, CompletionState, SectionProgress } from '../internal/progress';
 import { percentText, rowKind, sectionStatus, stateChoices } from '../internal/table';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowActions } from './checklist-row-actions';
-import { ItemTimerControls } from './checklist-rows';
 import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
 import type { ActionResponse, Task } from '@/types/tracker';
 
@@ -33,12 +31,8 @@ export interface ChecklistTableProps {
   /** Where "Add row" puts new rows: the row whose table this is, or the section's top level. */
   addParentId: string | null;
   canEdit: boolean;
-  /** Not archived, Done or Discarded: timers may start. */
-  open: boolean;
-  canTime: boolean;
-  time?: ChecklistItemTime;
   /** `submission` creates a Sub-mission (managers; supplied by the page from the tasks module). */
-  actions: { checklist: Command; start: Command; stop: Command; discard: Command; submission?: Command };
+  actions: { checklist: Command; submission?: Command };
   /** A row id whose menu opens on arrival (old `?item=` links). */
   selectedItem?: string;
   /** Where a row of this table may move: other rows here, and the level above (id null = top level). */
@@ -71,20 +65,17 @@ function RollupIcon({ row }: { row: ChecklistBranchRow }) {
   return <CircleDashedIcon className="text-muted-foreground size-4" aria-label="Not started" />;
 }
 
-function rowMeta(inside: string | null, estimate: string | null, elapsed: string | null): string {
-  return [inside, estimate ? `Est. ${estimate}` : null, elapsed ? `${elapsed} logged` : null]
-    .filter(Boolean)
-    .join(' · ');
-}
+// One mission timer (update plan, 3 November 2026): the per-row timer and the Est. and
+// Elapsed columns are gone; past time per row stays in the row panel and the effort breakdown.
 
 /**
- * One checklist table: the sheet's Checkbox / Progress / Objective / Links /
- * Estimated / Elapsed columns, with a one-tap completion control and a row
+ * One checklist table: the sheet's Checkbox / Progress / Objective / Links
+ * columns, with a one-tap completion control and a row
  * menu. A row with rows under it shows their progress and opens their table.
  * On phones each row becomes a two-line card; nothing scrolls sideways.
  */
 export function ChecklistTable(props: ChecklistTableProps) {
-  const { id, title, note, summary, rows, task, version, checklistId, section, addParentId, canEdit, open, canTime, time, actions } = props;
+  const { id, title, note, summary, rows, task, version, checklistId, section, addParentId, canEdit, actions } = props;
   const status = summary ? sectionStatus(summary) : null;
   const summaryValue = summary && summary.state !== 'not_applicable' ? summary.progressPercentage : null;
   const headingId = `${id}-heading`;
@@ -118,8 +109,6 @@ export function ChecklistTable(props: ChecklistTableProps) {
                 <th scope="col" className="w-0">Progress</th>
                 <th scope="col">Objective</th>
                 <th scope="col" className="w-0">Links</th>
-                <th scope="col" className="w-0 text-right">Est.</th>
-                <th scope="col" className="w-0 text-right">Elapsed</th>
                 <th scope="col" className="w-0"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -130,13 +119,10 @@ export function ChecklistTable(props: ChecklistTableProps) {
                 const container = choices.length === 0;
                 const href = rowHref(task.taskTag, row);
                 const progress = row.applicable ? percentText(row.progressPercentage) : 'N/A';
-                const estimate = formatMinutes(row.estimatedMinutes);
-                const elapsed = row.elapsedSeconds > 0 ? formatMinutes(Math.max(1, Math.round(row.elapsedSeconds / 60))) : null;
                 const inside = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside`
                   : kind === 'quest' ? `Quest · ${row.childCount} row${row.childCount === 1 ? '' : 's'}`
                   : kind === 'linked' ? 'Sub-mission' : null;
                 const state: CompletionState = row.completionState ?? 'No';
-                const timerHere = kind === 'item' && time?.available && ((canTime && open) || time.runningByNode.has(row.id));
                 return (
                   <tr
                     key={row.id}
@@ -179,7 +165,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                         <span className="text-foreground font-medium break-words">{row.title}</span>
                       )}
                       {row.description ? <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs break-words">{row.description}</p> : null}
-                      {rowMeta(inside, estimate, elapsed) ? <p className="text-muted-foreground mt-0.5 text-xs md:hidden">{rowMeta(inside, estimate, elapsed)}</p> : null}
+                      {inside ? <p className="text-muted-foreground mt-0.5 text-xs md:hidden">{inside}</p> : null}
                       {inside ? (
                         <p className="mt-0.5 text-xs max-md:hidden">
                           {kind === 'linked' || kind === 'quest' ? <span className={cn('badge-soft', kind === 'quest' ? 'bg-primary-subtle text-primary-subtle-foreground' : 'badge-accent')}>{kind === 'quest' ? <FlagIcon className="size-3" aria-hidden="true" /> : <RocketIcon className="size-3" aria-hidden="true" />}{inside}</span> : <span className="text-muted-foreground">{inside}</span>}
@@ -205,13 +191,8 @@ export function ChecklistTable(props: ChecklistTableProps) {
                         </span>
                       ) : <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="sheet-numeric whitespace-nowrap max-md:hidden">{estimate ?? <span className="text-muted-foreground">—</span>}</td>
-                    <td className="sheet-numeric whitespace-nowrap max-md:hidden">{elapsed ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="max-md:order-2 max-md:border-0 max-md:p-0">
                       <div className="flex items-center justify-end gap-1">
-                        {timerHere && time ? (
-                          <ItemTimerControls ctx={{ task, open, time: { info: time, canStart: canTime, start: actions.start, stop: actions.stop, discard: actions.discard } }} node={row} compact />
-                        ) : null}
                         {canEdit ? (
                           <ChecklistRowActions
                             row={row}

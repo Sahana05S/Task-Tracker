@@ -89,6 +89,8 @@ jobs:
         run: python tools/test_m63_checklist_rows_database.py --psql "$(command -v psql)" --port 15432
       - name: Objectives and sub-quests (migration 109)
         run: python tools/test_checklist_subquests_database.py --psql "$(command -v psql)" --port 15432
+      - name: Timer session activity (migration 110)
+        run: python tools/test_timer_session_activity_database.py --psql "$(command -v psql)" --port 15432
       - name: Company branding (migration 64)
         run: python tools/test_m64_company_branding_database.py --psql "$(command -v psql)" --port 15432
       - name: Conflict errors without PostgREST retries (migration 52)

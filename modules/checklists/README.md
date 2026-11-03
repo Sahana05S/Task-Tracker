@@ -2,9 +2,12 @@
 
 A mission's master checklist: one kind of row, nested as deep as needed (the
 sheet's Checklist Home and "[ChL]" tabs), in Setup / Activity / Closure
-sections, with Yes/No/N/A states, per-row links and estimates, progress
-rollups, and the time recorded against checklist items (item timers save
-ordinary task logs tagged with the item).
+sections, with Yes/No/N/A states, per-row links, progress rollups, and the
+time recorded against checklist rows before 3 November 2026 (item timers
+saved ordinary task logs tagged with the row; since then time is kept by the
+mission timer only, and the per-row timer, Est. and Elapsed columns are gone
+from every view, update plan section 5; the data and `getChecklistItemTime`
+reads stay).
 
 Since migration 63 (user decisions, 23 October 2026) any row that is not linked
 to a mission can have rows added under it. A row with rows under it takes their
@@ -70,7 +73,7 @@ control.
 | `index.ts` | Server reads: `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`, `getChecklistBranch`, `getUnmappedRootRows`, `getFocusedChecklistItemTime`, `getRunningChecklistTimers`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, tree helpers (`childrenOf`, `ancestry`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours`, table rules (`rowKind`, `stateChoices`, `opensTable`, `pageResult`, `sectionStatus`, `checklistIssues`, `SECTION_TITLES`), addresses (`checklistWorkHref`, `parseChecklistLocation`, `openChecklistRow`) |
 | `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode); a version conflict returns `errorCode: 'conflict'` |
-| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / No / N/A, commands queued so each sends the latest mission version), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `checklist-rows.tsx` (item timer and completion controls) |
+| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / No / N/A, commands queued so each sends the latest mission version), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `checklist-rows.tsx` (completion controls) |
 
 ## Private (`internal/`)
 
