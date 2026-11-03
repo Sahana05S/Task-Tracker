@@ -212,7 +212,7 @@ next RPC fails.
 
 ## 6. Workstream D: objective verification and "Work needed"
 
-**Modules:** `checklists` and `tasks`. **Migration:** 111. **Branch:**
+**Modules:** `checklists` and `tasks`. **Migration:** 114. **Branch:**
 `checklists/objective-review`.
 
 - New columns on `checklist_nodes`: `review_state` (`none`, `pending`,
@@ -247,7 +247,7 @@ vitest for the chip rules.
 ## 7. Workstream E: mission page, SMART goals, Mistakes and learning
 
 **Modules:** `tasks` and a new `modules/learning` (from `modules/_template/`).
-**Migration:** 112. **Branches:** `tasks/mission-brief`,
+**Migration:** 111. **Branches:** `tasks/mission-brief`,
 `learning/mission-learnings`.
 
 - Keep the three tabs (Work / Details / History); the call settled on not
@@ -299,7 +299,7 @@ in `tests/`.
 
 ## 9. Workstream G: workspace labels
 
-**Module:** new `modules/labels`. **Migration:** 113. **Branch:**
+**Module:** new `modules/labels`. **Migration:** 112. **Branch:**
 `labels/foundation`.
 
 - Tables `public.labels(id, organization_id, name, slug unique per company,
@@ -325,7 +325,7 @@ company isolation.
 
 ## 10. Workstream H: Input / Process / Output documents in the Shared Drive
 
-**Modules:** `files` and `tasks`. **Migration:** 114. **Branch:**
+**Modules:** `files` and `tasks`. **Migration:** 113. **Branch:**
 `files/ipo-documents`.
 
 - Reuse the proofs pipeline that already moves uploads into the Shared Drive.
@@ -544,12 +544,18 @@ manager, and an inactive director whose reports move up.
 | A | `tasks/people` | 108 | — |
 | B | `checklists/objectives-subquests` | 109 | — |
 | C | `time-tracking/mission-timer` | 110 | — |
-| D | `checklists/objective-review` | 111 | A (Observer excluded) |
-| E | `tasks/mission-brief`, `learning/mission-learnings` | 112 | A |
-| G | `labels/foundation` | 113 | E (learnings ship first without labels) |
+| D | `checklists/objective-review` | 114 | A (Observer excluded), B (both change `checklist_command`) |
+| E | `tasks/mission-brief`, `learning/mission-learnings` | 111 | — |
+| G | `labels/foundation` | 112 | E (learnings ship first without labels) |
 | F | `workspace-views/constellation` | — | A (relationships), B (sub-quests) |
-| H | `files/ipo-documents` | 114 | A |
+| H | `files/ipo-documents` | 113 | — |
 | K | `shared/icon` | — | D15 (postponed) |
+
+Running in parallel since 3 November 2026: J and I in the coordinating
+session; A, B then C, E then G, and H each in their own cloud session with the
+migration number above reserved. D and F start once A and B have merged. The
+migration workflow applies any unrecorded file in version order, gaps
+included, so lanes may merge in any order.
 
 For each branch: open a PR, wait for CI, merge, then check the
 `migrate-demo.yml` run before the next migration merges. A failed run is fixed
