@@ -15,6 +15,7 @@ import { rowHref } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistSection, type CompletionState } from '../internal/progress';
 import { percentText, rowKind, SECTION_TITLES, stateChoices } from '../internal/table';
 import { ChecklistStateBadge, ChecklistStateControl, ChecklistVersionField } from './checklist-state-control';
+import { ObjectiveReviewChip } from './objective-review';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 interface Ctx { task: Task; canEdit: boolean; version: number; action: Command }
@@ -103,6 +104,7 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
             ? <ChecklistStateControl taskId={ctx.task.id} checklistId={row.checklistId} nodeId={row.id} title={row.title} state={state} choices={choices} version={ctx.version} action={ctx.action} />
             : <ChecklistStateBadge state={state} />
         ) : null}
+        <ObjectiveReviewChip nodeId={row.id} />
       </div>
       {open ? (
         children?.state === 'ready' ? (

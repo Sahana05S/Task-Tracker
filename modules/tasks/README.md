@@ -53,6 +53,7 @@ template versions.
 | `task_people_command`, `is_task_worker` (public and `taskpulse_private`), `taskpulse_private.task_people_snapshot` | `108_mission_people.sql` |
 | `create_task_with_scale` | `61_new_mission_scale_mode.sql` |
 | `task_lifecycle_command` | `16_task_lifecycle_and_scale_contract.sql` |
+| Review invalidation (`invalidate_reviews` triggers) and the Done gate `assert_checklist_done` | 16 and 18; since `114_objective_review.sql` a time log no longer clears the mission's approvals (D-D3) and Done also waits for every checklist objective to be acknowledged (see modules/checklists) |
 | `task_details_command` | 17, revised in 18, 26, 38, 108 (the mission's people save details, relations and link labels) |
 | `publish_task_detail_template` | `17_native_task_details_and_templates.sql` |
 | `task_tools_preview`, `task_tools_command` | 24, revised in 25 (preview also 31, 32, 53 tags, 55 optional Duplicate `title`) |

@@ -12,6 +12,7 @@ import { percentText, rowKind, sectionStatus, stateChoices } from '../internal/t
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowActions } from './checklist-row-actions';
 import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
+import { ObjectiveReviewChip } from './objective-review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -148,6 +149,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                       ) : (
                         <ChecklistStateBadge state={state} />
                       )}
+                      {container ? null : <ObjectiveReviewChip nodeId={row.id} className="ml-2 align-middle" />}
                     </td>
                     <td className="max-md:order-4 max-md:border-0 max-md:p-0">
                       <div className="flex items-center gap-2">
