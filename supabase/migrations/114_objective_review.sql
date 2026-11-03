@@ -76,12 +76,12 @@ CREATE OR REPLACE FUNCTION public.checklist_command(p_task uuid, p_command text,
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-DECLARE actor uuid:=auth.uid(); role public.user_role; t public.tasks; c public.task_checklists; n public.checklist_nodes; receipt taskpulse_private.command_receipts; request jsonb:=jsonb_build_array(p_task,p_command,p_payload,p_expected_version); result jsonb; node_id uuid; section_role text; change_reason text; before_state jsonb; rollup jsonb; enabled boolean; owned_id uuid; copy_row record; neighbour uuid; BEGIN
+DECLARE actor uuid:=auth.uid(); role public.user_role; t public.tasks; c public.task_checklists; n public.checklist_nodes; receipt taskpulse_private.command_receipts; request jsonb:=jsonb_build_array(p_task,p_command,p_payload,p_expected_version); result jsonb; node_id uuid; section_role text; change_reason text; before_state jsonb; rollup jsonb; enabled boolean; owned_id uuid; copy_row record; neighbour uuid; quest_lists uuid[]; BEGIN
  SELECT u.role INTO role FROM public.users u WHERE u.id=actor AND u.is_active FOR SHARE;
  IF role IS NULL THEN RAISE EXCEPTION 'Active authenticated account required' USING ERRCODE='42501'; END IF;
  IF p_command='section' THEN RAISE EXCEPTION 'Section reviews were retired; an empty section is N/A' USING ERRCODE='23514'; END IF;
  IF p_operation IS NULL OR p_payload IS NULL OR jsonb_typeof(p_payload)<>'object' OR p_command IS NULL OR p_command NOT IN ('create','add','state','edit','map','delete','section','mode','duplicate','submission','reorder','review') THEN RAISE EXCEPTION 'Invalid checklist command' USING ERRCODE='23514'; END IF;
- IF (p_payload-'checklist_id')-(CASE p_command WHEN 'create' THEN ARRAY['title'] WHEN 'submission' THEN ARRAY['title','description','section','parent_id','priority'] WHEN 'add' THEN ARRAY['title','description','section','parent_id','linked_task_id','node_type','links','estimated_minutes','priority'] WHEN 'state' THEN ARRAY['node_id','state'] WHEN 'edit' THEN ARRAY['node_id','title','parent_id','linked_task_id','node_type','section','reason','links','estimated_minutes','priority'] WHEN 'map' THEN ARRAY['node_id','section','reason'] WHEN 'delete' THEN ARRAY['node_id','reason'] WHEN 'duplicate' THEN ARRAY['node_id'] WHEN 'review' THEN ARRAY['node_id','decision','note'] WHEN 'section' THEN ARRAY['section','intentional_empty','reason'] WHEN 'mode' THEN ARRAY['enabled','reason','preview_progress'] END)<>'{}' THEN RAISE EXCEPTION 'Unexpected checklist fields' USING ERRCODE='23514'; END IF;
+ IF (p_payload-'checklist_id')-(CASE p_command WHEN 'create' THEN ARRAY['title'] WHEN 'submission' THEN ARRAY['title','description','section','parent_id','priority'] WHEN 'add' THEN ARRAY['title','description','section','parent_id','linked_task_id','node_type','links','estimated_minutes','priority'] WHEN 'state' THEN ARRAY['node_id','state'] WHEN 'edit' THEN ARRAY['node_id','title','parent_id','linked_task_id','node_type','section','reason','links','estimated_minutes','priority'] WHEN 'map' THEN ARRAY['node_id','section','reason'] WHEN 'delete' THEN ARRAY['node_id','reason','with_children'] WHEN 'duplicate' THEN ARRAY['node_id'] WHEN 'review' THEN ARRAY['node_id','decision','note'] WHEN 'section' THEN ARRAY['section','intentional_empty','reason'] WHEN 'mode' THEN ARRAY['enabled','reason','preview_progress'] END)<>'{}' THEN RAISE EXCEPTION 'Unexpected checklist fields' USING ERRCODE='23514'; END IF;
  -- M14: assignees build and maintain their own checklist pages; section mapping,
  -- section gates and progress ownership stay with managers.
  IF p_command IN ('map','section','mode') AND role NOT IN ('managing_director','project_engineer') THEN RAISE EXCEPTION 'Manager controls section mapping, gates and progress ownership' USING ERRCODE='42501'; END IF;
@@ -182,6 +182,13 @@ DECLARE actor uuid:=auth.uid(); role public.user_role; t public.tasks; c public.
    UPDATE public.checklist_nodes SET detail_section=section_role WHERE id IN (SELECT id FROM subtree);
   ELSIF p_command='edit' THEN
    IF change_reason IS NULL THEN RAISE EXCEPTION 'Structure correction needs a reason' USING ERRCODE='23514'; END IF;
+   -- Never under one of its own rows, including the rows inside its Quests.
+   IF (p_payload->>'parent_id') IS NOT NULL AND EXISTS(WITH RECURSIVE sub(id,path) AS (SELECT n.id,ARRAY[n.id]
+      UNION ALL SELECT x.id,sub.path||x.id
+       FROM sub LEFT JOIN public.task_checklists q ON q.owner_node_id=sub.id
+       JOIN public.checklist_nodes x ON (x.parent_node_id=sub.id OR x.checklist_id=q.id) AND NOT x.id=ANY(sub.path))
+     SELECT 1 FROM sub WHERE id=(p_payload->>'parent_id')::uuid) THEN
+    RAISE EXCEPTION 'A row cannot move under one of its own rows' USING ERRCODE='23514'; END IF;
    WITH RECURSIVE subtree(id) AS (SELECT n.id UNION SELECT x.id FROM public.checklist_nodes x JOIN subtree s ON x.parent_node_id=s.id)
    UPDATE public.checklist_nodes x SET detail_section=section_role,
     title=CASE WHEN x.id=n.id THEN coalesce(nullif(btrim(p_payload->>'title'),''),x.title) ELSE x.title END,
@@ -215,17 +222,23 @@ DECLARE actor uuid:=auth.uid(); role public.user_role; t public.tasks; c public.
    DROP TABLE m14_copy;
   ELSIF p_command='delete' THEN
    IF change_reason IS NULL THEN RAISE EXCEPTION 'Give a reason for removing this row' USING ERRCODE='23514'; END IF;
-   IF EXISTS(SELECT 1 FROM public.checklist_nodes WHERE parent_node_id=n.id) AND (p_payload->>'with_children') IS DISTINCT FROM 'true' THEN
+   IF (EXISTS(SELECT 1 FROM public.checklist_nodes WHERE parent_node_id=n.id)
+      OR EXISTS(SELECT 1 FROM public.checklist_nodes x JOIN public.task_checklists o ON o.id=x.checklist_id WHERE o.owner_node_id=n.id))
+     AND (p_payload->>'with_children') IS DISTINCT FROM 'true' THEN
     RAISE EXCEPTION 'This row has rows under it; remove them with it or move them first' USING ERRCODE='23514'; END IF;
-   IF EXISTS(WITH RECURSIVE sub(id) AS (SELECT x.id FROM public.checklist_nodes x WHERE x.parent_node_id=n.id
-      UNION SELECT x.id FROM public.checklist_nodes x JOIN sub ON x.parent_node_id=sub.id)
-     SELECT 1 FROM public.task_checklists o WHERE o.owner_node_id IN (SELECT id FROM sub)) THEN
-    RAISE EXCEPTION 'A Quest is inside this row; empty and remove the Quest first' USING ERRCODE='23514'; END IF;
-   SELECT id INTO owned_id FROM public.task_checklists WHERE owner_node_id=n.id FOR UPDATE;
-   IF owned_id IS NOT NULL THEN
-    IF EXISTS(SELECT 1 FROM public.checklist_nodes WHERE checklist_id=owned_id) THEN RAISE EXCEPTION 'Remove the rows inside this Quest first.' USING ERRCODE='23514'; END IF;
+   -- Every Quest list inside this row at any depth, deepest first: removing a
+   -- list removes its rows, so no list is left owned by a removed row.
+   WITH RECURSIVE sub(id,level,path) AS (SELECT n.id,0,ARRAY[n.id]
+     UNION ALL SELECT x.id,sub.level+CASE WHEN x.parent_node_id=sub.id THEN 0 ELSE 1 END,sub.path||x.id
+      FROM sub LEFT JOIN public.task_checklists q ON q.owner_node_id=sub.id
+       JOIN public.checklist_nodes x ON (x.parent_node_id=sub.id OR x.checklist_id=q.id) AND NOT x.id=ANY(sub.path))
+   SELECT coalesce(array_agg(o.id ORDER BY s.level DESC,o.id),'{}') INTO quest_lists
+    FROM sub s JOIN public.task_checklists o ON o.owner_node_id=s.id;
+   PERFORM 1 FROM public.task_checklists WHERE id=ANY(quest_lists) FOR UPDATE;
+   FOREACH owned_id IN ARRAY quest_lists LOOP
     DELETE FROM public.task_checklists WHERE id=owned_id;
-   END IF;
+   END LOOP;
+   owned_id:=NULL;
    DELETE FROM public.checklist_nodes WHERE id=n.id;
   ELSIF p_command='section' THEN
    IF change_reason IS NULL OR jsonb_typeof(p_payload->'intentional_empty') IS DISTINCT FROM 'boolean' THEN RAISE EXCEPTION 'Section review needs an explicit empty decision and reason' USING ERRCODE='23514'; END IF;
