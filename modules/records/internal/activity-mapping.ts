@@ -93,15 +93,17 @@ const MISSION_WORDS: Record<string, string> = {
 };
 const CHECKLIST_WORDS: Record<string, string> = {
   create: 'Started a checklist',
-  add: 'Added a checklist item',
-  edit: 'Edited a checklist item',
-  state: 'Updated a checklist item',
-  map: 'Linked a checklist item',
-  section: 'Moved a checklist item',
+  add: 'Added a checklist objective',
+  edit: 'Edited a checklist objective',
+  state: 'Updated a checklist objective',
+  map: 'Linked a checklist objective',
+  section: 'Moved a checklist objective',
   mode: 'Changed how a checklist works',
-  delete: 'Removed a checklist item',
-  duplicate: 'Copied a checklist item',
-  submission: 'Submitted a checklist',
+  delete: 'Removed a checklist objective',
+  duplicate: 'Copied a checklist objective',
+  reorder: 'Reordered a checklist objective',
+  // 'submission' creates a Quest (migration 67).
+  submission: 'Added a Quest',
 };
 const TOOL_WORDS: Record<string, string> = {
   bulk_done: 'Marked missions done',

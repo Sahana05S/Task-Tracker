@@ -46,8 +46,8 @@ export interface ChecklistTableProps {
   /** Missions a manager may link a row to. */
   linkChoices?: readonly { id: string; taskTag: string; title: string }[];
   manager: boolean;
-  /** Inside a Quest: the add row offers items only (no Quest or Sub-mission). */
-  itemsOnly?: boolean;
+  /** Quest levels above this table's list (0 = the mission's checklist); limits the add row's Quest choice. */
+  questLevel?: number;
   /** The page's main table: its add row takes the cursor on arrival. */
   autoFocus?: boolean;
   /** Header control. */
@@ -78,7 +78,7 @@ function rowMeta(inside: string | null, estimate: string | null, elapsed: string
 }
 
 /**
- * One checklist table: the sheet's Checkbox / Progress / Item / Links /
+ * One checklist table: the sheet's Checkbox / Progress / Objective / Links /
  * Estimated / Elapsed columns, with a one-tap completion control and a row
  * menu. A row with rows under it shows their progress and opens their table.
  * On phones each row becomes a two-line card; nothing scrolls sideways.
@@ -116,7 +116,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
               <tr>
                 <th scope="col" className="w-0">Done</th>
                 <th scope="col" className="w-0">Progress</th>
-                <th scope="col">Item</th>
+                <th scope="col">Objective</th>
                 <th scope="col" className="w-0">Links</th>
                 <th scope="col" className="w-0 text-right">Est.</th>
                 <th scope="col" className="w-0 text-right">Elapsed</th>
@@ -133,7 +133,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                 const estimate = formatMinutes(row.estimatedMinutes);
                 const elapsed = row.elapsedSeconds > 0 ? formatMinutes(Math.max(1, Math.round(row.elapsedSeconds / 60))) : null;
                 const inside = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside`
-                  : kind === 'quest' ? `Quest · ${row.childCount} item${row.childCount === 1 ? '' : 's'}`
+                  : kind === 'quest' ? `Quest · ${row.childCount} row${row.childCount === 1 ? '' : 's'}`
                   : kind === 'linked' ? 'Sub-mission' : null;
                 const state: CompletionState = row.completionState ?? 'No';
                 const timerHere = kind === 'item' && time?.available && ((canTime && open) || time.runningByNode.has(row.id));
@@ -219,8 +219,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                             version={version}
                             action={actions.checklist}
                             defaultOpen={props.selectedItem === row.id}
-                            // A Quest holds items only, so its rows offer no "Link to a mission" (migration 77).
-                            manager={props.manager && !props.itemsOnly}
+                            manager={props.manager}
                             moveTargets={props.moveTargets?.filter(target => target.id !== row.id) ?? []}
                             linkChoices={props.linkChoices ?? []}
                           />
@@ -250,7 +249,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
             action={actions.checklist}
             subMissionAction={actions.submission}
             label={title}
-            itemsOnly={props.itemsOnly}
+            questLevel={props.questLevel}
             autoFocus={props.autoFocus}
           />
         </div>

@@ -19,12 +19,12 @@ export function RoadmapItemWork({ mission, node, onCommitted, onOpen }: {
     loadRoadmapItemTime(mission.id, node.id).then(result => {
       if (!current) return;
       if (result.success && result.data) setTime(result.data);
-      else setError(result.error ?? 'Item time is unavailable. Retry.');
-    }).catch(() => { if (current) setError('Item time is unavailable. Retry.'); });
+      else setError(result.error ?? 'Objective time is unavailable. Retry.');
+    }).catch(() => { if (current) setError('Objective time is unavailable. Retry.'); });
     return () => { current = false; };
   }, [mission.id, node.id, retry]);
   return <>
     <ChecklistItemWork task={mission} node={node} time={time} actions={{ state: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer }} onOpen={onOpen} onCommitted={onCommitted} />
-    {error ? <p role="alert" className="text-danger mt-3 text-sm">{error} <button type="button" className="link min-h-9 rounded px-2 focus-visible:outline-primary" onClick={() => setRetry(n => n + 1)}>Retry item time</button></p> : null}
+    {error ? <p role="alert" className="text-danger mt-3 text-sm">{error} <button type="button" className="link min-h-9 rounded px-2 focus-visible:outline-primary" onClick={() => setRetry(n => n + 1)}>Retry objective time</button></p> : null}
   </>;
 }

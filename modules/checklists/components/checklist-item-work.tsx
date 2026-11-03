@@ -29,13 +29,13 @@ export function ChecklistItemWork({ task, node, time, actions, onOpen, onCommitt
     <dl className="text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
       <dt>Progress</dt><dd className="text-foreground text-right tabular-nums">{node.progressPercentage === null ? '—' : `${Math.round(node.progressPercentage)}%`}</dd>
       <dt>Estimate</dt><dd className="text-right">{formatMinutes(node.estimatedMinutes) ?? 'Not estimated'}</dd>
-      {!container ? <><dt>Logged on this item</dt><dd className="text-right">{time?.available && seconds !== undefined ? `${formatHours(seconds / 3600)} h` : '—'}</dd></> : null}
+      {!container ? <><dt>Logged on this objective</dt><dd className="text-right">{time?.available && seconds !== undefined ? `${formatHours(seconds / 3600)} h` : '—'}</dd></> : null}
     </dl>
     {node.links.length ? <ul className="grid gap-2 text-sm">{node.links.map((href, index) => <li key={`${href}:${index}`}><a href={href} target="_blank" rel="noopener noreferrer" className="text-primary break-all underline underline-offset-4">Work link {index + 1}</a></li>)}</ul> : null}
     {container ? <><p className="text-muted-foreground text-sm">Progress is the average of the {node.childCount} row{node.childCount === 1 ? '' : 's'} under it.</p><button type="button" onClick={onOpen} className={cn(buttonVariants(), 'px-4')}>Open rows</button></> : <>
       <CompletionForm ctx={{ action: wrap(actions.state), task, checklistId: node.checklistId }} node={node} className="grid gap-2" />
       {time ? <ItemTimerControls ctx={{ task, open: true, time: { info: time, canStart: true, start: wrap(actions.start), stop: wrap(actions.stop), discard: wrap(actions.discard) } }} node={node} /> : <p role="status" className="text-muted-foreground text-xs">Loading item time…</p>}
-      {time && !time.available ? <p className="text-muted-foreground text-xs">Time per item isn’t available on this workspace yet.</p> : null}
+      {time && !time.available ? <p className="text-muted-foreground text-xs">Time per objective isn’t available on this workspace yet.</p> : null}
     </>}
   </div>;
 }

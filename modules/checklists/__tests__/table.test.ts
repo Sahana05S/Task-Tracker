@@ -10,6 +10,7 @@ vi.mock('next/link', () => ({
 import { checklistIssues, commandVersion, opensTable, pageResult, rowKind, sectionStatus, stateChoices } from '@/modules/checklists/client';
 import type { ChecklistBranchRow, ChecklistRollup, SectionProgress } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistWorkspaceProps } from '@/modules/checklists/components/checklist-workspace';
+import { ChecklistAddRow } from '@/modules/checklists/components/checklist-add-row';
 import type { Task } from '@/types/tracker';
 
 const CHECKLIST = '11111111-1111-4111-8111-111111111111';
@@ -111,7 +112,7 @@ describe('checklist home', () => {
     // Closure has no rows, so it says so instead of drawing an empty table.
     expect(html.match(/<table/g)).toHaveLength(2);
     expect(html).toContain('No closure rows yet. An empty section counts as N/A.');
-    for (const heading of ['Done', 'Progress', 'Item', 'Links', 'Est.', 'Elapsed']) expect(html).toContain(`>${heading}</th>`);
+    for (const heading of ['Done', 'Progress', 'Objective', 'Links', 'Est.', 'Elapsed']) expect(html).toContain(`>${heading}</th>`);
     expect(html).not.toContain('>Type</th>');
     // No 'Add sub-mission' choice for a member (68 offers it to managers only).
     expect(html).not.toContain('>Sub-mission</button>');
@@ -177,5 +178,24 @@ describe('checklist page', () => {
     expect(html).toMatch(/aria-current="page"[^>]*>Structural review</);
     expect(html).toContain('name="parent_id" value="page-1"');
     expect(html).toContain('Rows under Structural review');
+  });
+});
+
+describe('add row inside Quests (migration 109)', () => {
+  const action = async () => ({ success: true as const });
+  const render = (questLevel: number) => renderToStaticMarkup(createElement(ChecklistAddRow, {
+    taskId: TASK, checklistId: CHECKLIST, parentId: null, section: 'activity', version: 1, action, subMissionAction: action, label: 'Objectives', questLevel,
+  }));
+
+  it('offers Objective, Quest and Sub-mission inside a Quest', () => {
+    const html = render(1);
+    for (const kind of ['Objective', 'Quest', 'Sub-mission']) expect(html).toMatch(new RegExp(`role="radio"[^>]*>(<svg[^]*?</svg>)?${kind}</button>`));
+    expect(html).toContain('placeholder="New objective"');
+  });
+
+  it('stops offering a Quest at the third level', () => {
+    const html = render(3);
+    expect(html).not.toMatch(/>Quest<\/button>/);
+    expect(html).toMatch(/>Sub-mission<\/button>/);
   });
 });

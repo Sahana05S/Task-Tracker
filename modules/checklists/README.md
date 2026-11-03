@@ -35,10 +35,26 @@ Since migration 77 (user decision, 25 October 2026) a Quest has no Setup /
 Activity / Closure of its own: every row in it is filed in one list (stored as
 its Activity section, which the rollup reads), so a Quest row's progress is the
 equal average of its items and it is complete when every item is done or N/A.
-A Quest holds items only (no Quest or Sub-mission inside a Quest; the
-`quest_items_guard` and `quest_nesting_guard` triggers). It opens as its own
-checklist home (`?checklist=<id>`), titled "Items", with the Quest in the
-breadcrumb. Quests of closed missions keep any Setup / Closure rows they had.
+It opens as its own checklist home (`?checklist=<id>`), titled "Objectives",
+with each Quest above it in the breadcrumb (Quest › Sub-quest). Quests of
+closed missions keep any Setup / Closure rows they had.
+
+Since migration 109 (user decisions, 3 November 2026) the interface calls a
+ticked row an **Objective** (the database still stores `node_type = 'Item'`,
+and `rowKind()` still returns `'item'`), and a Quest may hold Objectives,
+Quests (sub-quests) and Sub-missions, **at most three levels of Quest** deep
+(D-B1). `quest_depth_guard` replaces migration 77's item-only triggers: rows in
+a Quest stay in its single list and a fourth Quest level is refused; the add
+row stops offering Quest at the third level (`MAX_QUEST_LEVEL`).
+`checklist_node_result` reads each Quest's own list through its path argument,
+so nested work counts once and the weights of migration 85 are unchanged; the
+TypeScript mirror reads a Quest's list from `ChecklistProgressNode.quest`.
+`delete` with `with_children` removes every Quest list inside the row at any
+depth (Sub-missions stay missions of their own); `edit` refuses moving a row
+under one of its own rows; duplicating a Quest skips Sub-mission rows.
+
+Tests: `__tests__/fixtures/checklist-rollups.json` (nested-quest cases) and
+`tools/test_checklist_subquests_database.py`.
 
 Four views (user decision, 23 October 2026), switched by `ChecklistViewSwitch`
 and kept in `?view=` plus per-device memory (phones start on Blocks): **Table**
@@ -77,7 +93,8 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | Object | Defined in |
 |---|---|
 | `task_checklists`, `checklist_nodes` | `07_tracker_replacement_foundation.sql` (row details in 33-35; one kind of row in 63) |
-| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43, 63, 66 and 85 (wording) |
+| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43, 63, 66, 67, 69, 85 (wording) and 109 (delete with nested Quests, edit loop check) |
+| `quest_depth_guard` (`aa_m109_quest_rows`, `aa_m109_quest_depth`), `submission_guard`, `copy_owned_checklist` | 109 (replaces 77's `quest_items_guard` / `quest_nesting_guard`); 41 and 67; 41, patched in 109 |
 | `checklist_follows_activity` trigger (`aa_m66_follow_activity`) | `66_progress_follows_activity.sql` (also patches `refresh_task_metrics`) |
 | `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63; Quest rows in 67; section weights in 85 |
 | `checklist_branch` | 41, patched in 63 (opens any non-linked row) |

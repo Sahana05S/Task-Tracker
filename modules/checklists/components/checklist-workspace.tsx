@@ -121,11 +121,13 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const issues = checklistIssues(rollup.errors);
   const view: ChecklistView = props.view ?? 'table';
   const cardCtx = { task, canEdit, version, action: props.actions.checklist };
-  // A Quest is one list of items (decision 25 Oct 2026): its home shows that list, plus any
+  // A Quest is one list of objectives (decision 25 Oct 2026): its home shows that list, plus any
   // Setup or Closure rows a closed mission's Quest still holds from before.
   const inQuest = !!checklist?.ownerNodeId;
+  // Quests nest three levels deep (D-B1, migration 109): each Quest above this list is one level.
+  const questLevel = ancestors.filter((ancestor) => ancestor.ownedChecklistId).length;
   const homeSections = quest ? props.sections?.filter((home) => home.section === 'activity' || home.rows.length > 0) : props.sections;
-  const sectionTitle = (key: ChecklistSection) => (inQuest && key === 'activity' ? 'Items' : SECTION_TITLES[key].title);
+  const sectionTitle = (key: ChecklistSection) => (inQuest && key === 'activity' ? 'Objectives' : SECTION_TITLES[key].title);
   // Said once, instead of an add box that silently is not there (user report, 28 Oct 2026).
   const addBlocked = canEdit ? null
     : task.archivedEffectiveDate ? 'This mission is archived, so its checklist is read-only.'
@@ -141,7 +143,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       action={props.actions.checklist}
       subMissionAction={tableActions.submission}
       label={sectionTitle(section)}
-      itemsOnly={inQuest}
+      questLevel={questLevel}
       autoFocus={parentId !== null || section === 'activity'}
     />
   ) : null;
@@ -150,11 +152,11 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   // Every view is rendered here from the same rows, so the switch changes view without a page load.
   const contentFor = (v: ChecklistView): React.ReactNode => !checklist ? null : homeSections && v !== 'table' ? (
           <ChecklistAltView view={v} sections={homeSections} rollup={rollup} checklistId={checklist.id} ctx={cardCtx} addRow={addRowFor}
-            title={quest && homeSections.length === 1 ? 'Items' : undefined} />
+            title={quest && homeSections.length === 1 ? 'Objectives' : undefined} />
         ) : homeSections ? (
           homeSections.map((home) => {
             const meta = quest && home.section === 'activity'
-              ? { title: 'Items', note: 'Every item counts equally towards the Quest’s progress.' }
+              ? { title: 'Objectives', note: 'Every objective counts equally towards the Quest’s progress.' }
               : SECTION_TITLES[home.section];
             const address = { checklistId: checklist.id, section: home.section };
             return (
@@ -178,9 +180,9 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 selectedItem={props.selectedItem}
                 {...shared}
                 moveTargets={moveTargets(home.rows, null)}
-                itemsOnly={inQuest}
+                questLevel={questLevel}
                 autoFocus={home.section === 'activity'}
-                emptyText={quest && home.section === 'activity' ? (canEdit ? 'No items yet. Add the first one below.' : 'No items yet.') : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
+                emptyText={quest && home.section === 'activity' ? (canEdit ? 'No objectives yet. Add the first one below.' : 'No objectives yet.') : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
                 footer={<Paging taskTag={task.taskTag} address={address} cursor={home.cursor} nextCursor={home.nextCursor} />}
               />
             );
@@ -208,7 +210,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             section={props.page.section}
             addParentId={props.page.nodeId}
             canEdit={canEdit}
-            itemsOnly={inQuest}
+            questLevel={questLevel}
             autoFocus
             open={open}
             canTime={props.canTime}
@@ -286,7 +288,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
             </span>
             <div className="min-w-0">
               <p className="stat-figure">{percentText(activity) ?? 'Not started'}</p>
-              <p className="text-muted-foreground text-xs">{checklist.ownerNodeId ? 'Progress, the average of its items' : 'Mission progress · Activity 95% · Setup 2.5% · Closure 2.5%'}</p>
+              <p className="text-muted-foreground text-xs">{checklist.ownerNodeId ? 'Progress, the average of its objectives' : 'Mission progress · Activity 95% · Setup 2.5% · Closure 2.5%'}</p>
             </div>
           </div>
           <MissionProgress value={activity} label={checklist.ownerNodeId ? 'Quest progress' : 'Mission progress'} className="h-1.5" />
@@ -294,7 +296,7 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
           <p className="text-muted-foreground text-xs">
             {rollup.isComplete
               ? (checklist.ownerNodeId ? 'This Quest is complete.' : 'Reviewers approve before Done.')
-              : checklist.ownerNodeId ? 'The Quest is complete when every item is done or N/A.' : 'Done waits until Setup, Activity and Closure are complete or N/A.'}
+              : checklist.ownerNodeId ? 'The Quest is complete when every objective is done or N/A.' : 'Done waits until Setup, Activity and Closure are complete or N/A.'}
           </p>
         </div>
       </div>

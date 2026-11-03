@@ -159,7 +159,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
         kind: isContainer(row) ? 'page' : 'item' }));
       const next = path[i + 1];
       if (next && !children.some(c => c.id === next.id)) children.push({ id: next.id, title: next.title, kind: 'page', progress: null, complete: false });
-      if (branch?.hasMore) children.push({ id: `more:${step.id}`, title: 'More items', kind: 'more', progress: null, complete: false });
+      if (branch?.hasMore) children.push({ id: `more:${step.id}`, title: 'More objectives', kind: 'more', progress: null, complete: false });
       return { parentId: step.id, children };
     });
     const layout = layoutMissionMap(entities, mapLevels, orientation);
@@ -296,7 +296,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
   const lastLevel = last ? levels[last.id] : undefined;
   const sectionStep = last && !last.options.parentNodeId ? last : undefined;
   const status = restoring ? 'Opening your saved place…' : !last ? `${roots.length} open ${roots.length === 1 ? 'mission' : 'missions'}`
-    : leaf ? `Action item · depth ${path.length}` : lastLevel?.loading && !lastLevel.branch ? 'Loading branch…' : `${lastLevel?.branch?.rows.length ?? 0} items · depth ${path.length}`;
+    : leaf ? `Objective · depth ${path.length}` : lastLevel?.loading && !lastLevel.branch ? 'Loading branch…' : `${lastLevel?.branch?.rows.length ?? 0} rows · depth ${path.length}`;
   const { w, h } = size;
 
   return <div className="mt-4 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -325,7 +325,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
         </div> : <span />}
         {mission ? <span className="flex flex-wrap items-center gap-3 text-xs font-semibold">
           <TimerButton taskId={mission.id} taskLabel={mission.taskTag} />
-          <Link className="link" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage items</Link>
+          <Link className="link" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage objectives</Link>
           <Link className="link" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
           <MissionActionsMenu taskId={mission.id} taskTag={mission.taskTag} />
         </span> : null}
@@ -357,9 +357,9 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
             const sub = node.kind === 'more' ? `Load ${BATCH} more`
               : m ? `${pct(m.progress)} · ${missionDueLabel(m.dueDate, today)}`
               : node.kind === 'item' ? (row?.applicable === false ? 'Not applicable' : node.complete ? 'Complete' : 'Open to work')
-              : `${pct(node.progress)} · ${row?.childCount ?? 0} items${opened ? ' · open' : ''}`;
+              : `${pct(node.progress)} · ${row?.childCount ?? 0} rows${opened ? ' · open' : ''}`;
             const Icon = node.kind === 'mission' ? OrbitIcon : node.kind === 'page' ? LayersIcon : node.kind === 'more' ? PlusIcon : node.complete ? CheckIcon : CircleIcon;
-            const kindLabel = { mission: 'Mission', page: 'Row with rows inside', item: 'Row', more: 'More items' }[node.kind];
+            const kindLabel = { mission: 'Mission', page: 'Row with rows inside', item: 'Objective', more: 'More objectives' }[node.kind];
             return <button key={node.id} type="button" data-map-node={node.id} tabIndex={dim ? -1 : 0}
               className={cn(styles.node, node.depth > 1 && styles.small, dim && styles.dim, node.id === focusId && styles.current)}
               style={{ left: node.x, top: node.y, ['--node' as string]: `var(--map-hue-${node.hue})` }}
@@ -379,7 +379,7 @@ export function MissionMap({ missions, today, initialLocation, onLocation, orien
             style={orientation === 'horizontal' ? { left: leafNode.x, top: leafNode.side < 0 ? leafNode.y - 50 : leafNode.y + 110 }
               : { left: leafNode.side < 0 ? leafNode.x - 126 - 250 : leafNode.x + 126, top: leafNode.y }}>
             <div className="flex items-start justify-between gap-2"><p className="text-primary text-[10px] font-extrabold tracking-widest uppercase">{leaf.section ?? 'activity'} item</p>
-              <button type="button" aria-label="Close item" onClick={() => setLeafId(null)} className="text-muted-foreground -mt-1 -mr-1 rounded p-1 hover:text-foreground"><XIcon className="size-4" aria-hidden="true" /></button></div>
+              <button type="button" aria-label="Close objective" onClick={() => setLeafId(null)} className="text-muted-foreground -mt-1 -mr-1 rounded p-1 hover:text-foreground"><XIcon className="size-4" aria-hidden="true" /></button></div>
             <h3 className="text-foreground mt-2 text-base leading-snug font-semibold break-words">{leaf.title}</h3>
             <p className="text-muted-foreground mt-1 text-xs">{leaf.applicable === false ? 'Not applicable' : leaf.isComplete ? 'Complete' : 'Not done yet'}{leaf.linkedTaskId ? ' · follows a linked mission' : ''}</p>
             {cardError ? <p role="alert" className="text-danger mt-2 text-xs">{cardError}</p> : null}

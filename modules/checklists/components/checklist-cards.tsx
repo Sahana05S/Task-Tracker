@@ -15,7 +15,7 @@ import { SectionStateIcon } from './section-state-icon';
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 
 const KIND: Record<ChecklistRowKind, { label: string; icon: typeof FlagIcon }> = {
-  item: { label: 'Item', icon: CircleIcon },
+  item: { label: 'Objective', icon: CircleIcon },
   parent: { label: 'Rows inside', icon: ListTreeIcon },
   quest: { label: 'Quest', icon: FlagIcon },
   linked: { label: 'Sub-mission', icon: RocketIcon },
