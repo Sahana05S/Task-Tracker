@@ -178,8 +178,12 @@ export interface Task {
   reviewerId: string | null;
   /** Multi-assignee user IDs from `task_assignees`, with `assigneeId` as fallback. */
   assigneeIds: string[];
-  /** Multi-reviewer user IDs from `task_reviewers`, with `reviewerId` as fallback. */
+  /** Multi-reviewer user IDs from `task_reviewers`, with `reviewerId` as fallback. Observers are not reviewers. */
   reviewerIds: string[];
+  /** Zero-share `task_assignees` rows (migration 108): edit the mission, earn no credit, log no time. Also in `assigneeIds`. */
+  collaboratorIds?: string[];
+  /** `task_reviewers` rows with role Observer (migration 108): follow the mission, never review it. */
+  observerIds?: string[];
 
   /** `task_scale` — assigned work weight. */
   taskScale: number | null;

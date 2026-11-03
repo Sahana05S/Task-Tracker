@@ -23,8 +23,11 @@ import {
 import { getTaskEffortBreakdown } from '@/modules/checklists';
 import { canStartTimerForTask, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
 import {
+  canEditTaskDetails,
+  canManageTaskPeople,
   canManageTasks,
   canUpdateTaskOwnFields,
+  isTaskWorker,
   getNativeDetailState,
   getNativeTemplates,
   getMissionChoices,
@@ -40,6 +43,7 @@ import { EffortPanel } from '@/modules/tasks/components/detail/effort-panel';
 import { TaskLogTimeline } from '@/modules/tasks/components/detail/log-timeline';
 import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
 import { MissionOverview } from '@/modules/tasks/components/detail/mission-overview';
+import { MissionPeopleManager } from '@/modules/tasks/components/detail/mission-people';
 import { ProofsPanel } from '@/modules/tasks/components/detail/proofs-panel';
 import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
@@ -104,6 +108,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const archived = !!task.archivedEffectiveDate;
   const successor = data.dependencies.find((d) => d.otherTask?.id === task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role) && !archived;
+  // D-A2: the mission's Owner, assignees and collaborators also edit its details (migration 108).
+  const canEditDetails = !archived && canEditTaskDetails(currentUser, task);
   const requested = (await searchParams).tab;
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
@@ -111,7 +117,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
-    details && canManage ? getMissionChoices() : Promise.resolve([]),
+    details && canEditDetails ? getMissionChoices() : Promise.resolve([]),
     details && canManage ? getVisibleReportChoices() : Promise.resolve([]),
     details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
     // A failed read leaves the track on current progress.
@@ -132,8 +138,31 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     execution.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running') ?? null;
 
   const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
-  const assigneeNames = task.assigneeIds.map((id) => memberNames.get(id) ?? 'Unknown');
-  const reviewerNames = task.reviewerIds.map((id) => memberNames.get(id) ?? 'Unknown');
+  const nameOf = (id: string) => memberNames.get(id) ?? 'Unknown';
+  // Migration 108: zero-share assignees are collaborators; Observer reviewer rows are observers.
+  const collaboratorIds = task.collaboratorIds ?? [];
+  const observerIds = task.observerIds ?? [];
+  const creditedIds = task.assigneeIds.filter((id) => id !== task.assigneeId && isTaskWorker(task, id));
+  const people = {
+    owner: task.assigneeId ? [nameOf(task.assigneeId)] : [],
+    assignees: creditedIds.map(nameOf),
+    collaborators: collaboratorIds.map(nameOf),
+    reviewers: task.reviewerIds.map(nameOf),
+    observers: observerIds.map(nameOf),
+  };
+  const related = new Set([task.assigneeId, ...task.assigneeIds, ...task.reviewerIds, ...observerIds]);
+  const person = (id: string) => ({ id, name: nameOf(id) });
+  const peopleManager = canManageTaskPeople(currentUser, task) ? (
+    <MissionPeopleManager
+      taskId={task.id}
+      version={task.lifecycleVersion ?? 0}
+      owner={task.assigneeId ? person(task.assigneeId) : null}
+      assignees={task.participantCreditMode === 'configured' ? creditedIds.map(person) : []}
+      collaborators={collaboratorIds.map(person)}
+      observers={observerIds.map(person)}
+      candidates={data.members.filter((member) => member.isActive && !related.has(member.id)).map((member) => ({ id: member.id, name: member.fullName }))}
+    />
+  ) : null;
 
   const checklistHref = `/tasks/${encodeURIComponent(task.taskTag)}/checklist`;
   const family = subMissionFamily(task.id, data.dependencies);
@@ -242,8 +271,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             />
             <MissionOverview
               data={data}
-              assigneeNames={assigneeNames}
-              reviewerNames={reviewerNames}
+              people={people}
+              peopleManager={peopleManager}
               overdue={overdue}
               belowProgress={
                 <WaypointTrack
@@ -293,6 +322,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               native={native}
               templates={templates}
               canManage={canManage}
+              canEditDetails={canEditDetails}
               tasks={workspace}
               members={data.members}
               reports={reports}

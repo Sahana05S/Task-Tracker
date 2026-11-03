@@ -70,13 +70,23 @@ export interface TaskFields {
   shares: number[] | null;
 }
 
+/**
+ * The Owner picker (migration 108): the database makes the first assignee the
+ * Owner, so the chosen owner moves to the front. An owner who is not among the
+ * selected assignees is ignored, and the first selected member stays Owner.
+ */
+export function ownerFirst(ids: string[] | null, ownerId: string): string[] | null {
+  if (!ids || !ownerId || !ids.includes(ownerId)) return ids;
+  return [ownerId, ...ids.filter((id) => id !== ownerId)];
+}
+
 /** Reads and validates the task form, in the order the messages have always appeared. */
 export function parseTaskFields(formData: FormData): Parsed<TaskFields> {
   const taskTag = readString(formData, 'taskTag');
   const title = readString(formData, 'title');
   const category = readString(formData, 'category');
   const priority = readString(formData, 'priority');
-  const assigneeIds = readIdList(formData, 'assigneeIds', 'assigneeId');
+  const assigneeIds = ownerFirst(readIdList(formData, 'assigneeIds', 'assigneeId'), readString(formData, 'ownerId'));
   const reviewerIds = readIdList(formData, 'reviewerIds', 'reviewerId');
   const dueDate = readNullableString(formData, 'dueDate');
   const taskScale = readNullableNumber(formData, 'taskScale');

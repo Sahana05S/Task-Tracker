@@ -113,31 +113,56 @@ export function attachSubMissionParents(
   return tasks.map((task) => ({ ...task, parentTaskId: parents.get(task.id) ?? null }));
 }
 
+/** A `task_assignees` row as the participant reads select it. */
+export interface AssigneeRow { task_id: string; user_id: string; is_primary: boolean; share_units: number | null }
+/** A `task_reviewers` row; `reviewer_role` is optional for selects that predate observers. */
+export interface ReviewerRow { task_id: string; user_id: string; is_primary: boolean; reviewer_role?: string | null }
+
+/**
+ * A zero-share, non-primary assignee row is a collaborator (migration 108).
+ * Rows stored as 'Collaborator' with shares are ordinary assignees.
+ */
+export function isCollaboratorRow(row: Pick<AssigneeRow, 'is_primary' | 'share_units'>): boolean {
+  return !row.is_primary && row.share_units === 0;
+}
+
+export function isObserverRow(row: Pick<ReviewerRow, 'reviewer_role'>): boolean {
+  return row.reviewer_role === 'Observer';
+}
+
 export function attachTaskParticipants(
   tasks: readonly Task[],
-  assignees: readonly { task_id: string; user_id: string; is_primary: boolean; share_units: number | null }[],
-  reviewers: readonly { task_id: string; user_id: string; is_primary: boolean }[],
+  assignees: readonly AssigneeRow[],
+  reviewers: readonly ReviewerRow[],
 ): Task[] {
   const owners = new Map<string, string[]>();
   const shares = new Map<string, Record<string, number>>();
+  const collaborators = new Map<string, string[]>();
   const reviews = new Map<string, string[]>();
+  const observers = new Map<string, string[]>();
+  const push = (map: Map<string, string[]>, key: string, id: string, first = false) => {
+    const ids = map.get(key) ?? [];
+    if (first) ids.unshift(id);
+    else ids.push(id);
+    map.set(key, ids);
+  };
   for (const row of assignees) {
-    const ids = owners.get(row.task_id) ?? [];
-    if (row.is_primary) ids.unshift(row.user_id);
-    else ids.push(row.user_id);
-    owners.set(row.task_id, ids);
+    push(owners, row.task_id, row.user_id, row.is_primary);
+    if (isCollaboratorRow(row)) push(collaborators, row.task_id, row.user_id);
     const units = shares.get(row.task_id) ?? {};
     units[row.user_id] = row.share_units ?? 0;
     shares.set(row.task_id, units);
   }
   for (const row of reviewers) {
-    const ids = reviews.get(row.task_id) ?? [];
-    if (row.is_primary) ids.unshift(row.user_id);
-    else ids.push(row.user_id);
-    reviews.set(row.task_id, ids);
+    if (isObserverRow(row)) push(observers, row.task_id, row.user_id);
+    else push(reviews, row.task_id, row.user_id, row.is_primary);
   }
-  return tasks.map(task => withTaskParticipants({
-    ...task,
-    participantShares: task.participantCreditMode === 'configured' ? shares.get(task.id) ?? {} : null,
-  }, { assigneeIds: owners.get(task.id), reviewerIds: reviews.get(task.id) }));
+  return tasks.map(task => ({
+    ...withTaskParticipants({
+      ...task,
+      participantShares: task.participantCreditMode === 'configured' ? shares.get(task.id) ?? {} : null,
+    }, { assigneeIds: owners.get(task.id), reviewerIds: reviews.get(task.id) }),
+    collaboratorIds: collaborators.get(task.id) ?? [],
+    observerIds: observers.get(task.id) ?? [],
+  }));
 }

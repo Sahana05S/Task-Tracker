@@ -51,6 +51,26 @@ export const TASK_MANAGER_ROLES = [
 ] as const satisfies readonly UserRole[];
 
 /**
+ * How a member relates to a mission (migration 108), strongest first. Owner,
+ * assignees and collaborators are `task_assignees` rows (a collaborator holds no
+ * share); reviewers and observers are `task_reviewers` rows (role Observer).
+ */
+export const MISSION_RELATIONSHIPS = ['owner', 'assignee', 'collaborator', 'reviewer', 'observer'] as const;
+export type MissionRelationship = (typeof MISSION_RELATIONSHIPS)[number];
+
+export const MISSION_RELATIONSHIP_LABELS = {
+  owner: 'Owner',
+  assignee: 'Assignee',
+  collaborator: 'Collaborator',
+  reviewer: 'Reviewer',
+  observer: 'Observer',
+} satisfies Record<MissionRelationship, string>;
+
+/** The people commands of `task_people_command`. */
+export const TASK_PEOPLE_COMMANDS = ['add_collaborator', 'remove_collaborator', 'add_observer', 'remove_observer', 'transfer_owner'] as const;
+export type TaskPeopleCommand = (typeof TASK_PEOPLE_COMMANDS)[number];
+
+/**
  * Roles permitted to edit the organisational statements and milestones.
  *
  * The same two roles as `TASK_MANAGER_ROLES` today, declared separately rather

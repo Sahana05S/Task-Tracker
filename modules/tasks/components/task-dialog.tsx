@@ -182,9 +182,14 @@ function TaskForm({
   const [scaleMode, setScaleMode] = React.useState<StandingScaleMode>(defaultScaleMode);
   const [operationId, setOperationId] = React.useState('');
   React.useEffect(() => setOperationId(crypto.randomUUID()), []);
+  // Collaborators (zero share) are managed from the mission page, not here; the
+  // save keeps them (migration 108).
   const [assigneeIds, setAssigneeIds] = React.useState<Set<string>>(
-    () => new Set(task?.assigneeIds ?? [defaultAssigneeId]),
+    () => new Set(task ? task.assigneeIds.filter((id) => !(task.collaboratorIds ?? []).includes(id)) : [defaultAssigneeId]),
   );
+  const [ownerChoice, setOwnerChoice] = React.useState<string>(task?.assigneeId ?? defaultAssigneeId);
+  // The chosen owner while still selected, else the first selected assignee.
+  const ownerId = assigneeIds.has(ownerChoice) ? ownerChoice : [...assigneeIds][0] ?? '';
   const [reviewerIds, setReviewerIds] = React.useState<Set<string>>(
     () => new Set(task?.reviewerIds ?? []),
   );
@@ -371,7 +376,7 @@ function TaskForm({
         <Field
           id="task-assignees"
           label="Assignees"
-          hint="At least one. The first selected member becomes the primary assignee."
+          hint="At least one. Pick the owner below; collaborators and observers are managed on the mission page."
           required
         >
           <MemberCheckboxGroup
@@ -384,6 +389,23 @@ function TaskForm({
               )
             }
           />
+        </Field>
+
+        <Field id="task-owner" label="Owner" hint="Leads the mission and manages its collaborators and observers.">
+          <NativeSelect
+            id="task-owner"
+            name="ownerId"
+            value={ownerId}
+            onChange={(event) => setOwnerChoice(event.target.value)}
+            disabled={assigneeIds.size === 0}
+          >
+            {activeMembers.filter((member) => assigneeIds.has(member.id)).map((member) => (
+              <option key={member.id} value={member.id}>{member.fullName}</option>
+            ))}
+            {[...assigneeIds].filter((id) => !activeMembers.some((member) => member.id === id)).map((id) => (
+              <option key={id} value={id}>{members.find((member) => member.id === id)?.fullName ?? id}</option>
+            ))}
+          </NativeSelect>
         </Field>
 
         <Field
