@@ -1,19 +1,25 @@
 import Link from 'next/link';
-import { CameraIcon, CheckCircle2Icon } from 'lucide-react';
+import { CameraIcon, CheckCircle2Icon, MessageCircleIcon } from 'lucide-react';
 
-import type { CheckInMark } from '@/modules/attendance/client';
+import { checkInMessage, checkOutMessage, type CheckInMark } from '@/modules/attendance/client';
 import type { AttendanceSettings } from '@/modules/settings/client';
 import { EmptyState, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
+import { ShareText } from '@/shared/ui/share-text';
 import { CheckInForm } from './check-in-form';
 
 /**
  * The `/attendance/check-in` page body: check in when the day has no check-in,
- * check out after one, and a summary once both are done.
+ * check out after one, and a summary once both are done. After checking in the
+ * member can send a greeting on WhatsApp, and after checking out their daily
+ * report (user decision, 3 November 2026); they choose who receives it.
  */
-export function CheckInDay({ email, day, settings }: {
+export function CheckInDay({ email, fullName, day, settings, report }: {
   email: string;
+  fullName: string;
   day: { in: CheckInMark | null; out: CheckInMark | null; recorded: boolean; available: boolean };
   settings: AttendanceSettings;
+  /** The member's daily report text for today; read only once they have checked out. */
+  report?: string;
 }) {
   const kind = day.in ? 'out' : 'in';
   const title = day.in && day.out ? 'Checked out' : kind === 'in' ? 'Check in' : 'Check out';
@@ -40,6 +46,17 @@ export function CheckInDay({ email, day, settings }: {
           <CheckInForm kind={kind} email={email} office={office} todayIn={day.in} backHref="/today" />
         </MissionPanel>
       )}
+      {day.available && settings.checkInEnabled && day.in ? (
+        day.out ? (
+          <MissionPanel icon={MessageCircleIcon} title="Share your day" subtitle="Your daily report, ready to send. WhatsApp asks who to send it to.">
+            <ShareText text={checkOutMessage(day.in.capturedAt, day.out.capturedAt, report ?? '')} title={`Daily report · ${fullName}`} />
+          </MissionPanel>
+        ) : (
+          <MissionPanel icon={MessageCircleIcon} title="Tell your team you’re in" subtitle="A greeting with your check-in time. WhatsApp asks who to send it to.">
+            <ShareText text={checkInMessage(fullName, day.in.capturedAt)} title={`${fullName} checked in`} />
+          </MissionPanel>
+        )
+      ) : null}
     </MissionPage>
   );
 }

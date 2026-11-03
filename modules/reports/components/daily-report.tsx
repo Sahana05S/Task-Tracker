@@ -12,7 +12,7 @@ import type { LivePresentation } from '@/modules/reports/internal/presentation/m
 import { compiledLogs, dailyReport, formatDailyReport, longDate, type DailyReport, type ValidityState } from '@/modules/reports/internal/presentation/daily-report';
 import { sumHours } from '@/modules/time-tracking/client';
 import { TaskLogCompilation, TaskLogSummary } from './member-panels';
-import { ShareText } from './share-text';
+import { ShareText } from '@/shared/ui/share-text';
 
 export interface DailyReportProps {
   model: LivePresentation;

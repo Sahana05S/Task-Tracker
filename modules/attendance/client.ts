@@ -40,3 +40,4 @@ export {
   type CheckInKind,
   type CheckInMark,
 } from './internal/check-in-model';
+export { CHECK_IN_NOTES, checkInMessage, checkOutMessage, firstName, greetingFor, noteFor, shareTime } from './internal/share-message';

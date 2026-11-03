@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { Building2Icon, ChevronRightIcon, NetworkIcon } from 'lucide-react';
+import { Building2Icon, ChevronRightIcon, CornerLeftUpIcon, NetworkIcon } from 'lucide-react';
 
-import { buildOrgTree, canViewEmployeeProfile, employeeHref, teamSize, type OrgNode, type OrgPerson, type TodayStatus } from '@/modules/team/client';
+import { buildOrgTree, canViewEmployeeProfile, employeeHref, orgTiers, teamSize, type OrgNode, type OrgPerson, type TodayStatus } from '@/modules/team/client';
 import { ROLE_LABELS } from '@/shared/tracker/enums';
 import { EmptyState, InitialsAvatar } from '@/shared/ui/mission-ui';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
@@ -30,15 +30,21 @@ function Status({ today }: { today: TodayStatus | null }) {
   );
 }
 
-/** One person: avatar, name, title, role, department and today's status; a link where the viewer may open the profile. */
-function PersonCard({ person, viewer, reports }: { person: OrgPerson; viewer: Viewer; reports: number }) {
+/**
+ * One person: avatar, name, title, role, department and today's status; a link where the viewer may open the profile.
+ * `manager` names who they report to when that is not visible from the lines (under a shared leadership row).
+ */
+function PersonCard({ person, viewer, reports, manager }: { person: OrgPerson; viewer: Viewer; reports: number; manager?: string }) {
+  // The role already reads as the title line when there is no job title, so its chip would only repeat it.
+  const showRole = person.jobTitle !== null;
+  const chips = showRole || person.department || manager;
   const canOpen = canViewEmployeeProfile(viewer, { id: person.id }) && Boolean(person.employeeId);
   const body = (
     <>
       <span className="flex items-center gap-2.5">
         <InitialsAvatar name={person.fullName} className="size-9 shrink-0" />
         <span className="grid min-w-0 flex-1 text-left">
-          <span className="text-foreground truncate text-sm font-semibold">
+          <span className="text-foreground line-clamp-2 text-sm font-semibold">
             {person.fullName}
             {person.id === viewer.id ? <span className="text-muted-foreground font-normal"> (you)</span> : null}
           </span>
@@ -48,22 +54,30 @@ function PersonCard({ person, viewer, reports }: { person: OrgPerson; viewer: Vi
           <ChevronRightIcon aria-hidden="true" className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
         ) : null}
       </span>
-      <span className="flex flex-wrap items-center gap-1.5">
-        <RoleBadge role={person.role} />
-        {person.department ? (
-          <span className="badge-soft badge-neutral inline-flex items-center gap-1">
-            <Building2Icon aria-hidden="true" className="size-3" />
-            {person.department}
-          </span>
-        ) : null}
-      </span>
+      {chips ? (
+        <span className="flex flex-wrap items-center gap-1.5">
+          {showRole ? <RoleBadge role={person.role} /> : null}
+          {person.department ? (
+            <span className="badge-soft badge-neutral inline-flex items-center gap-1">
+              <Building2Icon aria-hidden="true" className="size-3" />
+              {person.department}
+            </span>
+          ) : null}
+          {manager ? (
+            <span className="text-muted-foreground inline-flex min-w-0 items-center gap-1 text-xs">
+              <CornerLeftUpIcon aria-hidden="true" className="size-3 shrink-0" />
+              <span className="truncate">Reports to {manager.split(' ')[0]}</span>
+            </span>
+          ) : null}
+        </span>
+      ) : null}
       <span className="flex items-center justify-between gap-2">
         <Status today={person.today} />
         {reports > 0 ? <span className="text-muted-foreground text-xs">{reports} {reports === 1 ? 'report' : 'reports'}</span> : null}
       </span>
     </>
   );
-  const className = 'bg-card border-border grid w-56 gap-2 rounded-xl border p-3 text-left';
+  const className = 'bg-card border-border grid w-full max-w-xs gap-2 rounded-xl border p-3 text-left md:w-52';
   // Every card the viewer may open is a link to that profile (user request, 28 Oct 2026); members
   // open only their own, so the others say why rather than looking broken.
   return canOpen ? (
@@ -78,10 +92,10 @@ function PersonCard({ person, viewer, reports }: { person: OrgPerson; viewer: Vi
   );
 }
 
-function TreeBranch({ node, viewer }: { node: OrgNode; viewer: Viewer }) {
+function TreeBranch({ node, viewer, manager }: { node: OrgNode; viewer: Viewer; manager?: string }) {
   return (
     <li>
-      <PersonCard person={node.person} viewer={viewer} reports={teamSize(node) - 1} />
+      <PersonCard person={node.person} viewer={viewer} reports={teamSize(node) - 1} manager={manager} />
       {node.reports.length ? (
         <ul>
           {node.reports.map(child => <TreeBranch key={child.person.id} node={child} viewer={viewer} />)}
@@ -91,10 +105,10 @@ function TreeBranch({ node, viewer }: { node: OrgNode; viewer: Viewer }) {
   );
 }
 
-function ListBranch({ node, viewer }: { node: OrgNode; viewer: Viewer }) {
+function ListBranch({ node, viewer, manager }: { node: OrgNode; viewer: Viewer; manager?: string }) {
   return (
     <li className="grid gap-2">
-      <PersonCard person={node.person} viewer={viewer} reports={teamSize(node) - 1} />
+      <PersonCard person={node.person} viewer={viewer} reports={teamSize(node) - 1} manager={manager} />
       {node.reports.length ? (
         <ul className="border-border ml-4 grid gap-2 border-l pl-4">
           {node.reports.map(child => <ListBranch key={child.person.id} node={child} viewer={viewer} />)}
@@ -108,7 +122,10 @@ function ListBranch({ node, viewer }: { node: OrgNode; viewer: Viewer }) {
  * The company org chart: who reports to whom, from the reporting lines the
  * managing director sets in Manage people. A top-down tree from `md` (it
  * scrolls sideways inside its own box when the company is wide), an indented
- * list on phones. Both are nested lists of the real names.
+ * list on phones. Both are nested lists of the real names. Two or more
+ * managing directors at the top share one leadership row, with everyone under
+ * them as one level that names each person's manager (`orgTiers`), instead of
+ * separate, unconnected trees.
  */
 export function OrgChart({ people, viewer, available, canManage }: {
   people: readonly OrgPerson[];
@@ -125,6 +142,7 @@ export function OrgChart({ people, viewer, available, canManage }: {
     );
   }
   const roots = buildOrgTree(people);
+  const { leaders, below, managerOf } = orgTiers(roots);
   const active = people.filter(person => person.active);
   const departments = new Set(active.map(person => person.department).filter(Boolean));
   if (roots.length === 0) {
@@ -151,15 +169,43 @@ export function OrgChart({ people, viewer, available, canManage }: {
 
       <div className="hidden overflow-x-auto pb-2 md:block">
         <div className={styles.tree}>
-          <ul aria-label="Org chart">
-            {roots.map(root => <TreeBranch key={root.person.id} node={root} viewer={viewer} />)}
-          </ul>
+          {leaders.length ? (
+            <ul aria-label="Org chart">
+              <li>
+                <ul aria-label="Leadership" className={cn(styles.leaders, below.length && styles.leadersWithTeam)}>
+                  {leaders.map(leader => (
+                    <li key={leader.person.id} className={styles.leader}>
+                      <PersonCard person={leader.person} viewer={viewer} reports={teamSize(leader) - 1} />
+                    </li>
+                  ))}
+                </ul>
+                {below.length ? (
+                  <ul aria-label="Team">
+                    {below.map(node => <TreeBranch key={node.person.id} node={node} viewer={viewer} manager={managerOf.get(node.person.id)} />)}
+                  </ul>
+                ) : null}
+              </li>
+            </ul>
+          ) : (
+            <ul aria-label="Org chart">
+              {below.map(root => <TreeBranch key={root.person.id} node={root} viewer={viewer} />)}
+            </ul>
+          )}
         </div>
       </div>
 
-      <ul aria-label="Org chart" className="grid gap-3 md:hidden">
-        {roots.map(root => <ListBranch key={root.person.id} node={root} viewer={viewer} />)}
-      </ul>
+      <div className="grid gap-3 md:hidden">
+        {leaders.length ? (
+          <ul aria-label="Leadership" className="grid gap-2 sm:grid-cols-2">
+            {leaders.map(leader => (
+              <li key={leader.person.id}><PersonCard person={leader.person} viewer={viewer} reports={teamSize(leader) - 1} /></li>
+            ))}
+          </ul>
+        ) : null}
+        <ul aria-label={leaders.length ? 'Team' : 'Org chart'} className={cn('grid gap-3', leaders.length && 'border-border ml-4 border-l pl-4')}>
+          {below.map(node => <ListBranch key={node.person.id} node={node} viewer={viewer} manager={managerOf.get(node.person.id)} />)}
+        </ul>
+      </div>
     </section>
   );
 }

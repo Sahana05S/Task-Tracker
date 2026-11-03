@@ -25,7 +25,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.5rem 0.5rem 0;
+  padding: 1.5rem 0.25rem 0;
 }
 
 /* The two halves of the branch line above each card. */
@@ -89,4 +89,68 @@
 .tree > ul > li::before,
 .tree > ul > li::after {
   display: none;
+}
+
+/*
+ * Two or more managing directors at the top share one leadership row (user
+ * report, 3 November 2026: a second director split the chart into two
+ * unconnected trees). Each director's card drops a short line to one bar that
+ * joins them, and the line to the team below leaves from the bar's middle.
+ */
+.tree ul.leaders {
+  padding-top: 0;
+}
+
+.tree ul.leaders::before {
+  content: none;
+}
+
+.tree ul.leaders > li.leader {
+  padding: 0 0.25rem;
+}
+
+/* Directors' cards share one height, so every drop starts at a card's edge. */
+.tree ul.leaders > li.leader > * {
+  flex: 1 1 auto;
+}
+
+.tree ul.leaders > li.leader::before,
+.tree ul.leaders > li.leader::after {
+  content: none;
+}
+
+.tree ul.leadersWithTeam > li.leader {
+  padding-bottom: 1.5rem;
+}
+
+.tree ul.leadersWithTeam > li.leader::before,
+.tree ul.leadersWithTeam > li.leader::after {
+  content: '';
+  position: absolute;
+  top: auto;
+  bottom: 0;
+  width: 50%;
+  border: 0 none;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+/* Left half of the bar under this card. */
+.tree ul.leadersWithTeam > li.leader::before {
+  right: 50%;
+  left: auto;
+  height: 0;
+}
+
+/* The drop from the card, and the right half of the bar. */
+.tree ul.leadersWithTeam > li.leader::after {
+  left: 50%;
+  right: auto;
+  height: 1.5rem;
+  border-left: 1px solid var(--border-strong);
+}
+
+.tree ul.leadersWithTeam > li.leader:first-child::before,
+.tree ul.leadersWithTeam > li.leader:last-child::after {
+  border-bottom: 0 none;
 }

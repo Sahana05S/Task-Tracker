@@ -9,10 +9,10 @@ remove/restore access) and the signed-in member's own Settings (display name).
 | File | What it offers |
 |---|---|
 | `index.ts` | Server reads: `getPeopleAdminData` (members and open invitations of the director's company), `getTeamIndexData`, `getEmployeeProfileData`, `getEmployeeReportsData`, `getEmployeeByEmployeeId`, `resolveEmployeeRouteState`, `getMemberNames` (id -> display name; empty on error), `getOrgChart` (`available` is false before migration 65), and their types. Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure: `canViewTeamModule`, `canViewEmployeeProfile`, `canViewEmployeeReports`, `employeeHref`, `employeeReportsHref`, `normalizeEmployeeIdParam`, `buildEmployeeAnalyticsCharts` (with the profile chart types `EmployeeDayHours`, `EmployeeStarDay`, `StarDayState`), `optionalEmployeePerformance`, the org chart's `buildOrgTree`, `parseOrgChart`, `teamSize`, `TODAY_STATUSES` and types |
+| `client.ts` | Pure: `canViewTeamModule`, `canViewEmployeeProfile`, `canViewEmployeeReports`, `employeeHref`, `employeeReportsHref`, `normalizeEmployeeIdParam`, `buildEmployeeAnalyticsCharts` (with the profile chart types `EmployeeDayHours`, `EmployeeStarDay`, `StarDayState`), `optionalEmployeePerformance`, the org chart's `buildOrgTree`, `orgTiers` (several top-level managing directors as one leadership row), `parseOrgChart`, `teamSize`, `TODAY_STATUSES` and types |
 | `profile-actions.ts` | `'use server'` `updateDisplayName` |
 | `people-actions.ts` | `'use server'` `inviteMember`, `revokeInvitation`, `updateMember` (managing director only; enforced by `people_command`) |
-| `components/` | `EmployeeChartsPanel` (profile Charts tab: ten factor small multiples against the dashed team median, hours per day, missions and deadlines, mission mix), `ScoreVsMedianChart`, `StarCalendar` (daily star log), `AwardControls`, `SettingsForm`, `InviteForm` / `InvitationList` / `MemberList` (`people-admin.tsx`; the member edit form sets Reports to, Job title and Department), `OrgChart` (top-down tree from `md`, indented list on phones), `TeamViewSwitch` (List / Chart) |
+| `components/` | `EmployeeChartsPanel` (profile Charts tab: ten factor small multiples against the dashed team median, hours per day, missions and deadlines, mission mix), `ScoreVsMedianChart`, `StarCalendar` (daily star log), `AwardControls`, `SettingsForm`, `InviteForm` / `InvitationList` / `MemberList` (`people-admin.tsx`; the member edit form sets Reports to, Job title and Department), `OrgChart` (top-down tree from `md`, indented list on phones; two or more top-level managing directors share one leadership row joined to everyone below, each of whom names their manager, since 3 November 2026), `TeamViewSwitch` (List / Chart) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -27,7 +27,7 @@ remove/restore access) and the signed-in member's own Settings (display name).
 | `member-names.ts` | Member display names keyed by id (used by Today) |
 | `people.ts` | People page: form parsing, members/invitations read, `people_command` call |
 | `org-chart.ts` | `org_chart()` read |
-| `org-tree.ts` | Pure org chart parser and tree builder (nearest active manager, loop guard) |
+| `org-tree.ts` | Pure org chart parser and tree builder (nearest active manager, loop guard) and `orgTiers` (the leadership row) |
 
 ## Database it owns
 | Object | Defined in |
@@ -37,7 +37,7 @@ remove/restore access) and the signed-in member's own Settings (display name).
 | `daily_star_records`, `performance_score_components` (legacy history reads) | `01_init_schema.sql` |
 | `member_invitations`, `people_command(text,jsonb)`, invite-only `handle_new_user`, last-director guard | `49_people_admin_invitations.sql` |
 | Direct writes to `users` change only `full_name`, for every role (directors included); roles, activation, placement and email change only through `people_command` or `handle_new_user` | `105_users_direct_write_display_name_only.sql` |
-| `users.reports_to`, `job_title`, `department_id` (same company, no loops, active manager; a new non-director starts under the earliest active director, also when the company is attached later: 103), `people_command` placement fields, `org_chart()` (any active member; today's status coarse only: in, half day, away, not recorded) | `65_org_chart.sql`, `103_org_chart_default_manager.sql` |
+| `users.reports_to`, `job_title`, `department_id` (same company, no loops, active manager; a new non-director starts under the earliest active director, also when the company is attached later: 103), `people_command` placement fields, `org_chart()` (any active member; today's status coarse only: in, half day, away, not recorded; from the active attendance record only since 107) | `65_org_chart.sql`, `103_org_chart_default_manager.sql`, `107_org_chart_active_status.sql` |
 
 It also reads tables owned by other modules (`daily_task_logs`,
 `attendance_records`, `report_snapshots`, `task_links`). All objects are

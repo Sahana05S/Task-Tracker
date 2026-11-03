@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildOrgTree, parseOrgChart, teamSize, type OrgNode, type OrgPerson } from '../client';
+import { buildOrgTree, orgTiers, parseOrgChart, teamSize, type OrgNode, type OrgPerson } from '../client';
 
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
@@ -70,6 +70,75 @@ describe('buildOrgTree', () => {
       person(3, { fullName: 'C', reportsTo: uuid(1), active: false }),
     ]);
     expect(shape(tree)).toEqual(['B']);
+  });
+});
+
+describe('orgTiers', () => {
+  const names = (nodes: OrgNode[]) => nodes.map(node => node.person.fullName);
+
+  it('leaves a company with one managing director as it was', () => {
+    const roots = buildOrgTree([
+      person(1, { fullName: 'Meera', role: 'managing_director' }),
+      person(2, { fullName: 'Arun', reportsTo: uuid(1) }),
+    ]);
+    const tiers = orgTiers(roots);
+    expect(tiers.leaders).toEqual([]);
+    expect(shape(tiers.below)).toEqual([{ Meera: ['Arun'] }]);
+    expect(tiers.managerOf.size).toBe(0);
+  });
+
+  it('puts two directors in one row and their reports in one level under it (user report, 3 Nov 2026)', () => {
+    const roots = buildOrgTree([
+      person(1, { fullName: 'Harish', role: 'managing_director' }),
+      person(2, { fullName: 'Aishwarya', role: 'managing_director' }),
+      person(3, { fullName: 'Vijay', role: 'project_engineer', reportsTo: uuid(1) }),
+      person(4, { fullName: 'Kavi', role: 'data_manager', reportsTo: uuid(1) }),
+      person(5, { fullName: 'Sahana', reportsTo: uuid(1) }),
+      person(6, { fullName: 'Devi', reportsTo: uuid(5) }),
+    ]);
+    const tiers = orgTiers(roots);
+    expect(names(tiers.leaders)).toEqual(['Aishwarya', 'Harish']);
+    expect(shape(tiers.below)).toEqual(['Vijay', 'Kavi', { Sahana: ['Devi'] }]);
+    expect(tiers.managerOf.get(uuid(3))).toBe('Harish');
+    expect(tiers.managerOf.has(uuid(6))).toBe(false);
+    // Each director's card still counts only their own people.
+    expect(tiers.leaders.map(teamSize)).toEqual([1, 5]);
+  });
+
+  it('shows both directors\' reports together, each naming their own manager', () => {
+    const roots = buildOrgTree([
+      person(1, { fullName: 'Harish', role: 'managing_director' }),
+      person(2, { fullName: 'Aishwarya', role: 'managing_director' }),
+      person(3, { fullName: 'Zara', reportsTo: uuid(2) }),
+      person(4, { fullName: 'Bala', reportsTo: uuid(1) }),
+    ]);
+    const tiers = orgTiers(roots);
+    expect(names(tiers.below)).toEqual(['Bala', 'Zara']);
+    expect(tiers.managerOf.get(uuid(3))).toBe('Aishwarya');
+    expect(tiers.managerOf.get(uuid(4))).toBe('Harish');
+  });
+
+  it('keeps other top-level people (a cleared manager) under the row, with no manager named', () => {
+    const roots = buildOrgTree([
+      person(1, { fullName: 'Harish', role: 'managing_director' }),
+      person(2, { fullName: 'Aishwarya', role: 'managing_director' }),
+      person(3, { fullName: 'Loose' }),
+    ]);
+    const tiers = orgTiers(roots);
+    expect(names(tiers.leaders)).toEqual(['Aishwarya', 'Harish']);
+    expect(names(tiers.below)).toEqual(['Loose']);
+    expect(tiers.managerOf.has(uuid(3))).toBe(false);
+  });
+
+  it('treats an inactive director as gone: their people move up and one director remains', () => {
+    const roots = buildOrgTree([
+      person(1, { fullName: 'Harish', role: 'managing_director' }),
+      person(2, { fullName: 'Old', role: 'managing_director', active: false }),
+      person(3, { fullName: 'Kept', reportsTo: uuid(2) }),
+    ]);
+    const tiers = orgTiers(roots);
+    expect(tiers.leaders).toEqual([]);
+    expect(names(tiers.below)).toEqual(['Harish', 'Kept']);
   });
 });
 

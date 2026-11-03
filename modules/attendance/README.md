@@ -44,6 +44,23 @@ on-time policy sees it. Photos older than the company's retention are removed
 nightly by `POST /api/internal/attendance-photos` (third step of
 `.github/workflows/award-worker.yml`); the times and positions stay.
 
+## WhatsApp after check-in and check-out (3 November 2026)
+User decision: the app drafts the message and the member picks who receives it
+in WhatsApp; nothing is sent automatically and no number is stored. After
+checking in, `/attendance/check-in` shows "Tell your team you're in" with a
+greeting by the India time of day, the check-in time and date, and one of
+`CHECK_IN_NOTES` picked by the date (`checkInMessage`). After checking out it
+shows "Share your day": both times above the member's daily report text
+(`checkOutMessage`; the page reads the report through the reports module only
+once the day is checked out, and a failed read leaves just the times). Both use
+`ShareText` from `shared/ui/share-text`: Send on WhatsApp
+(`https://wa.me/?text=…`, which opens the app on a phone and WhatsApp Desktop
+or Web on a laptop, with a chat picker), Copy, and the phone's share sheet. The
+attendance record is saved before any of this appears, so WhatsApp can never
+undo or repeat a check-in. Rules in `internal/share-message.ts`, tests in
+`__tests__/share-message.test.ts`. Inside the Android app the link must leave
+the WebView for WhatsApp; that is handled in the stellar-mobile shell.
+
 ## Check-in reminder (migration 93, M20)
 With a reminder time set in Settings > Company > Check-in (off by default),
 pg_cron runs `taskpulse_private.check_in_reminder_tick()` every 5 minutes
@@ -75,7 +92,7 @@ record (active or withdrawn) is never changed.
 | `check-in-actions.ts` | `'use server'` `checkIn()` (upload the photo, then `attendance_check_in`; `operationId` and `photoId` make a retry replay), `loadCheckInPhotos()` (signed links for one person's day: own, or anyone's for MD/PE) |
 | `actions.ts` | `'use server'` `saveAttendanceRecord()` (sets `kind=attendance` and calls the dated-record command); `fillAttendanceDay()` (one new record per listed member for a day, each with an operation id derived from the form's, so a resubmit replays; existing records are never overwritten; reports saved and skipped members) |
 | `client.ts` | Matrix model and editing payload: `attendanceMatrix`, `attendanceMonth`, `shiftMonth`, `cellValues`, `withStatus`, `hoursBetween`, `cellCommand`, `emptyCells`, `fillCommand`, types `AttendanceMatrixModel`, `MatrixRow`, `MatrixCell`, `CellValues`, `DayFill`; pure helpers and types: `summarizeAttendance`, `EMPTY_ATTENDANCE_SUMMARY`, `AttendanceSummary`, `defaultHoursForStatus`, `computeHoursFromCheckTimes`, `compareRecordedHours`, `dailyAttendanceValidity`, `localCheckTime`, `ATTENDANCE_INPUT_VERSION`, `canManageAttendance`, `canEditAttendanceRecord`, `ATTENDANCE_COLUMNS`, `mapAttendanceRecord(s)`; check-in helpers `compressPhoto`, `mapLink`, `mapEmbed`, `MAX_PHOTO_BYTES`, types `CheckInKind`, `CheckInMark` |
-| `components/` | `AttendanceWorkspace` (the `/attendance` page body), `AttendanceMatrix` (grid or calendar, one shared editor sheet), `AttendanceCellEditor`, `AttendanceDayFill`, `CheckInDay` (the `/attendance/check-in` body), `CheckInForm`, `CheckInEvidence`, `CheckInPrompt` (Today's button) |
+| `components/` | `AttendanceWorkspace` (the `/attendance` page body), `AttendanceMatrix` (grid or calendar, one shared editor sheet), `AttendanceCellEditor`, `AttendanceDayFill`, `CheckInDay` (the `/attendance/check-in` body, with the WhatsApp share panels), `CheckInForm`, `CheckInEvidence`, `CheckInPrompt` (Today's button) |
 
 Code that may end up in a client bundle (for example the scoring engine)
 imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
@@ -88,6 +105,7 @@ imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
 | `contract.ts` | Exact-decimal hour validity rules and local check-time parsing |
 | `summary.ts` | Period totals (payable days, hours) |
 | `permissions.ts` | Who may manage or edit attendance (UI messages; the database is the real boundary) |
+| `share-message.ts` | The WhatsApp check-in greeting and check-out message (pure) |
 | `mappers.ts` | `attendance_records` row -> `AttendanceRecord` |
 | `matrix.ts` | The month matrix, the month parameter, the cell editor's values and the exact command fields for a cell or a day fill |
 | `check-in-model.ts` | Check-in types, row mapper, map links and photo compression (client-safe) |

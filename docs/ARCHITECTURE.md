@@ -86,7 +86,7 @@ Start from `modules/_template/` when creating a module.
 | `shared/read-models/team-summary.ts` | Cached raw `team_summary_inputs` fetch shared by scoring and support |
 | `shared/commands/` | Command results and idempotent operation ids |
 | `shared/tracker/` | Common enums, display formatters and `csv.ts` (`csvCell`, the formula-safe CSV cell) |
-| `shared/ui/` | Buttons, inputs, dialogs (shadcn), `mission-ui` page/panel blocks, `tracker-badges`, `execution-form`, `chart-palette`, `theme` (Light / Dark / System: `ThemeProvider`, `useTheme`, `ThemeChoice`; `theme-script.ts` is the pre-paint inline script the root layout embeds) |
+| `shared/ui/` | Buttons, inputs, dialogs (shadcn), `mission-ui` page/panel blocks, `tracker-badges`, `execution-form`, `chart-palette`, `share-text` (`ShareText`: a message preview with Send on WhatsApp, Copy and the share sheet; `share-link.ts` `whatsappHref`), `theme` (Light / Dark / System: `ThemeProvider`, `useTheme`, `ThemeChoice`; `theme-script.ts` is the pre-paint inline script the root layout embeds) |
 | `shared/utils.ts` | `cn()` class-name helper |
 
 ## Module map

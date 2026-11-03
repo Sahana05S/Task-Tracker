@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckIcon, CopyIcon, Share2Icon } from 'lucide-react';
+import { CheckIcon, CopyIcon, MessageCircleIcon, Share2Icon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
+import { whatsappHref } from '@/shared/ui/share-link';
 
 /**
- * The daily report as the message the member sends: a preview bubble with
- * Copy, plus Share (the phone's share sheet) where the browser offers it.
+ * A message the member sends (the daily report, the check-in greeting): a
+ * preview bubble with Send on WhatsApp (WhatsApp opens with the text filled in
+ * and the member picks the chat, on a phone or a laptop), Copy, and Share (the
+ * phone's share sheet) where the browser offers it.
  */
 export function ShareText({ text, title }: { text: string; title: string }) {
   const [canShare, setCanShare] = useState(false);
@@ -42,7 +45,13 @@ export function ShareText({ text, title }: { text: string; title: string }) {
         <BoldText text={text} />
       </pre>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" onClick={copy} className="gap-1.5">
+        <Button asChild className="gap-1.5">
+          <a href={whatsappHref(text)} target="_blank" rel="noopener noreferrer">
+            <MessageCircleIcon className="size-4" aria-hidden="true" />
+            Send on WhatsApp
+          </a>
+        </Button>
+        <Button type="button" variant="outline" onClick={copy} className="gap-1.5">
           {status.startsWith('Copied') ? <CheckIcon className="size-4" aria-hidden="true" /> : <CopyIcon className="size-4" aria-hidden="true" />}
           Copy text
         </Button>
