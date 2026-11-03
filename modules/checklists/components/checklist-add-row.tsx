@@ -10,14 +10,18 @@ import type { ChecklistSection } from '../internal/progress';
 import { ChecklistVersionField } from './checklist-state-control';
 import type { ActionResponse } from '@/types/tracker';
 
+/** Quests nest three levels deep (decision D-B1, 3 November 2026; migration 109). */
+export const MAX_QUEST_LEVEL = 3;
+
 const KINDS = [
-  { key: 'add', label: 'Item', hint: 'A row you tick Yes, No or N/A' },
-  { key: 'submission', label: 'Quest', hint: 'A page with its own list of items' },
+  { key: 'add', label: 'Objective', hint: 'A row you tick Yes, No or N/A' },
+  { key: 'submission', label: 'Quest', hint: 'A page with its own list of objectives, sub-quests and sub-missions' },
   { key: 'sub-mission', label: 'Sub-mission', hint: 'A real mission of its own, linked here; its progress feeds this row' },
 ] as const;
 
 /**
- * The last row of a checklist table: pick Item or Quest, type a title, add.
+ * The last row of a checklist table: pick Objective, Quest or Sub-mission,
+ * type a title, add.
  * Rows go under any row from its menu, and links, estimates and instructions
  * are added afterwards there too, so adding stays one line.
  */
@@ -30,7 +34,7 @@ export function ChecklistAddRow({
   action,
   subMissionAction,
   label,
-  itemsOnly = false,
+  questLevel = 0,
   autoFocus = false,
 }: {
   taskId: string;
@@ -42,8 +46,8 @@ export function ChecklistAddRow({
   /** Present for managers: creates a Sub-mission (a linked real mission). */
   subMissionAction?: (form: FormData) => Promise<ActionResponse<unknown>>;
   label: string;
-  /** Inside a Quest: items only (no Quest or Sub-mission in a Quest). */
-  itemsOnly?: boolean;
+  /** Quest levels above this list: 0 for the mission's checklist; at the last level no Quest is offered. */
+  questLevel?: number;
   /** The page's main add row: the cursor starts in its title box. */
   autoFocus?: boolean;
 }) {
@@ -55,7 +59,7 @@ export function ChecklistAddRow({
     if (autoFocus && (!document.activeElement || document.activeElement === document.body)) titleRef.current?.focus({ preventScroll: true });
   }, [autoFocus]);
   const [kind, setKind] = React.useState<(typeof KINDS)[number]['key']>('add');
-  const kinds = KINDS.filter((entry) => itemsOnly ? entry.key === 'add' : entry.key !== 'sub-mission' || subMissionAction);
+  const kinds = KINDS.filter((entry) => entry.key === 'submission' ? questLevel < MAX_QUEST_LEVEL : entry.key !== 'sub-mission' || subMissionAction);
   const chosen = kinds.find((entry) => entry.key === kind) ?? kinds[0];
   const subMission = chosen.key === 'sub-mission';
 
@@ -69,7 +73,7 @@ export function ChecklistAddRow({
       <input type="hidden" name="parent_id" value={parentId ?? ''} />
       <div className="border-primary/35 bg-primary-subtle/30 grid gap-2.5 rounded-xl border border-dashed p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span id={`${titleId}-kind`} className="text-foreground text-sm font-semibold">{kinds.length === 1 ? 'Add an item' : 'Add'}</span>
+          <span id={`${titleId}-kind`} className="text-foreground text-sm font-semibold">{kinds.length === 1 ? 'Add an objective' : 'Add'}</span>
           {kinds.length === 1 ? null : <div role="radiogroup" aria-labelledby={`${titleId}-kind`} className="flex flex-wrap gap-1.5">
             {kinds.map((entry) => {
               const Icon = entry.key === 'submission' ? FlagIcon : entry.key === 'sub-mission' ? RocketIcon : CircleCheckIcon;
@@ -103,7 +107,7 @@ export function ChecklistAddRow({
             required
             maxLength={500}
             data-autofocus=""
-            placeholder={chosen.key === 'add' ? 'New item' : chosen.key === 'submission' ? 'Name the Quest' : 'Name the sub-mission'}
+            placeholder={chosen.key === 'add' ? 'New objective' : chosen.key === 'submission' ? 'Name the Quest' : 'Name the sub-mission'}
             className="bg-card h-9 min-w-48 flex-1 basis-56"
           />
           <Button type="submit" size="sm" className="h-9">

@@ -215,28 +215,29 @@ export function ChecklistRowActions({
             <h3 id={id('remove-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Trash2Icon className="text-danger size-4" aria-hidden="true" />Remove
             </h3>
-            {kind === 'quest' && row.childCount > 0 ? (
-              <p className="text-muted-foreground text-sm">Open the Quest and remove its rows first, then the Quest can be removed.</p>
-            ) : (
-              <ExecutionForm action={action} scope={`delete:${row.id}`}>
-                <input type="hidden" name="command" value="delete" />
-                {hidden}
-                {kind === 'parent' ? <input type="hidden" name="with_children" value="true" /> : null}
-                <div className="grid gap-3">
-                  {kind === 'parent' ? (
-                    <p className="text-danger text-sm">
-                      The {row.childCount} row{row.childCount === 1 ? '' : 's'} under it go too. Time logged on them is kept.
-                    </p>
-                  ) : null}
-                  <Field id={id('remove-reason')} label="Why remove it?" required>
-                    <Input id={id('remove-reason')} name="reason" required maxLength={1000} />
-                  </Field>
-                  <Button type="submit" variant="destructive" className="justify-self-start">
-                    {kind === 'parent' ? `Remove row and its ${row.childCount} row${row.childCount === 1 ? '' : 's'}` : kind === 'quest' ? 'Remove Quest' : 'Remove row'}
-                  </Button>
-                </div>
-              </ExecutionForm>
-            )}
+            <ExecutionForm action={action} scope={`delete:${row.id}`}>
+              <input type="hidden" name="command" value="delete" />
+              {hidden}
+              {row.childCount > 0 && (kind === 'parent' || kind === 'quest') ? <input type="hidden" name="with_children" value="true" /> : null}
+              <div className="grid gap-3">
+                {kind === 'parent' ? (
+                  <p className="text-danger text-sm">
+                    The {row.childCount} row{row.childCount === 1 ? '' : 's'} under it go too. Time logged on them is kept.
+                  </p>
+                ) : kind === 'quest' && row.childCount > 0 ? (
+                  <p className="text-danger text-sm">
+                    Everything in the Quest goes too: its {row.childCount} row{row.childCount === 1 ? '' : 's'} and any sub-quests inside them.
+                    Sub-missions stay as missions of their own, and time logged is kept.
+                  </p>
+                ) : null}
+                <Field id={id('remove-reason')} label="Why remove it?" required>
+                  <Input id={id('remove-reason')} name="reason" required maxLength={1000} />
+                </Field>
+                <Button type="submit" variant="destructive" className="justify-self-start">
+                  {kind === 'parent' ? `Remove row and its ${row.childCount} row${row.childCount === 1 ? '' : 's'}` : kind === 'quest' ? 'Remove Quest' : 'Remove row'}
+                </Button>
+              </div>
+            </ExecutionForm>
           </section>
         </div>
       </SheetContent>

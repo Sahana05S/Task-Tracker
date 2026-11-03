@@ -23,9 +23,9 @@ type Children = { state: 'loading' } | { state: 'error'; message: string } | { s
 /**
  * Every level of the checklist as one collapsible tree. Only the level you
  * open is read, so a large checklist stays fast. A Quest opens into its own
- * three phases. Rows tick in place, as in the table. Each section ends with
+ * list. Rows tick in place, as in the table. Each section ends with
  * the same add row as the other views, and an open Quest or row ends with a
- * one-line "Add an item" (user request, 28 Oct 2026: adding works in every view).
+ * one-line "Add an objective" (user request, 28 Oct 2026: adding works in every view).
  */
 export function ChecklistOutline({ groups, ctx, addRows }: {
   groups: readonly { section: ChecklistSection; rows: readonly ChecklistBranchRow[] }[];
@@ -139,7 +139,7 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
   );
 }
 
-/** One line to add an item inside an open Quest or row; the cursor stays for the next one. */
+/** One line to add an objective inside an open Quest or row; the cursor stays for the next one. */
 function OutlineAddItem({ ctx, checklistId, parentId, section, indent, onAdded }: {
   ctx: Ctx;
   checklistId: string;
@@ -159,8 +159,8 @@ function OutlineAddItem({ ctx, checklistId, parentId, section, indent, onAdded }
         <input type="hidden" name="section" value={section} />
         <input type="hidden" name="parent_id" value={parentId ?? ''} />
         <div className="flex items-center gap-2">
-          <label htmlFor={id} className="sr-only">New item</label>
-          <Input id={id} name="title" required maxLength={500} placeholder="Add an item" className="bg-card h-8 min-w-40 flex-1 text-sm" />
+          <label htmlFor={id} className="sr-only">New objective</label>
+          <Input id={id} name="title" required maxLength={500} placeholder="Add an objective" className="bg-card h-8 min-w-40 flex-1 text-sm" />
           <Button type="submit" size="sm" variant="outline" className="h-8"><PlusIcon aria-hidden="true" />Add</Button>
         </div>
       </ExecutionForm>

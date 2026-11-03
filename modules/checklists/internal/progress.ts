@@ -11,6 +11,12 @@ export interface ChecklistProgressNode {
   readonly linkedTaskId?: string | null;
   readonly progressPercentage?: number | null;
   readonly linkedStatus?: string | null;
+  /**
+   * A Quest row's own list (migration 67; sub-quests since 109). The row reads
+   * that list's mission-style result: its progress, its completion and whether
+   * its Activity has applicable rows, as `checklist_node_result` does.
+   */
+  readonly quest?: readonly ChecklistProgressNode[];
 }
 export interface ChecklistNodeProgress {
   readonly id: string;
@@ -105,7 +111,12 @@ export function computeChecklistProgress(
     const nested=children.get(n.id) ?? [];
     const resolved=nested.map(resolve);
     let value: ChecklistNodeProgress;
-    if(nested.length>0) {
+    if(n.quest) {
+      const own=computeChecklistProgress(n.quest);
+      errors.push(...own.errors);
+      own.nodeProgress.forEach(p=>values.set(p.id,p));
+      value={id:n.id,progressPercentage:own.taskProgress,isComplete:own.isComplete,applicable:own.sections.activity.applicable};
+    } else if(nested.length>0) {
       if(n.linkedTaskId) errors.push(`linked_parent:${n.id}`);
       value=average(n.id,resolved);
     } else if(n.completionState==='N/A') {

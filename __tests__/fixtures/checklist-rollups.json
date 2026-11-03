@@ -627,5 +627,178 @@
   ],
   "expectedProgress": 100,
   "expectedComplete": true
+ },
+ {
+  "name": "Nested quests: a sub-sub-quest at 50 gives its Quest 25 and the mission 62.5",
+  "nodes": [
+   {
+    "id": "quest",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Page",
+    "completionState": "No",
+    "quest": [
+     {
+      "id": "a",
+      "parentNodeId": null,
+      "section": "activity",
+      "nodeType": "Item",
+      "completionState": "Yes"
+     },
+     {
+      "id": "sub-quest",
+      "parentNodeId": null,
+      "section": "activity",
+      "nodeType": "Page",
+      "completionState": "No",
+      "quest": [
+       {
+        "id": "b",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "No"
+       },
+       {
+        "id": "sub-sub-quest",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Page",
+        "completionState": "No",
+        "quest": [
+         {
+          "id": "c1",
+          "parentNodeId": null,
+          "section": "activity",
+          "nodeType": "Item",
+          "completionState": "Yes"
+         },
+         {
+          "id": "c2",
+          "parentNodeId": null,
+          "section": "activity",
+          "nodeType": "Item",
+          "completionState": "No"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "expectedProgress": 62.5,
+  "expectedComplete": false,
+  "expectedNoErrors": true
+ },
+ {
+  "name": "Nested quests complete when every level is done",
+  "nodes": [
+   {
+    "id": "setup-row",
+    "parentNodeId": null,
+    "section": "setup",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "quest",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Page",
+    "completionState": "No",
+    "quest": [
+     {
+      "id": "a",
+      "parentNodeId": null,
+      "section": "activity",
+      "nodeType": "Item",
+      "completionState": "Yes"
+     },
+     {
+      "id": "sub-quest",
+      "parentNodeId": null,
+      "section": "activity",
+      "nodeType": "Page",
+      "completionState": "No",
+      "quest": [
+       {
+        "id": "b",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "N/A"
+       },
+       {
+        "id": "sub-sub-quest",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Page",
+        "completionState": "No",
+        "quest": [
+         {
+          "id": "c",
+          "parentNodeId": null,
+          "section": "activity",
+          "nodeType": "Item",
+          "completionState": "Yes"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": true,
+  "expectedNoErrors": true
+ },
+ {
+  "name": "A Quest with only N/A rows drops out of Activity",
+  "nodes": [
+   {
+    "id": "x",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Item",
+    "completionState": "Yes"
+   },
+   {
+    "id": "quest",
+    "parentNodeId": null,
+    "section": "activity",
+    "nodeType": "Page",
+    "completionState": "No",
+    "quest": [
+     {
+      "id": "a",
+      "parentNodeId": null,
+      "section": "activity",
+      "nodeType": "Item",
+      "completionState": "N/A"
+     },
+     {
+      "id": "sub-quest",
+      "parentNodeId": null,
+      "section": "activity",
+      "nodeType": "Page",
+      "completionState": "No",
+      "quest": [
+       {
+        "id": "b",
+        "parentNodeId": null,
+        "section": "activity",
+        "nodeType": "Item",
+        "completionState": "N/A"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "expectedProgress": 100,
+  "expectedComplete": true,
+  "expectedNoErrors": true
  }
 ]
