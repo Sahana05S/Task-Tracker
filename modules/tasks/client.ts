@@ -34,6 +34,13 @@ export {
   PROOF_ACCEPT,
   proofFileProblem,
   proofMimeType,
+  isMissionFileKind,
+  MISSION_DOCUMENT_KINDS,
+  MISSION_FILE_KINDS,
+  missionFileFolder,
+  missionFilesOfKind,
+  type MissionDocumentKind,
+  type MissionFileKind,
   type MissionProof,
 } from '@/modules/tasks/internal/proofs/rules';
 export { uploadProofToTicket } from '@/modules/tasks/internal/proofs/upload';

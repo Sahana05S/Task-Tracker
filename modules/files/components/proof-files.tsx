@@ -22,9 +22,13 @@ function formData(values: Record<string, string>): FormData {
  * A compact proof list with Add and Remove, for any record whose proofs go to
  * the Shared Drive (sales entries; migration 102). The owning module supplies
  * its three Server Actions and the record's hidden fields (`fields`, sent with
- * every action); the database decides who may.
+ * every action); the database decides who may. Mission Input / Process /
+ * Output documents (migration 113) use it with their own wording.
  */
-export function ProofFiles({ bucket, files, canAdd, fields, start, save, remove, label = 'Proofs' }: {
+export function ProofFiles({
+  bucket, files, canAdd, fields, start, save, remove, label = 'Proofs', addLabel = 'Add proof', noun = 'proof',
+  empty = 'Receipts, agreements or site photos; kept in the company Shared Drive.',
+}: {
   bucket: FileBucket;
   files: readonly ProofFile[];
   canAdd: boolean;
@@ -33,6 +37,12 @@ export function ProofFiles({ bucket, files, canAdd, fields, start, save, remove,
   save: Action<null>;
   remove: Action<null>;
   label?: string;
+  /** The Add button's text. */
+  addLabel?: string;
+  /** Singular word for one file in messages ("proof", "document"). */
+  noun?: string;
+  /** Shown when there are no files yet. */
+  empty?: string;
 }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
@@ -59,7 +69,7 @@ export function ProofFiles({ bucket, files, canAdd, fields, start, save, remove,
     }
     const saved = await save(formData({ ...details, path: started.data.path, fileName: file.name, operationId: crypto.randomUUID() }));
     if (!saved.success) {
-      toast.error(saved.error ?? 'The proof was not saved.');
+      toast.error(saved.error ?? `The ${noun} was not saved.`);
       return false;
     }
     return true;
@@ -73,7 +83,7 @@ export function ProofFiles({ bucket, files, canAdd, fields, start, save, remove,
         if (await uploadOne(file)) added += 1;
       }
       if (added) {
-        toast.success(added === 1 ? 'Proof added.' : `${added} proofs added.`);
+        toast.success(added === 1 ? `${noun.charAt(0).toUpperCase()}${noun.slice(1)} added.` : `${added} ${noun}s added.`);
         router.refresh();
       }
     } finally {
@@ -87,7 +97,7 @@ export function ProofFiles({ bucket, files, canAdd, fields, start, save, remove,
     startRemoving(async () => {
       const result = await remove(formData({ ...fields, proofId: file.id, operationId: crypto.randomUUID() }));
       if (!result.success) {
-        toast.error(result.error ?? 'The proof was not removed.');
+        toast.error(result.error ?? `The ${noun} was not removed.`);
         return;
       }
       toast.success('Removed.');
@@ -119,7 +129,7 @@ export function ProofFiles({ bucket, files, canAdd, fields, start, save, remove,
             />
             <Button type="button" size="sm" variant="outline" disabled={busy !== null} onClick={() => input.current?.click()}>
               {busy ? <LoaderCircleIcon aria-hidden="true" className="animate-spin" /> : null}
-              {busy ?? 'Add proof'}
+              {busy ?? addLabel}
             </Button>
           </>
         ) : null}
@@ -146,7 +156,7 @@ export function ProofFiles({ bucket, files, canAdd, fields, start, save, remove,
           ))}
         </ul>
       ) : (
-        <p className="text-muted-foreground text-xs">Receipts, agreements or site photos; kept in the company Shared Drive.</p>
+        <p className="text-muted-foreground text-xs">{empty}</p>
       )}
     </section>
   );

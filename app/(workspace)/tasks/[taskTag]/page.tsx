@@ -116,8 +116,9 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
     // A failed read leaves the track on current progress.
     tab === 'work' ? getMissionWaypoints([task]).catch(() => null) : Promise.resolve(null),
-    // Null when the caller is not one of the mission's people or a manager: no panel.
-    tab === 'work' ? getTaskProofs(task.id) : Promise.resolve(null),
+    // Proofs (Work tab) and Input / Process / Output documents (Details tab). Null when the
+    // caller is not one of the mission's people or a manager: no panel, no uploads.
+    tab === 'work' || details ? getTaskProofs(task.id) : Promise.resolve(null),
     // Mistakes and learning (migration 111): the panel on Details, its count on Work. Null hides both.
     tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
   ]);
@@ -301,6 +302,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               checklistHref={checklistHref}
               canCreateWorkFile={!archived && !closed && canUpdateTaskOwnFields(currentUser, task)}
               providerState={native.instance?.providerState ?? 'not_requested'}
+              files={proofs}
+              canAddFiles={!archived}
             />
             {learnings ? <LearningPanel taskId={task.id} taskTag={task.taskTag} learnings={learnings} /> : null}
             <MissionPanel icon={GitBranchIcon} title="Dependency missions">
