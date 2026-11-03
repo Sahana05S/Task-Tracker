@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { ChecklistItemWork } from '@/modules/checklists/components/checklist-item-work';
 import { checklistCommand } from '@/modules/checklists/actions';
-import { startItemTimer, stopTaskTimer, discardTaskTimer } from '@/modules/time-tracking/timer-actions';
 import type { ChecklistBranchRow, ChecklistItemTime } from '@/modules/checklists/client';
 import type { RoadmapMission } from '@/modules/tasks/client';
 import { loadRoadmapItemTime } from '@/modules/workspace-views/roadmap-actions';
@@ -24,7 +23,7 @@ export function RoadmapItemWork({ mission, node, onCommitted, onOpen }: {
     return () => { current = false; };
   }, [mission.id, node.id, retry]);
   return <>
-    <ChecklistItemWork task={mission} node={node} time={time} actions={{ state: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer }} onOpen={onOpen} onCommitted={onCommitted} />
+    <ChecklistItemWork task={mission} node={node} time={time} actions={{ state: checklistCommand }} onOpen={onOpen} onCommitted={onCommitted} />
     {error ? <p role="alert" className="text-danger mt-3 text-sm">{error} <button type="button" className="link min-h-9 rounded px-2 focus-visible:outline-primary" onClick={() => setRetry(n => n + 1)}>Retry objective time</button></p> : null}
   </>;
 }

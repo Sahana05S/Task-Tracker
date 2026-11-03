@@ -1,15 +1,12 @@
-import { PlayIcon, SquareIcon, TimerIcon } from 'lucide-react';
-
-import { RunningClock } from '@/shared/ui/running-clock';
 import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Button } from '@/shared/ui/button';
-import type { ChecklistItemTime } from '@/modules/checklists/internal/item-time';
 import { cn } from '@/shared/utils';
 import type { ActionResponse, ChecklistNode, Task } from '@/types/tracker';
 
 /**
- * Item timer and completion controls shared by the checklist tables and the
- * Today roadmap. Server-safe.
+ * Completion controls shared by the checklist tables and the Today roadmap.
+ * Server-safe. (The per-row timer controls were retired on 3 November 2026;
+ * the mission timer is `TimerButton` in time-tracking.)
  */
 
 /** The shared control look (`.field` in globals.css), full width. */
@@ -20,70 +17,6 @@ export interface ChecklistContext {
   task: Pick<Task, 'id' | 'taskTag' | 'lifecycleVersion'>;
   /** Not archived, Done or Discarded. */
   open: boolean;
-  /** Item timers (migration 34): logged time, running timers and the actions. */
-  time?: {
-    info: ChecklistItemTime;
-    /** The signed-in user may start timers on this task. */
-    canStart: boolean;
-    start: (form: FormData) => Promise<ActionResponse<unknown>>;
-    stop: (form: FormData) => Promise<ActionResponse<unknown>>;
-    discard: (form: FormData) => Promise<ActionResponse<unknown>>;
-  };
-}
-
-/**
- * Start / stop / discard a timer on one checklist item. Stopping writes an
- * ordinary task log tagged with the item, so the time counts as task hours.
- */
-export function ItemTimerControls({ ctx, node, compact }: { ctx: Pick<ChecklistContext, 'time' | 'task' | 'open'>; node: ChecklistNode; compact?: boolean }) {
-  const time = ctx.time;
-  if (!time?.info.available) return null;
-  const mine = time.info.mine;
-  const mineHere = mine && mine.nodeId === node.id && mine.taskId === ctx.task.id ? mine : null;
-  const someoneElse = !mineHere ? time.info.runningByNode.get(node.id) : undefined;
-  if (mineHere) {
-    return (
-      <div className={cn('grid min-w-0 gap-2', compact && 'justify-items-end')}>
-        <p className="text-recognition-foreground bg-recognition-subtle inline-flex items-center gap-1.5 justify-self-start rounded-full px-2.5 py-1 text-xs font-semibold">
-          <TimerIcon className="size-3.5" aria-hidden="true" />
-          Timer running <RunningClock startedAt={mineHere.startedAt} />
-        </p>
-        <ExecutionForm action={time.stop} scope={`itemTimerStop:${mineHere.timerId}`} className="grid min-w-0 gap-2">
-          <input type="hidden" name="timerId" value={mineHere.timerId} />
-          <input type="hidden" name="expectedVersion" value={mineHere.version} />
-          {compact ? null : <textarea name="notes" placeholder="What did you do? (saved on the task log)" aria-label="Timer notes" className={cn(FIELD, 'min-h-16 py-2')} />}
-          <Button type="submit" size="sm" className="h-9 justify-self-start"><SquareIcon aria-hidden="true" />Stop and log time</Button>
-        </ExecutionForm>
-        {compact ? null : (
-          <ExecutionForm action={time.discard} scope={`itemTimerDiscard:${mineHere.timerId}`} className="grid min-w-0 gap-2">
-            <input type="hidden" name="timerId" value={mineHere.timerId} />
-            <input type="hidden" name="expectedVersion" value={mineHere.version} />
-            <input type="hidden" name="taskTag" value={ctx.task.taskTag} />
-            <input name="reason" required placeholder="Reason for discarding" aria-label="Reason for discarding" className={cn(FIELD, 'h-9')} />
-            <Button type="submit" variant="ghost" size="sm" className="justify-self-start">Discard timer</Button>
-          </ExecutionForm>
-        )}
-      </div>
-    );
-  }
-  if (someoneElse) {
-    return (
-      <p className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
-        <TimerIcon className="size-3.5" aria-hidden="true" />A teammate's timer is running here
-      </p>
-    );
-  }
-  if (!time.canStart || !ctx.open) return null;
-  if (mine) {
-    return compact ? null : <p className="text-muted-foreground text-xs">Your timer is already running elsewhere. Stop it before timing this item.</p>;
-  }
-  return (
-    <ExecutionForm action={time.start} scope={`itemTimerStart:${node.id}`} className="grid min-w-0 gap-2">
-      <input type="hidden" name="nodeId" value={node.id} />
-      {compact ? null : <textarea name="notes" placeholder="Optional note for the log" aria-label="Timer notes" className={cn(FIELD, 'min-h-16 py-2')} />}
-      <Button type="submit" variant={compact ? 'outline' : 'default'} size="sm" className="h-9 justify-self-start"><PlayIcon aria-hidden="true" />Start timer</Button>
-    </ExecutionForm>
-  );
 }
 
 /** Hidden identity fields every checklist command needs. */

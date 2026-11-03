@@ -13,6 +13,7 @@ import { startTaskTimer, stopTaskTimer } from '@/modules/time-tracking/timer-act
 import { prepareOperation } from '@/shared/commands/client-operation';
 import { announceMissionProgress } from '@/shared/ui/mission-progress-event';
 import { Button } from '@/shared/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/shared/ui/sheet';
 import { cn } from '@/shared/utils';
 
 export interface TimerButtonProps {
@@ -27,12 +28,16 @@ export interface TimerButtonProps {
 
 const INTERRUPTED = 'The response was interrupted. Press the button again to recover the saved result.';
 
-/** The fields a press sends: stop the running timer (with its version), or start one on the mission. */
-export function timerCommandForm(running: RunningTimer | null, taskId: string): FormData {
+/**
+ * The fields a press sends: stop the running timer (with its version and the
+ * session note from the Stop sheet), or start one on the mission.
+ */
+export function timerCommandForm(running: RunningTimer | null, taskId: string, notes?: string): FormData {
   const form = new FormData();
   if (running) {
     form.set('timerId', running.id);
     form.set('expectedVersion', String(running.executionVersion));
+    if (notes !== undefined) form.set('notes', notes);
   } else {
     form.set('taskId', taskId);
   }
@@ -45,12 +50,17 @@ export function timerCommandForm(running: RunningTimer | null, taskId: string): 
  * The database allows one running timer per user, so the button reads that
  * timer from `RunningTimerProvider`: Stop (with a live clock) on the running
  * mission, and unavailable everywhere else until it is stopped. The pill stays
- * focusable when unavailable so its reason can be read and tapped.
+ * focusable when unavailable so its reason can be read and tapped. Stop opens a
+ * sheet with the session note (`task_timers.notes`, decision D-C2), so the
+ * person can say what the session covered before it is logged.
  */
 export function TimerButton({ taskId, taskLabel, size = 'sm', className }: TimerButtonProps) {
   const router = useRouter();
   const running = useRunningTimer();
   const [saving, setSaving] = React.useState(false);
+  const [stopping, setStopping] = React.useState(false);
+  const [note, setNote] = React.useState('');
+  const noteId = React.useId();
   // Busy until the refreshed layout lands, so the button never shows a stale state.
   const [refreshing, startRefresh] = React.useTransition();
   const busy = saving || refreshing;
@@ -59,13 +69,22 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
   const subject = taskLabel ? ` on ${taskLabel}` : '';
   const reason = elsewhere ? `Your timer is running on ${running.taskTag}. Stop it there first.` : undefined;
 
-  async function press() {
+  function press() {
     if (busy) return;
     if (elsewhere) {
       toast.info(`Your timer is running on ${running.taskTag}`, { description: 'Stop it before starting another one.' });
       return;
     }
-    const form = timerCommandForm(mine ? running : null, taskId);
+    if (mine) {
+      setNote(running.notes ?? '');
+      setStopping(true);
+      return;
+    }
+    void send();
+  }
+
+  async function send(notes?: string) {
+    const form = timerCommandForm(mine ? running : null, taskId, notes);
     setSaving(true);
     try {
       const settle = await prepareOperation(form, mine ? 'timerButtonStop' : 'timerButtonStart');
@@ -75,6 +94,7 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
         return;
       }
       settle();
+      setStopping(false);
       if (mine) toast.success(`Timer stopped on ${running.taskTag}`, { description: `${formatElapsed(computeElapsedSeconds(new Date(running.startedAt), new Date()))} saved as a time log.` });
       else {
         toast.success(`Timer started on ${result.data!.taskTag}`, { description: 'Stop it here or from the running-timer pill.' });
@@ -89,6 +109,7 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
   }
 
   return (
+    <>
     <Button
       type="button"
       size={size}
@@ -111,5 +132,37 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
       {/* The visible text is decorative next to the label; the clock would otherwise be announced every second. */}
       <span aria-hidden="true">{mine ? <>Stop <RunningClock startedAt={running.startedAt} /></> : busy ? 'Starting…' : 'Start timer'}</span>
     </Button>
+    {mine ? (
+      <Sheet open={stopping} onOpenChange={(open) => { if (!saving) setStopping(open); }}>
+        <SheetContent side="bottom" className="mx-auto w-full gap-0 sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle className="text-foreground text-lg font-bold">Stop timer on {running.taskTag}</SheetTitle>
+            <SheetDescription className="text-muted-foreground">
+              <RunningClock startedAt={running.startedAt} /> so far. Stopping saves it as a time log on this mission.
+            </SheetDescription>
+          </SheetHeader>
+          <form
+            className="grid gap-3 px-4 pb-2"
+            onSubmit={(event) => { event.preventDefault(); void send(note); }}
+          >
+            <label htmlFor={noteId} className="text-foreground text-sm font-medium">What did this session cover?</label>
+            <textarea
+              id={noteId}
+              name="notes"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              maxLength={10000}
+              className="field min-h-24 py-2"
+              placeholder="Optional. Kept with the time log."
+            />
+            <SheetFooter className="flex-row flex-wrap gap-2 px-0">
+              <Button type="submit" disabled={saving} aria-busy={saving || undefined}>{saving ? 'Stopping…' : 'Stop and log'}</Button>
+              <Button type="button" variant="ghost" disabled={saving} onClick={() => setStopping(false)}>Keep running</Button>
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
+    ) : null}
+    </>
   );
 }

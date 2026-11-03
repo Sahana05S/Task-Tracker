@@ -21,7 +21,7 @@ import {
   PriorityBadge,
 } from '@/shared/ui/tracker-badges';
 import { getTaskEffortBreakdown } from '@/modules/checklists';
-import { canStartTimerForTask, getTaskExecution } from '@/modules/time-tracking';
+import { canStartTimerForTask, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
 import {
   canManageTasks,
   canUpdateTaskOwnFields,
@@ -107,7 +107,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const requested = (await searchParams).tab;
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
-  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings] = await Promise.all([
+  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings, sessionActivity] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
@@ -121,6 +121,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab === 'work' || details ? getTaskProofs(task.id) : Promise.resolve(null),
     // Mistakes and learning (migration 111): the panel on Details, its count on Work. Null hides both.
     tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
+    // What each timer session covered (migration 110); a failed read only hides the lines.
+    tab === 'history' ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
   ]);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
@@ -330,6 +332,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               taskTag={task.taskTag}
               canManage={canManage}
               currentUserId={currentUser.id}
+              sessionActivity={sessionActivity?.available ? sessionActivity.sessions : undefined}
             />
           </MissionPanel>
         </div>

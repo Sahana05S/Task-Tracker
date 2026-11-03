@@ -52,7 +52,6 @@ export function ChecklistRowActions({
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
   const kind = rowKind(row);
-  const estimate = formatMinutes(row.estimatedMinutes);
   const logged = row.elapsedSeconds > 0 ? formatMinutes(Math.max(1, Math.round(row.elapsedSeconds / 60))) : null;
   const id = (name: string) => `row-${row.id}-${name}`;
   const hidden = (
@@ -89,7 +88,8 @@ export function ChecklistRowActions({
           <p className="text-muted-foreground text-xs font-semibold">{summary}</p>
           <SheetTitle className="text-foreground text-lg font-bold tracking-tight break-words">{row.title}</SheetTitle>
           <SheetDescription className="text-muted-foreground">
-            {[estimate ? `Estimated ${estimate}` : null, logged ? `${logged} logged` : 'No time logged yet'].filter(Boolean).join(' · ')}
+            {/* Time is kept by the mission timer (3 November 2026); time logged on this row before then stays shown. */}
+            {logged ? `${logged} logged on this row` : 'Time is kept by the mission timer'}
           </SheetDescription>
         </SheetHeader>
 
@@ -159,11 +159,6 @@ export function ChecklistRowActions({
                 <Field id={id('links')} label="Links" hint="One web address per line, up to ten.">
                   <Textarea id={id('links')} name="links" defaultValue={row.links.join('\n')} rows={2} placeholder="https://" />
                 </Field>
-                {kind === 'item' ? (
-                  <Field id={id('estimate')} label="Estimated minutes">
-                    <Input id={id('estimate')} name="estimated_minutes" type="number" min={0} max={100000} step={1} inputMode="numeric" defaultValue={row.estimatedMinutes ?? ''} className="tabular-nums" />
-                  </Field>
-                ) : null}
                 <Field id={id('reason')} label="Why are you changing it?" hint="Kept with the checklist history." required>
                   <Input id={id('reason')} name="reason" required maxLength={1000} />
                 </Field>
