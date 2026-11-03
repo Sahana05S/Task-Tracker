@@ -69,7 +69,7 @@ CREATE TRIGGER zz_m114_review_follows_tick BEFORE UPDATE ON public.checklist_nod
 -- D-D3: per-objective review replaces "every log clears the mission approval".
 DROP TRIGGER IF EXISTS m03_invalidate_log_review ON public.daily_task_logs;
 
--- checklist_command: rewritten from the live definition (pg_get_functiondef).
+-- checklist_command: rewritten from the live definition at 113 (pg_get_functiondef), after 108 and 109.
 CREATE OR REPLACE FUNCTION public.checklist_command(p_task uuid, p_command text, p_payload jsonb, p_expected_version bigint, p_operation uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -262,7 +262,7 @@ DECLARE actor uuid:=auth.uid(); role public.user_role; t public.tasks; c public.
  RETURN result;
 END $function$;
 
--- assert_checklist_done: rewritten from the live definition.
+-- assert_checklist_done: rewritten from the live definition at 113 (keeps 108's Observer exclusion).
 CREATE OR REPLACE FUNCTION taskpulse_private.assert_checklist_done(p_task uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -279,7 +279,7 @@ AS $function$ DECLARE r jsonb; t public.tasks; BEGIN
  IF NOT(r->>'isComplete')::boolean THEN RAISE EXCEPTION 'Done needs every Setup, Activity and Closure row complete or N/A, and no checklist issues' USING ERRCODE='23514'; END IF;
  IF t.progress_percentage IS NOT NULL AND t.progress_percentage<>100 THEN RAISE EXCEPTION 'Checklist gates passed, but current manual task progress is not 100; reconcile progress or enable Activity ownership before Done' USING ERRCODE='23514'; END IF;
  IF t.reviewer_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.task_reviewers WHERE task_id=p_task AND user_id=t.reviewer_id) THEN RAISE EXCEPTION 'Reconcile the legacy primary reviewer before Done' USING ERRCODE='23514'; END IF;
- IF EXISTS(SELECT 1 FROM public.task_reviewers r LEFT JOIN public.users u ON u.id=r.user_id WHERE r.task_id=p_task AND (NOT coalesce(u.is_active,false) OR NOT r.review_approved OR r.reviewed_revision IS DISTINCT FROM t.work_revision)) THEN RAISE EXCEPTION 'Done needs every assigned reviewer approval for the current work revision' USING ERRCODE='23514'; END IF;
+ IF EXISTS(SELECT 1 FROM public.task_reviewers r LEFT JOIN public.users u ON u.id=r.user_id WHERE r.task_id=p_task AND r.reviewer_role<>'Observer' AND (NOT coalesce(u.is_active,false) OR NOT r.review_approved OR r.reviewed_revision IS DISTINCT FROM t.work_revision)) THEN RAISE EXCEPTION 'Done needs every assigned reviewer approval for the current work revision' USING ERRCODE='23514'; END IF;
 END $function$;
 
 -- The mission's objective reviews that are not none, and whether the viewer decides them.
