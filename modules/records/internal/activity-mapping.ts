@@ -87,6 +87,9 @@ const MISSION_WORDS: Record<string, string> = {
   review: 'Reviewed the mission',
   initialize_native_details: 'Set up the mission details',
   publish_detail_template: 'Published a details template',
+  mission_learning_add: 'Added a note to Mistakes and learning',
+  mission_learning_edit: 'Edited a note in Mistakes and learning',
+  mission_learning_withdraw: 'Withdrew a note from Mistakes and learning',
 };
 const CHECKLIST_WORDS: Record<string, string> = {
   create: 'Started a checklist',

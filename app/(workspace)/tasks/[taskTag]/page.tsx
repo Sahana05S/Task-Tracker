@@ -44,10 +44,14 @@ import { ProofsPanel } from '@/modules/tasks/components/detail/proofs-panel';
 import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
+import { getMissionLearnings } from '@/modules/learning';
+import { LearningCountChip } from '@/modules/learning/components/learning-count-chip';
+import { LearningPanel } from '@/modules/learning/components/learning-panel';
 import { getMissionWaypoints } from '@/modules/recognition';
 import { WaypointCelebration } from '@/modules/recognition/components/waypoint-celebration';
 import { WaypointTrack } from '@/modules/recognition/components/waypoint-track';
 import { WorkFilesPanel } from '@/modules/tasks/components/detail/work-files-panel';
+import { WorkTabBrief } from '@/modules/tasks/components/detail/work-tab-brief';
 import { TaskLifecyclePanel } from '@/modules/tasks/components/task-lifecycle-panel';
 import { TaskReviewForm } from '@/modules/tasks/components/task-review-form';
 import { requireProfile } from '@/shared/session/profile';
@@ -103,7 +107,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const requested = (await searchParams).tab;
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
-  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs] = await Promise.all([
+  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
@@ -114,6 +118,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab === 'work' ? getMissionWaypoints([task]).catch(() => null) : Promise.resolve(null),
     // Null when the caller is not one of the mission's people or a manager: no panel.
     tab === 'work' ? getTaskProofs(task.id) : Promise.resolve(null),
+    // Mistakes and learning (migration 111): the panel on Details, its count on Work. Null hides both.
+    tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
   ]);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
@@ -224,6 +230,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
       {tab === 'work' ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <section className="grid min-w-0 content-start gap-6">
+            <WorkTabBrief sections={data.sections} extra={learnings ? <LearningCountChip learnings={learnings} /> : null} />
             <ChecklistHero
               href={checklistHref}
               title={data.checklist?.title ?? null}
@@ -295,6 +302,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               canCreateWorkFile={!archived && !closed && canUpdateTaskOwnFields(currentUser, task)}
               providerState={native.instance?.providerState ?? 'not_requested'}
             />
+            {learnings ? <LearningPanel taskId={task.id} taskTag={task.taskTag} learnings={learnings} /> : null}
             <MissionPanel icon={GitBranchIcon} title="Dependency missions">
               <DependencyList dependencies={data.dependencies} taskId={task.id} />
             </MissionPanel>
