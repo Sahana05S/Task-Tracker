@@ -7,12 +7,13 @@ import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-m
 import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, HouseIcon, LocateFixedIcon, MinusIcon, PlusIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
-import { missionDueLabel, type RoadmapMission } from '@/modules/tasks/client';
+import { MISSION_RELATIONSHIP_LABELS } from '@/shared/tracker/enums';
+import { canTimeMission, missionDueLabel, type RoadmapMission } from '@/modules/tasks/client';
 import { checklistWorkHref, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistBranchRow, type ChecklistSection } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
 import {
   branchForRow, graphCamera, layoutMissionGraph, LABEL_WIDTH, wheelZoomFactor,
-  type GraphCamera, type GraphEntity, type GraphLevel, type GraphLink, type GraphNode, type GraphRelationship, type RoadmapLocation,
+  type GraphCamera, type GraphEntity, type GraphLevel, type GraphLink, type GraphNode, type RoadmapLocation,
 } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
@@ -24,8 +25,8 @@ const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.
 const SECTIONS: ChecklistSection[] = ['setup', 'activity', 'closure'];
 const BATCH = 20;
 
-/** A mission on the graph; `relationship` says how the viewer is attached to it. */
-export type GraphMission = RoadmapMission & { relationship?: GraphRelationship | null };
+/** A mission on the graph; `relationship` (migration 108) says how the viewer is attached to it, if at all. */
+type GraphMission = RoadmapMission;
 /** One opened node on the path: the mission, then each opened row with rows under it. */
 interface Step { id: string; title: string; missionId: string; options: ChecklistBranchOptions }
 interface Level { branch?: ChecklistBranch; error?: string; loading?: boolean }
@@ -39,9 +40,6 @@ function rowStep(row: Pick<ChecklistBranchRow, 'id' | 'title' | 'checklistId' | 
 const isContainer = (row: ChecklistBranchRow) => row.childCount > 0;
 const pct = (value: number | null) => value === null ? 'Not started' : `${Math.round(value)}%`;
 const HINT_MS = 1800;
-export const RELATIONSHIP_LABEL: Record<GraphRelationship, string> = {
-  owner: 'Owner', assignee: 'Assignee', collaborator: 'Collaborator', reviewer: 'Reviewer', observer: 'Observer',
-};
 const RELATION_TEXT = { Subtask: ['Sub-mission of', 'Has sub-mission'], Dependency: ['Depends on', 'Needed by'], Blocks: ['Blocked by', 'Blocks'], Related: ['Related to', 'Related to'] } as const;
 
 /** The caption under the map and the one-time "Use Ctrl + scroll" hint, kept out of the map's render. */
@@ -70,7 +68,7 @@ function GraphLegend({ rings }: { rings: boolean }) {
     <li><span className={cn(styles.swatch, styles.dashed)} aria-hidden="true" /> Dependency or blocks</li>
     <li><span className={cn(styles.swatch, styles.dotted)} aria-hidden="true" /> Related</li>
     <li>Larger star: higher priority · filled: progress</li>
-    {rings ? (['owner', 'assignee', 'collaborator', 'reviewer', 'observer'] as const).map(rel => <li key={rel}><span className={cn(styles.key, styles[rel])} aria-hidden="true" /> {RELATIONSHIP_LABEL[rel]}</li>) : null}
+    {rings ? (['owner', 'assignee', 'collaborator', 'reviewer', 'observer'] as const).map(rel => <li key={rel}><span className={cn(styles.key, styles[rel])} aria-hidden="true" /> {MISSION_RELATIONSHIP_LABELS[rel]}</li>) : null}
   </ul>;
 }
 
@@ -368,7 +366,7 @@ export function MissionGraph({ missions, links = [], today, initialLocation, onL
           {SECTIONS.map(section => <Button key={section} size="sm" variant={(sectionStep.options.section ?? 'activity') === section ? 'default' : 'ghost'} aria-pressed={(sectionStep.options.section ?? 'activity') === section} onClick={() => switchSection(section)} className="capitalize">{section}</Button>)}
         </div> : <span />}
         {mission ? <span className="flex flex-wrap items-center gap-3 text-xs font-semibold">
-          <TimerButton taskId={mission.id} taskLabel={mission.taskTag} />
+          {canTimeMission(mission) ? <TimerButton taskId={mission.id} taskLabel={mission.taskTag} /> : null}
           <Link className="link" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage objectives</Link>
           <Link className="link" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
           <MissionActionsMenu taskId={mission.id} taskTag={mission.taskTag} />
@@ -401,7 +399,7 @@ export function MissionGraph({ missions, links = [], today, initialLocation, onL
             const opened = pathIds.has(node.id);
             const dim = !visible(node.id);
             const overdue = !!m?.dueDate && m.dueDate < today;
-            const relationship = m?.relationship ? RELATIONSHIP_LABEL[m.relationship] : null;
+            const relationship = m?.relationship ? MISSION_RELATIONSHIP_LABELS[m.relationship] : null;
             const sub = node.kind === 'more' ? `Load ${BATCH} more`
               : m ? [relationship, pct(m.progress), missionDueLabel(m.dueDate, today)].filter(Boolean).join(' · ')
               : node.kind === 'objective' ? (row?.applicable === false ? 'Not applicable' : node.complete ? 'Complete' : 'Open to work')

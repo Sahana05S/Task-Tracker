@@ -47,7 +47,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   // The managing director and project engineers may switch to the whole team's missions.
   const canSeeTeam = (TASK_MANAGER_ROLES as readonly string[]).includes(profile.role);
   const scope = canSeeTeam ? roadmapScope(query.scope) : 'mine';
-  const initial = await getAssignedMissionBatch(profile.id, { due, scope }).catch(() => null);
+  const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true }).catch(() => null);
   // New in the last 30 days, until dismissed.
   const firstRun = Date.now() - Date.parse(profile.createdAt) < NEW_MEMBER_MS && (await cookies()).get(FIRST_RUN_COOKIE)?.value !== 'dismissed';
   return <MissionPage>

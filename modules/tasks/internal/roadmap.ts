@@ -3,8 +3,8 @@ import { createClient } from '@/shared/supabase/server';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { UUID_PATTERN } from '@/shared/forms/form-data';
 import {
-  compareRoadmapMissions, missionBatchLimit, missionDueFilter, strongerRelationship,
-  type MissionBatchOptions, type RoadmapMission, type RoadmapMissionBatch,
+  compareRoadmapMissions, missionBatchLimit, missionDueFilter, strongerRelationship, ROADMAP_LINK_LIMIT, ROADMAP_RELATIONS,
+  type MissionBatchOptions, type RoadmapLink, type RoadmapRelation, type RoadmapMission, type RoadmapMissionBatch,
 } from '@/modules/tasks/internal/roadmap-contract';
 import type { MissionRelationship } from '@/shared/tracker/enums';
 import type { TaskPriority, TaskStatus } from '@/types/tracker';
@@ -66,8 +66,11 @@ export async function getAssignedMissionBatch(userId: string, options: MissionBa
   const participant = db.from('tasks').select(`${COLUMNS},task_assignees!inner(user_id,is_primary,share_units)`).eq('task_assignees.user_id', userId);
   // Reviewers and observers (migration 108) only when the caller asks for them.
   const reviewer = db.from('tasks').select(`${COLUMNS},task_reviewers!inner(user_id,reviewer_role)`).eq('task_reviewers.user_id', userId);
-  const sources = (options.watching ? ['primary', 'participant', 'reviewer'] : ['primary', 'participant']) as ('primary' | 'participant' | 'reviewer')[];
-  const queries = sources.map(source => source === 'primary' ? primary : source === 'participant' ? participant : reviewer).map(query => {
+  // The whole team (managers): every open mission, with the viewer's own tie where there is one.
+  const team = db.from('tasks').select(COLUMNS);
+  const sources = (options.scope === 'team' ? ['team', 'primary', 'participant', 'reviewer'] : options.watching ? ['primary', 'participant', 'reviewer'] : ['primary', 'participant']) as ('team' | 'primary' | 'participant' | 'reviewer')[];
+  const pick = { team, primary, participant, reviewer };
+  const queries = sources.map(source => pick[source]).map(query => {
     let q = query.not('status', 'in', '("Done","Discarded")').is('archived_effective_date', null)
       .order('due_date', { ascending: true, nullsFirst: false }).order('id').limit(limit + 1);
     if (due === 'today') q = q.eq('due_date', today);
@@ -80,14 +83,35 @@ export async function getAssignedMissionBatch(userId: string, options: MissionBa
   const byId = new Map<string, RoadmapMission>();
   results.forEach((r, i) => {
     for (const row of (r.data ?? []) as unknown as MissionRow[]) {
-      const relationship = strongerRelationship(byId.get(row.id)?.relationship, rowRelationship(row, sources[i]));
+      const source = sources[i];
+      const known = byId.get(row.id)?.relationship;
+      const relationship = source === 'team' ? known : strongerRelationship(known, rowRelationship(row, source));
       byId.set(row.id, mapMission(row, relationship));
     }
   });
   const merged = [...byId.values()].sort(compareRoadmapMissions);
   const missions = merged.slice(0, limit);
   const hasMore = merged.length > limit;
-  return { missions, hasMore, nextCursor: hasMore ? encodeCursor(missions[missions.length - 1]) : null };
+  const links = await getMissionLinks(missions.map(m => m.id));
+  return { missions, hasMore, links, nextCursor: hasMore ? encodeCursor(missions[missions.length - 1]) : null };
+}
+
+/**
+ * Stored relations (Subtask, Dependency, Blocks, Related) with at least one end among `ids`, so the client can
+ * join batches as they load. Two indexed reads, each bounded; nothing is inferred. RLS remains authoritative.
+ */
+export async function getMissionLinks(ids: string[]): Promise<RoadmapLink[]> {
+  const valid = ids.filter(id => UUID_PATTERN.test(id)).slice(0, 100);
+  if (!valid.length) return [];
+  const db = await createClient();
+  const select = 'predecessor_task_id,successor_task_id,relation_type';
+  const reads = await Promise.all(['predecessor_task_id', 'successor_task_id'].map(column => db.from('task_dependencies')
+    .select(select).in(column, valid).in('relation_type', [...ROADMAP_RELATIONS]).order('id').limit(ROADMAP_LINK_LIMIT)));
+  if (reads.some(r => r.error)) throw new Error('Mission relations could not be loaded. Retry the roadmap.');
+  const rows = reads.flatMap(r => (r.data ?? []) as { predecessor_task_id: string; successor_task_id: string; relation_type: string }[]);
+  const links = new Map(rows.map(r => [`${r.relation_type}:${r.predecessor_task_id}:${r.successor_task_id}`,
+    { from: r.predecessor_task_id, to: r.successor_task_id, relation: r.relation_type as RoadmapRelation }]));
+  return [...links.values()].slice(0, ROADMAP_LINK_LIMIT);
 }
 
 /**
@@ -95,7 +119,7 @@ export async function getAssignedMissionBatch(userId: string, options: MissionBa
  * task details. Reviewers and observers pass too (migration 108); the database
  * still refuses their ticks and timers.
  */
-export async function getAssignedRoadmapMission(taskId: string, userId: string): Promise<RoadmapMission | null> {
+export async function getAssignedRoadmapMission(taskId: string, userId: string, options: { anyOpen?: boolean } = {}): Promise<RoadmapMission | null> {
   if (!UUID_PATTERN.test(taskId) || !UUID_PATTERN.test(userId)) return null;
   const db = await createClient();
   const [task, membership, review] = await Promise.all([
@@ -109,7 +133,8 @@ export async function getAssignedRoadmapMission(taskId: string, userId: string):
     : membership.data ? rowRelationship({ ...task.data, task_assignees: [membership.data] }, 'participant')
     : review.data ? rowRelationship({ ...task.data, task_reviewers: [review.data] }, 'reviewer')
     : null;
-  return relationship ? mapMission(task.data, relationship) : null;
+  // Managers browsing the whole team open any open mission; it carries no relationship of theirs.
+  return relationship ? mapMission(task.data, relationship) : options.anyOpen ? mapMission(task.data) : null;
 }
 
 /** Counts owned/participant completions without fetching a member's entire task history. */

@@ -9,12 +9,12 @@ import { Button } from '@/shared/ui/button';
 import { SegmentedControl, type SegmentedOption } from '@/shared/ui/segmented-control';
 import { PriorityBadge } from '@/shared/ui/tracker-badges';
 import { cn } from '@/shared/utils';
-import { missionDueLabel, type MissionDueFilter, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/client';
+import { canTimeMission, missionDueLabel, type MissionDueFilter, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/client';
 import type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow } from '@/modules/checklists/client';
-import { branchForRow, roadmapSearch, type GraphLink, type RoadmapLocation, type RoadmapScope } from '@/modules/workspace-views/client';
+import { branchForRow, roadmapSearch, type RoadmapLocation, type RoadmapScope } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch, loadRoadmapMissions } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
-import { MissionGraph, type GraphMission } from './mission-graph-view';
+import { MissionGraph } from './mission-graph-view';
 
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
   loading: () => <p role="status" className="text-muted-foreground py-4 text-sm">Preparing work controls…</p>,
@@ -31,10 +31,9 @@ const SCOPE_OPTIONS: readonly SegmentedOption<RoadmapScope>[] = [
   { value: 'mine', label: 'My missions', icon: UserIcon },
   { value: 'team', label: 'Whole team', icon: UsersIcon },
 ];
-/** A batch as the graph reads it: missions may carry the viewer's relationship, plus relations between them. */
-type GraphBatch = Omit<RoadmapMissionBatch, 'missions'> & { missions: GraphMission[]; links?: GraphLink[] };
+
 interface Props {
-  initial: GraphBatch | null;
+  initial: RoadmapMissionBatch | null;
   due: MissionDueFilter;
   /** Whose missions are shown; `team` only for the managing director and project engineers. */
   scope?: RoadmapScope;
@@ -171,7 +170,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
         {location && mission ? <div className="border-border flex flex-wrap items-start justify-between gap-3 border-b px-4 py-4 sm:px-5">
           <div className="min-w-0"><h3 className="text-foreground break-words text-base font-semibold">{mission.title}</h3><p className="text-muted-foreground mt-1 text-xs">{missionDueLabel(mission.dueDate, today)} · {mission.taskTag}</p></div>
           <span className="flex flex-wrap items-center gap-3">
-            <TimerButton taskId={mission.id} taskLabel={mission.taskTag} />
+            {canTimeMission(mission) ? <TimerButton taskId={mission.id} taskLabel={mission.taskTag} /> : null}
             <Link href={`/tasks/${encodeURIComponent(mission.taskTag)}`} className={cn('text-primary rounded text-xs font-semibold underline-offset-4 hover:underline', FOCUS)}>Mission details</Link>
             <MissionActionsMenu taskId={mission.id} taskTag={mission.taskTag} />
           </span>
@@ -193,7 +192,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
                   <span className="flex items-start justify-between gap-3"><span className="text-foreground min-w-0 break-words text-sm font-semibold">{item.title}</span><ArrowRightIcon className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" /></span>
                   <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><PriorityBadge priority={item.priority} /><span className={cn('text-xs', item.dueDate && item.dueDate < today ? 'text-overdue font-semibold' : 'text-muted-foreground')}>{missionDueLabel(item.dueDate, today)}</span><Progress value={item.progress} /><span className="text-muted-foreground text-xs">{item.taskTag}</span></span>
                 </button>
-                <TimerButton taskId={item.id} taskLabel={item.taskTag} className="shrink-0" />
+                {canTimeMission(item) ? <TimerButton taskId={item.id} taskLabel={item.taskTag} className="shrink-0" /> : null}
               </li>)}</ol> : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
             </div>}
           {!location && batch?.hasMore ? <Button className="mt-5 w-full" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : 'Load more missions'}</Button> : null}
