@@ -9,7 +9,7 @@ import { isMissionFileKind, PROOFS_BUCKET, type MissionProof } from './rules';
  * A mission's proofs and Input / Process / Output documents (migrations 101,
  * 113), each with its kind. PRIVATE. Null when the caller is not one of the
  * mission's people or a manager, or the database predates 101: the page then
- * shows no Proofs panel and no uploaded documents.
+ * sees only the links in the Files panel: no uploads and no Proofs group.
  */
 export async function readTaskProofs(taskId: string): Promise<MissionProof[] | null> {
   const supabase = await createClient();

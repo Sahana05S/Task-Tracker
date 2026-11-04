@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { SalesLogModule } from '@/modules/support/components/support-pages';
 import { requireProfile } from '@/shared/session/profile';
+import { isFileStorageReady } from '@/modules/files';
 import { canManageSupportRecords, getSaleProofs, getSupportModuleData } from '@/modules/support';
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export default async function SalesPage() {
   const profile = await requireProfile();
   const data = await getSupportModuleData();
   // Proofs only for entries the caller may see them on (the salesperson and managers).
-  const proofs = await getSaleProofs(data.salesLogs.map((entry) => entry.id));
+  const [proofs, driveReady] = await Promise.all([getSaleProofs(data.salesLogs.map((entry) => entry.id)), isFileStorageReady()]);
 
   return (
     <MissionPage>
@@ -30,6 +31,7 @@ export default async function SalesPage() {
         currentUser={profile}
         canManage={canManageSupportRecords(profile.role)}
         proofs={proofs}
+        driveReady={driveReady}
       />
     </MissionPage>
   );

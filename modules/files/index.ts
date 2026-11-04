@@ -14,6 +14,8 @@ import type { FileBucket } from './internal/rules';
 
 export { handleFileView } from './internal/view';
 export { readFileStorageHealth as getFileStorageHealth } from './internal/status';
+/** Whether new uploads move into the company Shared Drive (key set and drive connected); any member, for honest wording. */
+export { readFileStorageReady as isFileStorageReady } from './internal/connect';
 export * from './client';
 
 /** After the response: moves a newly recorded file into the Shared Drive (and retries a few waiting ones). */

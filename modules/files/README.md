@@ -26,17 +26,23 @@ tasks module, migration 101; the month the mission is assigned in) and
 `task_proofs.kind`, migration 113) and
 `Proofs/<YYYY-MM>/Sales/<date> - <client> - <salesperson>/<file name>` (bucket
 `sales-proofs`, support module, migration 102). `components/proof-files.tsx`
-(`ProofFiles`) is the shared add/open/remove list (sales proofs and mission
-documents; its wording is set by `label`, `addLabel`, `noun` and `empty`); `client.ts` has the shared
+(`ProofFiles`) is the shared upload/open/remove list (sales proofs and each
+group of a mission's Files panel; its wording is set by `label`, `addLabel`,
+`noun` and `empty`, `items` adds other rows such as pasted links to the same
+list, `children` a secondary option, and `driveReady` adds the honest storage
+note from `fileStorageNote`); `client.ts` has the shared
 proof file rules (`proofFileProblem`, `proofMimeType`, `PROOF_ACCEPT`, 25 MB)
 and `uploadToSignedLink`.
 
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | `handleFileView(request)` for `app/api/files/route.ts`; `scheduleDriveMove(org, bucket, path)`, `scheduleDriveRelease(org, bucket, paths)` (run after the response with `after()`); `getFileStorageHealth()` (managing director); everything in `client.ts` |
-| `client.ts` | `fileViewHref(bucket, path)`, `fileStorageLine(health)`, `FILE_BUCKETS`, `isFileBucket`, types `FileBucket`, `FileStorageHealth` |
+| `index.ts` | `handleFileView(request)` for `app/api/files/route.ts`; `scheduleDriveMove(org, bucket, path)`, `scheduleDriveRelease(org, bucket, paths)` (run after the response with `after()`); `getFileStorageHealth()` (managing director; names the service account even before a drive is connected); `isFileStorageReady()` (any member: key set and a drive connected, for honest upload wording); everything in `client.ts` |
+| `client.ts` | `fileViewHref(bucket, path)`, `fileStorageLine(health)`, `fileStorageNote(ready)` ("Kept in the app until the company Shared Drive is connected." / "Kept in the company Shared Drive."), `sharedDriveIdFrom(text)` and `SHARED_DRIVE_ID`, `FILE_BUCKETS`, `isFileBucket`, the proof file rules, `uploadToSignedLink`, types `FileBucket`, `FileStorageHealth`, `ProofFile` |
+| `actions.ts` | `'use server'` `connectSharedDrive` (Settings > Company, managing director): runs `file_storage_configure` with the id or the drive's address |
 | `components/file-storage-health.tsx` | `FileStorageHealthNotice`, the Data checks line |
+| `components/connect-shared-drive.tsx` | `ConnectSharedDrive`, the Settings > Company panel: status line, service account to add as Content manager, Shared Drive id and Connect |
+| `components/proof-files.tsx` | `ProofFiles`, the shared upload list (above) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -45,7 +51,8 @@ and `uploadToSignedLink`.
 | `move.ts` | Moves, retries, releases and the connection check, as the service role for one company |
 | `view.ts` | `/api/files` handler: `file_access`, then stream from Drive or redirect to a one-minute storage link |
 | `status.ts` | Data checks health (counts plus a live check) |
-| `rules.ts` | Buckets, view links, the health line (pure) |
+| `connect.ts` | `file_storage_configure` for the Connect step; whether the company's drive is connected (`file_storage_drive` as the service role) |
+| `rules.ts` | Buckets, view links, the health line, the storage note, Shared Drive id parsing (pure) |
 
 ## Database it owns
 Migration 100 (`100_drive_file_storage.sql`; 101 adds the `mission-proofs` bucket to `file_subject`, `file_access`, `file_move_pending` and `file_storage_status`, 102 the `sales-proofs` bucket; 113 files mission documents under `Missions/` in `file_subject`):
@@ -56,7 +63,7 @@ Migration 100 (`100_drive_file_storage.sql`; 101 adds the `mission-proofs` bucke
 
 ## Configuration
 - Vercel secret `TASKPULSE_DRIVE_SERVICE_ACCOUNT_JSON`: the service account's JSON key (go-live F7). Never in the repository or chat.
-- The Shared Drive id is stored per company by `file_storage_configure` (managing director). The service account must be a Content manager of that drive.
+- The Shared Drive id is stored per company by `file_storage_configure`: the managing director pastes it (or the drive's address) in Settings > Company > Shared Drive and presses Connect. The service account must be a Content manager of that drive; the panel names it.
 - Without the key or a connected drive, files simply stay in Supabase storage and Data checks says so.
 - The service account opens only files inside the Shared Drive. A link someone pastes (`task_links`) is stored as a link; the app cannot open, check or share it.
 

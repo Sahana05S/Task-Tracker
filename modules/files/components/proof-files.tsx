@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
+import { useRef, useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { ExternalLinkIcon, LoaderCircleIcon, PaperclipIcon, Trash2Icon } from 'lucide-react';
+import { ExternalLinkIcon, LoaderCircleIcon, PaperclipIcon, Trash2Icon, UploadIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { formatFileSize, PROOF_ACCEPT, proofFileProblem, proofMimeType, uploadToSignedLink, type FileBucket, type ProofFile } from '@/modules/files/client';
+import { fileStorageNote, formatFileSize, PROOF_ACCEPT, proofFileProblem, proofMimeType, uploadToSignedLink, type FileBucket, type ProofFile } from '@/modules/files/client';
 import { formatDate } from '@/shared/tracker/format';
 import { Button } from '@/shared/ui/button';
 import type { ActionResponse } from '@/types/tracker';
@@ -19,15 +19,16 @@ function formData(values: Record<string, string>): FormData {
 }
 
 /**
- * A compact proof list with Add and Remove, for any record whose proofs go to
- * the Shared Drive (sales entries; migration 102). The owning module supplies
- * its three Server Actions and the record's hidden fields (`fields`, sent with
- * every action); the database decides who may. Mission Input / Process /
- * Output documents (migration 113) use it with their own wording.
+ * A compact file list with Upload and Remove, for any record whose files go to
+ * the Shared Drive (sales entries, migration 102; a mission's Files panel,
+ * migrations 101 and 113). The owning module supplies its three Server Actions
+ * and the record's hidden fields (`fields`, sent with every action); the
+ * database decides who may. `items` adds other rows (pasted links) to the same
+ * list and `children` a secondary option under it.
  */
 export function ProofFiles({
   bucket, files, canAdd, fields, start, save, remove, label = 'Proofs', addLabel = 'Add proof', noun = 'proof',
-  empty = 'Receipts, agreements or site photos; kept in the company Shared Drive.',
+  empty = 'Receipts, agreements or site photos.', driveReady, items = [], children, className = 'border-border grid gap-2 border-t pt-3',
 }: {
   bucket: FileBucket;
   files: readonly ProofFile[];
@@ -43,6 +44,14 @@ export function ProofFiles({
   noun?: string;
   /** Shown when there are no files yet. */
   empty?: string;
+  /** Whether uploads move into the Shared Drive (honest wording); undefined says nothing about storage. */
+  driveReady?: boolean;
+  /** Other rows shown in the same list, after the files (for example pasted links). */
+  items?: readonly { key: string; node: ReactNode }[];
+  /** A secondary option under the list (for example "Add a link instead"). */
+  children?: ReactNode;
+  /** The section's classes; by default a top rule separates it from what comes before. */
+  className?: string;
 }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
@@ -105,13 +114,15 @@ export function ProofFiles({
     });
   }
 
-  if (!files.length && !canAdd) return null;
+  const count = files.length + items.length;
+  if (!count && !canAdd && !children) return null;
+  const storage = driveReady === undefined ? '' : ` ${fileStorageNote(driveReady)}`;
   return (
-    <section className="border-border grid gap-2 border-t pt-3" aria-label={label}>
+    <section className={className} aria-label={label}>
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
           <PaperclipIcon aria-hidden="true" className="text-primary size-4" />
-          {label}{files.length ? ` (${files.length})` : ''}
+          {label}{count ? ` (${count})` : ''}
         </h3>
         {canAdd ? (
           <>
@@ -128,13 +139,13 @@ export function ProofFiles({
               }}
             />
             <Button type="button" size="sm" variant="outline" disabled={busy !== null} onClick={() => input.current?.click()}>
-              {busy ? <LoaderCircleIcon aria-hidden="true" className="animate-spin" /> : null}
+              {busy ? <LoaderCircleIcon aria-hidden="true" className="animate-spin" /> : <UploadIcon aria-hidden="true" />}
               {busy ?? addLabel}
             </Button>
           </>
         ) : null}
       </div>
-      {files.length ? (
+      {count ? (
         <ul className="divide-border grid divide-y text-sm">
           {files.map((file) => (
             <li key={file.id} className="flex items-center justify-between gap-2 py-1.5">
@@ -154,10 +165,14 @@ export function ProofFiles({
               ) : null}
             </li>
           ))}
+          {items.map((item) => (
+            <li key={item.key} className="py-1.5">{item.node}</li>
+          ))}
         </ul>
       ) : (
-        <p className="text-muted-foreground text-xs">{empty}</p>
+        <p className="text-muted-foreground text-xs">{empty}{canAdd ? storage : ''}</p>
       )}
+      {children}
     </section>
   );
 }

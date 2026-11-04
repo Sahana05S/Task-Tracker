@@ -1,5 +1,5 @@
 /** PUBLIC client-safe API of the files module: types and pure helpers. */
-export { FILE_BUCKETS, fileStorageLine, fileViewHref, isFileBucket } from './internal/rules';
+export { FILE_BUCKETS, fileStorageLine, fileStorageNote, fileViewHref, isFileBucket, SHARED_DRIVE_ID, sharedDriveIdFrom } from './internal/rules';
 export type { FileBucket, FileStorageHealth } from './internal/rules';
 export {
   formatFileSize,

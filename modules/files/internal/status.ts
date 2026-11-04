@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createClient } from '@/shared/supabase/server';
 
+import { serviceAccountEmail } from './google';
 import { checkConnection, moveFiles } from './move';
 import type { FileStorageHealth } from './rules';
 
@@ -17,7 +18,8 @@ export async function readFileStorageHealth(): Promise<FileStorageHealth> {
   const [{ data, error }, { data: organizationId }] = await Promise.all([supabase.rpc('file_storage_status'), supabase.rpc('current_organization')]);
   if (error || !data || !organizationId) return UNAVAILABLE;
   const status = data as unknown as { configured: boolean; moved: number; pending: number; lastError: string | null };
-  if (!status.configured) return { ...UNAVAILABLE, available: true, pending: status.pending };
+  // The service account is named even before a drive is connected, so it can be added as a member first.
+  if (!status.configured) return { ...UNAVAILABLE, available: true, account: serviceAccountEmail(), pending: status.pending };
   const live = await checkConnection(organizationId);
   if (live.ok && status.pending > 0) await moveFiles(organizationId, []);
   return {
