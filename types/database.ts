@@ -183,6 +183,9 @@ export interface Database {
           progress_delta: number | null;
           requested_progress_delta?: number | null;
           timer_segment_number?: number | null;
+          /** Migration 14: a timer segment's start and end (null for manual and imported logs). */
+          timer_segment_start?: string | null;
+          timer_segment_end?: string | null;
           timer_duration_seconds?: number | null;
           effective_progress_delta?: number | null;
           execution_version?: number;

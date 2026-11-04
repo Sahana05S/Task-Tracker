@@ -31,6 +31,7 @@ export function compareRecordedHours(effort: string | null, capacity: string | n
 
 export { localCheckTime } from '@/shared/time/kolkata';
 
+/** `effort` is the day's productive hours with overlapping timers merged (migration 118), never a plain sum of mission hours. */
 export function dailyAttendanceValidity(status:AttendanceStatus|null,regular:string|null,offHours:string|null,effort:string|null):AttendanceValidity {
   if(status===null||regular===null||offHours===null||effort===null)return {available:false,valid:null,reasons:['missing_hours']};
   const normalize=(value:string,places:number)=>{

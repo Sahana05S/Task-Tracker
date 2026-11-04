@@ -9,6 +9,7 @@ export {
   computeScaledProgress,
   groupLogsByDate,
   isMetricsEligible,
+  mergedDayHours,
   roundToNumericScale,
   sumHours,
   sumProgressDelta,

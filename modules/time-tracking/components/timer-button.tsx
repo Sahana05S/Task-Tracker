@@ -47,16 +47,15 @@ export function timerCommandForm(running: RunningTimer | null, taskId: string, n
 /**
  * Play/stop pill for one mission's timer. Starting and stopping use the same
  * timer commands as the mission page; stopping writes an ordinary task log.
- * The database allows one running timer per user, so the button reads that
- * timer from `RunningTimerProvider`: Stop (with a live clock) on the running
- * mission, and unavailable everywhere else until it is stopped. The pill stays
- * focusable when unavailable so its reason can be read and tapped. Stop opens a
+ * Several missions' timers may run at once (migration 118), one per mission,
+ * so the button reads this mission's timer from `RunningTimerProvider`: Stop
+ * (with a live clock) where it runs, Start everywhere else. Stop opens a
  * sheet with the session note (`task_timers.notes`, decision D-C2), so the
  * person can say what the session covered before it is logged.
  */
 export function TimerButton({ taskId, taskLabel, size = 'sm', className }: TimerButtonProps) {
   const router = useRouter();
-  const running = useRunningTimer();
+  const running = useRunningTimer(taskId);
   const [saving, setSaving] = React.useState(false);
   const [stopping, setStopping] = React.useState(false);
   const [note, setNote] = React.useState('');
@@ -64,17 +63,11 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
   // Busy until the refreshed layout lands, so the button never shows a stale state.
   const [refreshing, startRefresh] = React.useTransition();
   const busy = saving || refreshing;
-  const mine = running?.taskId === taskId;
-  const elsewhere = running !== null && !mine;
+  const mine = running !== null;
   const subject = taskLabel ? ` on ${taskLabel}` : '';
-  const reason = elsewhere ? `Your timer is running on ${running.taskTag}. Stop it there first.` : undefined;
 
   function press() {
     if (busy) return;
-    if (elsewhere) {
-      toast.info(`Your timer is running on ${running.taskTag}`, { description: 'Stop it before starting another one.' });
-      return;
-    }
     if (mine) {
       setNote(running.notes ?? '');
       setStopping(true);
@@ -117,14 +110,13 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
       variant={mine ? 'secondary' : 'accent'}
       onClick={press}
       aria-busy={busy || undefined}
-      aria-disabled={elsewhere || busy || undefined}
+      aria-disabled={busy || undefined}
       aria-label={mine ? `Stop timer${subject}` : `Start timer${subject}`}
-      title={reason}
-      data-state={mine ? 'running' : elsewhere ? 'blocked' : 'idle'}
+      data-state={mine ? 'running' : 'idle'}
       className={cn(
         'font-semibold tabular-nums',
         mine && 'bg-success-subtle text-success-strong hover:bg-success-subtle/70',
-        (elsewhere || busy) && 'cursor-not-allowed opacity-60 motion-safe:active:scale-100',
+        busy && 'cursor-not-allowed opacity-60 motion-safe:active:scale-100',
         className,
       )}
     >

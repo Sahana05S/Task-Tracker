@@ -28,7 +28,7 @@ export async function getRunningTimers(userId: string): Promise<RunningTimer[]> 
       .eq('user_id', userId)
       .eq('status', 'Running')
       .order('started_at', { ascending: true })
-      .limit(5);
+      .limit(20);
     if (error || !data) return [];
     return data.flatMap((row) => {
       const task = Array.isArray(row.tasks) ? row.tasks[0] : row.tasks;

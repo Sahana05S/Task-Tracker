@@ -1,6 +1,6 @@
 import type { DailyTaskLog, Task, User } from '@/types/tracker';
 import { formatHours } from '@/shared/tracker/format';
-import { roundToNumericScale, sumHours } from '@/modules/time-tracking/client';
+import { mergedDayHours, roundToNumericScale } from '@/modules/time-tracking/client';
 import type { LivePresentation } from './model';
 import { previousDate } from './context';
 
@@ -20,6 +20,7 @@ const NOTE_LENGTH = 80;
 export interface DailyReportDay {
   date: string;
   logs: DailyTaskLog[];
+  /** Productive hours: overlapping timers counted once. */
   hours: number;
 }
 
@@ -55,7 +56,8 @@ export function dailyReport(model: LivePresentation, memberId: string, date: str
   if (!member) return null;
   const day = (on: string): DailyReportDay => {
     const logs = model.logs.filter((l) => l.userId === memberId && l.logDate === on);
-    return { date: on, logs, hours: roundToNumericScale(sumHours(logs)) };
+    // The day's hours merge timers that ran at the same time (migration 118).
+    return { date: on, logs, hours: roundToNumericScale(mergedDayHours(logs)) };
   };
   const openMissions = model.tasks
     .filter((t) => t.assigneeIds.includes(memberId) && openOn(t, date))

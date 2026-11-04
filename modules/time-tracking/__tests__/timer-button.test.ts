@@ -36,11 +36,17 @@ describe('timer button', () => {
     expect(html).toContain('Stop');
   });
 
-  it('is unavailable, with the reason, on every other mission', () => {
+  it('offers Start on every other mission while one runs (several timers at once, migration 118)', () => {
     const html = render('task-b', [timer]);
-    expect(html).toContain('data-state="blocked"');
-    expect(html).toContain('aria-disabled="true"');
-    expect(html).toContain('title="Your timer is running on TT-1. Stop it there first."');
+    expect(html).toContain('data-state="idle"');
+    expect(html).toContain('aria-label="Start timer on TT-2"');
+    expect(html).not.toContain('aria-disabled');
+  });
+
+  it('offers Stop on each running mission when several run', () => {
+    const other: RunningTimer = { ...timer, id: 'timer-2', taskId: 'task-b', taskTag: 'TT-2', taskTitle: 'Drawings' };
+    expect(render('task-a', [timer, other])).toContain('aria-label="Stop timer on TT-1"');
+    expect(render('task-b', [timer, other])).toContain('aria-label="Stop timer on TT-2"');
   });
 
   it('starts by mission id and stops by timer id and version', () => {
