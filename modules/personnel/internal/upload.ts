@@ -1,4 +1,4 @@
-import { createClient } from '@/shared/supabase/client';
+import { sendToSignedUpload } from '@/shared/supabase/signed-upload';
 
 import { RECORDS_BUCKET } from './rules';
 
@@ -9,10 +9,6 @@ import { RECORDS_BUCKET } from './rules';
  * Action. Returns an error message, or null when the file arrived.
  */
 export async function uploadToTicket(ticket: { path: string; token: string }, file: File): Promise<string | null> {
-  const { error } = await createClient().storage.from(RECORDS_BUCKET)
-    .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type, upsert: false });
-  if (!error) return null;
-  // The same attempt sent again after a lost response.
-  if (/exists|duplicate/i.test(error.message)) return null;
-  return `The file did not upload: ${error.message}`;
+  // A repeat after a lost response counts as arrived; see sendToSignedUpload.
+  return sendToSignedUpload(RECORDS_BUCKET, ticket, file, file.type);
 }
