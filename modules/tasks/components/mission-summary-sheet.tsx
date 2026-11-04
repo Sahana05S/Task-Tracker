@@ -26,6 +26,8 @@ export interface MissionSummarySheetProps {
   effortByTask: ReadonlyMap<string, TaskEffort>;
   memberNames: ReadonlyMap<string, string>;
   canManage: boolean;
+  /** Whether the viewer may open each mission's checklist (migration 117); defaults to yes. */
+  canReadWork?: (task: Task) => boolean;
   onClose: () => void;
   onEdit: (task: Task) => void;
   onRequestDelete: (task: Task) => void;
@@ -41,6 +43,7 @@ export function MissionSummarySheet({
   effortByTask,
   memberNames,
   canManage,
+  canReadWork,
   onClose,
   onEdit,
   onRequestDelete,
@@ -54,6 +57,7 @@ export function MissionSummarySheet({
             effort={effortByTask.get(task.id) ?? EMPTY_EFFORT}
             memberNames={memberNames}
             canManage={canManage}
+            canReadWork={canReadWork ? canReadWork(task) : true}
             onEdit={() => {
               onClose();
               onEdit(task);
@@ -74,6 +78,7 @@ function MissionSummary({
   effort,
   memberNames,
   canManage,
+  canReadWork,
   onEdit,
   onRequestDelete,
 }: {
@@ -81,6 +86,7 @@ function MissionSummary({
   effort: TaskEffort;
   memberNames: ReadonlyMap<string, string>;
   canManage: boolean;
+  canReadWork: boolean;
   onEdit: () => void;
   onRequestDelete: () => void;
 }) {
@@ -139,9 +145,11 @@ function MissionSummary({
               <ArrowRightIcon aria-hidden="true" />
             </Link>
           </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href={checklistWorkHref(task.taskTag)}>Master checklist</Link>
-          </Button>
+          {canReadWork ? (
+            <Button asChild size="sm" variant="outline">
+              <Link href={checklistWorkHref(task.taskTag)}>Master checklist</Link>
+            </Button>
+          ) : null}
           {canManage && !task.archivedEffectiveDate ? (
             <>
               <Button type="button" variant="outline" size="sm" onClick={onEdit}>

@@ -121,12 +121,14 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const canManage = canManageTasks(currentUser.role) && !archived;
   // D-A2: the mission's Owner, assignees and collaborators also edit its details (migration 108).
   const canEditDetails = !archived && canEditTaskDetails(currentUser, task);
-  const requested = (await searchParams).tab;
-  const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
-  const details = tab === 'details';
   const reviewer = task.reviewerIds.includes(currentUser.id);
   // The checklist and work content belong to the mission's people and the managing director (migration 117).
   const canReadWork = canReadMissionWork(currentUser, task);
+  // Details holds only work content, so it is not offered to anyone else; ?tab=details falls back to Work.
+  const tabs = canReadWork ? TABS : TABS.filter(([key]) => key !== 'details');
+  const requested = (await searchParams).tab;
+  const tab: Tab = tabs.some(([key]) => key === requested) ? requested as Tab : 'work';
+  const details = tab === 'details';
   const canWriteFiles = canWriteMissionFiles(currentUser, task);
   const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews, driveReady] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
@@ -292,7 +294,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
 
       <PageTabs
         label="Mission sections"
-        tabs={TABS.map(([key, label]) => ({
+        tabs={tabs.map(([key, label]) => ({
           href: key === 'work' ? '?' : `?tab=${key}`,
           label,
           current: tab === key,

@@ -130,20 +130,24 @@ export async function getEmployeeItemHours(employeeUserId: string, from: string,
   if (!rows.length) return [];
   const nodeIds = [...new Set(rows.map(r => r.checklist_node_id!))];
   const taskIds = [...new Set(rows.map(r => r.task_id))];
-  const [nodes, tasks] = await Promise.all([
+  // task_checklists rows come back only for missions whose checklist the viewer may read (migration 117).
+  const [nodes, tasks, readable] = await Promise.all([
     supabase.from('checklist_nodes').select('id, title').in('id', nodeIds),
     supabase.from('tasks').select('id, task_tag, title').in('id', taskIds),
+    supabase.from('task_checklists').select('task_id').in('task_id', taskIds),
   ]);
-  const failure = nodes.error ?? tasks.error;
+  const failure = nodes.error ?? tasks.error ?? readable.error;
   if (failure) throw new Error(`Failed to load item hours: ${failure.message}`);
   const nodeTitle = new Map((nodes.data ?? []).map(n => [n.id, n.title]));
   const task = new Map((tasks.data ?? []).map(t => [t.id, t]));
+  const canRead = new Set((readable.data ?? []).map(c => c.task_id));
   return groupItemHours(rows.map(r => ({
     taskId: r.task_id,
     taskTag: task.get(r.task_id)?.task_tag ?? 'Unknown task',
     taskTitle: task.get(r.task_id)?.title ?? '',
     nodeId: r.checklist_node_id!,
-    nodeTitle: nodeTitle.get(r.checklist_node_id!) ?? 'Removed item',
+    nodeTitle: canRead.has(r.task_id) ? nodeTitle.get(r.checklist_node_id!) ?? 'Removed item' : 'Private objective',
     hours: Number(r.hours_worked),
+    readable: canRead.has(r.task_id),
   })));
 }

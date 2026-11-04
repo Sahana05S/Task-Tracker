@@ -42,7 +42,7 @@ import {
   type TaskSortState,
 } from '@/modules/tasks/internal/filters';
 import { withoutCollapsed, type MissionNesting } from '@/modules/tasks/internal/grouping';
-import { canMarkMissionDone, canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
+import { canMarkMissionDone, canReadMissionWork, canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
 import { formatDate, isOverdue, formatHours } from '@/shared/tracker/format';
 import { cn, getInitials } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
@@ -291,14 +291,20 @@ export function TaskDataGrid({
                 </td>
 
                 <td>
-                  <Link
-                    href={checklistWorkHref(task.taskTag)}
-                    className="link inline-flex items-center gap-1 text-xs whitespace-nowrap"
-                    aria-label={`Master checklist for ${task.taskTag}`}
-                  >
-                    <ListChecksIcon className="size-3.5" aria-hidden="true" />
-                    {task.progressOwner === 'checklist' ? 'Drives progress' : 'Open'}
-                  </Link>
+                  {canReadMissionWork(currentUser, task) ? (
+                    <Link
+                      href={checklistWorkHref(task.taskTag)}
+                      className="link inline-flex items-center gap-1 text-xs whitespace-nowrap"
+                      aria-label={`Master checklist for ${task.taskTag}`}
+                    >
+                      <ListChecksIcon className="size-3.5" aria-hidden="true" />
+                      {task.progressOwner === 'checklist' ? 'Drives progress' : 'Open'}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground text-xs whitespace-nowrap" title="Only the mission's people see its checklist">
+                      Private
+                    </span>
+                  )}
                 </td>
 
                 {/* Pinned right so the menu is reachable without scrolling sideways. */}
