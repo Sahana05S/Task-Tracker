@@ -5,8 +5,35 @@
 consolidated plan written from them ("TaskPulse / Stellar Consolidated Update &
 Implementation Plan"); an audit of this codebase at migration 106 (`main` at
 `ab7583a`).
-**Status:** Proposed. Decisions are listed in section 14. The user answered
-D-A3, D-B1, D-D2, D12 and D13 on 3 November 2026; D15 (icon) is postponed.
+**Status:** Done, except the icon (D15, postponed by the user). Every workstream
+below is merged and its migration is live (migrations 107-115, 4 November 2026);
+see "Result". The user answered D-A3, D-B1, D-D2, D12 and D13 on 3 November 2026
+and asked that everything stay in English; the other open decisions were built
+with the recommended answer (section 14).
+
+## Result (4 November 2026)
+
+Built by parallel sessions, one branch and one reserved migration each; every PR
+merged after green CI, and every migration run applied cleanly.
+
+| Workstream | PR | Migration | What the user sees |
+|---|---|---|---|
+| J Org chart | #130 | 107 | Two or more managing directors share one leadership row; everyone below names their manager; today's status ignores withdrawn records |
+| I WhatsApp | #130 | none | After check-in, a greeting with the time and a daily positive note; after check-out, the daily report; Send on WhatsApp opens the chat picker on phone or laptop |
+| A Mission people | #135 | 108 | Owner, Collaborators (no share, no time logging) and Observers (follow only, never block Done); Manage people on the mission page |
+| B Objectives and sub-quests | #133 | 109 | Items are called Objectives; Quests hold Quests (3 deep), Objectives and Sub-missions; "remove row and its rows" works again |
+| C One mission timer | #136 | 110 | No timers on checklist rows; the mission timer's sessions list what was changed while each ran |
+| E Mistakes and learning | #132 | 111 | A Mistakes & learning panel and a SMART brief on each mission |
+| G Labels | #134 | 112 | `#` labels on missions, learning notes and meeting points; `/labels`; Settings > Company > Labels |
+| H Input / Process / Output | #131 | 113 | Upload Input, Process and Output documents on a mission; they move into the Shared Drive |
+| D Objective review | #138 | 114 | Acknowledge / Work needed per objective; pending or Work-needed objectives block Done |
+| F Constellation graph | #137 | none | Today's map is a star graph of real mission links; Whole team switch for managers |
+| Follow-ups | #139 | 115 | Task Tools copies keep collaborators and observers in their roles; Reports > Mission activity |
+| K Icon | — | — | Postponed by the user |
+
+Still to look at: the graph and the other new screens on the live site with real
+missions (they were checked with sample data), and in the Android app that the
+WhatsApp link opens WhatsApp (stellar-mobile shell).
 
 ## Why this second plan exists
 
@@ -517,21 +544,21 @@ manager, and an inactive director whose reports move up.
 | D11, D12 | WhatsApp: prefilled or automatic; message text and recipient | Prefilled, drafted in the app; the person picks the chat in WhatsApp on phone or laptop. Check-in: greeting, check-in time, positive note. Check-out: the daily report message (user, 3 Nov 2026). |
 | D13 | What is wrong with the org chart | Adding a second managing director splits it into two unconnected trees and overflows the panel (user, 3 Nov 2026, with screenshot). |
 
-### Still open (recommended answer in brackets)
+### Open on 3 November (recommended answer in brackets) and what was built
 
 | ID | Question | Status |
 |---|---|---|
-| D-A1 | Scale editable by MD only, or MD and project engineers? (keep MD and PE) | |
-| D-A2 | May the Owner and Collaborators edit mission Details? (yes) | |
-| D-A4 | Who may transfer ownership? (MD, PE, current Owner) | |
-| D-A5 | Should anyone's read access narrow? Today every member reads every mission. (no change) | |
-| D-C1 | Keep the per-row Links column? (yes) | |
-| D-C2 | Show the session note in the Stop sheet? (yes) | |
-| D-D1 | Can a reviewer acknowledge their own objective? (no) | |
-| D-D3 | Stop clearing mission approval on every time log once objectives are reviewed? (yes) | |
-| D-F1 | `d3-force` or a hand-written layout? (`d3-force`) | |
-| D-G1 | Which records take labels first? (missions, learnings, meeting points) | |
-| D09, D10 | IPO documents at mission level, in the existing Shared Drive? (yes) | |
+| D-A1 | Scale editable by MD only, or MD and project engineers? (keep MD and PE) | Built as recommended (MD and PE) |
+| D-A2 | May the Owner and Collaborators edit mission Details? (yes) | Built as recommended (108) |
+| D-A4 | Who may transfer ownership? (MD, PE, current Owner) | Built as recommended (108) |
+| D-A5 | Should anyone's read access narrow? Today every member reads every mission. (no change) | No change |
+| D-C1 | Keep the per-row Links column? (yes) | Kept (110) |
+| D-C2 | Show the session note in the Stop sheet? (yes) | Built (110) |
+| D-D1 | Can a reviewer acknowledge their own objective? (no) | Built as recommended (114) |
+| D-D3 | Stop clearing mission approval on every time log once objectives are reviewed? (yes) | Built as recommended (114) |
+| D-F1 | `d3-force` or a hand-written layout? (`d3-force`) | Hand-written, no new dependency (#137) |
+| D-G1 | Which records take labels first? (missions, learnings, meeting points) | Built as recommended (112) |
+| D09, D10 | IPO documents at mission level, in the existing Shared Drive? (yes) | Built as recommended (113) |
 | D15 | The new icon asset | Postponed by the user |
 | D16 | Infrastructure ownership review | Separate assessment |
 

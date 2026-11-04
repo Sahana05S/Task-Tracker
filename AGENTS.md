@@ -26,6 +26,39 @@ change). The refactor is complete and merged into `main`. Follow
   `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
   `__tests__/fixtures/`.
 
+## 3 November 2026 updates (migrations 107-115)
+
+The user's 3 November calls (plan and result in `docs/UPDATE-PLAN-2026-11.md`)
+were built in parallel lanes, one branch and one migration each, all merged and
+live on 4 November 2026. User decisions to keep:
+
+- **Mission people (108):** Owner, assignees, zero-share **Collaborators** (edit the
+  mission, details and checklist; never log time: `is_task_worker`) and
+  **Observers** (`task_reviewers.reviewer_role='Observer'`: follow only, never
+  review, never block Done). The managing director, project engineers and the
+  mission's Owner manage people (`task_people_command`). Task Tools copies keep
+  both roles (115).
+- **Checklist words and depth (109):** rows are called **Objectives** in the
+  interface only (`node_type='Item'` stays). A Quest may hold Objectives, Quests and
+  Sub-missions, at most **3 Quest levels**.
+- **One timer per mission (110):** no timers on checklist rows (data and the offline
+  RPCs stay); each session lists what was changed while it ran, on the mission's
+  History tab and Reports > Mission activity.
+- **Objective review (114):** Acknowledge / Work needed per objective by managers and
+  non-observer reviewers; **pending or Work-needed objectives block Done**; Work
+  needed un-ticks the row through the normal path (no new scoring rule); a time log
+  no longer clears mission approval.
+- **Mistakes and learning** live on the mission page (111). **Labels** (112) are
+  never called tags (`task_tag` is the mission identifier); names are English
+  letters and digits.
+- **WhatsApp (no migration):** the app drafts the message and the member picks the
+  chat (`wa.me/?text=`, no stored number): a greeting with the check-in time and a
+  daily positive note; the daily report at check-out.
+- **Org chart (107):** several top-level managing directors share one leadership row.
+- IPO documents upload into the Shared Drive at mission level (113); the Today map
+  is a constellation of real mission links with no new dependency.
+- Everything stays in **English**. The new Stellar icon is **postponed** by the user.
+
 ## Drive file storage (go-live Part F) - 2 November 2026
 
 The user asked for personal documents and proof files to live in the company
