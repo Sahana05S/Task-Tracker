@@ -10,7 +10,10 @@ the service account, and only the managing director (and anyone added as a
 drive member) can browse the drive directly. Check-in photos stay in Supabase.
 
 How a file travels: the browser uploads to Supabase storage through a signed
-link (no request size limit), the owning module's command records it, then
+link (no request size limit; `shared/supabase/signed-upload.ts` reads the picked
+file into memory first, because the Android app's WebView often cannot send a
+file-chooser file itself and reported "Failed to fetch", and retries one network
+failure), the owning module's command records it, then
 `scheduleDriveMove` moves it after the response: folders by app property, a
 resumable upload, `file_move_finish` records the Drive id, and only then is the
 storage copy deleted. A failed step leaves the file in storage, still viewable,

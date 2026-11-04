@@ -1,4 +1,4 @@
-import { createClient } from '@/shared/supabase/client';
+import { sendToSignedUpload } from '@/shared/supabase/signed-upload';
 
 import type { FileBucket } from './rules';
 
@@ -9,9 +9,5 @@ import type { FileBucket } from './rules';
  * repeat after a lost response counts as arrived).
  */
 export async function uploadToSignedLink(bucket: FileBucket, ticket: { path: string; token: string }, file: File, mimeType: string): Promise<string | null> {
-  const { error } = await createClient().storage.from(bucket)
-    .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: mimeType, upsert: false });
-  if (!error) return null;
-  if (/exists|duplicate/i.test(error.message)) return null;
-  return `The file did not upload: ${error.message}`;
+  return sendToSignedUpload(bucket, ticket, file, mimeType);
 }

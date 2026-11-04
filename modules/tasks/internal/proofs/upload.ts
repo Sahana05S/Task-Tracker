@@ -1,4 +1,4 @@
-import { createClient } from '@/shared/supabase/client';
+import { sendToSignedUpload } from '@/shared/supabase/signed-upload';
 
 import { PROOFS_BUCKET } from './rules';
 
@@ -8,9 +8,5 @@ import { PROOFS_BUCKET } from './rules';
  * file arrived.
  */
 export async function uploadProofToTicket(ticket: { path: string; token: string }, file: File, mimeType: string): Promise<string | null> {
-  const { error } = await createClient().storage.from(PROOFS_BUCKET)
-    .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: mimeType, upsert: false });
-  if (!error) return null;
-  if (/exists|duplicate/i.test(error.message)) return null;
-  return `The file did not upload: ${error.message}`;
+  return sendToSignedUpload(PROOFS_BUCKET, ticket, file, mimeType);
 }
