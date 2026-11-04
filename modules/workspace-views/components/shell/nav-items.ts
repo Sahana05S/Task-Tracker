@@ -11,6 +11,7 @@ import {
   DollarSignIcon,
   FileBadgeIcon,
   FileTextIcon,
+  HashIcon,
   HistoryIcon,
   LightbulbIcon,
   ListChecksIcon,
@@ -144,6 +145,7 @@ export const MORE_ITEMS: readonly NavTab[] = [
   { label: 'My salary', href: '/my-salary', match: ['/my-salary'], icon: BadgeIndianRupeeIcon, roles: ['project_engineer', 'data_manager', 'team_member'] },
   // M19: Code of Conduct, letterhead and performance reviews, for everyone.
   { label: 'HR', href: '/hr', match: ['/hr'], icon: FileBadgeIcon },
+  { label: 'Labels', href: '/labels', match: ['/labels'], icon: HashIcon },
   { label: 'Settings', href: '/settings', match: ['/settings'], icon: SettingsIcon },
   { label: 'Guide', href: '/guide', match: ['/guide'], icon: CircleHelpIcon },
 ];

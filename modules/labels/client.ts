@@ -1,0 +1,19 @@
+// PUBLIC client-safe exports: types and pure helpers only (no server imports).
+export {
+  cleanLabelName,
+  isLabelSubjectKind,
+  LABEL_COLOUR_CLASS,
+  LABEL_COLOUR_NAME,
+  LABEL_COLOURS,
+  LABEL_NAME_MAX,
+  LABEL_SUBJECT_KINDS,
+  labelSlug,
+  labelSuggestions,
+  type CatalogueLabel,
+  type Label,
+  type LabelCatalogue,
+  type LabelColour,
+  type LabelledItem,
+  type LabelledRecords,
+  type LabelSubjectKind,
+} from '@/modules/labels/internal/rules';

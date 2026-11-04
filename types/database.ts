@@ -964,6 +964,12 @@ export interface Database {
       /** Migration 111: Mistakes and learning on the mission page (learning module). */
       mission_learnings: { Args: { p_task: string }; Returns: Json };
       mission_learning_command: { Args: { p_op: 'add' | 'edit' | 'withdraw'; p_task: string; p_learning: string | null; p_kind: 'mistake' | 'learning' | null; p_body: string | null; p_operation: string }; Returns: Json };
+      /** Migration 112: workspace labels (labels module). */
+      label_catalogue: { Args: Record<never, never>; Returns: Json };
+      labels_for: { Args: { p_kind: 'task' | 'mission_learning' | 'meeting_point'; p_ids: string[] }; Returns: Json };
+      labelled: { Args: { p_slug: string }; Returns: Json };
+      label_command: { Args: { p_op: 'create' | 'rename' | 'archive' | 'restore'; p_label: string | null; p_name: string | null; p_colour: string | null; p_description: string | null; p_operation: string }; Returns: Json };
+      label_link_command: { Args: { p_op: 'attach' | 'detach'; p_kind: 'task' | 'mission_learning' | 'meeting_point'; p_subject: string; p_label: string | null; p_name: string | null; p_operation: string }; Returns: Json };
       /** Migration 100: company files in the Google Shared Drive (files module). */
       file_storage_configure: { Args: { p_shared_drive_id: string }; Returns: Json };
       file_storage_status: { Args: Record<never, never>; Returns: Json };

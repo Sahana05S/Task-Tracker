@@ -87,10 +87,12 @@ function NoteForm({ taskId, taskTag, note, onDone }: {
  * managing director add notes; the author or a manager edits or withdraws one.
  * Not a dated record and never part of a score.
  */
-export function LearningPanel({ taskId, taskTag, learnings }: {
+export function LearningPanel({ taskId, taskTag, learnings, noteExtras }: {
   taskId: string;
   taskTag: string;
   learnings: MissionLearnings;
+  /** Per-note blocks shown under a note (its labels), keyed by note id. */
+  noteExtras?: Readonly<Record<string, React.ReactNode>>;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<string | null>(null);
@@ -148,6 +150,7 @@ export function LearningPanel({ taskId, taskTag, learnings }: {
                     <p className="text-muted-foreground text-xs">
                       {note.authorName ?? 'Team member'} · {formatDate(note.createdAt.slice(0, 10))}{note.edited ? ' · edited' : ''}
                     </p>
+                    {noteExtras?.[note.id] ?? null}
                   </>
                 )}
               </li>

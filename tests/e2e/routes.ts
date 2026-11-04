@@ -37,6 +37,8 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRoute[] = [
   { file: 'hr/reviews/[reviewId]', path: `/hr/reviews/${MISSING_UUID}`, audience: 'all' },
   { file: 'hr/reviews', path: '/hr/reviews', audience: 'all' },
   { file: 'ideas', path: '/ideas', audience: 'all' },
+  { file: 'labels', path: '/labels', audience: 'all' },
+  { file: 'labels/[slug]', path: '/labels/qa-no-such-label', audience: 'all' },
   { file: 'leaderboard', path: '/leaderboard', audience: 'all' },
   { file: 'logs', path: '/logs', audience: 'all' },
   { file: 'meeting-points', path: '/meeting-points', audience: 'all' },

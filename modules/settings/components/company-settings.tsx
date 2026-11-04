@@ -66,6 +66,7 @@ const SECTIONS = [
   { id: 'attendance', label: 'Check-in' },
   { id: 'standing-missions', label: 'Standing missions' },
   { id: 'holidays', label: 'Holidays' },
+  { id: 'labels', label: 'Labels' },
 ] as const;
 
 /**
@@ -73,11 +74,16 @@ const SECTIONS = [
  * standing monthly rows, per company. Each section saves on its own (one
  * versioned command per section), so editing one never overwrites another.
  */
-export function CompanySettingsEditor({ settings, members }: { settings: CompanySettings; members: readonly CompanyMember[] }) {
+export function CompanySettingsEditor({ settings, members, labels }: {
+  settings: CompanySettings;
+  members: readonly CompanyMember[];
+  /** Settings > Company > Labels (the labels module's manager, migration 112); the section is left out without it. */
+  labels?: React.ReactNode;
+}) {
   return (
     <div className="grid gap-5 lg:gap-6">
       <nav aria-label="Company settings sections" className="flex max-w-full gap-1.5 overflow-x-auto pb-1">
-        {SECTIONS.map((section) => (
+        {SECTIONS.filter((section) => section.id !== 'labels' || labels).map((section) => (
           <a key={section.id} href={`#${section.id}`} className="filter-pill shrink-0">
             {section.label}
           </a>
@@ -98,6 +104,11 @@ export function CompanySettingsEditor({ settings, members }: { settings: Company
       </div>
       <StandingMissionsSection settings={settings} members={members} />
       <HolidaysSection settings={settings} />
+      {labels ? (
+        <MissionPanel id="labels" icon={TagsIcon} title="Labels" subtitle="Group missions, mistakes and learning, and meeting points; renaming keeps a label on everything it is on">
+          {labels}
+        </MissionPanel>
+      ) : null}
     </div>
   );
 }

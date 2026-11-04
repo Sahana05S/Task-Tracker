@@ -5,7 +5,11 @@ import { NewTaskButton } from '@/modules/tasks/components/new-task-button';
 import { MissionsPageMenu, MonthSetupBanner } from '@/modules/tasks/components/month-setup/month-setup-entry';
 import { MissionsWorkspace } from '@/modules/workspace-views/components/missions-workspace';
 import { requireProfile } from '@/shared/session/profile';
-import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import { MissionNotice, MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
+import Link from 'next/link';
+import { HashIcon } from 'lucide-react';
+import { getLabelled } from '@/modules/labels';
+import { LabelChip } from '@/modules/labels/components/label-chips';
 import { getTaskEffortTotals } from '@/modules/time-tracking';
 import { addMonths, countMissionsInMonth, defaultSetupMonth, getTaskWorkspaceData, monthOf, setupBannerMonth } from '@/modules/tasks';
 import { kolkataDate } from '@/shared/time/kolkata';
@@ -27,13 +31,18 @@ export const metadata: Metadata = {
  * and `modules/time-tracking/actions.ts`. The team headline lives on Team >
  * Analytics (slice 3, 20 October 2026).
  */
-export default async function TasksPage() {
+export default async function TasksPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const profile = await requireProfile();
+  // ?label=<slug> (migration 112): only the missions carrying that label.
+  const labelParam = (await searchParams).label;
+  const labelSlug = typeof labelParam === 'string' && labelParam ? labelParam : null;
+  const labelled = labelSlug ? await getLabelled(labelSlug) : null;
+  const labelledIds = labelSlug ? new Set(labelled?.items.filter((item) => item.kind === 'task').map((item) => item.id) ?? []) : null;
   const canManage = (TASK_MANAGER_ROLES as readonly UserRole[]).includes(
     profile.role,
   );
 
-  const workspace = getTaskWorkspaceData();
+  const workspace = getTaskWorkspaceData().then((data) => (labelledIds ? { ...data, tasks: data.tasks.filter((task) => labelledIds.has(task.id)) } : data));
   const [{ tasks, members }, effortTotals, templates, waypoints, setup] = await Promise.all([
     workspace,
     getTaskEffortTotals(),
@@ -63,6 +72,13 @@ export default async function TasksPage() {
       />
 
       {setup?.bannerMonth ? <MonthSetupBanner month={setup.bannerMonth} /> : null}
+
+      {labelSlug ? (
+        <MissionNotice icon={HashIcon}>
+          {labelled ? <>Showing missions labelled <LabelChip label={labelled.label} />.</> : <>No label called #{labelSlug}.</>}{' '}
+          <Link href="/tasks" className="link font-semibold">Show all missions</Link>
+        </MissionNotice>
+      ) : null}
 
       <MissionsWorkspace
         tasks={tasks}
