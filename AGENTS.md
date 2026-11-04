@@ -127,8 +127,12 @@ user's standing rules, which earlier lived only in the laptop's Claude memory
   merging a migration, check that run; a failed run means the live site is
   ahead of its database, so fix it with a new forward migration at once.
 - Testing stays light: `npm run typecheck`, or one focused test file when
-  changing logic; CI runs the full suite and Vercel the build. No disposable
-  test databases or new `tools/test_*_database.py` suites; check the result on
+  changing logic; CI runs the full suite and Vercel the build. Do not build
+  disposable test databases locally. A database test (`tools/test_*_database.py`,
+  with its line in `.github/workflows/contract-checks.yml`) is fine when a
+  migration changes who may do what or a rule the user decided; prefer
+  extending an existing suite, and let CI run it (user decision, 4 November
+  2026, keeping the suites added for migrations 108-116). Check the result on
   the live demo site at the end.
 - One short branch per change, named after the module. Every new migration ends
   with `SELECT taskpulse_private.m15_secure();` (see M15 below).
