@@ -35,6 +35,25 @@ Still to look at: the graph and the other new screens on the live site with real
 missions (they were checked with sample data), and in the Android app that the
 WhatsApp link opens WhatsApp (stellar-mobile shell).
 
+## Follow-up changes (4 November 2026)
+
+After trying the 3 November features the user asked for six more changes. Built in five
+parallel lanes, all merged and live (migrations 116-119):
+
+| Change | PR | Migration | What the user sees |
+|---|---|---|---|
+| Label changes in Team > Activity | #141 | 116 | Created / renamed / archived labels and labels added to or removed from records appear in Team > Activity |
+| One Files panel | #143 | none | On the mission Work tab: Input, Process, Output and Proofs, each one list; Upload is the main button, "Add a link instead" is an option; Settings > Company > Shared Drive lets the managing director connect the drive; screens say files stay in the app until it is connected |
+| Objective status and views | #145 | none | Only Yes and N/A (tap again to clear); a sent-back objective shows "Changes needed" with the note; sections and Quests say Not started / Changes needed / In progress correctly; Table, Board, Blocks, Outline and Today show the same details |
+| Checklist visibility and roles | #147 | 117 | A mission's checklist and work are visible only to the managing director, the Owner, assignees, collaborators, reviewers and observers (project engineers only on missions they are on); MD, Owner and assignees decide observers; collaborators can no longer mark Done; observers can view files but not upload or remove them |
+| Several timers at once | #146 | 118 | A person can run several mission timers together; each mission keeps its full time, and the day's productive hours are the merged time (9-13 and 11-14 = 5 h), used by attendance checks, reports and scores |
+| Check-out report in four blocks | #148 | 119 | Check-in to 11:00, 11:00-13:00, 14:00-16:00, 16:00 to check-out (break times editable in Settings > Company > Check-in); each block lists the missions worked on and the block's productive hours |
+| Labels show and filter | #144 | none | Label chips on the Missions list and cards, the mission header and Today; a label filter on the Missions page; labels in the New mission dialog |
+
+Left open: project engineers still see every mission's lines in Team > Activity (including
+objective titles), and an off-mission project engineer's checklist writes are still accepted by
+the database although the app no longer offers them.
+
 ## Why this second plan exists
 
 The first plan was written from the call recordings without access to the code.
