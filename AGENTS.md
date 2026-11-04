@@ -26,6 +26,32 @@ change). The refactor is complete and merged into `main`. Follow
   `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
   `__tests__/fixtures/`.
 
+## 4 November 2026 updates (migrations 116-119)
+
+Follow-up requests after the 3 November work (result in `docs/UPDATE-PLAN-2026-11.md`,
+"Follow-up changes"). User decisions to keep; they replace the matching 3 November lines below:
+
+- **Checklist visibility (117):** a mission's checklist and work content (checklist, detail
+  sections, links, learning notes, files, branch/review/time reads) are visible only to the
+  managing director, the mission's Owner, assignees and collaborators (`task_assignees`), and its
+  reviewers and observers (`task_reviewers`): `can_read_mission_work`. Project engineers see them
+  only on missions they are on. Mission rows themselves stay visible company-wide. MD, Owner and
+  credited assignees decide observers. **Collaborators cannot mark a mission Done; observers can
+  view files but not upload or remove them.** Scoring, reports and awards read as the definer and
+  are unaffected.
+- **Several timers at once (118):** at most one running timer per person **per mission**. Each
+  mission keeps its full logged time; every daily total (attendance validity, reports, Daily perf
+  log, analytics, policies) uses the **merged** time (`member_day_hours`, `mergedSeconds`).
+- **Check-out report (119):** four blocks split by company break times (morning tea 11:00, lunch
+  13:00-14:00, evening tea 16:00; Settings > Company > Check-in), each listing missions and the
+  block's merged productive hours.
+- **Objectives:** the tick offers only **Yes and N/A**; "not done" is shown empty and is still
+  stored as `'No'`. A sent-back objective shows "Changes needed".
+- **Files:** one Files panel (Input, Process, Output, Proofs); upload first, links optional; the
+  managing director connects the Shared Drive in Settings > Company.
+- **Labels** show as chips on missions and filter the Missions page; label changes appear in Team >
+  Activity (116).
+
 ## 3 November 2026 updates (migrations 107-115)
 
 The user's 3 November calls (plan and result in `docs/UPDATE-PLAN-2026-11.md`)
