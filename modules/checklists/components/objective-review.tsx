@@ -17,6 +17,7 @@ import {
   canDecideObjective,
   reviewChip,
   reviewsByNode,
+  sentBackIndex,
   type ObjectiveReview,
   type ObjectiveReviews,
   type ReviewChipTone,
@@ -33,6 +34,7 @@ interface ReviewContextValue {
   data: ObjectiveReviews;
   byNode: ReadonlyMap<string, ObjectiveReview>;
   names: Readonly<Record<string, string>>;
+  sentBack: ReturnType<typeof sentBackIndex>;
 }
 
 const ReviewContext = React.createContext<ReviewContextValue | null>(null);
@@ -51,10 +53,38 @@ export function ObjectiveReviewProvider({ taskId, version, action, reviews, name
 }) {
   const data = reviews ?? NO_REVIEWS;
   const value = React.useMemo<ReviewContextValue>(
-    () => ({ taskId, version, action, data, byNode: reviewsByNode(data), names: names ?? {} }),
+    () => ({ taskId, version, action, data, byNode: reviewsByNode(data), names: names ?? {}, sentBack: sentBackIndex(data) }),
     [taskId, version, action, data, names],
   );
   return <ReviewContext.Provider value={value}>{children}</ReviewContext.Provider>;
+}
+
+/** True when an objective inside this row (or the row itself) was sent back for changes. */
+export function useRowChangesNeeded(nodeId: string): boolean {
+  return React.useContext(ReviewContext)?.sentBack.hasRow(nodeId) ?? false;
+}
+
+/** True when a list section (a checklist's Setup / Activity / Closure, or a Quest's list) holds a sent-back objective. */
+export function useSectionChangesNeeded(checklistId: string | null | undefined, section: string | null | undefined): boolean {
+  return React.useContext(ReviewContext)?.sentBack.hasSection(checklistId, section) ?? false;
+}
+
+/**
+ * The reviewer's note under an objective, visible rather than only in a
+ * tooltip: what to change when it was sent back, or a note left with an
+ * acknowledgement.
+ */
+export function ObjectiveReviewNote({ nodeId, className }: { nodeId: string; className?: string }) {
+  const ctx = React.useContext(ReviewContext);
+  const review = ctx?.byNode.get(nodeId);
+  if (!ctx || !review || !review.note || (review.state !== 'work_needed' && review.state !== 'acknowledged')) return null;
+  const by = review.reviewedBy ? ctx.names[review.reviewedBy] : null;
+  const sentBack = review.state === 'work_needed';
+  return (
+    <p className={cn('rounded-lg px-2 py-1 text-xs break-words', sentBack ? 'bg-danger-subtle text-danger-foreground' : 'bg-success-subtle text-success-strong', className)}>
+      <span className="font-semibold">{sentBack ? 'Changes needed' : 'Acknowledged'}{by ? ` · ${by}` : ''}:</span> {review.note}
+    </p>
+  );
 }
 
 const TONE: Record<ReviewChipTone, string> = {
@@ -65,7 +95,7 @@ const TONE: Record<ReviewChipTone, string> = {
 const ICON: Record<ReviewChipTone, typeof ClockIcon> = { attention: ClockIcon, success: CircleCheckIcon, danger: CircleAlertIcon };
 const CHIP = 'inline-flex max-w-full shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem] font-semibold whitespace-nowrap';
 
-/** The review chip beside an objective's tick: Pending, Acknowledged or Work needed. Reviewers open it to decide. */
+/** The review chip beside an objective's tick: Pending, Acknowledged or Changes needed (sent back). Reviewers open it to decide. */
 export function ObjectiveReviewChip({ nodeId, className }: { nodeId: string; className?: string }) {
   const ctx = React.useContext(ReviewContext);
   const review = ctx?.byNode.get(nodeId);
@@ -136,7 +166,7 @@ function ObjectiveReviewSheet({ review, trigger }: { review: ObjectiveReview; tr
               <Field id={`work-${review.nodeId}`} label="What work is needed" required>
                 <Textarea id={`work-${review.nodeId}`} name="note" rows={3} required maxLength={REVIEW_NOTE_MAX} />
               </Field>
-              <p className="text-muted-foreground text-xs">The tick goes back to No and the people on the mission are told.</p>
+              <p className="text-muted-foreground text-xs">The tick is cleared, the objective shows Changes needed with your note, and the people on the mission are told.</p>
               <Button type="submit" variant="outline" className="justify-self-start">
                 <CircleAlertIcon aria-hidden="true" />Work needed
               </Button>

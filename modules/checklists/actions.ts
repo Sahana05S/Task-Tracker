@@ -6,6 +6,8 @@ import { revalidateAfterChecklistChange } from '@/modules/checklists/internal/ca
 import type { ChecklistSection } from '@/modules/checklists/internal/progress';
 import { runChecklistCommand } from '@/modules/checklists/internal/commands';
 import { parseChecklistCommand } from '@/modules/checklists/internal/input';
+import { NO_REVIEWS, type ObjectiveReviews } from '@/modules/checklists/internal/review';
+import { getObjectiveReviews } from '@/modules/checklists/internal/review-read';
 import { getCurrentProfile } from '@/shared/session/profile';
 import type { Json } from '@/types/database';
 import type { ActionResponse } from '@/types/tracker';
@@ -39,5 +41,16 @@ export async function loadChecklistRows(
     return { success: true, data: { rows: branch.rows, hasMore: branch.hasMore } };
   } catch {
     return { success: false, error: 'These rows could not be loaded.' };
+  }
+}
+
+/** A mission's objective reviews (114), for views loaded in the browser (Today's item work). */
+export async function loadObjectiveReviews(taskId: string): Promise<ActionResponse<ObjectiveReviews>> {
+  const profile = await getCurrentProfile();
+  if (!profile?.isActive) return { success: false, error: 'Active authentication required.' };
+  try {
+    return { success: true, data: await getObjectiveReviews(taskId) };
+  } catch {
+    return { success: true, data: NO_REVIEWS };
   }
 }

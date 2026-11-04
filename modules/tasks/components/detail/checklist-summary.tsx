@@ -6,7 +6,7 @@ import {
 import { MissionProgress } from '@/shared/ui/mission-ui';
 import { ChecklistGateBadge } from '@/modules/checklists/components/checklist-gate-badge';
 import { SectionStateIcon } from '@/modules/checklists/components/section-state-icon';
-import type { ChecklistRollup, ChecklistSection, SectionProgress } from '@/modules/checklists/client';
+import { sectionStatus, type ChecklistRollup, type ChecklistSection, type SectionProgress } from '@/modules/checklists/client';
 import { formatPercent } from '@/shared/tracker/format';
 import { Button } from '@/shared/ui/button';
 
@@ -19,10 +19,11 @@ const SECTION_LABELS: Record<ChecklistSection, string> = {
 
 const SECTION_ORDER: readonly ChecklistSection[] = ['setup', 'activity', 'closure'];
 
-function sectionStateLabel(section: SectionProgress): string {
+function sectionStateLabel(section: SectionProgress, changesNeeded: boolean): string {
   switch (section.state) {
     case 'complete': return 'Complete';
-    case 'partial': return 'In progress';
+    // Not started at 0%, Changes needed when an objective was sent back, In progress once something is done.
+    case 'partial': return sectionStatus(section, changesNeeded).label;
     case 'not_applicable': return 'No rows (N/A)';
     case 'uninitialized': return 'Not initialized';
     case 'missing': return 'Not set up';
@@ -40,11 +41,14 @@ export function ChecklistHero({
   href,
   title,
   itemCount,
-  rollup }: {
+  rollup,
+  changesNeeded = [] }: {
   href: string;
   title: string | null;
   itemCount: number;
   rollup?: ChecklistRollup;
+  /** Phases holding an objective a reviewer sent back (migration 114). */
+  changesNeeded?: readonly ChecklistSection[];
 }) {
   return (
     <section aria-labelledby="phases-heading" className="hero-card relative grid gap-4 p-5 sm:p-6">
@@ -76,6 +80,7 @@ export function ChecklistHero({
           {SECTION_ORDER.map((key, index) => {
             const section = rollup.sections[key];
             const value = section.state === 'not_applicable' ? 'N/A' : formatPercent(section.progressPercentage);
+            const changes = changesNeeded.includes(key);
             return (
               <li key={key}>
                 <Link
@@ -83,13 +88,13 @@ export function ChecklistHero({
                   className="bg-card/85 hover:bg-card focus-visible:ring-ring grid gap-2 rounded-2xl p-3.5 shadow-(--shadow-card) transition-colors outline-none focus-visible:ring-2"
                 >
                   <span className="flex items-center gap-2 text-sm">
-                    <SectionStateIcon section={section} className="size-4 shrink-0" />
+                    <SectionStateIcon section={section} changesNeeded={changes} className="size-4 shrink-0" />
                     <span className="text-foreground font-semibold">{index + 1}. {SECTION_LABELS[key]}</span>
                     <span className="text-foreground ml-auto text-sm font-bold tabular-nums">{value}</span>
                   </span>
                   <MissionProgress value={section.state === 'not_applicable' ? null : section.progressPercentage} label={`${SECTION_LABELS[key]} progress`} className="h-1.5" />
                   <span className="text-muted-foreground text-xs">
-                    {sectionStateLabel(section)}{key === 'activity' ? ' · 95% of progress' : ' · 2.5% of progress'}
+                    <span className={changes && section.state === 'partial' ? 'text-danger font-semibold' : undefined}>{sectionStateLabel(section, changes)}</span>{key === 'activity' ? ' · 95% of progress' : ' · 2.5% of progress'}
                   </span>
                 </Link>
               </li>

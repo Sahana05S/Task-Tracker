@@ -22,7 +22,7 @@ import {
   PriorityBadge,
 } from '@/shared/ui/tracker-badges';
 import { getObjectiveReviews, getTaskEffortBreakdown } from '@/modules/checklists';
-import { NO_REVIEWS, reviewsAwaiting } from '@/modules/checklists/client';
+import { CHECKLIST_SECTIONS, NO_REVIEWS, reviewsAwaiting, sentBackIndex } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
 import { ObjectiveReviewProvider, ObjectiveReviewQueue } from '@/modules/checklists/components/objective-review';
 import { canStartTimerForTask, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
@@ -143,8 +143,9 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     canReadWork && tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
     // What each timer session covered (migration 110); a failed read only hides the lines.
     tab === 'history' && canReadWork ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
-    // Objectives waiting for this reviewer (114); a failed read only hides the list.
-    tab === 'work' && !archived && canReadWork && (reviewer || canManage) ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
+    // Objectives waiting for this reviewer (114), and the phases holding a sent-back objective
+    // (the checklist summary says Changes needed); a failed read only hides them.
+    tab === 'work' && !archived && canReadWork ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
     // Whether uploads reach the Shared Drive yet, so the Files panel words it honestly.
     tab === 'work' && canReadWork ? isFileStorageReady() : Promise.resolve(false),
   ]);
@@ -157,6 +158,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   ]);
   const canLabelMission = !archived && (canManage || task.assigneeIds.includes(currentUser.id));
   const awaitingReview = reviewsAwaiting(objectiveReviews);
+  const sentBack = sentBackIndex(objectiveReviews);
+  const changesNeeded = CHECKLIST_SECTIONS.filter((key) => sentBack.hasSection(data.checklist?.id, key));
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
     ? execution.timers
@@ -308,6 +311,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
                   title={data.checklist?.title ?? null}
                   itemCount={data.checklistNodes.length}
                   rollup={data.checklistRollup}
+                  changesNeeded={changesNeeded}
                 />
               </>
             ) : <MissionWorkPrivate />}

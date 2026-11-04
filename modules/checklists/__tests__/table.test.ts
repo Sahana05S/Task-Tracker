@@ -7,7 +7,7 @@ vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: { href: string; children: ReactNode }) => createElement('a', { href, ...rest }, children),
 }));
 
-import { checklistIssues, commandVersion, opensTable, pageResult, rowKind, sectionStatus, stateChoices } from '@/modules/checklists/client';
+import { checklistIssues, commandVersion, completionWords, nextCompletionState, opensTable, pageResult, rowKind, rowStatus, sectionStatus, stateChoices } from '@/modules/checklists/client';
 import type { ChecklistBranchRow, ChecklistRollup, SectionProgress } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistWorkspaceProps } from '@/modules/checklists/components/checklist-workspace';
 import { ChecklistAddRow } from '@/modules/checklists/components/checklist-add-row';
@@ -75,8 +75,9 @@ describe('checklist table rules', () => {
     expect(rowKind(row({ id: 'a', title: 'a', nodeType: 'Page', childCount: 1 }))).toBe('parent');
     expect(rowKind(row({ id: 'a', title: 'a', childCount: 2 }))).toBe('parent');
     expect(rowKind(row({ id: 'a', title: 'a', linkedTaskId: 'x' }))).toBe('linked');
-    expect(stateChoices('item')).toEqual(['Yes', 'No', 'N/A']);
-    expect(stateChoices('linked')).toEqual(['No', 'N/A']);
+    // "No" means nothing (user decision, 4 November 2026): only Yes and N/A are offered.
+    expect(stateChoices('item')).toEqual(['Yes', 'N/A']);
+    expect(stateChoices('linked')).toEqual(['N/A']);
     expect(stateChoices('parent')).toEqual([]);
     expect(opensTable('parent')).toBe(true);
     expect(opensTable('item')).toBe(false);
@@ -89,6 +90,34 @@ describe('checklist table rules', () => {
     expect(pageResult(undefined)).toBe('OPEN');
     expect(sectionStatus(section('not_applicable', null, true)).label).toBe('No rows (N/A)');
     expect(sectionStatus(section('invalid', null)).tone).toBe('alert');
+    expect(sectionStatus(section('complete', 100, true)).label).toBe('Complete');
+  });
+
+  it('clears a tick by tapping the chosen choice again, saving the stored not-done value', () => {
+    expect(nextCompletionState('No', 'Yes')).toBe('Yes');
+    expect(nextCompletionState('Yes', 'Yes')).toBe('No');
+    expect(nextCompletionState('Yes', 'N/A')).toBe('N/A');
+    expect(nextCompletionState('N/A', 'N/A')).toBe('No');
+    expect(nextCompletionState(undefined, 'N/A')).toBe('N/A');
+    expect(completionWords('No')).toBe('Not done');
+    expect(completionWords(undefined)).toBe('Not done');
+    expect(completionWords('Yes')).toBe('Yes');
+  });
+
+  it('says Not started at 0%, Changes needed after a send-back, and In progress only once something is done', () => {
+    expect(sectionStatus(section('partial', 0)).label).toBe('Not started');
+    expect(sectionStatus(section('partial', null)).label).toBe('Not started');
+    expect(sectionStatus(section('partial', 40)).label).toBe('In progress');
+    expect(sectionStatus(section('partial', 0), true)).toEqual({ label: 'Changes needed', tone: 'alert' });
+    expect(sectionStatus(section('partial', 40), true).label).toBe('Changes needed');
+    // A finished section stays Complete / N/A.
+    expect(sectionStatus(section('complete', 100, true), true).label).toBe('Complete');
+    const quest = { applicable: true, isComplete: false, progressPercentage: 0 };
+    expect(rowStatus(quest).label).toBe('Not started');
+    expect(rowStatus({ ...quest, progressPercentage: 50 }).label).toBe('In progress');
+    expect(rowStatus(quest, true).label).toBe('Changes needed');
+    expect(rowStatus({ ...quest, isComplete: true, progressPercentage: 100 }, true).label).toBe('Complete');
+    expect(rowStatus({ ...quest, applicable: false }).label).toBe('Not applicable');
     expect(checklistIssues(['unsectioned:a', 'unsectioned:b', 'mystery'])).toHaveLength(2);
     // Every code the database can report has its own sentence.
     for (const code of ['duplicate_node', 'unsectioned', 'missing_parent', 'cross_section', 'missing_or_cross_parent', 'cycle', 'checklist_cycle',
@@ -121,10 +150,14 @@ describe('checklist home', () => {
     expect(html).not.toContain('<details');
   });
 
-  it('gives an editable item one-tap Yes / No / N/A and a linked row only No / N/A', () => {
+  it('gives an editable item one-tap Yes / N/A (never No) and a linked row only N/A', () => {
     expect(html).toContain('aria-label="Completion of Draw section A"');
-    expect(html).toMatch(/aria-label="Completion of Survey mission"[^]*?>No<[^]*?>N\/A</);
-    expect(html).not.toMatch(/aria-label="Completion of Survey mission"[^<]*<button[^>]*>Yes</);
+    expect(html).toMatch(/aria-label="Completion of Draw section A"[^]*?>Yes<[^]*?>N\/A</);
+    expect(html).toMatch(/aria-label="Completion of Survey mission"[^]*?>N\/A</);
+    expect(html).not.toMatch(/aria-label="Completion of Survey mission"(?:(?!<\/div>)[^])*>Yes</);
+    expect(html).not.toMatch(/<button[^>]*>No<\/button>/);
+    // An unticked objective is empty, said as Not done for screen readers.
+    expect(html).toContain('Not done');
     expect(html).not.toContain('aria-label="Completion of Structural review"');
   });
 

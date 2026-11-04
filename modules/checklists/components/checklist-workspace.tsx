@@ -21,7 +21,7 @@ import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-ca
 import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
 import { ObjectiveReviewProvider } from './objective-review';
-import type { ObjectiveReviews } from '../internal/review';
+import { NO_REVIEWS, sentBackIndex, type ObjectiveReviews } from '../internal/review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -121,6 +121,9 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const tableActions = { checklist: props.actions.checklist, submission: manager ? props.actions.submission : undefined };
   const shared = { manager, linkChoices: tools?.linkChoices ?? [] };
   const issues = checklistIssues(rollup.errors);
+  // Section headers say "Changes needed" while an objective in them is sent back (114).
+  const sentBack = sentBackIndex(props.reviews ?? NO_REVIEWS);
+  const changesIn = (key: ChecklistSection) => !!checklist && sentBack.hasSection(checklist.id, key);
   const view: ChecklistView = props.view ?? 'table';
   const cardCtx = { task, canEdit, version, action: props.actions.checklist };
   // A Quest is one list of objectives (decision 25 Oct 2026): its home shows that list, plus any
@@ -153,7 +156,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const viewKeys: ChecklistView[] = props.page ? ['table', 'blocks', 'outline'] : ['table', 'board', 'blocks', 'outline'];
   // Every view is rendered here from the same rows, so the switch changes view without a page load.
   const contentFor = (v: ChecklistView): React.ReactNode => !checklist ? null : homeSections && v !== 'table' ? (
-          <ChecklistAltView view={v} sections={homeSections} rollup={rollup} checklistId={checklist.id} ctx={cardCtx} addRow={addRowFor}
+          <ChecklistAltView view={v} sections={homeSections} rollup={rollup} checklistId={checklist.id} ctx={cardCtx} addRow={addRowFor} changesIn={changesIn}
             title={quest && homeSections.length === 1 ? 'Objectives' : undefined} />
         ) : homeSections ? (
           homeSections.map((home) => {
@@ -168,6 +171,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 title={meta.title}
                 note={meta.note}
                 summary={rollup.sections[home.section]}
+                changesNeeded={changesIn(home.section)}
                 rows={home.rows}
                 task={task}
                 version={version}
@@ -194,6 +198,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             checklistId={checklist.id}
             ctx={cardCtx}
             addRow={(section) => addRowFor(section, props.page!.nodeId)}
+            changesIn={changesIn}
             title={`Rows under ${current?.title ?? 'this row'}`}
             parentNodeId={props.page.nodeId}
           />
@@ -232,7 +237,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
         </div>
 
         {checklist && props.sections ? (
-          <HomeHero {...props} checklist={checklist} tools={tools} />
+          <HomeHero {...props} checklist={checklist} tools={tools} changesIn={changesIn} />
         ) : checklist && props.page ? (
           <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} inQuest={inQuest} />
         ) : null}
@@ -262,7 +267,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   );
 }
 
-function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools'] }) {
+function HomeHero({ task, ownerNames, checklist, rollup, changesIn }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools']; changesIn: (key: ChecklistSection) => boolean }) {
   const activity = rollup.taskProgress;
   return (
     <section aria-label="Checklist summary" className="hero-card p-5 sm:p-6">
@@ -302,11 +307,13 @@ function HomeHero({ task, ownerNames, checklist, rollup, version, actions, tools
         {CHECKLIST_SECTIONS.map((key) => {
           const section = rollup.sections[key];
           const value = section.state === 'not_applicable' ? 'N/A' : percentText(section.progressPercentage) ?? 'Not started';
+          const changes = changesIn(key) && section.state === 'partial';
           return (
             <a key={key} href={`#${key}`} className="text-foreground hover:bg-card inline-flex items-center gap-1.5 rounded-full bg-card/70 px-3 py-1.5 text-xs font-semibold transition-colors">
-              <SectionStateIcon section={section} className="size-3.5" />
+              <SectionStateIcon section={section} changesNeeded={changes} className="size-3.5" />
               {SECTION_TITLES[key].title}
               <span className="text-muted-foreground tabular-nums">{value}</span>
+              {changes ? <span className="text-danger">· Changes needed</span> : null}
             </a>
           );
         })}
@@ -435,7 +442,7 @@ function NoChecklist({ task, version, canCreate, action }: { task: Task; version
 }
 
 /** Board, Blocks and Outline for the home's three phases, or one page of rows. */
-function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, title, parentNodeId }: {
+function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, title, parentNodeId, changesIn }: {
   view: Exclude<ChecklistView, 'table'>;
   sections: readonly ChecklistHomeSection[];
   rollup: ChecklistRollup;
@@ -445,10 +452,12 @@ function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, ti
   /** A page of rows: its heading instead of the phase name, and the row it is under. */
   title?: string;
   parentNodeId?: string;
+  /** A phase holds an objective sent back for changes. */
+  changesIn: (section: ChecklistSection) => boolean;
 }) {
   if (view === 'outline') return <ChecklistOutline groups={sections} ctx={ctx} addRows={Object.fromEntries(sections.map((home) => [home.section, addRow(home.section)]))} />;
   const heading = (home: ChecklistHomeSection) => (
-    <PhaseHeading id={`${checklistId}-${home.section}`} title={title ?? SECTION_TITLES[home.section].title} summary={title ? undefined : rollup.sections[home.section]} />
+    <PhaseHeading id={`${checklistId}-${home.section}`} title={title ?? SECTION_TITLES[home.section].title} summary={title ? undefined : rollup.sections[home.section]} changesNeeded={!title && changesIn(home.section)} />
   );
   const paging = (home: ChecklistHomeSection) => (
     <Paging taskTag={ctx.task.taskTag} address={{ checklistId, parentNodeId, section: home.section }} cursor={home.cursor} nextCursor={home.nextCursor} />

@@ -2,7 +2,7 @@
 
 A mission's master checklist: one kind of row, nested as deep as needed (the
 sheet's Checklist Home and "[ChL]" tabs), in Setup / Activity / Closure
-sections, with Yes/No/N/A states, per-row links, progress rollups, and the
+sections, ticked Yes or N/A (an unticked row is empty), per-row links, progress rollups, and the
 time recorded against checklist rows before 3 November 2026 (item timers
 saved ordinary task logs tagged with the row; since then time is kept by the
 mission timer only, and the per-row timer, Est. and Elapsed columns are gone
@@ -67,31 +67,49 @@ cards), **Blocks** (card grids per phase; Quests and sub-missions larger) and
 opened, through `loadChecklistRows`). Every view ticks with the same one-tap
 control.
 
+Since 4 November 2026 (user decisions) **only Yes and N/A** are offered: "No"
+means nothing. An unticked objective is shown empty ("Not done" for screen
+readers) and tapping the chosen choice again clears it, which sends the stored
+not-done value `'No'` (`NOT_DONE`; still the `completion_state` default and
+read as not done by the rollup, so no migration and progress is unchanged). A
+linked sub-mission offers only N/A (clearing restores it). Every view, Today's
+item work included, shows **the same objective details** through
+`components/objective-details.tsx`: `ObjectiveTick` (tick + review chip) and
+`ObjectiveDetails` (one-line description that opens, the reviewer's note,
+Quest / sub-mission tag and status, rows inside, progress with its status,
+links as icons). Statuses say **Not started** at 0%, **Changes needed** when an
+objective inside was sent back, **In progress** only once something is done,
+then Complete / Not applicable (`rowStatus`, `sectionStatus`): section headers
+in every view, Quest and parent rows, and the mission Work tab's checklist
+summary. `getObjectiveReviews` adds to each sent-back objective the rows above
+it (its `trail`, read from `checklist_nodes` / `task_checklists.owner_node_id`,
+bounded) so `sentBackIndex` can mark them.
+
 Since migration 114 (plan section 6, user decisions 3 November 2026) each
 objective has its own review: ticking **Yes** leaves it **Pending** when the
 mission has a Primary or Secondary reviewer (otherwise there is nothing to
 review), and any later tick change resets it. The managing director, project
 engineers and the mission's Primary / Secondary reviewers (never Observers, and
 never on their own tick) **Acknowledge** it or send it back as **Work needed**
-with a note; Work needed puts the tick back to No through the ordinary state
-update, so progress and credit follow with no new scoring rule. Pending or Work
+with a note; Work needed clears the tick (the stored `'No'`) through the ordinary state
+update and the objective shows **Changes needed** with the note, so progress and credit follow with no new scoring rule. Pending or Work
 needed objectives block Done (`assert_checklist_done`); the mission-level
 approval stays the last step, and a new time log no longer clears it (the
 `m03_invalidate_log_review` trigger is gone). Each decision is an audit event
 (`checklist_review`, the decision and note as its reason) and reaches the
 activity log. Reviewers hear about ticks waiting for them once per mission per
 day; the mission's assignees hear about Work needed. A chip beside the tick
-(`ObjectiveReviewChip`) shows the state and opens the review sheet for those who
-decide; the mission page lists the objectives waiting for the viewer under
+(`ObjectiveReviewChip`) shows Pending / Acknowledged / Changes needed and opens
+the review sheet for those who decide; `ObjectiveReviewNote` shows the note; the mission page lists the objectives waiting for the viewer under
 "Your review is requested".
 
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
 | `index.ts` | Server reads: `getObjectiveReviews` (114), `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`, `getChecklistBranch`, `getUnmappedRootRows`, `getFocusedChecklistItemTime`, `getRunningChecklistTimers`. Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, tree helpers (`childrenOf`, `ancestry`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours`, table rules (`rowKind`, `stateChoices`, `opensTable`, `pageResult`, `sectionStatus`, `checklistIssues`, `SECTION_TITLES`), addresses (`checklistWorkHref`, `parseChecklistLocation`, `openChecklistRow`), objective review rules (`reviewChip`, `canDecideObjective`, `mayReviewObjectives`, `reviewStateAfterTick`, `reviewDecisionError`, `blockingReviews`, `reviewsAwaiting`, `parseObjectiveReviews`, `NO_REVIEWS`) |
-| `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode, review); a version conflict returns `errorCode: 'conflict'` |
-| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / No / N/A, commands queued so each sends the latest mission version), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `checklist-rows.tsx` (completion controls), `objective-review.tsx` (`ObjectiveReviewProvider`, `ObjectiveReviewChip` with the review sheet, `ObjectiveReviewQueue` for the mission page) |
+| `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, tree helpers (`childrenOf`, `ancestry`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours`, table rules (`rowKind`, `stateChoices`, `NOT_DONE`, `nextCompletionState`, `completionWords`, `rowStatus`, `opensTable`, `pageResult`, `sectionStatus`, `checklistIssues`, `SECTION_TITLES`), addresses (`checklistWorkHref`, `parseChecklistLocation`, `openChecklistRow`), objective review rules (`reviewChip`, `canDecideObjective`, `mayReviewObjectives`, `reviewStateAfterTick`, `reviewDecisionError`, `blockingReviews`, `reviewsAwaiting`, `parseObjectiveReviews`, `sentBackIndex`, `NO_REVIEWS`) |
+| `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode, review); a version conflict returns `errorCode: 'conflict'`. `loadChecklistRows` (Outline), `loadObjectiveReviews` (Today's item work) |
+| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / N/A, tap again to clear; commands queued so each sends the latest mission version), `objective-details.tsx` (`ObjectiveTick`, `ObjectiveDetails`, `ObjectiveRowStatus`, `ObjectiveLinks`: the same details in every view), `ChecklistItemWork` (Today), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `checklist-rows.tsx` (shared command fields), `objective-review.tsx` (`ObjectiveReviewProvider`, `ObjectiveReviewChip` with the review sheet, `ObjectiveReviewNote`, `useRowChangesNeeded` / `useSectionChangesNeeded`, `ObjectiveReviewQueue` for the mission page) |
 
 ## Private (`internal/`)
 
@@ -110,7 +128,7 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | `table.ts` | Pure rules for the checklist tables (row kinds, completion choices, page result, readable rollup issues) |
 | `focused-time.ts` | Bounded item-time reads: one item's aggregate, or the running timers for a table |
 | `review.ts` | Objective review rules and the `checklist_reviews` payload parser (114) |
-| `review-read.ts` | Calls `checklist_reviews` |
+| `review-read.ts` | Calls `checklist_reviews`; adds the rows above each sent-back objective (`trail`) |
 
 ## Database it owns
 | Object | Defined in |
@@ -126,6 +144,8 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | `task_effort_breakdown` | `36_task_effort_breakdown.sql` |
 
 It also reads `daily_task_logs` and `task_timers` (time tracking) for item time.
+`review-read.ts` reads `checklist_nodes` (id, parent, list, section) and
+`task_checklists.owner_node_id` for the rows above sent-back objectives.
 All objects are company-scoped by migrations 39-40 (M15).
 
 ## Depends on

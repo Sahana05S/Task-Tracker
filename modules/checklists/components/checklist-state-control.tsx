@@ -2,13 +2,13 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckIcon, LoaderCircleIcon, MinusIcon } from 'lucide-react';
+import { CheckIcon, CircleIcon, LoaderCircleIcon, MinusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { prepareOperation } from '@/shared/commands/client-operation';
 import { announceMissionProgress } from '@/shared/ui/mission-progress-event';
 import { cn } from '@/shared/utils';
-import { commandVersion } from '../internal/table';
+import { commandVersion, completionWords, nextCompletionState } from '../internal/table';
 import type { CompletionState } from '../internal/progress';
 import type { ActionResponse } from '@/types/tracker';
 
@@ -69,14 +69,17 @@ export function ChecklistVersionField({ fallback }: { fallback: number }) {
 
 const CHOICE_STYLE: Record<CompletionState, string> = {
   Yes: 'aria-pressed:bg-success-strong aria-pressed:text-success-subtle',
+  // Never offered (user decision, 4 November 2026); kept so the map covers the stored value.
   No: 'aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-(--shadow-card)',
   'N/A': 'aria-pressed:bg-primary-subtle aria-pressed:text-primary-subtle-foreground',
 };
 
 /**
- * One-tap Yes / No / N/A for a checklist row (the sheet's Checkbox column).
- * The chosen state shows at once; a refused change puts the old state back
- * and says why.
+ * One-tap Yes / N/A for a checklist row (the sheet's Checkbox column). An
+ * unticked row shows neither pressed ("Not done"); tapping the chosen one
+ * again clears it, which saves the stored not-done value. A linked
+ * sub-mission offers only N/A. The chosen state shows at once; a refused
+ * change puts the old state back and says why.
  */
 export function ChecklistStateControl({
   taskId,
@@ -105,8 +108,9 @@ export function ChecklistStateControl({
   // The saved state wins once the page refreshes.
   React.useEffect(() => setShown(state), [state]);
 
-  async function choose(next: CompletionState) {
-    if (next === shown || pending) return;
+  async function choose(tapped: CompletionState) {
+    if (pending) return;
+    const next = nextCompletionState(shown, tapped);
     const previous = shown;
     setShown(next);
     setPending(true);
@@ -153,12 +157,14 @@ export function ChecklistStateControl({
       aria-busy={pending || undefined}
       className="bg-muted inline-flex shrink-0 items-center gap-0.5 rounded-lg p-0.5"
     >
+      <span className="sr-only">{completionWords(shown)}. </span>
       {choices.map((choice) => (
         <button
           key={choice}
           type="button"
           aria-pressed={shown === choice}
           disabled={pending && shown !== choice}
+          title={shown === choice ? `Tap again to clear ${choice}` : undefined}
           onClick={() => choose(choice)}
           className={cn(
             'text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex h-7 min-w-9 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold transition-colors outline-none focus-visible:ring-2 disabled:opacity-50',
@@ -181,5 +187,6 @@ export function ChecklistStateBadge({ state }: { state: CompletionState }) {
   if (state === 'N/A') {
     return <span className="text-muted-foreground inline-flex items-center gap-1 text-xs font-semibold"><MinusIcon className="size-3.5" aria-hidden="true" />N/A</span>;
   }
-  return <span className="text-muted-foreground text-xs font-semibold">No</span>;
+  // Not done is shown empty; the words are for screen readers.
+  return <span className="text-muted-foreground inline-flex items-center"><CircleIcon className="size-3.5" aria-hidden="true" /><span className="sr-only">Not done</span></span>;
 }

@@ -271,7 +271,7 @@ export const CATEGORY_MEANINGS = {
 export const CHECKLIST_NODE_MEANINGS = {
   Page: 'A checklist page of its own, opened from its parent.',
   Group: 'A heading; its progress is the average of what is inside it.',
-  Item: 'One check answered Yes, No or N/A.',
+  Item: 'One objective, ticked Yes when done or N/A when it does not apply.',
   Task: 'Another mission whose progress counts here.',
 } satisfies Record<ChecklistNodeType, string>;
 

@@ -7,7 +7,7 @@
 // checks this.
 
 import { useCallback, useEffect, useState } from 'react';
-import { CircleDashedIcon, CircleSlashIcon, CheckIcon, ChevronRightIcon, RefreshCwIcon, TimerIcon, WifiOffIcon, XIcon } from 'lucide-react';
+import { CircleDashedIcon, CircleSlashIcon, CheckIcon, ChevronRightIcon, RefreshCwIcon, TimerIcon, WifiOffIcon } from 'lucide-react';
 
 import { missionDueLabel } from '@/modules/tasks/client';
 import { Button } from '@/shared/ui/button';
@@ -44,8 +44,8 @@ function returnPath(): string {
 function StateMark({ state, applicable }: { readonly state: OfflineRow['state']; readonly applicable: boolean }) {
   if (!applicable || state === 'N/A') return <CircleSlashIcon className="text-muted-foreground size-4 shrink-0" aria-label="Not applicable" />;
   if (state === 'Yes') return <CheckIcon className="text-success size-4 shrink-0" aria-label="Yes" />;
-  if (state === 'No') return <XIcon className="text-destructive size-4 shrink-0" aria-label="No" />;
-  return <CircleDashedIcon className="text-muted-foreground size-4 shrink-0" aria-label="Not ticked" />;
+  // "No" is never offered (4 November 2026): the stored value is shown empty, as not done.
+  return <CircleDashedIcon className="text-muted-foreground size-4 shrink-0" aria-label="Not done" />;
 }
 
 function RowList({ rows, section, parent }: { readonly rows: readonly OfflineRow[]; readonly section: OfflineSection; readonly parent: string | null }) {
