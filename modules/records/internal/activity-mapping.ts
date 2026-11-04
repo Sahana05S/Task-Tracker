@@ -107,6 +107,15 @@ const CHECKLIST_WORDS: Record<string, string> = {
   // Migration 114: the decision and its note arrive as the entry's reason.
   review: 'Reviewed a checklist objective',
 };
+// Labels (migration 112, listed from 116); the label's name arrives as the entry's reason ("#Crane").
+const LABEL_WORDS: Record<string, string> = {
+  label_create: 'Created a label',
+  label_rename: 'Renamed a label',
+  label_archive: 'Archived a label',
+  label_restore: 'Restored a label',
+  label_link_attach: 'Added a label',
+  label_link_detach: 'Removed a label',
+};
 const TOOL_WORDS: Record<string, string> = {
   bulk_done: 'Marked missions done',
   bulk_reopen: 'Reopened missions',
@@ -217,6 +226,7 @@ function summary(row: ActivityRow): string {
   const word = ROW_WORDS[row.record_kind ?? '']?.[action];
   if (word) return word;
   if (MISSION_WORDS[action]) return MISSION_WORDS[action];
+  if (LABEL_WORDS[action]) return LABEL_WORDS[action];
   if (action.startsWith('checklist_')) {
     const command = action.slice('checklist_'.length);
     return CHECKLIST_WORDS[command] ?? `Checklist: ${codeLabel(command).toLowerCase()}`;
@@ -239,6 +249,7 @@ function link(row: ActivityRow, people: ReadonlyMap<string, Person>): { href: st
     return { href: `/settings?tab=company${section ? `#${section.anchor}` : ''}`, label: 'Company settings' };
   }
   if (row.task_tag) return { href: `/tasks/${encodeURIComponent(row.task_tag)}`, label: row.task_tag };
+  if (row.record_kind === 'labels' || row.record_kind === 'label_links') return { href: '/labels', label: 'Labels' };
   const subject = row.subject_user_id ? people.get(row.subject_user_id) : undefined;
   if (row.kind === 'people' && subject?.employeeId) return { href: `/team/${encodeURIComponent(subject.employeeId)}`, label: 'Profile' };
   return null;

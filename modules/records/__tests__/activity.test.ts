@@ -59,6 +59,18 @@ describe('activity wording and links', () => {
     expect(save('something_new')).toMatchObject({ summary: 'Changed company settings', href: '/settings?tab=company' });
   });
 
+  it('words label changes, names the label and links the mission or the label directory (migration 116)', () => {
+    expect(mapActivity(row({ kind: 'company', action: 'label_create', record_kind: 'labels', reason: '#Crane' }), people))
+      .toMatchObject({ summary: 'Created a label', reason: '#Crane', href: '/labels', linkLabel: 'Labels' });
+    expect(mapActivity(row({ kind: 'company', action: 'label_rename', record_kind: 'labels' }), people).summary).toBe('Renamed a label');
+    expect(mapActivity(row({ kind: 'company', action: 'label_archive', record_kind: 'labels' }), people).summary).toBe('Archived a label');
+    expect(mapActivity(row({ kind: 'company', action: 'label_restore', record_kind: 'labels' }), people).summary).toBe('Restored a label');
+    expect(mapActivity(row({ action: 'label_link_attach', record_kind: 'label_links', task_tag: 'Nov26_PJT3', reason: '#Crane' }), people))
+      .toMatchObject({ summary: 'Added a label', reason: '#Crane', href: '/tasks/Nov26_PJT3', linkLabel: 'Nov26_PJT3' });
+    expect(mapActivity(row({ action: 'label_link_detach', record_kind: 'label_links' }), people))
+      .toMatchObject({ summary: 'Removed a label', href: '/labels' });
+  });
+
   it('never shows an id for an unknown person', () => {
     expect(mapActivity(row({ actor_id: '33333333-3333-4333-8333-333333333333' }), people).actor).toBe('Former member');
   });

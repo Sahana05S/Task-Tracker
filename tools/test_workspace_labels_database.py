@@ -139,6 +139,29 @@ for db in DBS:
     assert T1 not in labels_for(db,M4,'task',[T1])
     print('PASS',db,'archived labels are hidden and cannot be attached; detach and restore work')
 
+    # ---- activity (migration 116) -------------------------------------------------------------------------------------
+    if LATEST>=116:
+        today=value(db,"(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date")
+        audits=lambda cmd:int(value(db,f"count(*) FROM taskpulse_private.audit_events WHERE command='{cmd}'"))
+        def feed(uid,action):
+            return int(ok(db,uid,f"SELECT count(*) FROM public.activity_feed('{today}','{today}') f WHERE f.action='{action}' AND f.task_id='{T1}'"))
+        attached,detached=audits('label_link_attach'),audits('label_link_detach')
+        key=str(uuid4())
+        ok(db,MD,link_sql('attach','task',T1,label=crane['id'],operation=key))
+        ok(db,MD,link_sql('attach','task',T1,label=crane['id'],operation=key))   # replay: the receipt answers
+        ok(db,MD,link_sql('attach','task',T1,label=crane['id']))                 # already linked: nothing changes
+        assert audits('label_link_attach')==attached+1,'one audit row per link actually added'
+        row=json.loads(value(db,"protected_changes FROM taskpulse_private.audit_events WHERE command='label_link_attach' ORDER BY id DESC LIMIT 1"))
+        assert row['task_id']['after']==T1 and row['subject_kind']=='task' and row['reason']=='#Crane',row
+        assert feed(MD,'label_link_attach')>=1,'the director sees the line'
+        assert feed(M4,'label_link_attach')>=1,"the mission's assignee sees the line"
+        assert feed(DM,'label_link_attach')==0,'a member with no part in the mission does not'
+        assert int(ok(db,MD,f"SELECT count(*) FROM public.activity_feed('{today}','{today}') f WHERE f.action='label_create' AND f.reason LIKE '#%'"))>=1
+        ok(db,MD,link_sql('detach','task',T1,label=crane['id']))
+        ok(db,MD,link_sql('detach','task',T1,label=crane['id']))                 # already gone: nothing changes
+        assert audits('label_link_detach')==detached+1
+        print('PASS',db,'label changes reach Team > Activity: one line per real change, named, shown to the mission\'s people only')
+
     # ---- company separation ----------------------------------------------------------------------------------------------
     sql(db,"INSERT INTO public.organizations(name,slug) VALUES('Beta Builders','beta')")
     B=value(db,"id FROM public.organizations WHERE slug='beta'")
