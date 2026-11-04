@@ -14,7 +14,7 @@ analytics read, and plain-language data-gap wording.
 | `client.ts` | Pure, safe for `'use client'`: `viewContext`, `viewQuery`, `nextDate`, `previousDate`, `buildPresentation`, `liveReport`, `reportCsv`, `reportText`, `csvCell`, the daily report (`dailyReport`, `dailyReportText`, `compiledLogs`, `reportsTab`, `longDate`), `dataGaps`, `GAP_SENTENCE`, `calculationReasons`, `plainReason`, the daily perf log's pure parts (`dailyPerfFilter`, `dailyPerfRows`, `dailyPerfCsv`, `seesTeamDetail`, `DAILY_PERF_STATUS_LABEL`), and types (`ViewContext`, `LivePresentation`, `MonthArchive`, ...) |
 | `month-actions.ts` | `'use server'` `monthArchiveAction` (draft, close, revise, begin correction); the retired `freezeMonthlySnapshot` stub |
 | `report-actions.ts` | `'use server'` `generateReportSnapshotAction` |
-| `components/` | `DailyReportView` (member and day pickers, today / yesterday, open missions, log compilation range, validity strip), the "Share as text" panel (uses `shared/ui/share-text`: Send on WhatsApp, Copy, and the phone share sheet where available), member panels `TaskList` / `TaskLogSummary` / `TaskLogCompilation` (also used by the employee profile), `LiveReport`, `ArchivedReport`, `MonthArchiveControls`, `ReportContext`, `OperationalEvidence`, `CopyReport` |
+| `components/` | `DailyReportView` (member and day pickers, today / yesterday, open missions, log compilation range, validity strip), the "Share as text" panel (uses `shared/ui/share-text`: Send on WhatsApp, Copy, and the phone share sheet where available), member panels `TaskList` / `TaskLogSummary` / `TaskLogCompilation` (also used by the employee profile), `LiveReport`, `ArchivedReport`, `MonthArchiveControls`, `ReportContext`, `OperationalEvidence`, `CopyReport`, `MissionActivityView` (Reports > Mission activity) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -55,4 +55,11 @@ day of the month) is built only on request, `getLivePresentation(view, member,
 is empty. **Month close** is `?tab=month` and still
 answers the older `?period=`, `?asOf=` and `?revision=` links; it holds the
 archive controls, live or archived report, downloads and the retained saved
-reports table (`ReportsModule` from support).
+reports table (`ReportsModule` from support). **Mission activity** is
+`?tab=activity&mission=<tag>` (3 November 2026): pick a mission and see its timer
+sessions, who ran each, how long, and what they changed while it ran
+(`MissionActivityView`, reusing time-tracking's `TimerRecords` without Stop or
+Discard and its `getTimerSessionActivity`, migration 110). Managers see every
+session, members their own, as on the mission's History tab; the page composes
+the reads (tasks' `getMissionChoices`, team's `getMemberNames`), so reports
+imports neither team nor any module's internals.
