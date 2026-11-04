@@ -52,6 +52,10 @@ them. All objects are company-scoped by migrations 39-40 (M15).
   the mission types", "Changed the meeting types", "Changed the standing
   missions", "Changed the holiday calendar") linking to that section of
   `/settings?tab=company`; the settings row's own version bump is not listed.
+  Since migration 111 Mistakes and learning notes, and since 116 labels: the
+  label directory's changes (Company kind, linking to `/labels`) and each label
+  added to or removed from a record (Missions kind, with the record's mission);
+  the label's name arrives as the entry's reason.
 - Managers (managing director, project engineer) see the whole company; any
   other member sees what they did and changes to their account, their dated
   records, their logs and missions they are assigned to. Company separation

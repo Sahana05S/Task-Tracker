@@ -41,8 +41,9 @@ Migration 112 (`112_workspace_labels.sql`):
 - `public.label_links(label_id, subject_kind, subject_id, organization_id, created_by, created_at)`, primary key `(label_id, subject_kind, subject_id)`; kinds `task`, `mission_learning`, `meeting_point`.
 - Both company-owned, no direct grants, FORCE RLS by `m15_secure()`.
 - `label_catalogue()`, `labels_for(kind, ids)`, `labelled(slug)`: every active member; links to withdrawn notes or meeting points and to other companies are never returned.
-- `label_command(op, label, name, colour, description, operation)`: managing director and project engineers; idempotent; audited as `label_<op>`.
-- `label_link_command(op, kind, subject, label, name, operation)`: whoever may edit the subject (mission: managers or an assignee, not archived; learning note: its author while a writer, or a manager; meeting point: managers, data managers or its author); at most 20 labels per record.
+- `label_command(op, label, name, colour, description, operation)`: managing director and project engineers; idempotent; audited as `label_<op>` with the label's name as the reason ("#Crane", since 116).
+- `label_link_command(op, kind, subject, label, name, operation)`: whoever may edit the subject (mission: managers or an assignee, not archived; learning note: its author while a writer, or a manager; meeting point: managers, data managers or its author); at most 20 labels per record. Since migration 116 each link it actually adds or removes is audited as `label_link_attach` / `label_link_detach` (row = the label, `task_id` = the record's mission, reason = "#name"); replays and unchanged links write nothing.
+- Team > Activity (migration 116): `activity_feed` lists `labels` (Company: Created / Renamed / Archived / Restored a label, linking to `/labels`) and `label_links` (Missions: Added / Removed a label, linking to the mission, seen by the mission's people).
 - Helpers `taskpulse_private.label_slug`, `label_json`, `label_subject_readable`, `label_subject_editable`, `label_require_member`.
 
 Harness: `tools/test_workspace_labels_database.py`.
