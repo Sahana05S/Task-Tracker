@@ -181,7 +181,11 @@ function addDays(date: string, days: number): string {
 const validDate = (value: string | null | undefined): value is string =>
   Boolean(value && ISO_DATE_PATTERN.test(value) && addDays(value, 0) === value);
 const TEAM_ROLES: readonly UserRole[] = ['managing_director', 'project_engineer'];
-/** Roles that see the whole company's activity (the database's own rule). */
+/**
+ * Roles that see the whole company's activity and may filter by any member (the
+ * database's own rule). Since migration 120 a project engineer's mission lines
+ * are only those of missions they are on; the database applies that.
+ */
 export const seesAllActivity = (role: UserRole): boolean => TEAM_ROLES.includes(role);
 
 /**

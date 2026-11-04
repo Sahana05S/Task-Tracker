@@ -111,7 +111,11 @@ for db in DBS:
     refused(db,'review',{'node_id':a,'decision':'acknowledged'},'7','42501')
     tick(db,c,'Yes',uid='1')
     refused(db,'review',{'node_id':c,'decision':'acknowledged'},'1','42501','you ticked')
+    # 120: a project engineer reviews only on missions they are on.
+    refused(db,'review',{'node_id':c,'decision':'acknowledged'},'2','42501','private to the mission')
+    sql(db,f"INSERT INTO public.task_reviewers(task_id,user_id,reviewer_role) VALUES('{T2}','{u('2')}','Observer')")
     cl(db,'review',{'node_id':c,'decision':'acknowledged'},uid='2')
+    sql(db,f"DELETE FROM public.task_reviewers WHERE task_id='{T2}' AND user_id='{u('2')}'")
     n=node(db,c)
     assert (n['review_state'],n['reviewed_by'],n['completion_state'])==('acknowledged',u('2'),'Yes')
     print('PASS',db,'Observers, data managers, assignees and inactive accounts are refused (42501); nobody decides their own tick; a project engineer acknowledges')

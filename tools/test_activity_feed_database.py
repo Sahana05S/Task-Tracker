@@ -164,8 +164,12 @@ for db in DBS:
     assert all(r['actor_id']!=B4 for r in rows)
     assert counts(db)==before,'the read writes nothing'
     print('PASS',db,'manager sees missions, records, time and month rows of their company only, newest first; the read writes nothing')
-    assert feed(db,PE,'2026-10-20','2026-10-21')==rows
-    print('PASS',db,'project engineer sees the same rows as the director')
+    # Migration 120: a project engineer sees the director's rows except the mission lines of
+    # missions they are not on (here neither T1 nor T2), unless they acted or are the subject.
+    pe_rows=feed(db,PE,'2026-10-20','2026-10-21')
+    assert pe_rows==[r for r in rows if r['kind']!='missions' or PE in (r['actor_id'],r['subject_user_id'])],pe_rows
+    assert any(r['kind']=='missions' for r in rows) and not any(r['kind']=='missions' for r in pe_rows)
+    print('PASS',db,'project engineer sees the director\'s rows except mission lines of missions they are not on')
 
     mine=feed(db,M4,'2026-10-20','2026-10-21')
     ids={r['id'] for r in mine}
