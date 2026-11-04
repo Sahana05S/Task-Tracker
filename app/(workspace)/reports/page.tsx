@@ -3,6 +3,7 @@ import { LiveReport } from '@/modules/reports/components/live-report';
 import { getCompanySettings } from '@/modules/settings';
 import { ArchivedReport } from '@/modules/reports/components/archived-report';
 import { DailyReportView } from '@/modules/reports/components/daily-report';
+import { MissionActivityView } from '@/modules/reports/components/mission-activity';
 import { DataChecks } from '@/modules/reports/components/data-checks';
 import { PushHealth } from '@/modules/notifications/components/push-health';
 import { FileStorageHealthNotice } from '@/modules/files/components/file-storage-health';
@@ -24,7 +25,9 @@ import { ReportsModule } from '@/modules/support/components/support-pages';
 import { requireProfile } from '@/shared/session/profile';
 import { canManageReportSnapshots, getSupportModuleData } from '@/modules/support';
 import { canManageTasks } from '@/modules/tasks/client';
-import { canViewEmployeeReports, getEmployeeByEmployeeId } from '@/modules/team';
+import { getMissionChoices } from '@/modules/tasks';
+import { getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
+import { canViewEmployeeReports, getEmployeeByEmployeeId, getMemberNames } from '@/modules/team';
 import { ISO_DATE_PATTERN } from '@/shared/forms/form-data';
 
 export const metadata: Metadata = {
@@ -40,6 +43,7 @@ interface ReportsSearchParams {
   date?: string;
   from?: string;
   to?: string;
+  mission?: string;
 }
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<ReportsSearchParams> }) {
@@ -47,19 +51,55 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const profile = await requireProfile();
   // Data checks: the managing director's one list of what is missing (decision 25 Oct 2026).
   const checks = query.tab === 'checks' && profile.role === 'managing_director';
-  const month = !checks && reportsTab(query) === 'month';
+  const activity = !checks && query.tab === 'activity';
+  const month = !checks && !activity && reportsTab(query) === 'month';
   const tabs = (
     <PageTabs
       label="Report views"
       tabs={[
-        { href: '/reports', label: 'Daily report', current: !month && !checks },
+        { href: '/reports', label: 'Daily report', current: !month && !checks && !activity },
         { href: `/reports?tab=month${query.period ? `&period=${encodeURIComponent(query.period)}` : ''}`, label: 'Month close', current: month },
+        { href: '/reports?tab=activity', label: 'Mission activity', current: activity },
         ...(profile.role === 'managing_director' ? [{ href: '/reports?tab=checks', label: 'Data checks', current: checks }] : []),
       ]}
     />
   );
   if (checks) return <DataChecksView tabs={tabs} />;
+  if (activity) return <MissionActivity query={query} tabs={tabs} />;
   return month ? <MonthClose query={query} tabs={tabs} /> : <DailyReport query={query} tabs={tabs} />;
+}
+
+/**
+ * One mission's timer sessions and what each covered (follow-up to migration 110,
+ * 3 November 2026): managers see everyone's sessions, members their own, as on the
+ * mission's History tab.
+ */
+async function MissionActivity({ query, tabs }: { query: ReportsSearchParams; tabs: React.ReactNode }) {
+  const profile = await requireProfile();
+  const choices = await getMissionChoices();
+  const selected = choices.find((choice) => choice.taskTag === query.mission) ?? null;
+  const seesEveryone = canManageTasks(profile.role);
+  const [execution, activity, names] = selected
+    ? await Promise.all([
+        getTaskExecution(selected.id),
+        getTimerSessionActivity(selected.id).catch(() => ({ available: false as const })),
+        getMemberNames(),
+      ])
+    : [{ timers: [], logs: [] }, { available: false as const }, {}];
+  const timers = seesEveryone ? execution.timers : execution.timers.filter((timer) => timer.userId === profile.id);
+  return (
+    <MissionPage>
+      <MissionPageHeader title="Reports" description="Mission activity: timer sessions and what each covered" tabs={tabs} />
+      <MissionActivityView
+        choices={choices}
+        selected={selected}
+        timers={timers}
+        memberNames={new Map(Object.entries(names))}
+        sessions={activity.available ? activity.sessions : null}
+        seesEveryone={seesEveryone}
+      />
+    </MissionPage>
+  );
 }
 
 /** The member's day: defaults to the viewer and today; managers may pick anyone. */
