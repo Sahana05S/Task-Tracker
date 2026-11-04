@@ -23,6 +23,13 @@ describe('checklist command contract (one kind of row)', () => {
     expect(parseChecklistCommand(form('section', { section: 'setup', intentional_empty: 'true', reason: 'x' }))).toEqual({ ok: false, error: 'Unknown checklist action.' });
   });
 
+  it('sends an objective review with its decision and note (114)', () => {
+    const parsed = parseChecklistCommand(form('review', { checklist_id: 'list', node_id: 'row-1', decision: 'work_needed', note: 'Add the photo' }));
+    expect(parsed.ok && parsed.value.payload).toEqual({ node_id: 'row-1', decision: 'work_needed', note: 'Add the photo', checklist_id: 'list' });
+    const acknowledged = parseChecklistCommand(form('review', { node_id: 'row-1', decision: 'acknowledged' }));
+    expect(acknowledged.ok && acknowledged.value.payload).toEqual({ node_id: 'row-1', decision: 'acknowledged', note: null });
+  });
+
   it('rejects priority outside the supported ordering range', () => {
     expect(parseChecklistCommand(form('add', { title: 'x', section: 'activity', priority: '4' }))).toEqual({ ok: false, error: 'Choose a priority from 0 to 3.' });
   });

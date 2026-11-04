@@ -31,6 +31,8 @@ describe('activity wording and links', () => {
   it('words row changes by table, commands by prefix, and unknown codes readably', () => {
     expect(mapActivity(row({ action: 'INSERT', record_kind: 'task_assignees', subject_user_id: ASHA }), people).summary).toBe('Added an assignee');
     expect(mapActivity(row({ action: 'checklist_state', record_kind: 'task_checklists' }), people).summary).toBe('Updated a checklist objective');
+    const reviewed = mapActivity(row({ action: 'checklist_review', record_kind: 'task_checklists', reason: 'Work needed: Add the site photo' }), people);
+    expect([reviewed.summary, reviewed.reason]).toEqual(['Reviewed a checklist objective', 'Work needed: Add the site photo']);
     expect(mapActivity(row({ action: 'checklist_something_new', record_kind: 'task_checklists' }), people).summary).toBe('Checklist: something new');
     expect(mapActivity(row({ action: 'task_tools_bulk_done', record_kind: 'tool_previews' }), people).summary).toBe('Marked missions done');
     expect(mapActivity(row({ action: 'save_task_with_participants', record_kind: 'tasks', task_tag: 'T1' }), people).summary).toBe('Saved the mission and its assignees');

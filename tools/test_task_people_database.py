@@ -131,6 +131,11 @@ for DB in DBS:
     if value(DB,f"progress_owner FROM public.tasks WHERE id='{tid}'")!='checklist':
         ok(DB,OWNER,lifecycle(DB,tid,'progress',{'progress':100}))
     refused(DB,OWNER,lifecycle(DB,tid,'transition',{'status':'Done'}),'23514')
+    # 114 (D-D2), where applied (the upgrade database stops at 108): the ticked objective waits
+    # for the Primary reviewer; an Observer cannot decide it.
+    if value(DB,"count(*) FROM pg_attribute WHERE attrelid='public.checklist_nodes'::regclass AND attname='review_state'")=='1':
+        refused(DB,U(3),checklist(DB,tid,'review',{'node_id':nid,'decision':'acknowledged'}),'42501')
+        ok(DB,REVIEWER,checklist(DB,tid,'review',{'node_id':nid,'decision':'acknowledged'}))
     ok(DB,REVIEWER,lifecycle(DB,tid,'review',{'approved':True}))
     ok(DB,OWNER,lifecycle(DB,tid,'transition',{'status':'Done'}))
     assert value(DB,f"status FROM public.tasks WHERE id='{tid}'")=='Done'

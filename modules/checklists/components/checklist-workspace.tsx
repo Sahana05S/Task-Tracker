@@ -20,6 +20,8 @@ import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-cards';
 import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
+import { ObjectiveReviewProvider } from './objective-review';
+import type { ObjectiveReviews } from '../internal/review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -67,6 +69,9 @@ export interface ChecklistWorkspaceProps {
   view?: ChecklistView;
   /** The address named the view (otherwise this device's last choice applies). */
   viewExplicit?: boolean;
+  /** Objective reviews (migration 114) and member names for their chips. */
+  reviews?: ObjectiveReviews;
+  memberNames?: Readonly<Record<string, string>>;
 }
 
 const PAGE_SIZE = 50;
@@ -219,6 +224,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
 
   return (
     <ChecklistVersionProvider version={version}>
+      <ObjectiveReviewProvider taskId={task.id} version={version} action={props.actions.checklist} reviews={props.reviews} names={props.memberNames}>
       <MissionPage>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
@@ -251,6 +257,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
           </>
         )}
       </MissionPage>
+      </ObjectiveReviewProvider>
     </ChecklistVersionProvider>
   );
 }

@@ -6,8 +6,8 @@ import { requireProfile } from '@/shared/session/profile';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { getMissionChoices, getTaskForChecklist, normalizeTaskTagParam } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
-import { getChecklistBranch, getUnmappedRootRows } from '@/modules/checklists';
-import { CHECKLIST_SECTIONS, checklistWorkHref, parseChecklistLocation, parseChecklistView, type ChecklistBranch, type ChecklistBranchOptions } from '@/modules/checklists/client';
+import { getChecklistBranch, getObjectiveReviews, getUnmappedRootRows } from '@/modules/checklists';
+import { CHECKLIST_SECTIONS, NO_REVIEWS, checklistWorkHref, parseChecklistLocation, parseChecklistView, type ChecklistBranch, type ChecklistBranchOptions } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistHomeSection } from '@/modules/checklists/components/checklist-workspace';
 import { checklistCommand } from '@/modules/checklists/actions';
 import { createSubMission } from '@/modules/tasks/actions';
@@ -67,10 +67,12 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
   const manager = canManageTasks(user.role);
   const checklistId = branch.checklist?.id;
   // One mission timer (3 November 2026): the checklist reads no row timers.
-  const [names, linkChoices, unmapped] = await Promise.all([
+  const [names, linkChoices, unmapped, reviews] = await Promise.all([
     getMemberNames().catch((): Record<string, string> => ({})),
     manager ? getMissionChoices().then(choices => choices.filter(t => t.id !== task.id)) : [],
     manager && checklistId && sections ? getUnmappedRootRows(checklistId) : [],
+    // A failed review read hides the chips instead of failing the checklist.
+    getObjectiveReviews(task.id).catch(() => NO_REVIEWS),
   ]);
 
   return (
@@ -90,6 +92,8 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       actions={{ checklist: checklistCommand, submission: createSubMission }}
       view={viewParam ?? 'table'}
       viewExplicit={viewParam !== null && viewParam !== undefined}
+      reviews={reviews}
+      memberNames={names}
       headerActions={<MissionActionsMenu taskId={task.id} taskTag={task.taskTag} variant="button" />}
     />
   );

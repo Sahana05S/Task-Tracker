@@ -493,6 +493,11 @@ export interface Database {
           priority?: number;
           detail_section?: 'setup'|'activity'|'closure'|null;
           completion_state?: 'Yes'|'No'|'N/A';
+          /** Objective review (migration 114); written only by checklist_command. */
+          review_state?: 'none'|'pending'|'acknowledged'|'work_needed';
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          review_note?: string | null;
           sort_order: number;
           estimated_minutes: number | null;
           links?: string[];
@@ -861,6 +866,7 @@ export interface Database {
       checklist_item_seconds: { Args: { p_task: string; p_node: string }; Returns: number };
       checklist_branch: {Args:{p_task:string;p_checklist:string|null;p_parent:string|null;p_section:string;p_offset:number;p_limit:number};Returns:Json};
       checklist_rollups: {Args:{p_task_ids:string[]};Returns:Json};
+      checklist_reviews: {Args:{p_task:string};Returns:Json};
       task_details_command: {Args:{p_task:string;p_command:string;p_payload:Json;p_expected_version:number;p_operation:string};Returns:Json};
       /** Migration 108: add/remove collaborator or observer, transfer owner. MD, PE or the mission's Owner. */
       task_people_command: { Args: { p_task: string; p_command: string; p_payload: Json; p_expected_version: number; p_operation: string }; Returns: Json };

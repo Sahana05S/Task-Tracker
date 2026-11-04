@@ -20,7 +20,10 @@ import {
   FreshnessIndicator,
   PriorityBadge,
 } from '@/shared/ui/tracker-badges';
-import { getTaskEffortBreakdown } from '@/modules/checklists';
+import { getObjectiveReviews, getTaskEffortBreakdown } from '@/modules/checklists';
+import { NO_REVIEWS, reviewsAwaiting } from '@/modules/checklists/client';
+import { checklistCommand } from '@/modules/checklists/actions';
+import { ObjectiveReviewProvider, ObjectiveReviewQueue } from '@/modules/checklists/components/objective-review';
 import { canStartTimerForTask, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
 import {
   canEditTaskDetails,
@@ -113,7 +116,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const requested = (await searchParams).tab;
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
-  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings, sessionActivity] = await Promise.all([
+  const reviewer = task.reviewerIds.includes(currentUser.id);
+  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
@@ -129,7 +133,10 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
     // What each timer session covered (migration 110); a failed read only hides the lines.
     tab === 'history' ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
+    // Objectives waiting for this reviewer (114); a failed read only hides the list.
+    tab === 'work' && !archived && (reviewer || canManage) ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
   ]);
+  const awaitingReview = reviewsAwaiting(objectiveReviews);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
     ? execution.timers
@@ -239,13 +246,16 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         />
       )}
 
-      {!archived&&task.reviewerIds.includes(currentUser.id) ? (
+      {!archived&&(reviewer||awaitingReview.length>0) ? (
         <section className="border-primary/20 bg-primary-subtle/60 rounded-2xl border p-4 sm:p-5" aria-label="Your review">
           <h2 className="text-foreground mb-2 flex items-center gap-2 text-base font-bold tracking-tight">
             <ClipboardCheckIcon className="text-primary size-4" aria-hidden="true" />
             Your review is requested
           </h2>
-          <TaskReviewForm taskId={task.id} version={task.lifecycleVersion ?? 0} />
+          <ObjectiveReviewProvider taskId={task.id} version={task.lifecycleVersion ?? 0} action={checklistCommand} reviews={objectiveReviews} names={Object.fromEntries(memberNames)}>
+            <ObjectiveReviewQueue taskTag={task.taskTag} reviews={awaitingReview} />
+          </ObjectiveReviewProvider>
+          {reviewer ? <TaskReviewForm taskId={task.id} version={task.lifecycleVersion ?? 0} /> : null}
         </section>
       ) : null}
 
