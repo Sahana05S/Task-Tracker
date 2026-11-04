@@ -69,6 +69,7 @@ export function MissionStatusBanner({
   hasWork,
   readyToFinish,
   canChange,
+  canFinish = true,
 }: {
   taskId: string;
   taskTag: string;
@@ -78,12 +79,14 @@ export function MissionStatusBanner({
   /** Setup, Activity and Closure are all complete. */
   readyToFinish: boolean;
   canChange: boolean;
+  /** False hides "Mark Done" (collaborators, migration 117). Defaults to true. */
+  canFinish?: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = React.useState(false);
   const closed = status === 'Done' || status === 'Discarded';
   const notStarted = status === 'Not Started' && hasWork;
-  const finish = !closed && !notStarted && readyToFinish;
+  const finish = !closed && !notStarted && readyToFinish && canFinish;
   if (!canChange || (!notStarted && !finish)) return null;
 
   const to: TaskStatus = notStarted ? 'In Progress' : 'Done';

@@ -28,8 +28,12 @@ import { ObjectiveReviewProvider, ObjectiveReviewQueue } from '@/modules/checkli
 import { canStartTimerForTask, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
 import {
   canEditTaskDetails,
+  canManageMissionObservers,
   canManageTaskPeople,
   canManageTasks,
+  canMarkMissionDone,
+  canReadMissionWork,
+  canWriteMissionFiles,
   canUpdateTaskOwnFields,
   isTaskWorker,
   getNativeDetailState,
@@ -48,6 +52,7 @@ import { TaskLogTimeline } from '@/modules/tasks/components/detail/log-timeline'
 import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
 import { MissionOverview } from '@/modules/tasks/components/detail/mission-overview';
 import { MissionPeopleManager } from '@/modules/tasks/components/detail/mission-people';
+import { MissionWorkPrivate } from '@/modules/tasks/components/detail/mission-work-private';
 import { ProofsPanel } from '@/modules/tasks/components/detail/proofs-panel';
 import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
@@ -121,24 +126,27 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
   const reviewer = task.reviewerIds.includes(currentUser.id);
+  // The checklist and work content belong to the mission's people and the managing director (migration 117).
+  const canReadWork = canReadMissionWork(currentUser, task);
+  const canWriteFiles = canWriteMissionFiles(currentUser, task);
   const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
-    details ? getNativeDetailState(task.id) : Promise.resolve(null),
+    details && canReadWork ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
     details && canEditDetails ? getMissionChoices() : Promise.resolve([]),
     details && canManage ? getVisibleReportChoices() : Promise.resolve([]),
-    details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
+    details && canReadWork ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
     // A failed read leaves the track on current progress.
     tab === 'work' ? getMissionWaypoints([task]).catch(() => null) : Promise.resolve(null),
     // Proofs (Work tab) and Input / Process / Output documents (Details tab). Null when the
     // caller is not one of the mission's people or a manager: no panel, no uploads.
-    tab === 'work' || details ? getTaskProofs(task.id) : Promise.resolve(null),
+    canReadWork && (tab === 'work' || details) ? getTaskProofs(task.id) : Promise.resolve(null),
     // Mistakes and learning (migration 111): the panel on Details, its count on Work. Null hides both.
-    tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
+    canReadWork && tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
     // What each timer session covered (migration 110); a failed read only hides the lines.
-    tab === 'history' ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
+    tab === 'history' && canReadWork ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
     // Objectives waiting for this reviewer (114); a failed read only hides the list.
-    tab === 'work' && !archived && (reviewer || canManage) ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
+    tab === 'work' && !archived && canReadWork && (reviewer || canManage) ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
   ]);
   // Labels (migration 112): the mission's own on every tab (header chips); the catalogue and each
   // learning note's on the Details tab. Null hides them.
@@ -171,8 +179,13 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   };
   const related = new Set([task.assigneeId, ...task.assigneeIds, ...task.reviewerIds, ...observerIds]);
   const person = (id: string) => ({ id, name: nameOf(id) });
-  const peopleManager = canManageTaskPeople(currentUser, task) ? (
+  // Collaborators and ownership: managers and the Owner; observers: the managing director, Owner and assignees (117).
+  const canManagePeople = canManageTaskPeople(currentUser, task);
+  const canManageObservers = canManageMissionObservers(currentUser, task);
+  const peopleManager = canManagePeople || canManageObservers ? (
     <MissionPeopleManager
+      canManageCollaborators={canManagePeople}
+      canManageObservers={canManageObservers}
       taskId={task.id}
       version={task.lifecycleVersion ?? 0}
       owner={task.assigneeId ? person(task.assigneeId) : null}
@@ -211,6 +224,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               status={task.status}
               version={task.lifecycleVersion}
               canEdit={!archived && (canManage || canUpdateTaskOwnFields(currentUser, task))}
+              canMarkDone={canMarkMissionDone(currentUser, task)}
             />
             <PriorityBadge priority={task.priority} />
             <FreshnessIndicator freshness={task.freshness} className="ml-1" />
@@ -256,6 +270,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           hasWork={(task.progressPercentage ?? 0) > 0 || data.effort.hoursLogged > 0}
           readyToFinish={data.checklistRollup?.isComplete === true}
           canChange={canManage || canUpdateTaskOwnFields(currentUser, task)}
+          canFinish={canMarkMissionDone(currentUser, task)}
         />
       )}
 
@@ -285,13 +300,17 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
       {tab === 'work' ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <section className="grid min-w-0 content-start gap-6">
-            <WorkTabBrief sections={data.sections} extra={learnings ? <LearningCountChip learnings={learnings} /> : null} />
-            <ChecklistHero
-              href={checklistHref}
-              title={data.checklist?.title ?? null}
-              itemCount={data.checklistNodes.length}
-              rollup={data.checklistRollup}
-            />
+            {canReadWork ? (
+              <>
+                <WorkTabBrief sections={data.sections} extra={learnings ? <LearningCountChip learnings={learnings} /> : null} />
+                <ChecklistHero
+                  href={checklistHref}
+                  title={data.checklist?.title ?? null}
+                  itemCount={data.checklistNodes.length}
+                  rollup={data.checklistRollup}
+                />
+              </>
+            ) : <MissionWorkPrivate />}
             <MissionOverview
               data={data}
               people={people}
@@ -328,7 +347,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
                 ) : null}
               </div>
             </MissionPanel>
-            {proofs ? <ProofsPanel taskId={task.id} taskTag={task.taskTag} proofs={proofs} canAdd={!archived} /> : null}
+            {proofs ? <ProofsPanel taskId={task.id} taskTag={task.taskTag} proofs={proofs} canAdd={!archived && canWriteFiles} /> : null}
             {family.children.length ? (
               <MissionPanel icon={RocketIcon} title="Sub-missions" subtitle={`${family.children.filter((s) => s.status === 'Done').length} of ${family.children.length} done`}>
                 <SubMissionsPanel subMissions={family.children} />
@@ -336,6 +355,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             ) : null}
           </aside>
         </div>
+      ) : details && !canReadWork ? (
+        <MissionWorkPrivate />
       ) : details && native ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <section className="grid min-w-0 content-start gap-6">
@@ -358,7 +379,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               canCreateWorkFile={!archived && !closed && canUpdateTaskOwnFields(currentUser, task)}
               providerState={native.instance?.providerState ?? 'not_requested'}
               files={proofs}
-              canAddFiles={!archived}
+              canAddFiles={!archived && canWriteFiles}
             />
             {learnings ? (
               <LearningPanel

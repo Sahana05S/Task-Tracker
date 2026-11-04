@@ -24,6 +24,8 @@ export interface StatusSelectProps {
   status: TaskStatus;
   /** False renders a read-only badge instead of a picker. */
   canEdit: boolean;
+  /** False keeps Done out of reach (collaborators, migration 117). Defaults to true. */
+  canMarkDone?: boolean;
   className?: string;
 }
 
@@ -45,6 +47,7 @@ export function StatusSelect({
   taskTag,
   status,
   canEdit,
+  canMarkDone = true,
   className,
 }: StatusSelectProps) {
   const [value, setValue] = React.useState<TaskStatus>(status);
@@ -96,7 +99,7 @@ export function StatusSelect({
         </SelectTrigger>
         <SelectContent>
           {TASK_STATUSES.map((entry) => (
-            <SelectItem key={entry} value={entry} disabled={entry === 'Discarded' || entry === 'Carryover' || entry === 'Not Started'}>
+            <SelectItem key={entry} value={entry} disabled={entry === 'Discarded' || entry === 'Carryover' || entry === 'Not Started' || (entry === 'Done' && !canMarkDone)}>
               <StatusBadge status={entry} />
             </SelectItem>
           ))}

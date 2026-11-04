@@ -66,7 +66,7 @@ export async function getAssignedMissionBatch(userId: string, options: MissionBa
   const participant = db.from('tasks').select(`${COLUMNS},task_assignees!inner(user_id,is_primary,share_units)`).eq('task_assignees.user_id', userId);
   // Reviewers and observers (migration 108) only when the caller asks for them.
   const reviewer = db.from('tasks').select(`${COLUMNS},task_reviewers!inner(user_id,reviewer_role)`).eq('task_reviewers.user_id', userId);
-  // The whole team (managers): every open mission, with the viewer's own tie where there is one.
+  // The whole team (the managing director, migration 117): every open mission, with the viewer's own tie where there is one.
   const team = db.from('tasks').select(COLUMNS);
   const sources = (options.scope === 'team' ? ['team', 'primary', 'participant', 'reviewer'] : options.watching ? ['primary', 'participant', 'reviewer'] : ['primary', 'participant']) as ('team' | 'primary' | 'participant' | 'reviewer')[];
   const pick = { team, primary, participant, reviewer };
@@ -133,7 +133,7 @@ export async function getAssignedRoadmapMission(taskId: string, userId: string, 
     : membership.data ? rowRelationship({ ...task.data, task_assignees: [membership.data] }, 'participant')
     : review.data ? rowRelationship({ ...task.data, task_reviewers: [review.data] }, 'reviewer')
     : null;
-  // Managers browsing the whole team open any open mission; it carries no relationship of theirs.
+  // The managing director browsing the whole team opens any open mission; it carries no relationship of theirs.
   return relationship ? mapMission(task.data, relationship) : options.anyOpen ? mapMission(task.data) : null;
 }
 

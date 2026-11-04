@@ -68,6 +68,8 @@ for db in DBS:
     print('PASS',db,'the table is definer-owned with FORCE RLS and no direct access; the command is for signed-in users only')
 
     # ---- who may write ----------------------------------------------------------------------------------------
+    # Migration 117: a project engineer reads and writes a mission's notes only when on it; here an observer.
+    sql(db,f"INSERT INTO public.task_reviewers(task_id,user_id,reviewer_role,is_primary) VALUES('{T1}','{PE}','Observer',false)")
     for uid in (M5,M6,DM,INACTIVE):expect_code(db,uid,cmd('add',T1),'42501')
     expect_code(db,None,cmd('add',T1),'42501')
     assert rows(db)=='0'
@@ -78,15 +80,17 @@ for db in DBS:
     print('PASS',db,"the assignee, a project engineer and the director add; another member, the reviewer, a data manager, inactive and anonymous callers are refused")
 
     # ---- who may read -----------------------------------------------------------------------------------------
-    for uid in (MD,PE,DM,M4,M5,M6):
+    for uid in (MD,PE,M4,M6):
         r=read(db,uid)
         assert len(r['items'])==3 and r['canAdd']==(uid in (MD,PE,M4)),(uid,r)
+    for uid in (DM,M5):  # 117: not on the mission
+        expect_code(db,uid,f"SELECT public.mission_learnings('{T1}')",'42501')
     expect_code(db,INACTIVE,f"SELECT public.mission_learnings('{T1}')",'42501')
     mine={i['id']:i for i in read(db,M4)['items']}
     assert mine[own]['canEdit'] and not mine[pe]['canEdit'] and mine[own]['kind']=='mistake' and mine[own]['authorName']
-    assert all(i['canEdit'] for i in read(db,PE)['items']) and not any(i['canEdit'] for i in read(db,M5)['items'])
+    assert all(i['canEdit'] for i in read(db,PE)['items']) and not any(i['canEdit'] for i in read(db,M6)['items'])
     assert read(db,M5,T2)=={'canAdd':True,'items':[]}
-    print('PASS',db,'every active member reads the notes; canAdd and canEdit follow the rules')
+    print('PASS',db,"the director and the mission's people read the notes; others are refused; canAdd and canEdit follow the rules")
 
     # ---- validation ---------------------------------------------------------------------------------------------
     before=rows(db)
@@ -103,7 +107,7 @@ for db in DBS:
     assert edited=={'id':own,'state':'active'}
     assert json.loads(ok(db,M4,cmd('edit',T1,own,kind='learning',body='Check cable specs against the drawing',operation=op)))==edited
     expect_code(db,M4,cmd('edit',T1,own,kind='learning',body='Other text',operation=op),'PT409')
-    item={i['id']:i for i in read(db,M5)['items']}[own]
+    item={i['id']:i for i in read(db,M6)['items']}[own]
     assert (item['kind'],item['body'],item['edited'])==('learning','Check cable specs against the drawing',True)
     expect_code(db,M4,cmd('edit',T1,pe,body='Not mine'),'P0002')
     expect_code(db,M4,cmd('withdraw',T1,pe),'P0002')

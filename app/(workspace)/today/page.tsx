@@ -9,7 +9,6 @@ import { getLabelsFor } from '@/modules/labels';
 import { missionDueFilter } from '@/modules/tasks/client';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { parseRoadmapLocation, roadmapScope } from '@/modules/workspace-views/client';
-import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 
 import {
   AnalyticsTeaser,
@@ -46,7 +45,8 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const due = missionDueFilter(query.due);
   const today = kolkataDate();
   // The managing director and project engineers may switch to the whole team's missions.
-  const canSeeTeam = (TASK_MANAGER_ROLES as readonly string[]).includes(profile.role);
+  // The whole team's graph opens other people's checklists: the managing director only (migration 117).
+  const canSeeTeam = profile.role === 'managing_director';
   const scope = canSeeTeam ? roadmapScope(query.scope) : 'mine';
   const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true }).catch(() => null);
   // Labels (migration 112) on the first batch: one labels_for read; a failure only hides the chips.

@@ -3,9 +3,11 @@
 ## What it does
 Mistakes and learning on the mission page (update plan of 3 November 2026,
 workstream E; the user chose to keep them with the mission). Each note is a
-mistake or a learning, tied to one mission. Every active member of the company
-reads them on the mission's Details tab; the Work tab shows their count. The
-mission's assignees, project engineers and the managing director add notes; the
+mistake or a learning, tied to one mission. The managing director and the
+mission's people (owner, assignees, collaborators, reviewers, observers; project
+engineers only when on it, migration 117) read them on the mission's Details tab;
+the Work tab shows their count. The mission's assignees, project engineers on the
+mission and the managing director add notes; the
 author (while still one of those) or a manager edits or withdraws one. An
 archived mission's notes are read-only. Not a dated record and never part of a
 score; each change is one `mission_learning_<op>` line in Team > Activity.

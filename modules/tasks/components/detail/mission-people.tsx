@@ -13,12 +13,15 @@ interface Person {
 }
 
 /**
- * Collaborators, observers and ownership of one mission (migration 108). Shown
- * to the managing director, project engineers and the mission's Owner;
- * `task_people_command` decides. Collaborators edit the mission but hold no
+ * Collaborators, observers and ownership of one mission (migration 108).
+ * Collaborators and ownership: the managing director, project engineers and the
+ * mission's Owner. Observers: the managing director, the Owner and the mission's
+ * assignees (migration 117). `task_people_command` decides. Collaborators edit the mission but hold no
  * share and log no time; observers follow it and never review it.
  */
 export function MissionPeopleManager({
+  canManageCollaborators = true,
+  canManageObservers = true,
   taskId,
   version,
   owner,
@@ -27,6 +30,10 @@ export function MissionPeopleManager({
   observers,
   candidates,
 }: {
+  /** Collaborators and ownership transfer (managers and the Owner). */
+  canManageCollaborators?: boolean;
+  /** Observers (the managing director, the Owner and assignees). */
+  canManageObservers?: boolean;
   taskId: string;
   version: number;
   owner: Person | null;
@@ -44,7 +51,7 @@ export function MissionPeopleManager({
         Manage people
       </summary>
       <div className="mt-4 grid gap-5 sm:grid-cols-2">
-        <PeopleGroup
+        {canManageCollaborators ? <PeopleGroup
           title="Collaborators"
           hint="Edit the mission, its checklist and details. No share of the credit, no time logged."
           taskId={taskId}
@@ -53,18 +60,18 @@ export function MissionPeopleManager({
           removeCommand="remove_collaborator"
           addCommand="add_collaborator"
           candidates={candidates}
-        />
-        <PeopleGroup
+        /> : null}
+        {canManageObservers ? <PeopleGroup
           title="Observers"
-          hint="Follow the mission and its notifications. They cannot tick, edit or review."
+          hint="Follow the mission, see its checklist and files. They cannot tick, edit, upload or review."
           taskId={taskId}
           version={version}
           people={observers}
           removeCommand="remove_observer"
           addCommand="add_observer"
           candidates={candidates}
-        />
-        <div className="grid content-start gap-2 sm:col-span-2">
+        /> : null}
+        {canManageCollaborators ? <div className="grid content-start gap-2 sm:col-span-2">
           <p className="text-foreground text-sm font-semibold">Owner</p>
           <p className="text-muted-foreground text-xs">
             {owner ? `${owner.name} owns this mission.` : 'No owner is recorded.'} Ownership moves to an assignee with a share; shares stay as they are.
@@ -83,7 +90,7 @@ export function MissionPeopleManager({
           ) : (
             <p className="text-muted-foreground text-xs">Add a second assignee with a share (Edit mission) to hand ownership over.</p>
           )}
-        </div>
+        </div> : null}
       </div>
     </details>
   );

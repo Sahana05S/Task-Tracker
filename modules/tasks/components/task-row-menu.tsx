@@ -40,6 +40,8 @@ export interface TaskRowMenuProps {
   canManage: boolean;
   /** Manager, or an active assignee of this mission. */
   canEditOwnFields: boolean;
+  /** False hides "Mark done" (collaborators, migration 117). Defaults to true. */
+  canMarkDone?: boolean;
   actions: TaskRowActions;
   /**
    * First item: omitted shows "Quick summary" (Missions list); a link shows
@@ -58,6 +60,7 @@ export function TaskRowMenuItems({
   task,
   canManage,
   canEditOwnFields,
+  canMarkDone = true,
   actions,
   openHref,
 }: TaskRowMenuProps) {
@@ -85,7 +88,7 @@ export function TaskRowMenuItems({
       {canAct ? (
         <>
           {openHref !== null ? <DropdownMenuSeparator /> : null}
-          {task.status !== 'Done' ? (
+          {task.status !== 'Done' && canMarkDone ? (
             <DropdownMenuItem onSelect={() => onRun('bulk_done')}>
               <CheckCircle2Icon aria-hidden="true" />
               Mark done…

@@ -43,12 +43,15 @@ actions=[(e['action'],e['nodeTitle'],e['state']) for e in s['events']]
 assert actions==[('checklist_add','Draw elevation',None),('checklist_state','Draw elevation','Yes')],actions
 print('PASS',DB,'a session lists its owner\'s commands on the mission between start and stop, oldest first')
 
+# Migration 117: only the director and the mission's people read it; the PE and member 6 observe T2.
+sql(DB,f"INSERT INTO public.task_reviewers(task_id,user_id,reviewer_role,is_primary) VALUES('{T2}','{uid_of('2')}','Observer',false),('{T2}','{uid_of('6')}','Observer',false)")
 assert sessions('1')==mine
 assert sessions('2')==mine
-assert sessions('4')==[] and sessions('6')==[]
+assert sessions('6')==[]
+sessions('4',success=False)  # not on the mission
 sessions('7',success=False)  # inactive
 actor(DB,'',f"SELECT * FROM public.timer_session_activity('{T2}')",success=False)
-print('PASS',DB,'managers read every session; other members only their own; inactive and anonymous callers refused')
+print('PASS',DB,'managers on the mission read every session; its other people only their own; outsiders, inactive and anonymous callers refused')
 
 # Discarded and running timers are not sessions; a removed row keeps its line without a title.
 d=first_json(actor(DB,uid_of('5'),f"SELECT public.start_task_timer('{T2}','{{}}'::jsonb,'{uuid4()}')"))
