@@ -102,6 +102,12 @@ that show a mission type's name use `useCategoryLabels()`; server code uses
 - Migration 93 adds `check_in_reminder_time` (time, NULL = off), returned as
   `attendance.checkInReminderTime` ("HH:MM") and saved by the same section
   (optional key). The reminder itself belongs to the attendance module.
+- Migration 119 adds the break times `morning_tea_at`, `lunch_start`,
+  `lunch_end`, `evening_tea_at` (defaults 11:00, 13:00, 14:00, 16:00; NULL =
+  no such break; in day order, lunch start and end together), returned as
+  `attendance.morningTeaAt`/`lunchStart`/`lunchEnd`/`eveningTeaAt` and saved
+  by the same section (optional keys; a payload without them keeps the saved
+  times). The check-out report's time blocks use them (attendance module).
 
 Tests: `modules/settings/__tests__/settings.test.ts`,
 `tools/test_company_settings_database.py`, `tools/test_mission_scale_mode_database.py`,

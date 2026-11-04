@@ -102,13 +102,18 @@ export function compiledLogs(model: LivePresentation, memberId: string, from: st
  * The WhatsApp message for one member's own day: today's and yesterday's logs
  * with hours, then open missions. Bold uses asterisks; lines stay short.
  */
-export function dailyReportText(model: LivePresentation, memberId: string, date: string): string {
+export function dailyReportText(model: LivePresentation, memberId: string, date: string, options?: DailyReportTextOptions): string {
   const report = dailyReport(model, memberId, date);
-  return report ? formatDailyReport(report) : '';
+  return report ? formatDailyReport(report, options) : '';
+}
+
+export interface DailyReportTextOptions {
+  /** False leaves out today's logs, e.g. when the check-out message lists them in time blocks. */
+  includeToday?: boolean;
 }
 
 /** The share text for a report already built. */
-export function formatDailyReport(report: DailyReport): string {
+export function formatDailyReport(report: DailyReport, options: DailyReportTextOptions = {}): string {
   const { date } = report;
   const lines = [`*Daily report · ${report.member.fullName}*`, longDate(date), ''];
   const day = (title: string, d: DailyReportDay, inPeriod: boolean) => {
@@ -123,7 +128,7 @@ export function formatDailyReport(report: DailyReport): string {
     if (d.logs.length > SHARE_LOGS_PER_DAY) lines.push(`(${d.logs.length - SHARE_LOGS_PER_DAY} more)`);
     lines.push('');
   };
-  day(`Today, ${shortDate(date)}`, report.today, true);
+  if (options.includeToday !== false) day(`Today, ${shortDate(date)}`, report.today, true);
   day(`Yesterday, ${shortDate(report.yesterday.date)}`, report.yesterday, report.yesterdayInPeriod);
   lines.push(`*Open missions (${report.openMissions.length})*`);
   if (report.openMissions.length === 0) lines.push('None open.');

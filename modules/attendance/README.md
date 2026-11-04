@@ -63,6 +63,23 @@ undo or repeat a check-in. Rules in `internal/share-message.ts`, tests in
 `__tests__/share-message.test.ts`. Inside the Android app the link must leave
 the WebView for WhatsApp; that is handled in the stellar-mobile shell.
 
+## Check-out report in time blocks (4 November 2026, migration 119)
+User decision: the check-out message lists the day in four blocks: check-in to
+morning tea, morning tea to lunch, lunch to evening tea, evening tea to
+check-out, at the break times the managing director sets in Settings > Company
+> Check-in (default 11:00, 13:00-14:00, 16:00 India time; settings module).
+Lunch is not counted. Under each block, every mission whose timer ran in it
+with its time there, and the block's productive time with timers that ran
+together counted once (migration 118); then the day's productive time and the
+entries logged without times. Blocks wholly before check-in or after
+check-out are skipped and the edges clipped; a break that is not set joins the
+blocks on either side; a timer still running counts up to check-out. Pure
+builder `timeBlockDay` and `formatTimeBlocks` (`internal/share-message.ts`,
+tests in `__tests__/time-blocks.test.ts`). The check-in page reads the day
+through time-tracking's `getMemberDaySessions` and composes the message
+(`checkOutMessage(in, out, report, blocks)`); the daily report then leaves out
+today's logs. If the day cannot be read, the report keeps today's logs.
+
 ## Check-in reminder (migration 93, M20)
 With a reminder time set in Settings > Company > Check-in (off by default),
 pg_cron runs `taskpulse_private.check_in_reminder_tick()` every 5 minutes
@@ -107,7 +124,7 @@ imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.
 | `contract.ts` | Exact-decimal hour validity rules and local check-time parsing |
 | `summary.ts` | Period totals (payable days, hours) |
 | `permissions.ts` | Who may manage or edit attendance (UI messages; the database is the real boundary) |
-| `share-message.ts` | The WhatsApp check-in greeting and check-out message (pure) |
+| `share-message.ts` | The WhatsApp check-in greeting and check-out message, with the day in time blocks (pure) |
 | `mappers.ts` | `attendance_records` row -> `AttendanceRecord` |
 | `matrix.ts` | The month matrix, the month parameter, the cell editor's values and the exact command fields for a cell or a day fill |
 | `check-in-model.ts` | Check-in types, row mapper, map links and photo compression (client-safe) |

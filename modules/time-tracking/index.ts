@@ -11,3 +11,4 @@ export { getTimerSessionActivity } from '@/modules/time-tracking/internal/timers
 export { countMyLogsInPeriod } from '@/modules/time-tracking/internal/logs/counts';
 export { getMemberLogDates } from '@/modules/time-tracking/internal/logs/member-log-dates';
 export { getMemberDayHours } from '@/modules/time-tracking/internal/logs/member-day-hours';
+export { getMemberDaySessions, type DaySession, type DayManualEntry, type MemberDaySessions } from '@/modules/time-tracking/internal/logs/member-day-sessions';

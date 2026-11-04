@@ -11,6 +11,7 @@ export {
   formatDailyReport,
   reportsTab,
   type DailyReport,
+  type DailyReportTextOptions,
 } from '@/modules/reports/internal/presentation/daily-report';
 export { calculationReasons, dataGaps, GAP_SENTENCE, plainReason, type DataGap } from '@/modules/reports/internal/presentation/plain-language';
 export type { MonthArchive, MonthHistory } from '@/modules/reports/internal/month/archive';

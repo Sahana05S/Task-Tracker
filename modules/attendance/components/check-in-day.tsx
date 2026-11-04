@@ -13,13 +13,15 @@ import { CheckInForm } from './check-in-form';
  * member can send a greeting on WhatsApp, and after checking out their daily
  * report (user decision, 3 November 2026); they choose who receives it.
  */
-export function CheckInDay({ email, fullName, day, settings, report }: {
+export function CheckInDay({ email, fullName, day, settings, report, blocks }: {
   email: string;
   fullName: string;
   day: { in: CheckInMark | null; out: CheckInMark | null; recorded: boolean; available: boolean };
   settings: AttendanceSettings;
   /** The member's daily report text for today; read only once they have checked out. */
   report?: string;
+  /** Today in time blocks between the break times (`formatTimeBlocks`); read once they have checked out. */
+  blocks?: string;
 }) {
   const kind = day.in ? 'out' : 'in';
   const title = day.in && day.out ? 'Checked out' : kind === 'in' ? 'Check in' : 'Check out';
@@ -49,7 +51,7 @@ export function CheckInDay({ email, fullName, day, settings, report }: {
       {day.available && settings.checkInEnabled && day.in ? (
         day.out ? (
           <MissionPanel icon={MessageCircleIcon} title="Share your day" subtitle="Your daily report, ready to send. WhatsApp asks who to send it to.">
-            <ShareText text={checkOutMessage(day.in.capturedAt, day.out.capturedAt, report ?? '')} title={`Daily report · ${fullName}`} />
+            <ShareText text={checkOutMessage(day.in.capturedAt, day.out.capturedAt, report ?? '', blocks ?? '')} title={`Daily report · ${fullName}`} />
           </MissionPanel>
         ) : (
           <MissionPanel icon={MessageCircleIcon} title="Tell your team you’re in" subtitle="A greeting with your check-in time. WhatsApp asks who to send it to.">
