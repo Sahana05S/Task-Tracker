@@ -4,9 +4,9 @@ import { MissionPanel } from '@/shared/ui/mission-ui';
 import { Disclosure, SmartGoalTile, TextBlock } from '@/modules/tasks/components/detail/detail-tiles';
 import { InitializeDetailsForm, NativeDetailsEditor } from '@/modules/tasks/components/native-details-editor';
 import { DETAIL_FIELDS, type NativeTemplate } from '@/modules/tasks/internal/details-contract';
-import type { NativeDetailState, ReportChoice } from '@/modules/tasks/internal/native-details';
+import type { NativeDetailState } from '@/modules/tasks/internal/native-details';
 import { cn } from '@/shared/utils';
-import type { Task, TaskDetailSection, User } from '@/types/tracker';
+import type { Task, TaskDetailSection } from '@/types/tracker';
 
 /** The content of a native detail section, or null when it is empty. */
 export function sectionValue(sectionsByKey: ReadonlyMap<string, TaskDetailSection>, key: string): string | null {
@@ -22,8 +22,6 @@ export function MissionBrief({
   canManage,
   canEditDetails = canManage,
   tasks,
-  members,
-  reports,
 }: {
   task: Task;
   sections: readonly TaskDetailSection[];
@@ -34,8 +32,6 @@ export function MissionBrief({
   canEditDetails?: boolean;
   /** Missions for the related-task picker (tag and title). */
   tasks: readonly Pick<Task, 'id' | 'taskTag' | 'title'>[];
-  members: readonly User[];
-  reports: readonly ReportChoice[];
 }) {
   const sectionsByKey = new Map(sections.map((section) => [section.keyName, section]));
   const smartFields = DETAIL_FIELDS.filter((f) => f.group === 'smart');
@@ -97,7 +93,7 @@ export function MissionBrief({
 
         {canEditDetails ? (
           <Disclosure summary="Edit structured details and links" icon={PencilIcon}>
-            <NativeDetailsEditor task={task} sections={sections} tasks={tasks} members={members} reports={reports}/>
+            <NativeDetailsEditor task={task} sections={sections} tasks={tasks}/>
           </Disclosure>
         ) : null}
 

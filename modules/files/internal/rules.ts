@@ -39,3 +39,23 @@ export function fileStorageLine(health: FileStorageHealth): { text: string; atte
     attention: health.pending > 0 && Boolean(health.error),
   };
 }
+
+/**
+ * Where a new upload is kept, for upload screens: honest about a drive that is
+ * not connected yet (files then stay in the app and move once it is).
+ */
+export function fileStorageNote(driveReady: boolean): string {
+  return driveReady
+    ? 'Kept in the company Shared Drive.'
+    : 'Kept in the app until the company Shared Drive is connected.';
+}
+
+/** A Shared Drive id: the code at the end of the drive's address (the check of migration 100). */
+export const SHARED_DRIVE_ID = /^[A-Za-z0-9_-]{10,100}$/;
+
+/** Accepts the id itself or the drive's whole address, and returns the id. */
+export function sharedDriveIdFrom(value: string): string {
+  const text = value.trim();
+  const fromAddress = /\/drive\/(?:u\/\d+\/)?folders\/([A-Za-z0-9_-]+)/.exec(text);
+  return fromAddress ? fromAddress[1] : text;
+}

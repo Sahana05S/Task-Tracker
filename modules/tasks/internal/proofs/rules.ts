@@ -21,7 +21,7 @@ export const PROOFS_BUCKET = 'mission-proofs';
 /** What a mission file is (migration 113): a proof, or an Input / Process / Output document. */
 export const MISSION_FILE_KINDS = ['proof', 'input', 'process', 'output'] as const;
 export type MissionFileKind = (typeof MISSION_FILE_KINDS)[number];
-/** The three document kinds, in the order the Work files panel shows them. */
+/** The three document kinds, in the order the Files panel shows them (Proofs come last). */
 export const MISSION_DOCUMENT_KINDS = ['input', 'process', 'output'] as const satisfies readonly MissionFileKind[];
 export type MissionDocumentKind = (typeof MISSION_DOCUMENT_KINDS)[number];
 

@@ -39,7 +39,6 @@ import {
   getNativeDetailState,
   getNativeTemplates,
   getMissionChoices,
-  getVisibleReportChoices,
   getTaskProofs,
   normalizeTaskTagParam,
   resolveTaskDetailRouteState,
@@ -53,20 +52,20 @@ import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
 import { MissionOverview } from '@/modules/tasks/components/detail/mission-overview';
 import { MissionPeopleManager } from '@/modules/tasks/components/detail/mission-people';
 import { MissionWorkPrivate } from '@/modules/tasks/components/detail/mission-work-private';
-import { ProofsPanel } from '@/modules/tasks/components/detail/proofs-panel';
+import { FilesPanel } from '@/modules/tasks/components/detail/files-panel';
 import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
 import { LabelInput } from '@/modules/labels/components/label-input';
 import { LabelChips } from '@/modules/labels/components/label-chips';
+import { isFileStorageReady } from '@/modules/files';
 import { getMissionLearnings } from '@/modules/learning';
 import { LearningCountChip } from '@/modules/learning/components/learning-count-chip';
 import { LearningPanel } from '@/modules/learning/components/learning-panel';
 import { getMissionWaypoints } from '@/modules/recognition';
 import { WaypointCelebration } from '@/modules/recognition/components/waypoint-celebration';
 import { WaypointTrack } from '@/modules/recognition/components/waypoint-track';
-import { WorkFilesPanel } from '@/modules/tasks/components/detail/work-files-panel';
 import { WorkTabBrief } from '@/modules/tasks/components/detail/work-tab-brief';
 import { TaskLifecyclePanel } from '@/modules/tasks/components/task-lifecycle-panel';
 import { TaskReviewForm } from '@/modules/tasks/components/task-review-form';
@@ -129,24 +128,25 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   // The checklist and work content belong to the mission's people and the managing director (migration 117).
   const canReadWork = canReadMissionWork(currentUser, task);
   const canWriteFiles = canWriteMissionFiles(currentUser, task);
-  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews] = await Promise.all([
+  const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews, driveReady] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details && canReadWork ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
     details && canEditDetails ? getMissionChoices() : Promise.resolve([]),
-    details && canManage ? getVisibleReportChoices() : Promise.resolve([]),
     details && canReadWork ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
     // A failed read leaves the track on current progress.
     tab === 'work' ? getMissionWaypoints([task]).catch(() => null) : Promise.resolve(null),
-    // Proofs (Work tab) and Input / Process / Output documents (Details tab). Null when the
-    // caller is not one of the mission's people or a manager: no panel, no uploads.
-    canReadWork && (tab === 'work' || details) ? getTaskProofs(task.id) : Promise.resolve(null),
+    // Input / Process / Output files and Proofs for the Files panel (Work tab). Null for
+    // anyone who may not read the mission's work: no Files panel.
+    canReadWork && tab === 'work' ? getTaskProofs(task.id) : Promise.resolve(null),
     // Mistakes and learning (migration 111): the panel on Details, its count on Work. Null hides both.
     canReadWork && tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
     // What each timer session covered (migration 110); a failed read only hides the lines.
     tab === 'history' && canReadWork ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
     // Objectives waiting for this reviewer (114); a failed read only hides the list.
     tab === 'work' && !archived && canReadWork && (reviewer || canManage) ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
+    // Whether uploads reach the Shared Drive yet, so the Files panel words it honestly.
+    tab === 'work' && canReadWork ? isFileStorageReady() : Promise.resolve(false),
   ]);
   // Labels (migration 112): the mission's own on every tab (header chips); the catalogue and each
   // learning note's on the Details tab. Null hides them.
@@ -327,6 +327,16 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
                 />
               }
             />
+            {canReadWork ? (
+              <FilesPanel
+                task={task}
+                links={data.links}
+                files={proofs}
+                canUpload={canWriteFiles}
+                canAddLink={canEditDetails}
+                driveReady={driveReady}
+              />
+            ) : null}
             {waypoints?.recent.length ? <WaypointCelebration tasks={waypoints.recent} waypoints={waypoints.waypoints} /> : null}
             {canManage ? <TaskLifecyclePanel task={task} /> : null}
           </section>
@@ -347,7 +357,6 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
                 ) : null}
               </div>
             </MissionPanel>
-            {proofs ? <ProofsPanel taskId={task.id} taskTag={task.taskTag} proofs={proofs} canAdd={!archived && canWriteFiles} /> : null}
             {family.children.length ? (
               <MissionPanel icon={RocketIcon} title="Sub-missions" subtitle={`${family.children.filter((s) => s.status === 'Done').length} of ${family.children.length} done`}>
                 <SubMissionsPanel subMissions={family.children} />
@@ -368,18 +377,6 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               canManage={canManage}
               canEditDetails={canEditDetails}
               tasks={workspace}
-              members={data.members}
-              reports={reports}
-            />
-            <WorkFilesPanel
-              task={task}
-              links={data.links}
-              sections={data.sections}
-              checklistHref={checklistHref}
-              canCreateWorkFile={!archived && !closed && canUpdateTaskOwnFields(currentUser, task)}
-              providerState={native.instance?.providerState ?? 'not_requested'}
-              files={proofs}
-              canAddFiles={!archived && canWriteFiles}
             />
             {learnings ? (
               <LearningPanel
