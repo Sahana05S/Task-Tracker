@@ -26,7 +26,7 @@ change). The refactor is complete and merged into `main`. Follow
   `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
   `__tests__/fixtures/`.
 
-## 4 November 2026 updates (migrations 116-119)
+## 4 November 2026 updates (migrations 116-120)
 
 Follow-up requests after the 3 November work (result in `docs/UPDATE-PLAN-2026-11.md`,
 "Follow-up changes"). User decisions to keep; they replace the matching 3 November lines below:
@@ -38,7 +38,8 @@ Follow-up requests after the 3 November work (result in `docs/UPDATE-PLAN-2026-1
   only on missions they are on. Mission rows themselves stay visible company-wide. MD, Owner and
   credited assignees decide observers. **Collaborators cannot mark a mission Done; observers can
   view files but not upload or remove them.** Scoring, reports and awards read as the definer and
-  are unaffected.
+  are unaffected. Since 120 a project engineer who is not on a mission also cannot change its
+  checklist or details, and sees its Team > Activity lines only when on it.
 - **Several timers at once (118):** at most one running timer per person **per mission**. Each
   mission keeps its full logged time; every daily total (attendance validity, reports, Daily perf
   log, analytics, policies) uses the **merged** time (`member_day_hours`, `mergedSeconds`).

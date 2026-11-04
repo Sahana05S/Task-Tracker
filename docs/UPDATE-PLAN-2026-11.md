@@ -50,9 +50,9 @@ parallel lanes, all merged and live (migrations 116-119):
 | Check-out report in four blocks | #148 | 119 | Check-in to 11:00, 11:00-13:00, 14:00-16:00, 16:00 to check-out (break times editable in Settings > Company > Check-in); each block lists the missions worked on and the block's productive hours |
 | Labels show and filter | #144 | none | Label chips on the Missions list and cards, the mission header and Today; a label filter on the Missions page; labels in the New mission dialog |
 
-Left open: project engineers still see every mission's lines in Team > Activity (including
-objective titles), and an off-mission project engineer's checklist writes are still accepted by
-the database although the app no longer offers them.
+Two items left open by #147 were then closed by migration 120 (#150): a project engineer sees
+mission lines in Team > Activity only for missions they are on, and the database refuses their
+checklist and detail changes on missions they are not on.
 
 ## Why this second plan exists
 
