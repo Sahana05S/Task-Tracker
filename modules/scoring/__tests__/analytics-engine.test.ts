@@ -70,6 +70,8 @@ function makeLog(overrides: Partial<DailyTaskLog> & { taskId: string; userId: st
     logSource: overrides.logSource ?? 'Manual',
     sourceTimerId: overrides.sourceTimerId ?? null,
     createdAt: overrides.createdAt ?? '2026-09-15T08:00:00Z',
+    timerSegmentStart: overrides.timerSegmentStart ?? null,
+    timerSegmentEnd: overrides.timerSegmentEnd ?? null,
   };
 }
 
@@ -323,6 +325,22 @@ describe('computeTeamAnalytics', () => {
     const m = result.members[0]!;
     expect(m.hoursLogged).toBe(5);    // all hours
     expect(m.eligibleHours).toBe(5);  // source contract has no OT-only exclusion
+  });
+
+  it('merges timers that ran at the same time (migration 118), keeping each mission whole', () => {
+    const member = makeUser({ id: 'u1' });
+    const a = makeTask({ id: 't1', taskTag: 'T1', assigneeId: 'u1', taskScale: 10 });
+    const b = makeTask({ id: 't2', taskTag: 'T2', assigneeId: 'u1', taskScale: 5 });
+    const logs = [
+      makeLog({ id: 'a', taskId: 't1', userId: 'u1', hoursWorked: 4, progressDelta: 0,
+        timerSegmentStart: '2026-09-10T09:00:00+05:30', timerSegmentEnd: '2026-09-10T13:00:00+05:30' }),
+      makeLog({ id: 'b', taskId: 't2', userId: 'u1', hoursWorked: 3, progressDelta: 0,
+        timerSegmentStart: '2026-09-10T11:00:00+05:30', timerSegmentEnd: '2026-09-10T14:00:00+05:30' }),
+      makeLog({ id: 'manual', taskId: 't2', userId: 'u1', hoursWorked: 1, progressDelta: 0 }),
+    ];
+    const m = computeTeamAnalytics({ members: [member], tasks: [a, b], logs, period: SEP_2026 }).members[0]!;
+    expect(m.hoursLogged).toBe(6);    // 09:00-14:00 merged (5 h) + 1 h manual, not 8 h
+    expect(m.eligibleHours).toBe(6);
   });
 
   it('excludes inactive members from analysis', () => {

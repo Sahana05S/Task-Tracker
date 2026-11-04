@@ -16,6 +16,7 @@ import type {
   UserRole,
 } from '@/types/tracker';
 import { currentPeriod, resolvePeriod, type AnalyticsPeriod } from '@/shared/time/period';
+import { overlapSeconds, type TimeInterval } from '@/shared/time/intervals';
 /** Calendar periods live in shared/time/period; re-exported for scoring code. */
 export { currentPeriod, resolvePeriod, type AnalyticsPeriod };
 
@@ -196,7 +197,7 @@ export interface AnalyticsInput {
   calculation?: CalculationResult;
   members: readonly User[];
   tasks: readonly Task[];
-  logs: readonly (Pick<DailyTaskLog, "userId" | "taskId" | "logDate" | "hoursWorked" | "progressDelta"> & Pick<DailyTaskLog, "creditShares" | "creditScale" | "effectUnknown">)[];
+  logs: readonly (Pick<DailyTaskLog, "userId" | "taskId" | "logDate" | "hoursWorked" | "progressDelta"> & Pick<DailyTaskLog, "creditShares" | "creditScale" | "effectUnknown" | "timerSegmentStart" | "timerSegmentEnd">)[];
   attendanceRecords?: readonly AttendanceRecord[];
   attendanceSummaries?: ReadonlyMap<string, AttendanceSummary>;
   period: AnalyticsPeriod;
@@ -301,6 +302,9 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
 
   /* --- Effort: hours and the progress they produced ---------------------- */
 
+  // Several timers may run at once (migration 118): a member's hours are the
+  // merged time, so overlapping timer segments are taken off once below.
+  const segments = new Map<string, { all: TimeInterval[]; eligible: TimeInterval[] }>();
   for (const log of input.logs) {
     if (!isWithinPeriod(log.logDate, period)) continue;
 
@@ -308,6 +312,9 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
     if (!accumulator && !log.creditShares) continue;
 
     if (accumulator) accumulator.hoursLogged += log.hoursWorked;
+    const segment = accumulator && log.timerSegmentStart && log.timerSegmentEnd ? { start: log.timerSegmentStart, end: log.timerSegmentEnd } : null;
+    const memberSegments = segment ? segments.get(log.userId) ?? { all: [], eligible: [] } : null;
+    if (segment && memberSegments) { segments.set(log.userId, memberSegments); memberSegments.all.push(segment); }
 
     const task = taskById.get(log.taskId);
     if (!task || !isTaskEligible(task)) continue;
@@ -318,6 +325,7 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
     // progress: counting OT time against a rate it can never contribute to would
     // penalise a member for logging it honestly.
     if (accumulator) accumulator.eligibleHours += log.hoursWorked;
+    if (segment && memberSegments) memberSegments.eligible.push(segment);
 
     // Execution aggregates carry the scale/shares captured when credit was
     // earned. Legacy input fallback is retained only for old pure fixtures.
@@ -329,6 +337,12 @@ export function computeTeamAnalytics(input: AnalyticsInput): TeamAnalytics {
         if (recipient) recipient.scaledProgress += credit * units / 1_000_000;
       }
     } else if (accumulator) accumulator.scaledProgress += credit;
+  }
+
+  for (const [userId, list] of segments) {
+    const accumulator = accumulators.get(userId)!;
+    accumulator.hoursLogged -= overlapSeconds(list.all) / 3600;
+    accumulator.eligibleHours -= overlapSeconds(list.eligible) / 3600;
   }
 
   /* --- Totals ------------------------------------------------------------ */

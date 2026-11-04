@@ -1,6 +1,7 @@
 import { eligibilityReasons, EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/client';
 import type { Task } from '@/types/tracker';
 import type { DailyTaskLog } from '@/types/tracker';
+import { overlapSeconds } from '@/shared/time/intervals';
 
 /**
  * The effort and productivity formulas from `domain-rules.md`, kept pure so the
@@ -118,6 +119,19 @@ export function sumHours(logs: readonly { hoursWorked: number }[]): number {
   return logs.reduce((total, log) => total + log.hoursWorked, 0);
 }
 
+/**
+ * A person's productive hours over a set of their own logs (a day or a range):
+ * the plain sum less the time counted twice by overlapping timer segments
+ * (user decision, 4 November 2026: several timers may run at once and the
+ * day's hours are the merged time). Logs without segment times (manual,
+ * imported, older snapshots) count as entered. A day without overlaps sums
+ * exactly as before. Per-mission figures keep using `sumHours`.
+ */
+export function mergedDayHours(logs: readonly { hoursWorked: number; timerSegmentStart?: string | null; timerSegmentEnd?: string | null }[]): number {
+  const segments = logs.flatMap((log) => log.timerSegmentStart && log.timerSegmentEnd ? [{ start: log.timerSegmentStart, end: log.timerSegmentEnd }] : []);
+  return sumHours(logs) - overlapSeconds(segments) / 3600;
+}
+
 /** Total progress delta across a set of logs. */
 export function sumProgressDelta(
   logs: readonly { progressDelta: number | null }[],
@@ -206,7 +220,8 @@ export function groupLogsByDate(
       return {
         logDate,
         logs: ordered,
-        totalHours: sumHours(ordered),
+        // One person's day: timers that ran together count once (migration 118).
+        totalHours: mergedDayHours(ordered),
         totalProgressDelta: sumProgressDelta(ordered),
       };
     });

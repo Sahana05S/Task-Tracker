@@ -4,7 +4,7 @@ import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-m
 import { EmptyState, MissionProgress } from '@/shared/ui/mission-ui';
 import { CategoryBadge, FreshnessIndicator, PriorityBadge, StatusBadge } from '@/shared/ui/tracker-badges';
 import { formatDate, formatHours, formatPercent } from '@/shared/tracker/format';
-import { sumHours } from '@/modules/time-tracking/client';
+import { mergedDayHours } from '@/modules/time-tracking/client';
 import type { DailyTaskLog, Task } from '@/types/tracker';
 
 /**
@@ -90,7 +90,8 @@ export function TaskLogSummary({ logs, tasks, empty = 'No task logs.' }: { logs:
 export function TaskLogCompilation({ logs, tasks, empty = 'No task logs in this range.' }: { logs: readonly DailyTaskLog[]; tasks: readonly Task[]; empty?: string }) {
   if (logs.length === 0) return <EmptyState>{empty}</EmptyState>;
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
-  const total = sumHours(logs);
+  // One member's logs: timers that ran together count once (migration 118).
+  const total = mergedDayHours(logs);
   return (
     <div className="border-border relative overflow-x-auto rounded-xl border">
       <table className="sheet-grid w-full min-w-[32rem]">

@@ -20,7 +20,7 @@ export interface ChecklistItemTime {
   secondsByNode: ReadonlyMap<string, number>;
   /** Running item timers on this task, by item. */
   runningByNode: ReadonlyMap<string, RunningItemTimer>;
-  /** The signed-in user's running timer on any task, if any. */
+  /** The signed-in user's running timer on this mission, if any (several may run at once, migration 118). */
   mine: RunningItemTimer | null;
 }
 
@@ -78,6 +78,8 @@ export async function getChecklistItemTime(taskId: string, userId: string): Prom
       .from('task_timers')
       .select('id, user_id, task_id, checklist_node_id, started_at, execution_version')
       .eq('user_id', userId)
+      // Several timers may run at once (migration 118): the one on this mission.
+      .eq('task_id', taskId)
       .eq('status', 'Running')
       .limit(1)
       .maybeSingle(),

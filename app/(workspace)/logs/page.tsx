@@ -4,7 +4,7 @@ import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { LogHistory } from '@/modules/time-tracking/components/log-history';
 import { requireProfile } from '@/shared/session/profile';
 import { getMyLogHistory } from '@/modules/time-tracking';
-import { sumHours } from '@/modules/time-tracking/client';
+import { mergedDayHours } from '@/modules/time-tracking/client';
 import { formatHours } from '@/shared/tracker/format';
 
 export const metadata: Metadata = {
@@ -22,7 +22,8 @@ export default async function LogsPage() {
   const profile = await requireProfile();
   const { logs, tasks } = await getMyLogHistory(profile.id);
 
-  const totalHours = sumHours(logs);
+  // Timers that ran together count once (migration 118).
+  const totalHours = mergedDayHours(logs);
 
   return (
     <MissionPage className="max-w-[880px]">

@@ -12,7 +12,7 @@ export async function getFocusedChecklistItemTime(taskId: string, nodeId: string
   const [seconds, running, mine] = await Promise.all([
     db.rpc('checklist_item_seconds', { p_task: taskId, p_node: nodeId }),
     db.from('task_timers').select(TIMER).eq('task_id', taskId).eq('checklist_node_id', nodeId).eq('status', 'Running').limit(1).maybeSingle(),
-    db.from('task_timers').select(TIMER).eq('user_id', userId).eq('status', 'Running').limit(1).maybeSingle(),
+    db.from('task_timers').select(TIMER).eq('user_id', userId).eq('task_id', taskId).eq('status', 'Running').limit(1).maybeSingle(),
   ]);
   if (seconds.error && ['PGRST202', '42883'].includes(seconds.error.code)) return { available: false, secondsByNode: new Map(), runningByNode: new Map(), mine: null };
   const failure = seconds.error ?? running.error ?? mine.error;
@@ -24,14 +24,15 @@ export async function getFocusedChecklistItemTime(taskId: string, nodeId: string
 
 /**
  * Running timers for a checklist table: item timers on this task plus the
- * viewer's own running timer. Logged seconds come from the branch rows
+ * viewer's own running timer on this mission (several may run at once,
+ * migration 118). Logged seconds come from the branch rows
  * (`elapsedSeconds`, already a subtree total), so no task log is read here.
  */
 export async function getRunningChecklistTimers(taskId: string, userId: string, secondsByNode: ReadonlyMap<string, number>): Promise<ChecklistItemTime> {
   const db = await createClient();
   const [running, mine] = await Promise.all([
     db.from('task_timers').select(TIMER).eq('task_id', taskId).eq('status', 'Running').not('checklist_node_id', 'is', null).limit(50),
-    db.from('task_timers').select(TIMER).eq('user_id', userId).eq('status', 'Running').limit(1).maybeSingle(),
+    db.from('task_timers').select(TIMER).eq('user_id', userId).eq('task_id', taskId).eq('status', 'Running').limit(1).maybeSingle(),
   ]);
   // Before migration 34 there is no item tag; item timers are then unavailable.
   if (running.error?.code === '42703' || mine.error?.code === '42703') return { available: false, secondsByNode, runningByNode: new Map(), mine: null };

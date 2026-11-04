@@ -65,5 +65,44 @@ sessions('1'); assert value(DB,"(SELECT count(*) FROM taskpulse_private.audit_ev
 assert value(DB,"provolatile FROM pg_proc WHERE proname='timer_session_activity'")=='s'
 print('PASS',DB,'the read writes nothing (STABLE)')
 
+# Migration 118: several mission timers at once; the day's hours merge overlaps.
+T3='10000000-0000-0000-0000-000000000003'
+sql(DB,f"INSERT INTO public.tasks(id,task_tag,title,assignee_id,task_scale) VALUES ('{T3}','T3','C','{uid_of('5')}',4)")
+assert value(DB,"count(*) FROM pg_indexes WHERE indexname='idx_task_timers_one_running_per_user'")=='0'
+# Member 5 still has the T2 timer started above running; a second mission starts beside it.
+other=first_json(actor(DB,uid_of('5'),f"SELECT public.start_task_timer('{T3}','{{}}'::jsonb,'{uuid4()}')"))
+assert value(DB,f"count(*) FROM public.task_timers WHERE user_id='{uid_of('5')}' AND status='Running'")=='2'
+raw=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',DB,'-v','ON_ERROR_STOP=1','-At'],text=True,capture_output=True,
+    input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid_of('5')}',true); SELECT public.start_task_timer('{T3}','{{}}'::jsonb,'{uuid4()}'); COMMIT;")
+assert raw.returncode!=0 and 'idx_task_timers_one_running_per_mission' in raw.stderr,raw.stderr
+print('PASS',DB,'two missions\' timers run at once; the same mission twice is refused')
+
+# Offline spans on both missions yesterday, 09:00-13:00 and 11:00-14:00 India time.
+day=value(DB,"((clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date-1)"); after=value(DB,f"'{day}'::date+1")
+grant=sql(DB,f"INSERT INTO taskpulse_private.offline_grants(organization_id,user_id,issued_at) SELECT organization_id,id,clock_timestamp()-interval '60 hours' FROM public.users WHERE id='{uid_of('5')}' RETURNING id").splitlines()[0]
+def offline(task,start,end):
+    return first_json(actor(DB,uid_of('5'),f"SELECT public.record_offline_timer('{task}',NULL,{start}::timestamptz,{end}::timestamptz,'{grant}','{uuid4()}',NULL)"))
+at=lambda hhmm:literal(f'{day}T{hhmm}:00+05:30')
+offline(T2,at('09:00'),at('13:00')); offline(T3,at('11:00'),at('14:00'))
+per_task=lambda t:float(value(DB,f"coalesce(sum(hours_worked),0) FROM public.daily_task_logs WHERE task_id='{t}' AND user_id='{uid_of('5')}' AND log_date='{day}' AND reversed_at IS NULL"))
+assert per_task(T2)==4 and per_task(T3)==3,(per_task(T2),per_task(T3))
+assert float(value(DB,f"taskpulse_private.member_day_hours('{uid_of('5')}','{day}')"))==5
+print('PASS',DB,'each mission keeps its full time (4 h and 3 h); the day\'s hours merge to 5 h')
+
+# Attendance validity uses the merged hours: 5 h fits a six-hour day, 7 h would not.
+record(DB,'attendance',{'business_date':day,'author_id':uid_of('5'),'attendance_status':'Present','attendance_hours':'6','off_hours':'0',
+    'check_in_at':day+'T09:00:00+05:30','check_out_at':day+'T15:00:00+05:30','reason':'Concurrent timers fixture'},uid='1')
+ctx=context(DB,day,after,uid='5')
+assert float(ctx['days'][0]['effortHours'])==5 and ctx['days'][0]['valid'] is True,ctx['days'][0]
+facts=json.loads(next(x for x in actor(DB,uid_of('5'),f"SELECT public.policy_period_facts('{day}','{day}',NULL)") if x.startswith('{')))
+assert any(float(d['loggedHours'])==5 for m in facts['members'] for d in m['days']),facts
+print('PASS',DB,'attendance validity and policy facts count the merged 5 h')
+
+# An offline span no longer has to wait for a server timer still running.
+sql(DB,f"UPDATE public.task_timers SET started_at=clock_timestamp()-interval '20 minutes' WHERE id='{other['timerId']}'")
+offline(T2,"clock_timestamp()-interval '15 minutes'","clock_timestamp()-interval '5 minutes'")
+assert value(DB,f"status FROM public.task_timers WHERE id='{other['timerId']}'")=='Running'
+print('PASS',DB,'offline spans are recorded beside running timers')
+
 sql('postgres',f'DROP DATABASE IF EXISTS {DB} WITH (FORCE);')
-print('ALL PASS timer session activity (migration 110)')
+print('ALL PASS timer session activity (migration 110) and concurrent timers (migration 118)')

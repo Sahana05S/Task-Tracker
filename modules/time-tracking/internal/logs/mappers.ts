@@ -12,12 +12,14 @@ import type { DailyTaskLog } from '@/types/tracker';
 
 /** Explicit column list for log selects. */
 export const LOG_COLUMNS =
-  'id, task_id, user_id, log_date, hours_worked, progress_delta, update_notes, raw_links, log_source, source_timer_id, created_at, requested_progress_delta, effective_progress_delta, execution_version, reversed_at, timer_segment_number, timer_duration_seconds, credit_shares, credit_scale' as const;
+  'id, task_id, user_id, log_date, hours_worked, progress_delta, update_notes, raw_links, log_source, source_timer_id, created_at, requested_progress_delta, effective_progress_delta, execution_version, reversed_at, timer_segment_number, timer_segment_start, timer_segment_end, timer_duration_seconds, credit_shares, credit_scale' as const;
 
 export function mapDailyTaskLog(row: DailyTaskLogRow): DailyTaskLog {
   return {
     id: row.id,
     timerSegmentNumber:row.timer_segment_number,
+    timerSegmentStart:row.timer_segment_start ?? null,
+    timerSegmentEnd:row.timer_segment_end ?? null,
     timerDurationSeconds:row.timer_duration_seconds,
     taskId: row.task_id,
     userId: row.user_id,

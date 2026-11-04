@@ -257,6 +257,9 @@ export interface DailyTaskLog {
   progressDelta: number | null;
   requestedProgressDelta?: number | null;
   timerSegmentNumber?: number | null;
+  /** A timer segment's start and end (ISO); null for manual and imported logs. Day totals merge overlapping segments. */
+  timerSegmentStart?: string | null;
+  timerSegmentEnd?: string | null;
   timerDurationSeconds?: number | null;
   effectiveProgressDelta?: number | null;
   effectUnknown?: boolean;

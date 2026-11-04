@@ -6,6 +6,8 @@ See `docs/ARCHITECTURE.md` for the rules.
 Records each employee's measured daily attendance (status, regular hours,
 separate off-hours, check-in/out) and shows whether each elapsed Asia/Kolkata
 day is valid: task effort must fit within regular attendance plus off-hours.
+Task effort is the day's productive hours: timers that ran at the same time
+count once (migration 118, `taskpulse_private.attendance_inputs`).
 Attendance is a gate for scoring, not a score bonus. It also reports the dates
 on which the whole active team is on holiday.
 
