@@ -81,7 +81,7 @@ print('PASS',DB,'two missions\' timers run at once; the same mission twice is re
 day=value(DB,"((clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date-1)"); after=value(DB,f"'{day}'::date+1")
 grant=sql(DB,f"INSERT INTO taskpulse_private.offline_grants(organization_id,user_id,issued_at) SELECT organization_id,id,clock_timestamp()-interval '60 hours' FROM public.users WHERE id='{uid_of('5')}' RETURNING id").splitlines()[0]
 def offline(task,start,end):
-    return first_json(actor(DB,uid_of('5'),f"SELECT public.record_offline_timer('{task}',NULL,{start}::timestamptz,{end}::timestamptz,'{grant}','{uuid4()}',NULL)"))
+    return first_json(actor(DB,uid_of('5'),f"SELECT public.record_offline_timer('{task}',NULL,({start})::timestamptz,({end})::timestamptz,'{grant}','{uuid4()}',NULL)"))
 at=lambda hhmm:literal(f'{day}T{hhmm}:00+05:30')
 offline(T2,at('09:00'),at('13:00')); offline(T3,at('11:00'),at('14:00'))
 per_task=lambda t:float(value(DB,f"coalesce(sum(hours_worked),0) FROM public.daily_task_logs WHERE task_id='{t}' AND user_id='{uid_of('5')}' AND log_date='{day}' AND reversed_at IS NULL"))
