@@ -55,7 +55,7 @@ template versions.
 | `task_lifecycle_command` | `16_task_lifecycle_and_scale_contract.sql` |
 | `task_details_command` | 17, revised in 18, 26, 38, 108 (the mission's people save details, relations and link labels) |
 | `publish_task_detail_template` | `17_native_task_details_and_templates.sql` |
-| `task_tools_preview`, `task_tools_command` | 24, revised in 25 (preview also 31, 32, 53 tags, 55 optional Duplicate `title`) |
+| `task_tools_preview`, `task_tools_command` | 24, revised in 25 (preview also 31, 32, 53 tags, 55 optional Duplicate `title`); since 115 a copy puts only credited assignees and non-observer reviewers through the save and then adds the source's active zero-share Collaborators and Observers in their roles (support splits and one-per-member copies carry neither; `tools/test_task_tools_people_database.py`) |
 | `participant_reconciliation` | `10_permissions_and_participant_contract.sql` |
 | `month_setup_context`, `month_setup_preview`, `month_setup_commit`, `taskpulse_private.month_setup_items` | `55_month_setup.sql`; `99_month_setup_commit_timeout.sql` gives the commit a 60 s statement timeout (a full month takes about 8.5 s, over the 8 s API cap) |
 
