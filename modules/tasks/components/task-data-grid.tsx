@@ -42,7 +42,7 @@ import {
   type TaskSortState,
 } from '@/modules/tasks/internal/filters';
 import { withoutCollapsed, type MissionNesting } from '@/modules/tasks/internal/grouping';
-import { canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
+import { canMarkMissionDone, canUpdateTaskOwnFields } from '@/modules/tasks/internal/permissions';
 import { formatDate, isOverdue, formatHours } from '@/shared/tracker/format';
 import { cn, getInitials } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
@@ -250,6 +250,7 @@ export function TaskDataGrid({
                     taskTag={task.taskTag}
                     status={task.status}
                     canEdit={canEditOwnFields}
+                    canMarkDone={canMarkMissionDone(currentUser, task)}
                   />
                 </td>
 
@@ -319,6 +320,7 @@ export function TaskDataGrid({
                         task={task}
                         canManage={canManage}
                         canEditOwnFields={canEditOwnFields}
+                        canMarkDone={canMarkMissionDone(currentUser, task)}
                         actions={actions}
                       />
                     </DropdownMenuContent>

@@ -7,11 +7,15 @@ import type { ChecklistBranch, ChecklistBranchOptions, ChecklistItemTime } from 
 import { getLabelsFor, type Label } from '@/modules/labels';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { UUID_PATTERN } from '@/shared/forms/form-data';
-import { TASK_MANAGER_ROLES } from '@/shared/tracker/enums';
 import type { ActionResponse } from '@/types/tracker';
 
-function isManager(role: string): boolean {
-  return (TASK_MANAGER_ROLES as readonly string[]).includes(role);
+/**
+ * The whole team's missions and anyone's checklist branch: the managing director
+ * only. Project engineers read a checklist only when they are on the mission
+ * (4 November 2026, migration 117), so they browse their own missions.
+ */
+function seesEveryMission(role: string): boolean {
+  return role === 'managing_director';
 }
 
 /** A batch of Today missions with their labels (migration 112): one labels_for read per batch; null when it failed. */
@@ -20,8 +24,8 @@ export type RoadmapMissionBatchWithLabels = RoadmapMissionBatch & { labels?: Rec
 export async function loadRoadmapMissions(options: MissionBatchOptions): Promise<ActionResponse<RoadmapMissionBatchWithLabels>> {
   const profile = await getCurrentProfile();
   if (!profile?.isActive) return { success: false, error: 'Sign in to load your missions.' };
-  // Whole team only for the managing director and project engineers; everyone also sees what they review or observe.
-  const team = options.scope === 'team' && isManager(profile.role);
+  // Whole team only for the managing director; everyone also sees what they review or observe.
+  const team = options.scope === 'team' && seesEveryMission(profile.role);
   try {
     const batch = await getAssignedMissionBatch(profile.id, { ...options, scope: team ? 'team' : 'mine', watching: true });
     const labels = await getLabelsFor('task', batch.missions.map((mission) => mission.id)).catch(() => null);
@@ -36,7 +40,7 @@ export async function loadRoadmapBranch(taskId: string, options: ChecklistBranch
   if (!UUID_PATTERN.test(taskId) || (options.checklistId && !UUID_PATTERN.test(options.checklistId))
     || (options.parentNodeId && !UUID_PATTERN.test(options.parentNodeId))) return { success: false, error: 'This checklist address is invalid. Open the mission again.' };
   try {
-    const mission = await getAssignedRoadmapMission(taskId, profile.id, { anyOpen: isManager(profile.role) });
+    const mission = await getAssignedRoadmapMission(taskId, profile.id, { anyOpen: seesEveryMission(profile.role) });
     if (!mission) return { success: false, error: 'This open mission is no longer assigned to you. Refresh your roadmap.' };
     const branch = await getChecklistBranch(taskId, options);
     return { success: true, data: { mission, branch } };
@@ -47,7 +51,7 @@ export async function loadRoadmapItemTime(taskId: string, nodeId: string): Promi
   const profile = await getCurrentProfile();
   if (!profile?.isActive || !UUID_PATTERN.test(taskId) || !UUID_PATTERN.test(nodeId)) return { success: false, error: 'Sign in and open this item again.' };
   try {
-    if (!await getAssignedRoadmapMission(taskId, profile.id, { anyOpen: isManager(profile.role) })) return { success: false, error: 'This open mission is no longer assigned to you.' };
+    if (!await getAssignedRoadmapMission(taskId, profile.id, { anyOpen: seesEveryMission(profile.role) })) return { success: false, error: 'This open mission is no longer assigned to you.' };
     return { success: true, data: await getFocusedChecklistItemTime(taskId, nodeId, profile.id) };
   } catch { return { success: false, error: 'Item time could not be loaded. Retry this item.' }; }
 }

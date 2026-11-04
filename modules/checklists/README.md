@@ -121,7 +121,7 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | `checklist_nodes.review_state`, `reviewed_by`, `reviewed_at`, `review_note`; trigger `zz_m114_review_follows_tick`; `checklist_reviews(task)`; the objective check in `assert_checklist_done` | `114_objective_review.sql` |
 | `checklist_follows_activity` trigger (`aa_m66_follow_activity`) | `66_progress_follows_activity.sql` (also patches `refresh_task_metrics`) |
 | `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63; Quest rows in 67; section weights in 85 |
-| `checklist_branch` | 41, patched in 63 (opens any non-linked row) |
+| `checklist_branch` | 41, patched in 63 (opens any non-linked row); since 117 it, `checklist_reviews`, `checklist_item_seconds` and `task_effort_breakdown` raise 42501 unless the caller may read the mission's work (`can_read_mission_work`, owned by modules/tasks); the `checklist_nodes`, `task_checklists` and `checklist_sections` read policies use the same rule |
 | `checklist_sections` | 18; kept for older readers, no longer read by the rollup (63) |
 | `task_effort_breakdown` | `36_task_effort_breakdown.sql` |
 

@@ -14,7 +14,7 @@ template versions.
 | File | What it offers |
 |---|---|
 | `index.ts` | Server reads: `getTaskWorkspaceData`, `getMissionChoices` (every mission as id, tag and title for pickers; one narrow read), `resolveTaskDetailRouteState`, `getTaskDetailData`, `normalizeTaskTagParam`, `getNativeTemplates`, `getNativeDetailState`, `getVisibleReportChoices`, `getParticipantReconciliation`, `getToolLineage` + `buildRecentOperations` (Tools page Recent operations), `getMonthSetupContext` + `countMissionsInMonth` (month setup wizard and the Missions banner), and the Today reads `getMemberTaskIds`, `getOpenTasksByIds`, `countTasksCompletedBetween`; `getTaskProofs` (a mission's proofs and Input / Process / Output documents, each with its `kind`; null for anyone outside its people and managers). Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`, `isTaskWorker`, `canEditTaskDetails`, `canManageTaskPeople`, `missionRelationship`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools types, month helpers (`monthOf`, `addMonths`, `defaultSetupMonth`, `setupBannerMonth`), proof rules (`proofFileProblem`, `proofMimeType`, `PROOF_ACCEPT`, `MAX_PROOF_BYTES`, `formatProofSize`, `MissionProof`, and for migration 113 `MISSION_FILE_KINDS`, `MISSION_DOCUMENT_KINDS`, `isMissionFileKind`, `missionFilesOfKind`, `missionFileFolder`) and `uploadProofToTicket` (browser half of a proof upload) |
+| `client.ts` | Pure rules and types, safe for `'use client'`: task contract (`PRIORITY_WEIGHTS`, `FRESHNESS_SCORES`, `eligibilityReasons`, `classifyFreshness`, `scaleValue`), details contract (`DETAIL_FIELDS`, `ipoLinks`, ...), permissions (`canManageTasks`, `canUpdateTaskOwnFields`, `isAssignedToTask`, `isTaskWorker`, `canEditTaskDetails`, `canManageTaskPeople`, `missionRelationship`, and for migration 117 `canReadMissionWork`, `canMarkMissionDone`, `canWriteMissionFiles`, `canManageMissionObservers`), shares, mappers (`mapTask`, `TASK_COLUMNS`), Task Tools types, month helpers (`monthOf`, `addMonths`, `defaultSetupMonth`, `setupBannerMonth`), proof rules (`proofFileProblem`, `proofMimeType`, `PROOF_ACCEPT`, `MAX_PROOF_BYTES`, `formatProofSize`, `MissionProof`, and for migration 113 `MISSION_FILE_KINDS`, `MISSION_DOCUMENT_KINDS`, `isMissionFileKind`, `missionFilesOfKind`, `missionFileFolder`) and `uploadProofToTicket` (browser half of a proof upload) |
 | `actions.ts` | `'use server'` task commands: `createTask`, `updateTask`, `updateTaskStatus`, `updateTaskProgress`, `missionPromptState`, `loadMissionActions`, `createSubMission` (a sub-mission from a checklist add row: `submission_create`, migration 68), `addSubMission` (the same from the Missions list's row menu, into the parent's root checklist in the chosen phase; reads the parent's current version), `moveMissionFromPrompt` (status prompts: reads the current version and moves only from the status the prompt showed), `changeTaskLifecycle`, `recordTaskReview`, `changeTaskPeople` (collaborators, observers, ownership: `task_people_command`), `deleteTask` |
 | `detail-actions.ts` | `'use server'` native-details commands: `initializeTaskDetails`, `saveTaskDetails`, `addTaskAsset`, `addTaskRelation`, `renameNativeLink`, `publishNativeTemplate` |
 | `tool-actions.ts` | `'use server'` Task Tools: `previewTaskTool`, `commitTaskTool`; month setup: `previewMonthSetup`, `commitMonthSetup` |
@@ -46,11 +46,12 @@ template versions.
 | Object | Defined in |
 |---|---|
 | `tasks` | `01_init_schema.sql` (later columns in 07, 10, 16, 17, 25) |
-| `taskpulse_private.task_proofs`, bucket `mission-proofs` (private, 25 MB, PDF/images/Office) and its policies, `task_proofs(task)`, `task_proof_command(...)`, `task_proof_folder_allowed`, `task_proof_in_use`: the mission's assignees and reviewers plus the managing director and project engineers see and add proofs; the uploader or a manager removes one. `task_proofs.kind` (proof / input / process / output) and `task_proof_command(..., p_kind)` add Input / Process / Output documents on the same rules | `101_mission_proofs.sql`, `113_mission_ipo_documents.sql` |
+| `taskpulse_private.task_proofs`, bucket `mission-proofs` (private, 25 MB, PDF/images/Office) and its policies, `task_proofs(task)`, `task_proof_command(...)`, `task_proof_folder_allowed`, `task_proof_in_use`: the mission's assignees and reviewers plus the managing director and project engineers see and add proofs; the uploader or a manager removes one. Since 117 the files follow `can_read_mission_work` (project engineers only when on the mission) and observers only view: `taskpulse_private.task_proof_writer`, `task_proof_folder_writable` (bucket upload and discard policies). `task_proofs.kind` (proof / input / process / output) and `task_proof_command(..., p_kind)` add Input / Process / Output documents on the same rules | `101_mission_proofs.sql`, `113_mission_ipo_documents.sql` |
 | `task_assignees`, `task_reviewers`, `task_links`, `task_dependencies` | `07_tracker_replacement_foundation.sql` |
 | `task_detail_templates`, `task_detail_template_versions`, `task_detail_instances`, `task_detail_sections`, `task_detail_review_flags` | `17_native_task_details_and_templates.sql` |
 | `save_task_with_participants` | 10, revised in 12, 16, 17, 108 (compares credited assignees and non-observer reviewers only) |
-| `task_people_command`, `is_task_worker` (public and `taskpulse_private`), `taskpulse_private.task_people_snapshot` | `108_mission_people.sql` |
+| `task_people_command`, `is_task_worker` (public and `taskpulse_private`), `taskpulse_private.task_people_snapshot` | `108_mission_people.sql`; observers chosen by the managing director, Owner and assignees since 117 |
+| `taskpulse_private.can_read_mission_work`, `public.can_read_mission_work(task)`, `public.can_read_checklist(checklist)`; read policies `m01_read` on `task_checklists`, `checklist_nodes`, `task_detail_sections`, `m05_section_read` on `checklist_sections`, `m04_links_read` on `task_links`; the write-only `m01_admin_insert` / `_update` / `_delete` policies that replace `m01_admin` on those four tables; the Done rule in `taskpulse_private.task_command` | `117_checklist_visibility.sql` |
 | `create_task_with_scale` | `61_new_mission_scale_mode.sql` |
 | `task_lifecycle_command` | `16_task_lifecycle_and_scale_contract.sql` |
 | Review invalidation (`invalidate_reviews` triggers) and the Done gate `assert_checklist_done` | 16 and 18; since `114_objective_review.sql` a time log no longer clears the mission's approvals (D-D3) and Done also waits for every checklist objective to be acknowledged (see modules/checklists) |
@@ -66,16 +67,35 @@ All of these are company-scoped by migrations 39-40 (M15).
 
 | Relationship | Stored as | May |
 |---|---|---|
-| Owner | `task_assignees` `assignment_role='Owner'`, `is_primary`, = `tasks.assignee_id` | everything an assignee may, plus manage collaborators and observers and hand ownership to another credited assignee |
-| Assignee | `task_assignees` with `share_units > 0` (non-first rows are stored as 'Collaborator' with shares; they stay assignees) | log time, tick and build the checklist, edit details, earn credit |
-| Collaborator | `task_assignees` with `share_units = 0` | tick and build the checklist and edit details; no credit and no time (D-A3) |
-| Reviewer | `task_reviewers` Primary / Secondary | review; their approval gates Done |
-| Observer | `task_reviewers` `reviewer_role='Observer'` | read and get notifications; never tick, edit, review or block Done |
+| Owner | `task_assignees` `assignment_role='Owner'`, `is_primary`, = `tasks.assignee_id` | everything an assignee may, plus manage collaborators and hand ownership to another credited assignee |
+| Assignee | `task_assignees` with `share_units > 0` (non-first rows are stored as 'Collaborator' with shares; they stay assignees) | log time, tick and build the checklist, edit details, add files, mark Done, choose observers (117), earn credit |
+| Collaborator | `task_assignees` with `share_units = 0` | tick and build the checklist, edit details, add files; no credit, no time (D-A3) and no Done (117) |
+| Reviewer | `task_reviewers` Primary / Secondary | read the checklist, add files, review; their approval gates Done |
+| Observer | `task_reviewers` `reviewer_role='Observer'` | read the checklist and files and get notifications; never tick, edit, upload, review or block Done |
+
+**Who sees a mission's checklist and work (migration 117, user decision 4
+November 2026).** The checklist, its rows and sections, details, links, files,
+objective reviews, item time, timer session lines and mistakes and learning are
+readable only by the managing director and the mission's people above (any
+`task_assignees` row, the legacy `tasks.assignee_id`, any `task_reviewers`
+row). Project engineers read them only when they are one of those. Everyone
+else still sees the mission in lists and its people and progress
+(`tasks`, `task_assignees`, `task_reviewers`, `checklist_rollups` stay
+company-wide); its Work and Details tabs and `/tasks/[tag]/checklist` show
+"This checklist is private to the mission's people" (`MissionWorkPrivate`,
+`canReadMissionWork`). The definer reads (`checklist_branch`,
+`checklist_reviews`, `checklist_item_seconds`, `timer_session_activity`,
+`task_effort_breakdown`, `task_proofs`, `mission_learnings`) raise 42501 for
+anyone else rather than returning an empty result, so a private checklist is
+never mistaken for an empty one. Scores, reports and awards read through their
+own definer functions and are unaffected. The Today Whole team view and opening
+another member's branch are for the managing director only.
 
 `task_people_command(task, command, {user_id}, lifecycle_version, operation)`
-runs `add_collaborator`, `remove_collaborator`, `add_observer`, `remove_observer`
-and `transfer_owner` for the managing director, project engineers and the
-current Owner (D-A4). It bumps `lifecycle_version`, writes `audit_events`
+runs `add_collaborator`, `remove_collaborator` and `transfer_owner` for the
+managing director, project engineers and the current Owner (D-A4), and
+`add_observer` / `remove_observer` for the managing director, the Owner and
+credited assignees (117). It bumps `lifecycle_version`, writes `audit_events`
 (`task_people_<command>`) and a command receipt, and never touches shares or
 `participant_version`. The edit form (`TaskDialog`) has an Owner picker and keeps
 collaborators and observers it does not list. `Task.collaboratorIds` and
@@ -126,7 +146,7 @@ cards and the table take a `WaypointSlot` (recognition's waypoint track and the
 table's Waypoint column, left out without it), and `MissionOverview` takes a
 `belowProgress` node; tasks does not import recognition.
 
-Roadmap public reads: `getAssignedMissionBatch`, `getAssignedRoadmapMission`, `getMissionLinks`, `countAssignedMissionsCompletedBetween` (internal/roadmap.ts). Client contract/filter/order helpers live in roadmap-contract.ts and are exported through client.ts (`canTimeMission`: only owners and assignees run a timer or log time, so Today hides the timer for collaborators, reviewers and observers). Batches keyset by due date/UUID to agree with PostgreSQL ordering, preserve legacy primary and participant assignments, and fetch no whole-company task list unless asked for `{ scope: 'team' }` (the managers' Whole team view on Today; the caller checks the role and the list is still one keyset batch). Each batch also returns `links`: the stored `task_dependencies` rows (Subtask, Dependency, Blocks, Related; read only) with an end in the batch, two indexed reads bounded by `ROADMAP_LINK_LIMIT`, for the Today constellation's lines. `getAssignedRoadmapMission(…, { anyOpen: true })` lets a manager open any open mission from the Whole team view.
+Roadmap public reads: `getAssignedMissionBatch`, `getAssignedRoadmapMission`, `getMissionLinks`, `countAssignedMissionsCompletedBetween` (internal/roadmap.ts). Client contract/filter/order helpers live in roadmap-contract.ts and are exported through client.ts (`canTimeMission`: only owners and assignees run a timer or log time, so Today hides the timer for collaborators, reviewers and observers). Batches keyset by due date/UUID to agree with PostgreSQL ordering, preserve legacy primary and participant assignments, and fetch no whole-company task list unless asked for `{ scope: 'team' }` (the managing director's Whole team view on Today since 117; the caller checks the role and the list is still one keyset batch). Each batch also returns `links`: the stored `task_dependencies` rows (Subtask, Dependency, Blocks, Related; read only) with an end in the batch, two indexed reads bounded by `ROADMAP_LINK_LIMIT`, for the Today constellation's lines. `getAssignedRoadmapMission(…, { anyOpen: true })` lets the managing director open any open mission from the Whole team view.
 
 ## Month setup (DECISIONS "Month setup wizard - 21 October 2026", migration 55)
 - `/tasks/setup` (managing director and project engineer; the Missions page menu,

@@ -89,7 +89,8 @@ sent). On the History tab each stopped session in `TimerRecords` says
 "During this session: …", from `timer_session_activity` (migration 110): the
 commands that timer's owner ran on the mission and its checklists between
 start and stop. Managers read every session, members their own, as for
-`task_timers`. Timer logs still add hours only (`effective_progress_delta = 0`);
+`task_timers`, and only on missions whose work they may read (migration 117:
+the managing director and the mission's people; anyone else gets 42501). Timer logs still add hours only (`effective_progress_delta = 0`);
 no score changes. Tests: `tools/test_timer_session_activity_database.py`.
 
 ## Several timers at once (4 November 2026, migration 118)

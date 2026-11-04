@@ -5,7 +5,8 @@ import { notFound } from 'next/navigation';
 import { requireProfile } from '@/shared/session/profile';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { getMissionChoices, getTaskForChecklist, normalizeTaskTagParam } from '@/modules/tasks';
-import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
+import { canManageTasks, canReadMissionWork, canUpdateTaskOwnFields } from '@/modules/tasks/client';
+import { MissionWorkPrivate } from '@/modules/tasks/components/detail/mission-work-private';
 import { getChecklistBranch, getObjectiveReviews, getUnmappedRootRows } from '@/modules/checklists';
 import { CHECKLIST_SECTIONS, NO_REVIEWS, checklistWorkHref, parseChecklistLocation, parseChecklistView, type ChecklistBranch, type ChecklistBranchOptions } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistHomeSection } from '@/modules/checklists/components/checklist-workspace';
@@ -33,6 +34,16 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
   const user = await requireProfile();
   const task = await getTaskForChecklist((await params).taskTag);
   if (!task) notFound();
+  // Only the mission's people and the managing director read its checklist (migration 117).
+  if (!canReadMissionWork(user, task)) {
+    return (
+      <section className="mx-auto grid w-full max-w-[1200px] gap-3 px-4 pt-6 pb-10 lg:px-6">
+        <h1 className="text-foreground text-[1.625rem] leading-tight font-bold tracking-tight">{task.taskTag} checklist</h1>
+        <MissionWorkPrivate />
+        <Link className="link text-sm font-semibold" href={`/tasks/${encodeURIComponent(task.taskTag)}`}>Back to mission</Link>
+      </section>
+    );
+  }
   const location = parseChecklistLocation(await searchParams);
   const viewParam = parseChecklistView((await searchParams).view);
   const options: ChecklistBranchOptions = { checklistId: location.checklistId, section: location.section };

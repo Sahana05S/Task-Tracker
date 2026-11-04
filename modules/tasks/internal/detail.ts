@@ -89,16 +89,21 @@ export async function getTaskForChecklist(rawTaskTag: string): Promise<Task | nu
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('tasks')
-    .select(`${TASK_COLUMNS}, task_assignees(user_id, is_primary, share_units)`)
+    .select(`${TASK_COLUMNS}, task_assignees(user_id, is_primary, share_units), task_reviewers(user_id, is_primary, reviewer_role)`)
     .eq('task_tag', taskTag)
     .maybeSingle();
   if (error) throw new Error(`Failed to load task: ${error.message}`);
   if (!data) return null;
-  const { task_assignees: assignees, ...row } = data as unknown as TaskRow & {
+  const { task_assignees: assignees, task_reviewers: reviewers, ...row } = data as unknown as TaskRow & {
     task_assignees: { user_id: string; is_primary: boolean; share_units: number | null }[] | null;
+    task_reviewers: { user_id: string; is_primary: boolean; reviewer_role: string }[] | null;
   };
-  const [task] = attachTaskParticipants([mapTask(row)], (assignees ?? []).map((a) => ({ ...a, task_id: row.id })), []);
-  // No reviewer rows were read here: keep the legacy primary reviewer projection only.
+  // Reviewers and observers decide who may read the checklist (canReadMissionWork, migration 117).
+  const [task] = attachTaskParticipants(
+    [mapTask(row)],
+    (assignees ?? []).map((a) => ({ ...a, task_id: row.id })),
+    (reviewers ?? []).map((r) => ({ ...r, task_id: row.id })),
+  );
   return task;
 }
 

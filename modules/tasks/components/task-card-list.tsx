@@ -193,6 +193,7 @@ function MissionCard({
               task={task}
               canManage={canManage}
               canEditOwnFields={canEditOwnFields}
+              canMarkDone={canManage || isWorker}
               actions={actions}
             />
           </DropdownMenuContent>
@@ -268,6 +269,7 @@ function MissionCard({
             taskTag={task.taskTag}
             status={task.status}
             canEdit={canEditOwnFields}
+            canMarkDone={canManage || isWorker}
           />
           <div className="ml-auto flex items-center gap-2">
             {isWorker && !archived && !closed && LogHoursAction ? <LogHoursAction taskId={task.id} taskTag={task.taskTag} /> : null}

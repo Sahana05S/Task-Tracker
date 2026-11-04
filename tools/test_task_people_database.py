@@ -1,5 +1,10 @@
 """Mission people (migration 108): Owner, Collaborators and Observers; disposable PostgreSQL only.
 
+Where migration 117 is applied (the fresh database): only the managing director and the
+mission's people read its checklist and work (a project engineer only when on it); the
+managing director, owner and assignees choose observers; collaborators cannot mark it Done;
+observers see but do not add or remove files.
+
 A collaborator edits their own mission's checklist and details but not another's and
 cannot log time; an observer cannot tick, review or log, and does not block Done;
 managing director and project engineer parity is unchanged; the owner manages people;
@@ -18,6 +23,7 @@ assert TARGET in NUMBERS,'migration 108 missing'
 PREV=max(n for n in NUMBERS if n<TARGET)
 U=lambda n:'00000000-0000-0000-0000-'+str(n).zfill(12)
 MD,PE,OWNER,MATE,REVIEWER,OUTSIDER,COLLAB=U(1),U(2),U(4),U(5),U(6),U(3),U(8)
+STRANGER=U(7)  # an active member with no tie to the mission (117 reads)
 
 def migrate(db,upto,start=1):
     for m in sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0])):
@@ -73,7 +79,8 @@ for DB in DBS:
         print('PASS',DB,f'upgrade {PREV}->{TARGET} leaves every participant row unchanged')
     else:
         migrate(DB,max(NUMBERS)); sql(DB,seed)
-    sql(DB,f"UPDATE public.users SET is_active=true WHERE id='{U(7)}'")  # the seed's inactive member is not used here
+    sql(DB,f"UPDATE public.users SET is_active=true WHERE id='{U(7)}'")  # the seed's inactive member, active here as a stranger
+    v117=value(DB,"to_regprocedure('public.can_read_mission_work(uuid)') IS NOT NULL")=='t'
     # A configured mission: owner 4 and assignee 5 with shares 70/30, reviewer 6.
     tid=ok(DB,MD,f"SELECT public.save_task_with_participants(NULL,{j({'title':'People','category':'T','priority':'Medium','task_scale':5,'initialize_details':False})},"
         f"ARRAY['{OWNER}','{MATE}']::uuid[],ARRAY['{REVIEWER}']::uuid[],ARRAY[700000,300000]::integer[],NULL,false,'{uuid4()}')")
@@ -90,7 +97,13 @@ for DB in DBS:
     assert ok(DB,OWNER,people(DB,OWNER,tid,'add_collaborator',COLLAB,key,first['version']-1))==first,'receipt replays'
     refused(DB,OWNER,people(DB,OWNER,tid,'add_observer',COLLAB,key),'PT409')
     refused(DB,OWNER,people(DB,OWNER,tid,'add_observer',U(3),ver=0),'PT409')
-    ok(DB,PE,people(DB,PE,tid,'add_observer',U(3)))
+    if v117:
+        # 117: observers are chosen by the managing director, the owner and credited assignees.
+        refused(DB,PE,people(DB,PE,tid,'add_observer',U(3)))
+        refused(DB,COLLAB,people(DB,COLLAB,tid,'add_observer',U(3)))
+        ok(DB,MATE,people(DB,MATE,tid,'add_observer',U(3)))
+    else:
+        ok(DB,PE,people(DB,PE,tid,'add_observer',U(3)))
     refused(DB,MD,people(DB,MD,tid,'add_observer',MATE),'23514')
     refused(DB,MD,people(DB,MD,tid,'add_collaborator',REVIEWER),'23514')
     snap=rows(DB,tid)
@@ -122,6 +135,51 @@ for DB in DBS:
     ok(DB,MATE,checklist(DB,tid,'state',{'node_id':nid,'state':'Yes'}))
     print('PASS',DB,'observer cannot tick, review or log; assignee ticks')
 
+    if v117:
+        # Who reads the mission's checklist and work (117).
+        def work_reads(uid):
+            return [f"SELECT public.checklist_branch('{tid}')",f"SELECT public.checklist_reviews('{tid}')",
+                f"SELECT public.mission_learnings('{tid}')",f"SELECT public.task_effort_breakdown('{tid}')",
+                f"SELECT public.checklist_item_seconds('{tid}','{nid}')",f"SELECT public.task_proofs('{tid}')",
+                f"SELECT count(*) FROM public.timer_session_activity('{tid}')"]
+        def rows_seen(uid):
+            return ok(DB,uid,f"SELECT (SELECT count(*) FROM public.checklist_nodes WHERE checklist_id='{cid}')||','||"
+                f"(SELECT count(*) FROM public.task_checklists WHERE task_id='{tid}')||','||"
+                f"(SELECT count(*) FROM public.checklist_sections WHERE checklist_id='{cid}')||','||"
+                f"(SELECT count(*) FROM public.tasks WHERE id='{tid}')")
+        everything=value(DB,f"(SELECT count(*) FROM public.checklist_nodes WHERE checklist_id='{cid}')||','||"
+            f"(SELECT count(*) FROM public.task_checklists WHERE task_id='{tid}')||','||"
+            f"(SELECT count(*) FROM public.checklist_sections WHERE checklist_id='{cid}')||',1'")
+        assert everything.split(',')[0]!='0',everything
+        for uid in (MD,OWNER,MATE,COLLAB,REVIEWER,U(3)):
+            for statement in work_reads(uid): ok(DB,uid,statement)
+            assert rows_seen(uid)==everything,(uid,rows_seen(uid),everything)
+        for uid in (STRANGER,PE):
+            for statement in work_reads(uid): refused(DB,uid,statement)
+            assert rows_seen(uid)=='0,0,0,1',(uid,rows_seen(uid))  # the mission itself stays listed
+            assert ok(DB,uid,f"SELECT count(*) FROM public.task_assignees WHERE task_id='{tid}'")!='0'
+        # A project engineer on the mission (here an observer the assignee adds) reads it.
+        ok(DB,MATE,people(DB,MATE,tid,'add_observer',PE))
+        for statement in work_reads(PE): ok(DB,PE,statement)
+        assert rows_seen(PE)==everything
+        ok(DB,MATE,people(DB,MATE,tid,'remove_observer',PE))
+        refused(DB,PE,f"SELECT public.checklist_branch('{tid}')")
+        print('PASS',DB,'only the managing director and the mission\'s people read its checklist; a project engineer only when on it')
+
+        # Observers see the mission's files but neither add nor remove them.
+        org=value(DB,f"organization_id FROM public.tasks WHERE id='{tid}'")
+        def proof(op,path='NULL',proof_id='NULL'):
+            return f"SELECT public.task_proof_command('{op}','{tid}',{path},'Site.pdf','application/pdf',1000,{proof_id},'{uuid4()}')"
+        path=literal(f"{org}/{tid}/{uuid4()}.pdf")
+        refused(DB,U(3),proof('add',path))
+        added=ok(DB,REVIEWER,proof('add',path))
+        listed=ok(DB,U(3),f"SELECT public.task_proofs('{tid}')")
+        assert [x['id'] for x in listed]==[added['id']] and listed[0]['canRemove'] is False,listed
+        refused(DB,U(3),proof('withdraw',proof_id=literal(added['id'])))
+        ok(DB,COLLAB,f"SELECT public.task_proofs('{tid}')")
+        ok(DB,REVIEWER,proof('withdraw',proof_id=literal(added['id'])))
+        print('PASS',DB,'observers view files only; reviewers add and remove theirs')
+
     # Assignees and managers log time as before.
     started=ok(DB,MATE,timer(tid)); ok(DB,MATE,f"SELECT public.discard_task_timer('{started['timerId']}',{j({'reason':'test'})},'{uuid4()}',0)")
     ok(DB,OWNER,log(tid)); ok(DB,PE,log(tid)); ok(DB,MD,log(tid))
@@ -137,6 +195,7 @@ for DB in DBS:
         refused(DB,U(3),checklist(DB,tid,'review',{'node_id':nid,'decision':'acknowledged'}),'42501')
         ok(DB,REVIEWER,checklist(DB,tid,'review',{'node_id':nid,'decision':'acknowledged'}))
     ok(DB,REVIEWER,lifecycle(DB,tid,'review',{'approved':True}))
+    if v117: refused(DB,COLLAB,lifecycle(DB,tid,'transition',{'status':'Done'}))  # 117: collaborators do not finish it
     ok(DB,OWNER,lifecycle(DB,tid,'transition',{'status':'Done'}))
     assert value(DB,f"status FROM public.tasks WHERE id='{tid}'")=='Done'
     refused(DB,MD,people(DB,MD,tid,'remove_observer',U(3)),'23514')

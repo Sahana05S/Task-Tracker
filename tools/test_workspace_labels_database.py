@@ -92,7 +92,7 @@ for db in DBS:
     assert created['slug']=='brand-new'
     note=json.loads(ok(db,M4,f"SELECT public.mission_learning_command('add','{T1}',NULL,'learning','Book the crane early','{uuid4()}')"))['id']
     ok(db,M4,link_sql('attach','mission_learning',note,label=crane['id']))
-    expect_code(db,M5,link_sql('attach','mission_learning',note,label=crane['id']),'42501')
+    expect_code(db,M6,link_sql('attach','mission_learning',note,label=crane['id']),'42501')  # T1's reviewer reads the note but does not edit it
     ok(db,M5,link_sql('attach','meeting_point',MP1,label=crane['id']))
     expect_code(db,M4,link_sql('attach','meeting_point',MP1,label=safety['id']),'42501')
     ok(db,DM,link_sql('attach','meeting_point',MP1,label=safety['id']))
@@ -114,8 +114,10 @@ for db in DBS:
     print('PASS',db,'rename keeps the id, so both links follow the new name; a clash or a member is refused')
 
     # ---- labelled returns only readable subjects -----------------------------------------------------------------
-    items=labelled(db,M5,'crane')['items']
+    items=labelled(db,M6,'crane')['items']
     assert sorted(i['kind'] for i in items)==['meeting_point','mission_learning','task'],items
+    # Migration 117: a learning note is listed only to those who may read its mission (M5 is not on T1).
+    assert sorted(i['kind'] for i in labelled(db,M5,'crane')['items'])==['meeting_point','task']
     ok(db,M4,f"SELECT public.mission_learning_command('withdraw','{T1}','{note}',NULL,NULL,'{uuid4()}')")
     assert sorted(i['kind'] for i in labelled(db,M5,'crane')['items'])==['meeting_point','task']
     assert note not in labels_for(db,MD,'mission_learning',[note])
