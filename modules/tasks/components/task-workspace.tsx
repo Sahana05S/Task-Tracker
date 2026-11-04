@@ -30,7 +30,7 @@ import {
   type TaskSortState,
 } from '@/modules/tasks/internal/filters';
 import { nestSubMissions } from '@/modules/tasks/internal/grouping';
-import { canManageTasks } from '@/modules/tasks/internal/permissions';
+import { canManageTasks, canReadMissionWork } from '@/modules/tasks/internal/permissions';
 import type { ToolOperation } from '@/modules/tasks/internal/tools/contract';
 import type { Task, User } from '@/types/tracker';
 import type { Label } from '@/modules/labels/client';
@@ -290,6 +290,7 @@ export function TaskWorkspace({
         effortByTask={effortByTask}
         memberNames={memberNames}
         canManage={canManage}
+        canReadWork={(task) => canReadMissionWork(currentUser, task)}
         onClose={() => setSummaryTaskId(null)}
         onEdit={openEdit}
         onRequestDelete={setPendingDelete}

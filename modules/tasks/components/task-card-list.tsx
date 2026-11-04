@@ -30,7 +30,7 @@ import {
 } from '@/shared/ui/dropdown-menu';
 import { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
 import type { MissionNesting } from '@/modules/tasks/internal/grouping';
-import { canUpdateTaskOwnFields, isAssignedToTask, isTaskWorker } from '@/modules/tasks/internal/permissions';
+import { canReadMissionWork, canUpdateTaskOwnFields, isAssignedToTask, isTaskWorker } from '@/modules/tasks/internal/permissions';
 import { formatDate, formatPercent, isOverdue, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
@@ -107,6 +107,7 @@ export const TaskCardList = React.memo(function TaskCardList({
             canEditOwnFields={canUpdateTaskOwnFields(currentUser, task)}
             isAssignee={isAssignedToTask(task, currentUser.id)}
             isWorker={isTaskWorker(task, currentUser.id)}
+            canReadWork={canReadMissionWork(currentUser, task)}
             canManage={canManage}
             actions={actions}
             LogHoursAction={LogHoursAction}
@@ -133,6 +134,8 @@ interface MissionCardProps {
   isAssignee: boolean;
   /** Assigned with a share; collaborators do not log time (migration 108). */
   isWorker: boolean;
+  /** Sees the checklist and work (migration 117); otherwise no checklist link is shown. */
+  canReadWork: boolean;
   canManage: boolean;
   actions: TaskRowActions;
   LogHoursAction?: LogHoursActionComponent;
@@ -148,6 +151,7 @@ function MissionCard({
   canEditOwnFields,
   isAssignee,
   isWorker,
+  canReadWork,
   canManage,
   actions,
   LogHoursAction,
@@ -253,14 +257,16 @@ function MissionCard({
       <div className="border-border flex flex-col gap-3 border-t pt-4">
         <div className="flex items-center justify-between gap-2">
           <AvatarStack names={assigneeNames} />
-          <Link
-            href={checklistWorkHref(task.taskTag)}
-            className="link inline-flex items-center gap-1 text-xs"
-            aria-label={`Master checklist for ${task.taskTag}`}
-          >
-            <ListChecksIcon className="size-3.5" aria-hidden="true" />
-            Master checklist
-          </Link>
+          {canReadWork ? (
+            <Link
+              href={checklistWorkHref(task.taskTag)}
+              className="link inline-flex items-center gap-1 text-xs"
+              aria-label={`Master checklist for ${task.taskTag}`}
+            >
+              <ListChecksIcon className="size-3.5" aria-hidden="true" />
+              Master checklist
+            </Link>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusSelect

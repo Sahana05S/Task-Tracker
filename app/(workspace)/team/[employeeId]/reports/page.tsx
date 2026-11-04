@@ -286,9 +286,13 @@ function ItemHoursPanel({ tasks }: { tasks: readonly ItemHourTask[] | null }) {
               <ul className="border-border divide-border divide-y border-t text-sm">
                 {task.items.map(item => (
                   <li key={item.nodeId} className="flex flex-wrap items-baseline justify-between gap-2 px-3.5 py-2">
-                    <Link href={`/tasks/${encodeURIComponent(task.taskTag)}/checklist/${item.nodeId}`} className="text-foreground min-w-0 break-words hover:underline">
-                      {item.title}
-                    </Link>
+                    {task.readable ? (
+                      <Link href={`/tasks/${encodeURIComponent(task.taskTag)}/checklist/${item.nodeId}`} className="text-foreground min-w-0 break-words hover:underline">
+                        {item.title}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground min-w-0 break-words" title="Only the mission's people see its checklist">{item.title}</span>
+                    )}
                     <span className="text-muted-foreground text-xs tabular-nums">
                       {formatHours(item.hours)} h · {item.entries} log{item.entries === 1 ? '' : 's'}
                     </span>

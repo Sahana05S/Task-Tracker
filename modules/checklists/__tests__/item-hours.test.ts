@@ -23,4 +23,9 @@ describe('hours by checklist item', () => {
     expect(grouped[0].items.map(i => i.title)).toEqual(['Alpha', 'Zeta']);
     expect(groupItemHours([])).toEqual([]);
   });
+
+  it('marks missions whose checklist the viewer may not read (migration 117)', () => {
+    const grouped = groupItemHours([log('t1', 'a', 1), { ...log('t2', 'b', 2, 'Private objective'), readable: false }]);
+    expect(grouped.map(t => [t.taskTag, t.readable])).toEqual([['T2', false], ['T1', true]]);
+  });
 });

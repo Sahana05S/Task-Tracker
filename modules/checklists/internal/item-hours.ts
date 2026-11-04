@@ -11,6 +11,8 @@ export interface ItemHourLog {
   readonly nodeId: string;
   readonly nodeTitle: string;
   readonly hours: number;
+  /** False when the viewer may not read the mission's checklist (migration 117); default true. */
+  readonly readable?: boolean;
 }
 
 export interface ItemHourRow {
@@ -25,15 +27,17 @@ export interface ItemHourTask {
   readonly taskTag: string;
   readonly taskTitle: string;
   readonly hours: number;
+  /** Whether the viewer may open the mission's checklist; items then link to their rows. */
+  readonly readable: boolean;
   readonly items: readonly ItemHourRow[];
 }
 
 /** Groups tagged logs by task, then item; largest totals first, ties by name. */
 export function groupItemHours(logs: readonly ItemHourLog[]): ItemHourTask[] {
-  const tasks = new Map<string, { taskTag: string; taskTitle: string; items: Map<string, { title: string; hours: number; entries: number }> }>();
+  const tasks = new Map<string, { taskTag: string; taskTitle: string; readable: boolean; items: Map<string, { title: string; hours: number; entries: number }> }>();
   for (const log of logs) {
     if (!Number.isFinite(log.hours)) continue;
-    const task = tasks.get(log.taskId) ?? { taskTag: log.taskTag, taskTitle: log.taskTitle, items: new Map() };
+    const task = tasks.get(log.taskId) ?? { taskTag: log.taskTag, taskTitle: log.taskTitle, readable: log.readable ?? true, items: new Map() };
     const item = task.items.get(log.nodeId) ?? { title: log.nodeTitle, hours: 0, entries: 0 };
     item.hours += log.hours;
     item.entries += 1;
@@ -45,7 +49,7 @@ export function groupItemHours(logs: readonly ItemHourLog[]): ItemHourTask[] {
       const items = [...t.items.entries()]
         .map(([nodeId, i]) => ({ nodeId, title: i.title, hours: i.hours, entries: i.entries }))
         .sort((a, b) => b.hours - a.hours || a.title.localeCompare(b.title));
-      return { taskId, taskTag: t.taskTag, taskTitle: t.taskTitle, hours: items.reduce((s, i) => s + i.hours, 0), items };
+      return { taskId, taskTag: t.taskTag, taskTitle: t.taskTitle, hours: items.reduce((s, i) => s + i.hours, 0), readable: t.readable, items };
     })
     .sort((a, b) => b.hours - a.hours || a.taskTag.localeCompare(b.taskTag));
 }
