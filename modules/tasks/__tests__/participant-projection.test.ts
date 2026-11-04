@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { attachTaskParticipants, withTaskParticipants } from '@/modules/tasks/internal/mappers';
+import { isTaskWorker, missionRelationship } from '@/modules/tasks/internal/permissions';
 import type { Task } from '@/types/tracker';
 
 const mission = (id: string, mode = 'configured'): Task => ({
@@ -33,6 +34,25 @@ describe('participant read projection', () => {
     expect(b.reviewerIds).toEqual(['legacy-reviewer']);
   });
 
+  it('tells zero-share collaborators and observers apart (migration 108)', () => {
+    const [task] = attachTaskParticipants([mission('p')], [
+      { task_id: 'p', user_id: 'owner', is_primary: true, share_units: 700000 },
+      { task_id: 'p', user_id: 'mate', is_primary: false, share_units: 300000 },
+      { task_id: 'p', user_id: 'helper', is_primary: false, share_units: 0 },
+    ], [
+      { task_id: 'p', user_id: 'reviewer', is_primary: true, reviewer_role: 'Primary' },
+      { task_id: 'p', user_id: 'watcher', is_primary: false, reviewer_role: 'Observer' },
+    ]);
+    expect(task.assigneeIds).toEqual(expect.arrayContaining(['owner', 'mate', 'helper']));
+    expect(task.collaboratorIds).toEqual(['helper']);
+    expect(task.reviewerIds).not.toContain('watcher');
+    expect(task.observerIds).toEqual(['watcher']);
+    expect(isTaskWorker(task, 'mate')).toBe(true);
+    expect(isTaskWorker(task, 'helper')).toBe(false);
+    expect(missionRelationship(task, 'helper')).toBe('collaborator');
+    expect(missionRelationship(task, 'watcher')).toBe('observer');
+  });
+
   it('matches the earlier projection at scale without repeated share scans', () => {
     const tasks = Array.from({ length: process.env.TASKPULSE_BENCHMARK === '1' ? 10_000 : 1_000 }, (_, i) => mission(String(i)));
     const assignees = tasks.flatMap(task => [
@@ -42,7 +62,7 @@ describe('participant read projection', () => {
     const before = performance.now();
     const old = tasks.map(task => withTaskParticipants({ ...task,
       participantShares: Object.fromEntries(assignees.filter(row => row.task_id === task.id).map(row => [row.user_id, row.share_units])),
-    }, { assigneeIds: ['primary', 'secondary'], reviewerIds: undefined }));
+    }, { assigneeIds: ['primary', 'secondary'], reviewerIds: undefined })).map(task => ({ ...task, collaboratorIds: [], observerIds: [] }));
     const oldMs = performance.now() - before;
     const after = performance.now();
     const current = attachTaskParticipants(tasks, assignees, []);

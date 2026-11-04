@@ -8,6 +8,8 @@ export interface RunningTimer {
   readonly taskId: string;
   readonly taskTag: string;
   readonly taskTitle: string;
+  /** The session note so far (the start note); the Stop sheet offers it for editing. */
+  readonly notes?: string | null;
 }
 
 /**
@@ -22,7 +24,7 @@ export async function getRunningTimers(userId: string): Promise<RunningTimer[]> 
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('task_timers')
-      .select('id,execution_version,started_at,task_id,tasks!inner(task_tag,title)')
+      .select('id,execution_version,started_at,task_id,notes,tasks!inner(task_tag,title)')
       .eq('user_id', userId)
       .eq('status', 'Running')
       .order('started_at', { ascending: true })
@@ -32,7 +34,7 @@ export async function getRunningTimers(userId: string): Promise<RunningTimer[]> 
       const task = Array.isArray(row.tasks) ? row.tasks[0] : row.tasks;
       return task ? [{
         id: row.id, executionVersion: row.execution_version ?? 0, startedAt: row.started_at,
-        taskId: row.task_id, taskTag: task.task_tag, taskTitle: task.title,
+        taskId: row.task_id, taskTag: task.task_tag, taskTitle: task.title, notes: row.notes,
       }] : [];
     });
   } catch {

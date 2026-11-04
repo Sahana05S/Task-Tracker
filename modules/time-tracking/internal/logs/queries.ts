@@ -70,8 +70,8 @@ export async function getTaskEffortTotals(): Promise<Map<string, TaskEffort>> {
 }
 
 /**
- * Tasks a user may log effort against: their own assignments, excluding work
- * that is finished or abandoned.
+ * Tasks a user may log effort against: their own assignments with a share (not
+ * collaborations), excluding work that is finished or abandoned.
  *
  * Fetched on demand when the log drawer opens rather than with every workspace
  * page, since the global FAB is present on all of them.
@@ -93,7 +93,9 @@ export async function getLoggableTasksFor(userId: string): Promise<Task[]> {
   const { data: assignmentRows, error: assignmentError } = await supabase
     .from('task_assignees')
     .select('task_id')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    // A zero-share collaborator logs no time (D-A3, migration 108).
+    .or('share_units.is.null,share_units.gt.0');
 
   if (assignmentError) {
     return mapTasks(legacyRows);

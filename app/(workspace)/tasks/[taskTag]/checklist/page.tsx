@@ -6,14 +6,12 @@ import { requireProfile } from '@/shared/session/profile';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { getMissionChoices, getTaskForChecklist, normalizeTaskTagParam } from '@/modules/tasks';
 import { canManageTasks, canUpdateTaskOwnFields } from '@/modules/tasks/client';
-import { getChecklistBranch, getRunningChecklistTimers, getUnmappedRootRows } from '@/modules/checklists';
-import { CHECKLIST_SECTIONS, checklistWorkHref, parseChecklistLocation, parseChecklistView, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistItemTime } from '@/modules/checklists/client';
+import { getChecklistBranch, getObjectiveReviews, getUnmappedRootRows } from '@/modules/checklists';
+import { CHECKLIST_SECTIONS, NO_REVIEWS, checklistWorkHref, parseChecklistLocation, parseChecklistView, type ChecklistBranch, type ChecklistBranchOptions } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistHomeSection } from '@/modules/checklists/components/checklist-workspace';
 import { checklistCommand } from '@/modules/checklists/actions';
 import { createSubMission } from '@/modules/tasks/actions';
 import { getMemberNames } from '@/modules/team';
-import { canStartTimerForTask } from '@/modules/time-tracking/client';
-import { discardTaskTimer, startItemTimer, stopTaskTimer } from '@/modules/time-tracking/timer-actions';
 
 type Params = Promise<{ taskTag: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -24,9 +22,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const tag = normalizeTaskTagParam((await params).taskTag);
   return { title: `${tag ?? 'Mission'} checklist` };
 }
-
-
-const NO_TIME: ChecklistItemTime = { available: false, secondsByNode: new Map(), runningByNode: new Map(), mine: null };
 
 /**
  * The master checklist. Without `parent` it is the checklist home (Setup,
@@ -69,15 +64,15 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
     );
   }
 
-  const rows = sections ? sections.flatMap(s => s.rows) : branch.rows;
   const manager = canManageTasks(user.role);
   const checklistId = branch.checklist?.id;
-  const [names, time, linkChoices, unmapped] = await Promise.all([
+  // One mission timer (3 November 2026): the checklist reads no row timers.
+  const [names, linkChoices, unmapped, reviews] = await Promise.all([
     getMemberNames().catch((): Record<string, string> => ({})),
-    // A failed timer read hides the timers instead of failing the checklist.
-    getRunningChecklistTimers(task.id, user.id, new Map(rows.map(row => [row.id, row.elapsedSeconds]))).catch(() => NO_TIME),
     manager ? getMissionChoices().then(choices => choices.filter(t => t.id !== task.id)) : [],
     manager && checklistId && sections ? getUnmappedRootRows(checklistId) : [],
+    // A failed review read hides the chips instead of failing the checklist.
+    getObjectiveReviews(task.id).catch(() => NO_REVIEWS),
   ]);
 
   return (
@@ -92,13 +87,13 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       page={location.parentNodeId ? { nodeId: location.parentNodeId, section: branch.section, rows: branch.rows, cursor: location.cursor ?? 0, nextCursor: branch.nextCursor } : undefined}
       manager={manager}
       executor={canUpdateTaskOwnFields(user, task)}
-      canTime={canStartTimerForTask(user, task)}
-      time={time}
       selectedItem={location.item}
       managerTools={manager ? { linkChoices, unmapped } : undefined}
-      actions={{ checklist: checklistCommand, start: startItemTimer, stop: stopTaskTimer, discard: discardTaskTimer, submission: createSubMission }}
+      actions={{ checklist: checklistCommand, submission: createSubMission }}
       view={viewParam ?? 'table'}
       viewExplicit={viewParam !== null && viewParam !== undefined}
+      reviews={reviews}
+      memberNames={names}
       headerActions={<MissionActionsMenu taskId={task.id} taskTag={task.taskTag} variant="button" />}
     />
   );

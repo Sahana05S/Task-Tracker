@@ -30,7 +30,7 @@ import {
 } from '@/shared/ui/dropdown-menu';
 import { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
 import type { MissionNesting } from '@/modules/tasks/internal/grouping';
-import { canUpdateTaskOwnFields, isAssignedToTask } from '@/modules/tasks/internal/permissions';
+import { canUpdateTaskOwnFields, isAssignedToTask, isTaskWorker } from '@/modules/tasks/internal/permissions';
 import { formatDate, formatPercent, isOverdue, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
@@ -101,6 +101,7 @@ export const TaskCardList = React.memo(function TaskCardList({
             effort={effortByTask.get(task.id) ?? EMPTY_EFFORT}
             canEditOwnFields={canUpdateTaskOwnFields(currentUser, task)}
             isAssignee={isAssignedToTask(task, currentUser.id)}
+            isWorker={isTaskWorker(task, currentUser.id)}
             canManage={canManage}
             actions={actions}
             LogHoursAction={LogHoursAction}
@@ -124,6 +125,8 @@ interface MissionCardProps {
   canEditOwnFields: boolean;
   /** Only assignees can time a mission; the database refuses anyone else. */
   isAssignee: boolean;
+  /** Assigned with a share; collaborators do not log time (migration 108). */
+  isWorker: boolean;
   canManage: boolean;
   actions: TaskRowActions;
   LogHoursAction?: LogHoursActionComponent;
@@ -137,6 +140,7 @@ function MissionCard({
   effort,
   canEditOwnFields,
   isAssignee,
+  isWorker,
   canManage,
   actions,
   LogHoursAction,
@@ -257,7 +261,7 @@ function MissionCard({
             canEdit={canEditOwnFields}
           />
           <div className="ml-auto flex items-center gap-2">
-            {isAssignee && !archived && !closed && LogHoursAction ? <LogHoursAction taskId={task.id} taskTag={task.taskTag} /> : null}
+            {isWorker && !archived && !closed && LogHoursAction ? <LogHoursAction taskId={task.id} taskTag={task.taskTag} /> : null}
             <Button asChild size="sm">
               <Link href={href} aria-label={`Open mission ${task.taskTag}`}>
                 Open

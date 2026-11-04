@@ -61,9 +61,8 @@ function props(overrides: Partial<ChecklistWorkspaceProps> = {}): ChecklistWorks
     ],
     manager: false,
     executor: true,
-    canTime: false,
     selectedItem: undefined,
-    actions: { checklist: noop, start: noop, stop: noop, discard: noop },
+    actions: { checklist: noop },
     ...overrides,
   };
 }
@@ -112,7 +111,10 @@ describe('checklist home', () => {
     // Closure has no rows, so it says so instead of drawing an empty table.
     expect(html.match(/<table/g)).toHaveLength(2);
     expect(html).toContain('No closure rows yet. An empty section counts as N/A.');
-    for (const heading of ['Done', 'Progress', 'Objective', 'Links', 'Est.', 'Elapsed']) expect(html).toContain(`>${heading}</th>`);
+    for (const heading of ['Done', 'Progress', 'Objective', 'Links']) expect(html).toContain(`>${heading}</th>`);
+    // One mission timer (3 November 2026): no per-row timer, Est. or Elapsed column.
+    for (const heading of ['Est.', 'Elapsed']) expect(html).not.toContain(`>${heading}</th>`);
+    expect(html).not.toContain('Start timer');
     expect(html).not.toContain('>Type</th>');
     // No 'Add sub-mission' choice for a member (68 offers it to managers only).
     expect(html).not.toContain('>Sub-mission</button>');
@@ -130,8 +132,6 @@ describe('checklist home', () => {
     expect(html).toContain(`href="/tasks/Sep26_T5/checklist?checklist=${CHECKLIST}&amp;parent=page-1&amp;section=activity"`);
     expect(html).toContain('3 rows inside');
     expect(html).toContain('Sub-mission');
-    expect(html).toContain('1 h 30 min');
-    expect(html).toContain('1 h');
     expect(html).toContain('aria-label="Link 1 for Draw section A"');
     expect(html).toContain('Next rows');
   });

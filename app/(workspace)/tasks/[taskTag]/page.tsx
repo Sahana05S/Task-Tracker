@@ -21,11 +21,17 @@ import {
   FreshnessIndicator,
   PriorityBadge,
 } from '@/shared/ui/tracker-badges';
-import { getTaskEffortBreakdown } from '@/modules/checklists';
-import { canStartTimerForTask, getTaskExecution } from '@/modules/time-tracking';
+import { getObjectiveReviews, getTaskEffortBreakdown } from '@/modules/checklists';
+import { NO_REVIEWS, reviewsAwaiting } from '@/modules/checklists/client';
+import { checklistCommand } from '@/modules/checklists/actions';
+import { ObjectiveReviewProvider, ObjectiveReviewQueue } from '@/modules/checklists/components/objective-review';
+import { canStartTimerForTask, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
 import {
+  canEditTaskDetails,
+  canManageTaskPeople,
   canManageTasks,
   canUpdateTaskOwnFields,
+  isTaskWorker,
   getNativeDetailState,
   getNativeTemplates,
   getMissionChoices,
@@ -41,6 +47,7 @@ import { EffortPanel } from '@/modules/tasks/components/detail/effort-panel';
 import { TaskLogTimeline } from '@/modules/tasks/components/detail/log-timeline';
 import { MissionBrief } from '@/modules/tasks/components/detail/mission-brief';
 import { MissionOverview } from '@/modules/tasks/components/detail/mission-overview';
+import { MissionPeopleManager } from '@/modules/tasks/components/detail/mission-people';
 import { ProofsPanel } from '@/modules/tasks/components/detail/proofs-panel';
 import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-prompt';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
@@ -107,22 +114,30 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const archived = !!task.archivedEffectiveDate;
   const successor = data.dependencies.find((d) => d.otherTask?.id === task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role) && !archived;
+  // D-A2: the mission's Owner, assignees and collaborators also edit its details (migration 108).
+  const canEditDetails = !archived && canEditTaskDetails(currentUser, task);
   const requested = (await searchParams).tab;
   const tab: Tab = TABS.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
-  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings] = await Promise.all([
+  const reviewer = task.reviewerIds.includes(currentUser.id);
+  const [execution, native, templates, workspace, reports, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
-    details && canManage ? getMissionChoices() : Promise.resolve([]),
+    details && canEditDetails ? getMissionChoices() : Promise.resolve([]),
     details && canManage ? getVisibleReportChoices() : Promise.resolve([]),
     details ? getTaskEffortBreakdown(task.id) : Promise.resolve(null),
     // A failed read leaves the track on current progress.
     tab === 'work' ? getMissionWaypoints([task]).catch(() => null) : Promise.resolve(null),
-    // Null when the caller is not one of the mission's people or a manager: no panel.
-    tab === 'work' ? getTaskProofs(task.id) : Promise.resolve(null),
+    // Proofs (Work tab) and Input / Process / Output documents (Details tab). Null when the
+    // caller is not one of the mission's people or a manager: no panel, no uploads.
+    tab === 'work' || details ? getTaskProofs(task.id) : Promise.resolve(null),
     // Mistakes and learning (migration 111): the panel on Details, its count on Work. Null hides both.
     tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
+    // What each timer session covered (migration 110); a failed read only hides the lines.
+    tab === 'history' ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
+    // Objectives waiting for this reviewer (114); a failed read only hides the list.
+    tab === 'work' && !archived && (reviewer || canManage) ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
   ]);
   // Labels (migration 112) on the Details tab: the mission's own and each learning note's. Null hides them.
   const [labelCatalogue, missionLabels, noteLabels] = details
@@ -133,6 +148,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
       ])
     : [null, null, null];
   const canLabelMission = !archived && (canManage || task.assigneeIds.includes(currentUser.id));
+  const awaitingReview = reviewsAwaiting(objectiveReviews);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
   const visibleTimers = canManage
     ? execution.timers
@@ -141,8 +157,31 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     execution.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running') ?? null;
 
   const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
-  const assigneeNames = task.assigneeIds.map((id) => memberNames.get(id) ?? 'Unknown');
-  const reviewerNames = task.reviewerIds.map((id) => memberNames.get(id) ?? 'Unknown');
+  const nameOf = (id: string) => memberNames.get(id) ?? 'Unknown';
+  // Migration 108: zero-share assignees are collaborators; Observer reviewer rows are observers.
+  const collaboratorIds = task.collaboratorIds ?? [];
+  const observerIds = task.observerIds ?? [];
+  const creditedIds = task.assigneeIds.filter((id) => id !== task.assigneeId && isTaskWorker(task, id));
+  const people = {
+    owner: task.assigneeId ? [nameOf(task.assigneeId)] : [],
+    assignees: creditedIds.map(nameOf),
+    collaborators: collaboratorIds.map(nameOf),
+    reviewers: task.reviewerIds.map(nameOf),
+    observers: observerIds.map(nameOf),
+  };
+  const related = new Set([task.assigneeId, ...task.assigneeIds, ...task.reviewerIds, ...observerIds]);
+  const person = (id: string) => ({ id, name: nameOf(id) });
+  const peopleManager = canManageTaskPeople(currentUser, task) ? (
+    <MissionPeopleManager
+      taskId={task.id}
+      version={task.lifecycleVersion ?? 0}
+      owner={task.assigneeId ? person(task.assigneeId) : null}
+      assignees={task.participantCreditMode === 'configured' ? creditedIds.map(person) : []}
+      collaborators={collaboratorIds.map(person)}
+      observers={observerIds.map(person)}
+      candidates={data.members.filter((member) => member.isActive && !related.has(member.id)).map((member) => ({ id: member.id, name: member.fullName }))}
+    />
+  ) : null;
 
   const checklistHref = `/tasks/${encodeURIComponent(task.taskTag)}/checklist`;
   const family = subMissionFamily(task.id, data.dependencies);
@@ -219,13 +258,16 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         />
       )}
 
-      {!archived&&task.reviewerIds.includes(currentUser.id) ? (
+      {!archived&&(reviewer||awaitingReview.length>0) ? (
         <section className="border-primary/20 bg-primary-subtle/60 rounded-2xl border p-4 sm:p-5" aria-label="Your review">
           <h2 className="text-foreground mb-2 flex items-center gap-2 text-base font-bold tracking-tight">
             <ClipboardCheckIcon className="text-primary size-4" aria-hidden="true" />
             Your review is requested
           </h2>
-          <TaskReviewForm taskId={task.id} version={task.lifecycleVersion ?? 0} />
+          <ObjectiveReviewProvider taskId={task.id} version={task.lifecycleVersion ?? 0} action={checklistCommand} reviews={objectiveReviews} names={Object.fromEntries(memberNames)}>
+            <ObjectiveReviewQueue taskTag={task.taskTag} reviews={awaitingReview} />
+          </ObjectiveReviewProvider>
+          {reviewer ? <TaskReviewForm taskId={task.id} version={task.lifecycleVersion ?? 0} /> : null}
         </section>
       ) : null}
 
@@ -251,8 +293,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             />
             <MissionOverview
               data={data}
-              assigneeNames={assigneeNames}
-              reviewerNames={reviewerNames}
+              people={people}
+              peopleManager={peopleManager}
               overdue={overdue}
               belowProgress={
                 <WaypointTrack
@@ -302,6 +344,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               native={native}
               templates={templates}
               canManage={canManage}
+              canEditDetails={canEditDetails}
               tasks={workspace}
               members={data.members}
               reports={reports}
@@ -313,6 +356,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               checklistHref={checklistHref}
               canCreateWorkFile={!archived && !closed && canUpdateTaskOwnFields(currentUser, task)}
               providerState={native.instance?.providerState ?? 'not_requested'}
+              files={proofs}
+              canAddFiles={!archived}
             />
             {learnings ? (
               <LearningPanel
@@ -369,6 +414,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               taskTag={task.taskTag}
               canManage={canManage}
               currentUserId={currentUser.id}
+              sessionActivity={sessionActivity?.available ? sessionActivity.sessions : undefined}
             />
           </MissionPanel>
         </div>

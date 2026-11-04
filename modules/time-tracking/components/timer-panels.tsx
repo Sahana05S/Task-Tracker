@@ -12,6 +12,7 @@ import {
   stopTaskTimer,
 } from '@/modules/time-tracking/timer-actions';
 import { formatElapsed } from '@/modules/time-tracking/internal/timers/elapsed';
+import { describeSessionEvent, sessionSummary, type TimerSessionActivity } from '@/modules/time-tracking/internal/timers/session-wording';
 import { EmptyState } from '@/shared/ui/mission-ui';
 
 /** Timer, timer records and manual time entry for one mission. */
@@ -54,6 +55,7 @@ export function TimerControl({
             <span className="text-foreground font-medium">Stop note</span>
             <textarea
               name="notes"
+              defaultValue={activeTimer.notes ?? ''}
               className={cn(FIELD, 'min-h-20 py-2')}
               placeholder="What did this timer session cover?"
             />
@@ -97,12 +99,15 @@ export function TimerRecords({
   taskTag,
   canManage,
   currentUserId,
+  sessionActivity,
 }: {
   timers: readonly TaskTimer[];
   memberNames: ReadonlyMap<string, string>;
   taskTag: string;
   canManage: boolean;
   currentUserId: string;
+  /** What each stopped session covered (migration 110), by timer id; absent when unavailable. */
+  sessionActivity?: ReadonlyMap<string, TimerSessionActivity>;
 }) {
   if (timers.length === 0) {
     return (
@@ -146,6 +151,7 @@ export function TimerRecords({
             {timer.notes ? (
               <p className="text-foreground mt-2 text-xs">{timer.notes}</p>
             ) : null}
+            <SessionActivity activity={sessionActivity?.get(timer.id)} />
             {timer.status === 'Running' && canManageThisTimer ? (
               <ExecutionForm action={discardTaskTimer} scope="discardTaskTimer" className="mt-2 grid gap-2"><label className="grid gap-1 text-sm"><span className="font-medium">Reason</span><input name="reason" required maxLength={1000} className={cn(FIELD, 'h-9')} /></label><input type="hidden" name="expectedVersion" value={timer.executionVersion ?? 0} />
                 <input type="hidden" name="timerId" value={timer.id} />
@@ -159,6 +165,25 @@ export function TimerRecords({
         );
       })}
     </div>
+  );
+}
+
+/** "During this session: …" under a stopped timer, with every change listed on request. */
+function SessionActivity({ activity }: { activity?: TimerSessionActivity }) {
+  const summary = activity ? sessionSummary(activity.events) : null;
+  if (!activity || !summary) return null;
+  if (activity.events.length <= 3) return <p className="text-muted-foreground mt-2 text-xs">{summary}</p>;
+  return (
+    <details className="disclosure text-muted-foreground mt-2 text-xs">
+      <summary>{summary}</summary>
+      <ul className="mt-1 grid gap-0.5 pl-4">
+        {activity.events.map((event, index) => (
+          <li key={`${event.at}:${index}`} className="list-disc">
+            <span className="tabular-nums">{formatDateTime(event.at)}</span> · {describeSessionEvent(event)}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 

@@ -11,7 +11,6 @@ import { cn } from '@/shared/utils';
 import { checklistWorkHref, type ChecklistView } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistRollup, type ChecklistSection } from '../internal/progress';
 import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-types';
-import type { ChecklistItemTime } from '../internal/item-time';
 import { SECTION_TITLES, checklistIssues, pageResult, percentText } from '../internal/table';
 import { SectionStateIcon } from './section-state-icon';
 import { ChecklistVersionField, ChecklistVersionProvider } from './checklist-state-control';
@@ -21,6 +20,8 @@ import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-cards';
 import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
+import { ObjectiveReviewProvider } from './objective-review';
+import type { ObjectiveReviews } from '../internal/review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -54,8 +55,6 @@ export interface ChecklistWorkspaceProps {
   page?: ChecklistPageView;
   manager: boolean;
   executor: boolean;
-  canTime: boolean;
-  time?: ChecklistItemTime;
   selectedItem?: string;
   /** Managers: where progress comes from, missions to link, and rows that still need a section. */
   managerTools?: {
@@ -63,13 +62,16 @@ export interface ChecklistWorkspaceProps {
     unmapped: readonly { id: string; title: string }[];
   };
   /** `submission` creates a Sub-mission (managers; supplied by the page from the tasks module). */
-  actions: { checklist: Command; start: Command; stop: Command; discard: Command; submission?: Command };
+  actions: { checklist: Command; submission?: Command };
   /** Beside the breadcrumb: the mission's own actions, supplied by the page. */
   headerActions?: React.ReactNode;
   /** Table (default), Board, Blocks or Outline. */
   view?: ChecklistView;
   /** The address named the view (otherwise this device's last choice applies). */
   viewExplicit?: boolean;
+  /** Objective reviews (migration 114) and member names for their chips. */
+  reviews?: ObjectiveReviews;
+  memberNames?: Readonly<Record<string, string>>;
 }
 
 const PAGE_SIZE = 50;
@@ -116,7 +118,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       href: ancestorHref(task.taskTag, ancestor, section),
       hideOnPhone: index < ancestors.length - 2 })),
   ];
-  const tableActions = { checklist: props.actions.checklist, start: props.actions.start, stop: props.actions.stop, discard: props.actions.discard, submission: manager ? props.actions.submission : undefined };
+  const tableActions = { checklist: props.actions.checklist, submission: manager ? props.actions.submission : undefined };
   const shared = { manager, linkChoices: tools?.linkChoices ?? [] };
   const issues = checklistIssues(rollup.errors);
   const view: ChecklistView = props.view ?? 'table';
@@ -173,9 +175,6 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 section={home.section}
                 addParentId={null}
                 canEdit={canEdit}
-                open={open}
-                canTime={props.canTime}
-                time={props.time}
                 actions={tableActions}
                 selectedItem={props.selectedItem}
                 {...shared}
@@ -212,9 +211,6 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             canEdit={canEdit}
             questLevel={questLevel}
             autoFocus
-            open={open}
-            canTime={props.canTime}
-            time={props.time}
             actions={tableActions}
             selectedItem={props.selectedItem}
             {...shared}
@@ -228,6 +224,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
 
   return (
     <ChecklistVersionProvider version={version}>
+      <ObjectiveReviewProvider taskId={task.id} version={version} action={props.actions.checklist} reviews={props.reviews} names={props.memberNames}>
       <MissionPage>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
@@ -260,6 +257,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
           </>
         )}
       </MissionPage>
+      </ObjectiveReviewProvider>
     </ChecklistVersionProvider>
   );
 }

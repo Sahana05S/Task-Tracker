@@ -104,6 +104,8 @@ const CHECKLIST_WORDS: Record<string, string> = {
   reorder: 'Reordered a checklist objective',
   // 'submission' creates a Quest (migration 67).
   submission: 'Added a Quest',
+  // Migration 114: the decision and its note arrive as the entry's reason.
+  review: 'Reviewed a checklist objective',
 };
 const TOOL_WORDS: Record<string, string> = {
   bulk_done: 'Marked missions done',

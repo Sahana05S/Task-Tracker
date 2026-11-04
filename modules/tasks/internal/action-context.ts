@@ -20,7 +20,7 @@ export async function getMissionActionContext(taskId: string): Promise<MissionAc
     supabase.from('tasks').select(TASK_COLUMNS).eq('id', taskId).maybeSingle(),
     supabase.from('users').select(USER_COLUMNS).order('full_name', { ascending: true }),
     supabase.from('task_assignees').select('task_id, user_id, is_primary, share_units').eq('task_id', taskId),
-    supabase.from('task_reviewers').select('task_id, user_id, is_primary').eq('task_id', taskId),
+    supabase.from('task_reviewers').select('task_id, user_id, is_primary, reviewer_role').eq('task_id', taskId),
     getNativeTemplates().catch(() => [] as NativeTemplate[]),
   ]);
   if (taskResult.error || !taskResult.data || memberResult.error || assigneeResult.error || reviewerResult.error) return null;

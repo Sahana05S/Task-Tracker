@@ -10,6 +10,7 @@ import { rowHref } from '../internal/location';
 import type { CompletionState, SectionProgress } from '../internal/progress';
 import { percentText, rowKind, sectionStatus, stateChoices, type ChecklistRowKind } from '../internal/table';
 import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
+import { ObjectiveReviewChip } from './objective-review';
 import { SectionStateIcon } from './section-state-icon';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -74,6 +75,7 @@ export function ChecklistRowCard({ row, ctx, large = false }: { row: ChecklistBr
           <ChecklistStateControl taskId={ctx.task.id} checklistId={row.checklistId} nodeId={row.id} title={row.title} state={state} choices={choices} version={ctx.version} action={ctx.action} />
         ) : <ChecklistStateBadge state={state} />
       ) : null}
+      <ObjectiveReviewChip nodeId={row.id} className="justify-self-start" />
     </article>
   );
 }

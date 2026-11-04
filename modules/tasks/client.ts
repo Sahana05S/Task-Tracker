@@ -22,7 +22,7 @@ export {
   type NativeTemplate,
   type TemplateNode,
 } from '@/modules/tasks/internal/details-contract';
-export { canManageTasks, canUpdateTaskOwnFields, isAssignedToTask } from '@/modules/tasks/internal/permissions';
+export { canEditTaskDetails, canManageTaskPeople, canManageTasks, canUpdateTaskOwnFields, isAssignedToTask, isTaskWorker, missionRelationship } from '@/modules/tasks/internal/permissions';
 export { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
 export { equalParticipantShares, parseSharePercent, TOTAL_SHARE_UNITS } from '@/modules/tasks/internal/shares';
 export { mapTask, mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/internal/mappers';
@@ -34,9 +34,16 @@ export {
   PROOF_ACCEPT,
   proofFileProblem,
   proofMimeType,
+  isMissionFileKind,
+  MISSION_DOCUMENT_KINDS,
+  MISSION_FILE_KINDS,
+  missionFileFolder,
+  missionFilesOfKind,
+  type MissionDocumentKind,
+  type MissionFileKind,
   type MissionProof,
 } from '@/modules/tasks/internal/proofs/rules';
 export { uploadProofToTicket } from '@/modules/tasks/internal/proofs/upload';
 export type { SupportSplitMode } from '@/modules/tasks/internal/tools/support-split';
 
-export { MISSION_BATCH_SIZE, compareRoadmapMissions, missionBatchLimit, missionDueFilter, missionDueLabel, type MissionDueFilter, type MissionBatchOptions, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/internal/roadmap-contract';
+export { MISSION_BATCH_SIZE, ROADMAP_LINK_LIMIT, ROADMAP_RELATIONS, canTimeMission, type RoadmapLink, type RoadmapRelation, compareRoadmapMissions, missionBatchLimit, missionDueFilter, missionDueLabel, type MissionDueFilter, type MissionBatchOptions, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/internal/roadmap-contract';

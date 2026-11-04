@@ -9,23 +9,33 @@ import { CATEGORY_LABELS } from '@/shared/tracker/enums';
 import { formatDate, formatHours, formatPercent } from '@/shared/tracker/format';
 import { TASK_FRESHNESS_MEANINGS } from '@/shared/tracker/labels';
 
+export interface MissionPeopleNames {
+  readonly owner: readonly string[];
+  readonly assignees: readonly string[];
+  readonly collaborators: readonly string[];
+  readonly reviewers: readonly string[];
+  readonly observers: readonly string[];
+}
+
 /**
  * The mission's core facts: progress, status, dates and people. This is the
  * page's first definition list.
  */
 export function MissionOverview({
   data,
-  assigneeNames,
-  reviewerNames,
+  people,
   overdue,
   belowProgress,
+  peopleManager,
 }: {
   data: TaskDetailData;
-  assigneeNames: readonly string[];
-  reviewerNames: readonly string[];
+  /** Names by relationship (migration 108); collaborators and observers show only when there are some. */
+  people: MissionPeopleNames;
   overdue: boolean;
   /** Under the progress bar: the waypoint track, supplied by the page. */
   belowProgress?: ReactNode;
+  /** Under the facts: the people controls, for those who may change them. */
+  peopleManager?: ReactNode;
 }) {
   const task = data.task;
   return (
@@ -73,9 +83,13 @@ export function MissionOverview({
           value={task.freshness ?? '—'}
           note={task.freshness ? TASK_FRESHNESS_MEANINGS[task.freshness] : 'Set an assigned and a due date to show it'}
         />
-        <PeopleTile label="Assignees" names={assigneeNames} fallback="Unassigned" />
-        <PeopleTile label="Reviewers" names={reviewerNames} fallback="No reviewer" />
+        <PeopleTile label="Owner" names={people.owner} fallback="No owner" />
+        <PeopleTile label="Assignees" names={people.assignees} fallback="Only the owner" />
+        {people.collaborators.length ? <PeopleTile label="Collaborators" names={people.collaborators} fallback="" /> : null}
+        <PeopleTile label="Reviewers" names={people.reviewers} fallback="No reviewer" />
+        {people.observers.length ? <PeopleTile label="Observers" names={people.observers} fallback="" /> : null}
       </dl>
+      {peopleManager}
     </section>
   );
 }

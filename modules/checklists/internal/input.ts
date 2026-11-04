@@ -19,6 +19,8 @@ const COMMAND_FIELDS: Record<string, string[]> = {
   // Migration 69: swap with the neighbour shown above or below.
   reorder: ['node_id', 'direction'],
   duplicate: ['node_id'],
+  // Migration 114: acknowledge an objective or send it back with a note.
+  review: ['node_id', 'decision', 'note'],
   mode: ['enabled', 'reason', 'preview_progress'],
 };
 

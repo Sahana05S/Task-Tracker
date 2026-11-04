@@ -89,6 +89,8 @@ jobs:
         run: python tools/test_m63_checklist_rows_database.py --psql "$(command -v psql)" --port 15432
       - name: Objectives and sub-quests (migration 109)
         run: python tools/test_checklist_subquests_database.py --psql "$(command -v psql)" --port 15432
+      - name: Timer session activity (migration 110)
+        run: python tools/test_timer_session_activity_database.py --psql "$(command -v psql)" --port 15432
       - name: Company branding (migration 64)
         run: python tools/test_m64_company_branding_database.py --psql "$(command -v psql)" --port 15432
       - name: Conflict errors without PostgREST retries (migration 52)
@@ -109,8 +111,14 @@ jobs:
         run: python tools/test_mission_learnings_database.py --psql "$(command -v psql)" --port 15432
       - name: Workspace labels (migration 112)
         run: python tools/test_workspace_labels_database.py --psql "$(command -v psql)" --port 15432
+      - name: Objective review and Work needed (migration 114)
+        run: python tools/test_objective_review_database.py --psql "$(command -v psql)" --port 15432
       - name: Demo recognition seed (script only, loopback)
         run: python tools/test_seed_demo_recognition_database.py --psql "$(command -v psql)" --port 15432 --manifest-dir "$RUNNER_TEMP/demo-recognition"
+      - name: Mission people, collaborators and observers (migration 108)
+        run: python tools/test_task_people_database.py --psql "$(command -v psql)" --port 15432
+      - name: Task Tools copies keep collaborators and observers in their roles (migration 115)
+        run: python tools/test_task_tools_people_database.py --psql "$(command -v psql)" --port 15432
       - name: Install openpyxl for the sheet tools
         run: python -m pip install openpyxl==3.1.5
       - name: Attendance import from the billed attendance sheet (script only, loopback)

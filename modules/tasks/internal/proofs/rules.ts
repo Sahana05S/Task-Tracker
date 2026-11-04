@@ -1,5 +1,5 @@
 /**
- * Mission proof rules (migration 101). PRIVATE; re-exported through `client.ts`.
+ * Mission proof and document rules (migrations 101, 113). PRIVATE; re-exported through `client.ts`.
  * The file rules are shared with sales proofs and live in the files module.
  */
 
@@ -18,4 +18,31 @@ export {
 /** Private bucket of migration 101; objects at <organization>/<task>/<uuid>.<ext>, then moved to the Shared Drive. */
 export const PROOFS_BUCKET = 'mission-proofs';
 
-export type MissionProof = ProofFile;
+/** What a mission file is (migration 113): a proof, or an Input / Process / Output document. */
+export const MISSION_FILE_KINDS = ['proof', 'input', 'process', 'output'] as const;
+export type MissionFileKind = (typeof MISSION_FILE_KINDS)[number];
+/** The three document kinds, in the order the Work files panel shows them. */
+export const MISSION_DOCUMENT_KINDS = ['input', 'process', 'output'] as const satisfies readonly MissionFileKind[];
+export type MissionDocumentKind = (typeof MISSION_DOCUMENT_KINDS)[number];
+
+export function isMissionFileKind(value: unknown): value is MissionFileKind {
+  return typeof value === 'string' && (MISSION_FILE_KINDS as readonly string[]).includes(value);
+}
+
+/** One mission file; rows from databases before 113 have no kind and are proofs. */
+export interface MissionProof extends ProofFile {
+  readonly kind: MissionFileKind;
+}
+
+/** The files of one kind. */
+export function missionFilesOfKind(files: readonly MissionProof[], kind: MissionFileKind): MissionProof[] {
+  return files.filter((file) => file.kind === kind);
+}
+
+/** The Shared Drive folder a mission file is moved into (mirrors taskpulse_private.file_subject). */
+export function missionFileFolder(task: { taskTag: string | null; title: string; assignedDate: string | null }, kind: MissionFileKind, uploadedOn: string): string[] {
+  const month = (task.assignedDate ?? uploadedOn).slice(0, 7);
+  const mission = `${task.taskTag ?? 'Mission'} - ${task.title.trim() || 'Untitled'}`.slice(0, 200);
+  if (kind === 'proof') return ['Proofs', month, mission];
+  return ['Missions', month, mission, kind.charAt(0).toUpperCase() + kind.slice(1)];
+}

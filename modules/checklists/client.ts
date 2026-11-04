@@ -32,3 +32,23 @@ export {
   stateChoices,
   type ChecklistRowKind,
 } from './internal/table';
+export {
+  NO_REVIEWS,
+  REVIEW_DECISIONS,
+  REVIEW_NOTE_MAX,
+  REVIEW_STATES,
+  blockingReviews,
+  canDecideObjective,
+  mayReviewObjectives,
+  parseObjectiveReviews,
+  reviewChip,
+  reviewDecisionError,
+  reviewStateAfterTick,
+  reviewsAwaiting,
+  reviewsByNode,
+  type ObjectiveReview,
+  type ObjectiveReviewDecision,
+  type ObjectiveReviews,
+  type ObjectiveReviewState,
+  type ReviewChip,
+} from './internal/review';
