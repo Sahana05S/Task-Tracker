@@ -23,6 +23,22 @@ export interface MissionBatchOptions {
   limit?: number;
   /** Also return missions the member reviews or observes. Off by default: Today's controls assume assigned work. */
   watching?: boolean;
+  /**
+   * `team`: every open mission in the company, for the managing director and project engineers (the caller
+   * checks the role; RLS already lets members read their company's missions). Default `mine`.
+   */
+  scope?: 'mine' | 'team';
+}
+/** `task_dependencies.relation_type` values the Today graph draws. */
+export type RoadmapRelation = 'Subtask' | 'Dependency' | 'Blocks' | 'Related';
+export const ROADMAP_RELATIONS: readonly RoadmapRelation[] = ['Subtask', 'Dependency', 'Blocks', 'Related'];
+/** One stored relation touching a batch mission: `from` is the predecessor (the parent, for Subtask). */
+export interface RoadmapLink { from: string; to: string; relation: RoadmapRelation }
+/** At most this many relations come back per batch. */
+export const ROADMAP_LINK_LIMIT = 200;
+/** Whether the member may run a timer or log time on the mission: owners and assignees with shares only (migration 108). */
+export function canTimeMission(mission: Pick<RoadmapMission, 'relationship'>): boolean {
+  return mission.relationship === 'owner' || mission.relationship === 'assignee';
 }
 const RELATIONSHIP_STRENGTH: Record<MissionRelationship, number> = { owner: 0, assignee: 1, collaborator: 2, reviewer: 3, observer: 4 };
 /** The stronger of two relationships (owner > assignee > collaborator > reviewer > observer). */
@@ -31,6 +47,8 @@ export function strongerRelationship(a: MissionRelationship | undefined, b: Miss
 }
 export interface RoadmapMissionBatch {
   missions: RoadmapMission[];
+  /** Stored relations with at least one end in this batch (bounded by ROADMAP_LINK_LIMIT). */
+  links?: RoadmapLink[];
   hasMore: boolean;
   nextCursor: string | null;
 }
