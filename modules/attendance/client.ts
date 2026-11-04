@@ -40,4 +40,4 @@ export {
   type CheckInKind,
   type CheckInMark,
 } from './internal/check-in-model';
-export { CHECK_IN_NOTES, checkInMessage, checkOutMessage, firstName, greetingFor, noteFor, shareTime } from './internal/share-message';
+export { blockDuration, CHECK_IN_NOTES, checkInMessage, checkOutMessage, firstName, formatTimeBlocks, greetingFor, noteFor, shareTime, timeBlockDay, type BlockManualEntry, type BlockSession, type BreakTimes, type TimeBlock, type TimeBlockDay, type TimeBlockMission } from './internal/share-message';

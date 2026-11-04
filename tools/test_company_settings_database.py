@@ -270,4 +270,20 @@ for db in DBS:
         sql(db,"BEGIN; SELECT set_config('request.jwt.claim.sub','"+uid+"',true);"+f"INSERT INTO public.attendance_records(user_id,attendance_date,status) VALUES('{uid}','{d(6)}','Holiday') ON CONFLICT DO NOTHING; COMMIT;")
     assert d(6) in holidays(M4,d(7))
     print('PASS',db,'the derived everyone-on-Holiday rule still marks dates')
+
+    # ---- break times for the check-out report (migration 119) ------------------------------------------------
+    att=settings(db,MD)['attendance']
+    assert (att['morningTeaAt'],att['lunchStart'],att['lunchEnd'],att['eveningTeaAt'])==('11:00','13:00','14:00','16:00'),att
+    base={k:att[k] for k in ('checkInEnabled','officeLatitude','officeLongitude','officeRadiusM','photoRetentionDays','autoMarkEnabled','weeklyOffDays','checkInReminderTime')}
+    save(db,MD,'attendance',base)  # an older client without the keys keeps them
+    assert settings(db,M4)['attendance']['lunchStart']=='13:00'
+    save(db,MD,'attendance',{**base,'morningTeaAt':'10:30','lunchStart':'12:30','lunchEnd':'13:15','eveningTeaAt':None})
+    att=settings(db,M4)['attendance']
+    assert (att['morningTeaAt'],att['lunchStart'],att['lunchEnd'],att['eveningTeaAt'])==('10:30','12:30','13:15',None),att
+    v=settings(db,MD)['version']
+    expect_code(db,MD,command_sql('attendance',{**base,'lunchStart':'14:00','lunchEnd':'13:00'},v),'23514')
+    expect_code(db,MD,command_sql('attendance',{**base,'morningTeaAt':'25:00'},v),'23514')
+    expect_code(db,MD,command_sql('attendance',{**base,'lunchStart':None},v),'23514')
+    expect_code(db,M4,command_sql('attendance',{**base,'morningTeaAt':'11:00'},v),'42501')
+    print('PASS',db,'break times: defaults, kept by older clients, saved by the director, ordered and well formed')
 print('ALL PASS')

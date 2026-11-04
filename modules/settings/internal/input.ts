@@ -151,8 +151,23 @@ const PARSERS: Record<SettingsSection, (raw: unknown) => Parsed<Record<string, J
     }
     // The reminder runs in a 30-minute window that must end by midnight (migration 93).
     if (reminder !== null && reminder > '23:29') return { ok: false, error: 'Choose a reminder time up to 23:29.' };
+    // Break times (migration 119): "HH:MM" or empty for none; lunch start and end together; in day order.
+    // A payload without them (an older client) leaves the saved times alone.
+    const breaks: Partial<Record<'morningTeaAt' | 'lunchStart' | 'lunchEnd' | 'eveningTeaAt', string | null>> = {};
+    for (const key of ['morningTeaAt', 'lunchStart', 'lunchEnd', 'eveningTeaAt'] as const) {
+      if (raw[key] === undefined) continue;
+      const value = raw[key] === '' ? null : raw[key];
+      if (value !== null && (typeof value !== 'string' || !REMINDER_TIME_PATTERN.test(value))) return { ok: false, error: 'Break times look like 11:00, or stay empty.' };
+      breaks[key] = value;
+    }
+    if (('lunchStart' in breaks || 'lunchEnd' in breaks) && (breaks.lunchStart == null) !== (breaks.lunchEnd == null)) return { ok: false, error: 'Give both the lunch start and end, or neither.' };
+    if (breaks.lunchStart != null && breaks.lunchEnd != null && breaks.lunchStart >= breaks.lunchEnd) return { ok: false, error: 'Lunch must end after it starts.' };
+    const order = [breaks.morningTeaAt, breaks.lunchStart, breaks.lunchEnd, breaks.eveningTeaAt].filter((time): time is string => typeof time === 'string');
+    if (order.some((time, index) => index > 0 && time < order[index - 1]) || (typeof breaks.morningTeaAt === 'string' && breaks.morningTeaAt === breaks.eveningTeaAt)) {
+      return { ok: false, error: 'Break times must run in order: morning tea, lunch, evening tea.' };
+    }
     return { ok: true, value: { checkInEnabled: raw.checkInEnabled, officeLatitude: latitude, officeLongitude: longitude, officeRadiusM: radius, photoRetentionDays: days,
-      autoMarkEnabled: raw.autoMarkEnabled, weeklyOffDays: [...new Set(off as number[])].sort(), checkInReminderTime: reminder } };
+      autoMarkEnabled: raw.autoMarkEnabled, weeklyOffDays: [...new Set(off as number[])].sort(), checkInReminderTime: reminder, ...breaks } };
   },
 
   mission_defaults(raw) {

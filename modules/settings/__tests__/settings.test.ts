@@ -217,4 +217,22 @@ describe('company branding (migration 64)', () => {
     expect(parseCompanySettings({ attendance: { checkInReminderTime: '08:45' } }).attendance.checkInReminderTime).toBe('08:45');
     expect(parseCompanySettings({ attendance: { checkInReminderTime: 'soon' } }).attendance.checkInReminderTime).toBeNull();
   });
+
+  it('saves the break times for the check-out report (migration 119)', () => {
+    const attendance = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90, autoMarkEnabled: true, weeklyOffDays: [0] };
+    const save = (extra: Record<string, unknown>) =>
+      parseSettingsCommand(form({ section: 'attendance', expectedVersion: '4', operationId: OP, payload: JSON.stringify({ ...attendance, ...extra }) }));
+    const breaks = { morningTeaAt: '10:30', lunchStart: '13:00', lunchEnd: '13:45', eveningTeaAt: '' };
+    const saved = save(breaks);
+    expect(saved.ok && saved.value.payload).toMatchObject({ morningTeaAt: '10:30', lunchStart: '13:00', lunchEnd: '13:45', eveningTeaAt: null });
+    const older = save({});
+    expect(older.ok && 'lunchStart' in older.value.payload).toBe(false);
+    expect(save({ ...breaks, lunchEnd: '' })).toEqual({ ok: false, error: 'Give both the lunch start and end, or neither.' });
+    expect(save({ ...breaks, lunchEnd: '12:00' })).toEqual({ ok: false, error: 'Lunch must end after it starts.' });
+    expect(save({ ...breaks, morningTeaAt: '13:30' })).toEqual({ ok: false, error: 'Break times must run in order: morning tea, lunch, evening tea.' });
+    expect(save({ ...breaks, morningTeaAt: '11' }).ok).toBe(false);
+    const defaults = parseCompanySettings({ attendance: {} }).attendance;
+    expect([defaults.morningTeaAt, defaults.lunchStart, defaults.lunchEnd, defaults.eveningTeaAt]).toEqual(['11:00', '13:00', '14:00', '16:00']);
+    expect(parseCompanySettings({ attendance: { eveningTeaAt: null } }).attendance.eveningTeaAt).toBeNull();
+  });
 });

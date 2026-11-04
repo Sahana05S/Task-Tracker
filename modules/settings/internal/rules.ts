@@ -125,8 +125,19 @@ export interface AttendanceSettings {
   weeklyOffDays: number[];
   /** Migration 93: daily "Time to check in" reminder, "HH:MM" Asia/Kolkata; null = off. */
   checkInReminderTime: string | null;
+  /**
+   * Migration 119: break times for the check-out report's four time blocks,
+   * "HH:MM" Asia/Kolkata; null = no such break (its blocks merge). Lunch is
+   * not counted as productive time.
+   */
+  morningTeaAt: string | null;
+  lunchStart: string | null;
+  lunchEnd: string | null;
+  eveningTeaAt: string | null;
 }
-export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90, autoMarkEnabled: true, weeklyOffDays: [0], checkInReminderTime: null };
+/** The break times before migration 119 and for a new company (user decision, 4 November 2026). */
+export const DEFAULT_BREAK_TIMES = { morningTeaAt: '11:00', lunchStart: '13:00', lunchEnd: '14:00', eveningTeaAt: '16:00' } as const;
+export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = { checkInEnabled: true, officeLatitude: null, officeLongitude: null, officeRadiusM: 200, photoRetentionDays: 90, autoMarkEnabled: true, weeklyOffDays: [0], checkInReminderTime: null, ...DEFAULT_BREAK_TIMES };
 
 /** A check-in reminder time: "HH:MM" on the 24-hour clock. */
 export const REMINDER_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -323,7 +334,18 @@ function parseAttendance(raw: unknown): AttendanceSettings {
       ? [...new Set(record.weeklyOffDays.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))].sort()
       : DEFAULT_ATTENDANCE_SETTINGS.weeklyOffDays,
     checkInReminderTime: typeof record.checkInReminderTime === 'string' && REMINDER_TIME_PATTERN.test(record.checkInReminderTime) ? record.checkInReminderTime : null,
+    // Absent before migration 119: the defaults. Null: that break is not set.
+    morningTeaAt: breakTime(record, 'morningTeaAt'),
+    lunchStart: breakTime(record, 'lunchStart'),
+    lunchEnd: breakTime(record, 'lunchEnd'),
+    eveningTeaAt: breakTime(record, 'eveningTeaAt'),
   };
+}
+
+function breakTime(record: Record<string, unknown>, key: keyof typeof DEFAULT_BREAK_TIMES): string | null {
+  if (!(key in record)) return DEFAULT_BREAK_TIMES[key];
+  const value = record[key];
+  return typeof value === 'string' && REMINDER_TIME_PATTERN.test(value) ? value : null;
 }
 
 function parseBranding(raw: unknown): CompanyBranding {

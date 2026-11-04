@@ -544,6 +544,10 @@ function AttendanceSection({ settings }: SectionProps) {
     autoMarkEnabled: saved.autoMarkEnabled,
     weeklyOffDays: saved.weeklyOffDays,
     checkInReminderTime: saved.checkInReminderTime ?? '',
+    morningTeaAt: saved.morningTeaAt ?? '',
+    lunchStart: saved.lunchStart ?? '',
+    lunchEnd: saved.lunchEnd ?? '',
+    eveningTeaAt: saved.eveningTeaAt ?? '',
   });
   const [locating, setLocating] = React.useState<string | null>(null);
   const set = (patch: Partial<typeof draft>) => setDraft((current) => ({ ...current, ...patch }));
@@ -581,6 +585,10 @@ function AttendanceSection({ settings }: SectionProps) {
           autoMarkEnabled: draft.autoMarkEnabled,
           weeklyOffDays: draft.weeklyOffDays,
           checkInReminderTime: draft.checkInReminderTime === '' ? null : draft.checkInReminderTime,
+          morningTeaAt: draft.morningTeaAt === '' ? null : draft.morningTeaAt,
+          lunchStart: draft.lunchStart === '' ? null : draft.lunchStart,
+          lunchEnd: draft.lunchEnd === '' ? null : draft.lunchEnd,
+          eveningTeaAt: draft.eveningTeaAt === '' ? null : draft.eveningTeaAt,
         })}
       >
         <div className="grid gap-4">
@@ -629,6 +637,20 @@ function AttendanceSection({ settings }: SectionProps) {
                 : "Leave empty for no reminder. With a time, everyone who hasn't checked in by then gets a notification on working days."}
             </p>
           </div>
+          <fieldset className="grid gap-2">
+            <legend className="text-foreground mb-1 text-sm font-medium">Break times</legend>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {([['morningTeaAt', 'Morning tea'], ['lunchStart', 'Lunch starts'], ['lunchEnd', 'Lunch ends'], ['eveningTeaAt', 'Evening tea']] as const).map(([key, label]) => (
+                <label key={key} className="field-label">
+                  {label}
+                  <input type="time" step={60} value={draft[key]} onChange={(event) => set({ [key]: event.target.value.slice(0, 5) })} className="field" />
+                </label>
+              ))}
+            </div>
+            <p className="text-muted-foreground text-sm">
+              The check-out report splits the day at these times: check-in to morning tea, morning tea to lunch, lunch to evening tea, evening tea to check-out. Lunch is not counted. Leave a time empty to join the blocks on either side.
+            </p>
+          </fieldset>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" checked={draft.autoMarkEnabled} onChange={(event) => set({ autoMarkEnabled: event.target.checked })} className="size-4" />
             Mark attendance automatically at the end of each day
