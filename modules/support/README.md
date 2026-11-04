@@ -47,6 +47,10 @@ suggestions, sales and meetings go through `dated_record_command` (migration
 
 Migration 102 (`102_sales_proofs.sql`): `taskpulse_private.sale_proofs`, bucket `sales-proofs` (private, 25 MB, PDF/images/Office) and its policies, `sale_proofs(sales[])`, `sale_proof_command(...)`, `sale_proof_folder_allowed`, `sale_proof_in_use`. The entry's salesperson, the managing director and project engineers see and add proofs; the uploader or one of those managers removes one. Files move to `Proofs/<YYYY-MM>/Sales/<date> - <client> - <salesperson>/` in the Shared Drive.
 
+Each dated record's card carries `id="record-<id>"`, and `getMeetingPointsData(date)`
+shows the period holding `date`, so `/meeting-points?date=<day>#record-<id>` opens one point
+(label pages link there).
+
 ## Depends on
 `shared/*` (Kolkata dates, calendar periods, the observation clock, the shared
 `team_summary_inputs` fetch for report counts, `shared/ui/execution-form`),

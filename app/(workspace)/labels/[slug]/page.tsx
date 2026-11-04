@@ -17,6 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 function href(item: LabelledItem): string {
   if (item.kind === 'task' && item.taskTag) return `/tasks/${encodeURIComponent(item.taskTag)}`;
   if (item.kind === 'mission_learning' && item.taskTag) return `/tasks/${encodeURIComponent(item.taskTag)}?tab=details#learning`;
+  // The point itself: Meeting Points opens the period holding its date and scrolls to its card.
+  if (item.kind === 'meeting_point') return `/meeting-points${item.date ? `?date=${encodeURIComponent(item.date)}` : ''}#record-${item.id}`;
   return `/meeting-points`;
 }
 

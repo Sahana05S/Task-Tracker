@@ -34,6 +34,8 @@ import { canUpdateTaskOwnFields, isAssignedToTask, isTaskWorker } from '@/module
 import { formatDate, formatPercent, isOverdue, formatHours } from '@/shared/tracker/format';
 import { cn } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
+import type { Label } from '@/modules/labels/client';
+import { LabelChips } from '@/modules/labels/components/label-chips';
 
 export interface TaskCardListProps {
   tasks: readonly Task[];
@@ -53,6 +55,8 @@ export interface TaskCardListProps {
   WaypointSlot?: WaypointSlotComponent;
   /** Sub-mission nesting for `tasks`, already ordered parent first (Missions list). */
   nesting?: ReadonlyMap<string, MissionNesting>;
+  /** A mission's labels (migration 112), shown as chips linking to `/labels/<slug>`. */
+  labelsOf?: (taskId: string) => readonly Label[];
 }
 
 /** A recognition waypoint track for one task; `stopped` is a discarded or archived mission. */
@@ -90,6 +94,7 @@ export const TaskCardList = React.memo(function TaskCardList({
   LogHoursAction,
   WaypointSlot,
   nesting,
+  labelsOf,
 }: TaskCardListProps) {
   return (
     <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -107,6 +112,7 @@ export const TaskCardList = React.memo(function TaskCardList({
             LogHoursAction={LogHoursAction}
             WaypointSlot={WaypointSlot}
             nest={nesting?.get(task.id)}
+            labels={labelsOf?.(task.id)}
           />
         </li>
       ))}
@@ -132,6 +138,7 @@ interface MissionCardProps {
   LogHoursAction?: LogHoursActionComponent;
   WaypointSlot?: WaypointSlotComponent;
   nest?: MissionNesting;
+  labels?: readonly Label[];
 }
 
 function MissionCard({
@@ -146,6 +153,7 @@ function MissionCard({
   LogHoursAction,
   WaypointSlot,
   nest,
+  labels,
 }: MissionCardProps) {
   const href = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const archived = Boolean(task.archivedEffectiveDate);
@@ -216,6 +224,7 @@ function MissionCard({
         {task.description ? (
           <p className="text-muted-foreground line-clamp-2 text-sm">{task.description}</p>
         ) : null}
+        <LabelChips labels={labels} max={4} className="mt-0.5" />
       </div>
 
       {/* Progress */}

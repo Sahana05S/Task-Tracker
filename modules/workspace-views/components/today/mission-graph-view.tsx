@@ -17,6 +17,8 @@ import {
 } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
+import type { Label } from '@/modules/labels/client';
+import { LabelChips } from '@/modules/labels/components/label-chips';
 import styles from './mission-graph.module.css';
 
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
@@ -72,8 +74,10 @@ function GraphLegend({ rings }: { rings: boolean }) {
   </ul>;
 }
 
-export function MissionGraph({ missions, links = [], today, initialLocation, onLocation }: {
+export function MissionGraph({ missions, links = [], labels, today, initialLocation, onLocation }: {
   missions: GraphMission[];
+  /** Labels per mission id (migration 112): names under each mission star, chips beside the open mission. */
+  labels?: Readonly<Record<string, readonly Label[]>> | null;
   /** Stored relations between missions in the loaded batches (Subtask, Dependency, Blocks, Related). */
   links?: GraphLink[];
   today: string;
@@ -370,6 +374,7 @@ export function MissionGraph({ missions, links = [], today, initialLocation, onL
           <Link className="link" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage objectives</Link>
           <Link className="link" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
           <MissionActionsMenu taskId={mission.id} taskTag={mission.taskTag} />
+          <LabelChips labels={labels?.[mission.id]} max={4} />
         </span> : null}
       </div> : null}
       {lastLevel?.error ? <p role="alert" className="text-danger mt-2 text-sm">{lastLevel.error} <button type="button" className="link font-semibold" onClick={() => last && fetchLevel(last)}><RotateCcwIcon className="inline size-3.5" aria-hidden="true" /> Retry branch</button></p> : null}
@@ -406,6 +411,8 @@ export function MissionGraph({ missions, links = [], today, initialLocation, onL
               : `${pct(node.progress)} · ${row?.childCount ?? 0} rows${opened ? ' · open' : ''}`;
             const kindLabel = { mission: 'Mission', quest: 'Quest', objective: 'Objective', more: 'More objectives' }[node.kind];
             const relations = relationText.get(node.id);
+            const nodeLabels = m ? labels?.[m.id] ?? [] : [];
+            const labelText = nodeLabels.length ? [...nodeLabels.slice(0, 2).map(l => `#${l.name}`), ...(nodeLabels.length > 2 ? [`+${nodeLabels.length - 2}`] : [])].join(' ') : null;
             const parent = node.parentId ? layout.byId.get(node.parentId) : undefined;
             const origin = parent ?? sky;
             const progress = node.complete ? 100 : Math.max(0, Math.min(100, node.progress ?? 0));
@@ -414,7 +421,7 @@ export function MissionGraph({ missions, links = [], today, initialLocation, onL
               style={{ left: node.x, top: node.y, ['--node' as string]: `var(--map-hue-${node.hue})`, ['--r' as string]: node.r, ['--p' as string]: progress,
                 ['--w' as string]: `${node.depth === 0 ? LABEL_WIDTH.mission : LABEL_WIDTH.child}px`,
                 ['--dx' as string]: `${origin.x - node.x}px`, ['--dy' as string]: `${origin.y - node.y}px` }}
-              aria-label={`${kindLabel}: ${node.title}. ${sub}.${m ? ` ${m.priority} priority.` : ''}${relations ? ` ${relations.join('. ')}.` : ''}`}
+              aria-label={`${kindLabel}: ${node.title}. ${sub}.${m ? ` ${m.priority} priority.` : ''}${relations ? ` ${relations.join('. ')}.` : ''}${nodeLabels.length ? ` Labels: ${nodeLabels.map(l => l.name).join(', ')}.` : ''}`}
               aria-expanded={node.kind === 'objective' || node.kind === 'more' ? undefined : opened}
               aria-pressed={node.kind === 'objective' ? node.id === leafId : undefined}
               onPointerDown={e => { pointer.current = e.pointerType; }}
@@ -434,6 +441,7 @@ export function MissionGraph({ missions, links = [], today, initialLocation, onL
               </span>
               <span className={styles.name}>{node.title}</span>
               <span className={styles.sub}>{armed === node.id ? 'Tap again to open' : sub}</span>
+              {labelText ? <span className={styles.labels} aria-hidden="true">{labelText}</span> : null}
             </button>;
           })}
           {leaf && leafNode ? <div className={styles.card} style={{ left: leafNode.x + LABEL_WIDTH.child / 2 + 18, top: leafNode.y }}>

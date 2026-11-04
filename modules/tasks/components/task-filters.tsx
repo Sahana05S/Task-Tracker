@@ -27,6 +27,8 @@ import {
 import { cn } from '@/shared/utils';
 import type { MissionView } from '@/modules/tasks/components/filter-params';
 import type { Task, TaskStatus, User } from '@/types/tracker';
+import type { Label } from '@/modules/labels/client';
+import { LabelFilter } from '@/modules/labels/components/label-filter';
 
 const VIEW_OPTIONS: readonly SegmentedOption<MissionView>[] = [
   { value: 'cards', label: 'Card view', icon: LayoutGridIcon, iconOnly: true },
@@ -44,6 +46,8 @@ export interface TaskFiltersProps {
   totalCount: number;
   view: MissionView;
   onViewChange: (view: MissionView) => void;
+  /** The company's labels (migration 112); null hides the label filter. */
+  labelCatalogue?: readonly Label[] | null;
 }
 
 /** Statuses that get a pill; the rarer ones stay in the facet menu. */
@@ -52,7 +56,7 @@ const PILL_STATUSES: readonly TaskStatus[] = ['Not Started', 'In Progress', 'Don
 /**
  * Missions toolbar (Stitch reference missions_list_1): search, status pills
  * with counts, the remaining facets (assignee, type, priority, freshness, any
- * status) and the card/table view switch.
+ * status, labels) and the card/table view switch.
  *
  * Filtering runs against the already-fetched set, so every change is immediate
  * and no round trip is involved.
@@ -66,6 +70,7 @@ export function TaskFilters({
   totalCount,
   view,
   onViewChange,
+  labelCatalogue = null,
 }: TaskFiltersProps) {
   const activeCount = activeFilterCount(filters);
   // Every code stays filterable (older missions keep hidden types), in company order.
@@ -224,6 +229,15 @@ export function TaskFilters({
           allLabel="Any freshness"
           className="w-full sm:w-36"
         />
+
+        {labelCatalogue || filters.labels.length ? (
+          <LabelFilter
+            catalogue={labelCatalogue ?? []}
+            value={filters.labels}
+            onChange={(next) => update('labels', next)}
+            className="w-full sm:w-40"
+          />
+        ) : null}
 
         {activeCount > 0 ? (
           <Button

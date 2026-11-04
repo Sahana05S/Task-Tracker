@@ -54,6 +54,7 @@ import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-m
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
 import { LabelInput } from '@/modules/labels/components/label-input';
+import { LabelChips } from '@/modules/labels/components/label-chips';
 import { getMissionLearnings } from '@/modules/learning';
 import { LearningCountChip } from '@/modules/learning/components/learning-count-chip';
 import { LearningPanel } from '@/modules/learning/components/learning-panel';
@@ -139,14 +140,13 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     // Objectives waiting for this reviewer (114); a failed read only hides the list.
     tab === 'work' && !archived && (reviewer || canManage) ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
   ]);
-  // Labels (migration 112) on the Details tab: the mission's own and each learning note's. Null hides them.
-  const [labelCatalogue, missionLabels, noteLabels] = details
-    ? await Promise.all([
-        getLabelCatalogue(),
-        getLabelsFor('task', [task.id]),
-        getLabelsFor('mission_learning', learnings?.items.map((note) => note.id) ?? []),
-      ])
-    : [null, null, null];
+  // Labels (migration 112): the mission's own on every tab (header chips); the catalogue and each
+  // learning note's on the Details tab. Null hides them.
+  const [labelCatalogue, missionLabels, noteLabels] = await Promise.all([
+    details ? getLabelCatalogue() : Promise.resolve(null),
+    getLabelsFor('task', [task.id]),
+    details ? getLabelsFor('mission_learning', learnings?.items.map((note) => note.id) ?? []) : Promise.resolve(null),
+  ]);
   const canLabelMission = !archived && (canManage || task.assigneeIds.includes(currentUser.id));
   const awaitingReview = reviewsAwaiting(objectiveReviews);
   const canUseTimer = !archived && canStartTimerForTask(currentUser, task);
@@ -225,6 +225,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
                 Archived
               </span>
             ) : null}
+            <LabelChips labels={missionLabels?.[task.id]} />
           </>
         }
         title={task.title}

@@ -13,9 +13,14 @@ export interface MeetingPointsData {
   readonly entries: readonly DatedEntry[];
 }
 
-/** Meeting points in the current Asia/Kolkata period, with members and task choices. */
-export async function getMeetingPointsData(): Promise<MeetingPointsData> {
-  const db=await createClient(),period=currentPeriod(new Date(kolkataDate()+'T12:00:00Z'));
+/**
+ * Meeting points in the current Asia/Kolkata period, with members and task
+ * choices. `date` (YYYY-MM-DD) shows the period holding that day instead, so a
+ * link to an older point (a label page) lands where it is listed.
+ */
+export async function getMeetingPointsData(date?: string | null): Promise<MeetingPointsData> {
+  const day=date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&!Number.isNaN(Date.parse(`${date}T12:00:00Z`))?date:kolkataDate();
+  const db=await createClient(),period=currentPeriod(new Date(day+'T12:00:00Z'));
   const [records,members,tasks]=await Promise.all([
     db.from('meeting_points').select('*').gte('meeting_date',period.startDate).lte('meeting_date',period.endDate).order('meeting_date',{ascending:false}),
     db.from('users').select(USER_COLUMNS).order('full_name'),db.from('tasks').select('id, task_tag, title'),
