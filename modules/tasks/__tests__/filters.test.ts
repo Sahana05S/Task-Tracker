@@ -95,11 +95,12 @@ describe('activeFilterCount', () => {
       priority: ALL,
       status: ALL,
       freshness: ALL,
+      labels: [],
     };
     expect(activeFilterCount(filters)).toBe(3);
   });
 
-  it('returns 6 when all facets are active', () => {
+  it('returns 7 when all facets are active', () => {
     const filters: TaskFilterState = {
       search: 'x',
       assigneeId: 'user-1',
@@ -107,8 +108,9 @@ describe('activeFilterCount', () => {
       priority: 'Focus',
       status: 'In Progress',
       freshness: 'Fresh',
+      labels: ['crane', 'site-a'],
     };
-    expect(activeFilterCount(filters)).toBe(6);
+    expect(activeFilterCount(filters)).toBe(7);
   });
 });
 
@@ -119,6 +121,28 @@ describe('activeFilterCount', () => {
 describe('filterTasks', () => {
   it('returns all tasks for EMPTY_FILTERS', () => {
     expect(filterTasks(TASKS, EMPTY_FILTERS)).toHaveLength(TASKS.length);
+  });
+
+  describe('labels', () => {
+    const slugs: Record<string, string[]> = { t1: ['crane'], t2: ['crane', 'site-a'], t3: ['site-b'] };
+    const labelsOf = (id: string) => slugs[id] ?? [];
+
+    it('keeps missions carrying any chosen label', () => {
+      expect(filterTasks(TASKS, { ...EMPTY_FILTERS, labels: ['site-a', 'site-b'] }, labelsOf).map((t) => t.id)).toEqual(['t2', 't3']);
+    });
+
+    it('combines with the other facets', () => {
+      const result = filterTasks(TASKS, { ...EMPTY_FILTERS, labels: ['crane'], assigneeId: 'user-1' }, labelsOf);
+      expect(result.map((t) => t.id)).toEqual(['t1']);
+    });
+
+    it('matches nothing when the labels are unknown', () => {
+      expect(filterTasks(TASKS, { ...EMPTY_FILTERS, labels: ['crane'] })).toEqual([]);
+    });
+
+    it('counts as an active filter', () => {
+      expect(hasActiveFilters({ ...EMPTY_FILTERS, labels: ['crane'] })).toBe(true);
+    });
   });
 
   it('filters by assigneeId', () => {

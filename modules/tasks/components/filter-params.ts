@@ -10,6 +10,14 @@ export type MissionView = 'cards' | 'table';
 
 interface ParamReader {
   get(name: string): string | null;
+  getAll?(name: string): string[];
+}
+
+/** Label slugs from `?label=a&label=b` (or `?label=a,b`), tidied and without repeats. */
+export function labelsFromParams(params: ParamReader): string[] {
+  const raw = params.getAll ? params.getAll('label') : [params.get('label') ?? ''];
+  const slugs = raw.flatMap((value) => value.split(',')).map((slug) => slug.trim().toLowerCase()).filter((slug) => /^[a-z0-9-]{1,40}$/.test(slug));
+  return [...new Set(slugs)];
 }
 
 function oneOf<T extends string>(values: readonly T[], value: string | null): T | typeof ALL {
@@ -28,6 +36,7 @@ export function filtersFromParams(params: ParamReader): TaskFilterState {
     priority: oneOf(TASK_PRIORITIES, params.get('priority')),
     status: oneOf(TASK_STATUSES, params.get('status')),
     freshness: oneOf(TASK_FRESHNESS_STATES, params.get('fresh')),
+    labels: labelsFromParams(params),
   };
 }
 
@@ -41,6 +50,7 @@ export function missionsHref(view: MissionView, filters: TaskFilterState = EMPTY
   if (filters.priority !== ALL) params.set('priority', filters.priority);
   if (filters.status !== ALL) params.set('status', filters.status);
   if (filters.freshness !== ALL) params.set('fresh', filters.freshness);
+  for (const slug of filters.labels) params.append('label', slug);
   const query = params.toString();
   return query ? `/tasks?${query}` : '/tasks';
 }

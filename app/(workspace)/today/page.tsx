@@ -5,6 +5,7 @@ import { FirstRunCard } from '@/modules/workspace-views/components/today/first-r
 import { FIRST_RUN_COOKIE } from '@/modules/workspace-views/components/today/first-run';
 import { MissionRoadmap } from '@/modules/workspace-views/components/today/mission-roadmap';
 import { getAssignedMissionBatch } from '@/modules/tasks';
+import { getLabelsFor } from '@/modules/labels';
 import { missionDueFilter } from '@/modules/tasks/client';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { parseRoadmapLocation, roadmapScope } from '@/modules/workspace-views/client';
@@ -48,6 +49,8 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const canSeeTeam = (TASK_MANAGER_ROLES as readonly string[]).includes(profile.role);
   const scope = canSeeTeam ? roadmapScope(query.scope) : 'mine';
   const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true }).catch(() => null);
+  // Labels (migration 112) on the first batch: one labels_for read; a failure only hides the chips.
+  const initialLabels = initial ? await getLabelsFor('task', initial.missions.map((mission) => mission.id)).catch(() => null) : null;
   // New in the last 30 days, until dismissed.
   const firstRun = Date.now() - Date.parse(profile.createdAt) < NEW_MEMBER_MS && (await cookies()).get(FIRST_RUN_COOKIE)?.value !== 'dismissed';
   return <MissionPage>
@@ -55,7 +58,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
     <Suspense fallback={null}><HrPrompt userId={profile.id} /></Suspense>
     <Suspense fallback={null}><RecordsPrompt userId={profile.id} employeeId={profile.employeeId} /></Suspense>
-    <MissionRoadmap key={`${due}:${scope}`} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} />
+    <MissionRoadmap key={`${due}:${scope}`} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLabels={initialLabels} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>
       <TodayOverview profile={profile} />
     </Suspense>

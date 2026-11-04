@@ -33,6 +33,7 @@ import { nestSubMissions } from '@/modules/tasks/internal/grouping';
 import { canManageTasks } from '@/modules/tasks/internal/permissions';
 import type { ToolOperation } from '@/modules/tasks/internal/tools/contract';
 import type { Task, User } from '@/types/tracker';
+import type { Label } from '@/modules/labels/client';
 
 export interface TaskWorkspaceProps {
   tasks: readonly Task[];
@@ -50,7 +51,21 @@ export interface TaskWorkspaceProps {
   LogHoursAction?: LogHoursActionComponent;
   /** Waypoint track on cards and the table's Waypoint column (recognition fills it). */
   WaypointSlot?: WaypointSlotComponent;
+  /** Labels (migration 112): chips on cards and rows, the label filter and the New mission field. Null when the read failed. */
+  labels?: MissionLabels | null;
 }
+
+/** The labels the Missions page read in one batch (`labels_for('task', ids)` and `label_catalogue()`). */
+export interface MissionLabels {
+  /** The company's labels, archived ones included (flagged). */
+  catalogue: readonly Label[];
+  /** May create a label while typing it (managing director and project engineers). */
+  canCreate: boolean;
+  /** Labels per mission id; a mission without labels may be missing. */
+  byTask: Readonly<Record<string, readonly Label[]>>;
+}
+
+const NO_LABELS: readonly Label[] = [];
 
 /** The operation drawer's subject: one command over a fixed set of missions. */
 interface RunningOperation {
@@ -76,6 +91,7 @@ export function TaskWorkspace({
   templates=[],
   LogHoursAction,
   WaypointSlot,
+  labels = null,
 }: TaskWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -130,10 +146,13 @@ export function TaskWorkspace({
     [effortEntries],
   );
 
+  const labelsOf = React.useCallback((taskId: string) => labels?.byTask[taskId] ?? NO_LABELS, [labels]);
+  const labelSlugsOf = React.useCallback((taskId: string) => labelsOf(taskId).map((label) => label.slug), [labelsOf]);
+
   const visibleTasks = React.useMemo(
     () =>
-      sortTasks(filterTasks(tasks, filters), sort, memberNames, effortByTask),
-    [tasks, filters, sort, memberNames, effortByTask],
+      sortTasks(filterTasks(tasks, filters, labelSlugsOf), sort, memberNames, effortByTask),
+    [tasks, filters, labelSlugsOf, sort, memberNames, effortByTask],
   );
   // Sub-missions follow their parent (with a "Part of" chip when the parent is filtered out).
   const nested = React.useMemo(() => nestSubMissions(visibleTasks, tasks), [visibleTasks, tasks]);
@@ -144,7 +163,7 @@ export function TaskWorkspace({
   const applyFilters = (next: TaskFilterState) => {
     setFilters(next);
     // A row hidden by the new filters leaves the selection for good.
-    const stillVisible = filterTasks(tasks, next).map((task) => task.id);
+    const stillVisible = filterTasks(tasks, next, labelSlugsOf).map((task) => task.id);
     setSelected((current) => pruneSelection(current, stillVisible));
     window.history.replaceState(null, '', missionsHref(view, next));
   };
@@ -189,6 +208,7 @@ export function TaskWorkspace({
         totalCount={tasks.length}
         view={view}
         onViewChange={changeView}
+        labelCatalogue={labels?.catalogue ?? null}
       />
 
       {tasks.length === 0 ? (
@@ -237,6 +257,7 @@ export function TaskWorkspace({
                 onSelectionChange={setSelected}
                 actions={rowActions}
                 WaypointSlot={WaypointSlot}
+                labelsOf={labels ? labelsOf : undefined}
               />
               <BulkActionBar
                 selectedCount={selection.size}
@@ -258,6 +279,7 @@ export function TaskWorkspace({
               actions={rowActions}
               LogHoursAction={LogHoursAction}
               WaypointSlot={WaypointSlot}
+              labelsOf={labels ? labelsOf : undefined}
             />
           </div>
         </>
@@ -290,6 +312,8 @@ export function TaskWorkspace({
         task={editingTask}
         members={members}
         defaultAssigneeId={currentUser.id}
+        labelCatalogue={labels?.catalogue ?? null}
+        canCreateLabels={labels?.canCreate ?? false}
       />
 
       <DeleteMissionSheet

@@ -13,6 +13,19 @@ label while typing it. Renaming keeps the label's id, so every link survives.
 viewer may read), and `/tasks?label=<slug>` filters the Missions table.
 Labels feed no score and no graph (D14).
 
+Show and filter (user decision, 4 November 2026): a mission's labels show as
+chips wherever it appears (Missions cards and table rows, the mission page
+header, Today's list rows, the open mission on the map, and as text under each
+mission star), each chip opening `/labels/<slug>`. Each page reads them in one
+batch (`labels_for('task', ids)`; Today once per batch of missions). The
+Missions page has a Labels filter beside the others: several labels, a mission
+matches when it carries any of them, combined with the other filters and kept
+in the URL as `?label=a&label=b` (an older `?label=a` still works). The New
+mission form takes labels too; they are attached through `label_link_command`
+once the mission exists, and a refused one never undoes the mission. A meeting
+point on a label page links to its card on Meeting Points
+(`/meeting-points?date=<day>#record-<id>`, the period holding that day).
+
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
@@ -20,13 +33,17 @@ Labels feed no score and no graph (D14).
 | `actions.ts` | `manageLabel(form)` (create, rename, archive, restore), `changeLabelLink(form)` (attach by id or name, detach) |
 | `client.ts` | Types `Label`, `CatalogueLabel`, `LabelCatalogue`, `LabelledRecords`, `LabelledItem`, `LabelSubjectKind`, `LabelColour`; `LABEL_COLOURS`, `LABEL_COLOUR_CLASS` (theme classes per token), `LABEL_COLOUR_NAME`, `labelSlug`, `cleanLabelName`, `labelSuggestions` |
 | `components/label-input.tsx` | `LabelInput`: a record's chips with remove buttons and the `#` add box with suggestions |
-| `components/label-chips.tsx` | `LabelChip`, `LabelChips`: read-only chips linking to `/labels/<slug>` |
+| `components/label-chips.tsx` | `LabelChip`, `LabelChips`: read-only chips linking to `/labels/<slug>` (`max` shows a "+n" for tight places) |
+| `components/label-combobox.tsx` | `LabelCombobox`: the `#` add box with suggestions (reports a choice; used by `LabelInput` and `LabelPicker`) |
+| `components/label-picker.tsx` | `LabelPicker` (labels chosen before the record exists), `attachPickedLabels(kind, id, picks, path)` |
+| `components/label-filter.tsx` | `LabelFilter`: several labels by slug, for a list's filters (Missions) |
 | `components/label-manager.tsx` | `LabelManager`: create / rename / colour / archive list |
 
 Where they show: the mission's Details tab (a Labels panel and a box under
-each learning note), each meeting point (through `DatedRecordModule`'s
-`extras`), `/labels`, `/labels/[slug]`, Settings > Company and the Missions
-page notice for `?label=`.
+each learning note), the mission page header, Missions cards and table rows
+(and the Labels filter and New mission field), Today's list and map, each
+meeting point (through `DatedRecordModule`'s `extras`), `/labels`,
+`/labels/[slug]` and Settings > Company.
 
 ## Private (`internal/`)
 | File | Job |
@@ -49,5 +66,6 @@ Migration 112 (`112_workspace_labels.sql`):
 Harness: `tools/test_workspace_labels_database.py`.
 
 ## Depends on
-`shared/*` only. Pages pass its components into the learning and support
+`shared/*` only. `tasks` (cards, table, filters, New mission form) and
+`workspace-views` (Today) import its `client.ts` and `components/`. Pages pass its components into the learning and support
 modules through their slots (`noteExtras`, `extras`), so neither imports it.

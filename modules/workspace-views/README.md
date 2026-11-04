@@ -48,7 +48,8 @@ scoring and team; nothing here queries the database directly.
 
 ## Depends on
 `shared/*` and the public APIs of `auth`, `tasks`, `time-tracking`,
-`milestones`, `scoring`, `support`, `reports` and `team` as each screen needs.
+`milestones`, `scoring`, `support`, `reports`, `team` and `labels` as each screen needs
+(Today shows each mission's labels; `loadRoadmapMissions` returns them with each batch).
 
 The shell footer shows a small "Powered by Stellar" line with `StellarMark` (`shared/ui/stellar-mark`), the product mark also used by the top bar, login and landing pages. No new database ownership or formula.
 

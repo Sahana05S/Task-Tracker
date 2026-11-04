@@ -24,6 +24,8 @@ import { ProgressInput } from '@/modules/tasks/components/progress-input';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { PartOfChip, SubMissionCount } from '@/modules/tasks/components/sub-mission-chips';
 import type { WaypointSlotComponent } from '@/modules/tasks/components/task-card-list';
+import type { Label } from '@/modules/labels/client';
+import { LabelChips } from '@/modules/labels/components/label-chips';
 import { TaskRowMenuItems, type TaskRowActions } from '@/modules/tasks/components/task-row-menu';
 import { FreshnessIndicator, PriorityBadge } from '@/shared/ui/tracker-badges';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -64,6 +66,8 @@ export interface TaskDataGridProps {
   nesting?: ReadonlyMap<string, MissionNesting>;
   /** The Waypoint column's cell; the column is left out without it. */
   WaypointSlot?: WaypointSlotComponent;
+  /** A mission's labels (migration 112), shown as chips under its title. */
+  labelsOf?: (taskId: string) => readonly Label[];
 }
 
 interface ColumnDef {
@@ -119,6 +123,7 @@ export function TaskDataGrid({
   actions,
   WaypointSlot,
   nesting,
+  labelsOf,
 }: TaskDataGridProps) {
   const columns = WaypointSlot ? COLUMNS : COLUMNS.filter((column) => !column.waypointSlot);
   // Parents start expanded; a collapsed parent hides every row under it.
@@ -221,6 +226,7 @@ export function TaskDataGrid({
                   {task.archivedEffectiveDate ? (
                     <span className="text-muted-foreground block text-xs">Archived, read-only</span>
                   ) : null}
+                  <LabelChips labels={labelsOf?.(task.id)} max={3} className="mt-1 gap-1" chipClassName="px-1.5 py-0 text-[11px]" />
                   {nest?.parentTag || nest?.childCount ? (
                     <span className="mt-1 flex flex-wrap gap-1">
                       {nest.parentTag ? <PartOfChip parentTag={nest.parentTag} /> : null}

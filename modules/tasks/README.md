@@ -85,7 +85,10 @@ reviewer and observer missions only with `{ watching: true }`.
 Tests: `tools/test_task_people_database.py`.
 
 ## Depends on
-`shared/*`, the public API of `checklists` (rollups and checklist types),
+`shared/*`, the public API of `labels` (chips on cards and table rows, the
+Missions Labels filter `?label=a&label=b` and the New mission form's labels,
+attached after the mission is created; the page passes `labels` to
+`TaskWorkspace`), the public API of `checklists` (rollups and checklist types),
 `settings` (the company's mission-type names and hidden codes: the create/edit
 form offers only active types plus the mission's current one) and
 `shared/ui` (mission UI, tracker badges). A new mission may leave its tag blank;

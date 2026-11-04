@@ -14,6 +14,8 @@ import type { ChecklistBranch, ChecklistBranchOptions, ChecklistBranchRow } from
 import { branchForRow, roadmapSearch, type RoadmapLocation, type RoadmapScope } from '@/modules/workspace-views/client';
 import { loadRoadmapBranch, loadRoadmapMissions } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
+import type { Label } from '@/modules/labels/client';
+import { LabelChips } from '@/modules/labels/components/label-chips';
 import { MissionGraph } from './mission-graph-view';
 
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
@@ -42,6 +44,8 @@ interface Props {
   today: string;
   initialView?: View;
   initialLocation?: RoadmapLocation | null;
+  /** Labels on the first batch's missions (migration 112); later batches bring their own. Null hides them. */
+  initialLabels?: Record<string, Label[]> | null;
 }
 function Progress({ value }: { value: number | null }) {
   return <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{value === null ? '—' : `${Math.round(value)}%`}</span>;
@@ -51,8 +55,9 @@ function LoadingBranch() {
 }
 
 /** The map view and a keyboard-first list over the same bounded data, actions and URL location. */
-export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = false, today, initialView = 'roadmap', initialLocation = null }: Props) {
+export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = false, today, initialView = 'roadmap', initialLocation = null, initialLabels = null }: Props) {
   const [batch, setBatch] = useState(initial);
+  const [labels, setLabels] = useState<Record<string, Label[]>>(initialLabels ?? {});
   const [view, setView] = useState<View>(initialView);
   const [location, setLocation] = useState<RoadmapLocation | null>(initialLocation);
   const [mission, setMission] = useState<RoadmapMission | null>(null);
@@ -117,6 +122,8 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
     startMore(async () => {
       const result = await loadRoadmapMissions({ due, scope, cursor: retry ? null : batch?.nextCursor });
       if (!result.success || !result.data) { setBatchError(result.error ?? 'This batch could not be loaded. Retry.'); return; }
+      const batchLabels = result.data.labels;
+      if (batchLabels) setLabels(previous => retry ? batchLabels : { ...previous, ...batchLabels });
       setBatch(previous => ({ ...result.data!,
         missions: retry ? result.data!.missions : [...new Map([...(previous?.missions ?? []), ...result.data!.missions].map(m => [m.id, m])).values()],
         links: retry ? result.data!.links : [...new Map([...(previous?.links ?? []), ...(result.data!.links ?? [])].map(l => [`${l.relation}:${l.from}:${l.to}`, l])).values()] }));
@@ -151,7 +158,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
     </nav>
     {view === 'roadmap' ? <>
       {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
-      {batch?.missions.length || location ? <MissionGraph missions={batch?.missions ?? []} links={batch?.links} today={today} initialLocation={location}
+      {batch?.missions.length || location ? <MissionGraph missions={batch?.missions ?? []} links={batch?.links} labels={labels} today={today} initialLocation={location}
         onLocation={next => { setLocation(next); remember(next, due, 'roadmap'); }} />
         : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
       {batch?.hasMore ? <Button className="mt-4" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : `Load more missions (${batch.missions.length} shown)`}</Button> : null}
@@ -168,7 +175,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
     <div className={cn('mt-4 grid min-w-0 gap-5', selected && 'xl:grid-cols-[minmax(0,1fr)_340px]')}>
       <div className="border-border bg-card min-w-0 rounded-2xl border">
         {location && mission ? <div className="border-border flex flex-wrap items-start justify-between gap-3 border-b px-4 py-4 sm:px-5">
-          <div className="min-w-0"><h3 className="text-foreground break-words text-base font-semibold">{mission.title}</h3><p className="text-muted-foreground mt-1 text-xs">{missionDueLabel(mission.dueDate, today)} · {mission.taskTag}</p></div>
+          <div className="min-w-0"><h3 className="text-foreground break-words text-base font-semibold">{mission.title}</h3><p className="text-muted-foreground mt-1 text-xs">{missionDueLabel(mission.dueDate, today)} · {mission.taskTag}</p><LabelChips labels={labels[mission.id]} className="mt-2" /></div>
           <span className="flex flex-wrap items-center gap-3">
             {canTimeMission(mission) ? <TimerButton taskId={mission.id} taskLabel={mission.taskTag} /> : null}
             <Link href={`/tasks/${encodeURIComponent(mission.taskTag)}`} className={cn('text-primary rounded text-xs font-semibold underline-offset-4 hover:underline', FOCUS)}>Mission details</Link>
@@ -187,12 +194,13 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
             {branch.hasMore ? <Button variant="outline" size="sm" disabled={pending} onClick={() => open(location, true)} className="mt-4">{pending ? 'Loading…' : 'Load more items'}</Button> : null}
           </div> : !pending && !error ? <p className="text-muted-foreground py-8 text-sm">This mission does not have a checklist yet. <Link href={`/tasks/${encodeURIComponent(mission?.taskTag ?? '')}`} className="link font-semibold">Open mission details</Link> to set one up.</p> : null
             : <div className="pt-4">
-              {batch?.missions.length ? <ol className="divide-border divide-y" aria-label="Your open assigned missions">{batch.missions.map(item => <li key={item.id} className="relative flex min-w-0 items-center gap-2" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 106px' }}>
+              {batch?.missions.length ? <ol className="divide-border divide-y" aria-label="Your open assigned missions">{batch.missions.map(item => <li key={item.id} className="relative flex min-w-0 flex-wrap items-center gap-x-2" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 106px' }}>
                 <button type="button" onClick={() => { setMission(item); open({ missionId: item.id }); }} className={cn('group text-left min-w-0 flex-1 py-3 hover:bg-muted rounded-lg px-2 transition-colors', FOCUS)}>
                   <span className="flex items-start justify-between gap-3"><span className="text-foreground min-w-0 break-words text-sm font-semibold">{item.title}</span><ArrowRightIcon className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" /></span>
                   <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><PriorityBadge priority={item.priority} /><span className={cn('text-xs', item.dueDate && item.dueDate < today ? 'text-overdue font-semibold' : 'text-muted-foreground')}>{missionDueLabel(item.dueDate, today)}</span><Progress value={item.progress} /><span className="text-muted-foreground text-xs">{item.taskTag}</span></span>
                 </button>
                 {canTimeMission(item) ? <TimerButton taskId={item.id} taskLabel={item.taskTag} className="shrink-0" /> : null}
+                <LabelChips labels={labels[item.id]} max={4} className="-mt-1.5 basis-full px-2 pb-3" />
               </li>)}</ol> : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
             </div>}
           {!location && batch?.hasMore ? <Button className="mt-5 w-full" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : 'Load more missions'}</Button> : null}

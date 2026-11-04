@@ -34,7 +34,12 @@ export interface TaskFilterState {
   priority: TaskPriority | All;
   status: TaskStatus | All;
   freshness: TaskFreshness | All;
+  /** Label slugs (migration 112); a mission matches when it carries any of them. Empty: no constraint. */
+  labels: readonly string[];
 }
+
+/** A mission's label slugs, for the label facet. */
+export type TaskLabelSlugs = (taskId: string) => readonly string[];
 
 export const EMPTY_FILTERS: TaskFilterState = {
   search: '',
@@ -43,6 +48,7 @@ export const EMPTY_FILTERS: TaskFilterState = {
   priority: ALL,
   status: ALL,
   freshness: ALL,
+  labels: [],
 };
 
 /** True when any facet is narrowing the result set. */
@@ -53,7 +59,8 @@ export function hasActiveFilters(filters: TaskFilterState): boolean {
     filters.category !== ALL ||
     filters.priority !== ALL ||
     filters.status !== ALL ||
-    filters.freshness !== ALL
+    filters.freshness !== ALL ||
+    filters.labels.length > 0
   );
 }
 
@@ -66,14 +73,21 @@ export function activeFilterCount(filters: TaskFilterState): number {
   if (filters.priority !== ALL) count++;
   if (filters.status !== ALL) count++;
   if (filters.freshness !== ALL) count++;
+  if (filters.labels.length > 0) count++;
   return count;
 }
 
+/**
+ * `labelsOf` gives each mission's label slugs; without it a label filter
+ * matches nothing, since no mission is known to carry the label.
+ */
 export function filterTasks(
   tasks: readonly Task[],
   filters: TaskFilterState,
+  labelsOf?: TaskLabelSlugs,
 ): Task[] {
   const needle = filters.search.trim().toLowerCase();
+  const wanted = new Set(filters.labels);
 
   return tasks.filter((task) => {
     if (
@@ -92,6 +106,9 @@ export function filterTasks(
       return false;
     }
     if (filters.freshness !== ALL && task.freshness !== filters.freshness) {
+      return false;
+    }
+    if (wanted.size > 0 && !(labelsOf?.(task.id) ?? []).some((slug) => wanted.has(slug))) {
       return false;
     }
 
