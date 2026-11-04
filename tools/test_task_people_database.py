@@ -166,6 +166,24 @@ for DB in DBS:
         refused(DB,PE,f"SELECT public.checklist_branch('{tid}')")
         print('PASS',DB,'only the managing director and the mission\'s people read its checklist; a project engineer only when on it')
 
+        v120=value(DB,"position('private to the mission' in pg_get_functiondef('public.task_details_command_m05(uuid,text,jsonb,bigint,uuid)'::regprocedure))>0")=='t'
+        if v120:
+            # 120: off the mission, a project engineer neither changes its checklist or details
+            # nor sees its lines in Team > Activity; on it, they do.
+            private="This checklist is private to the mission's people"
+            assert private in refused(DB,PE,checklist(DB,tid,'add',{'checklist_id':cid,'title':'Off mission','section':'activity'}))
+            assert private in refused(DB,PE,checklist(DB,tid,'state',{'node_id':nid,'state':'N/A'}))
+            assert private in refused(DB,PE,details(DB,tid,{'description':'Off mission'}))
+            feed=lambda uid:ok(DB,uid,f"SELECT count(*) FROM public.activity_feed(current_date-1,current_date+1,'missions',NULL,NULL,200) f "
+                f"WHERE f.task_id='{tid}' AND f.actor_id IS DISTINCT FROM '{uid}' AND f.subject_user_id IS DISTINCT FROM '{uid}'")
+            assert int(feed(MD))>0 and int(feed(PE))==0,(feed(MD),feed(PE))
+            ok(DB,MATE,people(DB,MATE,tid,'add_observer',PE))
+            assert int(feed(PE))>0,feed(PE)
+            pe_node=ok(DB,PE,checklist(DB,tid,'add',{'checklist_id':cid,'title':'On mission','section':'activity'}))
+            ok(DB,PE,f"SELECT public.checklist_command('{tid}','delete',{j({'node_id':pe_node['nodeId'],'reason':'test'})},{version(DB,tid)},'{uuid4()}')")
+            ok(DB,MATE,people(DB,MATE,tid,'remove_observer',PE))
+            print('PASS',DB,'off the mission a project engineer cannot change its checklist or details and sees none of its activity lines')
+
         # Observers see the mission's files but neither add nor remove them.
         org=value(DB,f"organization_id FROM public.tasks WHERE id='{tid}'")
         def proof(op,path='NULL',proof_id='NULL'):
