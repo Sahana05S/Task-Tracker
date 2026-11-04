@@ -29,12 +29,52 @@ export function rowKind(row: Pick<ChecklistBranchRow, 'nodeType' | 'linkedTaskId
 /** Rows that open a nested table (a parent) or their own checklist (a Quest). */
 export const opensTable = (kind: ChecklistRowKind) => kind === 'parent' || kind === 'quest';
 
-/** Completion choices a row offers; rows with rows under them offer none. */
+/**
+ * The stored "not done" value (user decision, 4 November 2026: "No" means
+ * nothing, so it is never offered). An unticked objective is shown empty and
+ * clearing a tick sends this; the database default and the rollup stay as
+ * they were, so progress is unchanged.
+ */
+export const NOT_DONE: CompletionState = 'No';
+
+/**
+ * Completion choices a row offers: Yes and N/A for an objective (tapping the
+ * chosen one again clears it); only N/A for a linked sub-mission, whose
+ * completion follows that mission (clearing restores it). Rows with rows under
+ * them offer none.
+ */
 export function stateChoices(kind: ChecklistRowKind): readonly CompletionState[] {
-  if (kind === 'item') return ['Yes', 'No', 'N/A'];
-  // Completion follows the linked mission; the row can only be excluded or restored.
-  if (kind === 'linked') return ['No', 'N/A'];
+  if (kind === 'item') return ['Yes', 'N/A'];
+  if (kind === 'linked') return ['N/A'];
   return [];
+}
+
+/** The state a tap leaves: the choice, or not done when it was already chosen. */
+export function nextCompletionState(current: CompletionState | null | undefined, tapped: CompletionState): CompletionState {
+  return current === tapped ? NOT_DONE : tapped;
+}
+
+/** A completion state in words ("Not done" for the stored No). */
+export function completionWords(state: CompletionState | null | undefined): string {
+  return state === 'Yes' ? 'Yes' : state === 'N/A' ? 'N/A' : 'Not done';
+}
+
+export type ProgressStatusTone = 'done' | 'active' | 'idle' | 'alert';
+
+/**
+ * Where a Quest, a row with rows under it or a sub-mission stands: Not
+ * applicable, Complete, Changes needed (an objective inside was sent back by a
+ * reviewer), In progress (something is done) or Not started (0%).
+ */
+export function rowStatus(
+  row: { applicable: boolean; isComplete: boolean; progressPercentage: number | null },
+  changesNeeded = false,
+): { label: 'Not applicable' | 'Complete' | 'Changes needed' | 'In progress' | 'Not started'; tone: ProgressStatusTone } {
+  if (!row.applicable) return { label: 'Not applicable', tone: 'done' };
+  if (row.isComplete) return { label: 'Complete', tone: 'done' };
+  if (changesNeeded) return { label: 'Changes needed', tone: 'alert' };
+  if ((row.progressPercentage ?? 0) > 0) return { label: 'In progress', tone: 'active' };
+  return { label: 'Not started', tone: 'idle' };
 }
 
 /** OPEN / CLOSED / N/A for a page, as on the sheet's "[ChL]" tabs. */
@@ -43,12 +83,19 @@ export function pageResult(progress: Pick<ChecklistNodeProgress, 'applicable' | 
   return progress?.isComplete ? 'CLOSED' : 'OPEN';
 }
 
-/** Short state for a section header. */
-export function sectionStatus(section: SectionProgress): { label: string; tone: 'done' | 'active' | 'idle' | 'alert' } {
+/**
+ * Short state for a section header. An unfinished section says Not started at
+ * 0%, Changes needed when an objective in it was sent back (review
+ * `work_needed`, migration 114) and In progress only once something is done.
+ */
+export function sectionStatus(section: SectionProgress, changesNeeded = false): { label: string; tone: ProgressStatusTone } {
   switch (section.state) {
-    case 'complete': return { label: 'Gate satisfied', tone: 'done' };
+    case 'complete': return { label: 'Complete', tone: 'done' };
     case 'not_applicable': return { label: 'No rows (N/A)', tone: 'done' };
-    case 'partial': return { label: 'In progress', tone: 'active' };
+    case 'partial': {
+      const { label, tone } = rowStatus({ applicable: true, isComplete: false, progressPercentage: section.progressPercentage }, changesNeeded);
+      return { label, tone };
+    }
     // Older databases only (before migration 63).
     case 'uninitialized': return { label: 'Not confirmed yet', tone: 'idle' };
     case 'missing': return { label: 'Not set up', tone: 'idle' };

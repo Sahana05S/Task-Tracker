@@ -1,18 +1,16 @@
 import type * as React from 'react';
 import Link from 'next/link';
-import { CheckCircle2Icon, ChevronRightIcon, CircleDashedIcon, CircleDotIcon, CircleMinusIcon, ExternalLinkIcon, TriangleAlertIcon, FlagIcon, RocketIcon } from 'lucide-react';
+import { ChevronRightIcon, TriangleAlertIcon } from 'lucide-react';
 
 import { MissionProgress } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
 import { rowHref } from '../internal/location';
-import { formatMinutes } from '../internal/pages';
 import type { ChecklistBranchRow } from '../internal/branch-types';
-import type { ChecklistSection, CompletionState, SectionProgress } from '../internal/progress';
-import { percentText, rowKind, sectionStatus, stateChoices } from '../internal/table';
+import type { ChecklistSection, SectionProgress } from '../internal/progress';
+import { percentText, sectionStatus } from '../internal/table';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowActions } from './checklist-row-actions';
-import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
-import { ObjectiveReviewChip } from './objective-review';
+import { ObjectiveDetails, ObjectiveLinks, ObjectiveTick } from './objective-details';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -24,6 +22,8 @@ export interface ChecklistTableProps {
   note?: string;
   /** Section rollup for the header; omitted on a nested page. */
   summary?: SectionProgress;
+  /** An objective in this section was sent back for changes (header says Changes needed). */
+  changesNeeded?: boolean;
   rows: readonly ChecklistBranchRow[];
   task: Pick<Task, 'id' | 'taskTag' | 'lifecycleVersion'>;
   version: number;
@@ -59,13 +59,6 @@ const STATUS_TONE = {
   alert: 'bg-danger-subtle text-danger',
 } as const;
 
-function RollupIcon({ row }: { row: ChecklistBranchRow }) {
-  if (!row.applicable) return <CircleMinusIcon className="text-muted-foreground size-4" aria-label="Not applicable" />;
-  if (row.isComplete) return <CheckCircle2Icon className="text-success-strong size-4" aria-label="Complete" />;
-  if ((row.progressPercentage ?? 0) > 0) return <CircleDotIcon className="text-primary size-4" aria-label="In progress" />;
-  return <CircleDashedIcon className="text-muted-foreground size-4" aria-label="Not started" />;
-}
-
 // One mission timer (update plan, 3 November 2026): the per-row timer and the Est. and
 // Elapsed columns are gone; past time per row stays in the row panel and the effort breakdown.
 
@@ -77,7 +70,7 @@ function RollupIcon({ row }: { row: ChecklistBranchRow }) {
  */
 export function ChecklistTable(props: ChecklistTableProps) {
   const { id, title, note, summary, rows, task, version, checklistId, section, addParentId, canEdit, actions } = props;
-  const status = summary ? sectionStatus(summary) : null;
+  const status = summary ? sectionStatus(summary, props.changesNeeded) : null;
   const summaryValue = summary && summary.state !== 'not_applicable' ? summary.progressPercentage : null;
   const headingId = `${id}-heading`;
 
@@ -115,15 +108,8 @@ export function ChecklistTable(props: ChecklistTableProps) {
             </thead>
             <tbody className="max-md:block">
               {rows.map((row) => {
-                const kind = rowKind(row);
-                const choices = stateChoices(kind);
-                const container = choices.length === 0;
                 const href = rowHref(task.taskTag, row);
                 const progress = row.applicable ? percentText(row.progressPercentage) : 'N/A';
-                const inside = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside`
-                  : kind === 'quest' ? `Quest · ${row.childCount} row${row.childCount === 1 ? '' : 's'}`
-                  : kind === 'linked' ? 'Sub-mission' : null;
-                const state: CompletionState = row.completionState ?? 'No';
                 return (
                   <tr
                     key={row.id}
@@ -133,23 +119,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
                     )}
                   >
                     <td className="max-md:order-3 max-md:border-0 max-md:p-0">
-                      {container ? (
-                        <RollupIcon row={row} />
-                      ) : canEdit ? (
-                        <ChecklistStateControl
-                          taskId={task.id}
-                          checklistId={row.checklistId}
-                          nodeId={row.id}
-                          title={row.title}
-                          state={state}
-                          choices={choices}
-                          version={version}
-                          action={actions.checklist}
-                        />
-                      ) : (
-                        <ChecklistStateBadge state={state} />
-                      )}
-                      {container ? null : <ObjectiveReviewChip nodeId={row.id} className="ml-2 align-middle" />}
+                      <ObjectiveTick row={row} ctx={{ task, canEdit, version, action: actions.checklist }} />
                     </td>
                     <td className="max-md:order-4 max-md:border-0 max-md:p-0">
                       <div className="flex items-center gap-2">
@@ -166,32 +136,11 @@ export function ChecklistTable(props: ChecklistTableProps) {
                       ) : (
                         <span className="text-foreground font-medium break-words">{row.title}</span>
                       )}
-                      {row.description ? <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs break-words">{row.description}</p> : null}
-                      {inside ? <p className="text-muted-foreground mt-0.5 text-xs md:hidden">{inside}</p> : null}
-                      {inside ? (
-                        <p className="mt-0.5 text-xs max-md:hidden">
-                          {kind === 'linked' || kind === 'quest' ? <span className={cn('badge-soft', kind === 'quest' ? 'bg-primary-subtle text-primary-subtle-foreground' : 'badge-accent')}>{kind === 'quest' ? <FlagIcon className="size-3" aria-hidden="true" /> : <RocketIcon className="size-3" aria-hidden="true" />}{inside}</span> : <span className="text-muted-foreground">{inside}</span>}
-                        </p>
-                      ) : null}
+                      {/* The same details as Board, Blocks, Outline and Today; links have their own column on wider screens. */}
+                      <ObjectiveDetails row={row} progress={false} links="phone" className="mt-1" />
                     </td>
                     <td className="max-md:hidden">
-                      {row.links.length ? (
-                        <span className="flex items-center gap-1">
-                          {row.links.map((url, index) => (
-                            <a
-                              key={`${url}:${index}`}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={url}
-                              aria-label={`Link ${index + 1} for ${row.title}`}
-                              className="text-primary hover:bg-primary-subtle inline-flex size-7 items-center justify-center rounded-md"
-                            >
-                              <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
-                            </a>
-                          ))}
-                        </span>
-                      ) : <span className="text-muted-foreground">—</span>}
+                      {row.links.length ? <ObjectiveLinks row={row} className="flex-nowrap" /> : <span className="text-muted-foreground">—</span>}
                     </td>
                     <td className="max-md:order-2 max-md:border-0 max-md:p-0">
                       <div className="flex items-center justify-end gap-1">

@@ -24,6 +24,19 @@ export interface ObjectiveReview {
   reviewedBy: string | null;
   reviewedAt: string | null;
   note: string | null;
+  /**
+   * The rows above a sent-back objective, nearest first, across Quest lists
+   * (filled by the server read for Work-needed objectives), so a parent row, a
+   * Quest and the section holding it can say "Changes needed".
+   */
+  trail?: readonly ReviewTrailStep[];
+}
+
+/** One row above an objective: where it sits. */
+export interface ReviewTrailStep {
+  nodeId: string;
+  checklistId: string;
+  section: 'setup' | 'activity' | 'closure' | null;
 }
 
 /** What the viewer may do about a mission's objectives, and the reviews that are not 'none'. */
@@ -86,7 +99,8 @@ export function reviewChip(review: Pick<ObjectiveReview, 'state' | 'note'> | nul
     case 'acknowledged':
       return { label: 'Acknowledged', tone: 'success', description: `Acknowledged${by}.${review.note ? ` ${review.note}` : ''}` };
     case 'work_needed':
-      return { label: 'Work needed', tone: 'danger', description: `Work needed${by}: ${review.note ?? ''}`.trim() };
+      // Sent back (user report, 4 November 2026): said as what the objective needs now.
+      return { label: 'Changes needed', tone: 'danger', description: `Changes needed${by}: ${review.note ?? ''}`.trim() };
     default:
       return null;
   }
@@ -132,6 +146,7 @@ export function parseObjectiveReviews(value: unknown): ObjectiveReviews {
       reviewedBy: text(r.reviewedBy),
       reviewedAt: text(r.reviewedAt),
       note: text(r.note),
+      ...(Array.isArray(r.trail) ? { trail: parseTrail(r.trail) } : {}),
     });
   }
   return { canDecide: raw.canDecide === true, viewerId: text(raw.viewerId), reviews };
@@ -140,4 +155,46 @@ export function parseObjectiveReviews(value: unknown): ObjectiveReviews {
 /** Reviews keyed by objective, for the checklist views. */
 export function reviewsByNode(data: ObjectiveReviews): ReadonlyMap<string, ObjectiveReview> {
   return new Map(data.reviews.map((review) => [review.nodeId, review]));
+}
+
+function parseTrail(value: unknown[]): ReviewTrailStep[] {
+  const steps: ReviewTrailStep[] = [];
+  for (const step of value) {
+    if (!step || typeof step !== 'object') continue;
+    const s = step as Record<string, unknown>;
+    if (typeof s.nodeId !== 'string' || typeof s.checklistId !== 'string') continue;
+    const section = s.section === 'setup' || s.section === 'activity' || s.section === 'closure' ? s.section : null;
+    steps.push({ nodeId: s.nodeId, checklistId: s.checklistId, section });
+  }
+  return steps;
+}
+
+/** Where sent-back (Work needed) objectives sit: the rows holding them and each list section. */
+export interface SentBackIndex {
+  /** Sent-back objectives and every row above them (parent rows, Quest rows). */
+  readonly nodes: ReadonlySet<string>;
+  /** `${checklistId}:${section}` for each list section holding one, at any level. */
+  readonly places: ReadonlySet<string>;
+}
+
+/** Builds the index the views use to say "Changes needed" on rows, Quests and section headers. */
+export function sentBackIndex(data: Pick<ObjectiveReviews, 'reviews'>): SentBackIndex & {
+  hasRow: (nodeId: string) => boolean;
+  hasSection: (checklistId: string | null | undefined, section: string | null | undefined) => boolean;
+} {
+  const nodes = new Set<string>();
+  const places = new Set<string>();
+  for (const review of data.reviews) {
+    if (review.state !== 'work_needed') continue;
+    for (const step of [review, ...(review.trail ?? [])]) {
+      nodes.add(step.nodeId);
+      places.add(`${step.checklistId}:${step.section ?? 'activity'}`);
+    }
+  }
+  return {
+    nodes,
+    places,
+    hasRow: (nodeId) => nodes.has(nodeId),
+    hasSection: (checklistId, section) => !!checklistId && places.has(`${checklistId}:${section ?? 'activity'}`),
+  };
 }

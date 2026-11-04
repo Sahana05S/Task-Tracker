@@ -12,10 +12,10 @@ import { cn } from '@/shared/utils';
 import type { ActionResponse, Task } from '@/types/tracker';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { rowHref } from '../internal/location';
-import { CHECKLIST_SECTIONS, type ChecklistSection, type CompletionState } from '../internal/progress';
-import { percentText, rowKind, SECTION_TITLES, stateChoices } from '../internal/table';
-import { ChecklistStateBadge, ChecklistStateControl, ChecklistVersionField } from './checklist-state-control';
-import { ObjectiveReviewChip } from './objective-review';
+import { CHECKLIST_SECTIONS, type ChecklistSection } from '../internal/progress';
+import { percentText, rowKind, SECTION_TITLES } from '../internal/table';
+import { ChecklistVersionField } from './checklist-state-control';
+import { ObjectiveDetails, ObjectiveRowStatus, ObjectiveTick } from './objective-details';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 interface Ctx { task: Task; canEdit: boolean; version: number; action: Command }
@@ -59,8 +59,6 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
   const expandable = kind === 'parent' || kind === 'quest';
   const [open, setOpen] = React.useState(false);
   const [children, setChildren] = React.useState<Children | null>(null);
-  const choices = stateChoices(kind);
-  const state: CompletionState = row.completionState ?? 'No';
   const progress = row.applicable ? percentText(row.progressPercentage) : 'N/A';
 
   const load = async () => {
@@ -86,7 +84,7 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
 
   return (
     <li className="grid">
-      <div className="hover:bg-muted/60 flex min-h-11 items-center gap-2 rounded-lg px-1 py-1" style={{ paddingLeft: `${0.25 + depth * 1.25}rem` }}>
+      <div className="hover:bg-muted/60 flex min-h-11 flex-wrap items-center gap-2 rounded-lg px-1 py-1" style={{ paddingLeft: `${0.25 + depth * 1.25}rem` }}>
         {expandable ? (
           <button type="button" onClick={toggle} aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} ${row.title}`} className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex size-7 shrink-0 items-center justify-center rounded-md outline-none focus-visible:ring-2">
             <ChevronRightIcon className={cn('size-4 transition-transform', open && 'rotate-90')} aria-hidden="true" />
@@ -94,18 +92,15 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
         ) : <span className="size-7 shrink-0" aria-hidden="true" />}
         {kind === 'quest' ? <FlagIcon className="text-primary size-4 shrink-0" aria-label="Quest" /> : kind === 'linked' ? <RocketIcon className="text-recognition-foreground size-4 shrink-0" aria-label="Sub-mission" /> : null}
         {rowHref(ctx.task.taskTag, row) ? (
-          <Link href={rowHref(ctx.task.taskTag, row)!} className="text-foreground min-w-0 flex-1 truncate text-sm font-semibold underline-offset-4 hover:underline">{row.title}</Link>
+          <Link href={rowHref(ctx.task.taskTag, row)!} className="text-foreground min-w-0 flex-1 basis-32 truncate text-sm font-semibold underline-offset-4 hover:underline">{row.title}</Link>
         ) : (
-          <span className={cn('text-foreground min-w-0 flex-1 truncate text-sm', row.isComplete && row.applicable && 'text-muted-foreground line-through decoration-1')}>{row.title}</span>
+          <span className={cn('text-foreground min-w-0 flex-1 basis-32 truncate text-sm', row.isComplete && row.applicable && 'text-muted-foreground line-through decoration-1')}>{row.title}</span>
         )}
         {kind !== 'item' ? <span className="text-muted-foreground w-10 shrink-0 text-right text-xs tabular-nums">{progress ?? '—'}</span> : null}
-        {choices.length ? (
-          ctx.canEdit
-            ? <ChecklistStateControl taskId={ctx.task.id} checklistId={row.checklistId} nodeId={row.id} title={row.title} state={state} choices={choices} version={ctx.version} action={ctx.action} />
-            : <ChecklistStateBadge state={state} />
-        ) : null}
-        <ObjectiveReviewChip nodeId={row.id} />
+        {expandable ? <ObjectiveRowStatus row={row} /> : <ObjectiveTick row={row} ctx={ctx} className="ml-auto shrink-0 justify-end" />}
       </div>
+      {/* The same details as the other views, under the title; the percentage is on the line above. */}
+      <ObjectiveDetails row={row} progress={false} className="pr-1 pb-1" style={{ paddingLeft: `${2.75 + depth * 1.25}rem` }} />
       {open ? (
         children?.state === 'ready' ? (
           children.groups.map((group) => (

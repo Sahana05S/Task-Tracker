@@ -324,7 +324,7 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
     if (!leaf || !leafLevel || !mission) return;
     const form = new FormData();
     form.set('command', 'state'); form.set('checklist_id', leaf.checklistId); form.set('taskId', mission.id);
-    form.set('expectedVersion', String(leafLevel.taskVersion)); form.set('node_id', leaf.id); form.set('state', leaf.completionState === 'Yes' ? 'No' : 'Yes');
+    form.set('expectedVersion', String(leafLevel.taskVersion)); form.set('node_id', leaf.id); form.set('state', leaf.completionState === 'Yes' ? 'No' /* cleared: the stored not-done value */ : 'Yes');
     form.set('operationId', crypto.randomUUID()); // idempotency key, as ExecutionForm supplies
     setCardBusy(true); setCardError(null);
     const result = await checklistCommand(form).catch(() => ({ success: false as const, error: 'The change could not be saved. Retry.' }));
@@ -451,7 +451,7 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
             <p className="text-muted-foreground mt-1 text-xs">{leaf.applicable === false ? 'Not applicable' : leaf.isComplete ? 'Complete' : 'Not done yet'}{leaf.linkedTaskId ? ' · follows a linked mission' : ''}</p>
             {cardError ? <p role="alert" className="text-danger mt-2 text-xs">{cardError}</p> : null}
             {!leaf.linkedTaskId && leaf.applicable !== false ? <Button size="sm" className="mt-3 w-full" variant={leaf.completionState === 'Yes' ? 'outline' : 'default'} disabled={cardBusy} onClick={quickComplete}>
-              {cardBusy ? 'Saving…' : leaf.completionState === 'Yes' ? 'Mark not done' : <><CheckIcon aria-hidden="true" />Complete step</>}</Button> : null}
+              {cardBusy ? 'Saving…' : leaf.completionState === 'Yes' ? 'Clear Yes' : <><CheckIcon aria-hidden="true" />Complete step</>}</Button> : null}
             <Button size="sm" variant="ghost" className="mt-1 w-full" onClick={() => panelHeading.current?.focus()}>Timer and details</Button>
           </div> : null}
         </div>

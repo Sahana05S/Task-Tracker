@@ -1,16 +1,25 @@
+'use client';
+
+import * as React from 'react';
+
 import { buttonVariants } from '@/shared/ui/button';
+import { loadObjectiveReviews } from '@/modules/checklists/actions';
 import type { ChecklistBranchRow } from '@/modules/checklists/client';
 import type { ChecklistItemTime } from '@/modules/checklists/client';
-import { CompletionForm } from './checklist-rows';
 import { formatHours } from '@/shared/tracker/format';
 import type { ActionResponse, Task } from '@/types/tracker';
 import { cn } from '@/shared/utils';
+import type { ObjectiveReviews } from '../internal/review';
+import { ObjectiveDetails, ObjectiveTick } from './objective-details';
+import { ObjectiveReviewProvider } from './objective-review';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 /**
  * One authoritative selected row. No entire checklist/detail tree is required.
- * Time is kept by the mission timer (3 November 2026); the row shows the time
- * logged against it before per-row timers were retired.
+ * It shows the same tick and details as the checklist views (review chip and
+ * note, links, description, sub-mission tag, progress). Time is kept by the
+ * mission timer (3 November 2026); the row shows the time logged against it
+ * before per-row timers were retired.
  */
 export function ChecklistItemWork({ task, node, time, actions, onOpen, onCommitted }: {
   task: Pick<Task, 'id' | 'taskTag' | 'lifecycleVersion'>;
@@ -21,23 +30,33 @@ export function ChecklistItemWork({ task, node, time, actions, onOpen, onCommitt
   onCommitted: () => void;
 }) {
   const container = node.childCount > 0;
-  const wrap = (action: Command): Command => async form => {
-    form.set('checklist_id', node.checklistId);
-    const result = await action(form);
+  const [reviews, setReviews] = React.useState<ObjectiveReviews>();
+  React.useEffect(() => {
+    let current = true;
+    // A failed read only leaves the review chip and note out.
+    loadObjectiveReviews(task.id).then((result) => { if (current && result.success) setReviews(result.data); }).catch(() => undefined);
+    return () => { current = false; };
+  }, [task.id, node.id, node.completionState]);
+  const { state } = actions;
+  const action = React.useCallback<Command>(async (form) => {
+    const result = await state(form);
     if (result.success) onCommitted();
     return result;
-  };
+  }, [state, onCommitted]);
   const seconds = time?.secondsByNode.get(node.id);
-  return <div className="mt-4 grid min-w-0 gap-4">
-    {node.description ? <p className="text-muted-foreground whitespace-pre-wrap break-words text-sm leading-relaxed">{node.description}</p> : null}
-    <dl className="text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-      <dt>Progress</dt><dd className="text-foreground text-right tabular-nums">{node.progressPercentage === null ? '—' : `${Math.round(node.progressPercentage)}%`}</dd>
-      {!container && seconds ? <><dt>Logged on this objective</dt><dd className="text-right">{time?.available && seconds !== undefined ? `${formatHours(seconds / 3600)} h` : '—'}</dd></> : null}
-    </dl>
-    {node.links.length ? <ul className="grid gap-2 text-sm">{node.links.map((href, index) => <li key={`${href}:${index}`}><a href={href} target="_blank" rel="noopener noreferrer" className="text-primary break-all underline underline-offset-4">Work link {index + 1}</a></li>)}</ul> : null}
-    {container ? <><p className="text-muted-foreground text-sm">Progress is the average of the {node.childCount} row{node.childCount === 1 ? '' : 's'} under it.</p><button type="button" onClick={onOpen} className={cn(buttonVariants(), 'px-4')}>Open rows</button></> : <>
-      <CompletionForm ctx={{ action: wrap(actions.state), task, checklistId: node.checklistId }} node={node} className="grid gap-2" />
-      <p className="text-muted-foreground text-xs">Time is kept by the mission’s timer.</p>
-    </>}
-  </div>;
+  return (
+    <ObjectiveReviewProvider taskId={task.id} version={task.lifecycleVersion ?? 0} action={actions.state} reviews={reviews}>
+      <div className="mt-4 grid min-w-0 gap-4">
+        <ObjectiveDetails row={node} />
+        <dl className="text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          <dt>Progress</dt><dd className="text-foreground text-right tabular-nums">{node.progressPercentage === null ? '—' : `${Math.round(node.progressPercentage)}%`}</dd>
+          {!container && seconds ? <><dt>Logged on this objective</dt><dd className="text-right">{time?.available && seconds !== undefined ? `${formatHours(seconds / 3600)} h` : '—'}</dd></> : null}
+        </dl>
+        {container ? <><p className="text-muted-foreground text-sm">Progress is the average of the {node.childCount} row{node.childCount === 1 ? '' : 's'} under it.</p><button type="button" onClick={onOpen} className={cn(buttonVariants(), 'px-4')}>Open rows</button></> : <>
+          <ObjectiveTick row={node} ctx={{ task, canEdit: true, version: task.lifecycleVersion ?? 0, action }} />
+          <p className="text-muted-foreground text-xs">Tap Yes when it is done, N/A when it does not apply; tap the chosen one again to clear it. Time is kept by the mission’s timer.</p>
+        </>}
+      </div>
+    </ObjectiveReviewProvider>
+  );
 }

@@ -9,6 +9,7 @@ import {
   reviewDecisionError,
   reviewStateAfterTick,
   reviewsAwaiting,
+  sentBackIndex,
   type ObjectiveReview,
 } from '@/modules/checklists/client';
 
@@ -74,13 +75,38 @@ describe('ticks and decisions', () => {
 });
 
 describe('review chip', () => {
-  it('shows Pending, Acknowledged and Work needed with its note; nothing for none', () => {
+  it('shows Pending, Acknowledged and a sent-back objective as Changes needed with its note; nothing for none', () => {
     expect(reviewChip(review())).toMatchObject({ label: 'Pending', tone: 'attention' });
     expect(reviewChip(review({ state: 'acknowledged' }), 'Asha')).toMatchObject({ label: 'Acknowledged', tone: 'success', description: 'Acknowledged by Asha.' });
     expect(reviewChip(review({ state: 'work_needed', note: 'Add the site photo' }), 'Asha'))
-      .toMatchObject({ label: 'Work needed', tone: 'danger', description: 'Work needed by Asha: Add the site photo' });
+      .toMatchObject({ label: 'Changes needed', tone: 'danger', description: 'Changes needed by Asha: Add the site photo' });
     expect(reviewChip(review({ state: 'none' }))).toBeNull();
     expect(reviewChip(undefined)).toBeNull();
+  });
+});
+
+describe('sentBackIndex', () => {
+  it('marks a sent-back objective, every row above it across Quest lists, and each list section holding it', () => {
+    const index = sentBackIndex({ reviews: [
+      review({ nodeId: 'obj', checklistId: 'quest-list', section: 'activity', state: 'work_needed', note: 'Redo',
+        trail: [{ nodeId: 'quest-row', checklistId: 'root', section: 'setup' }, { nodeId: 'parent-row', checklistId: 'root', section: 'setup' }] }),
+      review({ nodeId: 'waiting', checklistId: 'root', section: 'closure', state: 'pending' }),
+      review({ nodeId: 'ok', checklistId: 'root', section: 'activity', state: 'acknowledged' }),
+    ] });
+    for (const id of ['obj', 'quest-row', 'parent-row']) expect(index.hasRow(id)).toBe(true);
+    expect(index.hasRow('waiting')).toBe(false);
+    expect(index.hasRow('ok')).toBe(false);
+    expect(index.hasSection('root', 'setup')).toBe(true);
+    expect(index.hasSection('quest-list', 'activity')).toBe(true);
+    expect(index.hasSection('root', 'activity')).toBe(false);
+    expect(index.hasSection('root', 'closure')).toBe(false);
+    expect(index.hasSection(null, 'setup')).toBe(false);
+  });
+
+  it('keeps a well-formed trail from the read and drops malformed steps', () => {
+    const parsed = parseObjectiveReviews({ reviews: [{ nodeId: 'n1', checklistId: 'c1', state: 'work_needed', note: 'x',
+      trail: [{ nodeId: 'p', checklistId: 'c1', section: 'activity' }, { nodeId: 3 }] }] });
+    expect(parsed.reviews[0].trail).toEqual([{ nodeId: 'p', checklistId: 'c1', section: 'activity' }]);
   });
 });
 

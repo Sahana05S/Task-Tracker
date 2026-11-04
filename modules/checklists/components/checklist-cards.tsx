@@ -7,10 +7,9 @@ import type { Task } from '@/types/tracker';
 import type { ActionResponse } from '@/types/tracker';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { rowHref } from '../internal/location';
-import type { CompletionState, SectionProgress } from '../internal/progress';
-import { percentText, rowKind, sectionStatus, stateChoices, type ChecklistRowKind } from '../internal/table';
-import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
-import { ObjectiveReviewChip } from './objective-review';
+import type { SectionProgress } from '../internal/progress';
+import { percentText, rowKind, sectionStatus, type ChecklistRowKind } from '../internal/table';
+import { ObjectiveDetails, ObjectiveTick } from './objective-details';
 import { SectionStateIcon } from './section-state-icon';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -30,21 +29,16 @@ export interface CardContext {
 }
 
 /**
- * One checklist row as a card (Board and Blocks views): kind, title, progress
- * and the same one-tap Yes / No / N/A as the table. Quests, sub-missions and
- * rows with rows under them open their page.
+ * One checklist row as a card (Board and Blocks views): kind, title, the same
+ * details as every view (description, review note, links, sub-mission tag,
+ * progress) and the same one-tap Yes / N/A as the table. Quests, sub-missions
+ * and rows with rows under them open their page.
  */
 export function ChecklistRowCard({ row, ctx, large = false }: { row: ChecklistBranchRow; ctx: CardContext; large?: boolean }) {
   const kind = rowKind(row);
   const { label, icon: Icon } = KIND[kind];
-  const choices = stateChoices(kind);
   const href = rowHref(ctx.task.taskTag, row);
-  const progress = row.applicable ? percentText(row.progressPercentage) : 'N/A';
-  const state: CompletionState = row.completionState ?? 'No';
   const done = row.isComplete && row.applicable;
-  const detail = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside`
-    : kind === 'quest' ? `${row.childCount} Activity row${row.childCount === 1 ? '' : 's'}`
-    : kind === 'linked' && row.linkedTaskTag ? `${row.linkedTaskTag}${row.linkedTaskStatus ? ` · ${row.linkedTaskStatus}` : ''}` : null;
 
   return (
     <article className={cn('soft-card grid content-start gap-2.5 p-3.5', large && 'sm:p-4', done && 'bg-success-subtle/40')}>
@@ -61,36 +55,25 @@ export function ChecklistRowCard({ row, ctx, large = false }: { row: ChecklistBr
           ) : (
             <p className={cn('text-foreground font-medium break-words', large ? 'text-base' : 'text-sm')}>{row.title}</p>
           )}
-          {detail ? <p className="text-muted-foreground mt-0.5 text-xs">{detail}</p> : null}
         </div>
       </div>
-      {kind !== 'item' ? (
-        <div className="flex items-center gap-2">
-          <MissionProgress value={row.applicable ? row.progressPercentage : null} label={`${row.title} progress`} className="h-1.5 flex-1" />
-          <span className="text-foreground w-10 text-right text-xs font-semibold tabular-nums">{progress ?? '—'}</span>
-        </div>
-      ) : null}
-      {choices.length ? (
-        ctx.canEdit ? (
-          <ChecklistStateControl taskId={ctx.task.id} checklistId={row.checklistId} nodeId={row.id} title={row.title} state={state} choices={choices} version={ctx.version} action={ctx.action} />
-        ) : <ChecklistStateBadge state={state} />
-      ) : null}
-      <ObjectiveReviewChip nodeId={row.id} className="justify-self-start" />
+      <ObjectiveDetails row={row} />
+      {kind === 'item' || kind === 'linked' ? <ObjectiveTick row={row} ctx={ctx} /> : null}
     </article>
   );
 }
 
 /** A phase heading with its state and progress, for the Board columns and Blocks groups. */
-export function PhaseHeading({ id, title, summary }: { id: string; title: string; summary?: SectionProgress }) {
-  const status = summary ? sectionStatus(summary) : null;
+export function PhaseHeading({ id, title, summary, changesNeeded = false }: { id: string; title: string; summary?: SectionProgress; changesNeeded?: boolean }) {
+  const status = summary ? sectionStatus(summary, changesNeeded) : null;
   const value = summary?.state === 'not_applicable' ? 'N/A' : percentText(summary?.progressPercentage);
   return (
     <header className="grid gap-1.5">
       <div className="flex items-center justify-between gap-2">
         <h2 id={id} className="text-foreground flex items-center gap-2 text-base font-bold tracking-tight">
-          {summary ? <SectionStateIcon section={summary} className="size-4" /> : null}{title}
+          {summary ? <SectionStateIcon section={summary} changesNeeded={changesNeeded} className="size-4" /> : null}{title}
         </h2>
-        <span className="text-muted-foreground text-xs tabular-nums">{status?.label}{value ? ` · ${value}` : ''}</span>
+        <span className={cn('text-xs tabular-nums', status?.tone === 'alert' ? 'text-danger font-semibold' : 'text-muted-foreground')}>{status?.label}{value ? ` · ${value}` : ''}</span>
       </div>
       <MissionProgress value={summary?.progressPercentage ?? null} label={`${title} progress`} className="h-1.5" />
     </header>

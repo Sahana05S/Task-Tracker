@@ -14,7 +14,7 @@ import type { ActionResponse } from '@/types/tracker';
 export const MAX_QUEST_LEVEL = 3;
 
 const KINDS = [
-  { key: 'add', label: 'Objective', hint: 'A row you tick Yes, No or N/A' },
+  { key: 'add', label: 'Objective', hint: 'A row you tick Yes or N/A' },
   { key: 'submission', label: 'Quest', hint: 'A page with its own list of objectives, sub-quests and sub-missions' },
   { key: 'sub-mission', label: 'Sub-mission', hint: 'A real mission of its own, linked here; its progress feeds this row' },
 ] as const;
