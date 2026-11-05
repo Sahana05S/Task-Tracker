@@ -4,7 +4,8 @@ import { getAssignedMissionBatch, getAssignedRoadmapMission } from '@/modules/ta
 import type { MissionBatchOptions, RoadmapMission, RoadmapMissionBatch } from '@/modules/tasks/client';
 import { getFocusedChecklistItemTime, getChecklistBranch } from '@/modules/checklists';
 import type { ChecklistBranch, ChecklistBranchOptions, ChecklistItemTime } from '@/modules/checklists/client';
-import { getLabelsFor, type Label } from '@/modules/labels';
+import { getLabelCatalogue, getLabelled, getLabelsFor, labelSlug, type CatalogueLabel, type Label } from '@/modules/labels';
+import type { HashtagRecords } from '@/modules/workspace-views/internal/graph-hashtags';
 import { getCurrentProfile } from '@/shared/session/profile';
 import { UUID_PATTERN } from '@/shared/forms/form-data';
 import type { ActionResponse } from '@/types/tracker';
@@ -54,4 +55,30 @@ export async function loadRoadmapItemTime(taskId: string, nodeId: string): Promi
     if (!await getAssignedRoadmapMission(taskId, profile.id, { anyOpen: seesEveryMission(profile.role) })) return { success: false, error: 'This open mission is no longer assigned to you.' };
     return { success: true, data: await getFocusedChecklistItemTime(taskId, nodeId, profile.id) };
   } catch { return { success: false, error: 'Item time could not be loaded. Retry this item.' }; }
+}
+
+/** The company's active labels for the Today map's hashtag picker (label_catalogue), read only when the picker opens. */
+export async function loadGraphHashtags(): Promise<ActionResponse<CatalogueLabel[]>> {
+  const profile = await getCurrentProfile();
+  if (!profile?.isActive) return { success: false, error: 'Sign in to choose a hashtag.' };
+  const catalogue = await getLabelCatalogue().catch(() => null);
+  if (!catalogue) return { success: false, error: 'Hashtags could not be loaded. Retry.' };
+  const labels = catalogue.labels.filter((label) => !label.archived)
+    .sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name));
+  return { success: true, data: labels };
+}
+
+/**
+ * The missions and learning notes carrying one label (labelled(slug): only records the viewer may read,
+ * at most 500), reduced to ids and mission tags for the map's highlight.
+ */
+export async function loadGraphHashtag(slug: string): Promise<ActionResponse<HashtagRecords>> {
+  const profile = await getCurrentProfile();
+  if (!profile?.isActive) return { success: false, error: 'Sign in to choose a hashtag.' };
+  if (typeof slug !== 'string' || !slug || labelSlug(slug) !== slug) return { success: false, error: 'Choose a hashtag from the list.' };
+  const records = await getLabelled(slug).catch(() => null);
+  if (!records) return { success: false, error: 'This hashtag could not be read. Retry.' };
+  const taskIds = records.items.filter((item) => item.kind === 'task').map((item) => item.id);
+  const learningTaskTags = [...new Set(records.items.flatMap((item) => item.kind === 'mission_learning' && item.taskTag ? [item.taskTag] : []))];
+  return { success: true, data: { taskIds, learningTaskTags } };
 }
