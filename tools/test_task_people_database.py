@@ -163,6 +163,15 @@ def crew_flow(db):
     assert shares_of(db,tid)=={MATE:500000,COLLAB:500000}
     refused(db,OWNER,log(tid))
     ok(db,MD,people(db,MD,tid,'add_crew',OWNER))
+    # The former collaborator builds and ticks the checklist; the reviewer acknowledges it.
+    if value(db,f"count(*) FROM public.task_checklists WHERE task_id='{tid}' AND owner_node_id IS NULL")=='0':
+        ok(db,COLLAB,checklist(db,tid,'create',{'title':'Work'}))
+    cid=value(db,f"id FROM public.task_checklists WHERE task_id='{tid}' AND owner_node_id IS NULL")
+    ok(db,COLLAB,checklist(db,tid,'add',{'checklist_id':cid,'title':'Build','section':'activity'}))
+    nid=value(db,f"id FROM public.checklist_nodes WHERE checklist_id='{cid}' AND title='Build'")
+    ok(db,COLLAB,checklist(db,tid,'state',{'node_id':nid,'state':'Yes'}))
+    if value(db,"count(*) FROM pg_attribute WHERE attrelid='public.checklist_nodes'::regclass AND attname='review_state'")=='1':
+        ok(db,REVIEWER,checklist(db,tid,'review',{'node_id':nid,'decision':'acknowledged'}))
     if value(db,f"progress_owner FROM public.tasks WHERE id='{tid}'")!='checklist':
         ok(db,COLLAB,lifecycle(db,tid,'progress',{'progress':100}))
     ok(db,REVIEWER,lifecycle(db,tid,'review',{'approved':True}))
