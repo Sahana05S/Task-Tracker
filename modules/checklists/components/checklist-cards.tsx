@@ -26,6 +26,8 @@ export interface CardContext {
   canEdit: boolean;
   version: number;
   action: Command;
+  /** The mission is open and the viewer is Crew or a manager (Outline: inside a Quest its owner decides, migration 122). */
+  crewEdits?: boolean;
 }
 
 /**

@@ -106,6 +106,8 @@ const CHECKLIST_WORDS: Record<string, string> = {
   submission: 'Added a Quest',
   // Migration 114: the decision and its note arrive as the entry's reason.
   review: 'Reviewed a checklist objective',
+  // Migration 122: a Quest's owner was set or changed.
+  assign: 'Assigned a Quest',
 };
 // Labels (migration 112, listed from 116); the label's name arrives as the entry's reason ("#Crane").
 const LABEL_WORDS: Record<string, string> = {

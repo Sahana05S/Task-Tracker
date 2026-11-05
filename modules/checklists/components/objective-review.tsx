@@ -60,6 +60,12 @@ export function ObjectiveReviewProvider({ taskId, version, action, reviews, name
 }
 
 /** True when an objective inside this row (or the row itself) was sent back for changes. */
+/** A member's name from the provider's list (Quest owners, migration 122); null when unknown. */
+export function useMemberName(id: string | null | undefined): string | null {
+  const ctx = React.useContext(ReviewContext);
+  return id ? ctx?.names[id] ?? null : null;
+}
+
 export function useRowChangesNeeded(nodeId: string): boolean {
   return React.useContext(ReviewContext)?.sentBack.hasRow(nodeId) ?? false;
 }
