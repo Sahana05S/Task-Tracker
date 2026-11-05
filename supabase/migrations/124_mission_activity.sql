@@ -91,6 +91,8 @@ LANGUAGE sql IMMUTABLE SET search_path = '' AS $$
       p_changes -> 'task_id' ->> 'before', p_changes ->> 'task_id')) END;
 $$;
 REVOKE ALL ON FUNCTION taskpulse_private.audit_mission(text, uuid, jsonb) FROM PUBLIC, anon, authenticated, service_role;
+-- The index is built and maintained as the table's owner (taskpulse_definer), which must call it.
+GRANT EXECUTE ON FUNCTION taskpulse_private.audit_mission(text, uuid, jsonb) TO taskpulse_definer;
 
 CREATE INDEX audit_events_mission_idx ON taskpulse_private.audit_events
   (organization_id, taskpulse_private.audit_mission(table_name, row_id, protected_changes), occurred_at DESC, id DESC);
