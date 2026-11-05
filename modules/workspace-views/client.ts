@@ -24,3 +24,7 @@ export {
   type GraphCamera, type GraphEdge, type GraphEntity, type GraphKind, type GraphLevel, type GraphLink, type GraphNode,
   type GraphRelation, type GraphRelationship, type GraphStroke, type MissionGraphLayout,
 } from '@/modules/workspace-views/internal/mission-graph';
+export {
+  hashtagMatches, labelEdges, LABEL_EDGE_CAP,
+  type HashtagNodeInput, type HashtagReason, type HashtagRecords, type LabelEdge,
+} from '@/modules/workspace-views/internal/graph-hashtags';
