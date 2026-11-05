@@ -29,7 +29,26 @@ def sql(db, statement, success=True):
         raise AssertionError('Expected database denial: ' + statement)
     if not success and not any(code in result.stderr for code in ('42501','23514','40001','PT409','23503')):
         raise AssertionError('Failure was not an authorization/contract denial: ' + result.stderr)
+    if success and M125_MARKER in statement and not KEEP_M125_DATA:
+        restore_m125_roles(db)
     return result.stdout.strip()
+
+# Migration 125 (5 November 2026) moved every project engineer (Manager) and data manager
+# to team member: a one-time decision about the live company's people, not a rule. Suites
+# that seed before 125 runs still test the seed's role matrix (2 = Manager, 3 = data
+# manager), so right after 125 the harness puts back exactly the roles 125 changed, from its
+# retire_role audit rows. A suite that checks 125's data change itself sets
+# KEEP_M125_DATA = True (test_policies_database.py).
+M125_MARKER = 'm125: % project engineers'
+KEEP_M125_DATA = False
+
+def restore_m125_roles(db):
+    sql(db, """UPDATE public.users u SET role=(a.protected_changes#>>'{from,role}')::public.user_role
+  FROM taskpulse_private.audit_events a
+ WHERE a.command='retire_role' AND a.table_name='users' AND a.row_id=u.id AND u.role='team_member';
+UPDATE public.member_invitations i SET role=(a.protected_changes#>>'{from,role}')::public.user_role
+  FROM taskpulse_private.audit_events a
+ WHERE a.command='retire_role' AND a.table_name='member_invitations' AND a.row_id=i.id AND i.role='team_member';""")
 
 def actor(db, uid, statement, success=True, role='authenticated'):
     statement = re.sub(r"ARRAY\[('[0-9a-f-]+'(?:,'[0-9a-f-]+')*)\]", r'ARRAY[\1]::uuid[]', statement)

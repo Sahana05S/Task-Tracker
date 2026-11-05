@@ -8,6 +8,7 @@ exec(compile(source.split('\nfor db in DBS:')[0],str(Path(__file__).with_name('t
 from uuid import uuid4
 
 DBS=('taskpulse_policies_fresh_test','taskpulse_policies_upgrade_test')
+KEEP_M125_DATA=True  # the upgrade path checks migration 125's data change itself
 U=lambda n:'00000000-0000-0000-0000-'+str(n).zfill(12)
 A_DIR,A2,A3,A4,A5,A6,A8=U(1),U(2),U(3),U(4),U(5),U(6),U(8)
 B_DIR,B4='00000000-0000-0000-0000-0000000000b1','00000000-0000-0000-0000-0000000000b4'
