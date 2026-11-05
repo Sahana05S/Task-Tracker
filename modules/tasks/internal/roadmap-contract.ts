@@ -36,12 +36,12 @@ export const ROADMAP_RELATIONS: readonly RoadmapRelation[] = ['Subtask', 'Depend
 export interface RoadmapLink { from: string; to: string; relation: RoadmapRelation }
 /** At most this many relations come back per batch. */
 export const ROADMAP_LINK_LIMIT = 200;
-/** Whether the member may run a timer or log time on the mission: owners and assignees with shares only (migration 108). */
+/** Whether the member may run a timer or log time on the mission: every Crew member (migration 121). */
 export function canTimeMission(mission: Pick<RoadmapMission, 'relationship'>): boolean {
-  return mission.relationship === 'owner' || mission.relationship === 'assignee';
+  return mission.relationship === 'crew';
 }
-const RELATIONSHIP_STRENGTH: Record<MissionRelationship, number> = { owner: 0, assignee: 1, collaborator: 2, reviewer: 3, observer: 4 };
-/** The stronger of two relationships (owner > assignee > collaborator > reviewer > observer). */
+const RELATIONSHIP_STRENGTH: Record<MissionRelationship, number> = { crew: 0, reviewer: 1, observer: 2 };
+/** The stronger of two relationships (crew > reviewer > observer). */
 export function strongerRelationship(a: MissionRelationship | undefined, b: MissionRelationship): MissionRelationship {
   return a !== undefined && RELATIONSHIP_STRENGTH[a] <= RELATIONSHIP_STRENGTH[b] ? a : b;
 }

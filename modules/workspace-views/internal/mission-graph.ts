@@ -7,7 +7,7 @@ import type { TaskPriority } from '@/types/tracker';
 
 export type GraphKind = 'mission' | 'quest' | 'objective' | 'more';
 /** How the viewer is attached to a mission; drawn as the star's ring. */
-export type GraphRelationship = 'owner' | 'assignee' | 'collaborator' | 'reviewer' | 'observer';
+export type GraphRelationship = 'crew' | 'reviewer' | 'observer';
 /** `task_dependencies.relation_type` values the graph draws. Subtask runs parent → child. */
 export type GraphRelation = 'Subtask' | 'Dependency' | 'Blocks' | 'Related';
 export interface GraphEntity {

@@ -24,9 +24,9 @@ describe('timer permissions', () => {
     ).toBe(true);
   });
 
-  it('keeps collaborators off the timer (D-A3, migration 108)', () => {
-    const shared = { ...task, assigneeIds: [...task.assigneeIds, 'helper'], collaboratorIds: ['helper'] };
-    expect(canStartTimerForTask({ id: 'helper', role: 'team_member', isActive: true }, shared)).toBe(false);
+  it('lets every Crew member time the mission (migration 121)', () => {
+    const shared = { ...task, assigneeIds: [...task.assigneeIds, 'helper'] };
+    expect(canStartTimerForTask({ id: 'helper', role: 'team_member', isActive: true }, shared)).toBe(true);
     expect(canStartTimerForTask({ id: 'support-user', role: 'team_member', isActive: true }, shared)).toBe(true);
     expect(canStartTimerForTask({ id: 'helper', role: 'managing_director', isActive: true }, shared)).toBe(true);
   });

@@ -10,6 +10,13 @@ cannot log time; an observer cannot tick, review or log, and does not block Done
 managing director and project engineer parity is unchanged; the owner manages people;
 a removed collaborator's next command fails; a dialog save keeps collaborators,
 observers and custom shares. JWT shim only; no hosted connection.
+
+Migration 121 (Mission Crew, 5 November 2026): the upgrade database runs the 108-120 flow
+above at 120, then upgrades to 121: open missions with zero-share or unequal shares are
+re-split equally under a new participant version (earlier versions kept), Done and
+Discarded missions are untouched. The fresh database (every migration) runs the Crew flow:
+a former collaborator logs time and marks Done; only the managing director and Managers
+change the Crew; the Crew chooses observers; shares passed to a save are ignored.
 """
 from pathlib import Path
 source=Path(__file__).with_name('test_m09_database.py').read_text(encoding='utf-8')
@@ -18,9 +25,11 @@ from uuid import uuid4
 
 DBS=('taskpulse_people_fresh_test','taskpulse_people_upgrade_test')
 TARGET=108
+CREW=121
 NUMBERS=sorted(int(p.name.split('_')[0]) for p in (ROOT/'supabase/migrations').glob('*.sql'))
-assert TARGET in NUMBERS,'migration 108 missing'
+assert TARGET in NUMBERS and CREW in NUMBERS,'migration 108 or 121 missing'
 PREV=max(n for n in NUMBERS if n<TARGET)
+BEFORE_CREW=max(n for n in NUMBERS if n<CREW)
 U=lambda n:'00000000-0000-0000-0000-'+str(n).zfill(12)
 MD,PE,OWNER,MATE,REVIEWER,OUTSIDER,COLLAB=U(1),U(2),U(4),U(5),U(6),U(3),U(8)
 STRANGER=U(7)  # an active member with no tie to the mission (117 reads)
@@ -66,6 +75,112 @@ def save(db,tid,assignees,reviewers,shares=None):
     return f"SELECT public.save_task_with_participants('{tid}',{j(fields)},{arr(assignees)},{arr(reviewers)},{units},{pv},false,'{uuid4()}')"
 def rows(db,tid):
     return json.loads(value(db,f"taskpulse_private.task_people_snapshot('{tid}')"))
+def new_mission(db,title,assignees,reviewers=(),shares=None):
+    arr=lambda ids:'ARRAY['+','.join(literal(x) for x in ids)+']::uuid[]' if ids else "'{}'::uuid[]"
+    units='NULL' if shares is None else 'ARRAY['+','.join(map(str,shares))+']::integer[]'
+    return ok(db,MD,f"SELECT public.save_task_with_participants(NULL,{j({'title':title,'category':'T','priority':'Medium','task_scale':5,'initialize_details':False})},"
+        f"{arr(assignees)},{arr(reviewers)},{units},NULL,false,'{uuid4()}')")
+def shares_of(db,tid):return {a['user']:a['shares'] for a in rows(db,tid)['assignees']}
+def pversion(db,tid):return int(value(db,f"participant_version FROM public.tasks WHERE id='{tid}'"))
+def version_shares(db,tid,v):
+    return json.loads(value(db,f"shares FROM taskpulse_private.participant_versions WHERE task_id='{tid}' AND version={v}"))
+
+def crew_upgrade(db,tid):
+    """120 -> 121: open missions re-split equally under a new participant version; closed ones untouched."""
+    assert shares_of(db,tid)=={MATE:300000,OWNER:700000},shares_of(db,tid)
+    zero=new_mission(db,'Zero share',[OWNER])
+    ok(db,MD,people(db,MD,zero,'add_collaborator',COLLAB))
+    assert shares_of(db,zero)=={OWNER:1000000,COLLAB:0}
+    closed=new_mission(db,'Closed',[OWNER,MATE],shares=[700000,300000])
+    sql(db,f"UPDATE public.tasks SET status='Done' WHERE id='{closed}'")
+    equal=new_mission(db,'Equal',[OWNER,MATE])
+    before={t:pversion(db,t) for t in (tid,zero,closed,equal)}
+    closed_rows=value(db,f"md5(string_agg(to_jsonb(a)::text,'' ORDER BY user_id)) FROM public.task_assignees a WHERE task_id='{closed}'")
+    history=json.loads(value(db,"coalesce(jsonb_agg(to_jsonb(v) ORDER BY task_id,version),'[]') FROM taskpulse_private.participant_versions v"))
+    migrate(db,max(NUMBERS),start=CREW)
+    assert shares_of(db,tid)=={MATE:500000,OWNER:500000},shares_of(db,tid)
+    assert shares_of(db,zero)=={OWNER:500000,COLLAB:500000},shares_of(db,zero)
+    assert shares_of(db,closed)=={OWNER:700000,MATE:300000},'a Done mission keeps its shares'
+    assert value(db,f"md5(string_agg(to_jsonb(a)::text,'' ORDER BY user_id)) FROM public.task_assignees a WHERE task_id='{closed}'")==closed_rows
+    assert shares_of(db,equal)=={OWNER:500000,MATE:500000}
+    after={t:pversion(db,t) for t in (tid,zero,closed,equal)}
+    assert after=={tid:before[tid]+1,zero:before[zero]+1,closed:before[closed],equal:before[equal]},(before,after)
+    # Earlier versions (the credit history) are kept as recorded; the new split is a new version.
+    now=json.loads(value(db,"coalesce(jsonb_agg(to_jsonb(v) ORDER BY task_id,version),'[]') FROM taskpulse_private.participant_versions v"))
+    assert all(row in now for row in history),'every earlier participant version is kept unchanged'
+    assert version_shares(db,tid,before[tid])=={MATE:300000,OWNER:700000}
+    assert version_shares(db,tid,after[tid])=={MATE:500000,OWNER:500000}
+    # 108 added the collaborator without a new version, so the recorded split predates them.
+    assert version_shares(db,zero,before[zero])=={OWNER:1000000}
+    assert version_shares(db,zero,after[zero])=={OWNER:500000,COLLAB:500000}
+    ok(db,COLLAB,log(zero))  # the former collaborator now logs time
+    print('PASS',db,'121 re-splits open missions equally under a new participant version; Done missions and earlier versions unchanged')
+
+def crew_flow(db):
+    """Every migration applied: Mission Crew (121)."""
+    tid=new_mission(db,'Crew',[OWNER,MATE],[REVIEWER],shares=[700000,300000])
+    other=new_mission(db,'Other',[MATE])
+    assert shares_of(db,tid)=={OWNER:500000,MATE:500000},'passed shares are ignored'
+    # Only the managing director and Managers change the Crew; no owner power.
+    refused(db,MATE,people(db,MATE,tid,'add_crew',COLLAB))
+    refused(db,OWNER,people(db,OWNER,tid,'add_crew',COLLAB))
+    refused(db,OWNER,people(db,OWNER,tid,'add_collaborator',COLLAB))
+    refused(db,REVIEWER,people(db,REVIEWER,tid,'add_observer',COLLAB))
+    refused(db,MD,people(db,MD,tid,'transfer_owner',MATE),'23514')
+    pv=pversion(db,tid)
+    ok(db,MD,people(db,MD,tid,'add_collaborator',COLLAB))  # the 108 name is an alias of add_crew
+    assert shares_of(db,tid)=={OWNER:333334,MATE:333333,COLLAB:333333},shares_of(db,tid)
+    assert pversion(db,tid)==pv+1 and version_shares(db,tid,pv)=={OWNER:500000,MATE:500000}
+    ok(db,PE,people(db,PE,tid,'add_crew',STRANGER))
+    assert set(shares_of(db,tid).values())=={250000}
+    ok(db,PE,people(db,PE,tid,'remove_crew',STRANGER))
+    assert shares_of(db,tid)=={OWNER:333334,MATE:333333,COLLAB:333333}
+    assert value(db,f"count(*) FROM taskpulse_private.audit_events WHERE command IN ('task_people_add_crew','task_people_remove_crew') AND row_id='{tid}'")=='3'
+    refused(db,MD,people(db,MD,other,'remove_crew',MATE),'23514')  # a mission keeps one crew member
+    refused(db,MD,people(db,MD,tid,'add_crew',REVIEWER),'23514')
+    print('PASS',db,'only the managing director and Managers change the Crew; shares stay equal')
+
+    # The Crew, the managing director and Managers choose observers.
+    ok(db,COLLAB,people(db,COLLAB,tid,'add_observer',U(3)))
+    refused(db,U(3),people(db,U(3),tid,'add_observer',STRANGER))
+    refused(db,REVIEWER,people(db,REVIEWER,tid,'remove_observer',U(3)))
+    ok(db,MATE,people(db,MATE,tid,'remove_observer',U(3)))
+    ok(db,PE,people(db,PE,tid,'add_observer',U(3)))
+    assert {'user':U(3),'role':'Observer'} in rows(db,tid)['reviewers']
+    refused(db,U(3),timer(tid)); refused(db,U(3),log(tid))
+    print('PASS',db,'the Crew, the managing director and Managers choose observers; observers log nothing')
+
+    # A former collaborator is ordinary Crew: logs time and marks Done.
+    started=ok(db,COLLAB,timer(tid)); ok(db,COLLAB,f"SELECT public.discard_task_timer('{started['timerId']}',{j({'reason':'test'})},'{uuid4()}',0)")
+    ok(db,COLLAB,log(tid))
+    # A save that passes shares keeps the equal split and, with the same Crew, the version.
+    pv=pversion(db,tid)
+    current=[a['user'] for a in rows(db,tid)['assignees']]
+    ok(db,MD,save(db,tid,current,[REVIEWER],shares=[800000,100000,100000]))
+    assert shares_of(db,tid)=={OWNER:333334,MATE:333333,COLLAB:333333} and pversion(db,tid)==pv
+    # Removing the internal primary passes the row on; it carries no power.
+    ok(db,MD,people(db,MD,tid,'remove_crew',OWNER))
+    assert value(db,f"assignee_id FROM public.tasks WHERE id='{tid}'")==MATE
+    assert shares_of(db,tid)=={MATE:500000,COLLAB:500000}
+    refused(db,OWNER,log(tid))
+    ok(db,MD,people(db,MD,tid,'add_crew',OWNER))
+    # The former collaborator builds and ticks the checklist; the reviewer acknowledges it.
+    if value(db,f"count(*) FROM public.task_checklists WHERE task_id='{tid}' AND owner_node_id IS NULL")=='0':
+        ok(db,COLLAB,checklist(db,tid,'create',{'title':'Work'}))
+    cid=value(db,f"id FROM public.task_checklists WHERE task_id='{tid}' AND owner_node_id IS NULL")
+    ok(db,COLLAB,checklist(db,tid,'add',{'checklist_id':cid,'title':'Build','section':'activity'}))
+    nid=value(db,f"id FROM public.checklist_nodes WHERE checklist_id='{cid}' AND title='Build'")
+    ok(db,COLLAB,checklist(db,tid,'state',{'node_id':nid,'state':'Yes'}))
+    if value(db,"count(*) FROM pg_attribute WHERE attrelid='public.checklist_nodes'::regclass AND attname='review_state'")=='1':
+        ok(db,REVIEWER,checklist(db,tid,'review',{'node_id':nid,'decision':'acknowledged'}))
+    if value(db,f"progress_owner FROM public.tasks WHERE id='{tid}'")!='checklist':
+        ok(db,COLLAB,lifecycle(db,tid,'progress',{'progress':100}))
+    ok(db,REVIEWER,lifecycle(db,tid,'review',{'approved':True}))
+    refused(db,U(3),lifecycle(db,tid,'transition',{'status':'Done'}))
+    ok(db,COLLAB,lifecycle(db,tid,'transition',{'status':'Done'}))
+    assert value(db,f"status FROM public.tasks WHERE id='{tid}'")=='Done'
+    refused(db,MD,people(db,MD,tid,'add_crew',STRANGER),'23514')
+    print('PASS',db,'a former collaborator logs time and marks Done; a save ignores passed shares')
 
 for DB in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {DB} WITH (FORCE);')
@@ -77,10 +192,13 @@ for DB in DBS:
         migrate(DB,TARGET,start=PREV+1)
         assert value(DB,"md5(string_agg(to_jsonb(a)::text,'' ORDER BY id)) FROM public.task_assignees a")==before,'108 rewrites no participant'
         print('PASS',DB,f'upgrade {PREV}->{TARGET} leaves every participant row unchanged')
+        migrate(DB,BEFORE_CREW,start=TARGET+1)
     else:
         migrate(DB,max(NUMBERS)); sql(DB,seed)
     sql(DB,f"UPDATE public.users SET is_active=true WHERE id='{U(7)}'")  # the seed's inactive member, active here as a stranger
     v117=value(DB,"to_regprocedure('public.can_read_mission_work(uuid)') IS NOT NULL")=='t'
+    if value(DB,"to_regprocedure('taskpulse_private.crew_equal_split(uuid)') IS NOT NULL")=='t':
+        crew_flow(DB); continue
     # A configured mission: owner 4 and assignee 5 with shares 70/30, reviewer 6.
     tid=ok(DB,MD,f"SELECT public.save_task_with_participants(NULL,{j({'title':'People','category':'T','priority':'Medium','task_scale':5,'initialize_details':False})},"
         f"ARRAY['{OWNER}','{MATE}']::uuid[],ARRAY['{REVIEWER}']::uuid[],ARRAY[700000,300000]::integer[],NULL,false,'{uuid4()}')")
@@ -254,5 +372,6 @@ for DB in DBS:
     refused(DB,COLLAB,timer(legacy))
     ok(DB,OWNER,log(legacy))
     print('PASS',DB,'legacy missions keep their owner; their collaborators log no time')
+    crew_upgrade(DB,tid)
 
 print('PASS task people')

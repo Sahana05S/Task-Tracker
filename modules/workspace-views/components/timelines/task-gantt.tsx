@@ -42,7 +42,7 @@ export function TaskGantt({ timeline }: { timeline: TaskTimeline }) {
         <div className="min-w-[68rem]">
           <div className="grid grid-cols-[15rem_minmax(0,1fr)]">
             <div className="bg-muted/40 border-border text-muted-foreground border-r px-4 py-3 text-xs font-semibold">
-              Assignee
+              Crew
             </div>
             <div
               className="bg-muted/40 relative py-3"

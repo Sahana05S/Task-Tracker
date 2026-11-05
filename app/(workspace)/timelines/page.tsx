@@ -38,7 +38,7 @@ export default async function TimelinesPage({searchParams}:{searchParams:Promise
       <MissionPageHeader
         eyebrow="Missions"
         title="Mission timeline"
-        description={`${timeline.groups.length} assignees · ${assignedTaskCount} assignment bars (shared missions repeat by assignee) · ${timeline.totalDays} day range`}
+        description={`${timeline.groups.length} crew members · ${assignedTaskCount} assignment bars (shared missions repeat for each crew member) · ${timeline.totalDays} day range`}
       />
 
       <dl className="grid gap-2.5 sm:grid-cols-3 sm:gap-3">

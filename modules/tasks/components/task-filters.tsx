@@ -149,14 +149,14 @@ export function TaskFilters({
       {/* Phones: two filters per row, each filling its half. */}
       <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
         <FacetSelect
-          label="Assignee"
+          label="Crew"
           value={filters.assigneeId}
           onValueChange={(value) => update('assigneeId', value)}
           options={members.map((member) => ({
             value: member.id,
             label: member.fullName,
           }))}
-          allLabel="All assignees"
+          allLabel="All crew"
           className="w-full sm:w-40"
         />
 

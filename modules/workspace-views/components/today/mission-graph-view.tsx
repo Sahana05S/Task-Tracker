@@ -7,7 +7,7 @@ import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-m
 import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, HouseIcon, LocateFixedIcon, MinusIcon, PlusIcon, RotateCcwIcon, XIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
-import { MISSION_RELATIONSHIP_LABELS } from '@/shared/tracker/enums';
+import { MISSION_RELATIONSHIP_LABELS, MISSION_RELATIONSHIPS } from '@/shared/tracker/enums';
 import { canTimeMission, missionDueLabel, type RoadmapMission } from '@/modules/tasks/client';
 import { checklistWorkHref, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistBranchRow, type ChecklistSection } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
@@ -73,7 +73,7 @@ function GraphLegend({ rings, hashtag }: { rings: boolean; hashtag: string | nul
     <li><span className={cn(styles.swatch, styles.dotted)} aria-hidden="true" /> Related</li>
     {hashtag ? <li><span className={cn(styles.swatch, styles.labelSwatch)} aria-hidden="true" /> Shares #{hashtag} (not a link between records)</li> : null}
     <li>Larger star: higher priority · filled: progress</li>
-    {rings ? (['owner', 'assignee', 'collaborator', 'reviewer', 'observer'] as const).map(rel => <li key={rel}><span className={cn(styles.key, styles[rel])} aria-hidden="true" /> {MISSION_RELATIONSHIP_LABELS[rel]}</li>) : null}
+    {rings ? MISSION_RELATIONSHIPS.map(rel => <li key={rel}><span className={cn(styles.key, styles[rel])} aria-hidden="true" /> {MISSION_RELATIONSHIP_LABELS[rel]}</li>) : null}
   </ul>;
 }
 

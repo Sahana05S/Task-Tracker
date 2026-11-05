@@ -35,7 +35,6 @@ import {
   canReadMissionWork,
   canWriteMissionFiles,
   canUpdateTaskOwnFields,
-  isTaskWorker,
   getNativeDetailState,
   getNativeTemplates,
   getMissionChoices,
@@ -121,7 +120,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const archived = !!task.archivedEffectiveDate;
   const successor = data.dependencies.find((d) => d.otherTask?.id === task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role) && !archived;
-  // D-A2: the mission's Owner, assignees and collaborators also edit its details (migration 108).
+  // D-A2: the mission's Crew also edit its details (migrations 108, 121).
   const canEditDetails = !archived && canEditTaskDetails(currentUser, task);
   const reviewer = task.reviewerIds.includes(currentUser.id);
   // The checklist and work content belong to the mission's people and the managing director (migration 117).
@@ -173,31 +172,27 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
 
   const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
   const nameOf = (id: string) => memberNames.get(id) ?? 'Unknown';
-  // Migration 108: zero-share assignees are collaborators; Observer reviewer rows are observers.
-  const collaboratorIds = task.collaboratorIds ?? [];
+  // Migration 121: everyone on task_assignees is Crew (equal shares); Observer reviewer rows are observers.
+  const crewIds = [...new Set([task.assigneeId, ...task.assigneeIds].filter(Boolean))];
   const observerIds = task.observerIds ?? [];
-  const creditedIds = task.assigneeIds.filter((id) => id !== task.assigneeId && isTaskWorker(task, id));
   const people = {
-    owner: task.assigneeId ? [nameOf(task.assigneeId)] : [],
-    assignees: creditedIds.map(nameOf),
-    collaborators: collaboratorIds.map(nameOf),
+    crew: crewIds.map(nameOf),
     reviewers: task.reviewerIds.map(nameOf),
     observers: observerIds.map(nameOf),
   };
   const related = new Set([task.assigneeId, ...task.assigneeIds, ...task.reviewerIds, ...observerIds]);
   const person = (id: string) => ({ id, name: nameOf(id) });
-  // Collaborators and ownership: managers and the Owner; observers: the managing director, Owner and assignees (117).
-  const canManagePeople = canManageTaskPeople(currentUser, task);
+  // The Crew: the managing director and Managers (legacy missions are reviewed in Edit first);
+  // observers: the managing director, Managers and the Crew (121).
+  const canManagePeople = canManageTaskPeople(currentUser, task) && task.participantCreditMode === 'configured';
   const canManageObservers = canManageMissionObservers(currentUser, task);
   const peopleManager = canManagePeople || canManageObservers ? (
     <MissionPeopleManager
-      canManageCollaborators={canManagePeople}
+      canManageCrew={canManagePeople}
       canManageObservers={canManageObservers}
       taskId={task.id}
       version={task.lifecycleVersion ?? 0}
-      owner={task.assigneeId ? person(task.assigneeId) : null}
-      assignees={task.participantCreditMode === 'configured' ? creditedIds.map(person) : []}
-      collaborators={collaboratorIds.map(person)}
+      crew={crewIds.map(person)}
       observers={observerIds.map(person)}
       candidates={data.members.filter((member) => member.isActive && !related.has(member.id)).map((member) => ({ id: member.id, name: member.fullName }))}
     />

@@ -48,7 +48,7 @@ export function WorkbookDashboard({
           empty="No task statuses to chart yet."
         />
         <DistributionCard
-          title="Mission assignees"
+          title="Mission crew"
           subtitle="Assignment count, including multi-assignee missions"
           items={charts.taskAssignees}
           empty="No tasks are assigned yet."

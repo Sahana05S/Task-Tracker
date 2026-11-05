@@ -10,9 +10,7 @@ import { formatDate, formatHours, formatPercent } from '@/shared/tracker/format'
 import { TASK_FRESHNESS_MEANINGS } from '@/shared/tracker/labels';
 
 export interface MissionPeopleNames {
-  readonly owner: readonly string[];
-  readonly assignees: readonly string[];
-  readonly collaborators: readonly string[];
+  readonly crew: readonly string[];
   readonly reviewers: readonly string[];
   readonly observers: readonly string[];
 }
@@ -29,7 +27,7 @@ export function MissionOverview({
   peopleManager,
 }: {
   data: TaskDetailData;
-  /** Names by relationship (migration 108); collaborators and observers show only when there are some. */
+  /** Names by relationship (migration 121); observers show only when there are some. */
   people: MissionPeopleNames;
   overdue: boolean;
   /** Under the progress bar: the waypoint track, supplied by the page. */
@@ -83,9 +81,7 @@ export function MissionOverview({
           value={task.freshness ?? '—'}
           note={task.freshness ? TASK_FRESHNESS_MEANINGS[task.freshness] : 'Set an assigned and a due date to show it'}
         />
-        <PeopleTile label="Owner" names={people.owner} fallback="No owner" />
-        <PeopleTile label="Assignees" names={people.assignees} fallback="Only the owner" />
-        {people.collaborators.length ? <PeopleTile label="Collaborators" names={people.collaborators} fallback="" /> : null}
+        <PeopleTile label="Crew" names={people.crew} fallback="No crew" />
         <PeopleTile label="Reviewers" names={people.reviewers} fallback="No reviewer" />
         {people.observers.length ? <PeopleTile label="Observers" names={people.observers} fallback="" /> : null}
       </dl>

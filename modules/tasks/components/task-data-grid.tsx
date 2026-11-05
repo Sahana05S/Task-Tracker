@@ -87,7 +87,7 @@ interface ColumnDef {
  */
 const COLUMNS: readonly ColumnDef[] = [
   { key: 'title', label: 'Title' },
-  { key: 'assignee', label: 'Assignee' },
+  { key: 'assignee', label: 'Crew' },
   { key: 'priority', label: 'Priority' },
   { key: 'status', label: 'Status' },
   { key: 'progressPercentage', label: 'Progress', numeric: true },

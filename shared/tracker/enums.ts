@@ -51,23 +51,21 @@ export const TASK_MANAGER_ROLES = [
 ] as const satisfies readonly UserRole[];
 
 /**
- * How a member relates to a mission (migration 108), strongest first. Owner,
- * assignees and collaborators are `task_assignees` rows (a collaborator holds no
- * share); reviewers and observers are `task_reviewers` rows (role Observer).
+ * How a member relates to a mission (migration 121), strongest first. Everyone
+ * on a mission is Crew (`task_assignees` rows, equal shares, no lead); reviewers
+ * and observers are `task_reviewers` rows (role Observer).
  */
-export const MISSION_RELATIONSHIPS = ['owner', 'assignee', 'collaborator', 'reviewer', 'observer'] as const;
+export const MISSION_RELATIONSHIPS = ['crew', 'reviewer', 'observer'] as const;
 export type MissionRelationship = (typeof MISSION_RELATIONSHIPS)[number];
 
 export const MISSION_RELATIONSHIP_LABELS = {
-  owner: 'Owner',
-  assignee: 'Assignee',
-  collaborator: 'Collaborator',
+  crew: 'Crew',
   reviewer: 'Reviewer',
   observer: 'Observer',
 } satisfies Record<MissionRelationship, string>;
 
-/** The people commands of `task_people_command`. */
-export const TASK_PEOPLE_COMMANDS = ['add_collaborator', 'remove_collaborator', 'add_observer', 'remove_observer', 'transfer_owner'] as const;
+/** The people commands of `task_people_command` (121; add/remove_collaborator remain database aliases). */
+export const TASK_PEOPLE_COMMANDS = ['add_crew', 'remove_crew', 'add_observer', 'remove_observer'] as const;
 export type TaskPeopleCommand = (typeof TASK_PEOPLE_COMMANDS)[number];
 
 /**
