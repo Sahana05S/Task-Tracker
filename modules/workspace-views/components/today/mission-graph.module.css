@@ -109,3 +109,10 @@
 @media (prefers-reduced-motion: reduce) {
   .world, .node, .edge, .card, .hint, .star { transition-duration: .01ms !important; animation: none !important; }
 }
+
+/* Hashtags (lane 8): matching stars glow, the rest fade; label lines are thin, dotted and in the primary
+   colour, so they never read as structure (solid) or stored relations (dashed / round-dotted). */
+.faded { opacity: .3; }
+.match .star { outline: 2px solid var(--primary); outline-offset: 4px; }
+.labelEdge { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 2 4; opacity: .45; pointer-events: none; animation: fade .4s ease-out both; }
+.swatch.labelSwatch { border-top: 1px dotted var(--primary); }
