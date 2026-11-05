@@ -214,21 +214,15 @@ describe('checklist page', () => {
   });
 });
 
-describe('add row inside Quests (migration 109)', () => {
+describe('add row inside Quests (migrations 109 and 122)', () => {
   const action = async () => ({ success: true as const });
-  const render = (questLevel: number) => renderToStaticMarkup(createElement(ChecklistAddRow, {
-    taskId: TASK, checklistId: CHECKLIST, parentId: null, section: 'activity', version: 1, action, subMissionAction: action, label: 'Objectives', questLevel,
+  const render = () => renderToStaticMarkup(createElement(ChecklistAddRow, {
+    taskId: TASK, checklistId: CHECKLIST, parentId: null, section: 'activity', version: 1, action, subMissionAction: action, label: 'Objectives',
   }));
 
-  it('offers Objective, Quest and Sub-mission inside a Quest', () => {
-    const html = render(1);
+  it('offers Objective, Quest and Sub-mission at any depth (no level limit since 122)', () => {
+    const html = render();
     for (const kind of ['Objective', 'Quest', 'Sub-mission']) expect(html).toMatch(new RegExp(`role="radio"[^>]*>(<svg[^]*?</svg>)?${kind}</button>`));
     expect(html).toContain('placeholder="New objective"');
-  });
-
-  it('stops offering a Quest at the third level', () => {
-    const html = render(3);
-    expect(html).not.toMatch(/>Quest<\/button>/);
-    expect(html).toMatch(/>Sub-mission<\/button>/);
   });
 });

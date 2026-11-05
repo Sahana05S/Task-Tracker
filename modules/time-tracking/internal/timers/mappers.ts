@@ -2,7 +2,7 @@ import type { TaskTimerRow } from '@/types/database';
 import type { TaskTimer } from '@/types/tracker';
 
 export const TIMER_COLUMNS =
-  'id, task_id, user_id, status, started_at, stopped_at, elapsed_seconds, generated_log_id, notes, created_at, updated_at, execution_version' as const;
+  'id, task_id, user_id, status, started_at, stopped_at, elapsed_seconds, generated_log_id, notes, created_at, updated_at, execution_version, checklist_node_id' as const;
 
 export function mapTaskTimer(row: TaskTimerRow): TaskTimer {
   return {
@@ -16,6 +16,7 @@ export function mapTaskTimer(row: TaskTimerRow): TaskTimer {
     elapsedSeconds: row.elapsed_seconds,
     generatedLogId: row.generated_log_id,
     notes: row.notes,
+    nodeId: row.checklist_node_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

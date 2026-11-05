@@ -40,7 +40,7 @@ export interface TaskRowMenuProps {
   canManage: boolean;
   /** Manager, or an active assignee of this mission. */
   canEditOwnFields: boolean;
-  /** False hides "Mark done" (collaborators, migration 117). Defaults to true. */
+  /** False hides "Mark done" (not on the Crew, migrations 117, 121). Defaults to true. */
   canMarkDone?: boolean;
   actions: TaskRowActions;
   /**

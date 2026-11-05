@@ -1,4 +1,4 @@
-"""Activity log, migrations 54, 57 and 59: public.activity_feed visibility, command de-duplication, filters, bounds and paging. Two-company disposable PostgreSQL checks. JWT shim only; no hosted connection."""
+"""Activity log, migrations 54, 57, 59 and 124 (mission_activity): public.activity_feed visibility, command de-duplication, filters, bounds and paging. Two-company disposable PostgreSQL checks. JWT shim only; no hosted connection."""
 from pathlib import Path
 source=Path(__file__).with_name('test_m09_database.py').read_text(encoding='utf-8')
 exec(compile(source.split('\nfor db in DBS:')[0],str(Path(__file__).with_name('test_m09_database.py')),'exec'))
@@ -264,5 +264,82 @@ for db in DBS:
     queued=value(db,f"coalesce(string_agg(n.title,',' ORDER BY n.title),'') FROM taskpulse_private.push_outbox x JOIN taskpulse_private.notifications n ON n.id=x.notification_id JOIN taskpulse_private.user_devices d ON d.id=x.device_id WHERE d.token='{token}' AND n.dedupe_key LIKE 'p106-%'")
     assert queued=='new owner probe',queued
     print('PASS',db,'106: a phone signed in to another company stops receiving the previous company\'s notifications')
+
+    # Migration 124: one mission's history (mission_activity) with named people lines and file lines.
+    def history(uid,tid,before=None,limit=None):
+        q=(f"SELECT coalesce(jsonb_agg(h),'[]') FROM public.mission_activity('{tid}',"
+           f"{'NULL' if before is None else literal(json.dumps(before))+'::jsonb'},{'NULL' if limit is None else limit}) h")
+        r=run(db,uid,q)
+        assert r.returncode==0,r.stderr[:400]
+        return json.loads(next(x for x in r.stdout.splitlines() if x.startswith('[')))
+    M8=U(8)
+    mission=new_task(db,'ACT124')
+    tv=lambda c:value(db,f"{c} FROM public.tasks WHERE id='{mission}'")
+    fields={'task_tag':'ACT124','title':tv('title'),'category':tv('category'),'priority':tv('priority'),'expected_lifecycle_version':int(tv('lifecycle_version'))}
+    save_key=str(uuid4())
+    save=('SELECT public.save_task_with_participants('+literal(mission)+','+literal(json.dumps(fields))+"::jsonb,ARRAY['"+M4+"','"+M5+"','"+M8+"']::uuid[],ARRAY["+U6+"]::uuid[],NULL,"
+          +tv('participant_version')+',false,'+literal(save_key)+');')
+    actor(db,MD,save)
+    lines=history(MD,mission)
+    latest=lines[0]['occurred_at']
+    added=[r for r in lines if r['record_kind']=='task_assignees' and r['action']=='INSERT' and r['occurred_at']==latest]
+    assert sorted(r['subject_user_id'] for r in added)==sorted([M5,M8]) and all(r['actor_id']==MD and r['role'] for r in added),added
+    assert not [r for r in lines if r['action']=='save_task_with_participants' and r['occurred_at']==latest],'the save is not repeated beside its people lines'
+    # The equal re-split (121) is recorded (with mission and member) but folded into the add lines.
+    assert value(db,f"count(*) FROM taskpulse_private.audit_events WHERE table_name='task_assignees' AND command='UPDATE' AND protected_changes->'user_id'->>'after'='{M4}' AND protected_changes->'task_id'->>'after'='{mission}' AND protected_changes ? 'share_units'")!='0'
+    assert not [r for r in lines if r['record_kind']=='task_assignees' and r['action']=='UPDATE' and r['occurred_at']==latest],lines[:6]
+    team=feed(db,MD,today,today)
+    assert [r for r in team if r['action']=='save_task_with_participants' and r['task_tag']=='ACT124'] and not [r for r in team if r['task_tag']=='ACT124' and r['record_kind']=='task_assignees' and r['occurred_at']==latest]
+    print('PASS',db,'124: an Edit-dialog add of two people reads as two named Crew lines in the mission history (Team > Activity keeps its one save line)')
+    count=len(history(MD,mission,limit=200))
+    actor(db,MD,save)
+    assert len(history(MD,mission,limit=200))==count,'a retried save writes no line'
+    print('PASS',db,'124: a retried save writes no duplicate line')
+    # The scale command keeps its before and after values.
+    lifecycle(db,mission,'scale',{'mode':'manual','inputs':{'value':12},'reason':'Bigger scope','provenance':'synthetic M124 fixture'})
+    scale=next(r for r in history(MD,mission) if r['action']=='scale')
+    assert scale['action']=='scale' and scale['changes']['scale']=={'before':10,'after':12} and scale['reason']=='Bigger scope',scale
+    print('PASS',db,'124: a scale change keeps its before and after values')
+    # A Quest owner change (122) names the new owner and the Quest, here and in Team > Activity.
+    quest=checklist(db,mission,'submission',{'title':'Prospecting','section':'activity','assignee_id':M4})['nodeId']
+    checklist(db,mission,'assign',{'node_id':quest,'assignee_id':M5})
+    owner=next(r for r in history(MD,mission) if r['action']=='checklist_assign')
+    assert (owner['subject_user_id'],owner['detail'])==(M5,'Prospecting'),owner
+    assert any(r['action']=='checklist_assign' and r['subject_user_id']==M5 and r['task_tag']=='ACT124' for r in feed(db,MD,today,today))
+    print('PASS',db,'124: a Quest owner change names the new owner and the Quest')
+    # A file upload and its removal: one line each, a retry writes none, Team > Activity lists it.
+    org=value(db,f"organization_id FROM public.tasks WHERE id='{mission}'")
+    path=f"{org}/{mission}/{uuid4()}.pdf"
+    up_key=str(uuid4())
+    upload=f"SELECT public.task_proof_command('add','{mission}','{path}','Site photo.pdf','application/pdf',1200,NULL,'{up_key}','proof')"
+    proof=json.loads(next(x for x in actor(db,MD,upload) if x.startswith('{')))['id']
+    actor(db,MD,upload)
+    files=[r for r in history(MD,mission) if r['record_kind']=='task_proofs']
+    assert [(r['action'],r['detail'],r['role'],r['record_id']) for r in files]==[('task_proof_add','Site photo.pdf','proof',proof)],files
+    actor(db,MD,f"SELECT public.task_proof_command('withdraw','{mission}',NULL,NULL,NULL,NULL,'{proof}','{uuid4()}')")
+    files=[r for r in history(MD,mission) if r['record_kind']=='task_proofs']
+    assert [r['action'] for r in files]==['task_proof_withdraw','task_proof_add'] and files[0]['detail']=='Site photo.pdf',files
+    assert sorted(r['action'] for r in feed(db,MD,today,today,kind='missions') if r['record_kind']=='task_proofs' and r['task_tag']=='ACT124')==['task_proof_add','task_proof_withdraw']
+    print('PASS',db,'124: a file upload and removal each read as one line (a retried upload writes none), also in Team > Activity')
+    # The mission's people read it; a stranger, an anonymous caller and company B are refused.
+    assert history(M5,mission)==history(MD,mission) and history(M8,mission)
+    for uid in (U(3),INACTIVE,None,B_DIR):
+        expect_code(db,uid,f"SELECT * FROM public.mission_activity('{mission}')",'42501')
+    expect_code(db,MD,f"SELECT * FROM public.mission_activity('{mission}','{{\"at\":\"x\",\"id\":\"y\"}}')",'22023')
+    print('PASS',db,'124: the mission\'s people read its history; a stranger, inactive, anonymous and another company are refused')
+    # Keyset paging returns every line once, in order; the read writes nothing.
+    before_counts=counts(db)
+    whole=history(MD,mission,limit=200)
+    paged=[];cursor=None
+    while True:
+        page=history(MD,mission,before=cursor,limit=3)
+        paged+=page
+        if len(page)<3:break
+        cursor={'at':page[-1]['occurred_at'],'id':page[-1]['id']}
+    assert [r['id'] for r in paged]==[r['id'] for r in whole] and len(whole)>=6
+    assert counts(db)==before_counts
+    assert value(db,"has_function_privilege('anon','public.mission_activity(uuid,jsonb,integer)','EXECUTE')")=='f'
+    assert value(db,"pg_get_userbyid(proowner)||'/'||prosecdef||'/'||provolatile::text FROM pg_proc WHERE proname='mission_activity'")=='taskpulse_definer/true/s'
+    print('PASS',db,f'124: keyset pages of 3 return all {len(whole)} lines once, in order; read only, authenticated only')
 
 print('ALL PASS')

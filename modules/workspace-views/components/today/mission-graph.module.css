@@ -56,9 +56,7 @@
 .tick { position: absolute; inset: 0; display: grid; place-items: center; color: var(--card); }
 /* Relationship rings: told apart by line style and weight, never by colour alone (the label says it too). */
 .ring { position: absolute; inset: -7px; border-radius: 50%; border: 2px solid var(--foreground); opacity: .6; pointer-events: none; }
-.owner { border-width: 4px; border-style: double; inset: -9px; opacity: .8; }
-.assignee { border-style: solid; }
-.collaborator { border-style: dashed; }
+.crew { border-width: 4px; border-style: double; inset: -9px; opacity: .8; }
 .reviewer { border-style: dotted; border-width: 3px; }
 .observer { border-width: 1px; opacity: .4; }
 
@@ -99,8 +97,7 @@
 .swatch.dashed { border-top-style: dashed; }
 .swatch.dotted { border-top-style: dotted; border-top-width: 3px; }
 .key { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; border: 2px solid var(--muted-foreground); }
-.key.owner { border-width: 4px; border-style: double; }
-.key.collaborator { border-style: dashed; }
+.key.crew { border-width: 4px; border-style: double; }
 .key.reviewer { border-style: dotted; border-width: 3px; }
 .key.observer { border-width: 1px; }
 
@@ -109,3 +106,10 @@
 @media (prefers-reduced-motion: reduce) {
   .world, .node, .edge, .card, .hint, .star { transition-duration: .01ms !important; animation: none !important; }
 }
+
+/* Hashtags (lane 8): matching stars glow, the rest fade; label lines are thin, dotted and in the primary
+   colour, so they never read as structure (solid) or stored relations (dashed / round-dotted). */
+.faded { opacity: .3; }
+.match .star { outline: 2px solid var(--primary); outline-offset: 4px; }
+.labelEdge { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 2 4; opacity: .45; pointer-events: none; animation: fade .4s ease-out both; }
+.swatch.labelSwatch { border-top: 1px dotted var(--primary); }

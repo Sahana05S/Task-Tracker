@@ -176,12 +176,10 @@ export interface Task {
   assigneeId: string;
   /** `reviewer_id` — FK to `users.id`, ON DELETE SET NULL. */
   reviewerId: string | null;
-  /** Multi-assignee user IDs from `task_assignees`, with `assigneeId` as fallback. */
+  /** The mission's Crew: user IDs from `task_assignees`, with `assigneeId` as fallback (equal shares, migration 121). */
   assigneeIds: string[];
   /** Multi-reviewer user IDs from `task_reviewers`, with `reviewerId` as fallback. Observers are not reviewers. */
   reviewerIds: string[];
-  /** Zero-share `task_assignees` rows (migration 108): edit the mission, earn no credit, log no time. Also in `assigneeIds`. */
-  collaboratorIds?: string[];
   /** `task_reviewers` rows with role Observer (migration 108): follow the mission, never review it. */
   observerIds?: string[];
 
@@ -275,6 +273,8 @@ export interface DailyTaskLog {
   logSource: TaskLogSource;
   /** `source_timer_id` — timer session that produced this log, when applicable. */
   sourceTimerId: string | null;
+  /** `checklist_node_id`: the Quest (or, before migration 123, the checklist row) its timer ran on. */
+  checklistNodeId?: string | null;
   /** `created_at` — ISO 8601 timestamp. */
   createdAt: string;
 }
@@ -508,6 +508,8 @@ export interface TaskTimer {
   elapsedSeconds: number;
   generatedLogId: string | null;
   notes: string | null;
+  /** `checklist_node_id`: the Quest this timer ran on (migration 123; older rows may name any checklist row); null for a mission timer. */
+  nodeId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

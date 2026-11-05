@@ -38,7 +38,8 @@ Present, 8 h, off-hours 0 (migration 73); check-out corrects that same record
 to both check times and regular hours = out - in truncated to 2 decimals. A day
 that already had a record at check-in, or one a manager changed afterwards, is
 left alone (`recordExists`). The Today page
-header, the phone's New menu and the attendance page link to it; matrix cells
+header opens the same form in a sheet (below), and the phone's New menu and
+the attendance page link to it; matrix cells
 show a camera mark and the cell editor shows both photos (10-minute signed
 links), the times, a map link and an "outside office" badge. Before the
 day's record exists, `policy_period_facts` reads the check-in time, so the
@@ -62,6 +63,33 @@ attendance record is saved before any of this appears, so WhatsApp can never
 undo or repeat a check-in. Rules in `internal/share-message.ts`, tests in
 `__tests__/share-message.test.ts`. Inside the Android app the link must leave
 the WebView for WhatsApp; that is handled in the stellar-mobile shell.
+
+## WhatsApp opens after saving; check in from Today (5 November 2026)
+User request: WhatsApp opens by itself right after a check-in or check-out so
+the attendance message is not forgotten, and Today offers check in and out.
+The drafted messages are unchanged. Attendance is saved first; only then, once
+the page shows the drafted message of that same kind, WhatsApp opens with it,
+at most once per saved action and never after a reload (the pending action
+lives only in the open page). Nothing is recorded or shown as sent. Inside the
+Android app (Capacitor bridge or the `StellarApp` User-Agent marker) the page
+goes to the `wa.me` link and the shell hands it to WhatsApp; in a browser Save
+opens a blank tab in the same tap and that tab is sent to WhatsApp, closed if
+the save fails or the message does not arrive within two minutes. If the
+browser blocks the tab, the share panel is the fallback. Rules in
+`internal/whatsapp-handoff.ts` (`startHandoff`, `handoffSaved`,
+`cancelHandoff`, `runHandoff`, pure `handoffStep`; tests in
+`__tests__/whatsapp-handoff.test.ts`); `CheckInForm` starts and confirms the
+handoff and `CheckInShare` (the share panel) runs it.
+
+The Today header's `CheckInPrompt` (`user`, `loadShare`) renders
+`CheckInCard`: Check in, then Check out (with the check-in time), then Share
+your day. Each opens a sheet on Today with the same `CheckInForm` (photo and
+location rules, Asia/Kolkata dates and duplicate protection unchanged; Cancel
+and Done close the sheet through `onClose`), and after a save the drafted
+message under it. The route layer composes today's message
+(`app/(workspace)/attendance/check-in/day-share.ts`, used by the check-in page
+and Today), because the check-out report reads the reports and time-tracking
+modules, which depend on this one.
 
 ## Check-out report in time blocks (4 November 2026, migration 119)
 User decision: the check-out message lists the day in four blocks: check-in to
@@ -111,7 +139,7 @@ record (active or withdrawn) is never changed.
 | `check-in-actions.ts` | `'use server'` `checkIn()` (upload the photo, then `attendance_check_in`; `operationId` and `photoId` make a retry replay), `loadCheckInPhotos()` (signed links for one person's day: own, or anyone's for MD/PE) |
 | `actions.ts` | `'use server'` `saveAttendanceRecord()` (sets `kind=attendance` and calls the dated-record command); `fillAttendanceDay()` (one new record per listed member for a day, each with an operation id derived from the form's, so a resubmit replays; existing records are never overwritten; reports saved and skipped members) |
 | `client.ts` | Matrix model and editing payload: `attendanceMatrix`, `attendanceMonth`, `shiftMonth`, `cellValues`, `withStatus`, `hoursBetween`, `cellCommand`, `emptyCells`, `fillCommand`, types `AttendanceMatrixModel`, `MatrixRow`, `MatrixCell`, `CellValues`, `DayFill`; pure helpers and types: `summarizeAttendance`, `EMPTY_ATTENDANCE_SUMMARY`, `AttendanceSummary`, `defaultHoursForStatus`, `computeHoursFromCheckTimes`, `compareRecordedHours`, `dailyAttendanceValidity`, `localCheckTime`, `ATTENDANCE_INPUT_VERSION`, `canManageAttendance`, `canEditAttendanceRecord`, `ATTENDANCE_COLUMNS`, `mapAttendanceRecord(s)`; check-in helpers `compressPhoto`, `mapLink`, `mapEmbed`, `MAX_PHOTO_BYTES`, types `CheckInKind`, `CheckInMark` |
-| `components/` | `AttendanceWorkspace` (the `/attendance` page body), `AttendanceMatrix` (grid or calendar, one shared editor sheet), `AttendanceCellEditor`, `AttendanceDayFill`, `CheckInDay` (the `/attendance/check-in` body, with the WhatsApp share panels), `CheckInForm`, `CheckInEvidence`, `CheckInPrompt` (Today's button) |
+| `components/` | `AttendanceWorkspace` (the `/attendance` page body), `AttendanceMatrix` (grid or calendar, one shared editor sheet), `AttendanceCellEditor`, `AttendanceDayFill`, `CheckInDay` (the `/attendance/check-in` body, with the WhatsApp share panel; takes the composed `share`), `CheckInForm` (optional `onClose`, `onSaved`), `CheckInShare` (share panel that opens WhatsApp once after a save), `CheckInCard` and `CheckInPrompt` (Today's check-in sheet), `CheckInEvidence` |
 
 Code that may end up in a client bundle (for example the scoring engine)
 imports `client.ts`, never `index.ts`: `index.ts` pulls in `server-only`.

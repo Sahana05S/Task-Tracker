@@ -46,6 +46,8 @@ interface Props {
   initialLocation?: RoadmapLocation | null;
   /** Labels on the first batch's missions (migration 112); later batches bring their own. Null hides them. */
   initialLabels?: Record<string, Label[]> | null;
+  /** Member names by id, for Quest owners on the map (migration 122). */
+  memberNames?: Record<string, string> | null;
 }
 function Progress({ value }: { value: number | null }) {
   return <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{value === null ? '—' : `${Math.round(value)}%`}</span>;
@@ -55,7 +57,7 @@ function LoadingBranch() {
 }
 
 /** The map view and a keyboard-first list over the same bounded data, actions and URL location. */
-export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = false, today, initialView = 'roadmap', initialLocation = null, initialLabels = null }: Props) {
+export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = false, today, initialView = 'roadmap', initialLocation = null, initialLabels = null, memberNames = null }: Props) {
   const [batch, setBatch] = useState(initial);
   const [labels, setLabels] = useState<Record<string, Label[]>>(initialLabels ?? {});
   const [view, setView] = useState<View>(initialView);
@@ -158,7 +160,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
     </nav>
     {view === 'roadmap' ? <>
       {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
-      {batch?.missions.length || location ? <MissionGraph missions={batch?.missions ?? []} links={batch?.links} labels={labels} today={today} initialLocation={location}
+      {batch?.missions.length || location ? <MissionGraph missions={batch?.missions ?? []} links={batch?.links} labels={labels} names={memberNames} today={today} initialLocation={location}
         onLocation={next => { setLocation(next); remember(next, due, 'roadmap'); }} />
         : batch ? <p className="text-muted-foreground py-8 text-sm">{due === 'all' ? 'No open missions are assigned to you.' : due === 'today' ? 'No open assigned missions are due today.' : 'No open assigned missions are overdue.'} <Link href="/tasks" className="link font-semibold">Browse missions</Link></p> : null}
       {batch?.hasMore ? <Button className="mt-4" variant="outline" disabled={loadingMore} onClick={() => loadMoreMissions()}>{loadingMore ? 'Loading missions…' : `Load more missions (${batch.missions.length} shown)`}</Button> : null}

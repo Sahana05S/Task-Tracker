@@ -14,13 +14,14 @@ import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-t
 import { SECTION_TITLES, checklistIssues, pageResult, percentText } from '../internal/table';
 import { SectionStateIcon } from './section-state-icon';
 import { ChecklistVersionField, ChecklistVersionProvider } from './checklist-state-control';
-import { ChecklistIssues, ChecklistTable } from './checklist-table';
+import { ChecklistIssues, ChecklistTable, type QuestTimerSlot } from './checklist-table';
 import { ChecklistGateBadge } from './checklist-gate-badge';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-cards';
 import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
 import { ObjectiveReviewProvider } from './objective-review';
+import { QuestCrewProvider } from './quest-owner';
 import { NO_REVIEWS, sentBackIndex, type ObjectiveReviews } from '../internal/review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
@@ -55,6 +56,11 @@ export interface ChecklistWorkspaceProps {
   page?: ChecklistPageView;
   manager: boolean;
   executor: boolean;
+  /** Whether the viewer may change this list's rows (`checklist_branch.canEdit`, migration 122). */
+  listEditable?: boolean;
+  /** The mission's Crew, for Quest owner pickers (migration 122), and the viewer. */
+  crew?: readonly { id: string; name: string }[];
+  viewerId?: string;
   selectedItem?: string;
   /** Managers: where progress comes from, missions to link, and rows that still need a section. */
   managerTools?: {
@@ -63,6 +69,8 @@ export interface ChecklistWorkspaceProps {
   };
   /** `submission` creates a Sub-mission (managers; supplied by the page from the tasks module). */
   actions: { checklist: Command; submission?: Command };
+  /** A Quest's Start/Stop timer (migration 123), supplied by the page from the time-tracking module. */
+  questTimer?: QuestTimerSlot;
   /** Beside the breadcrumb: the mission's own actions, supplied by the page. */
   headerActions?: React.ReactNode;
   /** Table (default), Board, Blocks or Outline. */
@@ -97,7 +105,8 @@ function moveTargets(rows: readonly ChecklistBranchRow[], up: { id: string | nul
 export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const { task, checklist, ancestors, rollup, version, manager, executor } = props;
   const open = !task.archivedEffectiveDate && !['Done', 'Discarded'].includes(task.status);
-  const canEdit = executor && open;
+  // Inside a Quest only its owner, the owners above it and managers change rows (migration 122).
+  const canEdit = executor && open && props.listEditable !== false;
   const missionHref = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const homeHref = checklistWorkHref(task.taskTag);
   const section = props.page?.section ?? 'activity';
@@ -119,24 +128,23 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       hideOnPhone: index < ancestors.length - 2 })),
   ];
   const tableActions = { checklist: props.actions.checklist, submission: manager ? props.actions.submission : undefined };
-  const shared = { manager, linkChoices: tools?.linkChoices ?? [] };
+  const shared = { manager, linkChoices: tools?.linkChoices ?? [], questTimer: props.questTimer };
   const issues = checklistIssues(rollup.errors);
   // Section headers say "Changes needed" while an objective in them is sent back (114).
   const sentBack = sentBackIndex(props.reviews ?? NO_REVIEWS);
   const changesIn = (key: ChecklistSection) => !!checklist && sentBack.hasSection(checklist.id, key);
   const view: ChecklistView = props.view ?? 'table';
-  const cardCtx = { task, canEdit, version, action: props.actions.checklist };
+  const cardCtx = { task, canEdit, version, action: props.actions.checklist, crewEdits: executor && open };
   // A Quest is one list of objectives (decision 25 Oct 2026): its home shows that list, plus any
   // Setup or Closure rows a closed mission's Quest still holds from before.
   const inQuest = !!checklist?.ownerNodeId;
-  // Quests nest three levels deep (D-B1, migration 109): each Quest above this list is one level.
-  const questLevel = ancestors.filter((ancestor) => ancestor.ownedChecklistId).length;
   const homeSections = quest ? props.sections?.filter((home) => home.section === 'activity' || home.rows.length > 0) : props.sections;
   const sectionTitle = (key: ChecklistSection) => (inQuest && key === 'activity' ? 'Objectives' : SECTION_TITLES[key].title);
   // Said once, instead of an add box that silently is not there (user report, 28 Oct 2026).
   const addBlocked = canEdit ? null
     : task.archivedEffectiveDate ? 'This mission is archived, so its checklist is read-only.'
     : !open ? `This mission is ${task.status}. A manager can reopen it to add or change rows.`
+    : executor && props.listEditable === false ? 'Only this Quest’s owner, the owners of the Quests above it and managers can add or change its rows.'
     : 'Only managers and the people on this mission can add or change rows.';
   const addRowFor = (section: ChecklistSection, parentId: string | null = null) => canEdit && checklist ? (
     <ChecklistAddRow
@@ -148,7 +156,6 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       action={props.actions.checklist}
       subMissionAction={tableActions.submission}
       label={sectionTitle(section)}
-      questLevel={questLevel}
       autoFocus={parentId !== null || section === 'activity'}
     />
   ) : null;
@@ -183,7 +190,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 selectedItem={props.selectedItem}
                 {...shared}
                 moveTargets={moveTargets(home.rows, null)}
-                questLevel={questLevel}
+                questOwnerEdits={executor && open}
                 autoFocus={home.section === 'activity'}
                 emptyText={quest && home.section === 'activity' ? (canEdit ? 'No objectives yet. Add the first one below.' : 'No objectives yet.') : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
                 footer={<Paging taskTag={task.taskTag} address={address} cursor={home.cursor} nextCursor={home.nextCursor} />}
@@ -214,7 +221,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             section={props.page.section}
             addParentId={props.page.nodeId}
             canEdit={canEdit}
-            questLevel={questLevel}
+            questOwnerEdits={executor && open}
             autoFocus
             actions={tableActions}
             selectedItem={props.selectedItem}
@@ -230,6 +237,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   return (
     <ChecklistVersionProvider version={version}>
       <ObjectiveReviewProvider taskId={task.id} version={version} action={props.actions.checklist} reviews={props.reviews} names={props.memberNames}>
+      <QuestCrewProvider crew={props.crew ?? []} viewerId={props.viewerId ?? null}>
       <MissionPage>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
@@ -237,7 +245,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
         </div>
 
         {checklist && props.sections ? (
-          <HomeHero {...props} checklist={checklist} tools={tools} changesIn={changesIn} />
+          <HomeHero {...props} checklist={checklist} tools={tools} changesIn={changesIn} parent={quest ? { href: backHref, title: trail.at(-1)?.title ?? 'Master checklist' } : undefined} canTime={executor && open} />
         ) : checklist && props.page ? (
           <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} inQuest={inQuest} />
         ) : null}
@@ -262,12 +270,13 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
           </>
         )}
       </MissionPage>
+      </QuestCrewProvider>
       </ObjectiveReviewProvider>
     </ChecklistVersionProvider>
   );
 }
 
-function HomeHero({ task, ownerNames, checklist, rollup, changesIn }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools']; changesIn: (key: ChecklistSection) => boolean }) {
+function HomeHero({ ownerNames, task, checklist, rollup, changesIn, parent, canTime, questTimer }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools']; changesIn: (key: ChecklistSection) => boolean; parent?: { href: string; title: string }; canTime?: boolean }) {
   const activity = rollup.taskProgress;
   return (
     <section aria-label="Checklist summary" className="hero-card p-5 sm:p-6">
@@ -279,10 +288,21 @@ function HomeHero({ task, ownerNames, checklist, rollup, changesIn }: ChecklistW
           </p>
           <h1 className="text-foreground mt-3 text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">{checklist.title}</h1>
           <p className="text-muted-foreground mt-1 text-sm break-words">{task.title}</p>
+          {/* A Quest's home links the list it sits in (the parent Quest, row or master checklist). */}
+          {parent ? (
+            <p className="mt-1 text-sm break-words">
+              <span className="text-muted-foreground">Part of </span>
+              <Link href={parent.href} className="link font-semibold">{parent.title}</Link>
+            </p>
+          ) : null}
           <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2 text-sm">
             <span className="text-muted-foreground">Task owner</span>
             <AvatarStack names={ownerNames} />
           </div>
+          {/* A Quest's home times the Quest (migration 123): the mission's Crew and managers, while it is open. */}
+          {checklist.ownerNodeId && canTime && questTimer ? (
+            <div className="mt-4">{questTimer({ nodeId: checklist.ownerNodeId, title: checklist.title }, 'hero')}</div>
+          ) : null}
         </div>
         <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-card/85 p-4 shadow-(--shadow-card) sm:w-72">
           <div className="flex items-center gap-3">

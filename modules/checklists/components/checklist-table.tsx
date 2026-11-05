@@ -15,6 +15,9 @@ import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 
+/** Renders one Quest's timer button; `hero` is the larger one on a Quest's home. */
+export type QuestTimerSlot = (quest: { nodeId: string; title: string }, place: 'row' | 'hero') => React.ReactNode;
+
 export interface ChecklistTableProps {
   /** Anchor for links such as the mission page's phase list. */
   id: string;
@@ -41,8 +44,14 @@ export interface ChecklistTableProps {
   /** Missions a manager may link a row to. */
   linkChoices?: readonly { id: string; taskTag: string; title: string }[];
   manager: boolean;
-  /** Quest levels above this table's list (0 = the mission's checklist); limits the add row's Quest choice. */
-  questLevel?: number;
+  /**
+   * The mission is open and the viewer is Crew or a manager (migration 122): a Quest row's owner
+   * gets its menu even where the list around it is read-only for them, and every Quest row gets
+   * its timer (migration 123).
+   */
+  questOwnerEdits?: boolean;
+  /** A Quest's Start/Stop timer (migration 123), supplied by the page from the time-tracking module. */
+  questTimer?: QuestTimerSlot;
   /** The page's main table: its add row takes the cursor on arrival. */
   autoFocus?: boolean;
   /** Header control. */
@@ -144,8 +153,11 @@ export function ChecklistTable(props: ChecklistTableProps) {
                     </td>
                     <td className="max-md:order-2 max-md:border-0 max-md:p-0">
                       <div className="flex items-center justify-end gap-1">
-                        {canEdit ? (
+                        {/* Quests carry the timers (migration 123): the mission's Crew and managers, while it is open. */}
+                        {props.questOwnerEdits && row.ownedChecklistId && props.questTimer ? props.questTimer({ nodeId: row.id, title: row.title }, 'row') : null}
+                        {canEdit || (props.questOwnerEdits && row.ownedChecklistId && row.canEditQuest) ? (
                           <ChecklistRowActions
+                            canEditRow={canEdit}
                             row={row}
                             taskId={task.id}
                             version={version}
@@ -181,7 +193,6 @@ export function ChecklistTable(props: ChecklistTableProps) {
             action={actions.checklist}
             subMissionAction={actions.submission}
             label={title}
-            questLevel={props.questLevel}
             autoFocus={props.autoFocus}
           />
         </div>

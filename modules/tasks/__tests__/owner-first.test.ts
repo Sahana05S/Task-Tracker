@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { ownerFirst } from '@/modules/tasks/internal/input';
 
-describe('Owner picker order (migration 108)', () => {
-  it('moves the chosen owner to the front, where the database reads the Owner', () => {
+describe('Primary row order (migrations 108, 121)', () => {
+  it('moves the kept primary to the front, where the database reads it', () => {
     expect(ownerFirst(['a', 'b', 'c'], 'c')).toEqual(['c', 'a', 'b']);
   });
 

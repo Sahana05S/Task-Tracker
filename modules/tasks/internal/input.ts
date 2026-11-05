@@ -1,6 +1,5 @@
 import { readNullableString, readString, UUID_PATTERN } from '@/shared/forms/form-data';
 import { isTaskCategory, isTaskPriority } from '@/shared/tracker/enums';
-import { readParticipantShares } from '@/modules/tasks/internal/shares';
 import type { Json } from '@/types/database';
 import type { TaskCategory, TaskPriority } from '@/types/tracker';
 
@@ -71,9 +70,10 @@ export interface TaskFields {
 }
 
 /**
- * The Owner picker (migration 108): the database makes the first assignee the
- * Owner, so the chosen owner moves to the front. An owner who is not among the
- * selected assignees is ignored, and the first selected member stays Owner.
+ * The database keeps one internal primary row (the first Crew member, no extra
+ * power, migration 121). The dialog sends the current primary as `ownerId` so
+ * an edit keeps it first and does not move it needlessly; one who is no longer
+ * selected is ignored, and the first selected member takes the row.
  */
 export function ownerFirst(ids: string[] | null, ownerId: string): string[] | null {
   if (!ids || !ownerId || !ids.includes(ownerId)) return ids;
@@ -106,12 +106,8 @@ export function parseTaskFields(formData: FormData): Parsed<TaskFields> {
   if (taskScale === undefined) return { ok: false, error: 'Task scale must be a number.' };
   if (taskScale !== null && taskScale < 0) return { ok: false, error: 'Task scale cannot be negative.' };
 
-  let shares: number[] | null;
-  try {
-    shares = readParticipantShares(formData, assigneeIds);
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'Invalid shares.' };
-  }
+  // Crew share equally (migration 121): the database ignores passed shares, so none are sent.
+  const shares = null;
 
   return {
     ok: true,

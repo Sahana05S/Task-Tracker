@@ -3,7 +3,7 @@ import * as React from 'react';
 import { AppShell } from '@/modules/workspace-views/components/shell/app-shell';
 import { requireProfile } from '@/shared/session/profile';
 import { getNavCounts } from '@/modules/workspace-views';
-import { getRunningTimers } from '@/modules/time-tracking';
+import { getQuestMissionIds, getRunningTimers } from '@/modules/time-tracking';
 import { RunningTimerProvider } from '@/modules/time-tracking/components/running-timer-context';
 import { getShellCompanySettings, shellCategoryCatalogue } from '@/modules/settings';
 import { CompanySettingsProvider } from '@/modules/settings/components/company-settings-context';
@@ -31,9 +31,10 @@ export default async function WorkspaceLayout({
   readonly children: React.ReactNode;
 }) {
   const profile = await requireProfile();
-  const [counts, timers, catalogue, settings] = await Promise.all([
+  const [counts, timers, questMissionIds, catalogue, settings] = await Promise.all([
     getNavCounts(profile.id),
     getRunningTimers(profile.id),
+    getQuestMissionIds(),
     shellCategoryCatalogue(),
     getShellCompanySettings(),
   ]);
@@ -43,7 +44,7 @@ export default async function WorkspaceLayout({
       {/* Decides before the overlay paints whether the splash plays (once per sign-in, never for tests or reduced motion). */}
       <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
       <Splash companyName={settings.branding?.companyName} />
-      <RunningTimerProvider timers={timers}>
+      <RunningTimerProvider timers={timers} questMissionIds={questMissionIds}>
         <AppShell profile={profile} counts={counts}>
           {children}
           <MissionStartToaster />

@@ -4,7 +4,8 @@
 export * from '@/modules/time-tracking/client';
 
 export { getLoggableTasksFor, getMyLogHistory, getTaskEffortTotals } from '@/modules/time-tracking/internal/logs/queries';
-export { getRunningTimers } from '@/modules/time-tracking/internal/timers/running-timers';
+export { getQuestMissionIds, getRunningTimers } from '@/modules/time-tracking/internal/timers/running-timers';
+export { getQuestTimes } from '@/modules/time-tracking/internal/timers/quest-time';
 export { getTeamRunningTimers } from '@/modules/time-tracking/internal/timers/queries';
 export { getTaskExecution } from '@/modules/time-tracking/internal/execution';
 export { getTimerSessionActivity } from '@/modules/time-tracking/internal/timers/session-activity';

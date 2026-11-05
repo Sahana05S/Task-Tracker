@@ -11,7 +11,8 @@ describe('timer session report (migration 110)', () => {
       { action: 'checklist_add' },
       'nonsense',
     ] });
-    expect(activity).toEqual({ timerId: 't1', events: [{ at, action: 'checklist_state', nodeTitle: 'Draw elevation', state: 'Yes' }] });
+    expect(activity).toEqual({ timerId: 't1', events: [{ at, action: 'checklist_state', nodeTitle: 'Draw elevation', state: 'Yes' }], nodeId: null, questTitle: null });
+    expect(mapSessionActivity({ timer_id: 't3', events: [], node_id: 'q1', quest_title: 'Survey' })).toMatchObject({ nodeId: 'q1', questTitle: 'Survey' });
     expect(mapSessionActivity({ timer_id: 't2', events: null }).events).toEqual([]);
   });
 

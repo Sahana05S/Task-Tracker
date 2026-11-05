@@ -496,6 +496,8 @@ export interface Database {
           priority?: number;
           detail_section?: 'setup'|'activity'|'closure'|null;
           completion_state?: 'Yes'|'No'|'N/A';
+          /** A Quest row's owner, one of the mission's Crew (migration 122); written only by checklist_command. */
+          assignee_id?: string | null;
           /** Objective review (migration 114); written only by checklist_command. */
           review_state?: 'none'|'pending'|'acknowledged'|'work_needed';
           reviewed_by?: string | null;
@@ -880,6 +882,7 @@ export interface Database {
       correct_task_log: { Args: { p_log_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       reverse_task_log: { Args: { p_log_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       start_task_timer: { Args: { p_task_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
+      /** Migration 123: Quest rows only; Crew or a manager; one running timer per person per Quest. */
       start_checklist_item_timer: { Args: { p_node_id: string; p_payload: Json; p_operation_id: string; }; Returns: Json };
       stop_task_timer: { Args: { p_timer_id: string; p_payload: Json; p_operation_id: string; p_expected_version: number; }; Returns: Json };
       /** Migration 98: a timer run offline, stopped through the normal stop (Kolkata-midnight segments). p_node NULL = whole mission. */
@@ -989,8 +992,12 @@ export interface Database {
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };
       month_setup_commit: { Args: { p_preview: string; p_operation: string }; Returns: Json };
       /** Migration 54: the activity log read; company-scoped and role-gated in the database. */
+      mission_activity: { Args: { p_task: string; p_before?: Json | null; p_limit?: number | null }; Returns: { id: string; occurred_at: string; action: string; actor_id: string | null; subject_user_id: string | null; record_kind: string | null; record_id: string | null; fields: string[] | null; changes: Json | null; detail: string | null; role: string | null; reason: string | null }[] };
       activity_feed: { Args: { p_from: string; p_to: string; p_kind?: string | null; p_member?: string | null; p_before?: Json | null; p_limit?: number | null }; Returns: { id: string; occurred_at: string; kind: string; action: string; actor_id: string | null; subject_user_id: string | null; task_id: string | null; task_tag: string | null; record_kind: string | null; record_id: string | null; fields: string[] | null; reason: string | null; period: string | null }[] };
-      timer_session_activity: { Args: { p_task: string; p_limit?: number | null }; Returns: { timer_id: string; user_id: string; started_at: string; stopped_at: string; hours: number; notes: string | null; events: Json }[] };
+      /** Migration 123 adds node_id / quest_title: the Quest the session ran on (null for a mission timer). */
+      timer_session_activity: { Args: { p_task: string; p_limit?: number | null }; Returns: { timer_id: string; user_id: string; started_at: string; stopped_at: string; hours: number; notes: string | null; events: Json; node_id: string | null; quest_title: string | null }[] };
+      /** Migration 123: logged seconds per Quest, own and including sub-Quests. */
+      quest_time: { Args: { p_task: string }; Returns: { node_id: string; owned_checklist_id: string; checklist_id: string; parent_quest_id: string | null; title: string; assignee_id: string | null; own_seconds: number; total_seconds: number }[] };
       team_summary_inputs: { Args: { p_year: number; p_month: number }; Returns: Json };
       is_task_assignee: { Args: { p_task_id: string }; Returns: boolean };
       /** Migration 108: an assignee with shares (or the legacy assignee); collaborators are not workers. */

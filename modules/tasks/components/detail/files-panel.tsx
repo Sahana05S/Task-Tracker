@@ -40,7 +40,8 @@ function LinkRow({ link }: { link: TaskLink }) {
 }
 
 /**
- * The mission's one Files panel (Work tab): Input, Process, Output and Proofs.
+ * The mission's one Files panel (Work tab): Input, Process and Output side by side, left to
+ * right (three columns from md, a swipe row on phones), with Proofs and Other links under them.
  * Each group is one list of uploaded files (migrations 101 and 113, moved into
  * the company Shared Drive) and pasted links (`task_links.ipo_role`). Upload is
  * the main action; "Add a link instead" is the small option (not for Proofs).
@@ -58,16 +59,40 @@ export function FilesPanel({
   links: readonly TaskLink[];
   /** The mission's uploaded files; null for anyone outside its people and managers (links only, no Proofs). */
   files: readonly MissionProof[] | null;
-  /** Managers, the Owner, assignees, collaborators and reviewers of a live mission; never observers. */
+  /** Managers, the Crew and reviewers of a live mission; never observers. */
   canUpload: boolean;
-  /** Who may save a link (mission details: managers and the mission's assignees). */
+  /** Who may save a link (mission details: managers and the mission's Crew). */
   canAddLink: boolean;
   /** Whether uploads move into the Shared Drive yet (honest wording). */
   driveReady: boolean;
 }) {
   const otherLinks = links.filter((link) => !link.ipoRole || link.ipoRole === 'reference');
-  const groups = files ? GROUPS : GROUPS.filter((group) => group.kind !== 'proof');
+  const ipo = GROUPS.filter((group) => group.kind !== 'proof');
+  // Proofs sit under the row; anyone without file access (files null) sees links only, no Proofs.
+  const proofGroup = files ? GROUPS.find((group) => group.kind === 'proof') ?? null : null;
   const total = (files?.length ?? 0) + links.length;
+  const card = (group: (typeof GROUPS)[number]) => (
+    <ProofFiles
+      key={group.kind}
+      bucket={PROOFS_BUCKET}
+      files={files ? missionFilesOfKind(files, group.kind) : []}
+      items={group.kind === 'proof' ? [] : ipoLinks(links, group.kind).map((link) => ({ key: link.id, node: <LinkRow link={link} /> }))}
+      canAdd={canUpload && files !== null}
+      fields={{ taskId: task.id, taskTag: task.taskTag, kind: group.kind }}
+      start={startProofUpload}
+      save={saveProof}
+      remove={removeProof}
+      label={group.title}
+      addLabel="Upload"
+      noun={group.kind === 'proof' ? 'proof' : 'file'}
+      empty={group.empty}
+      className="bg-muted/50 grid h-full content-start gap-2 rounded-xl p-3"
+    >
+      {canAddLink && group.kind !== 'proof' ? (
+        <AddLinkForm taskId={task.id} version={task.lifecycleVersion ?? 0} ipoRole={group.kind} />
+      ) : null}
+    </ProofFiles>
+  );
 
   return (
     <MissionPanel
@@ -76,30 +101,19 @@ export function FilesPanel({
       subtitle={total ? `${total} file${total === 1 ? '' : 's'} and links` : 'Input, Process, Output and Proofs'}
     >
       <div className="grid gap-4">
-        <div className="grid gap-3 xl:grid-cols-2">
-          {groups.map((group) => (
-            <ProofFiles
-              key={group.kind}
-              bucket={PROOFS_BUCKET}
-              files={files ? missionFilesOfKind(files, group.kind) : []}
-              items={group.kind === 'proof' ? [] : ipoLinks(links, group.kind).map((link) => ({ key: link.id, node: <LinkRow link={link} /> }))}
-              canAdd={canUpload && files !== null}
-              fields={{ taskId: task.id, taskTag: task.taskTag, kind: group.kind }}
-              start={startProofUpload}
-              save={saveProof}
-              remove={removeProof}
-              label={group.title}
-              addLabel="Upload"
-              noun={group.kind === 'proof' ? 'proof' : 'file'}
-              empty={group.empty}
-              className="bg-muted/50 grid content-start gap-2 rounded-xl p-3"
-            >
-              {canAddLink && group.kind !== 'proof' ? (
-                <AddLinkForm taskId={task.id} version={task.lifecycleVersion ?? 0} ipoRole={group.kind} />
-              ) : null}
-            </ProofFiles>
+        {/* Input | Process | Output left to right: three columns from md, a swipe row below it. */}
+        <div
+          role="group"
+          aria-label="Input, Process and Output"
+          className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 md:pb-0"
+        >
+          {ipo.map((group) => (
+            <div key={group.kind} className="w-[85%] shrink-0 snap-start md:w-auto md:min-w-0">
+              {card(group)}
+            </div>
           ))}
         </div>
+        {proofGroup ? card(proofGroup) : null}
 
         {otherLinks.length ? (
           <div className="border-border grid gap-2 border-t pt-3">

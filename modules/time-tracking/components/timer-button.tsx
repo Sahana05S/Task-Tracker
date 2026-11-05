@@ -6,10 +6,11 @@ import { PlayIcon, SquareIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { RunningClock } from '@/shared/ui/running-clock';
-import { useRunningTimer } from '@/modules/time-tracking/components/running-timer-context';
+import { useMissionHasQuests, useRunningTimer } from '@/modules/time-tracking/components/running-timer-context';
+import { runningTimerLabel } from '@/modules/time-tracking/internal/timers/labels';
 import { computeElapsedSeconds, formatElapsed } from '@/modules/time-tracking/internal/timers/elapsed';
 import type { RunningTimer } from '@/modules/time-tracking/internal/timers/running-timers';
-import { startTaskTimer, stopTaskTimer } from '@/modules/time-tracking/timer-actions';
+import { startItemTimer, startTaskTimer, stopTaskTimer } from '@/modules/time-tracking/timer-actions';
 import { prepareOperation } from '@/shared/commands/client-operation';
 import { announceMissionProgress } from '@/shared/ui/mission-progress-event';
 import { Button } from '@/shared/ui/button';
@@ -21,6 +22,16 @@ export interface TimerButtonProps {
   taskId: string;
   /** Names the mission in the accessible label, e.g. its tag; needed where several buttons share a page. */
   taskLabel?: string;
+  /**
+   * The Quest this button times (migration 123). Omitted for the mission timer, which a
+   * mission with Quests no longer has: the button then shows only to stop a mission timer
+   * started before the Quests were added.
+   */
+  nodeId?: string | null;
+  /** The Quest's title, for labels such as "Start timer on TT-1 › Survey". */
+  questTitle?: string;
+  /** A shorter visible text (e.g. "Start") where the button sits on a dense row. */
+  compact?: boolean;
   /** `sm` for map, list and card rows; `default` for page headers. */
   size?: 'sm' | 'default';
   className?: string;
@@ -30,14 +41,17 @@ const INTERRUPTED = 'The response was interrupted. Press the button again to rec
 
 /**
  * The fields a press sends: stop the running timer (with its version and the
- * session note from the Stop sheet), or start one on the mission.
+ * session note from the Stop sheet), or start one on the mission or, with
+ * `nodeId`, on one of its Quests.
  */
-export function timerCommandForm(running: RunningTimer | null, taskId: string, notes?: string): FormData {
+export function timerCommandForm(running: RunningTimer | null, taskId: string, notes?: string, nodeId?: string | null): FormData {
   const form = new FormData();
   if (running) {
     form.set('timerId', running.id);
     form.set('expectedVersion', String(running.executionVersion));
     if (notes !== undefined) form.set('notes', notes);
+  } else if (nodeId) {
+    form.set('nodeId', nodeId);
   } else {
     form.set('taskId', taskId);
   }
@@ -45,17 +59,20 @@ export function timerCommandForm(running: RunningTimer | null, taskId: string, n
 }
 
 /**
- * Play/stop pill for one mission's timer. Starting and stopping use the same
- * timer commands as the mission page; stopping writes an ordinary task log.
- * Several missions' timers may run at once (migration 118), one per mission,
- * so the button reads this mission's timer from `RunningTimerProvider`: Stop
- * (with a live clock) where it runs, Start everywhere else. Stop opens a
+ * Play/stop pill for one Quest's timer, or a mission's timer when the mission
+ * has no Quests (migration 123). Starting and stopping use the same timer
+ * commands as the mission page; stopping writes an ordinary task log (tagged
+ * with the Quest). Several timers may run at once (migrations 118, 123), one
+ * per person per Quest, so the button reads its own timer from
+ * `RunningTimerProvider`: Stop (with a live clock) where it runs, Start
+ * everywhere else. Stop opens a
  * sheet with the session note (`task_timers.notes`, decision D-C2), so the
  * person can say what the session covered before it is logged.
  */
-export function TimerButton({ taskId, taskLabel, size = 'sm', className }: TimerButtonProps) {
+export function TimerButton({ taskId, taskLabel, nodeId = null, questTitle, compact = false, size = 'sm', className }: TimerButtonProps) {
   const router = useRouter();
-  const running = useRunningTimer(taskId);
+  const running = useRunningTimer(taskId, nodeId);
+  const questsOnly = useMissionHasQuests(taskId) && !nodeId;
   const [saving, setSaving] = React.useState(false);
   const [stopping, setStopping] = React.useState(false);
   const [note, setNote] = React.useState('');
@@ -64,7 +81,8 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
   const [refreshing, startRefresh] = React.useTransition();
   const busy = saving || refreshing;
   const mine = running !== null;
-  const subject = taskLabel ? ` on ${taskLabel}` : '';
+  const named = [taskLabel, questTitle].filter(Boolean).join(' › ');
+  const subject = named ? ` on ${named}` : '';
 
   function press() {
     if (busy) return;
@@ -77,20 +95,20 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
   }
 
   async function send(notes?: string) {
-    const form = timerCommandForm(mine ? running : null, taskId, notes);
+    const form = timerCommandForm(mine ? running : null, taskId, notes, nodeId);
     setSaving(true);
     try {
       const settle = await prepareOperation(form, mine ? 'timerButtonStop' : 'timerButtonStart');
-      const result = mine ? await stopTaskTimer(form) : await startTaskTimer(form);
+      const result = mine ? await stopTaskTimer(form) : nodeId ? await startItemTimer(form) : await startTaskTimer(form);
       if (!result.success) {
         toast.error(mine ? 'The timer was not stopped' : 'The timer did not start', { description: result.error });
         return;
       }
       settle();
       setStopping(false);
-      if (mine) toast.success(`Timer stopped on ${running.taskTag}`, { description: `${formatElapsed(computeElapsedSeconds(new Date(running.startedAt), new Date()))} saved as a time log.` });
+      if (mine) toast.success(`Timer stopped on ${runningTimerLabel(running)}`, { description: `${formatElapsed(computeElapsedSeconds(new Date(running.startedAt), new Date()))} saved as a time log.` });
       else {
-        toast.success(`Timer started on ${result.data!.taskTag}`, { description: 'Stop it here or from the running-timer pill.' });
+        toast.success(`Timer started on ${[result.data!.taskTag, questTitle].filter(Boolean).join(' › ')}`, { description: 'Stop it here or from the running-timer pill.' });
         announceMissionProgress(taskId);
       }
       startRefresh(() => router.refresh());
@@ -100,6 +118,9 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
       setSaving(false);
     }
   }
+
+  // A mission with Quests is timed on its Quests; only a mission timer still running shows here.
+  if (questsOnly && !mine) return null;
 
   return (
     <>
@@ -122,15 +143,15 @@ export function TimerButton({ taskId, taskLabel, size = 'sm', className }: Timer
     >
       {mine ? <SquareIcon className="fill-current" aria-hidden="true" /> : <PlayIcon className="fill-current" aria-hidden="true" />}
       {/* The visible text is decorative next to the label; the clock would otherwise be announced every second. */}
-      <span aria-hidden="true">{mine ? <>Stop <RunningClock startedAt={running.startedAt} /></> : busy ? 'Starting…' : 'Start timer'}</span>
+      <span aria-hidden="true">{mine ? <>Stop <RunningClock startedAt={running.startedAt} /></> : busy ? 'Starting…' : compact ? 'Start' : 'Start timer'}</span>
     </Button>
     {mine ? (
       <Sheet open={stopping} onOpenChange={(open) => { if (!saving) setStopping(open); }}>
         <SheetContent side="bottom" className="mx-auto w-full gap-0 sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle className="text-foreground text-lg font-bold">Stop timer on {running.taskTag}</SheetTitle>
+            <SheetTitle className="text-foreground text-lg font-bold">Stop timer on {runningTimerLabel(running)}</SheetTitle>
             <SheetDescription className="text-muted-foreground">
-              <RunningClock startedAt={running.startedAt} /> so far. Stopping saves it as a time log on this mission.
+              <RunningClock startedAt={running.startedAt} /> so far. Stopping saves it as a time log on this {running.nodeId ? 'Quest' : 'mission'}.
             </SheetDescription>
           </SheetHeader>
           <form

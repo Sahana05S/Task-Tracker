@@ -6,6 +6,7 @@ import { FIRST_RUN_COOKIE } from '@/modules/workspace-views/components/today/fir
 import { MissionRoadmap } from '@/modules/workspace-views/components/today/mission-roadmap';
 import { getAssignedMissionBatch } from '@/modules/tasks';
 import { getLabelsFor } from '@/modules/labels';
+import { getMemberNames } from '@/modules/team';
 import { missionDueFilter } from '@/modules/tasks/client';
 import { kolkataDate } from '@/shared/time/kolkata';
 import { parseRoadmapLocation, roadmapScope } from '@/modules/workspace-views/client';
@@ -26,6 +27,7 @@ import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { CheckInPrompt } from '@/modules/attendance/components/check-in-prompt';
 import { HrPrompt } from '@/modules/hr/components/hr-prompt';
 import { RecordsPrompt } from '@/modules/personnel/components/records-prompt';
+import { dayShare } from '../attendance/check-in/day-share';
 
 export const metadata: Metadata = { title: 'Today' };
 
@@ -49,16 +51,19 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const canSeeTeam = profile.role === 'managing_director';
   const scope = canSeeTeam ? roadmapScope(query.scope) : 'mine';
   const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true }).catch(() => null);
-  // Labels (migration 112) on the first batch: one labels_for read; a failure only hides the chips.
-  const initialLabels = initial ? await getLabelsFor('task', initial.missions.map((mission) => mission.id)).catch(() => null) : null;
+  // Labels (migration 112) and member names (Quest owners on the map, migration 122); a failure only hides them.
+  const [initialLabels, memberNames] = await Promise.all([
+    initial ? getLabelsFor('task', initial.missions.map((mission) => mission.id)).catch(() => null) : null,
+    getMemberNames().catch(() => null),
+  ]);
   // New in the last 30 days, until dismissed.
   const firstRun = Date.now() - Date.parse(profile.createdAt) < NEW_MEMBER_MS && (await cookies()).get(FIRST_RUN_COOKIE)?.value !== 'dismissed';
   return <MissionPage>
-    <MissionPageHeader title="Today" description="A clear path through your work." actions={<Suspense fallback={null}><CheckInPrompt userId={profile.id} /></Suspense>} />
+    <MissionPageHeader title="Today" description="A clear path through your work." actions={<Suspense fallback={null}><CheckInPrompt user={profile} loadShare={(day, breaks) => dayShare(profile, today, day, breaks)} /></Suspense>} />
     {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
     <Suspense fallback={null}><HrPrompt userId={profile.id} /></Suspense>
     <Suspense fallback={null}><RecordsPrompt userId={profile.id} employeeId={profile.employeeId} /></Suspense>
-    <MissionRoadmap key={`${due}:${scope}`} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLabels={initialLabels} />
+    <MissionRoadmap key={`${due}:${scope}`} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLabels={initialLabels} memberNames={memberNames} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>
       <TodayOverview profile={profile} />
     </Suspense>

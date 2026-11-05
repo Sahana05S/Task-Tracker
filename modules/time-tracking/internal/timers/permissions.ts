@@ -3,9 +3,9 @@ import type { Task, User } from '@/types/tracker';
 
 export function canStartTimerForTask(
   user: Pick<User, 'id' | 'role' | 'isActive'>,
-  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'collaboratorIds' | 'status' | 'archivedEffectiveDate'>,
+  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'status' | 'archivedEffectiveDate'>,
 ): boolean {
-  // Collaborators and observers do not log time (D-A3, migration 108).
+  // Every Crew member logs time; observers do not (migration 121).
   return (
     user.isActive && !task.archivedEffectiveDate &&
     task.status !== 'Done' &&

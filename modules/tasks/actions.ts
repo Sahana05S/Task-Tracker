@@ -308,11 +308,11 @@ export async function recordTaskReview(previous: TaskActionState | null, formDat
   return changeTaskLifecycle(previous, formData);
 }
 
-/* People: collaborators, observers, ownership (migration 108) --------------- */
+/* People: the Crew and observers (migrations 108, 121) ---------------------- */
 
 /**
- * One people command. The managing director, project engineers and the
- * mission's Owner may run it; `task_people_command` enforces that.
+ * One people command. The Crew: the managing director and Managers; observers:
+ * those and the mission's Crew. `task_people_command` enforces that.
  */
 export async function changeTaskPeople(_previous: TaskActionState | null, formData: FormData): Promise<TaskActionState> {
   const actor = await resolveActor();

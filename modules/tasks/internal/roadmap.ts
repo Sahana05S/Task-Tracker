@@ -17,13 +17,10 @@ interface MissionRow {
   task_reviewers?: { user_id: string; reviewer_role: string }[] | null;
 }
 
-/** The relationship one source row proves; the primary-assignee source is always 'owner'. */
+/** The relationship one source row proves: any assignee row (or the primary) is Crew (migration 121). */
 function rowRelationship(row: MissionRow, source: 'primary' | 'participant' | 'reviewer'): MissionRelationship {
-  if (source === 'primary') return 'owner';
   if (source === 'reviewer') return row.task_reviewers?.[0]?.reviewer_role === 'Observer' ? 'observer' : 'reviewer';
-  const a = row.task_assignees?.[0];
-  if (a?.is_primary) return 'owner';
-  return a && a.share_units === 0 ? 'collaborator' : 'assignee';
+  return 'crew';
 }
 interface Cursor { due: string | null; id: string }
 function decodeCursor(value?: string | null): Cursor | null {
@@ -129,7 +126,7 @@ export async function getAssignedRoadmapMission(taskId: string, userId: string, 
   ]);
   if (task.error || membership.error || review.error) throw new Error('Your mission could not be loaded. Retry the roadmap.');
   if (!task.data || task.data.archived_effective_date || ['Done', 'Discarded'].includes(task.data.status)) return null;
-  const relationship: MissionRelationship | null = task.data.assignee_id === userId ? 'owner'
+  const relationship: MissionRelationship | null = task.data.assignee_id === userId ? 'crew'
     : membership.data ? rowRelationship({ ...task.data, task_assignees: [membership.data] }, 'participant')
     : review.data ? rowRelationship({ ...task.data, task_reviewers: [review.data] }, 'reviewer')
     : null;

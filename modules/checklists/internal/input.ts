@@ -11,7 +11,10 @@ const COMMAND_FIELDS: Record<string, string[]> = {
   create: ['title'],
   add: ['title', 'description', 'section', 'parent_id'],
   // A Quest: a page with its own list of items (migrations 67 and 77).
-  submission: ['title', 'description', 'section', 'parent_id'],
+  // Migration 122: the Quest's owner (one of the Crew; empty means the creator).
+  submission: ['title', 'description', 'section', 'parent_id', 'assignee_id'],
+  // Migration 122: set or change a Quest's owner.
+  assign: ['node_id', 'assignee_id'],
   state: ['node_id', 'state'],
   edit: ['node_id', 'title', 'section', 'parent_id', 'linked_task_id', 'node_type', 'reason'],
   map: ['node_id', 'section', 'reason'],

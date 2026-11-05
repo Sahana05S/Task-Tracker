@@ -22,10 +22,11 @@ import {
   PriorityBadge,
 } from '@/shared/ui/tracker-badges';
 import { getObjectiveReviews, getTaskEffortBreakdown } from '@/modules/checklists';
-import { CHECKLIST_SECTIONS, NO_REVIEWS, reviewsAwaiting, sentBackIndex } from '@/modules/checklists/client';
+import { CHECKLIST_SECTIONS, NO_REVIEWS, checklistWorkHref, reviewsAwaiting, sentBackIndex } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
 import { ObjectiveReviewProvider, ObjectiveReviewQueue } from '@/modules/checklists/components/objective-review';
-import { canStartTimerForTask, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
+import { canStartTimerForTask, getQuestTimes, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
+import { QuestTimerList } from '@/modules/time-tracking/components/quest-timers';
 import {
   canEditTaskDetails,
   canManageMissionObservers,
@@ -35,12 +36,13 @@ import {
   canReadMissionWork,
   canWriteMissionFiles,
   canUpdateTaskOwnFields,
-  isTaskWorker,
   getNativeDetailState,
   getNativeTemplates,
   getMissionChoices,
+  getSubMissionOriginRow,
   getTaskProofs,
   normalizeTaskTagParam,
+  resolveSubMissionOrigin,
   resolveTaskDetailRouteState,
 } from '@/modules/tasks';
 import { ChecklistHero } from '@/modules/tasks/components/detail/checklist-summary';
@@ -61,6 +63,8 @@ import { LabelInput } from '@/modules/labels/components/label-input';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { isFileStorageReady } from '@/modules/files';
 import { getMissionLearnings } from '@/modules/learning';
+import { getMissionActivity, parseCursor } from '@/modules/records';
+import { MissionActivity } from '@/modules/records/components/mission-activity';
 import { LearningCountChip } from '@/modules/learning/components/learning-count-chip';
 import { LearningPanel } from '@/modules/learning/components/learning-panel';
 import { getMissionWaypoints } from '@/modules/recognition';
@@ -119,18 +123,19 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const archived = !!task.archivedEffectiveDate;
   const successor = data.dependencies.find((d) => d.otherTask?.id === task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role) && !archived;
-  // D-A2: the mission's Owner, assignees and collaborators also edit its details (migration 108).
+  // D-A2: the mission's Crew also edit its details (migrations 108, 121).
   const canEditDetails = !archived && canEditTaskDetails(currentUser, task);
   const reviewer = task.reviewerIds.includes(currentUser.id);
   // The checklist and work content belong to the mission's people and the managing director (migration 117).
   const canReadWork = canReadMissionWork(currentUser, task);
   // Details holds only work content, so it is not offered to anyone else; ?tab=details falls back to Work.
   const tabs = canReadWork ? TABS : TABS.filter(([key]) => key !== 'details');
-  const requested = (await searchParams).tab;
+  const query = await searchParams;
+  const requested = query.tab;
   const tab: Tab = tabs.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
   const canWriteFiles = canWriteMissionFiles(currentUser, task);
-  const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews, driveReady] = await Promise.all([
+  const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews, driveReady, quests] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details && canReadWork ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
@@ -150,6 +155,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab === 'work' && !archived && canReadWork ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
     // Whether uploads reach the Shared Drive yet, so the Files panel words it honestly.
     tab === 'work' && canReadWork ? isFileStorageReady() : Promise.resolve(false),
+    // Quests and their time (migration 123): a mission with Quests is timed on them. Null keeps the mission timer.
+    tab !== 'details' && canReadWork ? getQuestTimes(task.id) : Promise.resolve(null),
   ]);
   // Labels (migration 112): the mission's own on every tab (header chips); the catalogue and each
   // learning note's on the Details tab. Null hides them.
@@ -166,36 +173,40 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const visibleTimers = canManage
     ? execution.timers
     : execution.timers.filter((timer) => timer.userId === currentUser.id);
+  // The mission timer (no Quest); one started before the mission had Quests can still be stopped.
   const activeCurrentTimer =
-    execution.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running') ?? null;
+    execution.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running' && !timer.nodeId) ?? null;
+  const hasQuests = (quests?.length ?? 0) > 0;
+  const questTitles = new Map((quests ?? []).map((quest) => [quest.nodeId, quest.title]));
 
   const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
+  // Mission activity (migration 124): who changed what on this mission; only its people read it.
+  const activityBefore = tab === 'history' ? parseCursor(typeof query.before === 'string' ? query.before : null) : null;
+  const missionActivity = tab === 'history' && canReadWork
+    ? await getMissionActivity(task.id, activityBefore, memberNames).catch(() => null)
+    : undefined;
   const nameOf = (id: string) => memberNames.get(id) ?? 'Unknown';
-  // Migration 108: zero-share assignees are collaborators; Observer reviewer rows are observers.
-  const collaboratorIds = task.collaboratorIds ?? [];
+  // Migration 121: everyone on task_assignees is Crew (equal shares); Observer reviewer rows are observers.
+  const crewIds = [...new Set([task.assigneeId, ...task.assigneeIds].filter(Boolean))];
   const observerIds = task.observerIds ?? [];
-  const creditedIds = task.assigneeIds.filter((id) => id !== task.assigneeId && isTaskWorker(task, id));
   const people = {
-    owner: task.assigneeId ? [nameOf(task.assigneeId)] : [],
-    assignees: creditedIds.map(nameOf),
-    collaborators: collaboratorIds.map(nameOf),
+    crew: crewIds.map(nameOf),
     reviewers: task.reviewerIds.map(nameOf),
     observers: observerIds.map(nameOf),
   };
   const related = new Set([task.assigneeId, ...task.assigneeIds, ...task.reviewerIds, ...observerIds]);
   const person = (id: string) => ({ id, name: nameOf(id) });
-  // Collaborators and ownership: managers and the Owner; observers: the managing director, Owner and assignees (117).
-  const canManagePeople = canManageTaskPeople(currentUser, task);
+  // The Crew: the managing director and Managers (legacy missions are reviewed in Edit first);
+  // observers: the managing director, Managers and the Crew (121).
+  const canManagePeople = canManageTaskPeople(currentUser, task) && task.participantCreditMode === 'configured';
   const canManageObservers = canManageMissionObservers(currentUser, task);
   const peopleManager = canManagePeople || canManageObservers ? (
     <MissionPeopleManager
-      canManageCollaborators={canManagePeople}
+      canManageCrew={canManagePeople}
       canManageObservers={canManageObservers}
       taskId={task.id}
       version={task.lifecycleVersion ?? 0}
-      owner={task.assigneeId ? person(task.assigneeId) : null}
-      assignees={task.participantCreditMode === 'configured' ? creditedIds.map(person) : []}
-      collaborators={collaboratorIds.map(person)}
+      crew={crewIds.map(person)}
       observers={observerIds.map(person)}
       candidates={data.members.filter((member) => member.isActive && !related.has(member.id)).map((member) => ({ id: member.id, name: member.fullName }))}
     />
@@ -203,6 +214,9 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
 
   const checklistHref = `/tasks/${encodeURIComponent(task.taskTag)}/checklist`;
   const family = subMissionFamily(task.id, data.dependencies);
+  // "Created from TAG › row": the exact parent row when the viewer may read the parent's
+  // checklist (migration 117); otherwise only the parent mission ("Part of TAG").
+  const origin = resolveSubMissionOrigin(family.parent, family.parent ? await getSubMissionOriginRow(task.id, family.parent.id) : null);
   const closed = task.status === 'Done' || task.status === 'Discarded';
   const overdue = isOverdue(task.dueDate) && !closed;
 
@@ -233,9 +247,14 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             />
             <PriorityBadge priority={task.priority} />
             <FreshnessIndicator freshness={task.freshness} className="ml-1" />
-            {family.parent ? (
-              <Link href={`/tasks/${encodeURIComponent(family.parent.taskTag)}`} className="badge-soft badge-neutral hover:underline">
-                Part of {family.parent.taskTag}
+            {origin?.kind === 'row' ? (
+              <Link href={origin.href} title={`Created from ${origin.parentTag} › ${origin.path}`} className="badge-soft badge-neutral inline-flex max-w-full min-w-0 items-center gap-1 hover:underline">
+                <span className="shrink-0">Created from {origin.parentTag} ›</span>
+                <span className="min-w-0 truncate">{origin.label}</span>
+              </Link>
+            ) : origin ? (
+              <Link href={origin.href} className="badge-soft badge-neutral hover:underline">
+                Part of {origin.parentTag}
               </Link>
             ) : null}
             {archived ? (
@@ -349,7 +368,20 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
             <MissionPanel icon={TimerIcon} title="Time" subtitle={`${formatHours(data.effort.hoursLogged)} h logged`}>
               <div className="grid gap-5">
-                <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
+                {hasQuests ? (
+                  <>
+                    <QuestTimerList
+                      taskId={task.id}
+                      taskTag={task.taskTag}
+                      quests={quests!}
+                      canTime={canUseTimer && !closed}
+                      questHref={(quest) => checklistWorkHref(task.taskTag, { checklistId: quest.ownedChecklistId, section: 'activity' })}
+                    />
+                    {activeCurrentTimer ? <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} /> : null}
+                  </>
+                ) : (
+                  <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
+                )}
                 {canUseTimer ? (
                   <details className="group border-border border-t pt-4">
                     <summary className="text-foreground flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
@@ -425,9 +457,23 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          {missionActivity !== undefined ? (
+            <MissionPanel
+              icon={HistoryIcon}
+              title="Activity"
+              subtitle="Who changed what on this mission · newest first · India time"
+              className="lg:col-span-2"
+            >
+              <MissionActivity
+                page={missionActivity}
+                basePath={`/tasks/${encodeURIComponent(task.taskTag)}?tab=history`}
+                paged={!!activityBefore}
+              />
+            </MissionPanel>
+          ) : null}
           <MissionPanel
             icon={HistoryIcon}
-            title="Activity & updates"
+            title="Time logs"
             subtitle={`${data.effort.logCount} log ${data.effort.logCount === 1 ? 'entry' : 'entries'} · ${formatHours(data.effort.hoursLogged)} h`}
           >
             <TaskLogTimeline logs={execution.logs} memberNames={memberNames} />
@@ -440,6 +486,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               canManage={canManage}
               currentUserId={currentUser.id}
               sessionActivity={sessionActivity?.available ? sessionActivity.sessions : undefined}
+              questTitles={questTitles}
             />
           </MissionPanel>
         </div>

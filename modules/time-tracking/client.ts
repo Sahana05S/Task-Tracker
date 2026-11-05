@@ -20,6 +20,8 @@ export { mapTaskTimer, mapTaskTimers, TIMER_COLUMNS } from '@/modules/time-track
 export { canManageTimerRecord, canStartTimerForTask } from '@/modules/time-tracking/internal/timers/permissions';
 export { computeElapsedSeconds, computeTimerStopSummary, formatElapsed, secondsToRoundedHours } from '@/modules/time-tracking/internal/timers/elapsed';
 export type { RunningTimer } from '@/modules/time-tracking/internal/timers/running-timers';
+export { runningTimerLabel } from '@/modules/time-tracking/internal/timers/labels';
+export { questTree, type QuestTime } from '@/modules/time-tracking/internal/timers/quest-time-types';
 export type { TeamRunningTimer } from '@/modules/time-tracking/internal/timers/queries';
 export type { TaskExecution } from '@/modules/time-tracking/internal/execution';
 export type { LogHistoryData } from '@/modules/time-tracking/internal/logs/queries';

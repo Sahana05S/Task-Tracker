@@ -19,6 +19,8 @@ export interface MissionActivityProps {
   sessions: ReadonlyMap<string, TimerSessionActivity> | null;
   /** Managers see every session; members their own. */
   seesEveryone: boolean;
+  /** The mission's Quest titles by node id, to group sessions by Quest (migration 123). */
+  questTitles?: ReadonlyMap<string, string>;
 }
 
 /** Hours from whole seconds, to two decimals ("3.75"). */
@@ -29,9 +31,9 @@ function hoursOf(seconds: number): string {
 /**
  * Reports > Mission activity: one mission's timer sessions, who ran each, how
  * long, and what they changed while it ran (the same list as the mission's
- * History tab, without its Stop and Discard controls). Filters are a plain GET form.
+ * History tab, without its Stop and Discard controls), grouped by Quest. Filters are a plain GET form.
  */
-export function MissionActivityView({ choices, selected, timers, memberNames, sessions, seesEveryone }: MissionActivityProps) {
+export function MissionActivityView({ choices, selected, timers, memberNames, sessions, seesEveryone, questTitles }: MissionActivityProps) {
   const stopped = timers.filter((timer) => timer.status === 'Stopped');
   const seconds = stopped.reduce((sum, timer) => sum + timer.elapsedSeconds, 0);
   const people = new Set(stopped.map((timer) => timer.userId)).size;
@@ -64,7 +66,7 @@ export function MissionActivityView({ choices, selected, timers, memberNames, se
             {sessions === null ? (
               <MissionNotice tone="attention" role="status">What each session changed is not available on this database yet; the times are.</MissionNotice>
             ) : null}
-            <TimerRecords timers={timers} memberNames={memberNames} taskTag={selected.taskTag} canManage={false} currentUserId="" sessionActivity={sessions ?? undefined} />
+            <TimerRecords timers={timers} memberNames={memberNames} taskTag={selected.taskTag} canManage={false} currentUserId="" sessionActivity={sessions ?? undefined} questTitles={questTitles} />
             <Link href={`/tasks/${encodeURIComponent(selected.taskTag)}?tab=history`} className="link justify-self-start text-sm">Open the mission’s history</Link>
           </div>
         </MissionPanel>
