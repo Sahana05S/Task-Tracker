@@ -124,16 +124,16 @@ def refusal(uid,statement):
 def quest_timer(node,uid='5',key=None):
     return first_json(actor(DB,uid_of(uid),f"SELECT public.start_checklist_item_timer('{node}','{{}}'::jsonb,'{key or uuid4()}')"))
 quest_start=lambda node:f"SELECT public.start_checklist_item_timer('{node}','{{}}'::jsonb,'{uuid4()}')"
-mission_start=f"SELECT public.start_task_timer('{T4}','{{}}'::jsonb,'{uuid4()}')"
+mission_start=lambda:f"SELECT public.start_task_timer('{T4}','{{}}'::jsonb,'{uuid4()}')"  # a fresh operation id each time
 
 # Before it has Quests the mission keeps its mission timer.
-before=first_json(actor(DB,uid_of('5'),mission_start))
+before=first_json(actor(DB,uid_of('5'),mission_start()))
 call(DB,'discard_task_timer',before['timerId'],{'reason':'before the Quests'},version=0,uid='5')
 survey=cl4('submission',{'title':'Survey','section':'activity','priority':3})
 drawings=cl4('submission',{'title':'Drawings','section':'activity','priority':3})
 elevation=cl4('submission',{'title':'Elevation','section':'activity','priority':3,'checklist_id':drawings['ownedChecklistId']})
 plain=cl4('add',{'title':'Plain objective','section':'activity'})['nodeId']
-assert 'timed on its Quests' in refusal('5',mission_start)
+assert 'timed on its Quests' in refusal('5',mission_start())
 print('PASS',DB,'a mission timer runs while the mission has no Quests and is refused once it has some')
 
 key=str(uuid4())
