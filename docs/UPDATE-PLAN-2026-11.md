@@ -35,6 +35,30 @@ Still to look at: the graph and the other new screens on the live site with real
 missions (they were checked with sample data), and in the Android app that the
 WhatsApp link opens WhatsApp (stellar-mobile shell).
 
+## Revision 2 (5 November 2026)
+
+The user's consolidated "Revision 2" plan (calls of 3 and 4 November) was built in eight parallel
+lanes, one branch each, all merged and live on 5 November 2026 (migrations 121-125). User
+decisions: Crew with equal credit and no Lead; roles Managing Director / Manager / Team Member
+(no one is Manager yet); a Quest's owner, owners of Quests above it, the MD and Managers edit it;
+Quest timers per person per Quest with sub-Quests rolling up.
+
+| Change | PR | Migration | What the user sees |
+|---|---|---|---|
+| Mission Crew | #159 | 121 | Owner / Assignees / Collaborators become one Crew; all Crew log time and mark Done; equal credit, no share boxes; Crew managed by the MD and Managers; Crew choose observers (0 open missions needed a re-split) |
+| Quest owners, unlimited nesting | #158 | 122 | Every Quest has a Crew owner; only the owner, owners above it, the MD and Managers change its rows; "Add sub-Quest" with an owner picker, Assign in the row menu; no 3-level limit |
+| Quest timers | #160 | 123 | Start/Stop on each Quest (table, Quest home, Today graph, mission Time panel); one timer per person per Quest, several at once; Quest totals include sub-Quests; mission timer only when a mission has no Quests; History and Reports group sessions by Quest; scoring unchanged |
+| Mission activity history | #157 | 124 | The History tab opens with an Activity panel naming who did what ("X and Y were added to the Mission Crew", proofs, Quest assignments); same wording in Team > Activity; older entries read generically |
+| Roles and org chart | #156 | 125 | Only Managing Director, Manager, Team Member; 1 Project Engineer and 2 Data Managers became Team Members; Manager keeps the old Project Engineer powers; org chart is one tree, wraps wide levels, starts centred, counts direct reports |
+| Files row and origin link | #153 | none | Input / Process / Output side by side (swipe row on phones); a sub-mission shows "Created from TAG > row"; a Quest shows "Part of ..." |
+| WhatsApp and Today | #155 | none | WhatsApp opens once after check-in (greeting) and check-out (four-block report); check in and out from a sheet on Today |
+| Hashtags on the Today map | #154 | none | "Find by hashtag" highlights matching missions, optional dotted label links, link to the label page |
+
+Left open: Quests and objectives cannot carry hashtags themselves; a leadership row of more than
+four MDs does not wrap; some code comments still say "project engineers"; Objective review (11)
+and the security audit (15) were not changed. CI ran out of private-repository Actions minutes on
+5 November; the user made the repository public again.
+
 ## Follow-up changes (4 November 2026)
 
 After trying the 3 November features the user asked for six more changes. Built in five

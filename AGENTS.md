@@ -26,6 +26,29 @@ change). The refactor is complete and merged into `main`. Follow
   `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
   `__tests__/fixtures/`.
 
+## Revision 2 - 5 November 2026 (migrations 121-125)
+
+The user's "Revision 2" plan (result in `docs/UPDATE-PLAN-2026-11.md`, "Revision 2"). These
+decisions replace the matching 3 and 4 November lines below (Owner/Collaborators, 3 Quest levels,
+one timer per mission, four roles):
+
+- **Mission Crew (121):** everyone on a mission (any `task_assignees` row) is Crew: logs time, marks
+  Done, equal credit (shares always equal; no Lead; one internal primary row stays for
+  `check_participants`). Crew changes (`task_people_command` `add_crew`/`remove_crew`) belong to
+  the MD and Managers; Crew choose observers; `transfer_owner` is retired.
+- **Quest owners (122):** `checklist_nodes.assignee_id` on Quest rows; inside a Quest only its
+  owner, owners of ancestor Quests, the MD and Managers change rows (`can_edit_quest_list`); the
+  mission's root list stays open to all Crew; nesting is unlimited (cycle-guarded).
+- **Quest timers (123):** one running timer per person per Quest (`checklist_node_id`); several
+  at once; `quest_time` rolls sub-Quests up; a mission timer only while the mission has no Quests;
+  scoring keeps using task hours and merged day hours.
+- **Mission activity (124):** `mission_activity(task, before, limit)` for the History tab, named
+  from the audit rows; proofs are audited and listed.
+- **Roles (125):** Managing Director, Manager, Team Member. `project_engineer` stays the internal
+  code for **Manager**; `data_manager` is retired (no new assignments). No one is Manager today.
+- The repository is public again (5 November 2026, user decision) because private Actions minutes
+  ran out; keep CI lean.
+
 ## 4 November 2026 updates (migrations 116-120)
 
 Follow-up requests after the 3 November work (result in `docs/UPDATE-PLAN-2026-11.md`,
