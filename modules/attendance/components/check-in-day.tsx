@@ -1,27 +1,25 @@
 import Link from 'next/link';
 import { CameraIcon, CheckCircle2Icon, MessageCircleIcon } from 'lucide-react';
 
-import { checkInMessage, checkOutMessage, type CheckInMark } from '@/modules/attendance/client';
+import type { CheckInKind, CheckInMark } from '@/modules/attendance/client';
 import type { AttendanceSettings } from '@/modules/settings/client';
 import { EmptyState, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
-import { ShareText } from '@/shared/ui/share-text';
 import { CheckInForm } from './check-in-form';
+import { CheckInShare } from './check-in-share';
 
 /**
  * The `/attendance/check-in` page body: check in when the day has no check-in,
  * check out after one, and a summary once both are done. After checking in the
  * member can send a greeting on WhatsApp, and after checking out their daily
- * report (user decision, 3 November 2026); they choose who receives it.
+ * report (user decision, 3 November 2026); they choose who receives it. Right
+ * after a save here WhatsApp opens with that message by itself (5 November 2026).
  */
-export function CheckInDay({ email, fullName, day, settings, report, blocks }: {
+export function CheckInDay({ email, day, settings, share }: {
   email: string;
-  fullName: string;
   day: { in: CheckInMark | null; out: CheckInMark | null; recorded: boolean; available: boolean };
   settings: AttendanceSettings;
-  /** The member's daily report text for today; read only once they have checked out. */
-  report?: string;
-  /** Today in time blocks between the break times (`formatTimeBlocks`); read once they have checked out. */
-  blocks?: string;
+  /** Today's drafted message: the greeting once checked in, the daily report once checked out. */
+  share: { kind: CheckInKind; text: string; title: string } | null;
 }) {
   const kind = day.in ? 'out' : 'in';
   const title = day.in && day.out ? 'Checked out' : kind === 'in' ? 'Check in' : 'Check out';
@@ -48,16 +46,11 @@ export function CheckInDay({ email, fullName, day, settings, report, blocks }: {
           <CheckInForm kind={kind} email={email} office={office} todayIn={day.in} backHref="/today" />
         </MissionPanel>
       )}
-      {day.available && settings.checkInEnabled && day.in ? (
-        day.out ? (
-          <MissionPanel icon={MessageCircleIcon} title="Share your day" subtitle="Your daily report, ready to send. WhatsApp asks who to send it to.">
-            <ShareText text={checkOutMessage(day.in.capturedAt, day.out.capturedAt, report ?? '', blocks ?? '')} title={`Daily report · ${fullName}`} />
-          </MissionPanel>
-        ) : (
-          <MissionPanel icon={MessageCircleIcon} title="Tell your team you’re in" subtitle="A greeting with your check-in time. WhatsApp asks who to send it to.">
-            <ShareText text={checkInMessage(fullName, day.in.capturedAt)} title={`${fullName} checked in`} />
-          </MissionPanel>
-        )
+      {day.available && settings.checkInEnabled && share ? (
+        <MissionPanel icon={MessageCircleIcon} title={share.kind === 'out' ? 'Share your day' : 'Tell your team you’re in'}
+          subtitle={`${share.kind === 'out' ? 'Your daily report' : 'A greeting with your check-in time'}. WhatsApp opens after you save; it asks who to send it to.`}>
+          <CheckInShare kind={share.kind} text={share.text} title={share.title} />
+        </MissionPanel>
       ) : null}
     </MissionPage>
   );

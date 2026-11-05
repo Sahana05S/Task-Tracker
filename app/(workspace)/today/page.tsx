@@ -26,6 +26,7 @@ import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { CheckInPrompt } from '@/modules/attendance/components/check-in-prompt';
 import { HrPrompt } from '@/modules/hr/components/hr-prompt';
 import { RecordsPrompt } from '@/modules/personnel/components/records-prompt';
+import { dayShare } from '../attendance/check-in/day-share';
 
 export const metadata: Metadata = { title: 'Today' };
 
@@ -54,7 +55,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   // New in the last 30 days, until dismissed.
   const firstRun = Date.now() - Date.parse(profile.createdAt) < NEW_MEMBER_MS && (await cookies()).get(FIRST_RUN_COOKIE)?.value !== 'dismissed';
   return <MissionPage>
-    <MissionPageHeader title="Today" description="A clear path through your work." actions={<Suspense fallback={null}><CheckInPrompt userId={profile.id} /></Suspense>} />
+    <MissionPageHeader title="Today" description="A clear path through your work." actions={<Suspense fallback={null}><CheckInPrompt user={profile} loadShare={(day, breaks) => dayShare(profile, today, day, breaks)} /></Suspense>} />
     {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
     <Suspense fallback={null}><HrPrompt userId={profile.id} /></Suspense>
     <Suspense fallback={null}><RecordsPrompt userId={profile.id} employeeId={profile.employeeId} /></Suspense>

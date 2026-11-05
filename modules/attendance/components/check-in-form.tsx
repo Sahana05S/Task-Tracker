@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { CameraIcon, CheckCircle2Icon, LoaderCircleIcon, MapPinIcon, MapPinOffIcon, RefreshCwIcon } from 'lucide-react';
 
 import { checkIn } from '@/modules/attendance/check-in-actions';
-import { compressPhoto, mapEmbed, type CheckInKind, type CheckInMark } from '@/modules/attendance/client';
+import { cancelHandoff, compressPhoto, HANDOFF_TTL_MS, handoffSaved, mapEmbed, runHandoff, startHandoff, type CheckInKind, type CheckInMark } from '@/modules/attendance/client';
+import { isNativeApp, NATIVE_APP_USER_AGENT } from '@/modules/mobile/client';
 import { BUSINESS_TIME_ZONE } from '@/shared/time/kolkata';
 import { Button } from '@/shared/ui/button';
 import { MissionNotice } from '@/shared/ui/mission-ui';
@@ -34,18 +35,29 @@ function ReadOnly({ label, children }: { label: string; children: React.ReactNod
   );
 }
 
+/** The Android app (its bridge, or the shell's User-Agent marker). */
+function inApp(): boolean {
+  return isNativeApp() || (typeof navigator !== 'undefined' && navigator.userAgent.includes(NATIVE_APP_USER_AGENT));
+}
+
 /**
  * The phone check-in screen (the sheet's AppSheet form): email, date and time
  * fill themselves, the phone shares its position, and the employee only takes
- * a photo. The time saved is the server's, not this clock's.
+ * a photo. The time saved is the server's, not this clock's. A saved check-in
+ * or check-out then opens WhatsApp with the drafted message once the page
+ * shows it (`internal/whatsapp-handoff.ts`, `CheckInShare`).
  */
-export function CheckInForm({ kind, email, office, todayIn, backHref }: {
+export function CheckInForm({ kind, email, office, todayIn, backHref, onClose, onSaved }: {
   kind: CheckInKind;
   email: string;
   office: { latitude: number; longitude: number; radiusM: number } | null;
   /** Check-out shows when the day started. */
   todayIn: CheckInMark | null;
   backHref: string;
+  /** In a sheet (Today): Cancel and Done close it instead of following `backHref`. */
+  onClose?: () => void;
+  /** Called once the check-in or check-out is saved. */
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
@@ -107,10 +119,14 @@ export function CheckInForm({ kind, email, office, todayIn, backHref }: {
       form.set('longitude', String(located.position.longitude));
       form.set('accuracy', String(located.position.accuracy));
     }
+    // In this same tap, so a browser lets the WhatsApp tab open; nothing opens unless the save succeeds.
+    const operationId = ids.current.operationId;
+    startHandoff(kind, operationId, inApp(), () => window.open('', '_blank'));
     startSaving(async () => {
       try {
         const result = await checkIn(form);
         if (!result.success || !result.data) {
+          cancelHandoff(operationId);
           setError(result.error ?? 'The check-in was not saved.');
           // A refused check-in will not change on a resend; a new photo starts a new attempt.
           if (result.errorCode === 'conflict') ids.current = { operationId: crypto.randomUUID(), photoId: crypto.randomUUID() };
@@ -127,8 +143,13 @@ export function CheckInForm({ kind, email, office, todayIn, backHref }: {
             ? `Checked out at ${time}. Today already had an attendance record, so it was left as it is.${where}`
             : `Checked out at ${time}. Today is recorded as Present, ${data.hours} h.${where}`;
         setDone({ time, message });
+        handoffSaved(operationId, Date.now());
+        // Closes the waiting tab if the drafted message never arrives.
+        setTimeout(() => runHandoff(null, Date.now(), () => {}), HANDOFF_TTL_MS + 1000);
+        onSaved?.();
         router.refresh();
       } catch {
+        cancelHandoff(operationId);
         setError('The connection dropped. Tap Save again; the same check-in will not be saved twice.');
       }
     });
@@ -138,7 +159,9 @@ export function CheckInForm({ kind, email, office, todayIn, backHref }: {
     return (
       <div className="grid gap-4">
         <MissionNotice tone="info" icon={CheckCircle2Icon} role="status">{done.message}</MissionNotice>
-        <Button asChild variant="outline" className="justify-self-start"><Link href={backHref}>Done</Link></Button>
+        {onClose
+          ? <Button type="button" variant="outline" className="justify-self-start" onClick={onClose}>Done</Button>
+          : <Button asChild variant="outline" className="justify-self-start"><Link href={backHref}>Done</Link></Button>}
       </div>
     );
   }
@@ -201,7 +224,9 @@ export function CheckInForm({ kind, email, office, todayIn, backHref }: {
 
       {error ? <MissionNotice tone="danger" role="alert">{error}</MissionNotice> : null}
       <div className="grid grid-cols-2 gap-3">
-        <Button asChild variant="outline" size="lg"><Link href={backHref}>Cancel</Link></Button>
+        {onClose
+          ? <Button type="button" variant="outline" size="lg" onClick={onClose}>Cancel</Button>
+          : <Button asChild variant="outline" size="lg"><Link href={backHref}>Cancel</Link></Button>}
         <Button type="button" size="lg" onClick={save} disabled={!photo || saving || preparing}>
           {saving ? <LoaderCircleIcon className="animate-spin" aria-hidden="true" /> : null}
           {saving ? 'Saving…' : 'Save'}
