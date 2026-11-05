@@ -11,7 +11,12 @@ may edit a record may add or remove its labels; a manager may create a new
 label while typing it. Renaming keeps the label's id, so every link survives.
 `/labels` lists them, `/labels/<slug>` shows what carries one (only records the
 viewer may read), and `/tasks?label=<slug>` filters the Missions table.
-Labels feed no score and no graph (D14).
+Labels feed no score (D14). On the Today map they only highlight (5 November
+2026): a hashtag picker lists `label_catalogue()`, and choosing one marks the
+missions, learning notes' missions and linked sub-mission rows that carry it,
+through `labels_for` and `labelled(slug)` (so only what the viewer may read),
+with optional faint "label link" lines kept apart from the stored mission
+relations; label links never become `task_dependencies` and never move a star.
 
 Show and filter (user decision, 4 November 2026): a mission's labels show as
 chips wherever it appears (Missions cards and table rows, the mission page

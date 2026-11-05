@@ -12,13 +12,14 @@ import { canTimeMission, missionDueLabel, type RoadmapMission } from '@/modules/
 import { checklistWorkHref, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistBranchRow, type ChecklistSection } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
 import {
-  branchForRow, graphCamera, layoutMissionGraph, LABEL_WIDTH, wheelZoomFactor,
-  type GraphCamera, type GraphEntity, type GraphLevel, type GraphLink, type GraphNode, type RoadmapLocation,
+  branchForRow, graphCamera, hashtagMatches, labelEdges, layoutMissionGraph, LABEL_WIDTH, wheelZoomFactor,
+  type GraphCamera, type HashtagRecords, type GraphEntity, type GraphLevel, type GraphLink, type GraphNode, type RoadmapLocation,
 } from '@/modules/workspace-views/client';
-import { loadRoadmapBranch } from '@/modules/workspace-views/roadmap-actions';
+import { loadGraphHashtag, loadRoadmapBranch } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import type { Label } from '@/modules/labels/client';
 import { LabelChips } from '@/modules/labels/components/label-chips';
+import { GraphHashtagPicker } from './graph-hashtag-picker';
 import styles from './mission-graph.module.css';
 
 const RoadmapItemWork = dynamic(() => import('./roadmap-item-work').then(m => m.RoadmapItemWork), {
@@ -42,6 +43,7 @@ function rowStep(row: Pick<ChecklistBranchRow, 'id' | 'title' | 'checklistId' | 
 const isContainer = (row: ChecklistBranchRow) => row.childCount > 0;
 const pct = (value: number | null) => value === null ? 'Not started' : `${Math.round(value)}%`;
 const HINT_MS = 1800;
+const HASHTAG_REASON = { label: 'Carries', learning: 'Has a learning note with', linked: 'Follows a sub-mission with' } as const;
 const RELATION_TEXT = { Subtask: ['Sub-mission of', 'Has sub-mission'], Dependency: ['Depends on', 'Needed by'], Blocks: ['Blocked by', 'Blocks'], Related: ['Related to', 'Related to'] } as const;
 
 /** The caption under the map and the one-time "Use Ctrl + scroll" hint, kept out of the map's render. */
@@ -64,11 +66,12 @@ const MapHint = forwardRef<{ show: () => void }>(function MapHint(_, ref) {
 });
 
 /** What the lines and rings mean, in words and line styles (no colour needed). */
-function GraphLegend({ rings }: { rings: boolean }) {
+function GraphLegend({ rings, hashtag }: { rings: boolean; hashtag: string | null }) {
   return <ul aria-label="Map key" className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
     <li><span className={styles.swatch} aria-hidden="true" /> Sub-mission</li>
     <li><span className={cn(styles.swatch, styles.dashed)} aria-hidden="true" /> Dependency or blocks</li>
     <li><span className={cn(styles.swatch, styles.dotted)} aria-hidden="true" /> Related</li>
+    {hashtag ? <li><span className={cn(styles.swatch, styles.labelSwatch)} aria-hidden="true" /> Shares #{hashtag} (not a link between records)</li> : null}
     <li>Larger star: higher priority · filled: progress</li>
     {rings ? MISSION_RELATIONSHIPS.map(rel => <li key={rel}><span className={cn(styles.key, styles[rel])} aria-hidden="true" /> {MISSION_RELATIONSHIP_LABELS[rel]}</li>) : null}
   </ul>;
@@ -99,6 +102,12 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
   const [cardError, setCardError] = useState<string | null>(null);
   // Phones: the first tap focuses a star (and shows its name), the second opens it.
   const [armed, setArmed] = useState<string | null>(null);
+  // Hashtag highlight: the chosen label, what labelled(slug) said (null while reading) and the faint label lines.
+  const [hashtag, setHashtag] = useState<Label | null>(null);
+  const [hashtagRecords, setHashtagRecords] = useState<HashtagRecords | null>(null);
+  const [hashtagError, setHashtagError] = useState<string | null>(null);
+  const [labelLinks, setLabelLinks] = useState(false);
+  const hashtagSeq = useRef(0);
   const pointer = useRef<string | null>(null);
   const frame = useRef<HTMLElement>(null);
   const panelHeading = useRef<HTMLHeadingElement>(null);
@@ -183,6 +192,26 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
     const layout = layoutMissionGraph(entities, links, { levels: graphLevels });
     return { ...layout, byId: new Map(layout.nodes.map(n => [n.id, n])) };
   }, [roots, path, levels, links]);
+  // Nodes carrying the chosen hashtag: loaded missions' labels at once, then labelled(slug) for learning notes and linked rows.
+  const matches = useMemo(() => {
+    if (!hashtag) return null;
+    const missionsById = new Map(roots.map(m => [m.id, m]));
+    return hashtagMatches(layout.nodes.map(n => {
+      const m = n.depth === 0 ? missionsById.get(n.id) : undefined;
+      return m ? { id: n.id, taskTag: m.taskTag, labelIds: (labels?.[m.id] ?? []).map(l => l.id) } : { id: n.id, linkedTaskId: rows.get(n.id)?.linkedTaskId ?? null };
+    }), hashtag.id, hashtagRecords);
+  }, [hashtag, hashtagRecords, layout, roots, rows, labels]);
+  const hashtagLines = useMemo(() => matches && labelLinks ? labelEdges(layout.nodes, matches) : [], [matches, labelLinks, layout]);
+  async function chooseHashtag(label: Label) {
+    const seq = ++hashtagSeq.current;
+    setHashtag(label); setHashtagRecords(null); setHashtagError(null);
+    const result = await loadGraphHashtag(label.slug).catch(() => ({ success: false as const, error: undefined, data: undefined }));
+    if (seq !== hashtagSeq.current) return;
+    if (result.success && result.data) setHashtagRecords(result.data);
+    else setHashtagError(result.error ?? 'This hashtag could not be read. Retry.');
+  }
+  function clearHashtag() { hashtagSeq.current++; setHashtag(null); setHashtagRecords(null); setHashtagError(null); setLabelLinks(false); }
+
   // Keyboard order: missions in the batch's due order, then each opened level's rows.
   const ordered = useMemo(() => {
     const index = new Map(roots.map((m, i) => [m.id, i]));
@@ -365,6 +394,10 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
           <Button size="icon" variant="outline" className="size-8" aria-label="Zoom out" onClick={() => zoomAt(0.8)}><MinusIcon aria-hidden="true" /></Button>
         </div>
       </div>
+      <div className="mt-2">
+        <GraphHashtagPicker chosen={hashtag} count={matches?.size ?? 0} loading={!!hashtag && !hashtagRecords && !hashtagError} error={hashtagError}
+          labelLinks={labelLinks} onChoose={label => void chooseHashtag(label)} onClear={clearHashtag} onLabelLinks={setLabelLinks} />
+      </div>
       {last ? <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         {sectionStep ? <div role="group" aria-label="Checklist sections" className="bg-muted flex rounded-full p-1">
           {SECTIONS.map(section => <Button key={section} size="sm" variant={(sectionStep.options.section ?? 'activity') === section ? 'default' : 'ghost'} aria-pressed={(sectionStep.options.section ?? 'activity') === section} onClick={() => switchSection(section)} className="capitalize">{section}</Button>)}
@@ -397,12 +430,16 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
                 path.length > 0 && !(visible(edge.from) && visible(edge.to)) && styles.muted)}
               // The CSS `d` lets a line glide with its stars where supported; the attribute is the fallback.
               style={{ ['--edge' as string]: `var(--map-hue-${edge.hue})`, d: `path("${d}")` } as CSSProperties} />; })}
+            {hashtagLines.map(edge => <path key={edge.id} d={`M ${edge.x1} ${edge.y1} L ${edge.x2} ${edge.y2}`} className={styles.labelEdge} />)}
           </svg>
           {ordered.map(node => {
             const row = rows.get(node.id);
             const m = node.depth === 0 ? roots.find(r => r.id === node.id) : undefined;
             const opened = pathIds.has(node.id);
             const dim = !visible(node.id);
+            const match = matches?.get(node.id);
+            // With a hashtag chosen, stars that do not carry it fade (still reachable); an open matching mission's rows stay clear.
+            const faded = !!matches && !match && !(node.depth > 0 && path[0] && matches.has(path[0].id));
             const overdue = !!m?.dueDate && m.dueDate < today;
             const relationship = m?.relationship ? MISSION_RELATIONSHIP_LABELS[m.relationship] : null;
             const sub = node.kind === 'more' ? `Load ${BATCH} more`
@@ -417,11 +454,11 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
             const origin = parent ?? sky;
             const progress = node.complete ? 100 : Math.max(0, Math.min(100, node.progress ?? 0));
             return <button key={node.id} type="button" data-map-node={node.id} tabIndex={dim ? -1 : 0}
-              className={cn(styles.node, node.depth > 0 && styles.child, dim && styles.dim, node.id === focusId && styles.current, armed === node.id && styles.armed)}
+              className={cn(styles.node, node.depth > 0 && styles.child, dim && styles.dim, faded && styles.faded, match && styles.match, node.id === focusId && styles.current, armed === node.id && styles.armed)}
               style={{ left: node.x, top: node.y, ['--node' as string]: `var(--map-hue-${node.hue})`, ['--r' as string]: node.r, ['--p' as string]: progress,
                 ['--w' as string]: `${node.depth === 0 ? LABEL_WIDTH.mission : LABEL_WIDTH.child}px`,
                 ['--dx' as string]: `${origin.x - node.x}px`, ['--dy' as string]: `${origin.y - node.y}px` }}
-              aria-label={`${kindLabel}: ${node.title}. ${sub}.${m ? ` ${m.priority} priority.` : ''}${relations ? ` ${relations.join('. ')}.` : ''}${nodeLabels.length ? ` Labels: ${nodeLabels.map(l => l.name).join(', ')}.` : ''}`}
+              aria-label={`${kindLabel}: ${node.title}. ${sub}.${m ? ` ${m.priority} priority.` : ''}${relations ? ` ${relations.join('. ')}.` : ''}${nodeLabels.length ? ` Labels: ${nodeLabels.map(l => l.name).join(', ')}.` : ''}${match && hashtag ? ` ${HASHTAG_REASON[match]} #${hashtag.name}.` : ''}`}
               aria-expanded={node.kind === 'objective' || node.kind === 'more' ? undefined : opened}
               aria-pressed={node.kind === 'objective' ? node.id === leafId : undefined}
               onPointerDown={e => { pointer.current = e.pointerType; }}
@@ -459,7 +496,7 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
         <p className={cn(styles.float, styles.right)}>{free ? 'Manual' : last ? `Depth ${path.length}` : 'Overview'} · Zoom {Math.round(camera.z * 100)}%</p>
         <MapHint ref={hintRef} />
       </section>
-      <GraphLegend rings={roots.some(m => m.relationship)} />
+      <GraphLegend rings={roots.some(m => m.relationship)} hashtag={labelLinks && hashtag ? hashtag.name : null} />
     </div>
     {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-[calc(var(--header-offset)+1.5rem)]">
       <div className="flex items-start justify-between gap-3"><h3 ref={panelHeading} id="map-work-title" tabIndex={-1} className="text-foreground min-w-0 text-lg font-semibold break-words outline-none">{leaf.title}</h3>
