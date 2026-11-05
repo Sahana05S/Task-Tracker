@@ -243,7 +243,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
         </div>
 
         {checklist && props.sections ? (
-          <HomeHero {...props} checklist={checklist} tools={tools} changesIn={changesIn} />
+          <HomeHero {...props} checklist={checklist} tools={tools} changesIn={changesIn} parent={quest ? { href: backHref, title: trail.at(-1)?.title ?? 'Master checklist' } : undefined} />
         ) : checklist && props.page ? (
           <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} inQuest={inQuest} />
         ) : null}
@@ -274,7 +274,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   );
 }
 
-function HomeHero({ task, ownerNames, checklist, rollup, changesIn }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools']; changesIn: (key: ChecklistSection) => boolean }) {
+function HomeHero({ task, ownerNames, checklist, rollup, changesIn, parent }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools']; changesIn: (key: ChecklistSection) => boolean; parent?: { href: string; title: string } }) {
   const activity = rollup.taskProgress;
   return (
     <section aria-label="Checklist summary" className="hero-card p-5 sm:p-6">
@@ -286,6 +286,13 @@ function HomeHero({ task, ownerNames, checklist, rollup, changesIn }: ChecklistW
           </p>
           <h1 className="text-foreground mt-3 text-[1.625rem] leading-tight font-bold tracking-tight break-words lg:text-[2rem]">{checklist.title}</h1>
           <p className="text-muted-foreground mt-1 text-sm break-words">{task.title}</p>
+          {/* A Quest's home links the list it sits in (the parent Quest, row or master checklist). */}
+          {parent ? (
+            <p className="mt-1 text-sm break-words">
+              <span className="text-muted-foreground">Part of </span>
+              <Link href={parent.href} className="link font-semibold">{parent.title}</Link>
+            </p>
+          ) : null}
           <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2 text-sm">
             <span className="text-muted-foreground">Task owner</span>
             <AvatarStack names={ownerNames} />

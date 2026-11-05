@@ -93,9 +93,7 @@ export async function getLoggableTasksFor(userId: string): Promise<Task[]> {
   const { data: assignmentRows, error: assignmentError } = await supabase
     .from('task_assignees')
     .select('task_id')
-    .eq('user_id', userId)
-    // A zero-share collaborator logs no time (D-A3, migration 108).
-    .or('share_units.is.null,share_units.gt.0');
+    .eq('user_id', userId);  // every Crew member logs time (migration 121)
 
   if (assignmentError) {
     return mapTasks(legacyRows);

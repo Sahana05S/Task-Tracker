@@ -8,6 +8,10 @@ as an ordinary reviewer who blocks Done. Copies now carry the credited assignees
 non-observer reviewers through the save, then add the same Collaborators (still zero
 share) and Observers. Support splits and one-per-member copies name their own people
 and carry neither. JWT shim only; no hosted connection.
+
+Since migration 121 (Mission Crew) everyone on a mission is Crew with an equal share:
+the fresh database (every migration) checks that copies carry the whole Crew with equal
+shares and keep the Observers; the upgrade database stops at 115 and checks the 115 rules.
 """
 from pathlib import Path
 source=Path(__file__).with_name('test_m09_database.py').read_text(encoding='utf-8')
@@ -67,12 +71,35 @@ for DB in DBS:
     else:
         migrate(DB,max(NUMBERS)); sql(DB,seed)
     sql(DB,f"UPDATE public.users SET is_active=true WHERE id='{U(7)}'")
+    crew=value(DB,"to_regprocedure('taskpulse_private.crew_equal_split(uuid)') IS NOT NULL")=='t'
     # Owner 4 (70%) and assignee 5 (30%), reviewer 6; then collaborator 8 and observer 3.
     src=ok(DB,MD,f"SELECT public.save_task_with_participants(NULL,{j({'title':'Copy people','category':'T','priority':'Medium','task_scale':5,'initialize_details':False})},"
         f"ARRAY['{OWNER}','{MATE}']::uuid[],ARRAY['{REVIEWER}']::uuid[],ARRAY[700000,300000]::integer[],NULL,false,'{uuid4()}')")
     people(DB,src,'add_collaborator',COLLAB)
     people(DB,src,'add_observer',WATCHER)
     a,r=roles(DB,src)
+    if crew:
+        # 121: the passed 70/30 is ignored; the former collaborator joins the Crew equally.
+        assert {u:s for u,(_,s) in a.items()}=={OWNER:333334,MATE:333333,COLLAB:333333} and r[WATCHER]=='Observer',(a,r)
+        new,plan=copy(DB,'duplicate',{'sourceTaskId':src,'startDate':today.isoformat()})
+        item=plan['items'][0]
+        assert set(item['assignees'])=={OWNER,MATE,COLLAB} and WATCHER not in item['reviewers'],item
+        assert item['collaborators']==[] and item['observers']==[WATCHER],item
+        assert sorted(item['shares'])==[333333,333333,333334],item
+        a,r=roles(DB,new[0])
+        assert {u:s for u,(_,s) in a.items()}=={OWNER:333334,MATE:333333,COLLAB:333333},a
+        assert r=={REVIEWER:'Primary',WATCHER:'Observer'},r
+        assert done_gate(DB,new[0])=='1','only the real reviewer gates Done on the copy'
+        news,_=copy(DB,'weekly',{'sourceTaskId':src,'startDate':today.isoformat(),'count':2})
+        for tid in news:
+            a,r=roles(DB,tid)
+            assert set(a)=={OWNER,MATE,COLLAB} and len({s for _,s in a.values()}-{333333,333334})==0 and r.get(WATCHER)=='Observer',(tid,a,r)
+        team,_=copy(DB,'all_team',{'sourceTaskId':src,'startDate':today.isoformat()})
+        for tid in team:
+            a,r=roles(DB,tid)
+            assert [s for _,s in a.values()]==[1000000] and 'Observer' not in r.values(),(tid,a,r)
+        print('PASS',DB,'121: copies carry the whole Crew with equal shares and keep observers')
+        continue
     assert a[COLLAB]==('Collaborator',0) and r[WATCHER]=='Observer',(a,r)
 
     # Preview: the save carries only credited assignees and non-observer reviewers.

@@ -19,6 +19,17 @@ describe('label names', () => {
     expect(labelSuggestions(catalogue, 'cra', [catalogue[0]]).map((l) => l.name)).toEqual(['Site crane']);
     expect(labelSuggestions(catalogue, '#', []).map((l) => l.name)).toEqual(['Crane', 'Site crane', 'Safety']);
   });
+
+  it('reuses the registry when a learning note\'s box gets a typed #name (no second label, no free-text parsing)', () => {
+    const catalogue = [label('Mistake'), label('Mistakes log')];
+    // Typed with a hash, other case or spacing, the name lands on the existing label's slug, so the box offers it, not "Create".
+    for (const typed of ['#mistake', '  ##MISTAKE ', '#Mistake!']) {
+      expect(labelSlug(cleanLabelName(typed))).toBe(catalogue[0].slug);
+      expect(labelSuggestions(catalogue, typed, [])[0]).toBe(catalogue[0]);
+    }
+    // Already on the note: nothing new is offered for it.
+    expect(labelSuggestions(catalogue, '#mistake', [catalogue[0]]).map((l) => l.name)).toEqual(['Mistakes log']);
+  });
 });
 
 describe('label payloads', () => {

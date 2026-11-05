@@ -216,14 +216,10 @@ function TaskForm({
   const [scaleMode, setScaleMode] = React.useState<StandingScaleMode>(defaultScaleMode);
   const [operationId, setOperationId] = React.useState('');
   React.useEffect(() => setOperationId(crypto.randomUUID()), []);
-  // Collaborators (zero share) are managed from the mission page, not here; the
-  // save keeps them (migration 108).
+  // The whole Crew (migration 121): everyone listed shares the credit equally.
   const [assigneeIds, setAssigneeIds] = React.useState<Set<string>>(
-    () => new Set(task ? task.assigneeIds.filter((id) => !(task.collaboratorIds ?? []).includes(id)) : [defaultAssigneeId]),
+    () => new Set(task ? task.assigneeIds : [defaultAssigneeId]),
   );
-  const [ownerChoice, setOwnerChoice] = React.useState<string>(task?.assigneeId ?? defaultAssigneeId);
-  // The chosen owner while still selected, else the first selected assignee.
-  const ownerId = assigneeIds.has(ownerChoice) ? ownerChoice : [...assigneeIds][0] ?? '';
   const [reviewerIds, setReviewerIds] = React.useState<Set<string>>(
     () => new Set(task?.reviewerIds ?? []),
   );
@@ -427,10 +423,12 @@ function TaskForm({
 
         <Field
           id="task-assignees"
-          label="Assignees"
-          hint="At least one. Pick the owner below; collaborators and observers are managed on the mission page."
+          label="Crew"
+          hint="At least one. Everyone on the crew logs time, can mark the mission Done and shares the credit equally. Observers are managed on the mission page."
           required
         >
+          {/* Keeps the internal primary row where it is on an edit (no extra power). */}
+          {task?.assigneeId ? <input type="hidden" name="ownerId" value={task.assigneeId} /> : null}
           <MemberCheckboxGroup
             name="assigneeIds"
             members={activeMembers}
@@ -441,23 +439,6 @@ function TaskForm({
               )
             }
           />
-        </Field>
-
-        <Field id="task-owner" label="Owner" hint="Leads the mission and manages its collaborators and observers.">
-          <NativeSelect
-            id="task-owner"
-            name="ownerId"
-            value={ownerId}
-            onChange={(event) => setOwnerChoice(event.target.value)}
-            disabled={assigneeIds.size === 0}
-          >
-            {activeMembers.filter((member) => assigneeIds.has(member.id)).map((member) => (
-              <option key={member.id} value={member.id}>{member.fullName}</option>
-            ))}
-            {[...assigneeIds].filter((id) => !activeMembers.some((member) => member.id === id)).map((id) => (
-              <option key={id} value={id}>{members.find((member) => member.id === id)?.fullName ?? id}</option>
-            ))}
-          </NativeSelect>
         </Field>
 
         <Field
@@ -477,64 +458,6 @@ function TaskForm({
           />
         </Field>
 
-        {/*
-          A single assignee always holds 100%, so the split only appears once
-          there is something to split, or when an existing mission's shares
-          can be revised.
-        */}
-        {isEdit || assigneeIds.size > 1 ? (
-          <Field
-            id="participant-shares"
-            label="Participant shares"
-            className="sm:col-span-2"
-            hint={
-              isEdit
-                ? 'Leave all blank to keep the current shares, or use equal shares when changing participants. Explicit percentages must total 100%.'
-                : 'Leave blank for equal shares. Explicit percentages must total 100%.'
-            }
-          >
-            <div className="border-border divide-border divide-y rounded-md border bg-card">
-              {[...assigneeIds].map((id) => {
-                const member = members.find((entry) => entry.id === id);
-                const current = task?.participantShares?.[id];
-                return (
-                  <label
-                    key={id}
-                    className="flex items-center gap-3 px-3 py-2 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 truncate">
-                      {member?.fullName ?? id}
-                      {member ? (
-                        <span className="text-muted-foreground ml-2 text-xs">
-                          {member.employeeId}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Input
-                        name={`sharePercent:${id}`}
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.0001"
-                        inputMode="decimal"
-                        placeholder={
-                          current !== undefined
-                            ? `${current / 10000}`
-                            : 'Equal'
-                        }
-                        aria-label={`Share percentage for ${member?.fullName ?? id}`}
-                        className="w-24 text-right tabular-nums"
-                      />
-                      <span className="text-muted-foreground text-sm">%</span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </Field>
-        ) : null}
-
         {task?.participantCreditMode === 'legacy' ? (
           <div className="border-border bg-muted/40 grid gap-2 rounded-md border p-3 text-sm sm:col-span-2">
             <a
@@ -547,10 +470,10 @@ function TaskForm({
             </a>
             <label className="flex items-start gap-2">
               <input type="checkbox" name="acceptLegacyShares" className="accent-primary mt-1 size-3.5" />
-              <span>I reviewed this mission&apos;s legacy participants and approve configuring these shares.</span>
+              <span>I reviewed this mission&apos;s legacy participants and approve giving this crew equal shares.</span>
             </label>
             <p className="text-muted-foreground text-xs">
-              Share changes apply to future credit. Earlier earned credit and frozen reports stay unchanged.
+              Equal shares apply to future credit. Earlier earned credit and frozen reports stay unchanged.
             </p>
           </div>
         ) : null}

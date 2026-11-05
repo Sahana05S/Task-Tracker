@@ -79,7 +79,7 @@ export function MissionStatusBanner({
   /** Setup, Activity and Closure are all complete. */
   readyToFinish: boolean;
   canChange: boolean;
-  /** False hides "Mark Done" (collaborators, migration 117). Defaults to true. */
+  /** False hides "Mark Done" (not on the Crew, migrations 117, 121). Defaults to true. */
   canFinish?: boolean;
 }) {
   const router = useRouter();
