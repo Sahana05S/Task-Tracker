@@ -38,15 +38,17 @@ describe('parseInvite', () => {
 describe('parseMemberUpdate', () => {
   it('sends only the fields present', () => {
     expect(parseMemberUpdate(form({ userId: ID, isActive: 'false' }))).toEqual({ ok: true, value: { userId: ID, isActive: false } });
-    expect(parseMemberUpdate(form({ userId: ID, role: 'data_manager', fullName: 'A', employeeId: 'E-1' }))).toEqual({
+    expect(parseMemberUpdate(form({ userId: ID, role: 'project_engineer', fullName: 'A', employeeId: 'E-1' }))).toEqual({
       ok: true,
-      value: { userId: ID, role: 'data_manager', fullName: 'A', employeeId: 'E-1' },
+      value: { userId: ID, role: 'project_engineer', fullName: 'A', employeeId: 'E-1' },
     });
   });
 
   it('refuses a bad member id or role', () => {
     expect(parseMemberUpdate(form({ userId: 'x' }))).toEqual({ ok: false, error: 'Member not found.' });
     expect(parseMemberUpdate(form({ userId: ID, role: 'root' }))).toEqual({ ok: false, error: 'Choose a role.' });
+    // Data Manager is retired (migration 125).
+    expect(parseMemberUpdate(form({ userId: ID, role: 'data_manager' }))).toEqual({ ok: false, error: 'Choose a role.' });
   });
 
   it('reads org chart placement: a present field sets it, blank clears it', () => {

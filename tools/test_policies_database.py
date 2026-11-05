@@ -93,8 +93,31 @@ for db in DBS:
         for t,n in before.items():assert value(db,f"count(*) FROM {t}")==n,t
         assert definitions(db)!=at56
         print('PASS',db,'upgrade to 58 replaces the policy functions without touching existing rows')
+        roles125=125 in later
         for m in migrations():
-            if int(m.name.split('_')[0]) in later:sql(db,m.read_text(encoding='utf-8'))
+            n=int(m.name.split('_')[0])
+            if n==125:
+                # Open invitations for the two roles that migration 125 retires from use.
+                for k,role in enumerate(('project_engineer','data_manager')):
+                    ok(db,A_DIR,f"SELECT public.people_command('invite',{j({'email':f'role{k}@example.test','fullName':'Invited','employeeId':f'INV-{k}','role':role})})")
+            if n in later:sql(db,m.read_text(encoding='utf-8'))
+        if roles125:
+            # 125 (5 Nov 2026): roles are Managing Director, Manager (code project_engineer) and Team Member.
+            assert value(db,"count(*) FROM public.users WHERE role IN ('project_engineer','data_manager')")=='0'
+            assert value(db,"count(*) FROM public.member_invitations WHERE role IN ('project_engineer','data_manager') AND accepted_at IS NULL AND revoked_at IS NULL")=='0'
+            assert value(db,f"string_agg(protected_changes#>>'{{from,role}}',',' ORDER BY row_id) FROM taskpulse_private.audit_events WHERE command='retire_role' AND table_name='users' AND actor_role='system'")=='project_engineer,data_manager'
+            assert value(db,"count(*) FROM taskpulse_private.audit_events WHERE command='retire_role' AND table_name='member_invitations' AND protected_changes#>>'{to,role}'='team_member'")=='2'
+            refused(db,A_DIR,f"SELECT public.people_command('invite',{j({'email':'dm@example.test','fullName':'DM','employeeId':'INV-9','role':'data_manager'})})",'23514')
+            refused(db,A_DIR,f"SELECT public.people_command('update',{j({'userId':A3,'role':'data_manager'})})",'23514')
+            today125=value(db,"(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date")
+            refused(db,A2,facts(today125,today125,A5),'42501')  # a team member now
+            ok(db,A_DIR,f"SELECT public.people_command('update',{j({'userId':A2,'role':'project_engineer'})})")
+            assert [m['userId'] for m in ok(db,A2,facts(today125,today125,A5))['members']]==[A5],'a Manager keeps the old engineer powers'
+            refused(db,A2,f"SELECT public.people_command('invite',{j({'email':'x@example.test','fullName':'X','employeeId':'INV-8'})})",'42501')
+            assert 'project engineer' not in value(db,"string_agg(prosrc,'') FROM pg_proc WHERE prosrc LIKE '%can set up a month%' OR prosrc LIKE '%manage labels%'")
+            # The rest of this suite exercises the seed's data manager role as it was.
+            sql(db,f"UPDATE public.users SET role='data_manager' WHERE id='{A3}'")
+            print('PASS',db,'125: engineers, data managers and their open invitations become team members (audited); Data Manager cannot be given; a Manager keeps the engineer powers')
     else:
         apply(db); sql(db,seed)
         print('PASS',db,f'fresh install 01-{LATEST}')

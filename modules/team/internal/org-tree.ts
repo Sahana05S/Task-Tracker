@@ -108,31 +108,70 @@ export function buildOrgTree(people: readonly OrgPerson[]): OrgNode[] {
   return roots;
 }
 
-/** The chart's two tiers when a company has more than one top-level managing director. */
+/** The chart's two tiers when the top of the chart would otherwise not be one tree. */
 export interface OrgTiers {
-  /** Top-level managing directors, shown side by side as one row; empty when there is only one. */
+  /** Top-level managing directors, shown side by side as one row; empty when the roots already form one tree. */
   leaders: OrgNode[];
   /** Everyone under that row: the leaders' reports and any other top-level person, or the roots unchanged. */
   below: OrgNode[];
-  /** Who each person directly under the leadership row reports to (id -> manager's name). */
+  /** With two or more leaders: who each person directly under the row reports to (id -> manager's name). */
   managerOf: Map<string, string>;
+  /** People under the row who have no active manager (they join the row so the chart stays connected). */
+  noManager: Set<string>;
 }
 
 /**
- * Two or more managing directors without a manager would otherwise be drawn
- * as separate trees side by side, unconnected (user report, 3 November 2026).
- * They become one leadership row, and their reports plus any other top-level
- * person become one level under it, each still naming their own manager. With
- * a single director the roots are returned unchanged.
+ * The chart is always one connected tree (user decisions, 3 and 5 November
+ * 2026). Two or more managing directors without a manager become one
+ * leadership row; with a single director, people who have no manager would
+ * otherwise stand apart as separate trees, so that director becomes the row.
+ * Their reports plus every other top-level person form one level under it;
+ * with several leaders each person names their own manager, and people with
+ * no manager are listed in `noManager`. When the roots are already a single
+ * tree (or there is no director at the top) they are returned unchanged.
  */
 export function orgTiers(roots: readonly OrgNode[]): OrgTiers {
   const leaders = roots.filter(node => node.person.role === 'managing_director');
-  if (leaders.length < 2) return { leaders: [], below: [...roots], managerOf: new Map() };
-  const managerOf = new Map<string, string>();
-  for (const leader of leaders) for (const report of leader.reports) managerOf.set(report.person.id, leader.person.fullName);
   const others = roots.filter(node => node.person.role !== 'managing_director');
+  if (leaders.length === 0 || (leaders.length === 1 && others.length === 0)) {
+    return { leaders: [], below: [...roots], managerOf: new Map(), noManager: new Set() };
+  }
+  const managerOf = new Map<string, string>();
+  if (leaders.length > 1) {
+    for (const leader of leaders) for (const report of leader.reports) managerOf.set(report.person.id, leader.person.fullName);
+  }
   const below = [...leaders.flatMap(leader => leader.reports), ...others].sort(byRoleThenName);
-  return { leaders: [...leaders].sort(byRoleThenName), below, managerOf };
+  return {
+    leaders: [...leaders].sort(byRoleThenName),
+    below,
+    managerOf,
+    noManager: new Set(others.map(node => node.person.id)),
+  };
+}
+
+/** The most cards one level of the chart shows side by side before it wraps. */
+export const ORG_LEVEL_WIDTH = 4;
+
+/**
+ * Splits one level of the chart into rows of at most `width` cards (user
+ * request, 5 November 2026: wide levels wrap instead of scrolling far
+ * sideways). Rows are balanced, so five people read three and two, never four
+ * and one. A level that fits is one row.
+ */
+export function levelRows<T>(items: readonly T[], width: number = ORG_LEVEL_WIDTH): T[][] {
+  const size = Math.max(1, Math.floor(width));
+  if (items.length <= size) return items.length ? [[...items]] : [];
+  const rows = Math.ceil(items.length / size);
+  const base = Math.floor(items.length / rows);
+  const extra = items.length % rows;
+  const out: T[][] = [];
+  let start = 0;
+  for (let row = 0; row < rows; row += 1) {
+    const end = start + base + (row < extra ? 1 : 0);
+    out.push(items.slice(start, end));
+    start = end;
+  }
+  return out;
 }
 
 /** How many people are in a subtree, the person included. */

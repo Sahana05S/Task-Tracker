@@ -4,7 +4,7 @@ import { getCompanySettings } from '@/modules/settings';
 import { readString } from '@/shared/forms/form-data';
 import { createClient } from '@/shared/supabase/server';
 import { mapUser, USER_COLUMNS } from '@/shared/supabase/mappers';
-import { USER_ROLES } from '@/shared/tracker/enums';
+import { ASSIGNABLE_ROLES } from '@/shared/tracker/enums';
 import type { User, UserRole } from '@/types/tracker';
 
 /**
@@ -61,7 +61,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function readRole(value: string): UserRole | null {
-  return (USER_ROLES as readonly string[]).includes(value) ? (value as UserRole) : null;
+  // Data Manager is retired (migration 125); people_command refuses it too.
+  return (ASSIGNABLE_ROLES as readonly string[]).includes(value) ? (value as UserRole) : null;
 }
 
 export function parseInvite(form: FormData): Parsed<InviteInput> {

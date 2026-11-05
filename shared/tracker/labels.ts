@@ -247,8 +247,8 @@ export const ATTENDANCE_STATUS_MEANINGS = {
 
 export const ROLE_MEANINGS = {
   managing_director: 'Sees and manages everything, closes months and decides awards.',
-  project_engineer: 'Manages missions, people and attendance for the team.',
-  data_manager: 'Reviews daily facts, ideas, suggestions and sales.',
+  project_engineer: 'Manages missions, people and attendance for the team, and validates records.',
+  data_manager: 'Retired role; Managers validate records.',
   team_member: 'Works on missions and records their own time and attendance.',
 } satisfies Record<UserRole, string>;
 

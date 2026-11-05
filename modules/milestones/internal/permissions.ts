@@ -11,7 +11,7 @@ import type { UserRole } from '@/types/tracker';
  */
 
 export const NOT_ALLOWED =
-  'Only managing directors and project engineers can edit vision and milestones.';
+  'Only managing directors and managers can edit vision and milestones.';
 
 export function canEditMilestones(role: UserRole): boolean {
   return canManageMilestones(role);

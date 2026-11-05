@@ -10,7 +10,7 @@ import type { ActionResponse } from '@/types/tracker';
 
 /**
  * PUBLIC Server Actions for labels (migration 112). The database decides who
- * may manage labels (label_command: managing director and project engineers)
+ * may manage labels (label_command: managing director and managers)
  * and who may label a record (label_link_command); these check the shape.
  */
 

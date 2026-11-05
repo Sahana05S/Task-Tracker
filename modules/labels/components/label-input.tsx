@@ -20,7 +20,7 @@ function formData(values: Record<string, string>): FormData {
 
 /**
  * A record's labels with an add box: type `#` and part of a name to pick an
- * existing label, or (managing director and project engineers) create a new
+ * existing label, or (managing director and managers) create a new
  * one. Each chip has a remove button. Without `canEdit` it shows the chips
  * only. Every change is one label_link_command; the database checks who may.
  */

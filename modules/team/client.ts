@@ -14,6 +14,8 @@ export { optionalEmployeePerformance } from '@/modules/team/internal/performance
 export type { Invitation, PeopleAdminData, Placement } from '@/modules/team/internal/people';
 export {
   buildOrgTree,
+  levelRows,
+  ORG_LEVEL_WIDTH,
   orgTiers,
   parseOrgChart,
   teamSize,

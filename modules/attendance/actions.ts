@@ -27,7 +27,7 @@ function memberOperation(base:string,memberId:string,date:string):string{
  */
 export async function fillAttendanceDay(form:FormData):Promise<ActionResponse<{saved:number;skipped:string[]}>>{
  const profile=await getCurrentProfile();
- if(!profile?.isActive||!canManageAttendance(profile.role))return {success:false,error:'Only the managing director or a project engineer can fill a day for everyone.',errorCode:'forbidden'};
+ if(!profile?.isActive||!canManageAttendance(profile.role))return {success:false,error:'Only the managing director or a manager can fill a day for everyone.',errorCode:'forbidden'};
  const date=readString(form,'date'),fill=readString(form,'fill') as DayFill,holidayName=readString(form,'holidayName'),operation=readString(form,'operationId');
  const members=form.getAll('memberId').map(String);
  if(!ISO_DATE_PATTERN.test(date)||!FILLS.includes(fill)||!UUID_PATTERN.test(operation)||!members.length||!members.every(id=>UUID_PATTERN.test(id)))return {success:false,error:'Choose a day, what to fill and at least one member.',errorCode:'validation'};

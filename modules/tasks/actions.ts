@@ -56,7 +56,7 @@ export async function createTask(_prevState: TaskActionState | null, formData: F
   const actor = await resolveActor();
   if (!actor.ok) return failure(actor.error);
   if (!canManageTasks(actor.profile.role)) {
-    return failure('Only managing directors and project engineers can create tasks.');
+    return failure('Only managing directors and managers can create tasks.');
   }
 
   const fields = parseTaskFields(formData);
@@ -93,7 +93,7 @@ export async function updateTask(_prevState: TaskActionState | null, formData: F
   const actor = await resolveActor();
   if (!actor.ok) return failure(actor.error);
   if (!canManageTasks(actor.profile.role)) {
-    return failure('Only managing directors and project engineers can edit task details.');
+    return failure('Only managing directors and managers can edit task details.');
   }
 
   const version = readParticipantVersion(formData);
@@ -158,7 +158,7 @@ export async function updateTaskStatus(
 export async function createSubMission(form: FormData): Promise<ActionResponse<Json>> {
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) return { success: false, error: 'Only managing directors and project engineers can create sub-missions.' };
+  if (!canManageTasks(actor.profile.role)) return { success: false, error: 'Only managing directors and managers can create sub-missions.' };
   const title = readString(form, 'title');
   const taskId = readString(form, 'taskId');
   const version = Number(readString(form, 'expectedVersion'));
@@ -189,7 +189,7 @@ export async function createSubMission(form: FormData): Promise<ActionResponse<J
 export async function addSubMission(form: FormData): Promise<ActionResponse<Json>> {
   const actor = await resolveActor();
   if (!actor.ok) return { success: false, error: actor.error };
-  if (!canManageTasks(actor.profile.role)) return { success: false, error: 'Only managing directors and project engineers can create sub-missions.' };
+  if (!canManageTasks(actor.profile.role)) return { success: false, error: 'Only managing directors and managers can create sub-missions.' };
   const title = readString(form, 'title');
   const taskId = readString(form, 'taskId');
   const section = readString(form, 'section');
@@ -341,7 +341,7 @@ export async function deleteTask(taskId: string): Promise<TaskActionState> {
   const actor = await resolveActor();
   if (!actor.ok) return failure(actor.error);
   if (!canManageTasks(actor.profile.role)) {
-    return failure('Only managing directors and project engineers can delete tasks.');
+    return failure('Only managing directors and managers can delete tasks.');
   }
   if (taskId === '') return failure('Missing task reference.');
 

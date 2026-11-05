@@ -85,6 +85,7 @@ describe('orgTiers', () => {
     expect(tiers.leaders).toEqual([]);
     expect(shape(tiers.below)).toEqual([{ Meera: ['Arun'] }]);
     expect(tiers.managerOf.size).toBe(0);
+    expect(tiers.noManager.size).toBe(0);
   });
 
   it('puts two directors in one row and their reports in one level under it (user report, 3 Nov 2026)', () => {
@@ -137,8 +138,46 @@ describe('orgTiers', () => {
       person(3, { fullName: 'Kept', reportsTo: uuid(2) }),
     ]);
     const tiers = orgTiers(roots);
+    // One director remains; Kept has no active manager, so joins the level under that director.
+    expect(names(tiers.leaders)).toEqual(['Harish']);
+    expect(names(tiers.below)).toEqual(['Kept']);
+    expect(tiers.noManager.has(uuid(3))).toBe(true);
+  });
+
+  it('keeps one connected tree with a single director: people without a manager join under it (5 Nov 2026)', () => {
+    const roots = buildOrgTree([
+      person(1, { fullName: 'Meera', role: 'managing_director' }),
+      person(2, { fullName: 'Arun', reportsTo: uuid(1) }),
+      person(3, { fullName: 'Bina', reportsTo: uuid(2) }),
+      person(4, { fullName: 'Loose' }),
+      person(5, { fullName: 'Chitra', role: 'project_engineer' }),
+    ]);
+    expect(roots).toHaveLength(3);
+    const tiers = orgTiers(roots);
+    expect(names(tiers.leaders)).toEqual(['Meera']);
+    expect(shape(tiers.below)).toEqual(['Chitra', { Arun: ['Bina'] }, 'Loose']);
+    // A single director needs no "reports to" names; the unplaced people are marked.
+    expect(tiers.managerOf.size).toBe(0);
+    expect([...tiers.noManager].sort()).toEqual([uuid(4), uuid(5)]);
+    // "N reports" is direct reports: Meera has one (Arun), not two.
+    expect(tiers.leaders[0].reports).toHaveLength(1);
+    expect(teamSize(tiers.leaders[0]) - 1).toBe(2);
+  });
+
+  it('marks no one as unplaced when every top-level person is a director', () => {
+    const roots = buildOrgTree([
+      person(1, { fullName: 'Harish', role: 'managing_director' }),
+      person(2, { fullName: 'Aishwarya', role: 'managing_director' }),
+      person(3, { fullName: 'Bala', reportsTo: uuid(1) }),
+    ]);
+    expect(orgTiers(roots).noManager.size).toBe(0);
+  });
+
+  it('returns roots unchanged when no director is at the top', () => {
+    const roots = buildOrgTree([person(1, { fullName: 'A' }), person(2, { fullName: 'B' })]);
+    const tiers = orgTiers(roots);
     expect(tiers.leaders).toEqual([]);
-    expect(names(tiers.below)).toEqual(['Harish', 'Kept']);
+    expect(names(tiers.below)).toEqual(['A', 'B']);
   });
 });
 
