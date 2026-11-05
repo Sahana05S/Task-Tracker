@@ -77,8 +77,10 @@ function GraphLegend({ rings, hashtag }: { rings: boolean; hashtag: string | nul
   </ul>;
 }
 
-export function MissionGraph({ missions, links = [], labels, today, initialLocation, onLocation }: {
+export function MissionGraph({ missions, links = [], labels, names, today, initialLocation, onLocation }: {
   missions: GraphMission[];
+  /** Member names by id: a Quest star names its owner (migration 122). */
+  names?: Readonly<Record<string, string>> | null;
   /** Labels per mission id (migration 112): names under each mission star, chips beside the open mission. */
   labels?: Readonly<Record<string, readonly Label[]>> | null;
   /** Stored relations between missions in the loaded batches (Subtask, Dependency, Blocks, Related). */
@@ -445,7 +447,7 @@ export function MissionGraph({ missions, links = [], labels, today, initialLocat
             const sub = node.kind === 'more' ? `Load ${BATCH} more`
               : m ? [relationship, pct(m.progress), missionDueLabel(m.dueDate, today)].filter(Boolean).join(' · ')
               : node.kind === 'objective' ? (row?.applicable === false ? 'Not applicable' : node.complete ? 'Complete' : 'Open to work')
-              : `${pct(node.progress)} · ${row?.childCount ?? 0} rows${opened ? ' · open' : ''}`;
+              : [pct(node.progress), `${row?.childCount ?? 0} rows`, row?.ownedChecklistId && row.assigneeId ? names?.[row.assigneeId] ?? null : null, opened ? 'open' : null].filter(Boolean).join(' · ');
             const kindLabel = { mission: 'Mission', quest: 'Quest', objective: 'Objective', more: 'More objectives' }[node.kind];
             const relations = relationText.get(node.id);
             const nodeLabels = m ? labels?.[m.id] ?? [] : [];

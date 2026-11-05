@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2Icon, CircleAlertIcon, CircleDashedIcon, CircleDotIcon, CircleMinusIcon, ExternalLinkIcon, FlagIcon, ListTreeIcon, RocketIcon } from 'lucide-react';
+import { CheckCircle2Icon, CircleAlertIcon, CircleDashedIcon, CircleDotIcon, CircleMinusIcon, ExternalLinkIcon, FlagIcon, ListTreeIcon, RocketIcon, UserRoundIcon } from 'lucide-react';
 
 import { MissionProgress } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
@@ -9,7 +9,7 @@ import type { ChecklistBranchRow } from '../internal/branch-types';
 import type { CompletionState } from '../internal/progress';
 import { NOT_DONE, percentText, rowKind, rowStatus, stateChoices, type ProgressStatusTone } from '../internal/table';
 import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
-import { ObjectiveReviewChip, ObjectiveReviewNote, useRowChangesNeeded } from './objective-review';
+import { ObjectiveReviewChip, ObjectiveReviewNote, useMemberName, useRowChangesNeeded } from './objective-review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -67,6 +67,18 @@ export function ObjectiveTick({ row, ctx, className }: { row: ChecklistBranchRow
         <ChecklistStateControl taskId={ctx.task.id} checklistId={row.checklistId} nodeId={row.id} title={row.title} state={state} choices={choices} version={ctx.version} action={ctx.action} />
       ) : <ChecklistStateBadge state={state} />}
       <ObjectiveReviewChip nodeId={row.id} />
+    </span>
+  );
+}
+
+/** A Quest's owner (migration 122), as a chip; nothing when the row has no owner. */
+export function QuestOwnerChip({ assigneeId, className }: { assigneeId: string | null | undefined; className?: string }) {
+  const name = useMemberName(assigneeId);
+  if (!assigneeId) return null;
+  return (
+    <span className={cn('badge-soft badge-neutral max-w-full', className)} title="Quest owner">
+      <UserRoundIcon className="size-3 shrink-0" aria-hidden="true" /><span className="truncate">{name ?? 'Former member'}</span>
+      <span className="sr-only"> owns this Quest</span>
     </span>
   );
 }
@@ -135,7 +147,8 @@ export function ObjectiveDetails({ row, progress = true, links = 'all', classNam
     : null;
   const showProgress = progress && kind !== 'item';
   const hasLinks = row.links.length > 0;
-  const meta = tag || showProgress || hasLinks;
+  const owner = kind === 'quest' ? row.assigneeId ?? null : null;
+  const meta = tag || owner || showProgress || hasLinks;
 
   return (
     <div className={cn('grid min-w-0 gap-1.5 empty:hidden', className)} style={style}>
@@ -148,6 +161,7 @@ export function ObjectiveDetails({ row, progress = true, links = 'all', classNam
               <tag.icon className="size-3 shrink-0" aria-hidden="true" /><span className="truncate">{tag.text}</span>
             </span>
           ) : null}
+          {owner ? <QuestOwnerChip assigneeId={owner} /> : null}
           {showProgress ? (
             <span className="flex min-w-36 flex-1 items-center gap-2">
               <ObjectiveRowStatus row={row} label />

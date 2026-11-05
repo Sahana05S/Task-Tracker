@@ -117,7 +117,7 @@ const CHECKLIST_WORDS: Record<string, string> = {
   submission: 'Added a Quest',
   // Migration 114: the decision and its note arrive as the entry's reason.
   review: 'Reviewed a checklist objective',
-  // A Quest's owner (5 November 2026); the member arrives as the entry's "about".
+  // Migration 122: a Quest's owner was set or changed; the member arrives as the entry's "about".
   assign: 'Chose a Quest owner',
 };
 // Labels (migration 112, listed from 116); the label's name arrives as the entry's reason ("#Crane").

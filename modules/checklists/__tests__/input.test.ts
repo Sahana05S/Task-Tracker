@@ -23,6 +23,15 @@ describe('checklist command contract (one kind of row)', () => {
     expect(parseChecklistCommand(form('section', { section: 'setup', intentional_empty: 'true', reason: 'x' }))).toEqual({ ok: false, error: 'Unknown checklist action.' });
   });
 
+  it('sends a Quest owner with submission and assign (122)', () => {
+    const quest = parseChecklistCommand(form('submission', { checklist_id: 'list', title: 'Survey', section: 'activity', assignee_id: 'user-8' }));
+    expect(quest.ok && quest.value.payload).toEqual({ title: 'Survey', description: null, section: 'activity', parent_id: null, assignee_id: 'user-8', checklist_id: 'list' });
+    const mine = parseChecklistCommand(form('submission', { title: 'Mine', section: 'activity' }));
+    expect(mine.ok && mine.value.payload.assignee_id).toBeNull();
+    const assign = parseChecklistCommand(form('assign', { checklist_id: 'list', node_id: 'quest-1', assignee_id: 'user-4' }));
+    expect(assign.ok && assign.value.payload).toEqual({ node_id: 'quest-1', assignee_id: 'user-4', checklist_id: 'list' });
+  });
+
   it('sends an objective review with its decision and note (114)', () => {
     const parsed = parseChecklistCommand(form('review', { checklist_id: 'list', node_id: 'row-1', decision: 'work_needed', note: 'Add the photo' }));
     expect(parsed.ok && parsed.value.payload).toEqual({ node_id: 'row-1', decision: 'work_needed', note: 'Add the photo', checklist_id: 'list' });

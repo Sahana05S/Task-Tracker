@@ -496,6 +496,8 @@ export interface Database {
           priority?: number;
           detail_section?: 'setup'|'activity'|'closure'|null;
           completion_state?: 'Yes'|'No'|'N/A';
+          /** A Quest row's owner, one of the mission's Crew (migration 122); written only by checklist_command. */
+          assignee_id?: string | null;
           /** Objective review (migration 114); written only by checklist_command. */
           review_state?: 'none'|'pending'|'acknowledged'|'work_needed';
           reviewed_by?: string | null;

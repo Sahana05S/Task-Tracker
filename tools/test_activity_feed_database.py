@@ -300,6 +300,13 @@ for db in DBS:
     scale=next(r for r in history(MD,mission) if r['action']=='scale')
     assert scale['action']=='scale' and scale['changes']['scale']=={'before':10,'after':12} and scale['reason']=='Bigger scope',scale
     print('PASS',db,'124: a scale change keeps its before and after values')
+    # A Quest owner change (122) names the new owner and the Quest, here and in Team > Activity.
+    quest=checklist(db,mission,'submission',{'title':'Prospecting','section':'activity','assignee_id':M4})['nodeId']
+    checklist(db,mission,'assign',{'node_id':quest,'assignee_id':M5})
+    owner=next(r for r in history(MD,mission) if r['action']=='checklist_assign')
+    assert (owner['subject_user_id'],owner['detail'])==(M5,'Prospecting'),owner
+    assert any(r['action']=='checklist_assign' and r['subject_user_id']==M5 and r['task_tag']=='ACT124' for r in feed(db,MD,today,today))
+    print('PASS',db,'124: a Quest owner change names the new owner and the Quest')
     # A file upload and its removal: one line each, a retry writes none, Team > Activity lists it.
     org=value(db,f"organization_id FROM public.tasks WHERE id='{mission}'")
     path=f"{org}/{mission}/{uuid4()}.pdf"

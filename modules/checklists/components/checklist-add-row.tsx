@@ -8,10 +8,8 @@ import { ExecutionForm } from '@/shared/ui/execution-form';
 import { Input } from '@/shared/ui/input';
 import type { ChecklistSection } from '../internal/progress';
 import { ChecklistVersionField } from './checklist-state-control';
+import { QuestOwnerSelect } from './quest-owner';
 import type { ActionResponse } from '@/types/tracker';
-
-/** Quests nest three levels deep (decision D-B1, 3 November 2026; migration 109). */
-export const MAX_QUEST_LEVEL = 3;
 
 const KINDS = [
   { key: 'add', label: 'Objective', hint: 'A row you tick Yes or N/A' },
@@ -34,7 +32,6 @@ export function ChecklistAddRow({
   action,
   subMissionAction,
   label,
-  questLevel = 0,
   autoFocus = false,
 }: {
   taskId: string;
@@ -46,8 +43,6 @@ export function ChecklistAddRow({
   /** Present for managers: creates a Sub-mission (a linked real mission). */
   subMissionAction?: (form: FormData) => Promise<ActionResponse<unknown>>;
   label: string;
-  /** Quest levels above this list: 0 for the mission's checklist; at the last level no Quest is offered. */
-  questLevel?: number;
   /** The page's main add row: the cursor starts in its title box. */
   autoFocus?: boolean;
 }) {
@@ -59,7 +54,8 @@ export function ChecklistAddRow({
     if (autoFocus && (!document.activeElement || document.activeElement === document.body)) titleRef.current?.focus({ preventScroll: true });
   }, [autoFocus]);
   const [kind, setKind] = React.useState<(typeof KINDS)[number]['key']>('add');
-  const kinds = KINDS.filter((entry) => entry.key === 'submission' ? questLevel < MAX_QUEST_LEVEL : entry.key !== 'sub-mission' || subMissionAction);
+  // Quests nest without a level limit (migration 122).
+  const kinds = KINDS.filter((entry) => entry.key !== 'sub-mission' || subMissionAction);
   const chosen = kinds.find((entry) => entry.key === kind) ?? kinds[0];
   const subMission = chosen.key === 'sub-mission';
 
@@ -110,6 +106,13 @@ export function ChecklistAddRow({
             placeholder={chosen.key === 'add' ? 'New objective' : chosen.key === 'submission' ? 'Name the Quest' : 'Name the sub-mission'}
             className="bg-card h-9 min-w-48 flex-1 basis-56"
           />
+          {/* A new Quest's owner (migration 122): one of the Crew, the creator by default. */}
+          {chosen.key === 'submission' ? (
+            <label className="flex min-w-44 basis-44 items-center gap-2 text-xs font-medium">
+              Owner
+              <QuestOwnerSelect id={`${titleId}-owner`} className="border-input bg-card text-foreground focus-visible:ring-ring h-9 min-w-0 flex-1 rounded-lg border px-2 text-sm outline-none focus-visible:ring-2" />
+            </label>
+          ) : null}
           <Button type="submit" size="sm" className="h-9">
             <PlusIcon aria-hidden="true" />Add {chosen.label.toLowerCase()}
           </Button>

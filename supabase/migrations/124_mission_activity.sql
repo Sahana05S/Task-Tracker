@@ -85,10 +85,12 @@ SELECT pg_temp.m124_patch('public.activity_feed(date,date,text,uuid,jsonb,intege
  $f$('label_links', 'missions', false),
       -- Mission files (migration 124): one task_proof_<op> line per upload or removal.
       ('task_proofs', 'missions', false)$f$);
--- ... and a people command names its member (task_people_* keep the user id as a plain value).
+-- ... and a people command names its member (task_people_* keep the user id as a plain value), a
+-- Quest owner change (122's checklist_assign) its new owner.
 SELECT pg_temp.m124_patch('public.activity_feed(date,date,text,uuid,jsonb,integer)',
  $f$coalesce(a.protected_changes -> 'user_id' ->> 'after', a.protected_changes -> 'user_id' ->> 'before')$f$,
- $f$coalesce(a.protected_changes -> 'user_id' ->> 'after', a.protected_changes -> 'user_id' ->> 'before', a.protected_changes ->> 'user_id')$f$);
+ $f$coalesce(a.protected_changes -> 'user_id' ->> 'after', a.protected_changes -> 'user_id' ->> 'before', a.protected_changes ->> 'user_id',
+          CASE WHEN a.command = 'checklist_assign' THEN a.protected_changes -> 'node_after' ->> 'assignee' END)$f$);
 
 -- 4. One mission's history ---------------------------------------------------
 -- The mission an audit row is about, from the row itself (no table lookup), so
@@ -216,7 +218,9 @@ BEGIN
     SELECT 'audit:' || lpad(l.aid::text, 19, '0') AS line_id, l.* FROM listed l
   )
   SELECT l.line_id, l.at, l.command, l.actor,
-    taskpulse_private.activity_uuid(coalesce(l.pc -> 'user_id' ->> 'after', l.pc -> 'user_id' ->> 'before', l.pc ->> 'user_id')),
+    taskpulse_private.activity_uuid(coalesce(l.pc -> 'user_id' ->> 'after', l.pc -> 'user_id' ->> 'before', l.pc ->> 'user_id',
+      -- A Quest's new owner (migration 122's checklist_assign keeps it on node_after).
+      CASE WHEN l.command = 'checklist_assign' THEN l.pc -> 'node_after' ->> 'assignee' END)),
     l.tbl::text, l.row_id,
     CASE WHEN l.command = 'UPDATE' THEN ARRAY(SELECT x FROM unnest(l.changed_fields) x WHERE x = ANY (shown) ORDER BY x) END,
     CASE WHEN l.row_change THEN

@@ -41,8 +41,11 @@ export interface ChecklistTableProps {
   /** Missions a manager may link a row to. */
   linkChoices?: readonly { id: string; taskTag: string; title: string }[];
   manager: boolean;
-  /** Quest levels above this table's list (0 = the mission's checklist); limits the add row's Quest choice. */
-  questLevel?: number;
+  /**
+   * The mission is open and the viewer is Crew or a manager (migration 122): a Quest row's owner
+   * gets its menu even where the list around it is read-only for them.
+   */
+  questOwnerEdits?: boolean;
   /** The page's main table: its add row takes the cursor on arrival. */
   autoFocus?: boolean;
   /** Header control. */
@@ -144,8 +147,9 @@ export function ChecklistTable(props: ChecklistTableProps) {
                     </td>
                     <td className="max-md:order-2 max-md:border-0 max-md:p-0">
                       <div className="flex items-center justify-end gap-1">
-                        {canEdit ? (
+                        {canEdit || (props.questOwnerEdits && row.ownedChecklistId && row.canEditQuest) ? (
                           <ChecklistRowActions
+                            canEditRow={canEdit}
                             row={row}
                             taskId={task.id}
                             version={version}
@@ -181,7 +185,6 @@ export function ChecklistTable(props: ChecklistTableProps) {
             action={actions.checklist}
             subMissionAction={actions.submission}
             label={title}
-            questLevel={props.questLevel}
             autoFocus={props.autoFocus}
           />
         </div>
