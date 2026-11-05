@@ -10,7 +10,9 @@
 --
 -- 1. audit_write also keeps the before and after values a person reads on a
 --    mission line: a mission's title, type and dates, a participant's role, a
---    link's label and type, and both missions of a dependency. Only future
+--    link's label and type, and both missions of a dependency; a participant
+--    update also keeps its mission and member (unchanged, so not otherwise
+--    stored). Only future
 --    rows carry them; nothing is backfilled and no other table gains a value.
 -- 2. task_proof_command writes one audit row per file it adds or removes
 --    ('task_proof_add' / 'task_proof_withdraw', table 'task_proofs', the file's
@@ -57,6 +59,16 @@ SELECT pg_temp.m124_patch('taskpulse_private.audit_write()',
      OR (TG_TABLE_NAME='task_links' AND k=ANY(ARRAY['label','link_type']))
      OR (TG_TABLE_NAME='task_dependencies' AND k=ANY(ARRAY['predecessor_task_id','successor_task_id','relation_type']))
      OR k=ANY(ARRAY[$f$);
+
+-- A participant update stores only its changed columns; it also needs its mission
+-- and member to be read on the mission's history.
+SELECT pg_temp.m124_patch('taskpulse_private.audit_write()',
+ $f$  INSERT INTO taskpulse_private.audit_events(organization_id,actor_id,actor_role,command,table_name,row_id,changed_fields,protected_changes)$f$,
+ $f$  IF TG_OP='UPDATE' AND TG_TABLE_NAME IN ('task_assignees','task_reviewers') THEN
+    changes:=jsonb_build_object('task_id',jsonb_build_object('before',o->'task_id','after',n->'task_id'),
+      'user_id',jsonb_build_object('before',o->'user_id','after',n->'user_id'))||changes;
+  END IF;
+  INSERT INTO taskpulse_private.audit_events(organization_id,actor_id,actor_role,command,table_name,row_id,changed_fields,protected_changes)$f$);
 
 -- 2. Mission files are audited ----------------------------------------------
 SELECT pg_temp.m124_patch('public.task_proof_command(text,uuid,text,text,text,integer,uuid,uuid,text)',
