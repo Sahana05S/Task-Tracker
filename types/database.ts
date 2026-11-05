@@ -992,6 +992,7 @@ export interface Database {
       month_setup_preview: { Args: { p_payload: Json }; Returns: Json };
       month_setup_commit: { Args: { p_preview: string; p_operation: string }; Returns: Json };
       /** Migration 54: the activity log read; company-scoped and role-gated in the database. */
+      mission_activity: { Args: { p_task: string; p_before?: Json | null; p_limit?: number | null }; Returns: { id: string; occurred_at: string; action: string; actor_id: string | null; subject_user_id: string | null; record_kind: string | null; record_id: string | null; fields: string[] | null; changes: Json | null; detail: string | null; role: string | null; reason: string | null }[] };
       activity_feed: { Args: { p_from: string; p_to: string; p_kind?: string | null; p_member?: string | null; p_before?: Json | null; p_limit?: number | null }; Returns: { id: string; occurred_at: string; kind: string; action: string; actor_id: string | null; subject_user_id: string | null; task_id: string | null; task_tag: string | null; record_kind: string | null; record_id: string | null; fields: string[] | null; reason: string | null; period: string | null }[] };
       /** Migration 123 adds node_id / quest_title: the Quest the session ran on (null for a mission timer). */
       timer_session_activity: { Args: { p_task: string; p_limit?: number | null }; Returns: { timer_id: string; user_id: string; started_at: string; stopped_at: string; hours: number; notes: string | null; events: Json; node_id: string | null; quest_title: string | null }[] };

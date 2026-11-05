@@ -7,3 +7,5 @@ export type { RecordRevision } from '@/modules/records/internal/revisions';
 export { getActivity, type ActivityPage } from '@/modules/records/internal/activity';
 export { handleActivityExport } from '@/modules/records/internal/activity-export';
 export { ACTIVITY_PAGE, activityFilter, parseCursor, seesAllActivity } from '@/modules/records/internal/activity-mapping';
+export { getMissionActivity } from '@/modules/records/internal/mission-activity';
+export { MISSION_ACTIVITY_PAGE, type MissionActivityEntry, type MissionActivityPage } from '@/modules/records/internal/mission-activity-mapping';
