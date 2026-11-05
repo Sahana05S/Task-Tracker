@@ -285,7 +285,9 @@ for db in DBS:
     added=[r for r in lines if r['record_kind']=='task_assignees' and r['action']=='INSERT' and r['occurred_at']==latest]
     assert sorted(r['subject_user_id'] for r in added)==sorted([M5,M8]) and all(r['actor_id']==MD and r['role'] for r in added),added
     assert not [r for r in lines if r['action']=='save_task_with_participants' and r['occurred_at']==latest],'the save is not repeated beside its people lines'
-    assert any(r['record_kind']=='task_assignees' and r['action']=='UPDATE' and r['subject_user_id']==M4 and r['changes']['share_units']=={'before':1000000,'after':333334} for r in lines),lines[:6]
+    # The equal re-split (121) is recorded (with mission and member) but folded into the add lines.
+    assert value(db,f"count(*) FROM taskpulse_private.audit_events WHERE table_name='task_assignees' AND command='UPDATE' AND protected_changes->'user_id'->>'after'='{M4}' AND protected_changes->'task_id'->>'after'='{mission}' AND protected_changes ? 'share_units'")!='0'
+    assert not [r for r in lines if r['record_kind']=='task_assignees' and r['action']=='UPDATE' and r['occurred_at']==latest],lines[:6]
     team=feed(db,MD,today,today)
     assert [r for r in team if r['action']=='save_task_with_participants' and r['task_tag']=='ACT124'] and not [r for r in team if r['task_tag']=='ACT124' and r['record_kind']=='task_assignees' and r['occurred_at']==latest]
     print('PASS',db,'124: an Edit-dialog add of two people reads as two named Crew lines in the mission history (Team > Activity keeps its one save line)')

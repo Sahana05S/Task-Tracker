@@ -203,6 +203,11 @@ BEGIN
         AND EXISTS (SELECT 1 FROM kept c WHERE NOT c.row_change AND c.tbl = 'tasks' AND c.at = k.at
           AND c.command <> 'save_task_with_participants'))
       AND NOT (
+        -- Crew share equally (121): the automatic re-split when someone joins or
+        -- leaves is part of that line, not a change of its own.
+        k.row_change AND k.command = 'UPDATE' AND k.tbl = 'task_assignees'
+        AND EXISTS (SELECT 1 FROM kept r WHERE r.tbl = 'task_assignees' AND r.command IN ('INSERT', 'DELETE') AND r.at = k.at))
+      AND NOT (
         -- An owner transfer is one line, not its row updates.
         k.row_change AND k.command = 'UPDATE' AND k.tbl = 'task_assignees'
         AND EXISTS (SELECT 1 FROM kept c WHERE c.command = 'task_people_transfer_owner' AND c.at = k.at))

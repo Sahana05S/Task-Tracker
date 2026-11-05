@@ -72,7 +72,8 @@ them. All objects are company-scoped by migrations 39-40 (M15).
   link, dependency and mission-field changes inside a save, so each person
   added or removed is named. A save or people command whose rows are listed
   is not repeated; a lifecycle command (status, progress, scale) keeps one
-  line with its before and after values. Time logs and timer sessions keep
+  line with its before and after values, and the equal Crew re-split (migration
+  121) is part of the add or remove line. Time logs and timer sessions keep
   their own panels. A retried command returns from its receipt and writes no
   second line. Both views use the same words (`activitySummary`).
 - Tests: `tools/test_activity_feed_database.py` (fresh, upgrade, rollback,
