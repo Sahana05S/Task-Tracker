@@ -23,6 +23,7 @@ export {
   type TemplateNode,
 } from '@/modules/tasks/internal/details-contract';
 export { canEditTaskDetails, canManageMissionObservers, canManageTaskPeople, canManageTasks, canMarkMissionDone, canReadMissionWork, canUpdateTaskOwnFields, canWriteMissionFiles, isAssignedToTask, isTaskWorker, missionRelationship } from '@/modules/tasks/internal/permissions';
+export { resolveSubMissionOrigin, type SubMissionOrigin, type SubMissionOriginRow } from '@/modules/tasks/internal/origin';
 export { EMPTY_EFFORT, type TaskEffort } from '@/modules/tasks/internal/effort';
 export { equalParticipantShares, parseSharePercent, TOTAL_SHARE_UNITS } from '@/modules/tasks/internal/shares';
 export { mapTask, mapTasks, TASK_COLUMNS, withTaskParticipants } from '@/modules/tasks/internal/mappers';
