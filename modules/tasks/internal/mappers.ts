@@ -118,14 +118,6 @@ export interface AssigneeRow { task_id: string; user_id: string; is_primary: boo
 /** A `task_reviewers` row; `reviewer_role` is optional for selects that predate observers. */
 export interface ReviewerRow { task_id: string; user_id: string; is_primary: boolean; reviewer_role?: string | null }
 
-/**
- * A zero-share, non-primary assignee row is a collaborator (migration 108).
- * Rows stored as 'Collaborator' with shares are ordinary assignees.
- */
-export function isCollaboratorRow(row: Pick<AssigneeRow, 'is_primary' | 'share_units'>): boolean {
-  return !row.is_primary && row.share_units === 0;
-}
-
 export function isObserverRow(row: Pick<ReviewerRow, 'reviewer_role'>): boolean {
   return row.reviewer_role === 'Observer';
 }
@@ -137,7 +129,6 @@ export function attachTaskParticipants(
 ): Task[] {
   const owners = new Map<string, string[]>();
   const shares = new Map<string, Record<string, number>>();
-  const collaborators = new Map<string, string[]>();
   const reviews = new Map<string, string[]>();
   const observers = new Map<string, string[]>();
   const push = (map: Map<string, string[]>, key: string, id: string, first = false) => {
@@ -148,7 +139,6 @@ export function attachTaskParticipants(
   };
   for (const row of assignees) {
     push(owners, row.task_id, row.user_id, row.is_primary);
-    if (isCollaboratorRow(row)) push(collaborators, row.task_id, row.user_id);
     const units = shares.get(row.task_id) ?? {};
     units[row.user_id] = row.share_units ?? 0;
     shares.set(row.task_id, units);
@@ -162,7 +152,6 @@ export function attachTaskParticipants(
       ...task,
       participantShares: task.participantCreditMode === 'configured' ? shares.get(task.id) ?? {} : null,
     }, { assigneeIds: owners.get(task.id), reviewerIds: reviews.get(task.id) }),
-    collaboratorIds: collaborators.get(task.id) ?? [],
     observerIds: observers.get(task.id) ?? [],
   }));
 }

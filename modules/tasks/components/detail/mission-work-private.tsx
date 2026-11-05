@@ -12,7 +12,7 @@ export function MissionWorkPrivate({ className }: { className?: string }) {
     <MissionNotice icon={LockIcon} role="status" className={className}>
       <p className="font-semibold">This checklist is private to the mission&apos;s people</p>
       <p className="text-muted-foreground mt-1">
-        Its owner, assignees, collaborators, reviewers and observers, and the managing director, can see the checklist, details and files.
+        Its crew, reviewers and observers, and the managing director, can see the checklist, details and files.
       </p>
     </MissionNotice>
   );

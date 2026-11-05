@@ -35,12 +35,13 @@ import {
   canReadMissionWork,
   canWriteMissionFiles,
   canUpdateTaskOwnFields,
-  isTaskWorker,
   getNativeDetailState,
   getNativeTemplates,
   getMissionChoices,
+  getSubMissionOriginRow,
   getTaskProofs,
   normalizeTaskTagParam,
+  resolveSubMissionOrigin,
   resolveTaskDetailRouteState,
 } from '@/modules/tasks';
 import { ChecklistHero } from '@/modules/tasks/components/detail/checklist-summary';
@@ -121,7 +122,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const archived = !!task.archivedEffectiveDate;
   const successor = data.dependencies.find((d) => d.otherTask?.id === task.handoffSuccessorId)?.otherTask;
   const canManage = canManageTasks(currentUser.role) && !archived;
-  // D-A2: the mission's Owner, assignees and collaborators also edit its details (migration 108).
+  // D-A2: the mission's Crew also edit its details (migrations 108, 121).
   const canEditDetails = !archived && canEditTaskDetails(currentUser, task);
   const reviewer = task.reviewerIds.includes(currentUser.id);
   // The checklist and work content belong to the mission's people and the managing director (migration 117).
@@ -179,31 +180,27 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     ? await getMissionActivity(task.id, activityBefore, memberNames).catch(() => null)
     : undefined;
   const nameOf = (id: string) => memberNames.get(id) ?? 'Unknown';
-  // Migration 108: zero-share assignees are collaborators; Observer reviewer rows are observers.
-  const collaboratorIds = task.collaboratorIds ?? [];
+  // Migration 121: everyone on task_assignees is Crew (equal shares); Observer reviewer rows are observers.
+  const crewIds = [...new Set([task.assigneeId, ...task.assigneeIds].filter(Boolean))];
   const observerIds = task.observerIds ?? [];
-  const creditedIds = task.assigneeIds.filter((id) => id !== task.assigneeId && isTaskWorker(task, id));
   const people = {
-    owner: task.assigneeId ? [nameOf(task.assigneeId)] : [],
-    assignees: creditedIds.map(nameOf),
-    collaborators: collaboratorIds.map(nameOf),
+    crew: crewIds.map(nameOf),
     reviewers: task.reviewerIds.map(nameOf),
     observers: observerIds.map(nameOf),
   };
   const related = new Set([task.assigneeId, ...task.assigneeIds, ...task.reviewerIds, ...observerIds]);
   const person = (id: string) => ({ id, name: nameOf(id) });
-  // Collaborators and ownership: managers and the Owner; observers: the managing director, Owner and assignees (117).
-  const canManagePeople = canManageTaskPeople(currentUser, task);
+  // The Crew: the managing director and Managers (legacy missions are reviewed in Edit first);
+  // observers: the managing director, Managers and the Crew (121).
+  const canManagePeople = canManageTaskPeople(currentUser, task) && task.participantCreditMode === 'configured';
   const canManageObservers = canManageMissionObservers(currentUser, task);
   const peopleManager = canManagePeople || canManageObservers ? (
     <MissionPeopleManager
-      canManageCollaborators={canManagePeople}
+      canManageCrew={canManagePeople}
       canManageObservers={canManageObservers}
       taskId={task.id}
       version={task.lifecycleVersion ?? 0}
-      owner={task.assigneeId ? person(task.assigneeId) : null}
-      assignees={task.participantCreditMode === 'configured' ? creditedIds.map(person) : []}
-      collaborators={collaboratorIds.map(person)}
+      crew={crewIds.map(person)}
       observers={observerIds.map(person)}
       candidates={data.members.filter((member) => member.isActive && !related.has(member.id)).map((member) => ({ id: member.id, name: member.fullName }))}
     />
@@ -211,6 +208,9 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
 
   const checklistHref = `/tasks/${encodeURIComponent(task.taskTag)}/checklist`;
   const family = subMissionFamily(task.id, data.dependencies);
+  // "Created from TAG › row": the exact parent row when the viewer may read the parent's
+  // checklist (migration 117); otherwise only the parent mission ("Part of TAG").
+  const origin = resolveSubMissionOrigin(family.parent, family.parent ? await getSubMissionOriginRow(task.id, family.parent.id) : null);
   const closed = task.status === 'Done' || task.status === 'Discarded';
   const overdue = isOverdue(task.dueDate) && !closed;
 
@@ -241,9 +241,14 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             />
             <PriorityBadge priority={task.priority} />
             <FreshnessIndicator freshness={task.freshness} className="ml-1" />
-            {family.parent ? (
-              <Link href={`/tasks/${encodeURIComponent(family.parent.taskTag)}`} className="badge-soft badge-neutral hover:underline">
-                Part of {family.parent.taskTag}
+            {origin?.kind === 'row' ? (
+              <Link href={origin.href} title={`Created from ${origin.parentTag} › ${origin.path}`} className="badge-soft badge-neutral inline-flex max-w-full min-w-0 items-center gap-1 hover:underline">
+                <span className="shrink-0">Created from {origin.parentTag} ›</span>
+                <span className="min-w-0 truncate">{origin.label}</span>
+              </Link>
+            ) : origin ? (
+              <Link href={origin.href} className="badge-soft badge-neutral hover:underline">
+                Part of {origin.parentTag}
               </Link>
             ) : null}
             {archived ? (

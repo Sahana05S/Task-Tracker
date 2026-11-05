@@ -130,9 +130,9 @@ interface MissionCardProps {
   assigneeNames: readonly string[];
   effort: TaskEffort;
   canEditOwnFields: boolean;
-  /** Only assignees can time a mission; the database refuses anyone else. */
+  /** Only the Crew can time a mission; the database refuses anyone else. */
   isAssignee: boolean;
-  /** Assigned with a share; collaborators do not log time (migration 108). */
+  /** On the Crew, so they log time (migration 121). */
   isWorker: boolean;
   /** Sees the checklist and work (migration 117); otherwise no checklist link is shown. */
   canReadWork: boolean;

@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canManageMissionObservers,
+  canManageTaskPeople,
   canManageTasks,
   canMarkMissionDone,
   canReadMissionWork,
   canUpdateTaskOwnFields,
   canWriteMissionFiles,
   isAssignedToTask,
+  missionRelationship,
 } from '@/modules/tasks/internal/permissions';
 
 const task = {
@@ -48,11 +50,10 @@ describe('task permissions', () => {
   });
 });
 
-// 4 November 2026 (migration 117): owner, assignee, collaborator, reviewer, observer.
+// Migrations 117 and 121: Crew (owner, mate, collab are all Crew), reviewer, observer.
 const mission = {
   assigneeId: 'owner',
   assigneeIds: ['owner', 'mate', 'collab'],
-  collaboratorIds: ['collab'],
   reviewerIds: ['reviewer'],
   observerIds: ['observer'],
   archivedEffectiveDate: null,
@@ -69,8 +70,10 @@ describe('mission work visibility and role tightenings', () => {
     expect(canReadMissionWork(member('outsider'), mission)).toBe(false);
   });
 
-  it('keeps Done from collaborators only', () => {
-    expect(canMarkMissionDone(member('collab'), mission)).toBe(false);
+  it('lets every Crew member and managers mark Done (121)', () => {
+    expect(canMarkMissionDone(member('collab'), mission)).toBe(true);
+    expect(canMarkMissionDone(member('observer'), mission)).toBe(false);
+    expect(canMarkMissionDone(member('reviewer'), mission)).toBe(false);
     expect(canMarkMissionDone(member('owner'), mission)).toBe(true);
     expect(canMarkMissionDone(member('mate'), mission)).toBe(true);
     expect(canMarkMissionDone(member('pe', 'project_engineer'), mission)).toBe(true);
@@ -83,12 +86,26 @@ describe('mission work visibility and role tightenings', () => {
     expect(canWriteMissionFiles(member('pe', 'project_engineer'), mission)).toBe(false);
   });
 
-  it('lets the managing director, the owner and assignees choose observers', () => {
+  it('lets the managing director, Managers and the Crew choose observers (121)', () => {
     expect(canManageMissionObservers(member('md', 'managing_director'), mission)).toBe(true);
-    expect(canManageMissionObservers(member('owner'), mission)).toBe(true);
-    expect(canManageMissionObservers(member('mate'), mission)).toBe(true);
-    expect(canManageMissionObservers(member('collab'), mission)).toBe(false);
+    expect(canManageMissionObservers(member('pe', 'project_engineer'), mission)).toBe(true);
+    for (const id of ['owner', 'mate', 'collab']) expect(canManageMissionObservers(member(id), mission)).toBe(true);
     expect(canManageMissionObservers(member('reviewer'), mission)).toBe(false);
-    expect(canManageMissionObservers(member('pe', 'project_engineer'), mission)).toBe(false);
+    expect(canManageMissionObservers(member('observer'), mission)).toBe(false);
+  });
+
+  it('keeps the Crew with the managing director and Managers; no Owner branch (121)', () => {
+    expect(canManageTaskPeople(member('md', 'managing_director'), mission)).toBe(true);
+    expect(canManageTaskPeople(member('pe', 'project_engineer'), mission)).toBe(true);
+    expect(canManageTaskPeople(member('owner'), mission)).toBe(false);
+    expect(canManageTaskPeople(member('mate'), mission)).toBe(false);
+    expect(canManageTaskPeople(member('md', 'managing_director'), { ...mission, status: 'Done' })).toBe(false);
+  });
+
+  it('calls every assignee row Crew', () => {
+    for (const id of ['owner', 'mate', 'collab']) expect(missionRelationship(mission, id)).toBe('crew');
+    expect(missionRelationship(mission, 'reviewer')).toBe('reviewer');
+    expect(missionRelationship(mission, 'observer')).toBe('observer');
+    expect(missionRelationship(mission, 'outsider')).toBeNull();
   });
 });

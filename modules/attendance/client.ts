@@ -41,3 +41,4 @@ export {
   type CheckInMark,
 } from './internal/check-in-model';
 export { blockDuration, CHECK_IN_NOTES, checkInMessage, checkOutMessage, firstName, formatTimeBlocks, greetingFor, noteFor, shareTime, timeBlockDay, type BlockManualEntry, type BlockSession, type BreakTimes, type TimeBlock, type TimeBlockDay, type TimeBlockMission } from './internal/share-message';
+export { cancelHandoff, HANDOFF_TTL_MS, handoffSaved, handoffStep, runHandoff, startHandoff, type Handoff, type HandoffStep } from './internal/whatsapp-handoff';

@@ -162,7 +162,7 @@ export async function getTaskDetailData(
     throw new Error(`Failed to load members: ${memberResult.error.message}`);
   }
 
-  // Collaborators (zero share) and observers are told apart here (migration 108).
+  // Observers are told apart from reviewers here (migration 108); every assignee row is Crew (121).
   [task] = attachTaskParticipants([task], assigneeRows, reviewerRows);
 
   const checklist = checklistRow ? mapTaskChecklist(checklistRow) : null;

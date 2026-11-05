@@ -97,7 +97,7 @@ export async function createTaskWithScale(
   return { ok: true, value: data };
 }
 
-/** Adds or removes a collaborator or observer, or transfers ownership (migration 108). */
+/** Adds or removes a Crew member or an observer (migrations 108, 121). */
 export async function runTaskPeopleCommand(
   taskId: string,
   command: string,
