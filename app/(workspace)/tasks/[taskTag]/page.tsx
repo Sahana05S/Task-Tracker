@@ -22,10 +22,11 @@ import {
   PriorityBadge,
 } from '@/shared/ui/tracker-badges';
 import { getObjectiveReviews, getTaskEffortBreakdown } from '@/modules/checklists';
-import { CHECKLIST_SECTIONS, NO_REVIEWS, reviewsAwaiting, sentBackIndex } from '@/modules/checklists/client';
+import { CHECKLIST_SECTIONS, NO_REVIEWS, checklistWorkHref, reviewsAwaiting, sentBackIndex } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
 import { ObjectiveReviewProvider, ObjectiveReviewQueue } from '@/modules/checklists/components/objective-review';
-import { canStartTimerForTask, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
+import { canStartTimerForTask, getQuestTimes, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
+import { QuestTimerList } from '@/modules/time-tracking/components/quest-timers';
 import {
   canEditTaskDetails,
   canManageMissionObservers,
@@ -134,7 +135,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const tab: Tab = tabs.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
   const canWriteFiles = canWriteMissionFiles(currentUser, task);
-  const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews, driveReady] = await Promise.all([
+  const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews, driveReady, quests] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details && canReadWork ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
@@ -154,6 +155,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab === 'work' && !archived && canReadWork ? getObjectiveReviews(task.id).catch(() => NO_REVIEWS) : Promise.resolve(NO_REVIEWS),
     // Whether uploads reach the Shared Drive yet, so the Files panel words it honestly.
     tab === 'work' && canReadWork ? isFileStorageReady() : Promise.resolve(false),
+    // Quests and their time (migration 123): a mission with Quests is timed on them. Null keeps the mission timer.
+    tab !== 'details' && canReadWork ? getQuestTimes(task.id) : Promise.resolve(null),
   ]);
   // Labels (migration 112): the mission's own on every tab (header chips); the catalogue and each
   // learning note's on the Details tab. Null hides them.
@@ -170,8 +173,11 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const visibleTimers = canManage
     ? execution.timers
     : execution.timers.filter((timer) => timer.userId === currentUser.id);
+  // The mission timer (no Quest); one started before the mission had Quests can still be stopped.
   const activeCurrentTimer =
-    execution.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running') ?? null;
+    execution.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running' && !timer.nodeId) ?? null;
+  const hasQuests = (quests?.length ?? 0) > 0;
+  const questTitles = new Map((quests ?? []).map((quest) => [quest.nodeId, quest.title]));
 
   const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
   // Mission activity (migration 124): who changed what on this mission; only its people read it.
@@ -362,7 +368,20 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
             <MissionPanel icon={TimerIcon} title="Time" subtitle={`${formatHours(data.effort.hoursLogged)} h logged`}>
               <div className="grid gap-5">
-                <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
+                {hasQuests ? (
+                  <>
+                    <QuestTimerList
+                      taskId={task.id}
+                      taskTag={task.taskTag}
+                      quests={quests!}
+                      canTime={canUseTimer && !closed}
+                      questHref={(quest) => checklistWorkHref(task.taskTag, { checklistId: quest.ownedChecklistId, section: 'activity' })}
+                    />
+                    {activeCurrentTimer ? <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} /> : null}
+                  </>
+                ) : (
+                  <TimerControl taskTag={task.taskTag} activeTimer={activeCurrentTimer} canUseTimer={canUseTimer} />
+                )}
                 {canUseTimer ? (
                   <details className="group border-border border-t pt-4">
                     <summary className="text-foreground flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
@@ -467,6 +486,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               canManage={canManage}
               currentUserId={currentUser.id}
               sessionActivity={sessionActivity?.available ? sessionActivity.sessions : undefined}
+              questTitles={questTitles}
             />
           </MissionPanel>
         </div>

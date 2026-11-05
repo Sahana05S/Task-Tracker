@@ -13,6 +13,8 @@ import { ChecklistWorkspace, type ChecklistHomeSection } from '@/modules/checkli
 import { checklistCommand } from '@/modules/checklists/actions';
 import { createSubMission } from '@/modules/tasks/actions';
 import { getMemberNames } from '@/modules/team';
+import { canStartTimerForTask } from '@/modules/time-tracking/client';
+import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 
 type Params = Promise<{ taskTag: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -77,7 +79,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
 
   const manager = canManageTasks(user.role);
   const checklistId = branch.checklist?.id;
-  // One mission timer (3 November 2026): the checklist reads no row timers.
+  // Quests carry the timers (migration 123); other rows have none.
   const [names, linkChoices, unmapped, reviews] = await Promise.all([
     getMemberNames().catch((): Record<string, string> => ({})),
     manager ? getMissionChoices().then(choices => choices.filter(t => t.id !== task.id)) : [],
@@ -109,6 +111,9 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       reviews={reviews}
       memberNames={names}
       headerActions={<MissionActionsMenu taskId={task.id} taskTag={task.taskTag} variant="button" />}
+      questTimer={canStartTimerForTask(user, task) ? (quest, place) => (
+        <TimerButton taskId={task.id} taskLabel={task.taskTag} nodeId={quest.nodeId} questTitle={quest.title} size={place === 'hero' ? 'default' : 'sm'} compact={place === 'row'} />
+      ) : undefined}
     />
   );
 }

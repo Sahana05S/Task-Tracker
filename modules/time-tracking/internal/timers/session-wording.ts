@@ -10,12 +10,15 @@ export interface TimerSessionEvent {
 export interface TimerSessionActivity {
   readonly timerId: string;
   readonly events: readonly TimerSessionEvent[];
+  /** The Quest the session ran on (migration 123); null for a mission timer or an older database. */
+  readonly nodeId?: string | null;
+  readonly questTitle?: string | null;
 }
 
 const asText = (value: unknown): string | null => (typeof value === 'string' && value ? value : null);
 
 /** A `timer_session_activity` row into its events; malformed entries are dropped. */
-export function mapSessionActivity(row: { timer_id: string; events: Json }): TimerSessionActivity {
+export function mapSessionActivity(row: { timer_id: string; events: Json; node_id?: string | null; quest_title?: string | null }): TimerSessionActivity {
   const list = Array.isArray(row.events) ? row.events : [];
   const events = list.flatMap((entry) => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
@@ -23,7 +26,7 @@ export function mapSessionActivity(row: { timer_id: string; events: Json }): Tim
     const action = asText(entry.action);
     return at && action ? [{ at, action, nodeTitle: asText(entry.nodeTitle), state: asText(entry.state) }] : [];
   });
-  return { timerId: row.timer_id, events };
+  return { timerId: row.timer_id, events, nodeId: row.node_id ?? null, questTitle: row.quest_title ?? null };
 }
 
 // Checklist commands are stored as checklist_<command>; mission commands by their own name.

@@ -100,6 +100,7 @@ export function TimerRecords({
   canManage,
   currentUserId,
   sessionActivity,
+  questTitles,
 }: {
   timers: readonly TaskTimer[];
   memberNames: ReadonlyMap<string, string>;
@@ -108,16 +109,19 @@ export function TimerRecords({
   currentUserId: string;
   /** What each stopped session covered (migration 110), by timer id; absent when unavailable. */
   sessionActivity?: ReadonlyMap<string, TimerSessionActivity>;
+  /** The mission's Quest titles by node id (migration 123), to group sessions by Quest. */
+  questTitles?: ReadonlyMap<string, string>;
 }) {
   if (timers.length === 0) {
     return (
-      <EmptyState title="No timer sessions yet">Start the timer on this mission to log time as you work.</EmptyState>
+      <EmptyState title="No timer sessions yet">Start a timer on this mission or one of its Quests to log time as you work.</EmptyState>
     );
   }
 
-  return (
+  const groups = groupTimersByQuest(timers, questTitles, sessionActivity);
+  const list = (group: readonly TaskTimer[]) => (
     <div className="grid gap-2">
-      {timers.map((timer) => {
+      {group.map((timer) => {
         const canManageThisTimer = canManage || timer.userId === currentUserId;
 
         return (
@@ -166,6 +170,50 @@ export function TimerRecords({
       })}
     </div>
   );
+
+  // Missions without Quests keep one plain list; otherwise one heading per Quest (newest first).
+  if (groups.length === 1 && groups[0].nodeId === null) return list(groups[0].timers);
+  return (
+    <div className="grid gap-4">
+      {groups.map((group) => (
+        <section key={group.nodeId ?? 'mission'} aria-label={group.title} className="grid gap-2">
+          <h3 className="text-foreground flex items-baseline justify-between gap-2 text-sm font-semibold">
+            <span className="min-w-0 truncate">{group.title}</span>
+            <span className="text-muted-foreground shrink-0 text-xs font-normal tabular-nums">{formatElapsed(group.seconds)}</span>
+          </h3>
+          {list(group.timers)}
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Timer records grouped by the Quest they ran on (migration 123), groups in
+ * order of their latest session; mission-timer records form their own group.
+ * Every record is kept: a Quest no longer listed keeps its sessions under the
+ * title the session read gave, or "Earlier checklist row".
+ */
+export function groupTimersByQuest(
+  timers: readonly TaskTimer[],
+  questTitles?: ReadonlyMap<string, string>,
+  sessionActivity?: ReadonlyMap<string, TimerSessionActivity>,
+): { nodeId: string | null; title: string; seconds: number; timers: TaskTimer[] }[] {
+  const groups = new Map<string | null, { nodeId: string | null; title: string; seconds: number; latest: string; timers: TaskTimer[] }>();
+  for (const timer of timers) {
+    const nodeId = timer.nodeId ?? null;
+    const title = nodeId === null ? 'Mission timer'
+      : questTitles?.get(nodeId) ?? sessionActivity?.get(timer.id)?.questTitle ?? 'Earlier checklist row';
+    const group = groups.get(nodeId) ?? { nodeId, title, seconds: 0, latest: timer.startedAt, timers: [] };
+    if (group.title === 'Earlier checklist row' && title !== group.title) group.title = title;
+    group.timers.push(timer);
+    if (timer.status === 'Stopped') group.seconds += timer.elapsedSeconds;
+    if (timer.startedAt > group.latest) group.latest = timer.startedAt;
+    groups.set(nodeId, group);
+  }
+  return [...groups.values()]
+    .sort((a, b) => (a.latest < b.latest ? 1 : a.latest > b.latest ? -1 : 0))
+    .map(({ nodeId, title, seconds, timers: list }) => ({ nodeId, title, seconds, timers: list }));
 }
 
 /** "During this session: …" under a stopped timer, with every change listed on request. */

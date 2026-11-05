@@ -1,4 +1,4 @@
-"""Migration 110: timer_session_activity, the commands a person ran on a mission while their timer ran.
+"""Migrations 110, 118 and 123: timer_session_activity, the commands a person ran on a mission while their timer ran.
 Read only, owner-or-manager visibility, company scoped. Disposable PostgreSQL checks; JWT shim only."""
 from pathlib import Path
 source=Path(__file__).with_name('test_m09_database.py').read_text(encoding='utf-8')
@@ -77,7 +77,7 @@ other=first_json(actor(DB,uid_of('5'),f"SELECT public.start_task_timer('{T3}','{
 assert value(DB,f"count(*) FROM public.task_timers WHERE user_id='{uid_of('5')}' AND status='Running'")=='2'
 raw=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',DB,'-v','ON_ERROR_STOP=1','-At'],text=True,capture_output=True,
     input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid_of('5')}',true); SELECT public.start_task_timer('{T3}','{{}}'::jsonb,'{uuid4()}'); COMMIT;")
-assert raw.returncode!=0 and 'idx_task_timers_one_running_per_mission' in raw.stderr,raw.stderr
+assert raw.returncode!=0 and 'idx_task_timers_one_running_per_quest' in raw.stderr,raw.stderr  # 118's index, keyed by Quest since 123
 print('PASS',DB,'two missions\' timers run at once; the same mission twice is refused')
 
 # Offline spans on both missions yesterday, 09:00-13:00 and 11:00-14:00 India time.
@@ -107,5 +107,77 @@ offline(T2,"clock_timestamp()-interval '15 minutes'","clock_timestamp()-interval
 assert value(DB,f"status FROM public.task_timers WHERE id='{other['timerId']}'")=='Running'
 print('PASS',DB,'offline spans are recorded beside running timers')
 
+# Migration 123: Quest timers. Member 5 is T4's Crew; the managing director (1) may time any mission.
+T4='10000000-0000-0000-0000-000000000004'
+assert value(DB,"count(*) FROM pg_indexes WHERE indexname IN ('idx_task_timers_one_running_per_mission','idx_task_timers_one_running_per_quest')")=='1'
+sql(DB,f"INSERT INTO public.tasks(id,task_tag,title,assignee_id,task_scale) VALUES ('{T4}','T4','Quests','{uid_of('5')}',4)")
+if value(DB,f"count(*) FROM public.task_checklists WHERE task_id='{T4}' AND owner_node_id IS NULL")=='0':
+    sql(DB,f"INSERT INTO public.task_checklists(task_id,title) VALUES('{T4}','C4')")
+def cl4(cmd,payload,uid='5'):
+    v=int(value(DB,f"lifecycle_version FROM public.tasks WHERE id='{T4}'"))
+    return first_json(actor(DB,uid_of(uid),f"SELECT public.checklist_command('{T4}',{literal(cmd)},{literal(json.dumps(payload))}::jsonb,{v},'{uuid4()}')"))
+def refusal(uid,statement):
+    r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',DB,'-v','ON_ERROR_STOP=1','-At'],text=True,capture_output=True,
+        input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid_of(uid)}',true); {statement}; COMMIT;")
+    assert r.returncode!=0,r.stdout
+    return r.stderr
+def quest_timer(node,uid='5',key=None):
+    return first_json(actor(DB,uid_of(uid),f"SELECT public.start_checklist_item_timer('{node}','{{}}'::jsonb,'{key or uuid4()}')"))
+quest_start=lambda node:f"SELECT public.start_checklist_item_timer('{node}','{{}}'::jsonb,'{uuid4()}')"
+mission_start=lambda:f"SELECT public.start_task_timer('{T4}','{{}}'::jsonb,'{uuid4()}')"  # a fresh operation id each time
+
+# Before it has Quests the mission keeps its mission timer.
+before=first_json(actor(DB,uid_of('5'),mission_start()))
+call(DB,'discard_task_timer',before['timerId'],{'reason':'before the Quests'},version=0,uid='5')
+survey=cl4('submission',{'title':'Survey','section':'activity','priority':3})
+drawings=cl4('submission',{'title':'Drawings','section':'activity','priority':3})
+elevation=cl4('submission',{'title':'Elevation','section':'activity','priority':3,'checklist_id':drawings['ownedChecklistId']})
+plain=cl4('add',{'title':'Plain objective','section':'activity'})['nodeId']
+assert 'timed on its Quests' in refusal('5',mission_start())
+print('PASS',DB,'a mission timer runs while the mission has no Quests and is refused once it has some')
+
+key=str(uuid4())
+mine=quest_timer(survey['nodeId'],key=key)
+assert mine['nodeId']==survey['nodeId'] and quest_timer(survey['nodeId'],key=key)['timerId']==mine['timerId'],'replay returns the same timer'
+other=quest_timer(drawings['nodeId'])
+director=quest_timer(survey['nodeId'],uid='1')
+running=value(DB,f"string_agg(user_id::text||':'||checklist_node_id::text,',' ORDER BY user_id,checklist_node_id) FROM public.task_timers WHERE task_id='{T4}' AND status='Running'")
+assert running==','.join(sorted([f"{uid_of('1')}:{survey['nodeId']}",f"{uid_of('5')}:{drawings['nodeId']}",f"{uid_of('5')}:{survey['nodeId']}"])),running
+print('PASS',DB,'two people time one Quest; one person times two Quests at once; a replay returns its timer')
+
+assert 'already running on this Quest' in refusal('5',quest_start(survey['nodeId']))
+assert 'not a Quest' in refusal('5',quest_start(plain))
+assert 'Crew' in refusal('4',quest_start(survey['nodeId']))
+refusal('7',quest_start(survey['nodeId']))
+sql(DB,f"INSERT INTO public.task_timers(task_id,user_id,checklist_node_id) VALUES('{T4}','{uid_of('6')}','{survey['nodeId']}')",success=False)
+print('PASS',DB,'the same Quest twice, a non-Quest row, someone not on the Crew, an inactive account and a forged Quest tag are refused')
+
+# Offline spans by the director yesterday: Survey 09:00-13:00 and Elevation (inside Drawings) 11:00-14:00.
+grant1=sql(DB,f"INSERT INTO taskpulse_private.offline_grants(organization_id,user_id,issued_at) SELECT organization_id,id,clock_timestamp()-interval '60 hours' FROM public.users WHERE id='{uid_of('1')}' RETURNING id").splitlines()[0]
+def offline_quest(node,start,end):
+    return first_json(actor(DB,uid_of('1'),f"SELECT public.record_offline_timer('{T4}','{node}',({start})::timestamptz,({end})::timestamptz,'{grant1}','{uuid4()}',NULL)"))
+offline_quest(survey['nodeId'],at('09:00'),at('13:00')); offline_quest(elevation['nodeId'],at('11:00'),at('14:00'))
+assert float(value(DB,f"sum(hours_worked) FROM public.daily_task_logs WHERE task_id='{T4}' AND user_id='{uid_of('1')}' AND log_date='{day}' AND reversed_at IS NULL"))==7
+assert float(value(DB,f"taskpulse_private.member_day_hours('{uid_of('1')}','{day}')"))==5
+print('PASS',DB,'task hours keep each Quest in full (7 h); the day\'s hours merge to 5 h')
+
+times=lambda uid:{r['node_id']:r for r in json.loads(next(x for x in actor(DB,uid_of(uid),f"SELECT coalesce(jsonb_agg(to_jsonb(q)),'[]') FROM public.quest_time('{T4}') q") if x.startswith('[')))}
+q=times('5')
+assert (q[survey['nodeId']]['own_seconds'],q[survey['nodeId']]['total_seconds'])==(14400,14400),q
+assert (q[drawings['nodeId']]['own_seconds'],q[drawings['nodeId']]['total_seconds'])==(0,10800),q
+assert q[elevation['nodeId']]['total_seconds']==10800 and q[elevation['nodeId']]['parent_quest_id']==drawings['nodeId'],q
+assert q[survey['nodeId']]['parent_quest_id'] is None and q[survey['nodeId']]['title']=='Survey' and q[survey['nodeId']]['assignee_id']==uid_of('5'),q
+assert times('1')==q
+refusal('4',f"SELECT * FROM public.quest_time('{T4}')"); refusal('7',f"SELECT * FROM public.quest_time('{T4}')")
+print('PASS',DB,'quest_time gives each Quest its own time and its sub-Quests\' time; outsiders and inactive accounts refused')
+
+sql(DB,f"UPDATE public.task_timers SET started_at=clock_timestamp()-interval '10 minutes' WHERE id='{mine['timerId']}'")
+call(DB,'stop_task_timer',mine['timerId'],{'notes':'Site survey'},version=0,uid='5')
+s=[x for x in sessions('5',task=T4) if x['timer_id']==mine['timerId']][0]
+assert s['node_id']==survey['nodeId'] and s['quest_title']=='Survey',s
+assert value(DB,f"count(*) FROM public.task_timers WHERE task_id='{T4}'")=='6' and value(DB,f"status FROM public.task_timers WHERE id='{before['timerId']}'")=='Discarded'
+assert value(DB,f"status FROM public.task_timers WHERE id='{other['timerId']}'")=='Running' and value(DB,f"status FROM public.task_timers WHERE id='{director['timerId']}'")=='Running'
+print('PASS',DB,'a stopped Quest session names its Quest; other running timers and earlier records are untouched')
+
 sql('postgres',f'DROP DATABASE IF EXISTS {DB} WITH (FORCE);')
-print('ALL PASS timer session activity (migration 110) and concurrent timers (migration 118)')
+print('ALL PASS timer session activity (migration 110), concurrent timers (migration 118) and Quest timers (migration 123)')

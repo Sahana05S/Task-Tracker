@@ -7,7 +7,12 @@ time recorded against checklist rows before 3 November 2026 (item timers
 saved ordinary task logs tagged with the row; since then time is kept by the
 mission timer only, and the per-row timer, Est. and Elapsed columns are gone
 from every view, update plan section 5; the data and `getChecklistItemTime`
-reads stay).
+reads stay). Since migration 123 (5 November 2026) Quests carry timers again: a Quest
+row in `ChecklistTable` and a Quest's home in `ChecklistWorkspace` show a
+Start/Stop through the `questTimer` slot (`QuestTimerSlot`), which the checklist
+page fills with time-tracking's `TimerButton`, so this module never imports
+time-tracking (that would close the cycle tasks > checklists > time-tracking >
+tasks). Ordinary rows have no timer.
 
 Since migration 63 (user decisions, 23 October 2026) any row that is not linked
 to a mission can have rows added under it. A row with rows under it takes their
@@ -130,7 +135,7 @@ the review sheet for those who decide; `ObjectiveReviewNote` shows the note; the
 | `index.ts` | Server reads: `getObjectiveReviews` (114), `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`, `getChecklistBranch`, `getUnmappedRootRows`, `getFocusedChecklistItemTime`, `getRunningChecklistTimers`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, tree helpers (`childrenOf`, `ancestry`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours`, table rules (`rowKind`, `stateChoices`, `NOT_DONE`, `nextCompletionState`, `completionWords`, `rowStatus`, `opensTable`, `pageResult`, `sectionStatus`, `checklistIssues`, `SECTION_TITLES`), addresses (`checklistWorkHref`, `parseChecklistLocation`, `openChecklistRow`), objective review rules (`reviewChip`, `canDecideObjective`, `mayReviewObjectives`, `reviewStateAfterTick`, `reviewDecisionError`, `blockingReviews`, `reviewsAwaiting`, `parseObjectiveReviews`, `sentBackIndex`, `NO_REVIEWS`) |
 | `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode, review, submission, assign); a version conflict returns `errorCode: 'conflict'`. `loadChecklistRows` (Outline), `loadObjectiveReviews` (Today's item work) |
-| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / N/A, tap again to clear; commands queued so each sends the latest mission version), `objective-details.tsx` (`ObjectiveTick`, `ObjectiveDetails`, `ObjectiveRowStatus`, `ObjectiveLinks`: the same details in every view), `ChecklistItemWork` (Today), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `quest-owner.tsx` (`QuestCrewProvider`, `QuestOwnerSelect`, `AssignQuestForm`, 122), `checklist-rows.tsx` (shared command fields), `objective-review.tsx` (`ObjectiveReviewProvider`, `ObjectiveReviewChip` with the review sheet, `ObjectiveReviewNote`, `useRowChangesNeeded` / `useSectionChangesNeeded`, `ObjectiveReviewQueue` for the mission page) |
+| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables, with a `questTimer` slot for Quest timers; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / N/A, tap again to clear; commands queued so each sends the latest mission version), `objective-details.tsx` (`ObjectiveTick`, `ObjectiveDetails`, `ObjectiveRowStatus`, `ObjectiveLinks`: the same details in every view), `ChecklistItemWork` (Today), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `quest-owner.tsx` (`QuestCrewProvider`, `QuestOwnerSelect`, `AssignQuestForm`, 122), `checklist-rows.tsx` (shared command fields), `objective-review.tsx` (`ObjectiveReviewProvider`, `ObjectiveReviewChip` with the review sheet, `ObjectiveReviewNote`, `useRowChangesNeeded` / `useSectionChangesNeeded`, `ObjectiveReviewQueue` for the mission page) |
 
 ## Private (`internal/`)
 
