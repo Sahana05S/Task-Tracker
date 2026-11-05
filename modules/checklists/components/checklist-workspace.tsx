@@ -21,6 +21,7 @@ import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-ca
 import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
 import { ObjectiveReviewProvider } from './objective-review';
+import { QuestCrewProvider } from './quest-owner';
 import { NO_REVIEWS, sentBackIndex, type ObjectiveReviews } from '../internal/review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
@@ -55,6 +56,11 @@ export interface ChecklistWorkspaceProps {
   page?: ChecklistPageView;
   manager: boolean;
   executor: boolean;
+  /** Whether the viewer may change this list's rows (`checklist_branch.canEdit`, migration 122). */
+  listEditable?: boolean;
+  /** The mission's Crew, for Quest owner pickers (migration 122), and the viewer. */
+  crew?: readonly { id: string; name: string }[];
+  viewerId?: string;
   selectedItem?: string;
   /** Managers: where progress comes from, missions to link, and rows that still need a section. */
   managerTools?: {
@@ -97,7 +103,8 @@ function moveTargets(rows: readonly ChecklistBranchRow[], up: { id: string | nul
 export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const { task, checklist, ancestors, rollup, version, manager, executor } = props;
   const open = !task.archivedEffectiveDate && !['Done', 'Discarded'].includes(task.status);
-  const canEdit = executor && open;
+  // Inside a Quest only its owner, the owners above it and managers change rows (migration 122).
+  const canEdit = executor && open && props.listEditable !== false;
   const missionHref = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const homeHref = checklistWorkHref(task.taskTag);
   const section = props.page?.section ?? 'activity';
@@ -125,18 +132,17 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const sentBack = sentBackIndex(props.reviews ?? NO_REVIEWS);
   const changesIn = (key: ChecklistSection) => !!checklist && sentBack.hasSection(checklist.id, key);
   const view: ChecklistView = props.view ?? 'table';
-  const cardCtx = { task, canEdit, version, action: props.actions.checklist };
+  const cardCtx = { task, canEdit, version, action: props.actions.checklist, crewEdits: executor && open };
   // A Quest is one list of objectives (decision 25 Oct 2026): its home shows that list, plus any
   // Setup or Closure rows a closed mission's Quest still holds from before.
   const inQuest = !!checklist?.ownerNodeId;
-  // Quests nest three levels deep (D-B1, migration 109): each Quest above this list is one level.
-  const questLevel = ancestors.filter((ancestor) => ancestor.ownedChecklistId).length;
   const homeSections = quest ? props.sections?.filter((home) => home.section === 'activity' || home.rows.length > 0) : props.sections;
   const sectionTitle = (key: ChecklistSection) => (inQuest && key === 'activity' ? 'Objectives' : SECTION_TITLES[key].title);
   // Said once, instead of an add box that silently is not there (user report, 28 Oct 2026).
   const addBlocked = canEdit ? null
     : task.archivedEffectiveDate ? 'This mission is archived, so its checklist is read-only.'
     : !open ? `This mission is ${task.status}. A manager can reopen it to add or change rows.`
+    : executor && props.listEditable === false ? 'Only this Quest’s owner, the owners of the Quests above it and managers can add or change its rows.'
     : 'Only managers and the people on this mission can add or change rows.';
   const addRowFor = (section: ChecklistSection, parentId: string | null = null) => canEdit && checklist ? (
     <ChecklistAddRow
@@ -148,7 +154,6 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       action={props.actions.checklist}
       subMissionAction={tableActions.submission}
       label={sectionTitle(section)}
-      questLevel={questLevel}
       autoFocus={parentId !== null || section === 'activity'}
     />
   ) : null;
@@ -183,7 +188,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 selectedItem={props.selectedItem}
                 {...shared}
                 moveTargets={moveTargets(home.rows, null)}
-                questLevel={questLevel}
+                questOwnerEdits={executor && open}
                 autoFocus={home.section === 'activity'}
                 emptyText={quest && home.section === 'activity' ? (canEdit ? 'No objectives yet. Add the first one below.' : 'No objectives yet.') : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
                 footer={<Paging taskTag={task.taskTag} address={address} cursor={home.cursor} nextCursor={home.nextCursor} />}
@@ -214,7 +219,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             section={props.page.section}
             addParentId={props.page.nodeId}
             canEdit={canEdit}
-            questLevel={questLevel}
+            questOwnerEdits={executor && open}
             autoFocus
             actions={tableActions}
             selectedItem={props.selectedItem}
@@ -230,6 +235,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   return (
     <ChecklistVersionProvider version={version}>
       <ObjectiveReviewProvider taskId={task.id} version={version} action={props.actions.checklist} reviews={props.reviews} names={props.memberNames}>
+      <QuestCrewProvider crew={props.crew ?? []} viewerId={props.viewerId ?? null}>
       <MissionPage>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
@@ -262,6 +268,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
           </>
         )}
       </MissionPage>
+      </QuestCrewProvider>
       </ObjectiveReviewProvider>
     </ChecklistVersionProvider>
   );

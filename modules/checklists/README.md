@@ -45,16 +45,37 @@ closed missions keep any Setup / Closure rows they had.
 Since migration 109 (user decisions, 3 November 2026) the interface calls a
 ticked row an **Objective** (the database still stores `node_type = 'Item'`,
 and `rowKind()` still returns `'item'`), and a Quest may hold Objectives,
-Quests (sub-quests) and Sub-missions, **at most three levels of Quest** deep
-(D-B1). `quest_depth_guard` replaces migration 77's item-only triggers: rows in
-a Quest stay in its single list and a fourth Quest level is refused; the add
-row stops offering Quest at the third level (`MAX_QUEST_LEVEL`).
+Quests (sub-quests) and Sub-missions, at first at most three levels of Quest
+deep (D-B1; the limit was lifted by 122, below). `quest_depth_guard` replaces
+migration 77's item-only triggers: rows in a Quest stay in its single list.
 `checklist_node_result` reads each Quest's own list through its path argument,
 so nested work counts once and the weights of migration 85 are unchanged; the
 TypeScript mirror reads a Quest's list from `ChecklistProgressNode.quest`.
 `delete` with `with_children` removes every Quest list inside the row at any
 depth (Sub-missions stay missions of their own); `edit` refuses moving a row
 under one of its own rows; duplicating a Quest skips Sub-mission rows.
+
+**Quest owners, no level limit (migration 122, user decisions 5 November 2026).**
+Each Quest row has an owner, `checklist_nodes.assignee_id`, one of the
+mission's Crew (`taskpulse_private.is_crew`). Inside a Quest's list only its
+owner, the owners of the Quests above it, the managing director and Managers
+(project engineers who may read the mission's work) add, tick, edit, move,
+duplicate or remove rows (`taskpulse_private.can_edit_quest_list`, which walks
+`owner_node_id` up with a path array); the mission's own list stays open to all
+Crew. A Quest's owner may also rename, reorder or remove the Quest row itself.
+`submission` takes `assignee_id` (Crew only; default the creator when Crew, else
+the mission's primary), and `assign {node_id, assignee_id}` changes the owner
+(audited as `checklist_assign`, shown in Team > Activity as "Assigned a Quest").
+New Quest lists made by duplicates or Task Tools copies take the default owner
+(trigger `zz_m122_quest_owner`). The three-level limit is gone
+(`MAX_QUEST_LEVEL` removed); `quest_depth_guard` now only refuses a Quest list
+inside itself. `checklist_branch` returns `assigneeId` and `canEditQuest` on
+Quest rows and `canEdit` for the list; the page passes it as `listEditable`, so
+rows a viewer may not change are read-only. The owner shows as a chip in Table,
+Board, Blocks and Outline (`QuestOwnerChip` in `ObjectiveDetails`) and on Quest
+stars of the Today map; the add row, the Outline's add line (now with a Quest
+option) and the row menu's Assign section pick from the Crew
+(`components/quest-owner.tsx`). Objective review rules (114) are unchanged.
 
 Tests: `__tests__/fixtures/checklist-rollups.json` (nested-quest cases) and
 `tools/test_checklist_subquests_database.py`.
@@ -108,8 +129,8 @@ the review sheet for those who decide; `ObjectiveReviewNote` shows the note; the
 |---|---|
 | `index.ts` | Server reads: `getObjectiveReviews` (114), `loadChecklistRollups`, `getChecklistItemTime`, `getTaskEffortBreakdown`, `getEmployeeItemHours`, `getChecklistBranch`, `getUnmappedRootRows`, `getFocusedChecklistItemTime`, `getRunningChecklistTimers`. Also re-exports everything in `client.ts`. |
 | `client.ts` | Pure rules and types, safe for `'use client'`: `CHECKLIST_SECTIONS`, `computeChecklistProgress`, rollup/section types, tree helpers (`childrenOf`, `ancestry`, `isContainer`, `subtreeSeconds`, `formatMinutes`), `groupItemHours`, table rules (`rowKind`, `stateChoices`, `NOT_DONE`, `nextCompletionState`, `completionWords`, `rowStatus`, `opensTable`, `pageResult`, `sectionStatus`, `checklistIssues`, `SECTION_TITLES`), addresses (`checklistWorkHref`, `parseChecklistLocation`, `openChecklistRow`), objective review rules (`reviewChip`, `canDecideObjective`, `mayReviewObjectives`, `reviewStateAfterTick`, `reviewDecisionError`, `blockingReviews`, `reviewsAwaiting`, `parseObjectiveReviews`, `sentBackIndex`, `NO_REVIEWS`) |
-| `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode, review); a version conflict returns `errorCode: 'conflict'`. `loadChecklistRows` (Outline), `loadObjectiveReviews` (Today's item work) |
-| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / N/A, tap again to clear; commands queued so each sends the latest mission version), `objective-details.tsx` (`ObjectiveTick`, `ObjectiveDetails`, `ObjectiveRowStatus`, `ObjectiveLinks`: the same details in every view), `ChecklistItemWork` (Today), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `checklist-rows.tsx` (shared command fields), `objective-review.tsx` (`ObjectiveReviewProvider`, `ObjectiveReviewChip` with the review sheet, `ObjectiveReviewNote`, `useRowChangesNeeded` / `useSectionChangesNeeded`, `ObjectiveReviewQueue` for the mission page) |
+| `actions.ts` | `'use server'` `checklistCommand` (create, add, edit, state, map, delete, duplicate, mode, review, submission, assign); a version conflict returns `errorCode: 'conflict'`. `loadChecklistRows` (Outline), `loadObjectiveReviews` (Today's item work) |
+| `components/` | `ChecklistWorkspace` (checklist home: Setup / Activity / Closure tables; the table of the rows under one row; manager progress source and "Rows without a section"), `ChecklistTable`, `ChecklistStateControl` + `ChecklistVersionProvider` (one-tap Yes / N/A, tap again to clear; commands queued so each sends the latest mission version), `objective-details.tsx` (`ObjectiveTick`, `ObjectiveDetails`, `ObjectiveRowStatus`, `ObjectiveLinks`: the same details in every view), `ChecklistItemWork` (Today), `ChecklistRowActions` (row menu sheet: add under this, edit, move, link to a mission for managers, duplicate, remove), `ChecklistAddRow`, `quest-owner.tsx` (`QuestCrewProvider`, `QuestOwnerSelect`, `AssignQuestForm`, 122), `checklist-rows.tsx` (shared command fields), `objective-review.tsx` (`ObjectiveReviewProvider`, `ObjectiveReviewChip` with the review sheet, `ObjectiveReviewNote`, `useRowChangesNeeded` / `useSectionChangesNeeded`, `ObjectiveReviewQueue` for the mission page) |
 
 ## Private (`internal/`)
 
@@ -134,12 +155,13 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | Object | Defined in |
 |---|---|
 | `task_checklists`, `checklist_nodes` | `07_tracker_replacement_foundation.sql` (row details in 33-35; one kind of row in 63) |
-| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43, 63, 66, 67, 69, 85 (wording), 109 (delete with nested Quests, edit loop check) and 114 (`review`) |
-| `quest_depth_guard` (`aa_m109_quest_rows`, `aa_m109_quest_depth`), `submission_guard`, `copy_owned_checklist` | 109 (replaces 77's `quest_items_guard` / `quest_nesting_guard`); 41 and 67; 41, patched in 109 |
+| `checklist_command` | `18_checklist_rollups_and_propagation.sql`, revised in 33, 35, 41, 43, 63, 66, 67, 69, 85 (wording), 109 (delete with nested Quests, edit loop check), 114 (`review`), 120 (project engineers only on their missions) and 122 (Quest owners, `assign`) |
+| `checklist_nodes.assignee_id`; `taskpulse_private.is_crew`, `default_quest_owner`, `can_edit_quest_list`, `quest_default_owner` (trigger `zz_m122_quest_owner` on `task_checklists`) | `122_quest_owners.sql` |
+| `quest_depth_guard` (`aa_m109_quest_rows`, `aa_m109_quest_depth`), `submission_guard`, `copy_owned_checklist` | 109 (replaces 77's `quest_items_guard` / `quest_nesting_guard`; no level limit since 122); 41 and 67; 41, patched in 109 |
 | `checklist_nodes.review_state`, `reviewed_by`, `reviewed_at`, `review_note`; trigger `zz_m114_review_follows_tick`; `checklist_reviews(task)`; the objective check in `assert_checklist_done` | `114_objective_review.sql` |
 | `checklist_follows_activity` trigger (`aa_m66_follow_activity`) | `66_progress_follows_activity.sql` (also patches `refresh_task_metrics`) |
 | `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63; Quest rows in 67; section weights in 85 |
-| `checklist_branch` | 41, patched in 63 (opens any non-linked row); since 117 it, `checklist_reviews`, `checklist_item_seconds` and `task_effort_breakdown` raise 42501 unless the caller may read the mission's work (`can_read_mission_work`, owned by modules/tasks); the `checklist_nodes`, `task_checklists` and `checklist_sections` read policies use the same rule |
+| `checklist_branch` | 41, patched in 63 (opens any non-linked row), 71 (linked tags) and 122 (`assigneeId`, `canEditQuest`, `canEdit`); since 117 it, `checklist_reviews`, `checklist_item_seconds` and `task_effort_breakdown` raise 42501 unless the caller may read the mission's work (`can_read_mission_work`, owned by modules/tasks); the `checklist_nodes`, `task_checklists` and `checklist_sections` read policies use the same rule |
 | `checklist_sections` | 18; kept for older readers, no longer read by the rollup (63) |
 | `task_effort_breakdown` | `36_task_effort_breakdown.sql` |
 

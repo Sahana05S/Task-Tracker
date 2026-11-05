@@ -15,10 +15,19 @@ import { rowHref } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistSection } from '../internal/progress';
 import { percentText, rowKind, SECTION_TITLES } from '../internal/table';
 import { ChecklistVersionField } from './checklist-state-control';
+import { QuestOwnerSelect } from './quest-owner';
 import { ObjectiveDetails, ObjectiveRowStatus, ObjectiveTick } from './objective-details';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
-interface Ctx { task: Task; canEdit: boolean; version: number; action: Command }
+interface Ctx {
+  task: Task;
+  /** Whether the viewer may change rows at this level. */
+  canEdit: boolean;
+  version: number;
+  action: Command;
+  /** The mission is open and the viewer is Crew or a manager; inside a Quest its owner decides (migration 122). */
+  crewEdits?: boolean;
+}
 type Children = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; groups: { section: ChecklistSection | null; rows: ChecklistBranchRow[] }[] };
 
 /**
@@ -60,6 +69,8 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
   const [open, setOpen] = React.useState(false);
   const [children, setChildren] = React.useState<Children | null>(null);
   const progress = row.applicable ? percentText(row.progressPercentage) : 'N/A';
+  // Rows inside a Quest change only for its owner, the owners above it and managers (migration 122).
+  const inner: Ctx = kind === 'quest' ? { ...ctx, canEdit: !!(ctx.crewEdits && row.canEditQuest) } : ctx;
 
   const load = async () => {
     setChildren({ state: 'loading' });
@@ -107,13 +118,13 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
             <div key={group.section ?? 'rows'}>
               {group.section ? <p className="text-muted-foreground py-1 text-xs font-semibold tracking-wide uppercase" style={{ paddingLeft: `${2.5 + (depth + 1) * 1.25}rem` }}>{SECTION_TITLES[group.section].title}</p> : null}
               {group.rows.length ? (
-                <ul className="grid gap-0.5">{group.rows.map((child) => <OutlineRow key={child.id} row={child} depth={depth + 1} ctx={ctx} />)}</ul>
+                <ul className="grid gap-0.5">{group.rows.map((child) => <OutlineRow key={child.id} row={child} depth={depth + 1} ctx={inner} />)}</ul>
               ) : <p className="text-muted-foreground py-1 text-xs" style={{ paddingLeft: `${2.5 + (depth + 1) * 1.25}rem` }}>Nothing here yet.</p>}
             </div>
-          )).concat(ctx.canEdit ? [
+          )).concat(inner.canEdit ? [
             <OutlineAddItem
               key="add"
-              ctx={ctx}
+              ctx={inner}
               // A Quest holds items in its own list (migration 77); a row takes rows under it.
               checklistId={kind === 'quest' ? row.ownedChecklistId! : row.checklistId}
               parentId={kind === 'quest' ? null : row.id}
@@ -136,7 +147,10 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
   );
 }
 
-/** One line to add an objective inside an open Quest or row; the cursor stays for the next one. */
+/**
+ * One line to add an objective, or a sub-Quest with its owner (migration 122), inside an open Quest
+ * or row; the cursor stays for the next one.
+ */
 function OutlineAddItem({ ctx, checklistId, parentId, section, indent, onAdded }: {
   ctx: Ctx;
   checklistId: string;
@@ -146,18 +160,24 @@ function OutlineAddItem({ ctx, checklistId, parentId, section, indent, onAdded }
   onAdded: () => void;
 }) {
   const id = React.useId();
+  const [quest, setQuest] = React.useState(false);
   return (
     <div className="py-1 pr-1" style={{ paddingLeft: `${indent}rem` }}>
       <ExecutionForm action={ctx.action} scope={`outline-add:${checklistId}:${parentId ?? 'root'}`} onSuccess={onAdded}>
-        <input type="hidden" name="command" value="add" />
+        <input type="hidden" name="command" value={quest ? 'submission' : 'add'} />
         <input type="hidden" name="checklist_id" value={checklistId} />
         <input type="hidden" name="taskId" value={ctx.task.id} />
         <ChecklistVersionField fallback={ctx.version} />
         <input type="hidden" name="section" value={section} />
         <input type="hidden" name="parent_id" value={parentId ?? ''} />
-        <div className="flex items-center gap-2">
-          <label htmlFor={id} className="sr-only">New objective</label>
-          <Input id={id} name="title" required maxLength={500} placeholder="Add an objective" className="bg-card h-8 min-w-40 flex-1 text-sm" />
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" aria-pressed={quest} onClick={() => setQuest(!quest)} title={quest ? 'Adding a Quest' : 'Add a Quest instead'}
+            className="border-border text-muted-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground focus-visible:ring-ring inline-flex h-8 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold outline-none focus-visible:ring-2">
+            <FlagIcon className="size-3.5" aria-hidden="true" />Quest
+          </button>
+          <label htmlFor={id} className="sr-only">{quest ? 'New Quest' : 'New objective'}</label>
+          <Input id={id} name="title" required maxLength={500} placeholder={quest ? 'Name the Quest' : 'Add an objective'} className="bg-card h-8 min-w-40 flex-1 text-sm" />
+          {quest ? <QuestOwnerSelect id={`${id}-owner`} className="border-input bg-card text-foreground focus-visible:ring-ring h-8 min-w-32 rounded-lg border px-2 text-sm outline-none focus-visible:ring-2" /> : null}
           <Button type="submit" size="sm" variant="outline" className="h-8"><PlusIcon aria-hidden="true" />Add</Button>
         </div>
       </ExecutionForm>

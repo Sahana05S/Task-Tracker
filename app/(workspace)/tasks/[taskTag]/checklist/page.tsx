@@ -98,6 +98,9 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       page={location.parentNodeId ? { nodeId: location.parentNodeId, section: branch.section, rows: branch.rows, cursor: location.cursor ?? 0, nextCursor: branch.nextCursor } : undefined}
       manager={manager}
       executor={canUpdateTaskOwnFields(user, task)}
+      listEditable={branch.canEdit}
+      crew={task.assigneeIds.map(id => ({ id, name: names[id] ?? 'Unknown member' }))}
+      viewerId={user.id}
       selectedItem={location.item}
       managerTools={manager ? { linkChoices, unmapped } : undefined}
       actions={{ checklist: checklistCommand, submission: createSubMission }}

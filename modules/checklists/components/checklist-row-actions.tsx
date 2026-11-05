@@ -13,6 +13,7 @@ import { formatMinutes } from '../internal/pages';
 import { rowKind } from '../internal/table';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { ChecklistVersionField } from './checklist-state-control';
+import { AssignQuestForm } from './quest-owner';
 import type { ActionResponse } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -20,7 +21,8 @@ type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 /** The serialisable part of a row the sheet needs. */
 export type ChecklistActionRow = Pick<ChecklistBranchRow,
   'id' | 'checklistId' | 'parentNodeId' | 'nodeType' | 'title' | 'description' | 'section' | 'links'
-  | 'estimatedMinutes' | 'elapsedSeconds' | 'childCount' | 'linkedTaskId'>;
+  | 'estimatedMinutes' | 'elapsedSeconds' | 'childCount' | 'linkedTaskId'>
+  & Partial<Pick<ChecklistBranchRow, 'ownedChecklistId' | 'assigneeId' | 'canEditQuest'>>;
 
 const SELECT = 'border-input bg-card text-foreground focus-visible:ring-ring h-10 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-2';
 
@@ -38,6 +40,7 @@ export function ChecklistRowActions({
   manager,
   moveTargets,
   linkChoices,
+  canEditRow = true,
 }: {
   row: ChecklistActionRow;
   taskId: string;
@@ -49,6 +52,11 @@ export function ChecklistRowActions({
   moveTargets: readonly { id: string | null; title: string }[];
   /** Missions a manager may link this row to. */
   linkChoices: readonly { id: string; taskTag: string; title: string }[];
+  /**
+   * Whether the viewer may change rows in this row's list (migration 122). When not, a Quest's
+   * owner still gets its rename, order, assignment and removal; nothing else is offered.
+   */
+  canEditRow?: boolean;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
   const kind = rowKind(row);
@@ -73,7 +81,9 @@ export function ChecklistRowActions({
       <input type="hidden" name="node_type" value={linkedTaskId || row.nodeType === 'Task' ? 'Item' : row.nodeType} />
     </>
   );
-  const targets = moveTargets.filter(target => target.id !== row.parentNodeId);
+  const targets = canEditRow ? moveTargets.filter(target => target.id !== row.parentNodeId) : [];
+  // A Quest's owner and the owners above it assign it (migration 122).
+  const canAssign = kind === 'quest' && row.canEditQuest !== false;
   const summary = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside` : kind === 'linked' ? 'Follows a linked mission' : 'Row';
 
   return (
@@ -122,7 +132,9 @@ export function ChecklistRowActions({
             ))}
           </div>
 
-          {kind !== 'linked' && kind !== 'quest' && row.section ? (
+          {canAssign ? <AssignQuestForm row={row} taskId={taskId} version={version} action={action} /> : null}
+
+          {canEditRow && kind !== 'linked' && kind !== 'quest' && row.section ? (
             <section aria-labelledby={id('add-heading')} className="grid gap-2">
               <h3 id={id('add-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <PlusIcon className="text-primary size-4" aria-hidden="true" />Add a row under this
@@ -188,7 +200,7 @@ export function ChecklistRowActions({
             </section>
           ) : null}
 
-          {kind !== 'linked' ? (
+          {canEditRow && kind !== 'linked' ? (
             <section aria-labelledby={id('copy-heading')} className="soft-divider grid gap-2 pt-5">
               <h3 id={id('copy-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <CopyIcon className="text-primary size-4" aria-hidden="true" />Duplicate
