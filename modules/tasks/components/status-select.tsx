@@ -24,7 +24,7 @@ export interface StatusSelectProps {
   status: TaskStatus;
   /** False renders a read-only badge instead of a picker. */
   canEdit: boolean;
-  /** False keeps Done out of reach (collaborators, migration 117). Defaults to true. */
+  /** False keeps Done out of reach (not on the Crew, migrations 117, 121). Defaults to true. */
   canMarkDone?: boolean;
   className?: string;
 }

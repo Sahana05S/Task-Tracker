@@ -325,7 +325,7 @@ export function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; 
       <div className="border-border overflow-x-auto rounded-xl border">
         <table className="sheet-grid w-full">
           <thead>
-            <tr>{['Mission', 'Dates', 'Scale', 'Assignees', 'Reviewers'].map((label) => <th key={label} scope="col">{label}</th>)}</tr>
+            <tr>{['Mission', 'Dates', 'Scale', 'Crew', 'Reviewers'].map((label) => <th key={label} scope="col">{label}</th>)}</tr>
           </thead>
           <tbody>
             {preview.items.map((item, index) => (
@@ -341,7 +341,7 @@ export function PreviewTable({ preview, names, copy }: { preview: ToolsPreview; 
                 <td className="text-xs whitespace-nowrap tabular-nums">{item.scale ?? 'Unavailable'} <span className="text-muted-foreground">{codeLabel(item.scaleMode)}</span></td>
                 <td className="text-xs">
                   {item.assignees?.length
-                    ? item.assignees.map((id, i) => `${person(id)}${item.shares?.[i] === undefined ? '' : ` ${item.shares[i] / 10000}%`}`).join(', ')
+                    ? item.assignees.map((id) => person(id)).join(', ')
                     : 'Unchanged'}
                 </td>
                 <td className="text-xs">{item.reviewers?.length ? item.reviewers.map(person).join(', ') : '—'}</td>

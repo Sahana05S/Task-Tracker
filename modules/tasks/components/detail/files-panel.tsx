@@ -58,9 +58,9 @@ export function FilesPanel({
   links: readonly TaskLink[];
   /** The mission's uploaded files; null for anyone outside its people and managers (links only, no Proofs). */
   files: readonly MissionProof[] | null;
-  /** Managers, the Owner, assignees, collaborators and reviewers of a live mission; never observers. */
+  /** Managers, the Crew and reviewers of a live mission; never observers. */
   canUpload: boolean;
-  /** Who may save a link (mission details: managers and the mission's assignees). */
+  /** Who may save a link (mission details: managers and the mission's Crew). */
   canAddLink: boolean;
   /** Whether uploads move into the Shared Drive yet (honest wording). */
   driveReady: boolean;

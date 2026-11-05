@@ -7,7 +7,7 @@ import { HelpTip } from '@/shared/ui/help-tip';
 import type { TaskDetailData } from '@/modules/tasks/internal/detail';
 import { formatHours, formatNumeric, formatPercent } from '@/shared/tracker/format';
 
-/** Scale, progress, hours and productivity inputs, with eligibility and share notes. */
+/** Scale, progress, hours and productivity inputs, with eligibility and who shares the credit. */
 export function EffortPanel({
   data,
   todayHours,
@@ -34,7 +34,9 @@ export function EffortPanel({
       </dl>
       <div className="border-border text-muted-foreground mt-4 grid gap-2 border-t pt-3 text-xs">
         <p>Counted in performance: {task.validForMetrics ? 'yes' : `no (${codeLabels(task.eligibilityReasons ?? [], ', ') || 'not eligible'})`}. Productivity also needs logged hours.<HelpTip tip="eligible" /></p>
-        <p>Participant shares: {task.participantShares ? Object.entries(task.participantShares).map(([id,units])=>`${memberNames.get(id) ?? 'Former member'}: ${units/10000}%`).join(", ") : "not set for this older mission yet"}.</p>
+        <p>{task.participantShares
+          ? `Credit is shared equally by the crew: ${Object.keys(task.participantShares).map((id) => memberNames.get(id) ?? 'Former member').join(', ')}.`
+          : 'Credit sharing is not set for this older mission yet; review it in Edit.'}</p>
       </div>
     </MissionPanel>
   );

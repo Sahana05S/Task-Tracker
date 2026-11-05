@@ -34,7 +34,7 @@ describe('participant read projection', () => {
     expect(b.reviewerIds).toEqual(['legacy-reviewer']);
   });
 
-  it('tells zero-share collaborators and observers apart (migration 108)', () => {
+  it('makes every assignee row Crew and keeps observers apart (migrations 108, 121)', () => {
     const [task] = attachTaskParticipants([mission('p')], [
       { task_id: 'p', user_id: 'owner', is_primary: true, share_units: 700000 },
       { task_id: 'p', user_id: 'mate', is_primary: false, share_units: 300000 },
@@ -44,12 +44,11 @@ describe('participant read projection', () => {
       { task_id: 'p', user_id: 'watcher', is_primary: false, reviewer_role: 'Observer' },
     ]);
     expect(task.assigneeIds).toEqual(expect.arrayContaining(['owner', 'mate', 'helper']));
-    expect(task.collaboratorIds).toEqual(['helper']);
     expect(task.reviewerIds).not.toContain('watcher');
     expect(task.observerIds).toEqual(['watcher']);
     expect(isTaskWorker(task, 'mate')).toBe(true);
-    expect(isTaskWorker(task, 'helper')).toBe(false);
-    expect(missionRelationship(task, 'helper')).toBe('collaborator');
+    expect(isTaskWorker(task, 'helper')).toBe(true);
+    expect(missionRelationship(task, 'helper')).toBe('crew');
     expect(missionRelationship(task, 'watcher')).toBe('observer');
   });
 
@@ -62,7 +61,7 @@ describe('participant read projection', () => {
     const before = performance.now();
     const old = tasks.map(task => withTaskParticipants({ ...task,
       participantShares: Object.fromEntries(assignees.filter(row => row.task_id === task.id).map(row => [row.user_id, row.share_units])),
-    }, { assigneeIds: ['primary', 'secondary'], reviewerIds: undefined })).map(task => ({ ...task, collaboratorIds: [], observerIds: [] }));
+    }, { assigneeIds: ['primary', 'secondary'], reviewerIds: undefined })).map(task => ({ ...task, observerIds: [] }));
     const oldMs = performance.now() - before;
     const after = performance.now();
     const current = attachTaskParticipants(tasks, assignees, []);

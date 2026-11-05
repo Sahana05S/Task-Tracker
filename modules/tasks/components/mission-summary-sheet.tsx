@@ -114,7 +114,7 @@ function MissionSummary({
         ) : null}
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-          <Detail label="Assignees" value={names(task.assigneeIds, 'Unassigned')} />
+          <Detail label="Crew" value={names(task.assigneeIds, 'No crew')} />
           <Detail label="Reviewers" value={names(task.reviewerIds, '—')} />
           <Detail label="Priority" value={task.priority} />
           <Detail label="Status" value={task.archivedEffectiveDate ? `${task.status} (archived, read-only)` : task.status} />
