@@ -38,8 +38,10 @@ import {
   getNativeDetailState,
   getNativeTemplates,
   getMissionChoices,
+  getSubMissionOriginRow,
   getTaskProofs,
   normalizeTaskTagParam,
+  resolveSubMissionOrigin,
   resolveTaskDetailRouteState,
 } from '@/modules/tasks';
 import { ChecklistHero } from '@/modules/tasks/components/detail/checklist-summary';
@@ -198,6 +200,9 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
 
   const checklistHref = `/tasks/${encodeURIComponent(task.taskTag)}/checklist`;
   const family = subMissionFamily(task.id, data.dependencies);
+  // "Created from TAG › row": the exact parent row when the viewer may read the parent's
+  // checklist (migration 117); otherwise only the parent mission ("Part of TAG").
+  const origin = resolveSubMissionOrigin(family.parent, family.parent ? await getSubMissionOriginRow(task.id, family.parent.id) : null);
   const closed = task.status === 'Done' || task.status === 'Discarded';
   const overdue = isOverdue(task.dueDate) && !closed;
 
@@ -228,9 +233,14 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             />
             <PriorityBadge priority={task.priority} />
             <FreshnessIndicator freshness={task.freshness} className="ml-1" />
-            {family.parent ? (
-              <Link href={`/tasks/${encodeURIComponent(family.parent.taskTag)}`} className="badge-soft badge-neutral hover:underline">
-                Part of {family.parent.taskTag}
+            {origin?.kind === 'row' ? (
+              <Link href={origin.href} title={`Created from ${origin.parentTag} › ${origin.path}`} className="badge-soft badge-neutral inline-flex max-w-full min-w-0 items-center gap-1 hover:underline">
+                <span className="shrink-0">Created from {origin.parentTag} ›</span>
+                <span className="min-w-0 truncate">{origin.label}</span>
+              </Link>
+            ) : origin ? (
+              <Link href={origin.href} className="badge-soft badge-neutral hover:underline">
+                Part of {origin.parentTag}
               </Link>
             ) : null}
             {archived ? (
