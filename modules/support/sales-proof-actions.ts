@@ -11,7 +11,7 @@ import type { ActionResponse } from '@/types/tracker';
 /**
  * PUBLIC Server Actions for sales proofs (migration 102): a signed upload link
  * in the entry's folder, then the record, then removal. The database decides
- * who may (the entry's salesperson, the managing director, project engineers).
+ * who may (the entry's salesperson, the managing director, managers).
  */
 
 const RETRY = 'Reload the page and try again.';

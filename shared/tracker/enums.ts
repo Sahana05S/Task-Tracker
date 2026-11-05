@@ -39,10 +39,22 @@ export const USER_ROLES = [
 
 export const ROLE_LABELS = {
   managing_director: 'Managing Director',
-  project_engineer: 'Project Engineer',
+  project_engineer: 'Manager',
   data_manager: 'Data Manager',
   team_member: 'Team Member',
 } satisfies Record<UserRole, string>;
+
+/**
+ * Roles the managing director may give (migration 125): Managing Director,
+ * Manager (internal code `project_engineer`) and Team Member. `data_manager`
+ * stays in the enum and in USER_ROLES for parsing old data, but is retired:
+ * it is never offered and people_command refuses it.
+ */
+export const ASSIGNABLE_ROLES = [
+  'managing_director',
+  'project_engineer',
+  'team_member',
+] as const satisfies readonly UserRole[];
 
 /** Roles permitted to create, fully edit, or delete any task. */
 export const TASK_MANAGER_ROLES = [

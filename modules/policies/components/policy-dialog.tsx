@@ -46,8 +46,8 @@ export interface EditablePolicy {
 /** Plural audience labels, in USER_ROLES order. */
 const ROLE_LABELS = {
   managing_director: 'Managing director',
-  project_engineer: 'Project engineers',
-  data_manager: 'Data managers',
+  project_engineer: 'Managers',
+  data_manager: 'Data managers (retired)',
   team_member: 'Team members',
 } satisfies Record<MemberRole, string>;
 
@@ -223,7 +223,8 @@ function PolicyForm({ template, policy, members, onBack, onSaved, onDirty }: {
             options={[{ value: 'everyone', label: 'Everyone' }, { value: 'roles', label: 'Roles' }, { value: 'members', label: 'People' }]} />
           {audienceKind === 'roles' ? (
             <div className="grid gap-0.5">
-              {USER_ROLES.map((role) => (
+              {/* Data Manager is retired (migration 125): shown only while an old audience still names it. */}
+              {USER_ROLES.filter((role) => role !== 'data_manager' || roles.includes(role)).map((role) => (
                 <label key={role} className="flex min-h-11 items-center gap-2.5 text-sm">
                   <input type="checkbox" name="audienceRoles" value={role} defaultChecked={roles.includes(role)} className="accent-primary size-4" />
                   {ROLE_LABELS[role]}

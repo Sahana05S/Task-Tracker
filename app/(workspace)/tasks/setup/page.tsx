@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Month setup wizard (managing director and project engineer). Loads the
+ * Month setup wizard (managing director and manager). Loads the
  * current and next month together so switching between them is instant; the
  * database re-checks the role and the month on every call.
  */

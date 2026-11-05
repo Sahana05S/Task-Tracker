@@ -7,7 +7,7 @@ import { isMissingFunctionError } from '@/shared/supabase/schema-errors';
 
 /**
  * Sales proofs (migration 102). PRIVATE. Who may: the entry's salesperson, the
- * managing director and project engineers (user decision, 2 November 2026);
+ * managing director and managers (user decision, 2 November 2026);
  * `sale_proofs`, `sale_proof_command` and the bucket's policies enforce it.
  * Uploads land in the sales-proofs bucket through a signed link; the files
  * module moves each into Proofs/<YYYY-MM>/Sales/<entry>/ in the Shared Drive.

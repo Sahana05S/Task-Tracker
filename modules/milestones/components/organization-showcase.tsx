@@ -195,7 +195,7 @@ function MissingStatement({
         {title}
       </h3>
       <p className="text-muted-foreground text-sm">
-        No statement recorded. A managing director or project engineer can add one
+        No statement recorded. A managing director or manager can add one
         by inserting a{' '}
         <code className="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-xs">
           company_statements

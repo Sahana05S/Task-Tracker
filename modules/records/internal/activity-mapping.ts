@@ -182,6 +182,7 @@ const PEOPLE_WORDS: Record<string, string> = {
   accept_invitation: 'Joined the company',
   change_role: 'Changed a role',
   update_member: 'Edited member details',
+  retire_role: 'Moved to Team Member (roles simplified)',
   deactivate_member: 'Deactivated a member',
   reactivate_member: 'Reactivated a member',
 };

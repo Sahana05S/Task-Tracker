@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { Building2Icon, ChevronRightIcon, CornerLeftUpIcon, NetworkIcon } from 'lucide-react';
 
-import { buildOrgTree, canViewEmployeeProfile, employeeHref, orgTiers, teamSize, type OrgNode, type OrgPerson, type TodayStatus } from '@/modules/team/client';
+import { buildOrgTree, canViewEmployeeProfile, employeeHref, levelRows, orgTiers, type OrgNode, type OrgPerson, type TodayStatus } from '@/modules/team/client';
 import { ROLE_LABELS } from '@/shared/tracker/enums';
 import { EmptyState, InitialsAvatar } from '@/shared/ui/mission-ui';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
 import { cn } from '@/shared/utils';
 import type { User } from '@/types/tracker';
 
+import { CenteredScroll } from './centered-scroll';
 import styles from './org-chart.module.css';
 
 const STATUS: Record<TodayStatus, { label: string; dot: string }> = {
@@ -32,12 +33,13 @@ function Status({ today }: { today: TodayStatus | null }) {
 
 /**
  * One person: avatar, name, title, role, department and today's status; a link where the viewer may open the profile.
- * `manager` names who they report to when that is not visible from the lines (under a shared leadership row).
+ * `manager` names who they report to when that is not visible from the lines (under a shared leadership row);
+ * `unplaced` marks someone with no manager set, who joins the leadership row's level. `reports` counts direct reports.
  */
-function PersonCard({ person, viewer, reports, manager }: { person: OrgPerson; viewer: Viewer; reports: number; manager?: string }) {
+function PersonCard({ person, viewer, reports, manager, unplaced }: { person: OrgPerson; viewer: Viewer; reports: number; manager?: string; unplaced?: boolean }) {
   // The role already reads as the title line when there is no job title, so its chip would only repeat it.
   const showRole = person.jobTitle !== null;
-  const chips = showRole || person.department || manager;
+  const chips = showRole || person.department || manager || unplaced;
   const canOpen = canViewEmployeeProfile(viewer, { id: person.id }) && Boolean(person.employeeId);
   const body = (
     <>
@@ -68,6 +70,8 @@ function PersonCard({ person, viewer, reports, manager }: { person: OrgPerson; v
               <CornerLeftUpIcon aria-hidden="true" className="size-3 shrink-0" />
               <span className="truncate">Reports to {manager.split(' ')[0]}</span>
             </span>
+          ) : unplaced ? (
+            <span className="text-muted-foreground text-xs">No manager set</span>
           ) : null}
         </span>
       ) : null}
@@ -92,23 +96,42 @@ function PersonCard({ person, viewer, reports, manager }: { person: OrgPerson; v
   );
 }
 
-function TreeBranch({ node, viewer, manager }: { node: OrgNode; viewer: Viewer; manager?: string }) {
+interface Placement {
+  managerOf?: ReadonlyMap<string, string>;
+  noManager?: ReadonlySet<string>;
+}
+
+/**
+ * One level of the top-down tree. Up to four cards sit side by side; a wider
+ * level wraps into balanced rows hung from one trunk (`levelRows`).
+ */
+function TreeLevel({ nodes, viewer, label, placement }: { nodes: readonly OrgNode[]; viewer: Viewer; label?: string; placement?: Placement }) {
+  const rows = levelRows(nodes);
+  const branch = (node: OrgNode) => (
+    <TreeBranch key={node.person.id} node={node} viewer={viewer}
+      manager={placement?.managerOf?.get(node.person.id)} unplaced={placement?.noManager?.has(node.person.id)} />
+  );
+  if (rows.length <= 1) return <ul aria-label={label}>{nodes.map(branch)}</ul>;
+  return (
+    <div role="group" aria-label={label} className={styles.rows}>
+      {rows.map((row, index) => <ul key={index}>{row.map(branch)}</ul>)}
+    </div>
+  );
+}
+
+function TreeBranch({ node, viewer, manager, unplaced }: { node: OrgNode; viewer: Viewer; manager?: string; unplaced?: boolean }) {
   return (
     <li>
-      <PersonCard person={node.person} viewer={viewer} reports={teamSize(node) - 1} manager={manager} />
-      {node.reports.length ? (
-        <ul>
-          {node.reports.map(child => <TreeBranch key={child.person.id} node={child} viewer={viewer} />)}
-        </ul>
-      ) : null}
+      <PersonCard person={node.person} viewer={viewer} reports={node.reports.length} manager={manager} unplaced={unplaced} />
+      {node.reports.length ? <TreeLevel nodes={node.reports} viewer={viewer} /> : null}
     </li>
   );
 }
 
-function ListBranch({ node, viewer, manager }: { node: OrgNode; viewer: Viewer; manager?: string }) {
+function ListBranch({ node, viewer, manager, unplaced }: { node: OrgNode; viewer: Viewer; manager?: string; unplaced?: boolean }) {
   return (
     <li className="grid gap-2">
-      <PersonCard person={node.person} viewer={viewer} reports={teamSize(node) - 1} manager={manager} />
+      <PersonCard person={node.person} viewer={viewer} reports={node.reports.length} manager={manager} unplaced={unplaced} />
       {node.reports.length ? (
         <ul className="border-border ml-4 grid gap-2 border-l pl-4">
           {node.reports.map(child => <ListBranch key={child.person.id} node={child} viewer={viewer} />)}
@@ -120,12 +143,12 @@ function ListBranch({ node, viewer, manager }: { node: OrgNode; viewer: Viewer; 
 
 /**
  * The company org chart: who reports to whom, from the reporting lines the
- * managing director sets in Manage people. A top-down tree from `md` (it
- * scrolls sideways inside its own box when the company is wide), an indented
- * list on phones. Both are nested lists of the real names. Two or more
- * managing directors at the top share one leadership row, with everyone under
- * them as one level that names each person's manager (`orgTiers`), instead of
- * separate, unconnected trees.
+ * managing director sets in Manage people. A top-down tree from `md` (levels
+ * wider than four cards wrap into rows; anything still wider scrolls sideways
+ * inside its own box, opening centred), an indented list on phones. Both are
+ * nested lists of the real names. The chart is always one tree: managing
+ * directors at the top share one leadership row, and everyone under them,
+ * including people with no manager set, is one level (`orgTiers`).
  */
 export function OrgChart({ people, viewer, available, canManage }: {
   people: readonly OrgPerson[];
@@ -142,7 +165,8 @@ export function OrgChart({ people, viewer, available, canManage }: {
     );
   }
   const roots = buildOrgTree(people);
-  const { leaders, below, managerOf } = orgTiers(roots);
+  const { leaders, below, managerOf, noManager } = orgTiers(roots);
+  const placement: Placement = { managerOf, noManager };
   const active = people.filter(person => person.active);
   const departments = new Set(active.map(person => person.department).filter(Boolean));
   if (roots.length === 0) {
@@ -167,7 +191,7 @@ export function OrgChart({ people, viewer, available, canManage }: {
         </ul>
       </div>
 
-      <div className="hidden overflow-x-auto pb-2 md:block">
+      <CenteredScroll className="hidden overflow-x-auto pb-2 md:block">
         <div className={styles.tree}>
           {leaders.length ? (
             <ul aria-label="Org chart">
@@ -175,15 +199,11 @@ export function OrgChart({ people, viewer, available, canManage }: {
                 <ul aria-label="Leadership" className={cn(styles.leaders, below.length && styles.leadersWithTeam)}>
                   {leaders.map(leader => (
                     <li key={leader.person.id} className={styles.leader}>
-                      <PersonCard person={leader.person} viewer={viewer} reports={teamSize(leader) - 1} />
+                      <PersonCard person={leader.person} viewer={viewer} reports={leader.reports.length} />
                     </li>
                   ))}
                 </ul>
-                {below.length ? (
-                  <ul aria-label="Team">
-                    {below.map(node => <TreeBranch key={node.person.id} node={node} viewer={viewer} manager={managerOf.get(node.person.id)} />)}
-                  </ul>
-                ) : null}
+                {below.length ? <TreeLevel nodes={below} viewer={viewer} label="Team" placement={placement} /> : null}
               </li>
             </ul>
           ) : (
@@ -192,18 +212,18 @@ export function OrgChart({ people, viewer, available, canManage }: {
             </ul>
           )}
         </div>
-      </div>
+      </CenteredScroll>
 
       <div className="grid gap-3 md:hidden">
         {leaders.length ? (
           <ul aria-label="Leadership" className="grid gap-2 sm:grid-cols-2">
             {leaders.map(leader => (
-              <li key={leader.person.id}><PersonCard person={leader.person} viewer={viewer} reports={teamSize(leader) - 1} /></li>
+              <li key={leader.person.id}><PersonCard person={leader.person} viewer={viewer} reports={leader.reports.length} /></li>
             ))}
           </ul>
         ) : null}
         <ul aria-label={leaders.length ? 'Team' : 'Org chart'} className={cn('grid gap-3', leaders.length && 'border-border ml-4 border-l pl-4')}>
-          {below.map(node => <ListBranch key={node.person.id} node={node} viewer={viewer} manager={managerOf.get(node.person.id)} />)}
+          {below.map(node => <ListBranch key={node.person.id} node={node} viewer={viewer} manager={managerOf.get(node.person.id)} unplaced={noManager.has(node.person.id)} />)}
         </ul>
       </div>
     </section>

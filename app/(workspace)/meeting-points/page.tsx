@@ -15,7 +15,7 @@ export default async function MeetingPointsPage({searchParams}:{searchParams:Pro
   // ?date=YYYY-MM-DD opens the period holding that day (links from a label page to an older point).
   const date=(await searchParams).date;
   const [user,{period,members,tasks,entries},settings,catalogue]=await Promise.all([requireProfile(),getMeetingPointsData(typeof date==='string'?date:null),getCompanySettings(),getLabelCatalogue()]);
-  // Labels (migration 112): managers, data managers and a point's author may change them; label_link_command enforces it.
+  // Labels (migration 112): managers and a point's author may change them; label_link_command enforces it.
   const labels=catalogue?await getLabelsFor('meeting_point',entries.map(e=>e.id)):null;
   const extras=catalogue&&labels?Object.fromEntries(entries.filter(e=>e.validationState!=='withdrawn').map(e=>[e.id,<LabelInput key={e.id} kind="meeting_point" subjectId={e.id} labels={labels[e.id]??[]} catalogue={catalogue.labels} canEdit={user.isActive&&(canManageSupportRecords(user.role)||e.authorId===user.id)} canCreate={catalogue.canManage} hideEmpty className="border-border border-t pt-3"/>])):undefined;
   return <MissionPage>

@@ -154,3 +154,30 @@
 .tree ul.leadersWithTeam > li.leader:last-child::after {
   border-bottom: 0 none;
 }
+
+/*
+ * A level wider than four cards wraps into balanced rows (user request,
+ * 5 November 2026; `levelRows`). Every row hangs from one trunk: each row's
+ * own drop line meets the trunk, which runs down through every row but the
+ * last, behind the cards, so it shows in the gaps between rows.
+ */
+.rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tree .rows > ul:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 1.5rem;
+  bottom: 0;
+  left: 50%;
+  border-left: 1px solid var(--border-strong);
+}
+
+/* Cards sit above the trunk. */
+.tree li > :first-child {
+  position: relative;
+  z-index: 1;
+}

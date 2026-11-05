@@ -76,7 +76,7 @@ function LabelForm({ label, onDone }: { label?: CatalogueLabel; onDone: () => vo
 
 /**
  * Create, rename, recolour, archive and restore the company's labels
- * (managing director and project engineers; label_command enforces it).
+ * (managing director and managers; label_command enforces it).
  * Renaming keeps the label's id, so every mission, note and meeting point it
  * is on keeps it. Archiving hides a label from records and suggestions.
  */

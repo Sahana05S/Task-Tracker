@@ -15,7 +15,7 @@ import { keepTypedOnRefusal } from '@/shared/forms/submit';
 import { Button } from '@/shared/ui/button';
 import { InitialsAvatar, EmptyState, MissionPanel } from '@/shared/ui/mission-ui';
 import { RoleBadge } from '@/shared/ui/tracker-badges';
-import { ROLE_LABELS, USER_ROLES } from '@/shared/tracker/enums';
+import { ASSIGNABLE_ROLES, ROLE_LABELS } from '@/shared/tracker/enums';
 import type { User } from '@/types/tracker';
 
 type Action = (prev: PeopleActionState | null, form: FormData) => Promise<PeopleActionState>;
@@ -37,7 +37,7 @@ function useCommand(action: Action, onSuccess?: () => void) {
 }
 
 function RoleOptions() {
-  return USER_ROLES.map((role) => (
+  return ASSIGNABLE_ROLES.map((role) => (
     <option key={role} value={role}>
       {ROLE_LABELS[role]}
     </option>
