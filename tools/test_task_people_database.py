@@ -110,7 +110,8 @@ def crew_upgrade(db,tid):
     assert all(row in now for row in history),'every earlier participant version is kept unchanged'
     assert version_shares(db,tid,before[tid])=={MATE:300000,OWNER:700000}
     assert version_shares(db,tid,after[tid])=={MATE:500000,OWNER:500000}
-    assert version_shares(db,zero,before[zero])=={OWNER:1000000,COLLAB:0}
+    # 108 added the collaborator without a new version, so the recorded split predates them.
+    assert version_shares(db,zero,before[zero])=={OWNER:1000000}
     assert version_shares(db,zero,after[zero])=={OWNER:500000,COLLAB:500000}
     ok(db,COLLAB,log(zero))  # the former collaborator now logs time
     print('PASS',db,'121 re-splits open missions equally under a new participant version; Done missions and earlier versions unchanged')
