@@ -62,6 +62,8 @@ import { LabelInput } from '@/modules/labels/components/label-input';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { isFileStorageReady } from '@/modules/files';
 import { getMissionLearnings } from '@/modules/learning';
+import { getMissionActivity, parseCursor } from '@/modules/records';
+import { MissionActivity } from '@/modules/records/components/mission-activity';
 import { LearningCountChip } from '@/modules/learning/components/learning-count-chip';
 import { LearningPanel } from '@/modules/learning/components/learning-panel';
 import { getMissionWaypoints } from '@/modules/recognition';
@@ -127,7 +129,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const canReadWork = canReadMissionWork(currentUser, task);
   // Details holds only work content, so it is not offered to anyone else; ?tab=details falls back to Work.
   const tabs = canReadWork ? TABS : TABS.filter(([key]) => key !== 'details');
-  const requested = (await searchParams).tab;
+  const query = await searchParams;
+  const requested = query.tab;
   const tab: Tab = tabs.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
   const canWriteFiles = canWriteMissionFiles(currentUser, task);
@@ -171,6 +174,11 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     execution.timers.find((timer) => timer.userId === currentUser.id && timer.status === 'Running') ?? null;
 
   const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
+  // Mission activity (migration 124): who changed what on this mission; only its people read it.
+  const activityBefore = tab === 'history' ? parseCursor(typeof query.before === 'string' ? query.before : null) : null;
+  const missionActivity = tab === 'history' && canReadWork
+    ? await getMissionActivity(task.id, activityBefore, memberNames).catch(() => null)
+    : undefined;
   const nameOf = (id: string) => memberNames.get(id) ?? 'Unknown';
   // Migration 121: everyone on task_assignees is Crew (equal shares); Observer reviewer rows are observers.
   const crewIds = [...new Set([task.assigneeId, ...task.assigneeIds].filter(Boolean))];
@@ -430,9 +438,23 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          {missionActivity !== undefined ? (
+            <MissionPanel
+              icon={HistoryIcon}
+              title="Activity"
+              subtitle="Who changed what on this mission · newest first · India time"
+              className="lg:col-span-2"
+            >
+              <MissionActivity
+                page={missionActivity}
+                basePath={`/tasks/${encodeURIComponent(task.taskTag)}?tab=history`}
+                paged={!!activityBefore}
+              />
+            </MissionPanel>
+          ) : null}
           <MissionPanel
             icon={HistoryIcon}
-            title="Activity & updates"
+            title="Time logs"
             subtitle={`${data.effort.logCount} log ${data.effort.logCount === 1 ? 'entry' : 'entries'} · ${formatHours(data.effort.hoursLogged)} h`}
           >
             <TaskLogTimeline logs={execution.logs} memberNames={memberNames} />

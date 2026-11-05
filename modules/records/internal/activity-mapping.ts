@@ -90,6 +90,17 @@ const MISSION_WORDS: Record<string, string> = {
   mission_learning_add: 'Added a note to Mistakes and learning',
   mission_learning_edit: 'Edited a note in Mistakes and learning',
   mission_learning_withdraw: 'Withdrew a note from Mistakes and learning',
+  // Mission people (migration 108; Crew from 5 November 2026). The member arrives as the entry's "about".
+  task_people_add_crew: 'Added a member to the Mission Crew',
+  task_people_remove_crew: 'Removed a member from the Mission Crew',
+  task_people_add_collaborator: 'Added a member to the Mission Crew',
+  task_people_remove_collaborator: 'Removed a member from the Mission Crew',
+  task_people_add_observer: 'Added an observer',
+  task_people_remove_observer: 'Removed an observer',
+  task_people_transfer_owner: 'Handed the mission to a new owner',
+  // Mission files (migration 124); the file's name arrives as the entry's reason.
+  task_proof_add: 'Added a mission file',
+  task_proof_withdraw: 'Removed a mission file',
 };
 const CHECKLIST_WORDS: Record<string, string> = {
   create: 'Started a checklist',
@@ -106,8 +117,8 @@ const CHECKLIST_WORDS: Record<string, string> = {
   submission: 'Added a Quest',
   // Migration 114: the decision and its note arrive as the entry's reason.
   review: 'Reviewed a checklist objective',
-  // Migration 122: a Quest's owner was set or changed.
-  assign: 'Assigned a Quest',
+  // Migration 122: a Quest's owner was set or changed; the member arrives as the entry's "about".
+  assign: 'Chose a Quest owner',
 };
 // Labels (migration 112, listed from 116); the label's name arrives as the entry's reason ("#Crane").
 const LABEL_WORDS: Record<string, string> = {
@@ -139,7 +150,7 @@ const MONTH_WORDS: Record<string, string> = {
 };
 const ROW_WORDS: Record<string, Record<string, string>> = {
   tasks: { INSERT: 'Created a mission', DELETE: 'Deleted a mission' },
-  task_assignees: { INSERT: 'Added an assignee', DELETE: 'Removed an assignee', UPDATE: 'Changed an assignee share' },
+  task_assignees: { INSERT: 'Added a member to the Mission Crew', DELETE: 'Removed a member from the Mission Crew', UPDATE: 'Changed a Crew share' },
   task_reviewers: { INSERT: 'Added a reviewer', DELETE: 'Removed a reviewer', UPDATE: 'Changed a review' },
   task_dependencies: { INSERT: 'Linked two missions', DELETE: 'Removed a mission link' },
   task_links: { INSERT: 'Added a link', DELETE: 'Removed a link' },
@@ -147,7 +158,7 @@ const ROW_WORDS: Record<string, Record<string, string>> = {
   company_milestones: { INSERT: 'Added a milestone', UPDATE: 'Edited a milestone', DELETE: 'Removed a milestone' },
   report_snapshots: { INSERT: 'Saved a report', UPDATE: 'Edited a saved report', DELETE: 'Deleted a saved report' },
 };
-const FIELD_WORDS: Record<string, string> = {
+export const FIELD_WORDS: Record<string, string> = {
   status: 'status', priority: 'priority', title: 'title', category: 'type', assignee_id: 'assignee', reviewer_id: 'reviewer',
   assigned_date: 'start date', due_date: 'due date', completed_date: 'completion date', task_scale: 'scale',
   scale_override: 'scale', archived_effective_date: 'archive date', is_primary: 'primary assignee', share_units: 'share',
@@ -216,7 +227,8 @@ export function parseCursor(value: string | null | undefined): ActivityCursor | 
 }
 export const cursorParam = (cursor: ActivityCursor): string => `${cursor.at}~${cursor.id}`;
 
-function summary(row: ActivityRow): string {
+/** What an `activity_feed` row did, in words ("Added a mission file"). Mission Activity uses the same words. */
+export function activitySummary(row: ActivityRow): string {
   const action = row.action;
   if (row.kind === 'records') {
     return `${RECORD_VERB[action] ?? codeLabel(action)} ${RECORD_NOUN[row.record_kind ?? ''] ?? 'a record'}`;
@@ -268,7 +280,7 @@ export function mapActivity(row: ActivityRow, people: ReadonlyMap<string, Person
     id: row.id,
     at: row.occurred_at,
     kind: (ACTIVITY_KINDS as readonly string[]).includes(row.kind) ? (row.kind as ActivityKind) : 'other',
-    summary: summary(row),
+    summary: activitySummary(row),
     actor: name(row.actor_id),
     about: row.subject_user_id && row.subject_user_id !== row.actor_id ? name(row.subject_user_id) : null,
     href: target?.href ?? null,
