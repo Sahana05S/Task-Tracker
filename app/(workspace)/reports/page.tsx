@@ -26,7 +26,7 @@ import { requireProfile } from '@/shared/session/profile';
 import { canManageReportSnapshots, getSupportModuleData } from '@/modules/support';
 import { canManageTasks } from '@/modules/tasks/client';
 import { getMissionChoices } from '@/modules/tasks';
-import { getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
+import { getQuestTimes, getTaskExecution, getTimerSessionActivity } from '@/modules/time-tracking';
 import { canViewEmployeeReports, getEmployeeByEmployeeId, getMemberNames } from '@/modules/team';
 import { ISO_DATE_PATTERN } from '@/shared/forms/form-data';
 
@@ -79,13 +79,15 @@ async function MissionActivity({ query, tabs }: { query: ReportsSearchParams; ta
   const choices = await getMissionChoices();
   const selected = choices.find((choice) => choice.taskTag === query.mission) ?? null;
   const seesEveryone = canManageTasks(profile.role);
-  const [execution, activity, names] = selected
+  const [execution, activity, names, quests] = selected
     ? await Promise.all([
         getTaskExecution(selected.id),
         getTimerSessionActivity(selected.id).catch(() => ({ available: false as const })),
         getMemberNames(),
+        // Quest titles group the sessions by Quest (migration 123); null leaves one list.
+        getQuestTimes(selected.id).catch(() => null),
       ])
-    : [{ timers: [], logs: [] }, { available: false as const }, {}];
+    : [{ timers: [], logs: [] }, { available: false as const }, {}, null];
   const timers = seesEveryone ? execution.timers : execution.timers.filter((timer) => timer.userId === profile.id);
   return (
     <MissionPage>
@@ -96,6 +98,7 @@ async function MissionActivity({ query, tabs }: { query: ReportsSearchParams; ta
         timers={timers}
         memberNames={new Map(Object.entries(names))}
         sessions={activity.available ? activity.sessions : null}
+        questTitles={new Map((quests ?? []).map((quest) => [quest.nodeId, quest.title]))}
         seesEveryone={seesEveryone}
       />
     </MissionPage>

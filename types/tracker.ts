@@ -273,6 +273,8 @@ export interface DailyTaskLog {
   logSource: TaskLogSource;
   /** `source_timer_id` — timer session that produced this log, when applicable. */
   sourceTimerId: string | null;
+  /** `checklist_node_id`: the Quest (or, before migration 123, the checklist row) its timer ran on. */
+  checklistNodeId?: string | null;
   /** `created_at` — ISO 8601 timestamp. */
   createdAt: string;
 }
@@ -506,6 +508,8 @@ export interface TaskTimer {
   elapsedSeconds: number;
   generatedLogId: string | null;
   notes: string | null;
+  /** `checklist_node_id`: the Quest this timer ran on (migration 123; older rows may name any checklist row); null for a mission timer. */
+  nodeId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

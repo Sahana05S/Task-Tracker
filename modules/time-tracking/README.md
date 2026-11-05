@@ -1,19 +1,19 @@
 # time-tracking
 
-Hours worked on missions: work logs (create, correct, reverse), task timers
-(start, stop, discard; item timers on checklist rows are kept on the server
-only, see below), manual time entry, the
+Hours worked on missions: work logs (create, correct, reverse), timers on
+Quests and on missions without Quests (start, stop, discard; migration 123),
+manual time entry, the
 "Log time" drawer, the timer button, the `/logs` history page, the running-timer pill in the shell,
 and the effort and productivity formulas built on logged hours.
 
 ## Public API (the only files other code may import)
 | File | What it offers |
 |---|---|
-| `index.ts` | Server reads: `getTaskExecution` (a mission's logs and timers), `getTimerSessionActivity` (what each stopped session covered, migration 110), `getMyLogHistory`, `getTaskEffortTotals`, `getLoggableTasksFor`, `getRunningTimers`, `getTeamRunningTimers`, `getMemberLogDates` (Today's active days), `getMemberDayHours` (productive hours per member-day, overlapping timers merged, for the daily perf log), `getMemberDaySessions` (one member's day: timer segments and running timers with mission, start, end and note, plus manual entries; for the check-out report's time blocks). Also re-exports everything in `client.ts`. |
-| `client.ts` | Pure formulas and helpers, safe for `'use client'`: `roundToNumericScale`, `computeScaledProgress`, `computeProductivity`, `isMetricsEligible`, `sumHours` (per mission), `mergedDayHours` (one person's productive hours: overlapping timer segments counted once, migration 118), `aggregateEffortByTask`, `groupLogsByDate`, log/timer mappers, timer elapsed-time helpers, `canStartTimerForTask`, `canManageTimerRecord`, session wording (`sessionSummary`, `describeSessionEvent`, `mapSessionActivity`), and types |
+| `index.ts` | Server reads: `getTaskExecution` (a mission's logs and timers), `getTimerSessionActivity` (what each stopped session covered, migration 110), `getMyLogHistory`, `getTaskEffortTotals`, `getLoggableTasksFor`, `getRunningTimers` (with each Quest timer's `nodeId` and `questTitle`), `getQuestMissionIds` (missions with Quests, for `RunningTimerProvider`), `getQuestTimes` (a mission's Quests with own and sub-Quest-inclusive logged seconds, `quest_time`, migration 123), `getTeamRunningTimers`, `getMemberLogDates` (Today's active days), `getMemberDayHours` (productive hours per member-day, overlapping timers merged, for the daily perf log), `getMemberDaySessions` (one member's day: timer segments and running timers with mission, start, end and note, plus manual entries; for the check-out report's time blocks). Also re-exports everything in `client.ts`. |
+| `client.ts` | Pure formulas and helpers, safe for `'use client'`: `roundToNumericScale`, `computeScaledProgress`, `computeProductivity`, `isMetricsEligible`, `sumHours` (per mission), `mergedDayHours` (one person's productive hours: overlapping timer segments counted once, migration 118), `aggregateEffortByTask`, `groupLogsByDate`, log/timer mappers, timer elapsed-time helpers, `canStartTimerForTask`, `canManageTimerRecord`, session wording (`sessionSummary`, `describeSessionEvent`, `mapSessionActivity`), `runningTimerLabel` ("TAG › Quest"), `questTree` (Quests with their sub-Quests in reading order), and types (`QuestTime`) |
 | `actions.ts` | `'use server'` `createTaskLog`, `updateTaskLog`, `deleteTaskLog`, `loadLoggableTasks` |
-| `timer-actions.ts` | `'use server'` `startTaskTimer` (by `taskId`, or `taskTag` from older forms), `startItemTimer` (**deprecated**: no screen offers it since 3 November 2026; kept for older clients and the offline queue), `stopTaskTimer`, `discardTaskTimer`, `discardTimerAsManager`, `enterManualTaskTime`; for the Android app's offline queue (M21), `recordOfflineTimer` (a timer run offline, whole mission or a checklist row) and `stopTimerAt` (a server timer stopped offline), both taking an object with the offline grant and a persistent operation id |
-| `components/` | `QuickLogTrigger` ("Log time" pill) and `QuickLogDrawer`; `TimerButton` (play/stop pill for one mission) and `RunningTimerProvider`/`useRunningTimers`/`useRunningTimer(taskId)` (`running-timer-context.tsx`, mounted by the workspace layout with `getRunningTimers`); `LogHistory`; `timer-panels.tsx` (`TimerControl`, `TimerRecords`, `ManualTimeForm`) |
+| `timer-actions.ts` | `'use server'` `startTaskTimer` (by `taskId`, or `taskTag` from older forms), `startItemTimer` (a Quest timer by `nodeId`, migration 123; non-Quest rows are refused), `stopTaskTimer`, `discardTaskTimer`, `discardTimerAsManager`, `enterManualTaskTime`; for the Android app's offline queue (M21), `recordOfflineTimer` (a timer run offline, whole mission or a checklist row) and `stopTimerAt` (a server timer stopped offline), both taking an object with the offline grant and a persistent operation id |
+| `components/` | `QuickLogTrigger` ("Log time" pill) and `QuickLogDrawer`; `TimerButton` (play/stop pill for one Quest with `nodeId`, or for a mission without Quests) and `RunningTimerProvider`/`useRunningTimers`/`useRunningTimer(taskId, nodeId?)`/`useMissionHasQuests` (`running-timer-context.tsx`, mounted by the workspace layout with `getRunningTimers` and `getQuestMissionIds`); `QuestTimerList` (`quest-timers.tsx`: a mission's Quests with their time and a timer each); `LogHistory`; `timer-panels.tsx` (`TimerControl`, `TimerRecords` grouped by Quest with `groupTimersByQuest`, `ManualTimeForm`) |
 
 ## Private (`internal/`)
 | File | Job |
@@ -39,7 +39,8 @@ and the effort and productivity formulas built on logged hours.
 | `start_checklist_item_timer` | `34_checklist_item_timers.sql` |
 | `record_offline_timer`, `stop_task_timer_at` | `98_offline_timers.sql` |
 | `timer_session_activity` (read only) | `110_timer_session_activity.sql` |
-| `idx_task_timers_one_running_per_mission`, `taskpulse_private.overlap_hours`, `taskpulse_private.member_day_hours` | `118_concurrent_timers.sql` |
+| `taskpulse_private.overlap_hours`, `taskpulse_private.member_day_hours` | `118_concurrent_timers.sql` |
+| `idx_task_timers_one_running_per_quest` (replaces 118's per-mission index), `quest_time` (read only); `start_checklist_item_timer`, `timer_session_activity` (adds `node_id`, `quest_title`) and `execution_command` rewritten | `123_quest_timers.sql` |
 
 All objects are company-scoped by migrations 39-40 (M15). The timer commands
 also read `tasks.id` by tag.
@@ -98,8 +99,8 @@ User decisions: a person may run several mission timers at the same time; each
 mission keeps its full time (A 09:00-13:00 logs 4 h on A, B 11:00-14:00 logs
 3 h on B); the day's productive hours are the merged time (09:00-14:00 = 5 h).
 `idx_task_timers_one_running_per_mission` allows at most one running server
-timer per person per mission (the 23505 message reads "This mission's timer is
-already running"). Every daily total merges overlapping timer segments and adds
+timer per person per mission (since 123, per person per Quest; the 23505
+message reads "This timer is already running"). Every daily total merges overlapping timer segments and adds
 manual and imported hours as entered: in SQL `taskpulse_private.overlap_hours`
 (sum of segment lengths minus their union), used by `member_day_hours`,
 attendance validity (`attendance_inputs`, so `attendance_input_context`, scoring
@@ -110,3 +111,30 @@ the log compilation. The effort snapshots (`capture_effort_input`) now carry
 `timer_segment_start`/`timer_segment_end`; older snapshots had no overlaps, so
 their plain sum is already merged. Task productivity, scale-by-hours and every
 per-mission figure keep the full time.
+
+## Quest timers (5 November 2026, migration 123)
+User decisions: a mission with Quests is timed on its Quests. One running timer
+per person per Quest (`idx_task_timers_one_running_per_quest`, keyed by person,
+mission and Quest, the mission timer being the "no Quest" slot); several people
+can time the same Quest; one person can time several Quests at once, and the
+day's hours still merge overlaps (118). A mission with no Quests keeps its
+mission timer; `start_task_timer` is refused once a mission has Quests, and a
+mission timer already running is never touched (it can still be stopped).
+`start_checklist_item_timer` accepts Quest rows only (a row that owns a Quest
+list) and needs the mission's Crew or a manager, like every timer; the Quest is
+set on insert (`taskpulse.quest_timer`), so the same Quest twice by one person
+is refused with "Your timer is already running on this Quest".
+`record_offline_timer` is unchanged, so time recorded offline is never lost.
+`quest_time(task)` gives each Quest's own seconds and its total including
+everything inside it and its sub-Quests (recursive on `owner_node_id` with a
+path array); only those who may read the mission's work (117) read it.
+Scoring keeps reading total task hours; historical timer records are kept.
+
+Screens: a Start/Stop on each Quest row of the checklist table and on a
+Quest's home (supplied by the checklist page through `questTimer`, since
+checklists may not import this module), on an open Quest in Today's graph, and
+in the mission page's Time panel (`QuestTimerList`); the mission-level
+`TimerButton` hides on missions with Quests (`useMissionHasQuests`) unless a
+mission timer is still running. The running-timer pill reads "TAG › Quest".
+The History tab and Reports > Mission activity group sessions by Quest.
+Tests: `tools/test_timer_session_activity_database.py` (migration 123 part).

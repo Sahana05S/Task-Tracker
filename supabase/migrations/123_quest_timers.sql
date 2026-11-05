@@ -97,7 +97,7 @@ DECLARE actor uuid:=auth.uid(); tid uuid; result jsonb; timer public.task_timers
  PERFORM set_config('taskpulse.quest_timer','',true);
  SELECT * INTO STRICT timer FROM public.task_timers WHERE id=(result->>'timerId')::uuid;
  IF timer.checklist_node_id IS DISTINCT FROM p_node_id THEN
-  RAISE EXCEPTION 'Operation key reused with different input' USING ERRCODE='40001'; END IF;
+  RAISE EXCEPTION 'Operation key reused with different input' USING ERRCODE='PT409'; END IF;
  RETURN result||jsonb_build_object('nodeId',p_node_id);
 END $$;
 REVOKE ALL ON FUNCTION public.start_checklist_item_timer(uuid,jsonb,uuid) FROM PUBLIC,anon,authenticated,service_role;
@@ -105,7 +105,7 @@ GRANT EXECUTE ON FUNCTION public.start_checklist_item_timer(uuid,jsonb,uuid) TO 
 
 -- 4. Time per Quest, including sub-Quests -----------------------------------------
 CREATE FUNCTION public.quest_time(p_task uuid)
-RETURNS TABLE(node_id uuid, checklist_id uuid, parent_quest_id uuid, title text, assignee_id uuid, own_seconds bigint, total_seconds bigint)
+RETURNS TABLE(node_id uuid, owned_checklist_id uuid, checklist_id uuid, parent_quest_id uuid, title text, assignee_id uuid, own_seconds bigint, total_seconds bigint)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 #variable_conflict use_column
 BEGIN
@@ -117,7 +117,7 @@ BEGIN
   RAISE EXCEPTION 'This checklist is private to the mission''s people' USING ERRCODE='42501'; END IF;
  RETURN QUERY
  WITH RECURSIVE quests AS (
-  SELECT n.id AS quest_id,n.checklist_id AS in_list,o.id AS owned_list,n.title AS quest_title,n.assignee_id AS owner_id,n.sort_order AS place
+  SELECT n.id AS quest_id,n.checklist_id AS in_list,o.id AS owned_list,n.title::text AS quest_title,n.assignee_id AS owner_id,n.sort_order AS place
   FROM public.checklist_nodes n JOIN public.task_checklists o ON o.owner_node_id=n.id
   WHERE o.task_id=p_task),
  lists(quest_id,list_id,path) AS (
@@ -131,7 +131,7 @@ BEGIN
   FROM public.daily_task_logs g
   WHERE g.task_id=p_task AND g.reversed_at IS NULL AND g.checklist_node_id IS NOT NULL
   GROUP BY g.checklist_node_id)
- SELECT q.quest_id,q.in_list,
+ SELECT q.quest_id,q.owned_list,q.in_list,
   (SELECT p.owner_node_id FROM public.task_checklists p WHERE p.id=q.in_list),
   q.quest_title,q.owner_id,
   coalesce(round((SELECT x.s FROM secs x WHERE x.on_node=q.quest_id)),0)::bigint,
@@ -193,7 +193,7 @@ BEGIN
         ORDER BY a.occurred_at, a.id
         LIMIT 100) e
       LEFT JOIN public.checklist_nodes n ON n.id = e.event_node), '[]'::jsonb),
-    tm.checklist_node_id, qn.title
+    tm.checklist_node_id, qn.title::text
   FROM public.task_timers tm
   LEFT JOIN public.checklist_nodes qn ON qn.id = tm.checklist_node_id
   WHERE tm.task_id = p_task AND tm.organization_id = org

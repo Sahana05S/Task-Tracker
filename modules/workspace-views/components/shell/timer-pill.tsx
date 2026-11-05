@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronDownIcon, TimerIcon } from 'lucide-react';
 
 import { useRunningTimers } from '@/modules/time-tracking/components/running-timer-context';
+import { runningTimerLabel } from '@/modules/time-tracking/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
 import { RunningClock } from '@/shared/ui/running-clock';
 import { cn } from '@/shared/utils';
@@ -25,6 +26,7 @@ function Pulse() {
  * mission page, where it is stopped and logged, and shows the mission tag
  * rather than a ticking clock. Several timers may run at once (migration 118):
  * the pill then reads "2 timers running" and opens a list with a link to each.
+ * A Quest timer reads "TAG › Quest" (migration 123).
  */
 export function TimerPill({ compact = false }: { compact?: boolean }) {
   const timers = useRunningTimers();
@@ -34,13 +36,13 @@ export function TimerPill({ compact = false }: { compact?: boolean }) {
     return (
       <Link
         href={`/tasks/${encodeURIComponent(timer.taskTag)}`}
-        title={`Timer running on ${timer.taskTag} · ${timer.taskTitle}`}
+        title={`Timer running on ${runningTimerLabel(timer)} · ${timer.taskTitle}`}
         className={cn(PILL, compact && 'px-2.5')}
       >
         <Pulse />
         <TimerIcon className="size-3.5" aria-hidden="true" />
         <span className={cn(compact && 'sr-only')}>Timer running</span>
-        <span className="max-w-[9rem] truncate font-mono">{timer.taskTag}</span>
+        <span className="max-w-[12rem] truncate font-mono">{runningTimerLabel(timer)}</span>
       </Link>
     );
   }
@@ -61,7 +63,7 @@ export function TimerPill({ compact = false }: { compact?: boolean }) {
             <Link href={`/tasks/${encodeURIComponent(timer.taskTag)}`}>
               <TimerIcon className="text-success-strong size-4 shrink-0" aria-hidden="true" />
               <span className="grid min-w-0">
-                <span className="truncate font-mono font-semibold">{timer.taskTag}</span>
+                <span className="truncate font-mono font-semibold">{runningTimerLabel(timer)}</span>
                 <span className="text-muted-foreground truncate text-xs">{timer.taskTitle}</span>
               </span>
               <span className="text-muted-foreground ml-auto text-xs tabular-nums"><RunningClock startedAt={timer.startedAt} /></span>

@@ -367,6 +367,9 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
   const pathIds = new Set(path.map(s => s.id));
   const lastLevel = last ? levels[last.id] : undefined;
   const sectionStep = last && !last.options.parentNodeId ? last : undefined;
+  // An open Quest star carries its own timer (migration 123); the mission timer hides once a mission has Quests.
+  const openRow = last && path.length > 1 ? rows.get(last.id) : undefined;
+  const openQuest = openRow?.ownedChecklistId ? openRow : undefined;
   const status = restoring ? 'Opening your saved place…' : !last ? `${roots.length} open ${roots.length === 1 ? 'mission' : 'missions'}`
     : leaf ? `Objective · depth ${path.length}` : lastLevel?.loading && !lastLevel.branch ? 'Loading branch…' : `${lastLevel?.branch?.rows.length ?? 0} rows · depth ${path.length}`;
   const { w, h } = size;
@@ -406,6 +409,7 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
         </div> : <span />}
         {mission ? <span className="flex flex-wrap items-center gap-3 text-xs font-semibold">
           {canTimeMission(mission) ? <TimerButton taskId={mission.id} taskLabel={mission.taskTag} /> : null}
+          {canTimeMission(mission) && openQuest ? <TimerButton taskId={mission.id} taskLabel={mission.taskTag} nodeId={openQuest.id} questTitle={openQuest.title} /> : null}
           <Link className="link" href={checklistWorkHref(mission.taskTag, last.options)}>Add or manage objectives</Link>
           <Link className="link" href={`/tasks/${encodeURIComponent(mission.taskTag)}`}>Mission details</Link>
           <MissionActionsMenu taskId={mission.id} taskTag={mission.taskTag} />

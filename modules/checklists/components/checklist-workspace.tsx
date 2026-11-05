@@ -14,7 +14,7 @@ import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-t
 import { SECTION_TITLES, checklistIssues, pageResult, percentText } from '../internal/table';
 import { SectionStateIcon } from './section-state-icon';
 import { ChecklistVersionField, ChecklistVersionProvider } from './checklist-state-control';
-import { ChecklistIssues, ChecklistTable } from './checklist-table';
+import { ChecklistIssues, ChecklistTable, type QuestTimerSlot } from './checklist-table';
 import { ChecklistGateBadge } from './checklist-gate-badge';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-cards';
@@ -69,6 +69,8 @@ export interface ChecklistWorkspaceProps {
   };
   /** `submission` creates a Sub-mission (managers; supplied by the page from the tasks module). */
   actions: { checklist: Command; submission?: Command };
+  /** A Quest's Start/Stop timer (migration 123), supplied by the page from the time-tracking module. */
+  questTimer?: QuestTimerSlot;
   /** Beside the breadcrumb: the mission's own actions, supplied by the page. */
   headerActions?: React.ReactNode;
   /** Table (default), Board, Blocks or Outline. */
@@ -126,7 +128,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       hideOnPhone: index < ancestors.length - 2 })),
   ];
   const tableActions = { checklist: props.actions.checklist, submission: manager ? props.actions.submission : undefined };
-  const shared = { manager, linkChoices: tools?.linkChoices ?? [] };
+  const shared = { manager, linkChoices: tools?.linkChoices ?? [], questTimer: props.questTimer };
   const issues = checklistIssues(rollup.errors);
   // Section headers say "Changes needed" while an objective in them is sent back (114).
   const sentBack = sentBackIndex(props.reviews ?? NO_REVIEWS);
@@ -243,7 +245,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
         </div>
 
         {checklist && props.sections ? (
-          <HomeHero {...props} checklist={checklist} tools={tools} changesIn={changesIn} parent={quest ? { href: backHref, title: trail.at(-1)?.title ?? 'Master checklist' } : undefined} />
+          <HomeHero {...props} checklist={checklist} tools={tools} changesIn={changesIn} parent={quest ? { href: backHref, title: trail.at(-1)?.title ?? 'Master checklist' } : undefined} canTime={executor && open} />
         ) : checklist && props.page ? (
           <PageHero rollup={rollup} page={props.page} title={current?.title ?? 'Checklist page'} parentTitle={trail.at(-1)?.title ?? checklist.title} inQuest={inQuest} />
         ) : null}
@@ -274,7 +276,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   );
 }
 
-function HomeHero({ task, ownerNames, checklist, rollup, changesIn, parent }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools']; changesIn: (key: ChecklistSection) => boolean; parent?: { href: string; title: string } }) {
+function HomeHero({ ownerNames, task, checklist, rollup, changesIn, parent, canTime, questTimer }: ChecklistWorkspaceProps & { checklist: NonNullable<ChecklistWorkspaceProps['checklist']>; tools?: ChecklistWorkspaceProps['managerTools']; changesIn: (key: ChecklistSection) => boolean; parent?: { href: string; title: string }; canTime?: boolean }) {
   const activity = rollup.taskProgress;
   return (
     <section aria-label="Checklist summary" className="hero-card p-5 sm:p-6">
@@ -297,6 +299,10 @@ function HomeHero({ task, ownerNames, checklist, rollup, changesIn, parent }: Ch
             <span className="text-muted-foreground">Task owner</span>
             <AvatarStack names={ownerNames} />
           </div>
+          {/* A Quest's home times the Quest (migration 123): the mission's Crew and managers, while it is open. */}
+          {checklist.ownerNodeId && canTime && questTimer ? (
+            <div className="mt-4">{questTimer({ nodeId: checklist.ownerNodeId, title: checklist.title }, 'hero')}</div>
+          ) : null}
         </div>
         <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-card/85 p-4 shadow-(--shadow-card) sm:w-72">
           <div className="flex items-center gap-3">

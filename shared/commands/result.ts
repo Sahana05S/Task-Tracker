@@ -10,7 +10,7 @@ export function executionError(error: { code: string; message: string }): Action
   const errorCode = isConflictCode(error.code) || error.code === '23505' ? 'conflict'
     : error.code === '42501' ? 'forbidden' : error.code.startsWith('22') || error.code === '23514' || error.code === '23503' ? 'validation' : 'unavailable';
   return { success: false, errorCode, error: error.code === '23505'
-    ? "This mission's timer is already running. Stop or discard it first." : error.message };
+    ? 'This timer is already running. Stop or discard it first.' : error.message };
 }
 export function executionResult(value: Json): ExecutionResult {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
