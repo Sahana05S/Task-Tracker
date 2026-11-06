@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArchiveIcon, ArchiveRestoreIcon, NotebookPenIcon, PencilIcon, PlusIcon } from 'lucide-react';
+import { ArchiveIcon, ArchiveRestoreIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { manageLabel } from '@/modules/labels/actions';
@@ -75,10 +75,9 @@ function LabelForm({ label, onDone }: { label?: CatalogueLabel; onDone: () => vo
 }
 
 /**
- * Create, rename, recolour, archive and restore the company's labels, and
- * choose which are note types (managing director and managers; label_command
- * enforces it).
- * Renaming keeps the label's id, so every mission, note and meeting point it
+ * Create, rename, recolour, archive and restore the company's labels
+ * (managing director and managers; label_command enforces it).
+ * Renaming keeps the label's id, so every mission and meeting point it
  * is on keeps it. Archiving hides a label from records and suggestions.
  */
 export function LabelManager({ labels }: { labels: readonly CatalogueLabel[] }) {
@@ -86,19 +85,6 @@ export function LabelManager({ labels }: { labels: readonly CatalogueLabel[] }) 
   const path = usePathname();
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, start] = useTransition();
-
-  // Note types (migration 126): every note carries at least one of them.
-  function toggleNoteType(label: CatalogueLabel) {
-    start(async () => {
-      const result = await manageLabel(formData({ op: label.noteType ? 'note_type_off' : 'note_type_on', labelId: label.id, path, operationId: crypto.randomUUID() }));
-      if (!result.success) {
-        toast.error(result.error ?? 'The label was not changed.');
-        return;
-      }
-      toast.success(label.noteType ? `#${label.name} is no longer a note type.` : `#${label.name} is now a note type.`);
-      router.refresh();
-    });
-  }
 
   function toggleArchive(label: CatalogueLabel) {
     start(async () => {
@@ -128,21 +114,10 @@ export function LabelManager({ labels }: { labels: readonly CatalogueLabel[] }) 
                       #{label.name}
                     </a>
                     <span className="text-muted-foreground text-xs">
-                      {label.uses} {label.uses === 1 ? 'record' : 'records'}{label.noteType ? ' · note type' : ''}{label.archived ? ' · archived' : ''}{label.description ? ` · ${label.description}` : ''}
+                      {label.uses} {label.uses === 1 ? 'record' : 'records'}{label.archived ? ' · archived' : ''}{label.description ? ` · ${label.description}` : ''}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={label.noteType ? 'secondary' : 'ghost'}
-                      disabled={busy || label.archived}
-                      aria-pressed={label.noteType}
-                      title="Every note needs at least one note type"
-                      onClick={() => toggleNoteType(label)}
-                    >
-                      <NotebookPenIcon aria-hidden="true" />{label.noteType ? 'Note type' : 'Make note type'}
-                    </Button>
                     <Button type="button" size="icon" variant="ghost" aria-label={`Rename ${label.name}`} onClick={() => setEditing(label.id)}>
                       <PencilIcon aria-hidden="true" />
                     </Button>

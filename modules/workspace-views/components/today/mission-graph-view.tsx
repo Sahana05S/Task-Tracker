@@ -111,7 +111,8 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
   const [hashtag, setHashtag] = useState<Label | null>(null);
   const [hashtagRecords, setHashtagRecords] = useState<HashtagRecords | null>(null);
   const [hashtagError, setHashtagError] = useState<string | null>(null);
-  const [labelLinks, setLabelLinks] = useState(false);
+  // Missions sharing the picked label are linked by default (user decision, 6 November 2026); the box turns it off.
+  const [labelLinks, setLabelLinks] = useState(true);
   // Where each opened mission's sub-missions hang in its checklist (read once per mission when it opens).
   const [anchors, setAnchors] = useState<Record<string, Record<string, SubMissionAnchor>>>({});
   const anchorsAsked = useRef(new Set<string>());

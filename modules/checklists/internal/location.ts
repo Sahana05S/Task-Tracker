@@ -19,11 +19,6 @@ export function parseChecklistLocation(query: Record<string, string | string[] |
   return { checklistId: uuid('checklist'), parentNodeId: uuid('parent'), section, cursor, limit: 30, item: uuid('item') };
 }
 
-/** The mission's Notes panel opened for one Quest or objective (migration 126): its notes, and new ones go on it. */
-export function notesHref(taskTag: string, nodeId: string, title: string): string {
-  return `/tasks/${encodeURIComponent(taskTag)}?tab=details&notes=${encodeURIComponent(nodeId)}&noteTitle=${encodeURIComponent(title.slice(0, 180))}#notes`;
-}
-
 /** Opens the table of the rows under a row. */
 export function openChecklistRow(row: Pick<ChecklistBranchRow, 'id' | 'checklistId' | 'section' | 'ownedChecklistId'>): ChecklistBranchOptions {
   // A Quest opens as a master checklist of its own.

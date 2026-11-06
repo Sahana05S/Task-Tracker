@@ -105,7 +105,7 @@ export function CompanySettingsEditor({ settings, members, labels }: {
       <StandingMissionsSection settings={settings} members={members} />
       <HolidaysSection settings={settings} />
       {labels ? (
-        <MissionPanel id="labels" icon={TagsIcon} title="Labels" subtitle="Group missions, notes and meeting points; renaming keeps a label on everything it is on. Note types: every note carries at least one.">
+        <MissionPanel id="labels" icon={TagsIcon} title="Labels" subtitle="Group missions and meeting points; renaming keeps a label on everything it is on.">
           {labels}
         </MissionPanel>
       ) : null}

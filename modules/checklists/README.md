@@ -129,10 +129,8 @@ day; the mission's assignees hear about Work needed. A chip beside the tick
 the review sheet for those who decide; `ObjectiveReviewNote` shows the note; the mission page lists the objectives waiting for the viewer under
 "Your review is requested".
 
-Notes (migration 126, learning module): every row that is not a linked
-sub-mission has a Notes button in the table, and a Quest's home a "Notes on this
-Quest" link; both open the mission's Notes panel scoped to that row
-(`notesHref(taskTag, nodeId, title)` in `internal/location.ts`).
+Notes (126) were removed by the user on 6 November 2026 (migration 129): rows and Quest homes have no
+Notes link any more.
 
 ## Public API (the only files other code may import)
 | File | What it offers |

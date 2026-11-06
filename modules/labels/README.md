@@ -75,12 +75,13 @@ Migration 126 (Notes, owned by the learning module) adds:
 - `labelled(slug)`: a note item also has `taskId`, `nodeId` and `nodeTitle`; the label page groups them as "Notes".
 - A note's last type hashtag cannot be detached (deferred constraint trigger).
 
-Migration 127 (`127_mission_note_labels.sql`, user decision 6 November 2026): the mission page has no
-Labels panel and the New mission form no Labels field; a mission carries the hashtags of its notes.
-`labels_for('task', ids)` returns each mission's own links (older missions keep theirs) together with the
-hashtags on its active notes, each once, counting a note only for callers who may read it (117). So the
-chips, the Missions Labels filter (no separate "Include notes" choice), the mission header and Today all
-show them. `label_link_command` for missions stays (Task Tools and older data).
+Migration 127 briefly made a mission carry its notes' hashtags. Migration 129 (`129_remove_notes.sql`,
+user decision 6 November 2026: "I do not want notes at all, I only want labels") deleted every note and
+note link and the 26 starter hashtags (with their links), revoked the note commands and put
+`labels_for` back to the 112 body: a mission's labels are its own, set in the mission's Labels panel
+(Details tab) and the New mission form. `labels.note_type` and the `note_type_*` ops remain in the
+database unused; the Label manager no longer offers them. On the Today map, picking a label draws the
+label lines between the missions carrying it by default (the box turns them off).
 
 Harness: `tools/test_workspace_labels_database.py`.
 

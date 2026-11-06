@@ -5,6 +5,7 @@ import { prepareOperation } from '@/shared/commands/client-operation';
 
 import * as React from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 import {
   createTask,
@@ -28,6 +29,8 @@ import { TASK_PRIORITIES } from '@/shared/tracker/enums';
 import { categoryChoices, SCALE_MODE_LABELS, type StandingScaleMode } from '@/modules/settings/client';
 import { useCategoryCatalogue, useDefaultScaleMode } from '@/modules/settings/components/company-settings-context';
 import type { Task, User } from '@/types/tracker';
+import type { Label } from '@/modules/labels/client';
+import { attachPickedLabels, LabelPicker, type PickedLabel } from '@/modules/labels/components/label-picker';
 
 /** `null` opens the form in create mode; a task opens it in edit mode. */
 export interface TaskDialogProps {
@@ -38,6 +41,10 @@ export interface TaskDialogProps {
   /** Pre-selected assignee for new tasks, normally the current user. */
   defaultAssigneeId: string;
   templates?: readonly NativeTemplate[];
+  /** The company's labels (migration 112); null or absent hides the Labels field on a new mission. */
+  labelCatalogue?: readonly Label[] | null;
+  /** May create a label while typing it (managing director and project engineers). */
+  canCreateLabels?: boolean;
 }
 
 const INITIAL_STATE: TaskActionState | null = null;
@@ -66,11 +73,13 @@ export function TaskDialog({
   members,
   defaultAssigneeId,
   templates=[],
+  labelCatalogue = null,
+  canCreateLabels = false,
 }: TaskDialogProps) {
   const isEdit = task !== null;
 
   const [createState, createAction, createPending] = React.useActionState(
-    async (previous:TaskActionState|null,form:FormData)=>{try {const finish=await prepareOperation(form,'save_task_with_participants'); const result=await createTask(previous,form); if(result.success) finish(); return result;} catch {return {success:false,error:'Response interrupted; retry the same task to recover its result.'};}},
+    async (previous:TaskActionState|null,form:FormData)=>{try {const finish=await prepareOperation(form,'save_task_with_participants'); const result=await createTask(previous,form); if(result.success) {finish(); await attachNewMissionLabels(result.data?.taskId, form);} return result;} catch {return {success:false,error:'Response interrupted; retry the same task to recover its result.'};}},
     INITIAL_STATE,
   );
   const [editState, editAction, editPending] = React.useActionState(
@@ -128,6 +137,8 @@ export function TaskDialog({
           defaultAssigneeId={defaultAssigneeId}
           templates={templates}
           action={isEdit ? editAction : createAction}
+          labelCatalogue={labelCatalogue}
+          canCreateLabels={canCreateLabels}
           pending={pending}
           error={error}
           onCancel={() => onOpenChange(false)}
@@ -135,6 +146,23 @@ export function TaskDialog({
       </SheetContent>
     </Sheet>
   );
+}
+
+/**
+ * Labels picked on a new mission (migration 112), attached once it exists:
+ * one label_link_command each, so the database still decides who may. A
+ * refused label never undoes the mission; the toast says which were missed.
+ */
+async function attachNewMissionLabels(taskId: string | undefined, form: FormData) {
+  const raw = form.get('labelPicks');
+  if (!taskId || typeof raw !== 'string' || raw === '' || raw === '[]') return;
+  let picks: PickedLabel[];
+  try { picks = JSON.parse(raw) as PickedLabel[]; } catch { return; }
+  if (!Array.isArray(picks) || picks.length === 0) return;
+  const { failed, error } = await attachPickedLabels('task', taskId, picks, '/tasks');
+  if (failed.length) {
+    toast.error(`Mission saved, but ${failed.map((name) => `#${name}`).join(', ')} ${failed.length === 1 ? 'was' : 'were'} not added.${error ? ` ${error}` : ''} Add ${failed.length === 1 ? 'it' : 'them'} on the mission's Details tab.`);
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -147,6 +175,8 @@ interface TaskFormProps {
   defaultAssigneeId: string;
   templates?: readonly NativeTemplate[];
   action: (formData: FormData) => void;
+  labelCatalogue?: readonly Label[] | null;
+  canCreateLabels?: boolean;
   pending: boolean;
   error?: string;
   onCancel: () => void;
@@ -157,12 +187,16 @@ function TaskForm({
   members,
   defaultAssigneeId,
   action,
+  labelCatalogue = null,
+  canCreateLabels = false,
   pending,
   error,
   onCancel,
   templates=[],
 }: TaskFormProps) {
   const isEdit = task !== null;
+  // Labels for a new mission, attached after it is created (see attachNewMissionLabels).
+  const [labelPicks, setLabelPicks] = React.useState<PickedLabel[]>([]);
   // The company's mission types: hidden ones are left out, except the type
   // this mission already has.
   const catalogue = useCategoryCatalogue();
@@ -224,6 +258,7 @@ function TaskForm({
       <input type="hidden" name="lifecycleVersion" value={task?.lifecycleVersion ?? 0} />
       <input type="hidden" name="participantVersion" value={task?.participantVersion ?? 0} />
       <input type="hidden" name="operationId" value={operationId} />
+      {!isEdit && labelPicks.length ? <input type="hidden" name="labelPicks" value={JSON.stringify(labelPicks)} /> : null}
 
       {/*
         One scroll region for every field. Anything placed outside it either
@@ -366,6 +401,23 @@ function TaskForm({
                 placeholder="What the mission delivers and any context the assignee needs."
               />
             </Field>
+            {labelCatalogue ? (
+              <Field
+                id="task-labels"
+                label="Labels"
+                className="sm:col-span-2"
+                hint="Optional. Type # and part of a name; they are added once the mission is saved."
+              >
+                <LabelPicker
+                  inputId="task-labels"
+                  value={labelPicks}
+                  onChange={(next) => { setLabelPicks(next); }}
+                  catalogue={labelCatalogue}
+                  canCreate={canCreateLabels}
+                  disabled={pending}
+                />
+              </Field>
+            ) : null}
           </>
         ) : null}
 

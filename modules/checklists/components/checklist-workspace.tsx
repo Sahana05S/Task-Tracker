@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ClipboardCheckIcon, FileStackIcon, GaugeIcon, FlagIcon, NotebookPenIcon } from 'lucide-react';
+import { ClipboardCheckIcon, FileStackIcon, GaugeIcon, FlagIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -8,7 +8,7 @@ import { Input } from '@/shared/ui/input';
 import { AvatarStack, MissionPage, MissionProgress } from '@/shared/ui/mission-ui';
 import { Breadcrumb, type BreadcrumbItem } from '@/shared/ui/page-nav';
 import { cn } from '@/shared/utils';
-import { checklistWorkHref, notesHref, type ChecklistView } from '../internal/location';
+import { checklistWorkHref, type ChecklistView } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistRollup, type ChecklistSection } from '../internal/progress';
 import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-types';
 import { SECTION_TITLES, checklistIssues, pageResult, percentText, rowMoveTargets } from '../internal/table';
@@ -302,12 +302,6 @@ function HomeHero({ ownerNames, task, checklist, rollup, changesIn, parent, canT
           {/* A Quest's home times the Quest (migration 123): the mission's Crew and managers, while it is open. */}
           {checklist.ownerNodeId && canTime && questTimer ? (
             <div className="mt-4">{questTimer({ nodeId: checklist.ownerNodeId, title: checklist.title }, 'hero')}</div>
-          ) : null}
-          {/* The Quest's notes (migration 126) on the mission's Notes panel. */}
-          {checklist.ownerNodeId ? (
-            <Link href={notesHref(task.taskTag, checklist.ownerNodeId, checklist.title)} className="link mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
-              <NotebookPenIcon className="size-4" aria-hidden="true" />Notes on this Quest
-            </Link>
           ) : null}
         </div>
         <div className="grid w-full min-w-0 gap-2 rounded-2xl bg-card/85 p-4 shadow-(--shadow-card) sm:w-72">

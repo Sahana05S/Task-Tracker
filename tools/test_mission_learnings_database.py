@@ -62,7 +62,9 @@ for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);')
     sql('postgres',f'CREATE DATABASE {db}')
     sql(db,bootstrap)
-    every=[int(m.name.split('_')[0]) for m in MIGRATIONS]
+    # Notes are exercised up to 128; 129 removes them (checked at the end).
+    every=[int(m.name.split('_')[0]) for m in MIGRATIONS if int(m.name.split('_')[0])<=128]
+    later=[int(m.name.split('_')[0]) for m in MIGRATIONS if int(m.name.split('_')[0])>128]
     old={}
     if db==DBS[1]:
         migrate(db,[n for n in every if n<111]); sql(db,seed)
@@ -239,3 +241,16 @@ for db in DBS:
     expect_code(db,B_DIR,note_sql('delete',note=two,names=None),'P0002')
     assert json.loads(ok(db,B_DIR,hashtags))=={} and rows(db)==before
     print('PASS',db,"company B's director can neither read nor change company A's notes")
+
+    if later:
+        # 129 (user decision, 6 November 2026): no notes at all; notes and the starter hashtags are deleted.
+        custom=value(db,"count(*) FROM public.labels WHERE NOT slug=ANY(ARRAY["+','.join(literal(x) for x in STARTERS)+"])")
+        migrate(db,later)
+        assert value(db,'count(*) FROM public.mission_learnings')=='0'
+        assert value(db,"count(*) FROM public.label_links WHERE subject_kind='mission_learning'")=='0'
+        assert value(db,"count(*) FROM public.labels WHERE slug=ANY(ARRAY["+','.join(literal(x) for x in STARTERS)+"])")=='0'
+        assert value(db,"count(*) FROM public.labels WHERE NOT slug=ANY(ARRAY["+','.join(literal(x) for x in STARTERS)+"])")==custom,'labels the company made stay'
+        expect_code(db,M4,note_sql('add',names=None),'42501')
+        expect_code(db,MD,old_sql('add'),'42501')
+        assert notes(db,M4)['items']==[]
+        print('PASS',db,'129: every note and starter hashtag is gone, the company\'s own labels stay, and no one can write a note')

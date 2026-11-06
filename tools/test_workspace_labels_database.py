@@ -47,7 +47,9 @@ for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);')
     sql('postgres',f'CREATE DATABASE {db}')
     sql(db,bootstrap)
-    every=[int(m.name.split('_')[0]) for m in MIGRATIONS]
+    # The note cases run up to 128; 129 removes notes and the starter hashtags (checked at the end).
+    every=[int(m.name.split('_')[0]) for m in MIGRATIONS if int(m.name.split('_')[0])<=128]
+    later=[int(m.name.split('_')[0]) for m in MIGRATIONS if int(m.name.split('_')[0])>128]
     if db==DBS[1]:
         migrate(db,[n for n in every if n<112]); sql(db,seed)
         migrate(db,[n for n in every if n>=112])
@@ -186,3 +188,13 @@ for db in DBS:
     assert beta_crane['slug']=='crane' and beta_crane['id']!=crane['id'],'the same slug is free in another company'
     assert links(db)==before
     print('PASS',db,"company B sees none of company A's labels or links, cannot change them, and has its own 'crane'")
+
+    if later:
+        own=labels_for(db,MD,'task',[T1,T2])
+        migrate(db,later)
+        # 129: a mission's labels are its own again; notes, their links and the starter hashtags are gone.
+        assert labels_for(db,MD,'task',[T1,T2])==own
+        assert value(db,"count(*) FROM public.labels WHERE slug IN ('mistake','learning','client')")=='0'
+        assert value(db,"count(*) FROM public.labels WHERE slug='crane'")=='2','both companies keep their own #crane'
+        assert value(db,"count(*) FROM public.label_links WHERE subject_kind='mission_learning'")=='0'
+        print('PASS',db,"129: labels made by the companies stay with their links; starter hashtags and note links are gone")
