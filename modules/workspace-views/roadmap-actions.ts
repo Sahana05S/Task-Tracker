@@ -82,7 +82,7 @@ export async function loadGraphHashtags(): Promise<ActionResponse<CatalogueLabel
 }
 
 /**
- * The missions and learning notes carrying one label (labelled(slug): only records the viewer may read,
+ * The missions and notes carrying one label (labelled(slug): only records the viewer may read,
  * at most 500), reduced to ids and mission tags for the map's highlight.
  */
 export async function loadGraphHashtag(slug: string): Promise<ActionResponse<HashtagRecords>> {
@@ -92,6 +92,8 @@ export async function loadGraphHashtag(slug: string): Promise<ActionResponse<Has
   const records = await getLabelled(slug).catch(() => null);
   if (!records) return { success: false, error: 'This hashtag could not be read. Retry.' };
   const taskIds = records.items.filter((item) => item.kind === 'task').map((item) => item.id);
-  const learningTaskTags = [...new Set(records.items.flatMap((item) => item.kind === 'mission_learning' && item.taskTag ? [item.taskTag] : []))];
-  return { success: true, data: { taskIds, learningTaskTags } };
+  const notes = records.items.filter((item) => item.kind === 'mission_learning');
+  const noteTaskTags = [...new Set(notes.flatMap((item) => (item.taskTag ? [item.taskTag] : [])))];
+  const noteNodeIds = [...new Set(notes.flatMap((item) => (item.nodeId ? [item.nodeId] : [])))];
+  return { success: true, data: { taskIds, noteTaskTags, noteNodeIds } };
 }

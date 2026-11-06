@@ -7,6 +7,7 @@ import { MissionsWorkspace } from '@/modules/workspace-views/components/missions
 import { requireProfile } from '@/shared/session/profile';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
+import { getMissionNoteHashtags } from '@/modules/learning';
 import { getTaskEffortTotals } from '@/modules/time-tracking';
 import { addMonths, countMissionsInMonth, defaultSetupMonth, getTaskWorkspaceData, monthOf, setupBannerMonth } from '@/modules/tasks';
 import { kolkataDate } from '@/shared/time/kolkata';
@@ -83,10 +84,16 @@ export default async function TasksPage() {
   );
 }
 
-/** The label catalogue and each mission's labels; null when either read fails. */
+/**
+ * The label catalogue and each mission's labels; null when either read fails. The hashtags on each
+ * mission's notes (migration 126, only notes the viewer may read) feed "Include notes"; a failed read
+ * only hides that choice.
+ */
 async function missionLabels(taskIds: string[]) {
-  const [catalogue, byTask] = await Promise.all([getLabelCatalogue(), getLabelsFor('task', taskIds)]);
-  return catalogue && byTask ? { catalogue: catalogue.labels, canCreate: catalogue.canManage, byTask } : null;
+  const [catalogue, byTask, noteSlugsByTask] = await Promise.all([
+    getLabelCatalogue(), getLabelsFor('task', taskIds), getMissionNoteHashtags(taskIds).catch(() => null),
+  ]);
+  return catalogue && byTask ? { catalogue: catalogue.labels, canCreate: catalogue.canManage, byTask, noteSlugsByTask } : null;
 }
 
 /** The month the menu offers and, from the 25th while next month is empty, the banner's month. */

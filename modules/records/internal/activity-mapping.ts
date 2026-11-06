@@ -87,9 +87,6 @@ const MISSION_WORDS: Record<string, string> = {
   review: 'Reviewed the mission',
   initialize_native_details: 'Set up the mission details',
   publish_detail_template: 'Published a details template',
-  mission_learning_add: 'Added a note to Mistakes and learning',
-  mission_learning_edit: 'Edited a note in Mistakes and learning',
-  mission_learning_withdraw: 'Withdrew a note from Mistakes and learning',
   // Mission people (migration 108; Crew from 5 November 2026). The member arrives as the entry's "about".
   task_people_add_crew: 'Added a member to the Mission Crew',
   task_people_remove_crew: 'Removed a member from the Mission Crew',
@@ -120,6 +117,23 @@ const CHECKLIST_WORDS: Record<string, string> = {
   // Migration 122: a Quest's owner was set or changed; the member arrives as the entry's "about".
   assign: 'Chose a Quest owner',
 };
+// Notes (migration 126; the 111 commands read the same). The note's hashtags arrive as the reason
+// ("#mistake #client") and become part of the line: "Added a note #mistake #client".
+const NOTE_WORDS: Record<string, string> = {
+  mission_note_add: 'Added a note',
+  mission_note_edit: 'Edited a note',
+  mission_note_delete: 'Deleted a note',
+  mission_learning_add: 'Added a note',
+  mission_learning_edit: 'Edited a note',
+  mission_learning_withdraw: 'Deleted a note',
+};
+/** A note line carries its hashtags in the summary, not as a separate reason. */
+export const isNoteAction = (action: string): boolean => action in NOTE_WORDS;
+function noteHashtags(reason: string | null): string {
+  const text = reason?.trim() ?? '';
+  // Lines written before migration 126 name only the kind ('mistake' / 'learning') on the mission's History.
+  return text === 'mistake' || text === 'learning' ? `#${text}` : text;
+}
 // Labels (migration 112, listed from 116); the label's name arrives as the entry's reason ("#Crane").
 const LABEL_WORDS: Record<string, string> = {
   label_create: 'Created a label',
@@ -128,6 +142,9 @@ const LABEL_WORDS: Record<string, string> = {
   label_restore: 'Restored a label',
   label_link_attach: 'Added a label',
   label_link_detach: 'Removed a label',
+  // Note types (migration 126), chosen in Settings > Company.
+  label_note_type_on: 'Made a label a note type',
+  label_note_type_off: 'Stopped using a label as a note type',
 };
 const TOOL_WORDS: Record<string, string> = {
   bulk_done: 'Marked missions done',
@@ -238,6 +255,7 @@ export function activitySummary(row: ActivityRow): string {
   if (row.kind === 'month') return MONTH_WORDS[action] ?? codeLabel(action);
   if (row.kind === 'people') return PEOPLE_WORDS[action] ?? codeLabel(action);
   if (action.startsWith('company_settings_')) return settingsSection(action)?.words ?? 'Changed company settings';
+  if (NOTE_WORDS[action]) return `${NOTE_WORDS[action]} ${noteHashtags(row.reason)}`.trim();
   if (action === 'UPDATE' && row.kind === 'missions') {
     const changed = [...new Set((row.fields ?? []).map((field) => FIELD_WORDS[field] ?? codeLabel(field).toLowerCase()))];
     return changed.length ? `Changed the mission's ${changed.join(', ')}` : 'Edited a mission';
@@ -286,7 +304,7 @@ export function mapActivity(row: ActivityRow, people: ReadonlyMap<string, Person
     about: row.subject_user_id && row.subject_user_id !== row.actor_id ? name(row.subject_user_id) : null,
     href: target?.href ?? null,
     linkLabel: target?.label ?? null,
-    reason: row.reason?.trim() || null,
+    reason: isNoteAction(row.action) ? null : row.reason?.trim() || null,
   };
 }
 

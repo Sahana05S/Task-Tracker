@@ -9,6 +9,7 @@ export {
   LABEL_SUBJECT_KINDS,
   labelSlug,
   labelSuggestions,
+  mapLabel,
   type CatalogueLabel,
   type Label,
   type LabelCatalogue,

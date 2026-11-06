@@ -13,11 +13,13 @@ const LABEL_EDGE_NODES = 200;
 export interface HashtagRecords {
   /** Missions carrying the label (kind `task`). */
   readonly taskIds: readonly string[];
-  /** Mission tags whose Mistakes and learning notes carry the label (kind `mission_learning`). */
-  readonly learningTaskTags: readonly string[];
+  /** Mission tags whose notes carry the label (kind `mission_learning`, migration 126). */
+  readonly noteTaskTags: readonly string[];
+  /** Quests and objectives whose own notes carry the label; they match once their row is on the map (opened). */
+  readonly noteNodeIds?: readonly string[];
 }
 
-export type HashtagReason = 'label' | 'learning' | 'linked';
+export type HashtagReason = 'label' | 'note' | 'linked';
 
 export interface HashtagNodeInput {
   readonly id: string;
@@ -30,12 +32,14 @@ export interface HashtagNodeInput {
 }
 
 /**
- * The nodes that carry `labelId`, with why: the mission carries it ('label'), one of the mission's learning
- * notes does ('learning'), or a loaded row follows a linked mission that carries it ('linked').
+ * The nodes that carry `labelId`, with why: the mission carries it ('label'), one of its notes does ('note'),
+ * a loaded Quest or objective has a note carrying it ('note'), or a loaded row follows a linked mission that
+ * carries it ('linked').
  */
 export function hashtagMatches(nodes: readonly HashtagNodeInput[], labelId: string, records: HashtagRecords | null = null): Map<string, HashtagReason> {
   const tasks = new Set(records?.taskIds ?? []);
-  const learning = new Set(records?.learningTaskTags ?? []);
+  const noted = new Set(records?.noteTaskTags ?? []);
+  const notedRows = new Set(records?.noteNodeIds ?? []);
   // A mission known (from the loaded labels) to carry it counts as carrying it for its linked rows too.
   const isMission = (n: HashtagNodeInput) => n.taskTag !== undefined;
   for (const n of nodes) if (isMission(n) && n.labelIds?.includes(labelId)) tasks.add(n.id);
@@ -43,8 +47,9 @@ export function hashtagMatches(nodes: readonly HashtagNodeInput[], labelId: stri
   for (const n of nodes) {
     if (isMission(n)) {
       if (tasks.has(n.id)) out.set(n.id, 'label');
-      else if (n.taskTag && learning.has(n.taskTag)) out.set(n.id, 'learning');
-    } else if (n.linkedTaskId && tasks.has(n.linkedTaskId)) out.set(n.id, 'linked');
+      else if (n.taskTag && noted.has(n.taskTag)) out.set(n.id, 'note');
+    } else if (notedRows.has(n.id)) out.set(n.id, 'note');
+    else if (n.linkedTaskId && tasks.has(n.linkedTaskId)) out.set(n.id, 'linked');
   }
   return out;
 }

@@ -1,5 +1,5 @@
 /**
- * Workspace label rules (migration 112). PRIVATE; re-exported through
+ * Workspace label rules (migration 112; note types since 126). PRIVATE; re-exported through
  * `client.ts`. "Label" is the word in code and copy; "tag" is the mission
  * identifier (tasks.task_tag). `#` is only how a label is typed. The database
  * enforces every rule; these shape the page.
@@ -35,6 +35,8 @@ export interface Label {
   readonly colour: LabelColour;
   readonly description: string | null;
   readonly archived: boolean;
+  /** A note type (migration 126): every note carries at least one. Managers choose them in Settings > Company. */
+  readonly noteType: boolean;
 }
 
 export interface CatalogueLabel extends Label { readonly uses: number }
@@ -47,7 +49,10 @@ export interface LabelledItem {
   readonly taskTag: string | null;
   readonly date: string | null;
   readonly status: string | null;
-  readonly learningKind: 'mistake' | 'learning' | null;
+  /** Notes (migration 126): the note's mission and the Quest or objective it was written on. */
+  readonly taskId: string | null;
+  readonly nodeId: string | null;
+  readonly nodeTitle: string | null;
 }
 export interface LabelledRecords { readonly label: Label; readonly items: readonly LabelledItem[] }
 
@@ -86,6 +91,7 @@ export function mapLabel(row: unknown): Label | null {
     colour: isColour(value.colour) ? value.colour : 'neutral',
     description: typeof value.description === 'string' ? value.description : null,
     archived: value.archived === true,
+    noteType: value.noteType === true,
   };
 }
 
@@ -125,7 +131,9 @@ export function mapLabelled(data: unknown): LabelledRecords | null {
       taskTag: typeof item.taskTag === 'string' ? item.taskTag : null,
       date: typeof item.date === 'string' ? item.date : null,
       status: typeof item.status === 'string' ? item.status : null,
-      learningKind: item.learningKind === 'mistake' || item.learningKind === 'learning' ? item.learningKind : null,
+      taskId: typeof item.taskId === 'string' ? item.taskId : null,
+      nodeId: typeof item.nodeId === 'string' ? item.nodeId : null,
+      nodeTitle: typeof item.nodeTitle === 'string' ? item.nodeTitle : null,
     }];
   });
   return { label, items };

@@ -51,8 +51,9 @@ for db in DBS:
     if db==DBS[1]:
         migrate(db,[n for n in every if n<112]); sql(db,seed)
         migrate(db,[n for n in every if n>=112])
-        assert value(db,'count(*) FROM public.labels')=='0'
-        print('PASS',db,'upgrade to 112 starts with no labels')
+        # Migration 126 adds the 26 starter hashtags to a company that has members.
+        assert value(db,'count(*) FROM public.labels')==('26' if LATEST>=126 else '0')
+        print('PASS',db,'upgrade to 112 starts with no labels of its own')
     else:
         migrate(db,every); sql(db,seed)
         print('PASS',db,f'fresh install 01-{LATEST} including 112')
@@ -99,7 +100,7 @@ for db in DBS:
     expect_code(db,MD,link_sql('attach','meeting_point',MP2,label=safety['id']),'P0002')
     expect_code(db,MD,link_sql('attach','task',str(uuid4()),label=safety['id']),'P0002')
     expect_code(db,MD,link_sql('attach','sale',T1,label=safety['id']),'23514')
-    assert links(db)=='6'
+    assert links(db)==('7' if LATEST>=126 else '6')  # 126: the note also carries #learning
     got=labels_for(db,M6,'task',[T1,T2])
     assert sorted(l['slug'] for l in got[T1])==['brand-new','site-safety'] and [l['slug'] for l in got[T2]]==['crane']
     print('PASS',db,'assignees, managers, data managers (meeting points) and authors label what they may edit; others are refused')
@@ -126,7 +127,8 @@ for db in DBS:
     sql(db,f"UPDATE public.meeting_points SET validation_state='pending' WHERE id='{MP1}'")
     expect_code(db,M5,"SELECT public.labelled('no-such-label')",'P0002')
     cat=json.loads(ok(db,M6,'SELECT public.label_catalogue()'))
-    assert cat['canManage'] is False and {l['slug']:l['uses'] for l in cat['labels']}=={'brand-new':1,'crane':2,'safety-first':2}
+    own={l['slug']:l['uses'] for l in cat['labels'] if not l['description'] or l['slug'] in ('brand-new','crane','safety-first')}
+    assert cat['canManage'] is False and own=={'brand-new':1,'crane':2,'safety-first':2},own
     assert json.loads(ok(db,PE,'SELECT public.label_catalogue()'))['canManage'] is True
     print('PASS',db,'labelled() and labels_for() leave out withdrawn notes and meeting points; the catalogue counts readable uses')
 

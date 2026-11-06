@@ -71,6 +71,15 @@ describe('activity wording and links', () => {
       .toMatchObject({ summary: 'Removed a label', href: '/labels' });
   });
 
+  it('words notes with their hashtags (migration 126)', () => {
+    expect(mapActivity(row({ action: 'mission_note_add', record_kind: 'mission_learnings', task_tag: 'Nov26_PJT3', reason: '#mistake #client' }), people))
+      .toMatchObject({ summary: 'Added a note #mistake #client', reason: null, href: '/tasks/Nov26_PJT3' });
+    expect(mapActivity(row({ action: 'mission_note_edit', record_kind: 'mission_learnings', reason: '#learning' }), people).summary).toBe('Edited a note #learning');
+    expect(mapActivity(row({ action: 'mission_note_delete', record_kind: 'mission_learnings', reason: '#risk #site' }), people).summary).toBe('Deleted a note #risk #site');
+    expect(mapActivity(row({ action: 'mission_learning_add', record_kind: 'mission_learnings' }), people).summary).toBe('Added a note');
+    expect(mapActivity(row({ kind: 'company', action: 'label_note_type_on', record_kind: 'labels', reason: '#client' }), people).summary).toBe('Made a label a note type');
+  });
+
   it('never shows an id for an unknown person', () => {
     expect(mapActivity(row({ actor_id: '33333333-3333-4333-8333-333333333333' }), people).actor).toBe('Former member');
   });

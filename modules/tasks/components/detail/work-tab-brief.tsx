@@ -16,7 +16,7 @@ const SMART = [
  * the mission description and one chip per SMART goal that is filled in, each
  * chip showing its text on hover. Edited on the Details tab; nothing here
  * writes. Renders nothing when the details are empty. `extra` is a slot for
- * other small chips (Mistakes and learning).
+ * other small chips (Notes).
  */
 export function WorkTabBrief({ sections, extra }: { sections: readonly TaskDetailSection[]; extra?: React.ReactNode }) {
   const values = detailValues(sections);

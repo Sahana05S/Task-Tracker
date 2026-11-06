@@ -18,13 +18,18 @@ describe('hashtag highlight set', () => {
     expect([...hashtagMatches(nodes, L)]).toEqual([['m1', 'label'], ['q1', 'linked']]);
   });
 
-  it('adds missions, learning notes and linked rows labelled(slug) returned', () => {
-    const m = hashtagMatches(nodes, L, { taskIds: ['m4', 'hidden-sub'], learningTaskTags: ['T-3'] });
-    expect(Object.fromEntries(m)).toEqual({ m1: 'label', m3: 'learning', m4: 'label', q1: 'linked', q2: 'linked' });
+  it('adds missions, notes and linked rows labelled(slug) returned', () => {
+    const m = hashtagMatches(nodes, L, { taskIds: ['m4', 'hidden-sub'], noteTaskTags: ['T-3'] });
+    expect(Object.fromEntries(m)).toEqual({ m1: 'label', m3: 'note', m4: 'label', q1: 'linked', q2: 'linked' });
+  });
+
+  it('marks an opened Quest or objective whose own note carries the hashtag', () => {
+    const m = hashtagMatches(nodes, L, { taskIds: [], noteTaskTags: [], noteNodeIds: ['o1', 'q1', 'not-opened'] });
+    expect(Object.fromEntries(m)).toEqual({ m1: 'label', o1: 'note', q1: 'note' });
   });
 
   it('never matches a node the viewer was not given, nor a row that follows nothing', () => {
-    const m = hashtagMatches(nodes, L, { taskIds: ['not-on-map'], learningTaskTags: ['T-9'] });
+    const m = hashtagMatches(nodes, L, { taskIds: ['not-on-map'], noteTaskTags: ['T-9'], noteNodeIds: ['m2'] });
     expect(m.has('not-on-map')).toBe(false);
     expect(m.has('o1')).toBe(false);
     expect(m.has('m2')).toBe(false);

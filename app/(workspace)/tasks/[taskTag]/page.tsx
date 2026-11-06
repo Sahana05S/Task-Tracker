@@ -62,11 +62,11 @@ import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
 import { LabelInput } from '@/modules/labels/components/label-input';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { isFileStorageReady } from '@/modules/files';
-import { getMissionLearnings } from '@/modules/learning';
+import { getMissionNotes } from '@/modules/learning';
 import { getMissionActivity, parseCursor } from '@/modules/records';
 import { MissionActivity } from '@/modules/records/components/mission-activity';
-import { LearningCountChip } from '@/modules/learning/components/learning-count-chip';
-import { LearningPanel } from '@/modules/learning/components/learning-panel';
+import { NotesCountChip } from '@/modules/learning/components/notes-count-chip';
+import { NotesPanel } from '@/modules/learning/components/notes-panel';
 import { getMissionWaypoints } from '@/modules/recognition';
 import { WaypointCelebration } from '@/modules/recognition/components/waypoint-celebration';
 import { WaypointTrack } from '@/modules/recognition/components/waypoint-track';
@@ -135,7 +135,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const tab: Tab = tabs.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
   const canWriteFiles = canWriteMissionFiles(currentUser, task);
-  const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, learnings, sessionActivity, objectiveReviews, driveReady, quests] = await Promise.all([
+  const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, notes, sessionActivity, objectiveReviews, driveReady, quests] = await Promise.all([
     tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
     details && canReadWork ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
@@ -146,8 +146,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     // Input / Process / Output files and Proofs for the Files panel (Work tab). Null for
     // anyone who may not read the mission's work: no Files panel.
     canReadWork && tab === 'work' ? getTaskProofs(task.id) : Promise.resolve(null),
-    // Mistakes and learning (migration 111): the panel on Details, its count on Work. Null hides both.
-    canReadWork && tab !== 'history' ? getMissionLearnings(task.id) : Promise.resolve(null),
+    // Notes (migration 126): the panel on Details, its count on Work. Null hides both.
+    canReadWork && tab !== 'history' ? getMissionNotes(task.id) : Promise.resolve(null),
     // What each timer session covered (migration 110); a failed read only hides the lines.
     tab === 'history' && canReadWork ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
     // Objectives waiting for this reviewer (114), and the phases holding a sent-back objective
@@ -158,13 +158,19 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     // Quests and their time (migration 123): a mission with Quests is timed on them. Null keeps the mission timer.
     tab !== 'details' && canReadWork ? getQuestTimes(task.id) : Promise.resolve(null),
   ]);
-  // Labels (migration 112): the mission's own on every tab (header chips); the catalogue and each
-  // learning note's on the Details tab. Null hides them.
-  const [labelCatalogue, missionLabels, noteLabels] = await Promise.all([
+  // Labels (migration 112): the mission's own on every tab (header chips); the catalogue on the
+  // Details tab (the mission's labels and the Notes hashtag picker). Null hides them.
+  const [labelCatalogue, missionLabels] = await Promise.all([
     details ? getLabelCatalogue() : Promise.resolve(null),
     getLabelsFor('task', [task.id]),
-    details ? getLabelsFor('mission_learning', learnings?.items.map((note) => note.id) ?? []) : Promise.resolve(null),
   ]);
+  // Notes opened for one Quest or objective from the checklist (?notes=<row id>&noteTitle=<its title>).
+  const noteNode = typeof query.notes === 'string' && /^[0-9a-f-]{36}$/i.test(query.notes) ? query.notes : null;
+  const noteScope = noteNode ? {
+    nodeId: noteNode,
+    title: notes?.items.find((note) => note.nodeId === noteNode)?.nodeTitle
+      ?? (typeof query.noteTitle === 'string' && query.noteTitle.trim() ? query.noteTitle.trim().slice(0, 180) : 'this row'),
+  } : null;
   const canLabelMission = !archived && (canManage || task.assigneeIds.includes(currentUser.id));
   const awaitingReview = reviewsAwaiting(objectiveReviews);
   const sentBack = sentBackIndex(objectiveReviews);
@@ -326,7 +332,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           <section className="grid min-w-0 content-start gap-6">
             {canReadWork ? (
               <>
-                <WorkTabBrief sections={data.sections} extra={learnings ? <LearningCountChip learnings={learnings} /> : null} />
+                <WorkTabBrief sections={data.sections} extra={notes ? <NotesCountChip notes={notes} /> : null} />
                 <ChecklistHero
                   href={checklistHref}
                   title={data.checklist?.title ?? null}
@@ -416,23 +422,15 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               canEditDetails={canEditDetails}
               tasks={workspace}
             />
-            {learnings ? (
-              <LearningPanel
+            {notes ? (
+              <NotesPanel
                 taskId={task.id}
                 taskTag={task.taskTag}
-                learnings={learnings}
-                noteExtras={labelCatalogue && noteLabels ? Object.fromEntries(learnings.items.map((note) => [note.id, (
-                  <LabelInput
-                    key={note.id}
-                    kind="mission_learning"
-                    subjectId={note.id}
-                    labels={noteLabels[note.id] ?? []}
-                    catalogue={labelCatalogue.labels}
-                    canEdit={note.canEdit}
-                    canCreate={labelCatalogue.canManage}
-                    hideEmpty
-                  />
-                )])) : undefined}
+                notes={notes}
+                catalogue={labelCatalogue?.labels ?? null}
+                canCreate={labelCatalogue?.canManage ?? false}
+                scope={noteScope}
+                allHref={`/tasks/${encodeURIComponent(task.taskTag)}?tab=details#notes`}
               />
             ) : null}
             <MissionPanel icon={GitBranchIcon} title="Dependency missions">

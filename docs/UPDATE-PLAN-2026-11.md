@@ -35,6 +35,45 @@ Still to look at: the graph and the other new screens on the live site with real
 missions (they were checked with sample data), and in the Android app that the
 WhatsApp link opens WhatsApp (stellar-mobile shell).
 
+## Notes (6 November 2026)
+
+The user asked to replace Mistakes and learning with one Notes panel (branch `learning/notes`,
+migration 126). User decisions:
+
+- **One Notes panel** on the mission's Details tab, where Mistakes and learning was: a text box and
+  a hashtag picker (several hashtags, the existing label registry and `#name` typing, no
+  duplicates); newest first with author, date and hashtag chips; filter by hashtag inside the
+  panel. The author edits or deletes a note; Managers and the MD delete any note.
+- **Notes on Quests and objectives:** a note belongs to the mission, a Quest or an objective
+  (`mission_learnings.checklist_node_id`, same mission enforced). The mission page shows them all
+  and says which Quest or objective each came from. Each checklist row has a Notes button and a
+  Quest's home a "Notes on this Quest" link; both open the panel scoped to that row
+  (`?tab=details&notes=<row>`), and new notes go on it.
+- **Type hashtags:** every note carries at least one type hashtag, enforced in the database (the
+  command, plus a deferred constraint trigger that also refuses removing the last one). Managers
+  choose the types in Settings > Company > Labels ("Make note type"; `labels.note_type`).
+- **Starter hashtags,** created once per company by slug and never duplicated: types #mistake
+  #learning #idea #decision #risk #blocker #followup; topics #client #vendor #approval #government
+  #site #design #drawing #estimate #payment #documentation; causes #communication #delay #rework
+  #missinginfo #quality #budget; impact #critical #minor #repeat. A company with no type hashtag
+  at all receives them with its first note.
+- **Existing data:** every Mistakes and learning note became a note with #mistake or #learning,
+  keeping its author, dates, text and labels; nothing was deleted (the migration's notice gives
+  the count).
+- **Privacy unchanged:** only `can_read_mission_work` (117) callers read notes, their hashtags on
+  label pages, the Today map and the Missions filter.
+- **Hashtags everywhere:** `/labels/<name>` has a "Notes" group; the Today map highlights missions
+  with notes carrying the hashtag and, once opened, Quests and objectives whose own notes carry
+  it; the Missions filter has "Include notes" (`?notes=1`).
+- **Activity:** History and Team > Activity read "Added a note #mistake #client" (and Edited /
+  Deleted), with the Quest or objective named on the History line.
+- **Wording:** "Mistakes and learning" is gone from the interface; hashtags are never called tags.
+  No scoring, award or report change.
+
+Compatibility: the table and the `mission_learning` label subject kind are reused;
+`mission_learning_command` and `mission_learnings(task)` keep working (the command now writes a
+typed note), so the site deployed after the migration had no broken window.
+
 ## Revision 2 (5 November 2026)
 
 The user's consolidated "Revision 2" plan (calls of 3 and 4 November) was built in eight parallel
@@ -54,7 +93,7 @@ Quest timers per person per Quest with sub-Quests rolling up.
 | WhatsApp and Today | #155 | none | WhatsApp opens once after check-in (greeting) and check-out (four-block report); check in and out from a sheet on Today |
 | Hashtags on the Today map | #154 | none | "Find by hashtag" highlights matching missions, optional dotted label links, link to the label page |
 
-Left open: Quests and objectives cannot carry hashtags themselves; a leadership row of more than
+Left open: Quests and objectives cannot carry hashtags themselves (their notes can since 6 November); a leadership row of more than
 four MDs does not wrap; some code comments still say "project engineers"; Objective review (11)
 and the security audit (15) were not changed. CI ran out of private-repository Actions minutes on
 5 November; the user made the repository public again.

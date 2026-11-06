@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { LightbulbIcon, ListChecksIcon, MessageSquareIcon, TriangleAlertIcon } from 'lucide-react';
+import { ListChecksIcon, MessageSquareIcon, NotebookPenIcon } from 'lucide-react';
 
 import { getLabelled, LABEL_COLOUR_CLASS, type LabelledItem } from '@/modules/labels';
 import { requireProfile } from '@/shared/session/profile';
@@ -16,7 +16,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 function href(item: LabelledItem): string {
   if (item.kind === 'task' && item.taskTag) return `/tasks/${encodeURIComponent(item.taskTag)}`;
-  if (item.kind === 'mission_learning' && item.taskTag) return `/tasks/${encodeURIComponent(item.taskTag)}?tab=details#learning`;
+  if (item.kind === 'mission_learning' && item.taskTag) {
+    const scope = item.nodeId ? `&notes=${item.nodeId}${item.nodeTitle ? `&noteTitle=${encodeURIComponent(item.nodeTitle)}` : ''}` : '';
+    return `/tasks/${encodeURIComponent(item.taskTag)}?tab=details${scope}#notes`;
+  }
   // The point itself: Meeting Points opens the period holding its date and scrolls to its card.
   if (item.kind === 'meeting_point') return `/meeting-points${item.date ? `?date=${encodeURIComponent(item.date)}` : ''}#record-${item.id}`;
   return `/meeting-points`;
@@ -31,8 +34,8 @@ function Item({ item }: { item: LabelledItem }) {
           {item.title || 'Untitled'}
         </span>
         <span className="text-muted-foreground text-xs">
-          {[item.kind === 'mission_learning' ? (item.learningKind === 'mistake' ? 'Mistake' : 'Learning') : null,
-            item.kind === 'mission_learning' && item.taskTag ? `on ${item.taskTag}` : null,
+          {[item.kind === 'mission_learning' && item.taskTag ? `on ${item.taskTag}` : null,
+            item.kind === 'mission_learning' && item.nodeTitle ? item.nodeTitle : null,
             item.status, item.date ? formatDate(item.date) : null].filter(Boolean).join(' · ')}
         </span>
       </Link>
@@ -42,11 +45,11 @@ function Item({ item }: { item: LabelledItem }) {
 
 const GROUPS = [
   { kind: 'task', title: 'Missions', icon: ListChecksIcon },
-  { kind: 'mission_learning', title: 'Mistakes and learning', icon: LightbulbIcon },
+  { kind: 'mission_learning', title: 'Notes', icon: NotebookPenIcon },
   { kind: 'meeting_point', title: 'Meeting points', icon: MessageSquareIcon },
 ] as const;
 
-/** One label: the missions, learning notes and meeting points that carry it and the caller may read. */
+/** One label: the missions, notes and meeting points that carry it and the caller may read. */
 export default async function LabelPage({ params }: { params: Promise<{ slug: string }> }) {
   await requireProfile();
   const slug = decodeURIComponent((await params).slug);
@@ -66,7 +69,7 @@ export default async function LabelPage({ params }: { params: Promise<{ slug: st
           {GROUPS.map(({ kind, title, icon }) => {
             const group = items.filter((item) => item.kind === kind);
             return group.length ? (
-              <MissionPanel key={kind} icon={kind === 'mission_learning' && group.every((i) => i.learningKind === 'mistake') ? TriangleAlertIcon : icon} title={title} subtitle={`${group.length}`}
+              <MissionPanel key={kind} icon={icon} title={title} subtitle={`${group.length}`}
                 action={kind === 'task' ? <Link href={`/tasks?label=${encodeURIComponent(label.slug)}`} className="link text-xs font-semibold">Open in Missions</Link> : null}>
                 <ul className="divide-border grid divide-y">{group.map((item) => <Item key={item.id} item={item} />)}</ul>
               </MissionPanel>

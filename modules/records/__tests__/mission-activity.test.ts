@@ -65,6 +65,8 @@ describe('mission activity wording', () => {
       row({ action: 'checklist_state', record_kind: 'task_checklists', detail: 'Call the client' }),
       row({ action: 'checklist_assign', record_kind: 'task_checklists', detail: 'Prospecting', subject_user_id: PADMA }),
       row({ action: 'label_link_attach', record_kind: 'label_links', reason: '#Crane' }),
+      row({ action: 'mission_note_add', record_kind: 'mission_learnings', detail: 'Foundation', reason: '#risk #site' }),
+      row({ action: 'mission_learning_withdraw', record_kind: 'mission_learnings', reason: 'mistake' }),
       row({ action: 'INSERT', record_kind: 'tasks' }),
     ], names);
     expect(entries.map((e) => [e.summary, e.detail, e.reason])).toEqual([
@@ -73,6 +75,8 @@ describe('mission activity wording', () => {
       ['Updated a checklist objective', 'Call the client', null],
       ['Padmapriya owns the Quest', 'Prospecting', null],
       ['Added a label', null, '#Crane'],
+      ['Added a note #risk #site', 'Foundation', null],
+      ['Deleted a note #mistake', null, null],
       ['Created the mission', null, null],
     ]);
   });

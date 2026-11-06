@@ -2,7 +2,7 @@
 
 ## What it does
 Workspace labels (update plan of 3 November 2026, workstream G). A label groups
-related records across the app: missions, Mistakes and learning notes and
+related records across the app: missions, notes (the learning module) and
 meeting points (D-G1). In code and copy the word is **label**; "tag" stays the
 mission identifier (`tasks.task_tag`), and `#` is only how a label is typed.
 The managing director and project engineers create, rename, recolour and
@@ -13,7 +13,8 @@ label while typing it. Renaming keeps the label's id, so every link survives.
 viewer may read), and `/tasks?label=<slug>` filters the Missions table.
 Labels feed no score (D14). On the Today map they only highlight (5 November
 2026): a hashtag picker lists `label_catalogue()`, and choosing one marks the
-missions, learning notes' missions and linked sub-mission rows that carry it,
+missions, notes' missions, opened Quests and objectives whose notes carry it
+(migration 126) and linked sub-mission rows that carry it,
 through `labels_for` and `labelled(slug)` (so only what the viewer may read),
 with optional faint "label link" lines kept apart from the stored mission
 relations; label links never become `task_dependencies` and never move a star.
@@ -39,13 +40,13 @@ point on a label page links to its card on Meeting Points
 | `client.ts` | Types `Label`, `CatalogueLabel`, `LabelCatalogue`, `LabelledRecords`, `LabelledItem`, `LabelSubjectKind`, `LabelColour`; `LABEL_COLOURS`, `LABEL_COLOUR_CLASS` (theme classes per token), `LABEL_COLOUR_NAME`, `labelSlug`, `cleanLabelName`, `labelSuggestions` |
 | `components/label-input.tsx` | `LabelInput`: a record's chips with remove buttons and the `#` add box with suggestions |
 | `components/label-chips.tsx` | `LabelChip`, `LabelChips`: read-only chips linking to `/labels/<slug>` (`max` shows a "+n" for tight places) |
-| `components/label-combobox.tsx` | `LabelCombobox`: the `#` add box with suggestions (reports a choice; used by `LabelInput` and `LabelPicker`) |
+| `components/label-combobox.tsx` | `LabelCombobox`: the `#` add box with suggestions (reports a choice; used by `LabelInput`, `LabelPicker` and the Notes panel); optional `placeholder` / `ariaLabel` |
 | `components/label-picker.tsx` | `LabelPicker` (labels chosen before the record exists), `attachPickedLabels(kind, id, picks, path)` |
 | `components/label-filter.tsx` | `LabelFilter`: several labels by slug, for a list's filters (Missions) |
-| `components/label-manager.tsx` | `LabelManager`: create / rename / colour / archive list |
+| `components/label-manager.tsx` | `LabelManager`: create / rename / colour / archive list, and "Make note type" (migration 126) |
 
-Where they show: the mission's Details tab (a Labels panel and a box under
-each learning note), the mission page header, Missions cards and table rows
+Where they show: the mission's Details tab (a Labels panel, and each note's
+hashtags in the Notes panel), the mission page header, Missions cards and table rows
 (and the Labels filter and New mission field), Today's list and map, each
 meeting point (through `DatedRecordModule`'s `extras`), `/labels`,
 `/labels/[slug]` and Settings > Company.
@@ -68,9 +69,16 @@ Migration 112 (`112_workspace_labels.sql`):
 - Team > Activity (migration 116): `activity_feed` lists `labels` (Company: Created / Renamed / Archived / Restored a label, linking to `/labels`) and `label_links` (Missions: Added / Removed a label, linking to the mission, seen by the mission's people).
 - Helpers `taskpulse_private.label_slug`, `label_json`, `label_subject_readable`, `label_subject_editable`, `label_require_member`.
 
+Migration 126 (Notes, owned by the learning module) adds:
+- `labels.note_type` (in `label_json` as `noteType`); `label_command` ops `note_type_on` / `note_type_off` (managers; audited as `label_note_type_<on|off>`).
+- 26 starter hashtags per company, created once by slug (types, topics, causes, impact; see the learning README).
+- `labelled(slug)`: a note item also has `taskId`, `nodeId` and `nodeTitle`; the label page groups them as "Notes".
+- A note's last type hashtag cannot be detached (deferred constraint trigger).
+
 Harness: `tools/test_workspace_labels_database.py`.
 
 ## Depends on
-`shared/*` only. `tasks` (cards, table, filters, New mission form) and
-`workspace-views` (Today) import its `client.ts` and `components/`. Pages pass its components into the learning and support
-modules through their slots (`noteExtras`, `extras`), so neither imports it.
+`shared/*` only. `tasks` (cards, table, filters, New mission form),
+`workspace-views` (Today) and `learning` (Notes) import its `client.ts` and
+`components/`. Pages pass its components into the support module through its
+`extras` slot.

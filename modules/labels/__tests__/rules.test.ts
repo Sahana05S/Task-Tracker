@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { cleanLabelName, labelSlug, labelSuggestions, mapCatalogue, mapLabelled, mapLabelsFor, type Label } from '@/modules/labels/internal/rules';
 
 const label = (name: string, extra: Partial<Label> = {}): Label =>
-  ({ id: name, name, slug: labelSlug(name), colour: 'neutral', description: null, archived: false, ...extra });
+  ({ id: name, name, slug: labelSlug(name), colour: 'neutral', description: null, archived: false, noteType: false, ...extra });
 
 describe('label names', () => {
   it('derives the slug the database stores', () => {
@@ -35,15 +35,19 @@ describe('label names', () => {
 describe('label payloads', () => {
   it('maps the catalogue, labels_for and labelled, dropping malformed rows and unknown colours', () => {
     const cat = mapCatalogue({ canManage: true, labels: [{ id: 'a', name: 'Crane', slug: 'crane', colour: '#ff0000', uses: 3 }, { id: 1 }] });
-    expect(cat).toEqual({ canManage: true, labels: [{ id: 'a', name: 'Crane', slug: 'crane', colour: 'neutral', description: null, archived: false, uses: 3 }] });
-    expect(mapLabelsFor({ t1: [{ id: 'a', name: 'Crane', slug: 'crane', colour: 'danger' }], t2: 'x' })).toEqual({
-      t1: [{ id: 'a', name: 'Crane', slug: 'crane', colour: 'danger', description: null, archived: false }], t2: [],
+    expect(cat).toEqual({ canManage: true, labels: [{ id: 'a', name: 'Crane', slug: 'crane', colour: 'neutral', description: null, archived: false, noteType: false, uses: 3 }] });
+    expect(mapLabelsFor({ t1: [{ id: 'a', name: 'Crane', slug: 'crane', colour: 'danger', noteType: true }], t2: 'x' })).toEqual({
+      t1: [{ id: 'a', name: 'Crane', slug: 'crane', colour: 'danger', description: null, archived: false, noteType: true }], t2: [],
     });
     const records = mapLabelled({ label: { id: 'a', name: 'Crane', slug: 'crane' }, items: [
       { kind: 'task', id: 't', title: 'Lift', taskTag: 'Nov26_T1', status: 'Done', date: '2026-11-01' },
+      { kind: 'mission_learning', id: 'n', title: 'Rain on pour day', taskTag: 'Nov26_T1', taskId: 't', nodeId: 'q', nodeTitle: 'Foundation', date: '2026-11-02' },
       { kind: 'sale', id: 's' },
     ] });
-    expect(records?.items).toEqual([{ kind: 'task', id: 't', title: 'Lift', taskTag: 'Nov26_T1', date: '2026-11-01', status: 'Done', learningKind: null }]);
+    expect(records?.items).toEqual([
+      { kind: 'task', id: 't', title: 'Lift', taskTag: 'Nov26_T1', date: '2026-11-01', status: 'Done', taskId: null, nodeId: null, nodeTitle: null },
+      { kind: 'mission_learning', id: 'n', title: 'Rain on pour day', taskTag: 'Nov26_T1', date: '2026-11-02', status: null, taskId: 't', nodeId: 'q', nodeTitle: 'Foundation' },
+    ]);
     expect(mapCatalogue(null)).toBeNull();
     expect(mapLabelled({ items: [] })).toBeNull();
   });

@@ -36,6 +36,8 @@ export interface TaskFilterState {
   freshness: TaskFreshness | All;
   /** Label slugs (migration 112); a mission matches when it carries any of them. Empty: no constraint. */
   labels: readonly string[];
+  /** Also match missions whose notes carry one of `labels` (migration 126; `?notes=1`). */
+  includeNotes?: boolean;
 }
 
 /** A mission's label slugs, for the label facet. */
@@ -79,12 +81,14 @@ export function activeFilterCount(filters: TaskFilterState): number {
 
 /**
  * `labelsOf` gives each mission's label slugs; without it a label filter
- * matches nothing, since no mission is known to carry the label.
+ * matches nothing, since no mission is known to carry the label. With
+ * `includeNotes`, `noteLabelsOf` adds the hashtags on each mission's notes.
  */
 export function filterTasks(
   tasks: readonly Task[],
   filters: TaskFilterState,
   labelsOf?: TaskLabelSlugs,
+  noteLabelsOf?: TaskLabelSlugs,
 ): Task[] {
   const needle = filters.search.trim().toLowerCase();
   const wanted = new Set(filters.labels);
@@ -108,7 +112,11 @@ export function filterTasks(
     if (filters.freshness !== ALL && task.freshness !== filters.freshness) {
       return false;
     }
-    if (wanted.size > 0 && !(labelsOf?.(task.id) ?? []).some((slug) => wanted.has(slug))) {
+    if (
+      wanted.size > 0 &&
+      !(labelsOf?.(task.id) ?? []).some((slug) => wanted.has(slug)) &&
+      !(filters.includeNotes && (noteLabelsOf?.(task.id) ?? []).some((slug) => wanted.has(slug)))
+    ) {
       return false;
     }
 
