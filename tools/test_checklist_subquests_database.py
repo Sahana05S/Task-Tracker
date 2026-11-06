@@ -10,6 +10,7 @@ ROOT=Path(__file__).resolve().parents[1]
 from uuid import uuid4
 
 DBS=('taskpulse_m109_fresh_test','taskpulse_m109_upgrade_test')
+LATEST=max(int(m.name.split('_')[0]) for m in (ROOT/'supabase/migrations').glob('*.sql'))
 T2='10000000-0000-0000-0000-000000000002'  # assignee user 5; seed checklist C2
 C2='20000000-0000-0000-0000-000000000002'
 
@@ -64,7 +65,30 @@ for db in DBS:
         assert after['taskProgress']==before['taskProgress']==50 and after['errors']==[],(before,after)
         assert value(db,"count(*) FROM pg_trigger WHERE tgname IN ('aa_m77_quest_items','aa_m77_quest_nesting')")=='0'
         print('PASS',db,'upgrade 108->109: m77 triggers replaced; existing Quest progress unchanged')
-        migrate(db,10**6,start=110)
+        migrate(db,129,start=110)
+        if LATEST>=130:
+            # 130: rows with rows under them become Quests, deepest first; progress is unchanged.
+            p=add(db,'Parent'); k1=add(db,'Kid 1',parent=p); k2=add(db,'Kid 2',parent=p)
+            g1=add(db,'Grandkid 1',parent=k2); add(db,'Grandkid 2',parent=k2); tick(db,k1); tick(db,g1)
+            s0=add(db,'Setup parent',section='setup'); s1=add(db,'Setup 1',parent=s0,section='setup'); add(db,'Setup 2',parent=s0,section='setup'); tick(db,s1)
+            nested=rollup(db)
+            assert progress(nested,p)['progressPercentage']==75 and progress(nested,s0)['progressPercentage']==50,nested
+            migrate(db,130,start=130)
+            moved=rollup(db)
+            assert moved['taskProgress']==nested['taskProgress'] and moved['errors']==[],(nested,moved)
+            assert progress(moved,p)['progressPercentage']==75 and progress(moved,s0)['progressPercentage']==50,moved
+            assert value(db,"count(*) FROM public.checklist_nodes WHERE parent_node_id IS NOT NULL")=='0'
+            owned=lambda nid:value(db,f"id FROM public.task_checklists WHERE owner_node_id='{nid}'")
+            pl,kl,sl=owned(p),owned(k2),owned(s0)
+            assert all((pl,kl,sl)) and owned(k1)==''
+            assert value(db,f"string_agg(title,',' ORDER BY title) FROM public.checklist_nodes WHERE checklist_id='{pl}'")=='Kid 1,Kid 2'
+            assert value(db,f"string_agg(title||':'||detail_section,',' ORDER BY title) FROM public.checklist_nodes WHERE checklist_id='{sl}'")=='Setup 1:activity,Setup 2:activity'
+            assert value(db,f"string_agg(DISTINCT node_type::text,',') FROM public.checklist_nodes WHERE id IN ('{p}','{k2}','{s0}')")=='Page'
+            assert value(db,f"assignee_id FROM public.checklist_nodes WHERE id='{p}'")==uid_of('5'),'a converted Quest takes the default owner'
+            assert value(db,f"completion_state FROM public.checklist_nodes WHERE id='{k1}'")=='Yes'
+            print('PASS',db,'130: rows with rows under them became Quests (two levels and a Setup row); every figure unchanged')
+            for nid in (p,s0):cl(db,'delete',{'node_id':nid,'reason':'reset','with_children':True})
+        migrate(db,10**6,start=131 if LATEST>=130 else 130)
         # 122 backfill: the Quest's creator (the mission's assignee) owns it.
         assert value(db,f"assignee_id FROM public.checklist_nodes WHERE id='{q}'")==uid_of('5')
         print('PASS',db,'upgrade to latest: existing Quests take their creator as owner (122)')
@@ -122,10 +146,21 @@ for db in DBS:
     print('PASS',db,'duplicate copies sub-quests and Objectives, not Sub-mission links')
 
     # Edit: no move under its own rows; a Quest's rows cannot be reached by parent.
-    p=add(db,'Parent'); k=add(db,'Kid',parent=p)
-    denied(db,'edit',{'node_id':p,'parent_id':k,'section':'activity','reason':'loop'},'A row cannot move under one of its own rows')
-    denied(db,'edit',{'node_id':q1,'parent_id':b,'section':'activity','reason':'into itself'},'A row cannot move under one of its own rows')
-    print('PASS',db,'edit refuses moving a row or Quest under one of its own rows')
+    p=add(db,'Parent')
+    if LATEST>=130:
+        # 130 (user decision, 6 November 2026): no rows under an objective; rows go into a list.
+        other=add(db,'Other')
+        denied(db,'add',{'title':'Kid','section':'activity','parent_id':p},'Rows cannot go under an objective')
+        denied(db,'submission',{'title':'Quest under a row','section':'activity','parent_id':p},'Rows cannot go under an objective')
+        denied(db,'edit',{'node_id':other,'parent_id':p,'section':'activity'},'Rows cannot go under an objective')
+        denied(db,'edit',{'node_id':q1,'parent_id':b,'section':'activity'},'Rows cannot go under an objective')
+        cl(db,'delete',{'node_id':other,'reason':'gone'})
+        print('PASS',db,'130: no row, Quest or move goes under an objective')
+    else:
+        k=add(db,'Kid',parent=p)
+        denied(db,'edit',{'node_id':p,'parent_id':k,'section':'activity','reason':'loop'},'A row cannot move under one of its own rows')
+        denied(db,'edit',{'node_id':q1,'parent_id':b,'section':'activity','reason':'into itself'},'A row cannot move under one of its own rows')
+        print('PASS',db,'edit refuses moving a row or Quest under one of its own rows')
 
     # Delete without with_children refuses a Quest with rows; with it removes every nested list.
     denied(db,'delete',{'node_id':q1,'reason':'gone'},'This row has rows under it')

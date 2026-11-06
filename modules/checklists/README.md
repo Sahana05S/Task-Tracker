@@ -171,6 +171,7 @@ Work happens at `/tasks/[tag]/checklist`: without `parent` it is the checklist h
 | `checklist_rollups`, `checklist_result`, `checklist_node_result` | 18 and 41; replaced in 63; Quest rows in 67; section weights in 85 |
 | `checklist_branch` | 41, patched in 63 (opens any non-linked row), 71 (linked tags) and 122 (`assigneeId`, `canEditQuest`, `canEdit`); since 117 it, `checklist_reviews`, `checklist_item_seconds` and `task_effort_breakdown` raise 42501 unless the caller may read the mission's work (`can_read_mission_work`, owned by modules/tasks); the `checklist_nodes`, `task_checklists` and `checklist_sections` read policies use the same rule |
 | `checklist_sections` | 18; kept for older readers, no longer read by the rollup (63) |
+| No rows under a row: every row with rows under it became a Quest (deepest first, ids and figures unchanged); `checklist_command` refuses `add`, `submission` and `edit` with a `parent_id` ("Rows cannot go under an objective"); the row menu has no "Add a row under this" or Move (user decision, 6 November 2026) | `130_rows_under_objectives_to_quests.sql` |
 | `task_effort_breakdown` | `36_task_effort_breakdown.sql` |
 
 It also reads `daily_task_logs` and `task_timers` (time tracking) for item time.

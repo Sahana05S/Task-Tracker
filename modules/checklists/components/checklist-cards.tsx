@@ -42,7 +42,7 @@ export interface CardContext {
  * and rows with rows under them open their page. The row menu (edit, move,
  * duplicate, remove) is the same as the Table's.
  */
-export function ChecklistRowCard({ row, ctx, siblings, large = false }: { row: ChecklistBranchRow; ctx: CardContext; siblings: readonly ChecklistBranchRow[]; large?: boolean }) {
+export function ChecklistRowCard({ row, ctx, large = false }: { row: ChecklistBranchRow; ctx: CardContext; large?: boolean }) {
   const kind = rowKind(row);
   const { label, icon: Icon } = KIND[kind];
   const href = rowHref(ctx.task.taskTag, row);
@@ -64,7 +64,7 @@ export function ChecklistRowCard({ row, ctx, siblings, large = false }: { row: C
             <p className={cn('text-foreground font-medium break-words', large ? 'text-base' : 'text-sm')}>{row.title}</p>
           )}
         </div>
-        <div className="-mt-1 -mr-1.5 shrink-0"><ChecklistRowMenu row={row} siblings={siblings} ctx={ctx} /></div>
+        <div className="-mt-1 -mr-1.5 shrink-0"><ChecklistRowMenu row={row} ctx={ctx} /></div>
       </div>
       <ObjectiveDetails row={row} />
       {kind === 'item' || kind === 'linked' ? <ObjectiveTick row={row} ctx={ctx} /> : null}

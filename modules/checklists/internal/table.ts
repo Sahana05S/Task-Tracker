@@ -153,11 +153,3 @@ export function checklistGate(rollup: Pick<ChecklistRollup, 'sections' | 'isComp
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0] ?? 'A phase';
   return { closed: false, openPhases, label: `Open · ${list} not done` };
 }
-
-/**
- * Move choices for one list of rows: the other rows there that can hold rows (the same in every view).
- * Kept here, not in the client row menu, because the server-rendered checklist workspace calls it too.
- */
-export function rowMoveTargets(rows: readonly Pick<ChecklistBranchRow, 'id' | 'title' | 'linkedTaskId' | 'nodeType'>[]): { id: string | null; title: string }[] {
-  return rows.filter(row => !row.linkedTaskId && row.nodeType !== 'Task').map(row => ({ id: row.id, title: row.title }));
-}
