@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { CopyIcon, ExternalLinkIcon, Link2Icon, MoreHorizontalIcon, PencilIcon, Trash2Icon, ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
+import { NotebookPenIcon, CopyIcon, ExternalLinkIcon, Link2Icon, MoreHorizontalIcon, PencilIcon, Trash2Icon, ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -14,6 +14,8 @@ import { rowKind } from '../internal/table';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { ChecklistVersionField } from './checklist-state-control';
 import { AssignQuestForm } from './quest-owner';
+import { useQuestNotes } from './quest-notes';
+import { QuestNotesSheet } from '@/modules/learning/components/quest-notes-sheet';
 import type { ActionResponse } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -43,9 +45,12 @@ export function ChecklistRowMenu({ row, ctx }: {
     selectedItem?: string;
   };
 }) {
-  if (!(ctx.canEdit || (ctx.crewEdits && row.ownedChecklistId && row.canEditQuest))) return null;
+  // A viewer who may not change the row still gets a Quest's Notes (migration 132).
+  const editable = !!(ctx.canEdit || (ctx.crewEdits && row.ownedChecklistId && row.canEditQuest));
+  if (!editable && !row.ownedChecklistId) return null;
   return (
     <ChecklistRowActions
+      readOnly={!editable}
       canEditRow={ctx.canEdit}
       row={row}
       taskId={ctx.task.id}
@@ -74,6 +79,7 @@ export function ChecklistRowActions({
   manager,
   linkChoices,
   canEditRow = true,
+  readOnly = false,
 }: {
   row: ChecklistActionRow;
   taskId: string;
@@ -88,9 +94,28 @@ export function ChecklistRowActions({
    * owner still gets its rename, order, assignment and removal; nothing else is offered.
    */
   canEditRow?: boolean;
+  /** The viewer may not change this row: only a Quest's Notes are offered (the ⋯ opens them directly). */
+  readOnly?: boolean;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
   const kind = rowKind(row);
+  // Quest notes (migration 132): a "Notes" item on every Quest row; `?notes=<row id>` opens them on arrival.
+  const notes = useQuestNotes();
+  const hasNotes = kind === 'quest' && notes.counts !== null;
+  const [notesOpen, setNotesOpen] = React.useState(hasNotes && notes.openNodeId === row.id);
+  const notesSheet = hasNotes ? (
+    <QuestNotesSheet open={notesOpen} onOpenChange={setNotesOpen} taskId={taskId} nodeId={row.id} title={row.title} />
+  ) : null;
+  if (readOnly) {
+    return hasNotes ? (
+      <>
+        <Button type="button" variant="ghost" size="icon" className="size-8 rounded-lg" aria-label={`Notes on ${row.title}`} onClick={() => setNotesOpen(true)}>
+          <MoreHorizontalIcon aria-hidden="true" />
+        </Button>
+        {notesSheet}
+      </>
+    ) : null;
+  }
   const logged = row.elapsedSeconds > 0 ? formatMinutes(Math.max(1, Math.round(row.elapsedSeconds / 60))) : null;
   const id = (name: string) => `row-${row.id}-${name}`;
   const hidden = (
@@ -117,6 +142,8 @@ export function ChecklistRowActions({
   const summary = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside` : kind === 'linked' ? 'Follows a linked mission' : 'Row';
 
   return (
+    <>
+    {notesSheet}
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button type="button" variant="ghost" size="icon" className="size-8 rounded-lg" aria-label={`More for ${row.title}`}>
@@ -134,6 +161,11 @@ export function ChecklistRowActions({
         </SheetHeader>
 
         <div className="grid min-h-0 flex-1 content-start gap-6 overflow-y-auto px-5 py-5">
+          {hasNotes ? (
+            <Button type="button" variant="outline" className="justify-self-start" onClick={() => { setOpen(false); setNotesOpen(true); }}>
+              <NotebookPenIcon aria-hidden="true" />Notes{notes.counts?.[row.id] ? ` (${notes.counts[row.id]})` : ''}
+            </Button>
+          ) : null}
           {row.description ? <p className="text-foreground text-sm whitespace-pre-wrap break-words">{row.description}</p> : null}
           {row.links.length ? (
             <ul className="grid gap-1.5 text-sm">
@@ -245,6 +277,7 @@ export function ChecklistRowActions({
         </div>
       </SheetContent>
     </Sheet>
+    </>
   );
 }
 

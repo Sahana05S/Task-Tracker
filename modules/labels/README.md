@@ -83,6 +83,10 @@ note link and the 26 starter hashtags (with their links), revoked the note comma
 database unused; the Label manager no longer offers them. On the Today map, picking a label draws the
 label lines between the missions carrying it by default (the box turns them off).
 
+Migration 132 (Quest notes, learning module): notes come back on Quests only, tagged with ordinary labels.
+`labelled(slug)` note items also give `listId` and `rootList`; `/labels/<slug>` groups the notes by
+mission › Quest (`labelledNoteGroups`), each opening its Quest's notes.
+
 Harness: `tools/test_workspace_labels_database.py`.
 
 ## Depends on

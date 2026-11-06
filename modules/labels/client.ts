@@ -7,6 +7,7 @@ export {
   LABEL_COLOURS,
   LABEL_NAME_MAX,
   LABEL_SUBJECT_KINDS,
+  labelledNoteGroups,
   labelSlug,
   labelSuggestions,
   mapLabel,
@@ -15,6 +16,7 @@ export {
   type LabelCatalogue,
   type LabelColour,
   type LabelledItem,
+  type LabelledNoteGroup,
   type LabelledRecords,
   type LabelSubjectKind,
 } from '@/modules/labels/internal/rules';

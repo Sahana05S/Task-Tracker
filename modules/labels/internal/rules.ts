@@ -53,6 +53,9 @@ export interface LabelledItem {
   readonly taskId: string | null;
   readonly nodeId: string | null;
   readonly nodeTitle: string | null;
+  /** Quest notes (migration 132): the list the Quest's row sits in, and whether it is the mission's own. */
+  readonly listId: string | null;
+  readonly rootList: boolean;
 }
 export interface LabelledRecords { readonly label: Label; readonly items: readonly LabelledItem[] }
 
@@ -134,7 +137,28 @@ export function mapLabelled(data: unknown): LabelledRecords | null {
       taskId: typeof item.taskId === 'string' ? item.taskId : null,
       nodeId: typeof item.nodeId === 'string' ? item.nodeId : null,
       nodeTitle: typeof item.nodeTitle === 'string' ? item.nodeTitle : null,
+      listId: typeof item.listId === 'string' ? item.listId : null,
+      rootList: item.rootList !== false,
     }];
   });
   return { label, items };
+}
+
+/** Notes on a label page (migration 132), grouped by mission and then Quest, in the order they arrive (newest first). */
+export interface LabelledNoteGroup {
+  readonly taskTag: string;
+  readonly quests: readonly { readonly nodeId: string | null; readonly nodeTitle: string | null; readonly listId: string | null; readonly rootList: boolean; readonly notes: readonly LabelledItem[] }[];
+}
+export function labelledNoteGroups(items: readonly LabelledItem[]): LabelledNoteGroup[] {
+  const missions = new Map<string, Map<string, { nodeId: string | null; nodeTitle: string | null; listId: string | null; rootList: boolean; notes: LabelledItem[] }>>();
+  for (const item of items) {
+    if (item.kind !== 'mission_learning' || !item.taskTag) continue;
+    const quests = missions.get(item.taskTag) ?? new Map();
+    missions.set(item.taskTag, quests);
+    const key = item.nodeId ?? '';
+    const quest = quests.get(key) ?? { nodeId: item.nodeId, nodeTitle: item.nodeTitle, listId: item.listId, rootList: item.rootList, notes: [] };
+    quest.notes.push(item);
+    quests.set(key, quest);
+  }
+  return [...missions].map(([taskTag, quests]) => ({ taskTag, quests: [...quests.values()] }));
 }
