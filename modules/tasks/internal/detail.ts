@@ -166,34 +166,6 @@ export async function getTaskDetailData(
   [task] = attachTaskParticipants([task], assigneeRows, reviewerRows);
 
   const checklist = checklistRow ? mapTaskChecklist(checklistRow) : null;
-  const checklistNodeRows = checklist
-    ? await selectOrEmpty(
-        supabase
-          .from('checklist_nodes')
-          .select('*')
-          .eq('checklist_id', checklist.id)
-          .order('sort_order'),
-      )
-    : [];
-  const checklistNodes = checklistNodeRows.map(mapChecklistNode);
-  const linkedTaskIds = [
-    ...new Set(
-      checklistNodes
-        .map((node) => node.linkedTaskId)
-        .filter((linkedTaskId): linkedTaskId is string => linkedTaskId !== null),
-    ),
-  ];
-  const linkedTaskRows =
-    linkedTaskIds.length === 0
-      ? []
-      : await selectOrEmpty(
-          supabase.from('tasks').select(TASK_COLUMNS).in('id', linkedTaskIds),
-        );
-  const linkedTasksById = new Map(
-    linkedTaskRows.map((row) => [row.id, mapTask(row)]),
-  );
-  const checklistProgress = rollups.get(task.id)!;
-
   const dependencyTaskIds = [
     ...new Set(
       dependencyRows.map((row) =>
@@ -203,12 +175,42 @@ export async function getTaskDetailData(
       ),
     ),
   ];
-  const dependencyTasks =
+  // The checklist rows (then their linked missions) and the dependency missions load side by side
+  // (6 November 2026, speed): neither needs the other.
+  const [[checklistNodes, linkedTasksById], dependencyTasks] = await Promise.all([
+    (async () => {
+      const checklistNodeRows = checklist
+        ? await selectOrEmpty(
+            supabase
+              .from('checklist_nodes')
+              .select('*')
+              .eq('checklist_id', checklist.id)
+              .order('sort_order'),
+          )
+        : [];
+      const nodes = checklistNodeRows.map(mapChecklistNode);
+      const linkedTaskIds = [
+        ...new Set(
+          nodes
+            .map((node) => node.linkedTaskId)
+            .filter((linkedTaskId): linkedTaskId is string => linkedTaskId !== null),
+        ),
+      ];
+      const linkedTaskRows =
+        linkedTaskIds.length === 0
+          ? []
+          : await selectOrEmpty(
+              supabase.from('tasks').select(TASK_COLUMNS).in('id', linkedTaskIds),
+            );
+      return [nodes, new Map(linkedTaskRows.map((row) => [row.id, mapTask(row)]))] as const;
+    })(),
     dependencyTaskIds.length === 0
-      ? []
-      : await selectOrEmpty(
+      ? Promise.resolve([])
+      : selectOrEmpty(
           supabase.from('tasks').select(TASK_COLUMNS).in('id', dependencyTaskIds),
-        );
+        ),
+  ]);
+  const checklistProgress = rollups.get(task.id)!;
   const dependencyTaskById = new Map(
     dependencyTasks.map((row) => [row.id, mapTask(row)]),
   );
