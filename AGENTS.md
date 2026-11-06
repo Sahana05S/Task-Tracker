@@ -26,6 +26,25 @@ change). The refactor is complete and merged into `main`. Follow
   `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
   `__tests__/fixtures/`.
 
+## Follow-ups - 6 November 2026 (migrations 127-128)
+
+User decisions of 6 November 2026, after Notes:
+
+- **Labels (127):** the mission page has no Labels panel and the New mission form no Labels field; a
+  mission carries its notes' hashtags (`labels_for('task')` returns its own links, kept, plus the
+  hashtags of notes the caller may read). Notes are the one place to type a hashtag on a mission.
+- **Checklist row menu:** the same ⋯ menu on every row of Table, Board, Blocks and Outline
+  (`ChecklistRowMenu`); the Table shows no links; no reason box on edit, move, link or remove (128
+  drops the edit reason rule; a removal sends the row's title as its reason).
+- **Activity (128):** Team > Activity and the History tab name the objective or Quest and show
+  before -> after values (mission fields, lifecycle values, an objective's title and tick), only to
+  those who may read the mission's work. A note's text is never copied into the audit (126 rule kept).
+- **Files:** Input → Process → Output is drawn as one flow with arrows; Proofs stay under it.
+- **Today map:** a sub-mission hanging from a Quest sits just beyond that Quest with a short line.
+- **Speed:** no `router.refresh()` after a command that already revalidates (Next returns the
+  refreshed page with the action); `getAuthState` uses `getClaims()`; the mission page reads in one
+  batch and has its own `loading.tsx`.
+
 ## Notes - 6 November 2026 (migration 126)
 
 The user replaced Mistakes and learning with one **Notes** panel (result in
