@@ -2,6 +2,7 @@
 
 Multi-metric performance tracker for delivery teams (The TaskPulse project).
 
+
 Stellar weights every mission, records the hours worked against it, and
 measures each member against the team median for the month. Progress, scores,
 awards and payroll are computed in the database, so the same figure appears on
