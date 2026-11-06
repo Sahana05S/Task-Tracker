@@ -43,7 +43,7 @@ function rowStep(row: Pick<ChecklistBranchRow, 'id' | 'title' | 'checklistId' | 
 const isContainer = (row: ChecklistBranchRow) => row.childCount > 0;
 const pct = (value: number | null) => value === null ? 'Not started' : `${Math.round(value)}%`;
 const HINT_MS = 1800;
-const HASHTAG_REASON = { label: 'Carries', learning: 'Has a learning note with', linked: 'Follows a sub-mission with' } as const;
+const HASHTAG_REASON = { label: 'Carries', note: 'Has a note with', linked: 'Follows a sub-mission with' } as const;
 const RELATION_TEXT = { Subtask: ['Sub-mission of', 'Has sub-mission'], Dependency: ['Depends on', 'Needed by'], Blocks: ['Blocked by', 'Blocks'], Related: ['Related to', 'Related to'] } as const;
 
 /** The caption under the map and the one-time "Use Ctrl + scroll" hint, kept out of the map's render. */
@@ -215,7 +215,7 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
   }, [roots, path, levels, links, anchors]);
   // Sub-missions drawn from a Quest or row of the opened mission: they stay clear while the rest fades.
   const originOf = useMemo(() => new Map(layout.edges.filter(e => e.kind === 'origin').map(e => [e.to, e.from])), [layout]);
-  // Nodes carrying the chosen hashtag: loaded missions' labels at once, then labelled(slug) for learning notes and linked rows.
+  // Nodes carrying the chosen hashtag: loaded missions' labels at once, then labelled(slug) for notes (missions, Quests, objectives) and linked rows.
   const matches = useMemo(() => {
     if (!hashtag) return null;
     const missionsById = new Map(roots.map(m => [m.id, m]));

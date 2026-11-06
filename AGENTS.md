@@ -26,6 +26,24 @@ change). The refactor is complete and merged into `main`. Follow
   `bash tools/notes.sh push "message"` after changing them. Test fixtures live in
   `__tests__/fixtures/`.
 
+## Notes - 6 November 2026 (migration 126)
+
+The user replaced Mistakes and learning with one **Notes** panel (result in
+`docs/UPDATE-PLAN-2026-11.md`, "Notes (6 November 2026)"). Decisions to keep:
+
+- A note is a short text with one or more hashtags (workspace labels) and at least one **type
+  hashtag**, enforced in PostgreSQL (`mission_note_command` and a deferred constraint trigger).
+  Managers choose the types in Settings > Company > Labels (`labels.note_type`).
+- Notes belong to a mission, a Quest or an objective (`mission_learnings.checklist_node_id`); the
+  mission page lists them all and names where each came from; checklist rows and Quest homes open
+  the panel scoped to that row. The author edits; the author, Managers and the MD delete.
+- Starter hashtags exist once per company by slug (types #mistake #learning #idea #decision #risk
+  #blocker #followup; topics, causes and impact as listed in the plan); never duplicate them.
+- Privacy stays `can_read_mission_work` (117). Notes and hashtags feed no score.
+- The table `mission_learnings` and the label subject kind `mission_learning` are reused;
+  `mission_learning_command` and `mission_learnings(task)` remain as compatibility paths.
+- "Mistakes and learning" no longer appears in the interface; hashtags are never called tags.
+
 ## Revision 2 - 5 November 2026 (migrations 121-125)
 
 The user's "Revision 2" plan (result in `docs/UPDATE-PLAN-2026-11.md`, "Revision 2"). These

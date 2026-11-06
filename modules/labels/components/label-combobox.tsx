@@ -21,7 +21,7 @@ export type LabelChoice = { label: Label } | { create: string };
  * `LabelPicker` (holds the choice until the record exists). It only reports a
  * choice; the caller decides what to do with it.
  */
-export function LabelCombobox({ catalogue, current, canCreate, disabled = false, onChoose, inputId, className }: {
+export function LabelCombobox({ catalogue, current, canCreate, disabled = false, onChoose, inputId, className, placeholder, ariaLabel = 'Add a label' }: {
   /** The company's labels, for suggestions. */
   catalogue: readonly Label[];
   /** Labels already on the record (left out of the suggestions). */
@@ -34,6 +34,9 @@ export function LabelCombobox({ catalogue, current, canCreate, disabled = false,
   /** For a form field's `<label htmlFor>`. */
   inputId?: string;
   className?: string;
+  /** Box text; defaults to "Add a label" (or "Add or create a label" for managers). */
+  placeholder?: string;
+  ariaLabel?: string;
 }) {
   const listId = useId();
   const [text, setText] = useState('');
@@ -62,8 +65,8 @@ export function LabelCombobox({ catalogue, current, canCreate, disabled = false,
         id={inputId}
         className="field h-9 w-full pl-7 text-sm"
         value={text}
-        placeholder={canCreate ? 'Add or create a label' : 'Add a label'}
-        aria-label="Add a label"
+        placeholder={placeholder ?? (canCreate ? 'Add or create a label' : 'Add a label')}
+        aria-label={ariaLabel}
         role="combobox"
         aria-expanded={options.length > 0}
         aria-controls={listId}

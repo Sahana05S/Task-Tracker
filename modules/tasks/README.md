@@ -83,7 +83,7 @@ and Done / Discarded missions unchanged); `set_task_participants` and
 
 **Who sees a mission's checklist and work (migration 117, user decision 4
 November 2026).** The checklist, its rows and sections, details, links, files,
-objective reviews, item time, timer session lines and mistakes and learning are
+objective reviews, item time, timer session lines and notes are
 readable only by the managing director and the mission's people above (any
 `task_assignees` row, the legacy `tasks.assignee_id`, any `task_reviewers`
 row). Project engineers read them only when they are one of those. Everyone
@@ -116,7 +116,9 @@ Tests: `tools/test_task_people_database.py`.
 
 ## Depends on
 `shared/*`, the public API of `labels` (chips on cards and table rows, the
-Missions Labels filter `?label=a&label=b` and the New mission form's labels,
+Missions Labels filter `?label=a&label=b` (with "Include notes", `?notes=1`,
+also matching missions whose notes carry the hashtag: `MissionLabels.noteSlugsByTask`
+from the learning module's `getMissionNoteHashtags`, migration 126) and the New mission form's labels,
 attached after the mission is created; the page passes `labels` to
 `TaskWorkspace`), the public API of `checklists` (rollups and checklist types),
 `settings` (the company's mission-type names and hidden codes: the create/edit

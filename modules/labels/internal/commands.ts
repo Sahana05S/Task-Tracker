@@ -8,6 +8,9 @@ import { mapLabel, type Label, type LabelColour, type LabelSubjectKind } from '.
 
 /** Label writes through label_command and label_link_command (migration 112). PRIVATE. */
 
+/** label_command's operations; note_type_on / note_type_off since migration 126. */
+export type LabelOp = 'create' | 'rename' | 'archive' | 'restore' | 'note_type_on' | 'note_type_off';
+
 export type LabelFailure = { ok: false; error: string; code: 'forbidden' | 'validation' | 'conflict' | 'unavailable' };
 type LabelResult = { ok: true; label: Label } | LabelFailure;
 
@@ -26,7 +29,7 @@ function result(data: unknown, error: { code?: string; message: string } | null)
 }
 
 export async function runLabelCommand(input: {
-  op: 'create' | 'rename' | 'archive' | 'restore'; labelId: string | null; name: string | null;
+  op: LabelOp; labelId: string | null; name: string | null;
   colour: LabelColour | null; description: string | null; operationId: string;
 }): Promise<LabelResult> {
   const supabase = await createClient();

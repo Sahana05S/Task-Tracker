@@ -1,10 +1,13 @@
 // PUBLIC client-safe exports: types and pure helpers only (no server imports).
 export {
-  LEARNING_KINDS,
-  LEARNING_KIND_LABEL,
-  LEARNING_MAX_LENGTH,
-  learningCounts,
-  type LearningKind,
-  type MissionLearning,
-  type MissionLearnings,
+  filterNotes,
+  hashtagLine,
+  hasNoteType,
+  NOTE_MAX_HASHTAGS,
+  NOTE_MAX_LENGTH,
+  noteHashtagCounts,
+  noteTypeLabels,
+  type MissionNote,
+  type MissionNotes,
+  type NoteNodeKind,
 } from '@/modules/learning/internal/rules';

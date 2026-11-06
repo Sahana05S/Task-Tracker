@@ -107,7 +107,7 @@ jobs:
         run: python tools/test_month_setup_database.py --psql "$(command -v psql)" --port 15432
       - name: New mission scale mode and company default (migration 61)
         run: python tools/test_mission_scale_mode_database.py --psql "$(command -v psql)" --port 15432
-      - name: Mistakes and learning on the mission page (migration 111)
+      - name: Notes with hashtags on the mission page (migrations 111, 126)
         run: python tools/test_mission_learnings_database.py --psql "$(command -v psql)" --port 15432
       - name: Workspace labels (migration 112)
         run: python tools/test_workspace_labels_database.py --psql "$(command -v psql)" --port 15432

@@ -1,4 +1,4 @@
-import { activitySummary, FIELD_WORDS, type ActivityCursor } from './activity-mapping';
+import { activitySummary, FIELD_WORDS, isNoteAction, type ActivityCursor } from './activity-mapping';
 
 /**
  * Pure parts of a mission's own history (`public.mission_activity`, migration
@@ -198,8 +198,8 @@ export function mapMissionActivity(
       summary: row.action === 'checklist_assign' && row.subject_user_id ? `${name(row.subject_user_id)} owns the Quest` : plainSummary(row),
       detail,
       changes,
-      // Labels and files carry their name as the reason; do not repeat it.
-      reason: reason && reason !== detail ? reason : null,
+      // Labels and files carry their name as the reason, notes their hashtags in the summary.
+      reason: reason && reason !== detail && !isNoteAction(row.action) ? reason : null,
     });
   }
   return entries;

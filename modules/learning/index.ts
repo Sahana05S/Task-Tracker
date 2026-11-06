@@ -1,5 +1,5 @@
 import 'server-only';
 
-// PUBLIC server-side API of the learning module (migration 111).
+// PUBLIC server-side API of the notes module (migrations 111 and 126).
 export * from '@/modules/learning/client';
-export { getMissionLearnings } from '@/modules/learning/internal/queries';
+export { getMissionNoteHashtags, getMissionNotes } from '@/modules/learning/internal/queries';

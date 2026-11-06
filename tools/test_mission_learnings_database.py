@@ -1,25 +1,34 @@
-"""Mistakes and learning on the mission page, migration 111: public.mission_learnings, mission_learnings(task) and
-mission_learning_command(add/edit/withdraw). Fresh install 01-latest and upgrade (seeded before 111), no direct
-table access, who may write (managing director, project engineers, the mission's assignees) and who may read
-(every active member of the company), author-or-manager edits, validation, idempotent replay, archived missions,
-the audit line in activity_feed, and company separation. Disposable PostgreSQL; JWT shim only; no hosted connection."""
+"""Notes on the mission page: migration 111 (public.mission_learnings) and migration 126 (Notes with hashtags).
+Fresh install 01-latest and upgrade (Mistakes and learning notes written at 125, then 126 moves them into Notes),
+no direct table access, starter hashtags once per company, type hashtags set by managers, mission_note_command
+(add / edit / delete with several hashtags, a type hashtag required, notes on a Quest), mission_notes(task)
+privacy (can_read_mission_work), the Missions filter read, labelled(), the activity lines, the old command as a
+wrapper, archived missions and company separation. Disposable PostgreSQL; JWT shim only; no hosted connection."""
 from pathlib import Path
 source=Path(__file__).with_name('test_m09_database.py').read_text(encoding='utf-8')
 exec(compile(source.split('\nfor db in DBS:')[0],str(Path(__file__).with_name('test_m09_database.py')),'exec'))
 from uuid import uuid4
 
-DBS=('taskpulse_learnings_fresh_test','taskpulse_learnings_upgrade_test')
+DBS=('taskpulse_notes_fresh_test','taskpulse_notes_upgrade_test')
 U=lambda n:'00000000-0000-0000-0000-'+str(n).zfill(12)
 MD,PE,DM,M4,M5,M6,INACTIVE=U(1),U(2),U(3),U(4),U(5),U(6),U(7)
 B_DIR='00000000-0000-0000-0000-0000000000b1'
 T1,T2='10000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002'
+QUEST,QUEST_LIST,OBJECTIVE,OTHER_NODE=('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000009',
+ '30000000-0000-0000-0000-000000000009','30000000-0000-0000-0000-000000000002')
 MIGRATIONS=sorted((ROOT/'supabase/migrations').glob('*.sql'),key=lambda p:int(p.name.split('_')[0]))
 LATEST=int(MIGRATIONS[-1].name.split('_')[0])
-CMD='public.mission_learning_command(text,uuid,uuid,text,text,uuid)'
+CMD='public.mission_note_command(text,uuid,uuid,uuid,text,uuid[],text[],uuid)'
+STARTERS=['mistake','learning','idea','decision','risk','blocker','followup','client','vendor','approval','government',
+ 'site','design','drawing','estimate','payment','documentation','communication','delay','rework','missinginfo','quality',
+ 'budget','critical','minor','repeat']
+TYPES=['blocker','decision','followup','idea','learning','mistake','risk']
 
 def migrate(db,numbers):
+    out=[]
     for m in MIGRATIONS:
-        if int(m.name.split('_')[0]) in numbers:sql(db,m.read_text(encoding='utf-8'))
+        if int(m.name.split('_')[0]) in numbers:out.append(sql(db,m.read_text(encoding='utf-8')))
+    return out
 def run(db,uid,statement):
     role='anon' if uid is None else 'authenticated'
     return subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-At'],
@@ -32,110 +41,189 @@ def ok(db,uid,statement):
 def expect_code(db,uid,statement,code):
     r=run(db,uid,statement)
     assert r.returncode and code in r.stderr,(statement[:300],r.stderr[:800])
-def cmd(op,task,learning=None,kind='learning',body='Check the soil report first',operation=None):
-    learning_sql='NULL' if learning is None else f"'{learning}'"
-    kind_sql='NULL' if kind is None else literal(kind)
-    body_sql='NULL' if body is None else literal(body)
-    return f"SELECT public.mission_learning_command('{op}','{task}',{learning_sql},{kind_sql},{body_sql},'{operation or uuid4()}')"
-def read(db,uid,task=T1):return json.loads(ok(db,uid,f"SELECT public.mission_learnings('{task}')"))
-def add(db,uid,task=T1,**kw):return json.loads(ok(db,uid,cmd('add',task,**kw)))['id']
-def rows(db):return value(db,'count(*) FROM public.mission_learnings')
+def arr(values,kind):
+    return 'NULL' if values is None else ('ARRAY['+','.join(literal(v) for v in values)+f']::{kind}[]' if values else f"'{{}}'::{kind}[]")
+def note_sql(op,task=T1,note=None,node=None,body='Check the soil report first',labels=None,names=('learning',),operation=None):
+    q=lambda v:'NULL' if v is None else literal(v)
+    return (f"SELECT public.mission_note_command({literal(op)},'{task}',{q(note)}::uuid,{q(node)}::uuid,{q(body)},"
+            f"{arr(labels,'uuid')},{arr(None if names is None else list(names),'text')},'{operation or uuid4()}')")
+def old_sql(op,task=T1,learning=None,kind='learning',body='Old style note'):
+    q=lambda v:'NULL' if v is None else literal(v)
+    return f"SELECT public.mission_learning_command('{op}','{task}',{q(learning)}::uuid,{q(kind)},{q(body)},'{uuid4()}')"
+def add(db,uid,**kw):return json.loads(ok(db,uid,note_sql('add',**kw)))['id']
+def notes(db,uid,task=T1):return json.loads(ok(db,uid,f"SELECT public.mission_notes('{task}')"))
+def by_id(db,uid,task=T1):return {i['id']:i for i in notes(db,uid,task)['items']}
+def slugs(item):return [l['slug'] for l in item['labels']]
+def rows(db):return value(db,"count(*) FROM public.mission_learnings WHERE record_state='active'")
+def label_id(db,slug):return value(db,f"id FROM public.labels WHERE slug='{slug}' AND organization_id=(SELECT organization_id FROM public.tasks WHERE id='{T1}')")
 
-assert LATEST>=111
+assert LATEST>=126
 for db in DBS:
     sql('postgres',f'DROP DATABASE IF EXISTS {db} WITH (FORCE);')
     sql('postgres',f'CREATE DATABASE {db}')
     sql(db,bootstrap)
     every=[int(m.name.split('_')[0]) for m in MIGRATIONS]
+    old={}
     if db==DBS[1]:
         migrate(db,[n for n in every if n<111]); sql(db,seed)
-        tasks=value(db,'count(*) FROM public.tasks')
-        migrate(db,[n for n in every if n>=111])
-        assert value(db,'count(*) FROM public.tasks')==tasks and rows(db)=='0'
-        print('PASS',db,'upgrade to 111 keeps every mission and starts with no notes')
+        migrate(db,[n for n in every if 111<=n<126])
+        # Mistakes and learning as they were before 126, one with a label and one withdrawn.
+        old['mistake']=json.loads(ok(db,M4,old_sql('add',kind='mistake',body='Ordered the wrong cable')))['id']
+        old['learning']=json.loads(ok(db,MD,old_sql('add',kind='learning',body='Book the crane a week ahead')))['id']
+        old['gone']=json.loads(ok(db,M4,old_sql('add',kind='learning',body='Withdrawn later')))['id']
+        ok(db,M4,old_sql('withdraw',learning=old['gone'],kind=None,body=None))
+        crane=json.loads(ok(db,MD,f"SELECT public.label_command('create',NULL,'Crane',NULL,NULL,'{uuid4()}')"))['id']
+        ok(db,MD,f"SELECT public.label_link_command('attach','mission_learning','{old['learning']}','{crane}',NULL,'{uuid4()}')")
+        before=value(db,"jsonb_agg(jsonb_build_array(id,author_id,body,created_at,record_state) ORDER BY id) FROM public.mission_learnings")
+        migrate(db,[n for n in every if n>=126])
+        assert value(db,"jsonb_agg(jsonb_build_array(id,author_id,body,created_at,record_state) ORDER BY id) FROM public.mission_learnings")==before
+        items=by_id(db,M4)
+        assert set(items)=={old['mistake'],old['learning']},items
+        assert slugs(items[old['mistake']])==['mistake'] and slugs(items[old['learning']])==['learning','crane'],items
+        assert items[old['mistake']]['authorName'] and items[old['mistake']]['body']=='Ordered the wrong cable'
+        assert value(db,f"count(*) FROM public.label_links k JOIN public.labels l ON l.id=k.label_id WHERE k.subject_id='{old['gone']}' AND l.slug='learning'")=='1'
+        print('PASS',db,'upgrade to 126 moves every old note into Notes with #mistake or #learning, keeping author, date, text and labels; nothing is deleted')
     else:
         migrate(db,every); sql(db,seed)
-        print('PASS',db,f'fresh install 01-{LATEST} including 111')
+        print('PASS',db,f'fresh install 01-{LATEST} including 111 and 126')
 
     # ---- ownership and grants -------------------------------------------------------------------------------
     assert value(db,"taskpulse_private.m15_secure()")=='0 tables and 0 functions moved to taskpulse_definer'
     assert value(db,"pg_get_userbyid(relowner)||relforcerowsecurity FROM pg_class WHERE oid='public.mission_learnings'::regclass")=='taskpulse_definertrue'
-    assert value(db,"count(*) FROM taskpulse_private.m15_tenant_tables WHERE table_schema='public' AND table_name='mission_learnings'")=='1'
-    assert value(db,f"has_function_privilege('authenticated','{CMD}','EXECUTE') AND NOT has_function_privilege('anon','{CMD}','EXECUTE')")=='t'
+    for fn in (CMD,'public.mission_notes(uuid)','public.mission_note_hashtags(uuid[])'):
+        assert value(db,f"has_function_privilege('authenticated','{fn}','EXECUTE') AND NOT has_function_privilege('anon','{fn}','EXECUTE')")=='t',fn
     for uid in (MD,M4):
         expect_code(db,uid,'SELECT count(*) FROM public.mission_learnings','42501')
-        expect_code(db,uid,f"INSERT INTO public.mission_learnings(organization_id,task_id,kind,body,author_id) SELECT organization_id,id,'mistake','x','{uid}' FROM public.tasks LIMIT 1",'42501')
-    print('PASS',db,'the table is definer-owned with FORCE RLS and no direct access; the command is for signed-in users only')
+    print('PASS',db,'the table is definer-owned with FORCE RLS and no direct access; the commands are for signed-in users only')
 
-    # ---- who may write ----------------------------------------------------------------------------------------
-    # Migration 117: a project engineer reads and writes a mission's notes only when on it; here an observer.
-    sql(db,f"INSERT INTO public.task_reviewers(task_id,user_id,reviewer_role,is_primary) VALUES('{T1}','{PE}','Observer',false)")
-    for uid in (M5,M6,DM,INACTIVE):expect_code(db,uid,cmd('add',T1),'42501')
-    expect_code(db,None,cmd('add',T1),'42501')
-    assert rows(db)=='0'
-    own=add(db,M4,kind='mistake',body='  Ordered the wrong cable  ')
-    pe=add(db,PE)
-    add(db,MD,body='Book the crane a week ahead')
-    assert value(db,f"body FROM public.mission_learnings WHERE id='{own}'")=='Ordered the wrong cable'
-    print('PASS',db,"the assignee, a project engineer and the director add; another member, the reviewer, a data manager, inactive and anonymous callers are refused")
+    # ---- starter hashtags: once per company -------------------------------------------------------------------
+    if db==DBS[0]:
+        # Fresh install: the company had no members when 126 ran; its first note brings the starters.
+        assert value(db,"count(*) FROM public.labels")=='0'
+    first=add(db,M4,names=['#mistake','client','#Delay'],body='  Sent the old drawing to the client  ')
+    org=f"(SELECT organization_id FROM public.tasks WHERE id='{T1}')"
+    assert value(db,f"string_agg(slug,',' ORDER BY slug) FROM public.labels WHERE organization_id={org} AND slug=ANY(ARRAY{STARTERS})")==','.join(sorted(STARTERS))
+    assert value(db,f"string_agg(slug,',' ORDER BY slug) FROM public.labels WHERE organization_id={org} AND note_type")==','.join(TYPES)
+    assert value(db,f"taskpulse_private.note_starter_hashtags({org},'{MD}')")=='0'
+    assert value(db,f"count(*) FROM public.labels WHERE organization_id={org} AND slug=ANY(ARRAY{STARTERS})")==str(len(STARTERS))
+    print('PASS',db,'the 26 starter hashtags exist once per company, seven of them note types; seeding again adds nothing')
 
-    # ---- who may read -----------------------------------------------------------------------------------------
-    for uid in (MD,PE,M4,M6):
-        r=read(db,uid)
-        assert len(r['items'])==3 and r['canAdd']==(uid in (MD,PE,M4)),(uid,r)
-    for uid in (DM,M5):  # 117: not on the mission
-        expect_code(db,uid,f"SELECT public.mission_learnings('{T1}')",'42501')
-    expect_code(db,INACTIVE,f"SELECT public.mission_learnings('{T1}')",'42501')
-    mine={i['id']:i for i in read(db,M4)['items']}
-    assert mine[own]['canEdit'] and not mine[pe]['canEdit'] and mine[own]['kind']=='mistake' and mine[own]['authorName']
-    assert all(i['canEdit'] for i in read(db,PE)['items']) and not any(i['canEdit'] for i in read(db,M6)['items'])
-    assert read(db,M5,T2)=={'canAdd':True,'items':[]}
-    print('PASS',db,"the director and the mission's people read the notes; others are refused; canAdd and canEdit follow the rules")
+    # ---- adding notes with several hashtags ----------------------------------------------------------------------
+    item=by_id(db,M6)[first]
+    assert item['body']=='Sent the old drawing to the client' and slugs(item)==['mistake','client','delay'],item
+    assert item['labels'][0]['noteType'] is True and item['labels'][1]['noteType'] is False
+    assert item['nodeId'] is None and item['canEdit'] is False and item['canDelete'] is False
+    mine=by_id(db,M4)[first]; assert mine['canEdit'] and mine['canDelete']
+    assert by_id(db,MD)[first]['canDelete'] and not by_id(db,MD)[first]['canEdit']
+    two=add(db,MD,labels=[label_id(db,'decision'),label_id(db,'decision')],names=['#site','new crane hire'],body='Use the north gate')
+    assert slugs(by_id(db,M4)[two])==['decision','new-crane-hire','site']
+    print('PASS',db,'a note takes several hashtags by id or by #name, without duplicates, type hashtags first; a manager may create one on the way')
 
-    # ---- validation ---------------------------------------------------------------------------------------------
+    # ---- a type hashtag is required ------------------------------------------------------------------------------
     before=rows(db)
-    for bad in (dict(kind='Mistake'),dict(kind=None),dict(body='   '),dict(body=None),dict(body='x'*2001)):
-        expect_code(db,M4,cmd('add',T1,**bad),'23514')
-    expect_code(db,M4,cmd('remove',T1),'23514')
-    expect_code(db,M4,cmd('add',str(uuid4())),'P0002')
+    expect_code(db,M4,note_sql('add',names=['client']),'23514')
+    expect_code(db,M4,note_sql('add',names=[]),'23514')
+    expect_code(db,M4,note_sql('add',names=None),'23514')
+    expect_code(db,M4,note_sql('add',names=['learning'],body='   '),'23514')
+    expect_code(db,M4,note_sql('add',names=['learning'],body='x'*2001),'23514')
+    expect_code(db,M4,note_sql('add',names=['learning','brand new tag']),'42501')
+    expect_code(db,M4,note_sql('add',labels=[str(uuid4())]),'P0002')
+    expect_code(db,M4,note_sql('remove'),'23514')
     assert rows(db)==before
-    print('PASS',db,'bad kind, blank or overlong text, an unknown operation and an unknown mission are refused')
+    # ... and stays: removing a note's last type hashtag is refused.
+    expect_code(db,M4,f"SELECT public.label_link_command('detach','mission_learning','{first}','{label_id(db,'mistake')}',NULL,'{uuid4()}')",'23514')
+    assert slugs(by_id(db,M4)[first])==['mistake','client','delay']
+    print('PASS',db,'a note without a type hashtag, a blank or long text, an unknown hashtag or operation are refused; the last type hashtag cannot be removed')
 
-    # ---- edit and withdraw ----------------------------------------------------------------------------------------
+    # ---- managers set the type list --------------------------------------------------------------------------------
+    for uid in (M4,DM):expect_code(db,uid,f"SELECT public.label_command('note_type_on','{label_id(db,'client')}',NULL,NULL,NULL,'{uuid4()}')",'42501')
+    ok(db,PE,f"SELECT public.label_command('note_type_on','{label_id(db,'client')}',NULL,NULL,NULL,'{uuid4()}')")
+    client_only=add(db,M4,names=['client'],body='Client prefers calls')
+    ok(db,MD,f"SELECT public.label_command('note_type_off','{label_id(db,'client')}',NULL,NULL,NULL,'{uuid4()}')")
+    expect_code(db,M4,note_sql('add',names=['client']),'23514')
+    assert json.loads(ok(db,M4,"SELECT public.label_catalogue()"))['labels'][0].get('noteType') is not None
+    print('PASS',db,'only managers change which hashtags are note types; the rule follows the current list')
+
+    # ---- who may read ----------------------------------------------------------------------------------------------
+    sql(db,f"INSERT INTO public.task_reviewers(task_id,user_id,reviewer_role,is_primary) VALUES('{T1}','{PE}','Observer',false)")
+    for uid in (MD,PE,M4,M6):assert first in by_id(db,uid)
+    for uid in (DM,M5,INACTIVE,None):expect_code(db,uid,f"SELECT public.mission_notes('{T1}')",'42501')
+    expect_code(db,M5,note_sql('add'),'42501')
+    expect_code(db,M5,note_sql('delete',note=first,names=None),'42501')
+    assert notes(db,M5,T2)=={'canAdd':True,'items':[]}
+    assert notes(db,M4)['canAdd'] and not notes(db,M6)['canAdd']
+    hashtags=f"SELECT public.mission_note_hashtags(ARRAY['{T1}','{T2}']::uuid[])"
+    expected={'mistake','client','delay','decision','new-crane-hire','site'}|({'learning','crane'} if old else set())
+    assert set(json.loads(ok(db,M4,hashtags))[T1])==expected
+    assert json.loads(ok(db,M5,hashtags))=={}
+    got=json.loads(ok(db,M6,"SELECT public.labelled('delay')"))['items']
+    assert [(i['kind'],i['taskId'],i['nodeId']) for i in got]==[('mission_learning',T1,None)],got
+    assert json.loads(ok(db,M5,"SELECT public.labelled('delay')"))['items']==[]
+    print('PASS',db,"only the mission's people read its notes, their hashtags (Missions filter) and their label-page entries; strangers are refused")
+
+    # ---- notes on a Quest and an objective ---------------------------------------------------------------------------
+    sql(db,f"""SET session_replication_role=replica;
+      UPDATE public.checklist_nodes SET node_type='Page',title='Foundation' WHERE id='{QUEST}';
+      INSERT INTO public.task_checklists(id,organization_id,task_id,title,owner_node_id)
+       SELECT '{QUEST_LIST}',organization_id,id,'Foundation','{QUEST}' FROM public.tasks WHERE id='{T1}';
+      INSERT INTO public.checklist_nodes(id,organization_id,checklist_id,node_type,title)
+       SELECT '{OBJECTIVE}',organization_id,'{QUEST_LIST}','Item','Pour the slab' FROM public.task_checklists WHERE id='{QUEST_LIST}';""")
+    on_quest=add(db,M4,node=QUEST,names=['risk','site'],body='Rain forecast for the pour')
+    on_objective=add(db,M4,node=OBJECTIVE,names=['followup'],body='Order curing compound')
+    expect_code(db,M4,note_sql('add',node=OTHER_NODE),'23514')
+    items=by_id(db,MD)
+    assert (items[on_quest]['nodeId'],items[on_quest]['nodeKind'],items[on_quest]['nodeTitle'])==(QUEST,'quest','Foundation'),items[on_quest]
+    assert (items[on_objective]['nodeKind'],items[on_objective]['nodeTitle'])==('objective','Pour the slab')
+    assert [i['id'] for i in notes(db,MD)['items']][:2]==[on_objective,on_quest],'newest first'
+    assert [i['nodeId'] for i in json.loads(ok(db,M4,"SELECT public.labelled('risk')"))['items']]==[QUEST]
+    print('PASS',db,"notes on a Quest and an objective show on the mission page with where they came from; another mission's row is refused")
+
+    # ---- edit and delete ------------------------------------------------------------------------------------------------
     op=uuid4()
-    edited=json.loads(ok(db,M4,cmd('edit',T1,own,kind='learning',body='Check cable specs against the drawing',operation=op)))
-    assert edited=={'id':own,'state':'active'}
-    assert json.loads(ok(db,M4,cmd('edit',T1,own,kind='learning',body='Check cable specs against the drawing',operation=op)))==edited
-    expect_code(db,M4,cmd('edit',T1,own,kind='learning',body='Other text',operation=op),'PT409')
-    item={i['id']:i for i in read(db,M6)['items']}[own]
-    assert (item['kind'],item['body'],item['edited'])==('learning','Check cable specs against the drawing',True)
-    expect_code(db,M4,cmd('edit',T1,pe,body='Not mine'),'P0002')
-    expect_code(db,M4,cmd('withdraw',T1,pe),'P0002')
-    expect_code(db,M5,cmd('withdraw',T1,own),'42501')
-    ok(db,PE,cmd('edit',T1,own,kind='mistake',body='Ordered the wrong cable (corrected by PE)'))
-    expect_code(db,M4,cmd('edit',T2,own),'42501')
-    ok(db,M4,cmd('withdraw',T1,own))
-    assert own not in {i['id'] for i in read(db,MD)['items']} and len(read(db,MD)['items'])==2
-    expect_code(db,M4,cmd('edit',T1,own),'P0002')
-    assert value(db,f"record_state FROM public.mission_learnings WHERE id='{own}'")=='withdrawn'
-    print('PASS',db,'authors and managers edit and withdraw; replay returns the receipt; reuse, other notes and withdrawn notes are refused')
+    edit=note_sql('edit',note=first,names=['learning','client'],body='Send drawings from the register only',operation=op)
+    assert json.loads(ok(db,M4,edit))=={'id':first,'state':'active'}
+    assert json.loads(ok(db,M4,edit))=={'id':first,'state':'active'},'replay returns the receipt'
+    expect_code(db,M4,note_sql('edit',note=first,names=['learning'],body='Other',operation=op),'PT409')
+    item=by_id(db,M6)[first]
+    assert (item['body'],slugs(item),item['edited'])==('Send drawings from the register only',['learning','client'],True)
+    expect_code(db,MD,note_sql('edit',note=first,names=['learning']),'P0002')  # managers delete, they do not rewrite
+    expect_code(db,M6,note_sql('delete',note=first,names=None),'P0002')
+    expect_code(db,M4,note_sql('delete',note=two,names=None),'P0002')
+    ok(db,MD,note_sql('delete',note=on_objective,names=None))
+    ok(db,M4,note_sql('delete',note=client_only,names=None))
+    assert on_objective not in by_id(db,M4) and value(db,f"record_state FROM public.mission_learnings WHERE id='{on_objective}'")=='withdrawn'
+    assert on_objective not in json.loads(ok(db,MD,f"SELECT public.labels_for('mission_learning',ARRAY['{on_objective}']::uuid[])"))
+    expect_code(db,M4,note_sql('edit',note=on_objective,names=['learning']),'P0002')
+    print('PASS',db,'the author edits; the author or a manager deletes; replay, reuse, other notes and deleted notes behave')
 
-    # ---- audit and activity feed ----------------------------------------------------------------------------------
-    audit=value(db,"string_agg(command,',' ORDER BY id) FROM taskpulse_private.audit_events WHERE table_name='mission_learnings'")
-    assert audit.split(',')==['mission_learning_add']*3+['mission_learning_edit']*2+['mission_learning_withdraw'],audit
-    assert value(db,"count(*) FROM taskpulse_private.audit_events WHERE table_name='mission_learnings' AND protected_changes::text LIKE '%cable%'")=='0'
+    # ---- activity lines --------------------------------------------------------------------------------------------------
+    reasons=value(db,"string_agg(command||'|'||coalesce(protected_changes->>'reason','')||'|'||coalesce(protected_changes->>'node_title',''),';' ORDER BY id) FROM taskpulse_private.audit_events WHERE table_name='mission_learnings' AND command LIKE 'mission_note_%'")
+    assert 'mission_note_add|#mistake #client #delay|' in reasons and 'mission_note_add|#risk #site|Foundation' in reasons,reasons
+    assert 'mission_note_edit|#learning #client|' in reasons and 'mission_note_delete|#followup|Pour the slab' in reasons,reasons
+    assert value(db,"count(*) FROM taskpulse_private.audit_events WHERE table_name='mission_learnings' AND protected_changes::text LIKE '%drawing%'")=='0'
     today=value(db,"(clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date")
-    feed=f"SELECT string_agg(action||':'||coalesce(task_tag,'-'),',') FROM public.activity_feed('{today}','{today}','missions',NULL,NULL,200) WHERE record_kind='mission_learnings'"
-    assert ok(db,MD,feed).count('mission_learning_add:T1')==3
-    assert ok(db,M4,feed).count('mission_learning_')==6,'the assignee sees every line on their mission'
-    r=run(db,M5,feed); assert r.returncode==0 and 'mission_learning_' not in r.stdout
-    print('PASS',db,'each change is one audit line without the text, and shows in the activity feed under the mission')
+    feed=f"SELECT string_agg(action||':'||coalesce(task_tag,'-')||':'||coalesce(reason,''),',') FROM public.activity_feed('{today}','{today}','missions',NULL,NULL,200) WHERE record_kind='mission_learnings'"
+    assert 'mission_note_add:T1:#mistake #client #delay' in ok(db,MD,feed)
+    r=run(db,M5,feed); assert r.returncode==0 and 'mission_note_' not in r.stdout
+    history=ok(db,M4,f"SELECT string_agg(action||':'||coalesce(detail,'')||':'||coalesce(reason,''),',') FROM public.mission_activity('{T1}',NULL,200) WHERE record_kind='mission_learnings'")
+    assert 'mission_note_add:Foundation:#risk #site' in history and 'mission_note_edit::#learning #client' in history,history
+    print('PASS',db,'each change is one audit line with its hashtags (never the text), in Team > Activity and the mission History')
 
-    # ---- archived mission is read-only ------------------------------------------------------------------------------
+    # ---- the old command still works -----------------------------------------------------------------------------------
+    legacy=json.loads(ok(db,M4,old_sql('add',kind='mistake',body='Old screen note')))['id']
+    assert slugs(by_id(db,M4)[legacy])==['mistake']
+    ok(db,M4,old_sql('edit',learning=legacy,kind='learning',body='Old screen note, edited'))
+    assert slugs(by_id(db,M4)[legacy])==['learning','mistake']
+    expect_code(db,M4,old_sql('add',kind='idea'),'23514')
+    ok(db,M4,old_sql('withdraw',learning=legacy,kind=None,body=None))
+    assert legacy not in by_id(db,M4)
+    print('PASS',db,'mission_learning_command keeps working during the deploy and writes a typed note')
+
+    # ---- archived mission is read-only ---------------------------------------------------------------------------------
     sql(db,f"SET session_replication_role=replica; UPDATE public.tasks SET archived_effective_date=current_date WHERE id='{T1}';")
-    assert read(db,M4)['canAdd'] is False and not any(i['canEdit'] for i in read(db,MD)['items'])
-    expect_code(db,MD,cmd('add',T1),'23514')
-    expect_code(db,PE,cmd('withdraw',T1,pe),'23514')
+    r=notes(db,M4); assert r['canAdd'] is False and not any(i['canEdit'] or i['canDelete'] for i in r['items'])
+    expect_code(db,MD,note_sql('add'),'23514')
+    expect_code(db,M4,note_sql('delete',note=first,names=None),'23514')
     sql(db,f"SET session_replication_role=replica; UPDATE public.tasks SET archived_effective_date=NULL WHERE id='{T1}';")
     print('PASS',db,'an archived mission keeps its notes read-only')
 
@@ -146,8 +234,8 @@ for db in DBS:
       ('{B_DIR}','bdir@beta.test','{{"employee_id":"BETA-1"}}','{{"organization_id":"{B}"}}')""")
     sql(db,f"UPDATE public.users SET role='managing_director' WHERE id='{B_DIR}'")
     before=rows(db)
-    expect_code(db,B_DIR,f"SELECT public.mission_learnings('{T1}')",'P0002')
-    expect_code(db,B_DIR,cmd('add',T1),'P0002')
-    expect_code(db,B_DIR,cmd('withdraw',T1,pe),'P0002')
-    assert rows(db)==before
+    expect_code(db,B_DIR,f"SELECT public.mission_notes('{T1}')",'P0002')
+    expect_code(db,B_DIR,note_sql('add'),'P0002')
+    expect_code(db,B_DIR,note_sql('delete',note=two,names=None),'P0002')
+    assert json.loads(ok(db,B_DIR,hashtags))=={} and rows(db)==before
     print('PASS',db,"company B's director can neither read nor change company A's notes")

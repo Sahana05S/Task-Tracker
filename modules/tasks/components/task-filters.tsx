@@ -48,6 +48,8 @@ export interface TaskFiltersProps {
   onViewChange: (view: MissionView) => void;
   /** The company's labels (migration 112); null hides the label filter. */
   labelCatalogue?: readonly Label[] | null;
+  /** The hashtags on each mission's notes were read (migration 126): offer "Include notes". */
+  noteLabels?: boolean;
 }
 
 /** Statuses that get a pill; the rarer ones stay in the facet menu. */
@@ -71,6 +73,7 @@ export function TaskFilters({
   view,
   onViewChange,
   labelCatalogue = null,
+  noteLabels = false,
 }: TaskFiltersProps) {
   const activeCount = activeFilterCount(filters);
   // Every code stays filterable (older missions keep hidden types), in company order.
@@ -237,6 +240,18 @@ export function TaskFilters({
             onChange={(next) => update('labels', next)}
             className="w-full sm:w-40"
           />
+        ) : null}
+
+        {noteLabels && filters.labels.length ? (
+          <label className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <input
+              type="checkbox"
+              className="accent-primary size-4"
+              checked={!!filters.includeNotes}
+              onChange={(event) => update('includeNotes', event.target.checked)}
+            />
+            Include notes
+          </label>
         ) : null}
 
         {activeCount > 0 ? (

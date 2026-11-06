@@ -63,9 +63,12 @@ export interface MissionLabels {
   canCreate: boolean;
   /** Labels per mission id; a mission without labels may be missing. */
   byTask: Readonly<Record<string, readonly Label[]>>;
+  /** Hashtag slugs on each mission's notes (migration 126), for "Include notes"; absent when the read failed. */
+  noteSlugsByTask?: Readonly<Record<string, readonly string[]>> | null;
 }
 
 const NO_LABELS: readonly Label[] = [];
+const NO_SLUGS: readonly string[] = [];
 
 /** The operation drawer's subject: one command over a fixed set of missions. */
 interface RunningOperation {
@@ -148,11 +151,12 @@ export function TaskWorkspace({
 
   const labelsOf = React.useCallback((taskId: string) => labels?.byTask[taskId] ?? NO_LABELS, [labels]);
   const labelSlugsOf = React.useCallback((taskId: string) => labelsOf(taskId).map((label) => label.slug), [labelsOf]);
+  const noteSlugsOf = React.useCallback((taskId: string) => labels?.noteSlugsByTask?.[taskId] ?? NO_SLUGS, [labels]);
 
   const visibleTasks = React.useMemo(
     () =>
-      sortTasks(filterTasks(tasks, filters, labelSlugsOf), sort, memberNames, effortByTask),
-    [tasks, filters, labelSlugsOf, sort, memberNames, effortByTask],
+      sortTasks(filterTasks(tasks, filters, labelSlugsOf, noteSlugsOf), sort, memberNames, effortByTask),
+    [tasks, filters, labelSlugsOf, noteSlugsOf, sort, memberNames, effortByTask],
   );
   // Sub-missions follow their parent (with a "Part of" chip when the parent is filtered out).
   const nested = React.useMemo(() => nestSubMissions(visibleTasks, tasks), [visibleTasks, tasks]);
@@ -163,7 +167,7 @@ export function TaskWorkspace({
   const applyFilters = (next: TaskFilterState) => {
     setFilters(next);
     // A row hidden by the new filters leaves the selection for good.
-    const stillVisible = filterTasks(tasks, next, labelSlugsOf).map((task) => task.id);
+    const stillVisible = filterTasks(tasks, next, labelSlugsOf, noteSlugsOf).map((task) => task.id);
     setSelected((current) => pruneSelection(current, stillVisible));
     window.history.replaceState(null, '', missionsHref(view, next));
   };
@@ -209,6 +213,7 @@ export function TaskWorkspace({
         view={view}
         onViewChange={changeView}
         labelCatalogue={labels?.catalogue ?? null}
+        noteLabels={!!labels?.noteSlugsByTask}
       />
 
       {tasks.length === 0 ? (
