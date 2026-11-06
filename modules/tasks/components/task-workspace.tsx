@@ -318,8 +318,6 @@ export function TaskWorkspace({
         task={editingTask}
         members={members}
         defaultAssigneeId={currentUser.id}
-        labelCatalogue={labels?.catalogue ?? null}
-        canCreateLabels={labels?.canCreate ?? false}
       />
 
       <DeleteMissionSheet

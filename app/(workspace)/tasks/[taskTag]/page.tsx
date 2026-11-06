@@ -5,7 +5,6 @@ import {
   ArchiveIcon,
   ClipboardCheckIcon,
   GitBranchIcon,
-  HashIcon,
   HistoryIcon,
   PencilIcon,
   RocketIcon,
@@ -59,7 +58,6 @@ import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-p
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
-import { LabelInput } from '@/modules/labels/components/label-input';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { isFileStorageReady } from '@/modules/files';
 import { getMissionNotes } from '@/modules/learning';
@@ -188,7 +186,6 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     title: notes?.items.find((note) => note.nodeId === noteNode)?.nodeTitle
       ?? (typeof query.noteTitle === 'string' && query.noteTitle.trim() ? query.noteTitle.trim().slice(0, 180) : 'this row'),
   } : null;
-  const canLabelMission = !archived && (canManage || task.assigneeIds.includes(currentUser.id));
   const awaitingReview = reviewsAwaiting(objectiveReviews);
   const sentBack = sentBackIndex(objectiveReviews);
   const changesNeeded = CHECKLIST_SECTIONS.filter((key) => sentBack.hasSection(data.checklist?.id, key));
@@ -446,18 +443,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             </MissionPanel>
           </section>
           <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
-            {labelCatalogue && missionLabels ? (
-              <MissionPanel icon={HashIcon} title="Labels" subtitle="Group this mission with related work">
-                <LabelInput
-                  kind="task"
-                  subjectId={task.id}
-                  labels={missionLabels[task.id] ?? []}
-                  catalogue={labelCatalogue.labels}
-                  canEdit={canLabelMission}
-                  canCreate={labelCatalogue.canManage}
-                />
-              </MissionPanel>
-            ) : null}
+            {/* No Labels panel (127): the mission carries its notes' hashtags, shown in the header. */}
             <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
           </aside>
         </div>
