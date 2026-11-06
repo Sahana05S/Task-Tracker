@@ -23,6 +23,23 @@ describe('activity wording and links', () => {
     expect(entry).toMatchObject({ summary: 'Reviewed a daily fact', actor: 'Dev', about: 'Asha', href: '/records/fact/f1/history', linkLabel: 'History', reason: 'Checked' });
   });
 
+  it('names the objective and shows what changed (migration 128)', () => {
+    const renamed = mapActivity(row({ action: 'checklist_edit', record_kind: 'task_checklists', task_tag: 'T1', detail: 'Survey the north site',
+      changes: { title: { before: 'Survey the site', after: 'Survey the north site' } } }), people);
+    expect([renamed.summary, renamed.detail, renamed.changes]).toEqual(['Edited a checklist objective', 'Survey the north site',
+      [{ label: 'Title', before: 'Survey the site', after: 'Survey the north site' }]]);
+    const ticked = mapActivity(row({ action: 'checklist_state', record_kind: 'task_checklists', detail: 'Call the client', changes: { state: { before: 'No', after: 'Yes' } } }), people);
+    expect(ticked.changes).toEqual([{ label: 'Tick', before: 'Not done', after: 'Done' }]);
+    // A removal sends the row's title as its reason; it is not repeated beside the detail.
+    const removed = mapActivity(row({ action: 'checklist_delete', record_kind: 'task_checklists', detail: 'Call the client', reason: 'Call the client' }), people);
+    expect([removed.detail, removed.reason]).toEqual(['Call the client', null]);
+    const due = mapActivity(row({ record_kind: 'tasks', fields: ['due_date'], changes: { due_date: { before: '2026-11-10', after: '2026-11-14' } } }), people);
+    expect(due.changes).toEqual([{ label: 'Due date', before: '10 Nov 2026', after: '14 Nov 2026' }]);
+    expect(activityCsv([renamed])).toContain('Edited a checklist objective: Survey the north site; Title: Survey the site → Survey the north site');
+    // Older databases send neither column.
+    expect(mapActivity(row({ action: 'checklist_add', record_kind: 'task_checklists' }), people)).toMatchObject({ detail: null, changes: [] });
+  });
+
   it('names changed mission fields in plain words and links the mission', () => {
     const entry = mapActivity(row({ record_kind: 'tasks', task_tag: 'Oct26_T3', fields: ['due_date', 'priority'] }), people);
     expect(entry).toMatchObject({ summary: "Changed the mission's due date, priority", href: '/tasks/Oct26_T3', linkLabel: 'Oct26_T3', about: null });

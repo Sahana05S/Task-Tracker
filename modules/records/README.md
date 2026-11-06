@@ -35,6 +35,7 @@ company already retains.
 | `activity_feed` command de-duplication (a row change inside a shown command is not listed twice) | `57_activity_feed_command_dedupe.sql` |
 | `activity_feed` lists Settings > Company saves (`company_settings_<section>` on `organization_settings`) | `59_activity_feed_company_settings.sql` |
 | `mission_activity(task, before, limit)` (read only; one mission's history), `taskpulse_private.audit_mission` and the `audit_events_mission_idx` / `audit_events_checklist_idx` indexes; `activity_feed` lists `task_proofs` and names a `task_people_*` line's member; `audit_write` keeps a mission's title, type and dates, participant roles, link labels and dependency missions as before / after values | `124_mission_activity.sql` |
+| `activity_feed` returns `detail` (the objective or Quest's title, a note's text and where it was written) and `changes` (before -> after: the mission's changed fields, a lifecycle command's values, an objective's new title or tick), only to callers who may read the mission's work; `checklist_command` keeps the row's title and `mission_note_command` the note's text in their audit rows; `mission_activity` uses both. Team > Activity shows them under each line (user request, 6 November 2026) | `128_activity_detail.sql` |
 
 The tables themselves (attendance records, daily facts, ideas, suggestions,
 sales logs, meeting points) belong to `attendance` and `support`, which read

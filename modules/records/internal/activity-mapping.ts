@@ -41,7 +41,14 @@ export interface ActivityRow {
   fields: string[] | null;
   reason: string | null;
   period: string | null;
+  /** What the line is about (migration 128): the objective's title, a note's text. Only for the mission's people. */
+  detail?: string | null;
+  /** Before -> after values (migration 128): the mission's changed fields, an objective's new title or tick. */
+  changes?: Record<string, ActivityValueChange> | null;
 }
+
+export interface ActivityValueChange { before?: unknown; after?: unknown }
+export interface ActivityChange { label: string; before: string | null; after: string | null }
 
 export interface ActivityEntry {
   id: string;
@@ -57,6 +64,10 @@ export interface ActivityEntry {
   href: string | null;
   linkLabel: string | null;
   reason: string | null;
+  /** The objective, Quest or note the line is about. */
+  detail: string | null;
+  /** What changed, before -> after. */
+  changes: ActivityChange[];
 }
 
 export interface ActivityFilter { from: string; to: string; kind: ActivityKind | null; member: string | null }
@@ -181,6 +192,36 @@ export const FIELD_WORDS: Record<string, string> = {
   scale_override: 'scale', archived_effective_date: 'archive date', is_primary: 'primary assignee', share_units: 'share',
   review_approved: 'review',
 };
+const VALUE_LABEL: Record<string, string> = { progress: 'progress', scale: 'scale', share_units: 'share', state: 'tick' };
+// An objective's tick as the interface says it (only Yes and N/A are offered; 'No' shows empty).
+const TICK_WORDS: Record<string, string> = { Yes: 'Done', No: 'Not done', 'N/A': 'N/A' };
+
+function formatValue(key: string, value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  if (key === 'state' && typeof value === 'string') return TICK_WORDS[value] ?? value;
+  if (key === 'share_units' && typeof value === 'number') return `${Math.round(value / 1000) / 10}%`;
+  if (key === 'progress' && typeof value === 'number') return `${Math.round(value * 10) / 10}%`;
+  if (key === 'review_approved' && typeof value === 'boolean') return value ? 'Approved' : 'Not approved';
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return new Date(`${value}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+  return typeof value === 'object' ? JSON.stringify(value) : String(value);
+}
+
+/** Before -> after values in words, sorted by label; unchanged values and role/link keys are left out. */
+export function changeList(changes: Readonly<Record<string, ActivityValueChange>> | null | undefined): ActivityChange[] {
+  if (!changes) return [];
+  return Object.entries(changes)
+    .filter(([key]) => !['assignment_role', 'reviewer_role', 'label', 'link_type', 'relation_type'].includes(key))
+    .map(([key, change]) => ({
+      label: (VALUE_LABEL[key] ?? FIELD_WORDS[key] ?? key.replaceAll('_', ' ')).replace(/^./, (c) => c.toUpperCase()),
+      before: formatValue(key, change?.before),
+      after: formatValue(key, change?.after),
+    }))
+    .filter((change) => change.before !== change.after)
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
 // Settings > Company saves (migration 53, listed from migration 59): section -> words and page anchor.
 const COMPANY_SETTINGS: Record<string, { words: string; anchor: string }> = {
   agenda: { words: 'Changed the meeting agenda', anchor: 'agenda' },
@@ -304,7 +345,9 @@ export function mapActivity(row: ActivityRow, people: ReadonlyMap<string, Person
     about: row.subject_user_id && row.subject_user_id !== row.actor_id ? name(row.subject_user_id) : null,
     href: target?.href ?? null,
     linkLabel: target?.label ?? null,
-    reason: isNoteAction(row.action) ? null : row.reason?.trim() || null,
+    reason: isNoteAction(row.action) || (row.detail && row.reason?.trim() === row.detail) ? null : row.reason?.trim() || null,
+    detail: row.detail?.trim() || null,
+    changes: row.action === 'INSERT' || row.action === 'DELETE' ? [] : changeList(row.changes),
   };
 }
 
@@ -318,7 +361,11 @@ export function activityCsv(entries: readonly ActivityEntry[]): string {
   const header = ['Date', 'Time (Asia/Kolkata)', 'Kind', 'Who', 'What', 'About', 'Reason', 'Link'];
   const lines = entries.map((entry) => {
     const { date, time } = kolkataParts(entry.at);
-    return [date, time, ACTIVITY_KIND_LABEL[entry.kind], entry.actor, entry.summary, entry.about ?? '', entry.reason ?? '', entry.href ?? ''];
+    const what = [
+      entry.detail ? `${entry.summary}: ${entry.detail}` : entry.summary,
+      ...entry.changes.map((change) => `${change.label}: ${change.before ?? 'none'} → ${change.after ?? 'none'}`),
+    ].join('; ');
+    return [date, time, ACTIVITY_KIND_LABEL[entry.kind], entry.actor, what, entry.about ?? '', entry.reason ?? '', entry.href ?? ''];
   });
   return [header, ...lines].map((line) => line.map(csvCell).join(',')).join('\r\n');
 }

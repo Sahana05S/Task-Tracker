@@ -1,4 +1,4 @@
-import { activitySummary, FIELD_WORDS, isNoteAction, type ActivityCursor } from './activity-mapping';
+import { activitySummary, changeList, isNoteAction, type ActivityCursor } from './activity-mapping';
 
 /**
  * Pure parts of a mission's own history (`public.mission_activity`, migration
@@ -102,31 +102,10 @@ function peopleKey(row: MissionActivityRow): string | null {
   }
 }
 
-const VALUE_LABEL: Record<string, string> = { progress: 'progress', scale: 'scale', share_units: 'share' };
-
-function formatValue(key: string, value: unknown): string | null {
-  if (value === null || value === undefined || value === '') return null;
-  if (key === 'share_units' && typeof value === 'number') return `${Math.round(value / 1000) / 10}%`;
-  if (key === 'progress' && typeof value === 'number') return `${Math.round(value * 10) / 10}%`;
-  if (key === 'review_approved' && typeof value === 'boolean') return value ? 'Approved' : 'Not approved';
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return new Date(`${value}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-  }
-  return typeof value === 'object' ? JSON.stringify(value) : String(value);
-}
-
 /** The before -> after values worth showing: updates and commands only, never the create/delete snapshot. */
 function changesOf(row: MissionActivityRow): MissionActivityChange[] {
-  if (!row.changes || row.action === 'INSERT' || row.action === 'DELETE') return [];
-  return Object.entries(row.changes)
-    .filter(([key]) => !['assignment_role', 'reviewer_role', 'label', 'link_type', 'relation_type'].includes(key))
-    .map(([key, change]) => ({
-      label: (VALUE_LABEL[key] ?? FIELD_WORDS[key] ?? key.replaceAll('_', ' ')).replace(/^./, (c) => c.toUpperCase()),
-      before: formatValue(key, change?.before),
-      after: formatValue(key, change?.after),
-    }))
-    .filter((change) => change.before !== change.after)
-    .sort((a, b) => a.label.localeCompare(b.label));
+  if (row.action === 'INSERT' || row.action === 'DELETE') return [];
+  return changeList(row.changes);
 }
 
 function plainSummary(row: MissionActivityRow): string {
