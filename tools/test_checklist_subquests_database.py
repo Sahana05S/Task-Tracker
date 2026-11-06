@@ -168,7 +168,7 @@ for db in DBS:
     assert lists=='5',lists  # Quest, Sub-quest, Sub-sub-quest, the copy and its inner Quest
     cl(db,'delete',{'node_id':q1,'reason':'gone','with_children':True})
     assert value(db,f"count(*) FROM public.task_checklists WHERE task_id='{T2}' AND owner_node_id IS NOT NULL")=='0'
-    assert value(db,f"count(*) FROM public.checklist_nodes n JOIN public.task_checklists c ON c.id=n.checklist_id WHERE c.task_id='{T2}' AND c.owner_node_id IS NULL")=='2'
+    assert value(db,f"count(*) FROM public.checklist_nodes n JOIN public.task_checklists c ON c.id=n.checklist_id WHERE c.task_id='{T2}' AND c.owner_node_id IS NULL")==('1' if LATEST>=130 else '2')  # 'Parent' (and its 'Kid' before 130)
     assert value(db,f"count(*) FROM public.tasks WHERE id='{child}'")=='1'  # the Sub-mission itself stays
     cl(db,'delete',{'node_id':p,'reason':'gone','with_children':True})
     assert rollup(db)['errors']==[]
