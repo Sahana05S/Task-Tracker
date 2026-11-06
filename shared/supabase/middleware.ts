@@ -77,7 +77,7 @@ export async function updateSession(
   // signature locally against the project's published signing keys (cached),
   // instead of an Auth server round trip on each of the ~20 prefetches per page.
   // Projects on legacy symmetric keys fall back to the Auth server. The
-  // workspace layout (getUser) and RLS remain the authorization checks.
+  // profile read (getAuthState, also getClaims) and RLS remain the authorization checks.
   const { data } = await supabase.auth.getClaims();
 
   return { response: supabaseResponse, claims: data?.claims ?? null };

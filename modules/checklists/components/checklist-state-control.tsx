@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { CheckIcon, CircleIcon, LoaderCircleIcon, MinusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -100,7 +99,6 @@ export function ChecklistStateControl({
   version: number;
   action: Command;
 }) {
-  const router = useRouter();
   const queue = React.useContext(VersionContext);
   const [shown, setShown] = React.useState(state);
   const [pending, setPending] = React.useState(false);
@@ -133,7 +131,8 @@ export function ChecklistStateControl({
           toast.error(`“${title}” was not updated`, { description: result.error });
           return null;
         }
-        router.refresh();
+        // No extra page refresh: the command revalidates, so its response already carries the refreshed
+        // page (refreshing again rendered every page twice; 6 November 2026).
         if (next === 'Yes') announceMissionProgress(taskId);
         return commandVersion(result.data);
       } catch {

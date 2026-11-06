@@ -18,20 +18,26 @@ function rowsOrEmpty<T>({ data, error }: { data: T[] | null; error: { code?: str
   return data ?? [];
 }
 
-export async function getTaskExecution(taskId: string): Promise<TaskExecution> {
+/**
+ * `running` (the mission's Work tab, 6 November 2026): only the running timers and no logs, instead of
+ * every log and timer session the mission ever had.
+ */
+export async function getTaskExecution(taskId: string, scope: 'all' | 'running' = 'all'): Promise<TaskExecution> {
   const supabase = await createClient();
+  const timers = supabase
+    .from('task_timers')
+    .select(TIMER_COLUMNS)
+    .eq('task_id', taskId);
   const [logResult, timerResult] = await Promise.all([
-    supabase
-      .from('daily_task_logs')
-      .select(LOG_COLUMNS).is('reversed_at', null)
-      .eq('task_id', taskId)
-      .order('log_date', { ascending: false })
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('task_timers')
-      .select(TIMER_COLUMNS)
-      .eq('task_id', taskId)
-      .order('started_at', { ascending: false }),
+    scope === 'running'
+      ? Promise.resolve({ data: [], error: null })
+      : supabase
+        .from('daily_task_logs')
+        .select(LOG_COLUMNS).is('reversed_at', null)
+        .eq('task_id', taskId)
+        .order('log_date', { ascending: false })
+        .order('created_at', { ascending: false }),
+    (scope === 'running' ? timers.eq('status', 'Running') : timers).order('started_at', { ascending: false }),
   ]);
   return {
     logs: mapDailyTaskLogs(rowsOrEmpty(logResult)),

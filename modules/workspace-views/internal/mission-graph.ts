@@ -82,7 +82,13 @@ const GRAVITY = 2.5;
 const ITERATIONS = 320;
 /** Label widths (px) the overlap check reserves under each star; the label sits below the star. */
 export const LABEL_WIDTH = { mission: 150, child: 118 } as const;
-const LABEL_HEIGHT = { mission: 46, child: 36 } as const;
+/**
+ * The height the label really takes under the star (6 November 2026): a two-line name, the line under it
+ * and, for a mission, its labels line. Smaller values let labels run into the next star.
+ */
+const LABEL_HEIGHT = { mission: 72, child: 52 } as const;
+/** How far a sub-mission sits beyond the Quest (or row) it hangs from, star edge to star edge. */
+const ORIGIN_GAP = 70;
 const GAP = 14;
 const PRIORITY_RADIUS: Record<TaskPriority, number> = { Focus: 30, High: 26, Medium: 22, Low: 18, No: 16 };
 const CHILD_RADIUS: Record<Exclude<GraphKind, 'mission'>, number> = { quest: 15, objective: 11, more: 11 };
@@ -251,12 +257,33 @@ export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], 
       held.push(node); children.push(node); nodes.push(node); byId.set(node.id, node);
     });
   }
+  // With a mission opened, each of its sub-missions on the map hangs from the deepest row of its checklist
+  // path that is shown (its Quest, or the linked row itself); without one, the mission line stays.
+  const opener = levels.length && byId.has(levels[0].parentId) ? levels[0].parentId : null;
+  const origins = new Map<string, GraphNode>();
+  if (opener && anchors) for (const l of real) {
+    if (l.relation !== 'Subtask' || l.from !== opener || opened.has(l.to)) continue;
+    const via = [...(anchors[l.to] ?? [])].reverse().map(id => byId.get(id)).find(n => n && n.depth > 0);
+    if (via) origins.set(l.to, via);
+  }
   if (children.length) {
+    // A sub-mission hanging from a row sits just beyond that row, straight out from the row's parent, so
+    // its line is short and never crosses the other rows (user report, 6 November 2026). It is placed
+    // with the opened rows, so unrelated missions step aside for it rather than it for them.
+    for (const [subId, via] of [...origins].sort(([a], [b]) => (a < b ? -1 : 1))) {
+      const sub = byId.get(subId)!, from = byId.get(via.parentId!)!;
+      let ux = via.x - from.x, uy = via.y - from.y;
+      const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
+      const reach = via.r + sub.r + ORIGIN_GAP;
+      sub.x = via.x + ux * reach; sub.y = via.y + uy * reach;
+      placeFree(sub, held, via.x, via.y);
+      held.push(sub);
+    }
     // Missions that would sit under the opened rows move straight out from the opened mission, nearest
     // first, until they are clear; every other mission stays exactly where it was.
     const anchor = held[0];
     const clash = (n: GraphNode) => held.some(h => overlaps(graphFootprint(n), graphFootprint(h)));
-    const others = missionNodes.filter(n => !opened.has(n.id));
+    const others = missionNodes.filter(n => !opened.has(n.id) && !origins.has(n.id));
     const placed = [...held, ...others.filter(n => !clash(n))];
     const moved = others.filter(clash).sort((a, b) => Math.hypot(a.x - anchor.x, a.y - anchor.y) - Math.hypot(b.x - anchor.x, b.y - anchor.y) || (a.id < b.id ? -1 : 1));
     for (const n of moved) { placeFree(n, placed, anchor.x, anchor.y); placed.push(n); }
@@ -265,27 +292,12 @@ export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], 
   for (const n of nodes) { n.x = r1(n.x + GRAPH_ORIGIN); n.y = r1(n.y + GRAPH_ORIGIN); }
   const line = (id: string, a: GraphNode, b: GraphNode, relation: GraphRelation | null, kind: GraphEdgeKind, stroke: GraphStroke, hue: number): GraphEdge =>
     ({ id, from: a.id, to: b.id, relation, kind, stroke, hue, fromTone: a.tone, toTone: b.tone, x1: a.x, y1: a.y, x2: b.x, y2: b.y });
-  // With a mission opened, each of its sub-missions on the map hangs from the deepest row of its checklist
-  // path that is shown (its Quest, or the linked row itself); without one, the mission line stays.
-  const opener = levels.length && byId.has(levels[0].parentId) ? levels[0].parentId : null;
-  const origins = new Map<string, GraphNode>();
-  if (opener && anchors) for (const l of real) {
-    if (l.relation !== 'Subtask' || l.from !== opener) continue;
-    const via = [...(anchors[l.to] ?? [])].reverse().map(id => byId.get(id)).find(n => n && n.depth > 0);
-    if (via) origins.set(l.to, via);
-  }
-  const curve = (e: GraphEdge): GraphEdge => {
-    // A gentle bow to one side (fixed per pair), so the line reads as its own thread and clears straight rows.
-    const mx = (e.x1 + e.x2) / 2, my = (e.y1 + e.y2) / 2, dx = e.x2 - e.x1, dy = e.y2 - e.y1;
-    const side = hash(e.from + e.to) % 2 ? 1 : -1;
-    return { ...e, cx: r1(mx - dy * 0.18 * side), cy: r1(my + dx * 0.18 * side) };
-  };
   const edges: GraphEdge[] = [
     ...real.filter(l => !(l.relation === 'Subtask' && l.from === opener && origins.has(l.to)))
       .map(l => line(`${l.relation}:${l.from}:${l.to}`, byId.get(l.from)!, byId.get(l.to)!, l.relation, 'relation',
         l.relation === 'Subtask' ? 'solid' : l.relation === 'Related' ? 'dotted' : 'dashed', byId.get(l.from)!.hue)),
     ...nodes.filter(n => n.parentId).map(n => line(`row:${n.id}`, byId.get(n.parentId!)!, n, null, 'row', 'solid', n.hue)),
-    ...[...origins].map(([to, via]) => curve(line(`origin:${to}`, via, byId.get(to)!, 'Subtask', 'origin', 'solid', via.hue))),
+    ...[...origins].map(([to, via]) => line(`origin:${to}`, via, byId.get(to)!, 'Subtask', 'origin', 'solid', via.hue)),
   ];
   const width = Math.max(GRAPH_ORIGIN, ...nodes.map(n => graphFootprint(n).right)) + PAD;
   const height = Math.max(GRAPH_ORIGIN, ...nodes.map(n => graphFootprint(n).bottom)) + PAD;

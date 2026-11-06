@@ -120,7 +120,8 @@ describe('constellation layout', () => {
     const top = layoutMissionGraph(sky, links, { anchors, levels: [{ parentId: sky[0].id, children: [row('q', 'quest'), row('other', 'quest')] }] });
     const origin = top.edges.find(e => e.kind === 'origin')!;
     expect([origin.from, origin.to, origin.toTone]).toEqual(['q', sky[1].id, 'submission']);
-    expect(origin.cx).toBeDefined();
+    // A short straight thread (6 November 2026): the sub-mission sits just beyond its Quest.
+    expect(origin.cx).toBeUndefined();
     expect(top.edges.map(e => e.id)).not.toContain(direct);
     // The other sub-mission has no anchor: its mission line is kept.
     expect(top.edges.map(e => e.id)).toContain(`Subtask:${sky[0].id}:${sky[2].id}`);
@@ -135,6 +136,30 @@ describe('constellation layout', () => {
     const elsewhere = layoutMissionGraph(sky, links, { anchors, levels: [{ parentId: sky[0].id, children: [row('other', 'quest')] }] });
     expect(elsewhere.edges.some(e => e.kind === 'origin')).toBe(false);
     expect(elsewhere.edges.map(e => e.id)).toContain(direct);
+  });
+
+  it('puts each sub-mission next to its Quest, with a line that crosses no other star or label', () => {
+    const anchors = { [sky[1].id]: ['q'], [sky[2].id]: ['q2', 'linkRow'] };
+    const layout = layoutMissionGraph(sky, links, { anchors, levels: [
+      { parentId: sky[0].id, children: [...Array.from({ length: 6 }, (_, i) => row(`o${i}`)), row('q', 'quest'), ...Array.from({ length: 6 }, (_, i) => row(`p${i}`)), row('q2', 'quest')] },
+      { parentId: 'q2', children: [row('x0'), { ...row('linkRow'), linked: true }, row('x1')] },
+    ] });
+    expect(overlapping(layout.nodes)).toEqual([]);
+    const origins = layout.edges.filter(e => e.kind === 'origin');
+    expect(origins.map(e => [e.from, e.to]).sort()).toEqual([['linkRow', sky[2].id], ['q', sky[1].id]].sort());
+    for (const e of origins) {
+      // Close to the row it hangs from.
+      expect(Math.hypot(e.x2 - e.x1, e.y2 - e.y1)).toBeLessThan(260);
+      // Sampled along the line, no point falls inside another node's star or label.
+      for (const n of layout.nodes) {
+        if (n.id === e.from || n.id === e.to) continue;
+        const box = graphFootprint(n);
+        for (let t = 0; t <= 1; t += 0.02) {
+          const x = e.x1 + (e.x2 - e.x1) * t, y = e.y1 + (e.y2 - e.y1) * t;
+          expect(x > box.left && x < box.right && y > box.top && y < box.bottom, `${e.id} crosses ${n.id}`).toBe(false);
+        }
+      }
+    }
   });
 
   it('aims the camera at the sky, an opened node or a selected row', () => {

@@ -123,7 +123,9 @@ export function MissionActionsMenu({
           <TaskDialog
             templates={loaded.templates}
             open={editing}
-            onOpenChange={(open) => { setEditing(open); if (!open) router.refresh(); }}
+            // No refresh on close (6 November 2026): a save revalidates, so its response already carries the
+            // refreshed page, and closing without saving changes nothing.
+            onOpenChange={setEditing}
             task={loaded.task}
             members={loaded.members}
             defaultAssigneeId={loaded.currentUserId}

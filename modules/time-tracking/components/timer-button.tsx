@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { PlayIcon, SquareIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -70,16 +69,14 @@ export function timerCommandForm(running: RunningTimer | null, taskId: string, n
  * person can say what the session covered before it is logged.
  */
 export function TimerButton({ taskId, taskLabel, nodeId = null, questTitle, compact = false, size = 'sm', className }: TimerButtonProps) {
-  const router = useRouter();
   const running = useRunningTimer(taskId, nodeId);
   const questsOnly = useMissionHasQuests(taskId) && !nodeId;
   const [saving, setSaving] = React.useState(false);
   const [stopping, setStopping] = React.useState(false);
   const [note, setNote] = React.useState('');
   const noteId = React.useId();
-  // Busy until the refreshed layout lands, so the button never shows a stale state.
-  const [refreshing, startRefresh] = React.useTransition();
-  const busy = saving || refreshing;
+  // Busy until the command (and the refreshed page it carries) lands, so the button never shows a stale state.
+  const busy = saving;
   const mine = running !== null;
   const named = [taskLabel, questTitle].filter(Boolean).join(' › ');
   const subject = named ? ` on ${named}` : '';
@@ -111,7 +108,7 @@ export function TimerButton({ taskId, taskLabel, nodeId = null, questTitle, comp
         toast.success(`Timer started on ${[result.data!.taskTag, questTitle].filter(Boolean).join(' › ')}`, { description: 'Stop it here or from the running-timer pill.' });
         announceMissionProgress(taskId);
       }
-      startRefresh(() => router.refresh());
+      // No extra page refresh: timer commands revalidate, so the response already carries the refreshed page.
     } catch {
       toast.error('The timer may not have changed', { description: INTERRUPTED });
     } finally {

@@ -102,7 +102,10 @@ for db in DBS:
     expect_code(db,MD,link_sql('attach','sale',T1,label=safety['id']),'23514')
     assert links(db)==('7' if LATEST>=126 else '6')  # 126: the note also carries #learning
     got=labels_for(db,M6,'task',[T1,T2])
-    assert sorted(l['slug'] for l in got[T1])==['brand-new','site-safety'] and [l['slug'] for l in got[T2]]==['crane']
+    # 127: a mission also carries its notes' hashtags (#crane and #learning on T1's note), for those who may read the note.
+    noted=['brand-new','crane','learning','site-safety'] if LATEST>=127 else ['brand-new','site-safety']
+    assert sorted(l['slug'] for l in got[T1])==noted and [l['slug'] for l in got[T2]]==['crane'],got
+    assert sorted(l['slug'] for l in labels_for(db,M5,'task',[T1])[T1])==['brand-new','site-safety'],'M5 may not read T1\'s notes'
     print('PASS',db,'assignees, managers, data managers (meeting points) and authors label what they may edit; others are refused')
 
     # ---- rename keeps the id and every link ---------------------------------------------------------------------
@@ -122,6 +125,7 @@ for db in DBS:
     ok(db,M4,f"SELECT public.mission_learning_command('withdraw','{T1}','{note}',NULL,NULL,'{uuid4()}')")
     assert sorted(i['kind'] for i in labelled(db,M5,'crane')['items'])==['meeting_point','task']
     assert note not in labels_for(db,MD,'mission_learning',[note])
+    assert 'crane' not in [l['slug'] for l in labels_for(db,M4,'task',[T1])[T1]],'a withdrawn note no longer labels its mission'
     sql(db,f"UPDATE public.meeting_points SET validation_state='withdrawn' WHERE id='{MP1}'")
     assert [i['kind'] for i in labelled(db,M5,'crane')['items']]==['task']
     sql(db,f"UPDATE public.meeting_points SET validation_state='pending' WHERE id='{MP1}'")

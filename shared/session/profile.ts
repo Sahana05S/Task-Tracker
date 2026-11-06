@@ -27,29 +27,32 @@ export interface AuthState {
  * those two apart end up bouncing the user between `/login` and `/dashboard`
  * forever.
  *
- * Uses `auth.getUser()`, which validates the token against the Auth server,
- * rather than trusting a session decoded from cookies.
+ * Uses `auth.getClaims()` (6 November 2026, speed): it verifies the token's
+ * signature locally against the project's published signing keys instead of
+ * an Auth server round trip before every page and action (projects on legacy
+ * symmetric keys fall back to the Auth server). It never trusts an unverified
+ * cookie session. The profile read, RLS and every RPC still check the caller,
+ * and an inactive profile is still refused.
  */
 // Request-local only: never share an authenticated profile between requests.
 export const getAuthState = cache(async (): Promise<AuthState> => {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = typeof claims?.claims?.sub === 'string' ? claims.claims.sub : null;
 
-  if (!user) {
+  if (!userId) {
     return { authUserId: null, profile: null };
   }
 
   const { data, error } = await supabase
     .from('users')
     .select(USER_COLUMNS)
-    .eq('id', user.id)
+    .eq('id', userId)
     .maybeSingle();
 
   return {
-    authUserId: user.id,
+    authUserId: userId,
     profile: error || !data ? null : mapUser(data),
   };
 });

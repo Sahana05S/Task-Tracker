@@ -5,7 +5,6 @@ import {
   ArchiveIcon,
   ClipboardCheckIcon,
   GitBranchIcon,
-  HashIcon,
   HistoryIcon,
   PencilIcon,
   RocketIcon,
@@ -59,7 +58,6 @@ import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-p
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
-import { LabelInput } from '@/modules/labels/components/label-input';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { isFileStorageReady } from '@/modules/files';
 import { getMissionNotes } from '@/modules/learning';
@@ -109,9 +107,8 @@ export async function generateMetadata({
  * Work / Details / History tabs keep daily actions first; each tab loads only its own data.
  */
 export default async function TaskDetailPage({ params, searchParams }: TaskDetailPageProps) {
-  const currentUser = await requireProfile();
-
-  const { taskTag } = await params;
+  // The profile and the mission load together (6 November 2026, speed).
+  const [currentUser, { taskTag }, query] = await Promise.all([requireProfile(), params, searchParams]);
   const routeState = await resolveTaskDetailRouteState(taskTag);
 
   if (routeState.status !== 'ready') {
@@ -130,13 +127,24 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const canReadWork = canReadMissionWork(currentUser, task);
   // Details holds only work content, so it is not offered to anyone else; ?tab=details falls back to Work.
   const tabs = canReadWork ? TABS : TABS.filter(([key]) => key !== 'details');
-  const query = await searchParams;
   const requested = query.tab;
   const tab: Tab = tabs.some(([key]) => key === requested) ? requested as Tab : 'work';
   const details = tab === 'details';
   const canWriteFiles = canWriteMissionFiles(currentUser, task);
-  const [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, notes, sessionActivity, objectiveReviews, driveReady, quests] = await Promise.all([
-    tab !== 'details' ? getTaskExecution(task.id) : Promise.resolve({ timers: [], logs: [] }),
+  const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
+  const family = subMissionFamily(task.id, data.dependencies);
+  // Mission activity (migration 124): who changed what on this mission; only its people read it.
+  const activityBefore = tab === 'history' ? parseCursor(typeof query.before === 'string' ? query.before : null) : null;
+  // Every read below runs at once (6 November 2026, speed): labels, History and the parent row
+  // used to wait for this batch.
+  const [
+    [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, notes, sessionActivity, objectiveReviews, driveReady, quests],
+    [labelCatalogue, missionLabels],
+    missionActivity,
+    originRow,
+  ] = await Promise.all([Promise.all([
+    // Work shows only the running timer; History lists every log and session.
+    tab === 'history' ? getTaskExecution(task.id) : tab === 'work' ? getTaskExecution(task.id, 'running') : Promise.resolve({ timers: [], logs: [] }),
     details && canReadWork ? getNativeDetailState(task.id) : Promise.resolve(null),
     details ? getNativeTemplates() : Promise.resolve([]),
     details && canEditDetails ? getMissionChoices() : Promise.resolve([]),
@@ -157,12 +165,19 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab === 'work' && canReadWork ? isFileStorageReady() : Promise.resolve(false),
     // Quests and their time (migration 123): a mission with Quests is timed on them. Null keeps the mission timer.
     tab !== 'details' && canReadWork ? getQuestTimes(task.id) : Promise.resolve(null),
-  ]);
+  ]),
   // Labels (migration 112): the mission's own on every tab (header chips); the catalogue on the
   // Details tab (the mission's labels and the Notes hashtag picker). Null hides them.
-  const [labelCatalogue, missionLabels] = await Promise.all([
+  Promise.all([
     details ? getLabelCatalogue() : Promise.resolve(null),
     getLabelsFor('task', [task.id]),
+  ]),
+  tab === 'history' && canReadWork
+    ? getMissionActivity(task.id, activityBefore, memberNames).catch(() => null)
+    : Promise.resolve(undefined),
+  // "Created from TAG › row": the exact parent row when the viewer may read the parent's
+  // checklist (migration 117); otherwise only the parent mission ("Part of TAG").
+  family.parent ? getSubMissionOriginRow(task.id, family.parent.id) : Promise.resolve(null),
   ]);
   // Notes opened for one Quest or objective from the checklist (?notes=<row id>&noteTitle=<its title>).
   const noteNode = typeof query.notes === 'string' && /^[0-9a-f-]{36}$/i.test(query.notes) ? query.notes : null;
@@ -171,7 +186,6 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     title: notes?.items.find((note) => note.nodeId === noteNode)?.nodeTitle
       ?? (typeof query.noteTitle === 'string' && query.noteTitle.trim() ? query.noteTitle.trim().slice(0, 180) : 'this row'),
   } : null;
-  const canLabelMission = !archived && (canManage || task.assigneeIds.includes(currentUser.id));
   const awaitingReview = reviewsAwaiting(objectiveReviews);
   const sentBack = sentBackIndex(objectiveReviews);
   const changesNeeded = CHECKLIST_SECTIONS.filter((key) => sentBack.hasSection(data.checklist?.id, key));
@@ -185,12 +199,6 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   const hasQuests = (quests?.length ?? 0) > 0;
   const questTitles = new Map((quests ?? []).map((quest) => [quest.nodeId, quest.title]));
 
-  const memberNames = new Map(data.members.map((member) => [member.id, member.fullName]));
-  // Mission activity (migration 124): who changed what on this mission; only its people read it.
-  const activityBefore = tab === 'history' ? parseCursor(typeof query.before === 'string' ? query.before : null) : null;
-  const missionActivity = tab === 'history' && canReadWork
-    ? await getMissionActivity(task.id, activityBefore, memberNames).catch(() => null)
-    : undefined;
   const nameOf = (id: string) => memberNames.get(id) ?? 'Unknown';
   // Migration 121: everyone on task_assignees is Crew (equal shares); Observer reviewer rows are observers.
   const crewIds = [...new Set([task.assigneeId, ...task.assigneeIds].filter(Boolean))];
@@ -219,10 +227,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   ) : null;
 
   const checklistHref = `/tasks/${encodeURIComponent(task.taskTag)}/checklist`;
-  const family = subMissionFamily(task.id, data.dependencies);
-  // "Created from TAG › row": the exact parent row when the viewer may read the parent's
-  // checklist (migration 117); otherwise only the parent mission ("Part of TAG").
-  const origin = resolveSubMissionOrigin(family.parent, family.parent ? await getSubMissionOriginRow(task.id, family.parent.id) : null);
+  const origin = resolveSubMissionOrigin(family.parent, originRow);
   const closed = task.status === 'Done' || task.status === 'Discarded';
   const overdue = isOverdue(task.dueDate) && !closed;
 
@@ -438,18 +443,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             </MissionPanel>
           </section>
           <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
-            {labelCatalogue && missionLabels ? (
-              <MissionPanel icon={HashIcon} title="Labels" subtitle="Group this mission with related work">
-                <LabelInput
-                  kind="task"
-                  subjectId={task.id}
-                  labels={missionLabels[task.id] ?? []}
-                  catalogue={labelCatalogue.labels}
-                  canEdit={canLabelMission}
-                  canCreate={labelCatalogue.canManage}
-                />
-              </MissionPanel>
-            ) : null}
+            {/* No Labels panel (127): the mission carries its notes' hashtags, shown in the header. */}
             <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
           </aside>
         </div>

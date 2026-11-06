@@ -152,7 +152,20 @@ function ActivityTable({ entries }: { entries: readonly ActivityEntry[] }) {
                 <td className="text-muted-foreground tabular px-3 pt-2.5 pb-2 text-xs whitespace-nowrap">{kolkataParts(entry.at).time}</td>
                 <td className="text-foreground hidden px-3 py-2 font-medium sm:table-cell">{entry.actor}</td>
                 <td className="px-3 py-2">
-                  <p className="text-foreground">{entry.summary}</p>
+                  <p className="text-foreground">
+                    {entry.summary}
+                    {/* What exactly (migration 128): the objective, Quest or note, and its before -> after values. */}
+                    {entry.detail ? <span className="text-muted-foreground">: {entry.detail}</span> : null}
+                  </p>
+                  {entry.changes.length ? (
+                    <ul className="text-muted-foreground mt-0.5 grid gap-0.5 text-xs">
+                      {entry.changes.map((change) => (
+                        <li key={change.label}>
+                          {change.label}: {change.before ?? 'none'} → <span className="text-foreground">{change.after ?? 'none'}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                   <p className="text-muted-foreground mt-0.5 text-xs">
                     <span>{ACTIVITY_KIND_LABEL[entry.kind]}</span>
                     <span className="sm:hidden"> · {entry.actor}</span>

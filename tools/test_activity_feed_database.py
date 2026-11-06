@@ -342,4 +342,26 @@ for db in DBS:
     assert value(db,"pg_get_userbyid(proowner)||'/'||prosecdef||'/'||provolatile::text FROM pg_proc WHERE proname='mission_activity'")=='taskpulse_definer/true/s'
     print('PASS',db,f'124: keyset pages of 3 return all {len(whole)} lines once, in order; read only, authenticated only')
 
+    if LATEST>=128:
+        # Migration 128: a line names the objective and shows what changed, here and in Team > Activity.
+        node=checklist(db,mission,'add',{'title':'Survey the site','section':'activity','parent_id':None})['nodeId']
+        # No reason is needed to edit a row (128: the row menu has no reason box).
+        checklist(db,mission,'edit',{'node_id':node,'title':'Survey the north site','section':'activity','parent_id':None,'linked_task_id':None,'node_type':'Item'})
+        checklist(db,mission,'state',{'node_id':node,'state':'Yes'})
+        checklist(db,mission,'delete',{'node_id':node,'reason':'Survey the north site'})
+        def lines_of(rows):
+            return {r['action']:r for r in rows if r['action'] in ('checklist_add','checklist_edit','checklist_state','checklist_delete')}
+        for source in (lines_of(history(MD,mission)),lines_of([r for r in feed(db,MD,today,today,kind='missions') if r['task_tag']=='ACT124'])):
+            assert source['checklist_add']['detail']=='Survey the site' and not source['checklist_add']['changes'],source['checklist_add']
+            assert source['checklist_edit']['detail']=='Survey the north site',source['checklist_edit']
+            assert source['checklist_edit']['changes']=={'title':{'before':'Survey the site','after':'Survey the north site'}},source['checklist_edit']
+            assert source['checklist_state']['changes']['state']['after']=='Yes',source['checklist_state']
+            assert source['checklist_delete']['detail']=='Survey the north site','a removed row keeps its name'
+        # The mission's Crew read the detail; a project engineer not on the mission gets no line with it.
+        assert lines_of(feed(db,M5,today,today))['checklist_add']['detail']=='Survey the site'
+        assert all(r['detail'] is None and r['changes'] is None for r in feed(db,PE,today,today) if r['task_tag']=='ACT124')
+        assert value(db,"has_function_privilege('anon','public.activity_feed(date,date,text,uuid,jsonb,integer)','EXECUTE')")=='f'
+        assert value(db,"has_function_privilege('authenticated','public.activity_feed(date,date,text,uuid,jsonb,integer)','EXECUTE')")=='t'
+        print('PASS',db,'128: objective lines name the row (even once removed) and show the new title and tick, only to the mission\'s people')
+
 print('ALL PASS')

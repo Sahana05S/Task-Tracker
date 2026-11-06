@@ -45,9 +45,9 @@ point on a label page links to its card on Meeting Points
 | `components/label-filter.tsx` | `LabelFilter`: several labels by slug, for a list's filters (Missions) |
 | `components/label-manager.tsx` | `LabelManager`: create / rename / colour / archive list, and "Make note type" (migration 126) |
 
-Where they show: the mission's Details tab (a Labels panel, and each note's
-hashtags in the Notes panel), the mission page header, Missions cards and table rows
-(and the Labels filter and New mission field), Today's list and map, each
+Where they show: the mission's Details tab (each note's hashtags in the Notes
+panel; the mission's own Labels panel was removed by 127), the mission page header, Missions cards and
+table rows (and the Labels filter), Today's list and map, each
 meeting point (through `DatedRecordModule`'s `extras`), `/labels`,
 `/labels/[slug]` and Settings > Company.
 
@@ -74,6 +74,13 @@ Migration 126 (Notes, owned by the learning module) adds:
 - 26 starter hashtags per company, created once by slug (types, topics, causes, impact; see the learning README).
 - `labelled(slug)`: a note item also has `taskId`, `nodeId` and `nodeTitle`; the label page groups them as "Notes".
 - A note's last type hashtag cannot be detached (deferred constraint trigger).
+
+Migration 127 (`127_mission_note_labels.sql`, user decision 6 November 2026): the mission page has no
+Labels panel and the New mission form no Labels field; a mission carries the hashtags of its notes.
+`labels_for('task', ids)` returns each mission's own links (older missions keep theirs) together with the
+hashtags on its active notes, each once, counting a note only for callers who may read it (117). So the
+chips, the Missions Labels filter (no separate "Include notes" choice), the mission header and Today all
+show them. `label_link_command` for missions stays (Task Tools and older data).
 
 Harness: `tools/test_workspace_labels_database.py`.
 
