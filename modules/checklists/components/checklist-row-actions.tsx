@@ -10,7 +10,7 @@ import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/ui/sheet';
 import { formatMinutes } from '../internal/pages';
-import { rowKind } from '../internal/table';
+import { rowKind, rowMoveTargets } from '../internal/table';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { ChecklistVersionField } from './checklist-state-control';
 import { AssignQuestForm } from './quest-owner';
@@ -24,13 +24,7 @@ export type ChecklistActionRow = Pick<ChecklistBranchRow,
   | 'estimatedMinutes' | 'elapsedSeconds' | 'childCount' | 'linkedTaskId'>
   & Partial<Pick<ChecklistBranchRow, 'ownedChecklistId' | 'assigneeId' | 'canEditQuest'>>;
 
-type MoveTarget = { id: string | null; title: string };
 type LinkChoice = { id: string; taskTag: string; title: string };
-
-/** Move choices for one list of rows: the other rows there that can hold rows (the same in every view). */
-export function rowMoveTargets(rows: readonly Pick<ChecklistBranchRow, 'id' | 'title' | 'linkedTaskId' | 'nodeType'>[]): MoveTarget[] {
-  return rows.filter(row => !row.linkedTaskId && row.nodeType !== 'Task').map(row => ({ id: row.id, title: row.title }));
-}
 
 /**
  * The row menu wherever a view shows a row (Table, Board, Blocks, Outline; user request,
