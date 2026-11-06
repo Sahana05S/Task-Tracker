@@ -6,6 +6,11 @@
 import type { TaskPriority } from '@/types/tracker';
 
 export type GraphKind = 'mission' | 'quest' | 'objective' | 'more';
+/**
+ * What a star is, for its colour: a mission, a sub-mission (a mission another mission on the map holds,
+ * or the parent's row linked to it), a Quest (a row with rows under it), an objective, or "more".
+ */
+export type GraphTone = 'mission' | 'submission' | 'quest' | 'objective' | 'more';
 /** How the viewer is attached to a mission; drawn as the star's ring. */
 export type GraphRelationship = 'crew' | 'reviewer' | 'observer';
 /** `task_dependencies.relation_type` values the graph draws. Subtask runs parent → child. */
@@ -18,6 +23,8 @@ export interface GraphEntity {
   complete: boolean;
   priority?: TaskPriority;
   relationship?: GraphRelationship | null;
+  /** A checklist row linked to a sub-mission (`linked_task_id`). */
+  linked?: boolean;
 }
 /** One stored relation between two missions (`from` is the predecessor / parent). */
 export interface GraphLink { from: string; to: string; relation: GraphRelation }
@@ -29,22 +36,40 @@ export interface GraphNode extends GraphEntity {
   /** Radius of the star. */
   r: number;
   depth: number;
+  /** Connected group (kept for callers); the star's colour follows `tone`. */
   hue: number;
+  tone: GraphTone;
   parentId: string | null;
 }
 export type GraphStroke = 'solid' | 'dashed' | 'dotted';
+/** `relation`: a stored link between missions; `row`: an opened node to its rows; `origin`: the Quest or row a sub-mission hangs from. */
+export type GraphEdgeKind = 'relation' | 'row' | 'origin';
 export interface GraphEdge {
   id: string;
   from: string;
   to: string;
   /** Null for the line from an opened node to its rows. */
   relation: GraphRelation | null;
+  kind: GraphEdgeKind;
   stroke: GraphStroke;
   hue: number;
+  fromTone: GraphTone;
+  toTone: GraphTone;
   x1: number; y1: number; x2: number; y2: number;
+  /** Control point of a curved line (origin lines); absent for straight ones. */
+  cx?: number; cy?: number;
 }
 export interface MissionGraphLayout { nodes: GraphNode[]; edges: GraphEdge[]; width: number; height: number }
-export interface GraphOptions { levels?: GraphLevel[]; seed?: number; iterations?: number }
+export interface GraphOptions {
+  levels?: GraphLevel[];
+  seed?: number;
+  iterations?: number;
+  /**
+   * For the opened mission (levels[0]): each sub-mission's row path in its checklist, outermost first.
+   * The sub-mission is then drawn from the deepest of those rows on the map instead of from the mission.
+   */
+  anchors?: Readonly<Record<string, readonly string[]>>;
+}
 
 export const GRAPH_HUES = 5;
 /** Every coordinate is offset by this, so opening a branch never moves the world (or the camera) under the viewer. */
@@ -155,7 +180,7 @@ function placeFree(node: GraphNode, placed: GraphNode[], ox: number, oy: number)
 }
 
 export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], options: GraphOptions = {}): MissionGraphLayout {
-  const { levels = [], seed = 1, iterations = ITERATIONS } = options;
+  const { levels = [], seed = 1, iterations = ITERATIONS, anchors } = options;
   // Id order, not arrival order: the same set of missions always settles the same way.
   const missions = [...new Map(entities.filter(e => e.kind === 'mission').map(e => [e.id, e])).values()]
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -173,6 +198,10 @@ export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], 
   });
   const bodies = settle(ids, real, seed, iterations);
   const hues = components(ids, real);
+  // A mission held by another mission on the map (Subtask) is a sub-mission.
+  const subMissions = new Set(real.filter(l => l.relation === 'Subtask').map(l => l.to));
+  const toneOf = (e: GraphEntity): GraphTone => e.kind === 'mission' ? (subMissions.has(e.id) ? 'submission' : 'mission')
+    : e.linked ? 'submission' : e.kind;
 
   // Missions nearest the centre keep their spot; the rest step outwards until nothing overlaps.
   const nodes: GraphNode[] = [];
@@ -182,7 +211,7 @@ export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], 
   });
   for (const m of byDistance) {
     const body = bodies.get(m.id)!;
-    const node: GraphNode = { ...m, x: body.x, y: body.y, r: graphRadius(m), depth: 0, hue: hues.get(m.id) ?? 0, parentId: null };
+    const node: GraphNode = { ...m, x: body.x, y: body.y, r: graphRadius(m), depth: 0, hue: hues.get(m.id) ?? 0, tone: toneOf(m), parentId: null };
     placeFree(node, nodes, 0, 0);
     nodes.push(node);
   }
@@ -217,7 +246,7 @@ export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], 
       slot++;
       const angle = dir + offset + (ring % 2 ? step / 2 : 0);
       const node: GraphNode = { ...child, x: parent.x + radius * Math.cos(angle), y: parent.y + radius * Math.sin(angle),
-        r: graphRadius(child), depth: parent.depth + 1, hue: parent.hue, parentId: parent.id };
+        r: graphRadius(child), depth: parent.depth + 1, hue: parent.hue, tone: toneOf(child), parentId: parent.id };
       placeFree(node, held, parent.x, parent.y);
       held.push(node); children.push(node); nodes.push(node); byId.set(node.id, node);
     });
@@ -234,12 +263,29 @@ export function layoutMissionGraph(entities: GraphEntity[], links: GraphLink[], 
   }
 
   for (const n of nodes) { n.x = r1(n.x + GRAPH_ORIGIN); n.y = r1(n.y + GRAPH_ORIGIN); }
-  const line = (id: string, a: GraphNode, b: GraphNode, relation: GraphRelation | null, stroke: GraphStroke, hue: number): GraphEdge =>
-    ({ id, from: a.id, to: b.id, relation, stroke, hue, x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+  const line = (id: string, a: GraphNode, b: GraphNode, relation: GraphRelation | null, kind: GraphEdgeKind, stroke: GraphStroke, hue: number): GraphEdge =>
+    ({ id, from: a.id, to: b.id, relation, kind, stroke, hue, fromTone: a.tone, toTone: b.tone, x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+  // With a mission opened, each of its sub-missions on the map hangs from the deepest row of its checklist
+  // path that is shown (its Quest, or the linked row itself); without one, the mission line stays.
+  const opener = levels.length && byId.has(levels[0].parentId) ? levels[0].parentId : null;
+  const origins = new Map<string, GraphNode>();
+  if (opener && anchors) for (const l of real) {
+    if (l.relation !== 'Subtask' || l.from !== opener) continue;
+    const via = [...(anchors[l.to] ?? [])].reverse().map(id => byId.get(id)).find(n => n && n.depth > 0);
+    if (via) origins.set(l.to, via);
+  }
+  const curve = (e: GraphEdge): GraphEdge => {
+    // A gentle bow to one side (fixed per pair), so the line reads as its own thread and clears straight rows.
+    const mx = (e.x1 + e.x2) / 2, my = (e.y1 + e.y2) / 2, dx = e.x2 - e.x1, dy = e.y2 - e.y1;
+    const side = hash(e.from + e.to) % 2 ? 1 : -1;
+    return { ...e, cx: r1(mx - dy * 0.18 * side), cy: r1(my + dx * 0.18 * side) };
+  };
   const edges: GraphEdge[] = [
-    ...real.map(l => line(`${l.relation}:${l.from}:${l.to}`, byId.get(l.from)!, byId.get(l.to)!, l.relation,
-      l.relation === 'Subtask' ? 'solid' : l.relation === 'Related' ? 'dotted' : 'dashed', byId.get(l.from)!.hue)),
-    ...nodes.filter(n => n.parentId).map(n => line(`row:${n.id}`, byId.get(n.parentId!)!, n, null, 'solid', n.hue)),
+    ...real.filter(l => !(l.relation === 'Subtask' && l.from === opener && origins.has(l.to)))
+      .map(l => line(`${l.relation}:${l.from}:${l.to}`, byId.get(l.from)!, byId.get(l.to)!, l.relation, 'relation',
+        l.relation === 'Subtask' ? 'solid' : l.relation === 'Related' ? 'dotted' : 'dashed', byId.get(l.from)!.hue)),
+    ...nodes.filter(n => n.parentId).map(n => line(`row:${n.id}`, byId.get(n.parentId!)!, n, null, 'row', 'solid', n.hue)),
+    ...[...origins].map(([to, via]) => curve(line(`origin:${to}`, via, byId.get(to)!, 'Subtask', 'origin', 'solid', via.hue))),
   ];
   const width = Math.max(GRAPH_ORIGIN, ...nodes.map(n => graphFootprint(n).right)) + PAD;
   const height = Math.max(GRAPH_ORIGIN, ...nodes.map(n => graphFootprint(n).bottom)) + PAD;

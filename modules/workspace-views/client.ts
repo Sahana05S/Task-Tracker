@@ -21,7 +21,7 @@ export type {
 export { roadmapSearch, branchForRow, parseRoadmapLocation, roadmapScope, roadmapZoom, type RoadmapLocation, type RoadmapScope } from '@/modules/workspace-views/internal/roadmap';
 export {
   graphCamera, graphFootprint, graphRadius, layoutMissionGraph, wheelZoomFactor, GRAPH_HUES, LABEL_WIDTH,
-  type GraphCamera, type GraphEdge, type GraphEntity, type GraphKind, type GraphLevel, type GraphLink, type GraphNode,
+  type GraphCamera, type GraphEdge, type GraphEdgeKind, type GraphEntity, type GraphKind, type GraphTone, type GraphLevel, type GraphLink, type GraphNode,
   type GraphRelation, type GraphRelationship, type GraphStroke, type MissionGraphLayout,
 } from '@/modules/workspace-views/internal/mission-graph';
 export {

@@ -102,6 +102,41 @@ describe('constellation layout', () => {
     expect(layout.edges.filter(e => e.relation === null).map(e => e.id).sort()).toEqual(['row:a', 'row:deep', 'row:q']);
   });
 
+  it('colours stars by kind: missions, sub-missions, Quests, objectives', () => {
+    const layout = layoutMissionGraph(sky, links, { levels: [{ parentId: sky[3].id, children: [row('q', 'quest'), row('o'), { ...row('l'), linked: true }] }] });
+    const tone = (id: string) => layout.nodes.find(n => n.id === id)!.tone;
+    expect([tone(sky[0].id), tone(sky[1].id), tone(sky[2].id), tone(sky[3].id)]).toEqual(['mission', 'submission', 'submission', 'mission']);
+    expect([tone('q'), tone('o'), tone('l')]).toEqual(['quest', 'objective', 'submission']);
+    const rowLine = layout.edges.find(e => e.id === 'row:q')!;
+    expect([rowLine.kind, rowLine.fromTone, rowLine.toTone]).toEqual(['row', 'mission', 'quest']);
+  });
+
+  it('draws a sub-mission from its Quest only while its parent mission is open', () => {
+    const anchors = { [sky[1].id]: ['q', 'deep', 'linkRow'] };
+    const direct = `Subtask:${sky[0].id}:${sky[1].id}`;
+    // Collapsed: the mission line stays, whatever the anchors say.
+    expect(layoutMissionGraph(sky, links, { anchors }).edges.map(e => e.id)).toContain(direct);
+    // Opened at the top: the line leaves the Quest that holds the sub-mission, curved, and the mission line goes.
+    const top = layoutMissionGraph(sky, links, { anchors, levels: [{ parentId: sky[0].id, children: [row('q', 'quest'), row('other', 'quest')] }] });
+    const origin = top.edges.find(e => e.kind === 'origin')!;
+    expect([origin.from, origin.to, origin.toTone]).toEqual(['q', sky[1].id, 'submission']);
+    expect(origin.cx).toBeDefined();
+    expect(top.edges.map(e => e.id)).not.toContain(direct);
+    // The other sub-mission has no anchor: its mission line is kept.
+    expect(top.edges.map(e => e.id)).toContain(`Subtask:${sky[0].id}:${sky[2].id}`);
+    // Opened deeper: the line starts at the deepest row shown.
+    const deeper = layoutMissionGraph(sky, links, { anchors, levels: [
+      { parentId: sky[0].id, children: [row('q', 'quest')] },
+      { parentId: 'q', children: [row('deep', 'quest')] },
+      { parentId: 'deep', children: [{ ...row('linkRow'), linked: true }] },
+    ] });
+    expect(deeper.edges.find(e => e.kind === 'origin')!.from).toBe('linkRow');
+    // Anchored in a list that is not shown (another section): the mission line stays.
+    const elsewhere = layoutMissionGraph(sky, links, { anchors, levels: [{ parentId: sky[0].id, children: [row('other', 'quest')] }] });
+    expect(elsewhere.edges.some(e => e.kind === 'origin')).toBe(false);
+    expect(elsewhere.edges.map(e => e.id)).toContain(direct);
+  });
+
   it('aims the camera at the sky, an opened node or a selected row', () => {
     const layout = layoutMissionGraph(sky, links, { levels: [{ parentId: sky[0].id, children: [row('a'), row('b')] }] });
     const view = { w: 900, h: 560 };

@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createClient } from '@/shared/supabase/server';
 import { CHECKLIST_SECTIONS, type ChecklistSection } from '@/modules/checklists/client';
-import type { SubMissionOriginRow } from './origin';
+import { subMissionAnchorPaths, type SubMissionAnchor, type SubMissionOriginRow } from './origin';
 
 /**
  * The parent mission's checklist row linked to this sub-mission. Read under the caller's
@@ -40,5 +40,33 @@ export async function getSubMissionOriginRow(taskId: string, parentTaskId: strin
     };
   } catch {
     return null;
+  }
+}
+
+/** At most this many checklist rows are read to place a parent's sub-missions on the Today map. */
+const ANCHOR_ROW_LIMIT = 2000;
+
+/**
+ * For the Today map: which Quest (or row) of this mission each of its sub-missions hangs from. Read
+ * under the caller's session, so a viewer who may not read the checklist (migration 117) gets {}
+ * and the map keeps its mission-to-sub-mission line. A failed read is also {}.
+ */
+export async function getSubMissionAnchors(parentTaskId: string): Promise<Record<string, SubMissionAnchor>> {
+  try {
+    const db = await createClient();
+    const { data: lists, error } = await db.from('task_checklists').select('id,owner_node_id').eq('task_id', parentTaskId);
+    if (error || !lists?.length) return {};
+    const { data: nodes, error: nodeError } = await db.from('checklist_nodes')
+      .select('id,checklist_id,parent_node_id,linked_task_id,detail_section')
+      .in('checklist_id', lists.map((list) => list.id))
+      .order('created_at')
+      .limit(ANCHOR_ROW_LIMIT);
+    if (nodeError || !nodes?.length) return {};
+    return subMissionAnchorPaths(
+      lists.map((list) => ({ id: list.id, ownerNodeId: list.owner_node_id })),
+      nodes.map((node) => ({ id: node.id, checklistId: node.checklist_id, parentNodeId: node.parent_node_id, linkedTaskId: node.linked_task_id, section: node.detail_section ?? null })),
+    );
+  } catch {
+    return {};
   }
 }
