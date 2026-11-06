@@ -1,4 +1,5 @@
-import { ExternalLinkIcon, FolderOpenIcon, LinkIcon } from 'lucide-react';
+import { Fragment } from 'react';
+import { ArrowDownIcon, ArrowRightIcon, ExternalLinkIcon, FolderOpenIcon, LinkIcon } from 'lucide-react';
 
 import { fileStorageNote } from '@/modules/files/client';
 import { ProofFiles } from '@/modules/files/components/proof-files';
@@ -39,9 +40,21 @@ function LinkRow({ link }: { link: TaskLink }) {
   );
 }
 
+/** The arrow between two steps of the flow: down on phones, right from md. */
+function FlowArrow() {
+  return (
+    <div aria-hidden="true" className="text-primary flex flex-col items-center justify-center md:flex-row">
+      <span className="bg-primary/40 h-3 w-0.5 md:h-0.5 md:w-2" />
+      <ArrowDownIcon className="size-4 md:hidden" />
+      <ArrowRightIcon className="hidden size-4 md:block" />
+    </div>
+  );
+}
+
 /**
- * The mission's one Files panel (Work tab): Input, Process and Output side by side, left to
- * right (three columns from md, a swipe row on phones), with Proofs and Other links under them.
+ * The mission's one Files panel (Work tab): Input → Process → Output as one connected flow
+ * (user request, 6 November 2026: left to right with arrows from md, top to bottom on phones),
+ * with Proofs and Other links under it.
  * Each group is one list of uploaded files (migrations 101 and 113, moved into
  * the company Shared Drive) and pasted links (`task_links.ipo_role`). Upload is
  * the main action; "Add a link instead" is the small option (not for Proofs).
@@ -86,7 +99,9 @@ export function FilesPanel({
       addLabel="Upload"
       noun={group.kind === 'proof' ? 'proof' : 'file'}
       empty={group.empty}
-      className="bg-muted/50 grid h-full content-start gap-2 rounded-xl p-3"
+      className={group.kind === 'proof'
+        ? 'bg-muted/50 grid h-full content-start gap-2 rounded-xl p-3'
+        : 'bg-card border-primary/30 grid h-full content-start gap-2 rounded-xl border-2 p-3'}
     >
       {canAddLink && group.kind !== 'proof' ? (
         <AddLinkForm taskId={task.id} version={task.lifecycleVersion ?? 0} ipoRole={group.kind} />
@@ -101,16 +116,17 @@ export function FilesPanel({
       subtitle={total ? `${total} file${total === 1 ? '' : 's'} and links` : 'Input, Process, Output and Proofs'}
     >
       <div className="grid gap-4">
-        {/* Input | Process | Output left to right: three columns from md, a swipe row below it. */}
+        {/* Input → Process → Output: one flow, left to right from md, top to bottom below it. */}
         <div
           role="group"
-          aria-label="Input, Process and Output"
-          className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 md:pb-0"
+          aria-label="Input, then Process, then Output"
+          className="grid gap-1 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-1.5"
         >
-          {ipo.map((group) => (
-            <div key={group.kind} className="w-[85%] shrink-0 snap-start md:w-auto md:min-w-0">
-              {card(group)}
-            </div>
+          {ipo.map((group, index) => (
+            <Fragment key={group.kind}>
+              {index ? <FlowArrow /> : null}
+              <div className="min-w-0">{card(group)}</div>
+            </Fragment>
           ))}
         </div>
         {proofGroup ? card(proofGroup) : null}
