@@ -9,6 +9,7 @@ import type { ChecklistBranchRow } from '../internal/branch-types';
 import { rowHref } from '../internal/location';
 import type { SectionProgress } from '../internal/progress';
 import { percentText, rowKind, sectionStatus, type ChecklistRowKind } from '../internal/table';
+import { ChecklistRowMenu } from './checklist-row-actions';
 import { ObjectiveDetails, ObjectiveTick } from './objective-details';
 import { SectionStateIcon } from './section-state-icon';
 
@@ -28,15 +29,20 @@ export interface CardContext {
   action: Command;
   /** The mission is open and the viewer is Crew or a manager (Outline: inside a Quest its owner decides, migration 122). */
   crewEdits?: boolean;
+  /** For the row menu (the same one as the Table's). */
+  manager?: boolean;
+  linkChoices?: readonly { id: string; taskTag: string; title: string }[];
+  selectedItem?: string;
 }
 
 /**
  * One checklist row as a card (Board and Blocks views): kind, title, the same
  * details as every view (description, review note, links, sub-mission tag,
  * progress) and the same one-tap Yes / N/A as the table. Quests, sub-missions
- * and rows with rows under them open their page.
+ * and rows with rows under them open their page. The row menu (edit, move,
+ * duplicate, remove) is the same as the Table's.
  */
-export function ChecklistRowCard({ row, ctx, large = false }: { row: ChecklistBranchRow; ctx: CardContext; large?: boolean }) {
+export function ChecklistRowCard({ row, ctx, siblings, large = false }: { row: ChecklistBranchRow; ctx: CardContext; siblings: readonly ChecklistBranchRow[]; large?: boolean }) {
   const kind = rowKind(row);
   const { label, icon: Icon } = KIND[kind];
   const href = rowHref(ctx.task.taskTag, row);
@@ -58,6 +64,7 @@ export function ChecklistRowCard({ row, ctx, large = false }: { row: ChecklistBr
             <p className={cn('text-foreground font-medium break-words', large ? 'text-base' : 'text-sm')}>{row.title}</p>
           )}
         </div>
+        <div className="-mt-1 -mr-1.5 shrink-0"><ChecklistRowMenu row={row} siblings={siblings} ctx={ctx} /></div>
       </div>
       <ObjectiveDetails row={row} />
       {kind === 'item' || kind === 'linked' ? <ObjectiveTick row={row} ctx={ctx} /> : null}

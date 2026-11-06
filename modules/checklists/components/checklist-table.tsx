@@ -10,7 +10,7 @@ import type { ChecklistSection, SectionProgress } from '../internal/progress';
 import { percentText, sectionStatus } from '../internal/table';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowActions } from './checklist-row-actions';
-import { ObjectiveDetails, ObjectiveLinks, ObjectiveTick } from './objective-details';
+import { ObjectiveDetails, ObjectiveTick } from './objective-details';
 import type { ActionResponse, Task } from '@/types/tracker';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
@@ -72,8 +72,8 @@ const STATUS_TONE = {
 // Elapsed columns are gone; past time per row stays in the row panel and the effort breakdown.
 
 /**
- * One checklist table: the sheet's Checkbox / Progress / Objective / Links
- * columns, with a one-tap completion control and a row
+ * One checklist table: the sheet's Checkbox / Progress / Objective columns
+ * (no links: they stay in the row menu and the other views, 6 November 2026), with a one-tap completion control and a row
  * menu. A row with rows under it shows their progress and opens their table.
  * On phones each row becomes a two-line card; nothing scrolls sideways.
  */
@@ -111,7 +111,6 @@ export function ChecklistTable(props: ChecklistTableProps) {
                 <th scope="col" className="w-0">Done</th>
                 <th scope="col" className="w-0">Progress</th>
                 <th scope="col">Objective</th>
-                <th scope="col" className="w-0">Links</th>
                 <th scope="col" className="w-0"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -145,11 +144,8 @@ export function ChecklistTable(props: ChecklistTableProps) {
                       ) : (
                         <span className="text-foreground font-medium break-words">{row.title}</span>
                       )}
-                      {/* The same details as Board, Blocks, Outline and Today; links have their own column on wider screens. */}
-                      <ObjectiveDetails row={row} progress={false} links="phone" className="mt-1" />
-                    </td>
-                    <td className="max-md:hidden">
-                      {row.links.length ? <ObjectiveLinks row={row} className="flex-nowrap" /> : <span className="text-muted-foreground">—</span>}
+                      {/* The same details as Board, Blocks, Outline and Today, without the links. */}
+                      <ObjectiveDetails row={row} progress={false} links={false} className="mt-1" />
                     </td>
                     <td className="max-md:order-2 max-md:border-0 max-md:p-0">
                       <div className="flex items-center justify-end gap-1">

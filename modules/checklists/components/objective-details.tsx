@@ -129,13 +129,13 @@ export function ObjectiveLinks({ row, className }: { row: Pick<ChecklistBranchRo
  * nothing when the row has none of these.
  *
  * `progress={false}` when the view already shows the figure (the Table's
- * Progress column); `links="phone"` when the view has its own Links column on
- * wider screens.
+ * Progress column); `links={false}` in the Table, which shows no links (user
+ * decision, 6 November 2026: they stay in the row menu and the other views).
  */
-export function ObjectiveDetails({ row, progress = true, links = 'all', className, style }: {
+export function ObjectiveDetails({ row, progress = true, links = true, className, style }: {
   row: ChecklistBranchRow;
   progress?: boolean;
-  links?: 'all' | 'phone';
+  links?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }) {
@@ -146,7 +146,7 @@ export function ObjectiveDetails({ row, progress = true, links = 'all', classNam
     : kind === 'parent' ? { icon: ListTreeIcon, text: `${count} inside`, tone: 'badge-neutral' }
     : null;
   const showProgress = progress && kind !== 'item';
-  const hasLinks = row.links.length > 0;
+  const hasLinks = links && row.links.length > 0;
   const owner = kind === 'quest' ? row.assigneeId ?? null : null;
   const meta = tag || owner || showProgress || hasLinks;
 
@@ -169,7 +169,7 @@ export function ObjectiveDetails({ row, progress = true, links = 'all', classNam
               <span className="text-foreground text-xs font-semibold tabular-nums">{row.applicable ? percentText(row.progressPercentage) ?? '—' : 'N/A'}</span>
             </span>
           ) : null}
-          {hasLinks ? <ObjectiveLinks row={row} className={links === 'phone' ? 'md:hidden' : undefined} /> : null}
+          {hasLinks ? <ObjectiveLinks row={row} /> : null}
         </div>
       ) : null}
     </div>
