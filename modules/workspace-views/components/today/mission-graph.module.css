@@ -23,7 +23,7 @@
 .lines { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 .edge { fill: none; stroke: var(--edge); stroke-width: 2; stroke-linecap: round; opacity: .55; transition: opacity .4s, d .5s cubic-bezier(.22,.82,.18,1); animation: fade .6s ease-out both; }
 .row { stroke-width: 1.5; opacity: .75; }
-/* The Quest or row a sub-mission hangs from (opened mission only): a slightly heavier, curved thread. */
+/* The Quest or row a sub-mission hangs from (opened mission only): a short, slightly heavier thread. */
 .origin { stroke-width: 2.6; opacity: .95; }
 .originEnd { fill: var(--map-submission-a); animation: fade .6s ease-out both; }
 .dashed { stroke-dasharray: 9 7; }
@@ -75,7 +75,7 @@
   background: color-mix(in srgb, var(--card) 88%, transparent); border-radius: 7px; padding: 2px 6px;
 }
 .child .name { font-size: 11px; font-weight: 600; }
-.sub { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; margin-top: -4px; }
+.sub { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; margin-top: -4px; max-width: var(--w); overflow: hidden; text-overflow: ellipsis; }
 /* A mission's labels (migration 112), as text: the node is a button, so the chips that link sit beside the open mission. */
 .labels { max-width: var(--w); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 600; color: var(--primary); }
 .flag { position: absolute; top: -9px; right: -26px; border-radius: 7px; background: var(--map-flag); color: var(--map-flag-foreground); padding: 2px 5px; font-size: 9px; font-weight: 800; }
