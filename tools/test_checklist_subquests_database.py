@@ -294,7 +294,7 @@ for db in DBS:
         seen=read('4',f"SELECT public.quest_owner_requests_for('{mission}')")
         assert [x['nodeId'] for x in seen['pending']]==[survey]
         assert uid_of('8') in [c['id'] for c in seen['candidates']] and not {uid_of('4'),uid_of('5'),uid_of('6')}&{c['id'] for c in seen['candidates']}
-        expect=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-At'],
+        expect=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
             input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid_of('3')}',true);\nSELECT public.quest_owner_requests_for('{mission}');\nCOMMIT;",
             text=True,capture_output=True,encoding='utf-8')
         assert expect.returncode and 'private to its people' in expect.stderr,expect.stderr[-300:]
@@ -302,7 +302,7 @@ for db in DBS:
         qor('4','cancel',req=third['id'])
         assert value(db,f"status FROM public.quest_owner_requests WHERE id='{third['id']}'")=='cancelled'
         assert value(db,"has_function_privilege('anon','public.quest_owner_request_command(text,uuid,uuid,uuid,uuid)','EXECUTE')")=='f'
-        expect=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-At'],
+        expect=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
             input="BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','"+uid_of('4')+"',true);\nSELECT count(*) FROM public.quest_owner_requests;\nCOMMIT;",
             text=True,capture_output=True,encoding='utf-8')
         assert expect.returncode and 'permission denied' in expect.stderr,expect.stderr[-300:]
