@@ -191,6 +191,17 @@
   --map-hue-3: #986711;
   --map-hue-4: #347caf;
   --map-road: #c2cbe0;
+  /* Today map: one gradient per kind of star (missions, sub-missions, Quests, objectives). */
+  --map-mission-a: #7c5cf0;
+  --map-mission-b: #4f46c8;
+  --map-submission-a: #f2a33a;
+  --map-submission-b: #dd6a1f;
+  --map-quest-a: #1fb5a3;
+  --map-quest-b: #13866f;
+  --map-objective-a: #8d97ad;
+  --map-objective-b: #6c768d;
+  --map-more-a: #8d97ad;
+  --map-more-b: #6c768d;
   --map-flag: #f5c980;
   --map-flag-foreground: #533716;
   --map-shadow: rgb(26 23 46 / 0.08);
@@ -333,6 +344,16 @@
   --map-hue-3: #d9a43a;
   --map-hue-4: #5fa8e6;
   --map-road: #33353b;
+  --map-mission-a: #a996ff;
+  --map-mission-b: #6f68e8;
+  --map-submission-a: #ffc15e;
+  --map-submission-b: #f08a3c;
+  --map-quest-a: #4fdcc6;
+  --map-quest-b: #23b08f;
+  --map-objective-a: #9aa3b8;
+  --map-objective-b: #7a8399;
+  --map-more-a: #9aa3b8;
+  --map-more-b: #7a8399;
   --map-flag: #fcc54a;
   --map-flag-foreground: #2c210d;
   --map-shadow: rgb(0 0 0 / 0.35);

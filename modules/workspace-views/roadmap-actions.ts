@@ -1,7 +1,7 @@
 'use server';
 
-import { getAssignedMissionBatch, getAssignedRoadmapMission } from '@/modules/tasks';
-import type { MissionBatchOptions, RoadmapMission, RoadmapMissionBatch } from '@/modules/tasks/client';
+import { getAssignedMissionBatch, getAssignedRoadmapMission, getSubMissionAnchors } from '@/modules/tasks';
+import type { MissionBatchOptions, RoadmapMission, RoadmapMissionBatch, SubMissionAnchor } from '@/modules/tasks/client';
 import { getFocusedChecklistItemTime, getChecklistBranch } from '@/modules/checklists';
 import type { ChecklistBranch, ChecklistBranchOptions, ChecklistItemTime } from '@/modules/checklists/client';
 import { getLabelCatalogue, getLabelled, getLabelsFor, labelSlug, type CatalogueLabel, type Label } from '@/modules/labels';
@@ -46,6 +46,19 @@ export async function loadRoadmapBranch(taskId: string, options: ChecklistBranch
     const branch = await getChecklistBranch(taskId, options);
     return { success: true, data: { mission, branch } };
   } catch { return { success: false, error: 'The checklist could not be loaded. Retry this branch.' }; }
+}
+
+/**
+ * Which Quest or row of an opened mission each of its sub-missions hangs from, so the map can draw the
+ * sub-mission from there (same access rule as opening the mission's branch).
+ */
+export async function loadSubMissionAnchors(taskId: string): Promise<ActionResponse<Record<string, SubMissionAnchor>>> {
+  const profile = await getCurrentProfile();
+  if (!profile?.isActive || !UUID_PATTERN.test(taskId)) return { success: false, error: 'Sign in and open this mission again.' };
+  try {
+    if (!await getAssignedRoadmapMission(taskId, profile.id, { anyOpen: seesEveryMission(profile.role) })) return { success: false, error: 'This open mission is no longer assigned to you.' };
+    return { success: true, data: await getSubMissionAnchors(taskId) };
+  } catch { return { success: false, error: 'Sub-mission links could not be loaded.' }; }
 }
 
 export async function loadRoadmapItemTime(taskId: string, nodeId: string): Promise<ActionResponse<ChecklistItemTime>> {

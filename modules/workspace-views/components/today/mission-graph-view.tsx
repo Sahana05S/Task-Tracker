@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
@@ -8,14 +8,14 @@ import { ArrowUpLeftIcon, CheckIcon, ChevronRightIcon, HouseIcon, LocateFixedIco
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 import { MISSION_RELATIONSHIP_LABELS, MISSION_RELATIONSHIPS } from '@/shared/tracker/enums';
-import { canTimeMission, missionDueLabel, type RoadmapMission } from '@/modules/tasks/client';
+import { canTimeMission, missionDueLabel, type RoadmapMission, type SubMissionAnchor } from '@/modules/tasks/client';
 import { checklistWorkHref, type ChecklistBranch, type ChecklistBranchOptions, type ChecklistBranchRow, type ChecklistSection } from '@/modules/checklists/client';
 import { checklistCommand } from '@/modules/checklists/actions';
 import {
   branchForRow, graphCamera, hashtagMatches, labelEdges, layoutMissionGraph, LABEL_WIDTH, wheelZoomFactor,
   type GraphCamera, type HashtagRecords, type GraphEntity, type GraphLevel, type GraphLink, type GraphNode, type RoadmapLocation,
 } from '@/modules/workspace-views/client';
-import { loadGraphHashtag, loadRoadmapBranch } from '@/modules/workspace-views/roadmap-actions';
+import { loadGraphHashtag, loadRoadmapBranch, loadSubMissionAnchors } from '@/modules/workspace-views/roadmap-actions';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import type { Label } from '@/modules/labels/client';
 import { LabelChips } from '@/modules/labels/components/label-chips';
@@ -66,9 +66,12 @@ const MapHint = forwardRef<{ show: () => void }>(function MapHint(_, ref) {
 });
 
 /** What the lines and rings mean, in words and line styles (no colour needed). */
-function GraphLegend({ rings, hashtag }: { rings: boolean; hashtag: string | null }) {
+const TONE_KEY = [['mission', 'Mission'], ['submission', 'Sub-mission'], ['quest', 'Quest'], ['objective', 'Objective']] as const;
+function GraphLegend({ rings, hashtag, origin }: { rings: boolean; hashtag: string | null; origin: boolean }) {
   return <ul aria-label="Map key" className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-    <li><span className={styles.swatch} aria-hidden="true" /> Sub-mission</li>
+    {TONE_KEY.map(([tone, label]) => <li key={tone}><span className={styles.tone} style={{ ['--a' as string]: `var(--map-${tone}-a)`, ['--b' as string]: `var(--map-${tone}-b)` } as CSSProperties} aria-hidden="true" /> {label}</li>)}
+    <li><span className={styles.swatch} aria-hidden="true" /> Sub-mission link</li>
+    {origin ? <li><span className={cn(styles.swatch, styles.originSwatch)} aria-hidden="true" /> Sub-mission from this Quest or row</li> : null}
     <li><span className={cn(styles.swatch, styles.dashed)} aria-hidden="true" /> Dependency or blocks</li>
     <li><span className={cn(styles.swatch, styles.dotted)} aria-hidden="true" /> Related</li>
     {hashtag ? <li><span className={cn(styles.swatch, styles.labelSwatch)} aria-hidden="true" /> Shares #{hashtag} (not a link between records)</li> : null}
@@ -109,6 +112,10 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
   const [hashtagRecords, setHashtagRecords] = useState<HashtagRecords | null>(null);
   const [hashtagError, setHashtagError] = useState<string | null>(null);
   const [labelLinks, setLabelLinks] = useState(false);
+  // Where each opened mission's sub-missions hang in its checklist (read once per mission when it opens).
+  const [anchors, setAnchors] = useState<Record<string, Record<string, SubMissionAnchor>>>({});
+  const anchorsAsked = useRef(new Set<string>());
+  const gradientPrefix = useId().replace(/:/g, '');
   const hashtagSeq = useRef(0);
   const pointer = useRef<string | null>(null);
   const frame = useRef<HTMLElement>(null);
@@ -149,6 +156,15 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
     setLevels(p => ({ ...p, [step.id]: { branch: next ?? undefined } }));
     return next;
   }
+  /** Reads, once per mission, which Quest or row each of its sub-missions hangs from; a failure keeps the mission line. */
+  function fetchAnchors(missionId: string) {
+    if (anchorsAsked.current.has(missionId)) return;
+    anchorsAsked.current.add(missionId);
+    void loadSubMissionAnchors(missionId).then(result => {
+      if (result.success && result.data) setAnchors(p => ({ ...p, [missionId]: result.data! }));
+      else anchorsAsked.current.delete(missionId);
+    }).catch(() => anchorsAsked.current.delete(missionId));
+  }
   /** After a write, reread only the open branches (bounded) instead of the whole page. */
   function refreshPath() { for (const step of path) void fetchLevel(step); }
 
@@ -162,6 +178,7 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
       if (!result.success || !result.data?.branch) { onLocation(null); return; }
       const { mission, branch } = result.data;
       setFound(p => ({ ...p, [mission.id]: mission }));
+      fetchAnchors(mission.id);
       const ancestors = branch.ancestors.map(a => rowStep({ id: a.nodeId, title: a.title, checklistId: a.checklistId, section: loc.section ?? 'activity' }, mission.id));
       const steps = [missionStep(mission), ...ancestors];
       const deepest = steps.length - 1;
@@ -185,15 +202,19 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
     const graphLevels: GraphLevel[] = path.map((step, i) => {
       const branch = levels[step.id]?.branch;
       const children: GraphEntity[] = (branch?.rows ?? []).map(row => ({ id: row.id, title: row.title, progress: row.progressPercentage, complete: row.isComplete,
-        kind: isContainer(row) ? 'quest' : 'objective' }));
+        kind: isContainer(row) ? 'quest' : 'objective', linked: !!row.linkedTaskId }));
       const next = path[i + 1];
       if (next && !children.some(c => c.id === next.id)) children.push({ id: next.id, title: next.title, kind: 'quest', progress: null, complete: false });
       if (branch?.hasMore) children.push({ id: `more:${step.id}`, title: 'More objectives', kind: 'more', progress: null, complete: false });
       return { parentId: step.id, children };
     });
-    const layout = layoutMissionGraph(entities, links, { levels: graphLevels });
+    const opened = path[0] ? anchors[path[0].id] : undefined;
+    const layout = layoutMissionGraph(entities, links, { levels: graphLevels,
+      anchors: opened ? Object.fromEntries(Object.entries(opened).map(([child, anchor]) => [child, anchor.path])) : undefined });
     return { ...layout, byId: new Map(layout.nodes.map(n => [n.id, n])) };
-  }, [roots, path, levels, links]);
+  }, [roots, path, levels, links, anchors]);
+  // Sub-missions drawn from a Quest or row of the opened mission: they stay clear while the rest fades.
+  const originOf = useMemo(() => new Map(layout.edges.filter(e => e.kind === 'origin').map(e => [e.to, e.from])), [layout]);
   // Nodes carrying the chosen hashtag: loaded missions' labels at once, then labelled(slug) for learning notes and linked rows.
   const matches = useMemo(() => {
     if (!hashtag) return null;
@@ -328,6 +349,7 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
       const step = missionStep(mission);
       goTo([step]);
       if (!levelsRef.current[step.id]?.branch) void fetchLevel(step);
+      fetchAnchors(mission.id);
       return;
     }
     const index = path.findIndex(s => s.id === node.parentId);
@@ -378,7 +400,8 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
     const top = layout.nodes.filter(n => n.depth === 0);
     return top.length ? { x: top.reduce((s, n) => s + n.x, 0) / top.length, y: top.reduce((s, n) => s + n.y, 0) / top.length } : { x: 0, y: 0 };
   }, [layout]);
-  const visible = (id: string) => !path.length || pathIds.has(id) || layout.byId.get(id)?.parentId === last?.id;
+  const shown = (id: string) => !path.length || pathIds.has(id) || layout.byId.get(id)?.parentId === last?.id;
+  const visible = (id: string) => shown(id) || (originOf.has(id) && shown(originOf.get(id)!));
 
   return <div className="mt-4 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
     <div className={cn('min-w-0', !leaf && 'xl:col-span-2')}>
@@ -431,11 +454,18 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
         onPointerUp={() => { drag.current = null; setDragging(false); }} onPointerCancel={() => { drag.current = null; setDragging(false); }}>
         <div className={cn(styles.world, (dragging || free) && styles.free)} style={{ width: layout.width, height: layout.height, transform: `translate3d(${w / 2 - camera.x * camera.z}px,${h / 2 - camera.y * camera.z}px,0) scale(${camera.z})` }}>
           <svg className={styles.lines} width={layout.width} height={layout.height} aria-hidden="true">
-            {layout.edges.map(edge => { const d = `M ${edge.x1} ${edge.y1} L ${edge.x2} ${edge.y2}`; return <path key={edge.id} d={d}
-              className={cn(styles.edge, !edge.relation && styles.row, edge.stroke === 'dashed' && styles.dashed, edge.stroke === 'dotted' && styles.dotted,
+            {/* Each line fades from its source star's colour to its target's, so kinds read along the line too. */}
+            <defs>{layout.edges.map((edge, i) => <linearGradient key={edge.id} id={`${gradientPrefix}-g${i}`} gradientUnits="userSpaceOnUse" x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2}>
+              <stop offset="0" style={{ stopColor: `var(--map-${edge.fromTone}-a)` }} /><stop offset="1" style={{ stopColor: `var(--map-${edge.toTone}-a)` }} />
+            </linearGradient>)}</defs>
+            {layout.edges.map((edge, i) => { const d = edge.cx !== undefined ? `M ${edge.x1} ${edge.y1} Q ${edge.cx} ${edge.cy} ${edge.x2} ${edge.y2}` : `M ${edge.x1} ${edge.y1} L ${edge.x2} ${edge.y2}`; return <path key={edge.id} d={d}
+              className={cn(styles.edge, edge.kind === 'row' && styles.row, edge.kind === 'origin' && styles.origin, edge.stroke === 'dashed' && styles.dashed, edge.stroke === 'dotted' && styles.dotted,
                 path.length > 0 && !(visible(edge.from) && visible(edge.to)) && styles.muted)}
               // The CSS `d` lets a line glide with its stars where supported; the attribute is the fallback.
-              style={{ ['--edge' as string]: `var(--map-hue-${edge.hue})`, d: `path("${d}")` } as CSSProperties} />; })}
+              style={{ ['--edge' as string]: `url(#${gradientPrefix}-g${i})`, d: `path("${d}")` } as CSSProperties} />; })}
+            {layout.edges.filter(e => e.kind === 'origin').map(edge => <circle key={`end:${edge.id}`} className={styles.originEnd} r={4}
+              cx={edge.x2 - (edge.x2 - (edge.cx ?? edge.x1)) * (layout.byId.get(edge.to)!.r + 6) / Math.max(Math.hypot(edge.x2 - (edge.cx ?? edge.x1), edge.y2 - (edge.cy ?? edge.y1)), 1)}
+              cy={edge.y2 - (edge.y2 - (edge.cy ?? edge.y1)) * (layout.byId.get(edge.to)!.r + 6) / Math.max(Math.hypot(edge.x2 - (edge.cx ?? edge.x1), edge.y2 - (edge.cy ?? edge.y1)), 1)} />)}
             {hashtagLines.map(edge => <path key={edge.id} d={`M ${edge.x1} ${edge.y1} L ${edge.x2} ${edge.y2}`} className={styles.labelEdge} />)}
           </svg>
           {ordered.map(node => {
@@ -452,7 +482,9 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
               : m ? [relationship, pct(m.progress), missionDueLabel(m.dueDate, today)].filter(Boolean).join(' · ')
               : node.kind === 'objective' ? (row?.applicable === false ? 'Not applicable' : node.complete ? 'Complete' : 'Open to work')
               : [pct(node.progress), `${row?.childCount ?? 0} rows`, row?.ownedChecklistId && row.assigneeId ? names?.[row.assigneeId] ?? null : null, opened ? 'open' : null].filter(Boolean).join(' · ');
-            const kindLabel = { mission: 'Mission', quest: 'Quest', objective: 'Objective', more: 'More objectives' }[node.kind];
+            const kindLabel = node.tone === 'submission' ? (node.depth === 0 ? 'Sub-mission' : 'Sub-mission row') : { mission: 'Mission', quest: 'Quest', objective: 'Objective', more: 'More objectives' }[node.kind];
+            const from = originOf.get(node.id);
+            const hangs = from ? ` Hangs from ${layout.byId.get(from)?.title ?? 'a row'} in the open mission.` : '';
             const relations = relationText.get(node.id);
             const nodeLabels = m ? labels?.[m.id] ?? [] : [];
             const labelText = nodeLabels.length ? [...nodeLabels.slice(0, 2).map(l => `#${l.name}`), ...(nodeLabels.length > 2 ? [`+${nodeLabels.length - 2}`] : [])].join(' ') : null;
@@ -460,11 +492,11 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
             const origin = parent ?? sky;
             const progress = node.complete ? 100 : Math.max(0, Math.min(100, node.progress ?? 0));
             return <button key={node.id} type="button" data-map-node={node.id} tabIndex={dim ? -1 : 0}
-              className={cn(styles.node, node.depth > 0 && styles.child, dim && styles.dim, faded && styles.faded, match && styles.match, node.id === focusId && styles.current, armed === node.id && styles.armed)}
-              style={{ left: node.x, top: node.y, ['--node' as string]: `var(--map-hue-${node.hue})`, ['--r' as string]: node.r, ['--p' as string]: progress,
+              className={cn(styles.node, node.depth > 0 && styles.child, styles[node.tone], dim && styles.dim, faded && styles.faded, match && styles.match, node.id === focusId && styles.current, armed === node.id && styles.armed)}
+              style={{ left: node.x, top: node.y, ['--node' as string]: `var(--map-${node.tone}-a)`, ['--node-b' as string]: `var(--map-${node.tone}-b)`, ['--r' as string]: node.r, ['--p' as string]: progress,
                 ['--w' as string]: `${node.depth === 0 ? LABEL_WIDTH.mission : LABEL_WIDTH.child}px`,
                 ['--dx' as string]: `${origin.x - node.x}px`, ['--dy' as string]: `${origin.y - node.y}px` }}
-              aria-label={`${kindLabel}: ${node.title}. ${sub}.${m ? ` ${m.priority} priority.` : ''}${relations ? ` ${relations.join('. ')}.` : ''}${nodeLabels.length ? ` Labels: ${nodeLabels.map(l => l.name).join(', ')}.` : ''}${match && hashtag ? ` ${HASHTAG_REASON[match]} #${hashtag.name}.` : ''}`}
+              aria-label={`${kindLabel}: ${node.title}. ${sub}.${m ? ` ${m.priority} priority.` : ''}${relations ? ` ${relations.join('. ')}.` : ''}${nodeLabels.length ? ` Labels: ${nodeLabels.map(l => l.name).join(', ')}.` : ''}${match && hashtag ? ` ${HASHTAG_REASON[match]} #${hashtag.name}.` : ''}${hangs}`}
               aria-expanded={node.kind === 'objective' || node.kind === 'more' ? undefined : opened}
               aria-pressed={node.kind === 'objective' ? node.id === leafId : undefined}
               onPointerDown={e => { pointer.current = e.pointerType; }}
@@ -502,7 +534,7 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
         <p className={cn(styles.float, styles.right)}>{free ? 'Manual' : last ? `Depth ${path.length}` : 'Overview'} · Zoom {Math.round(camera.z * 100)}%</p>
         <MapHint ref={hintRef} />
       </section>
-      <GraphLegend rings={roots.some(m => m.relationship)} hashtag={labelLinks && hashtag ? hashtag.name : null} />
+      <GraphLegend rings={roots.some(m => m.relationship)} hashtag={labelLinks && hashtag ? hashtag.name : null} origin={originOf.size > 0} />
     </div>
     {leaf && mission && leafLevel ? <aside aria-labelledby="map-work-title" className="border-border bg-card h-fit min-w-0 rounded-2xl border p-5 xl:sticky xl:top-[calc(var(--header-offset)+1.5rem)]">
       <div className="flex items-start justify-between gap-3"><h3 ref={panelHeading} id="map-work-title" tabIndex={-1} className="text-foreground min-w-0 text-lg font-semibold break-words outline-none">{leaf.title}</h3>

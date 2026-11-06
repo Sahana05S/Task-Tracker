@@ -22,7 +22,10 @@
 .free { transition: none; }
 .lines { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 .edge { fill: none; stroke: var(--edge); stroke-width: 2; stroke-linecap: round; opacity: .55; transition: opacity .4s, d .5s cubic-bezier(.22,.82,.18,1); animation: fade .6s ease-out both; }
-.row { stroke: var(--map-road); stroke-width: 1.5; opacity: .9; }
+.row { stroke-width: 1.5; opacity: .75; }
+/* The Quest or row a sub-mission hangs from (opened mission only): a slightly heavier, curved thread. */
+.origin { stroke-width: 2.6; opacity: .95; }
+.originEnd { fill: var(--map-submission-a); animation: fade .6s ease-out both; }
 .dashed { stroke-dasharray: 9 7; }
 .dotted { stroke-dasharray: 1 6; stroke-width: 2.6; }
 .muted { opacity: .14; }
@@ -41,18 +44,24 @@
 .node:focus-visible .star, .armed .star { outline: 3px solid var(--ring); outline-offset: 7px; }
 .dim { opacity: .28; filter: grayscale(.6); }
 
-/* The star: filled by progress (a pie from twelve o'clock), the ring says how the viewer is involved. */
+/* The star: filled by progress (a pie from twelve o'clock) in its kind's colour, with a gradient rim
+   (--node to --node-b); the ring says how the viewer is involved. */
 .star {
   --fill: color-mix(in srgb, var(--node) 72%, var(--card));
   position: relative; width: calc(var(--r) * 2px); height: calc(var(--r) * 2px); border-radius: 50%; display: grid; place-items: center;
-  background: conic-gradient(var(--fill) calc(var(--p) * 1%), color-mix(in srgb, var(--node) 12%, var(--card)) 0);
-  border: 2px solid var(--node); color: var(--card);
+  background:
+    conic-gradient(var(--fill) calc(var(--p) * 1%), color-mix(in srgb, var(--node) 12%, var(--card)) 0) padding-box,
+    linear-gradient(135deg, var(--node), var(--node-b, var(--node))) border-box;
+  border: 2.5px solid transparent; color: var(--card);
   box-shadow: 0 0 calc(var(--r) * 0.9px) color-mix(in srgb, var(--node) 38%, transparent);
   transition: transform .2s, box-shadow .2s;
 }
 .node:hover .star, .current .star { transform: scale(1.12); box-shadow: 0 0 calc(var(--r) * 1.6px) color-mix(in srgb, var(--node) 55%, transparent); }
 .current .star::after { content: ""; position: absolute; inset: -12px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--node) 40%, transparent); }
 .done { --p: 100; }
+/* Sub-missions also carry a dashed inner ring, so they stay distinct without colour. */
+.submission .star::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1.5px dashed color-mix(in srgb, var(--card) 80%, transparent); pointer-events: none; }
+.objective .star, .more .star { border-width: 2px; }
 .tick { position: absolute; inset: 0; display: grid; place-items: center; color: var(--card); }
 /* Relationship rings: told apart by line style and weight, never by colour alone (the label says it too). */
 .ring { position: absolute; inset: -7px; border-radius: 50%; border: 2px solid var(--foreground); opacity: .6; pointer-events: none; }
@@ -100,6 +109,8 @@
 .key.crew { border-width: 4px; border-style: double; }
 .key.reviewer { border-style: dotted; border-width: 3px; }
 .key.observer { border-width: 1px; }
+.tone { display: inline-block; width: 13px; height: 13px; border-radius: 50%; vertical-align: middle; background: linear-gradient(135deg, var(--a), var(--b)); }
+.swatch.originSwatch { border-top: 3px solid var(--map-submission-a); border-radius: 3px; }
 
 @media (max-width: 760px) { .frame { height: 520px; min-height: 420px; } }
 @media (max-width: 490px) { .frame { height: 490px; } }
