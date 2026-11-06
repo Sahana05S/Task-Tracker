@@ -345,6 +345,7 @@ for db in DBS:
     if LATEST>=128:
         # Migration 128: a line names the objective and shows what changed, here and in Team > Activity.
         node=checklist(db,mission,'add',{'title':'Survey the site','section':'activity','parent_id':None})['nodeId']
+        # No reason is needed to edit a row (128: the row menu has no reason box).
         checklist(db,mission,'edit',{'node_id':node,'title':'Survey the north site','section':'activity','parent_id':None,'linked_task_id':None,'node_type':'Item'})
         checklist(db,mission,'state',{'node_id':node,'state':'Yes'})
         checklist(db,mission,'delete',{'node_id':node,'reason':'Survey the north site'})

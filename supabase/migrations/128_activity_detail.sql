@@ -6,7 +6,9 @@
 --
 -- 1. checklist_command keeps the row's title in its audit row (node_before /
 --    node_after gain 'title'), so an added, renamed, ticked or removed
---    objective or Quest is named even after it is renamed or removed.
+--    objective or Quest is named even after it is renamed or removed. An
+--    edit (rename, move, link) no longer requires a reason: the row menu
+--    stopped asking for one (user decision, 6 November 2026).
 -- 2. mission_note_command keeps the note's text (first 500 characters) in its
 --    audit row ('body').
 -- 3. activity_feed (Team > Activity) returns two more columns:
@@ -27,7 +29,8 @@
 --    shows a note's text, and lists an objective's title and tick change.
 --
 -- Every function is patched from its live definition; each fragment must
--- occur exactly once. No scoring, award, permission or data change.
+-- occur exactly once. No scoring, award or data change; the only rule change
+-- is the optional edit reason above.
 -- ===========================================================================
 BEGIN;
 
@@ -52,6 +55,12 @@ SELECT pg_temp.m128_apply('public.checklist_command(uuid,text,jsonb,bigint,uuid)
 SELECT pg_temp.m128_apply('public.checklist_command(uuid,text,jsonb,bigint,uuid)',
  $f$'node_after',(SELECT jsonb_build_object('id',x.id,$f$,
  $f$'node_after',(SELECT jsonb_build_object('id',x.id,'title',x.title,$f$);
+
+-- ... and an edit, move or link no longer needs a reason (user decision, 6 November 2026: the row
+-- menu has no reason box; a removal still sends the row's title as its reason).
+SELECT pg_temp.m128_apply('public.checklist_command(uuid,text,jsonb,bigint,uuid)',
+ $f$IF change_reason IS NULL THEN RAISE EXCEPTION 'Structure correction needs a reason' USING ERRCODE='23514'; END IF;$f$,
+ $f$NULL; /* 128: no reason is needed to edit, move or link a row */$f$);
 
 -- 2. Note commands keep the note's text ----------------------------------------
 SELECT pg_temp.m128_apply('public.mission_note_command(text,uuid,uuid,uuid,text,uuid[],text[],uuid)',
