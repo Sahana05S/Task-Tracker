@@ -11,3 +11,5 @@ export { getChecklistBranch, getUnmappedRootRows } from './internal/branch';
 export { getFocusedChecklistItemTime, getRunningChecklistTimers } from './internal/focused-time';
 
 export { getObjectiveReviews } from './internal/review-read';
+
+export { getMyQuestRequests, getQuestRequestsFor } from './internal/quest-requests';

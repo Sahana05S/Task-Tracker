@@ -22,6 +22,7 @@ import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
 import { ObjectiveReviewProvider } from './objective-review';
 import { QuestCrewProvider } from './quest-owner';
+import type { QuestRequests } from '../internal/quest-request-rules';
 import { NO_REVIEWS, sentBackIndex, type ObjectiveReviews } from '../internal/review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
@@ -61,6 +62,8 @@ export interface ChecklistWorkspaceProps {
   /** The mission's Crew, for Quest owner pickers (migration 122), and the viewer. */
   crew?: readonly { id: string; name: string }[];
   viewerId?: string;
+  /** Waiting Quest owner requests and who may be asked (migration 131). */
+  questRequests?: QuestRequests | null;
   selectedItem?: string;
   /** Managers: where progress comes from, missions to link, and rows that still need a section. */
   managerTools?: {
@@ -228,7 +231,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   return (
     <ChecklistVersionProvider version={version}>
       <ObjectiveReviewProvider taskId={task.id} version={version} action={props.actions.checklist} reviews={props.reviews} names={props.memberNames}>
-      <QuestCrewProvider crew={props.crew ?? []} viewerId={props.viewerId ?? null}>
+      <QuestCrewProvider crew={props.crew ?? []} viewerId={props.viewerId ?? null} requests={props.questRequests ?? null}>
       <MissionPage>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />

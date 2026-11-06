@@ -974,6 +974,10 @@ export interface Database {
       mission_notes: { Args: { p_task: string }; Returns: Json };
       mission_note_hashtags: { Args: { p_tasks: string[] }; Returns: Json };
       mission_note_command: { Args: { p_op: 'add' | 'edit' | 'delete'; p_task: string; p_note: string | null; p_node: string | null; p_body: string | null; p_labels: string[]; p_new_labels: string[]; p_operation: string }; Returns: Json };
+      /** Migration 131: asking someone outside the Crew to own a Quest (checklists module). */
+      quest_owner_request_command: { Args: { p_op: 'request' | 'cancel' | 'accept' | 'decline'; p_node: string | null; p_invitee: string | null; p_request: string | null; p_operation: string }; Returns: Json };
+      quest_owner_requests_mine: { Args: Record<never, never>; Returns: Json };
+      quest_owner_requests_for: { Args: { p_task: string }; Returns: Json };
       /** Migration 112: workspace labels (labels module). */
       label_catalogue: { Args: Record<never, never>; Returns: Json };
       labels_for: { Args: { p_kind: 'task' | 'mission_learning' | 'meeting_point'; p_ids: string[] }; Returns: Json };

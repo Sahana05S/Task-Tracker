@@ -27,6 +27,7 @@ import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { CheckInPrompt } from '@/modules/attendance/components/check-in-prompt';
 import { HrPrompt } from '@/modules/hr/components/hr-prompt';
 import { RecordsPrompt } from '@/modules/personnel/components/records-prompt';
+import { QuestRequestsPrompt } from '@/modules/checklists/components/quest-requests-prompt';
 import { dayShare } from '../attendance/check-in/day-share';
 
 export const metadata: Metadata = { title: 'Today' };
@@ -62,6 +63,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     <MissionPageHeader title="Today" description="A clear path through your work." actions={<Suspense fallback={null}><CheckInPrompt user={profile} loadShare={(day, breaks) => dayShare(profile, today, day, breaks)} /></Suspense>} />
     {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
     <Suspense fallback={null}><HrPrompt userId={profile.id} /></Suspense>
+    <Suspense fallback={null}><QuestRequestsPrompt /></Suspense>
     <Suspense fallback={null}><RecordsPrompt userId={profile.id} employeeId={profile.employeeId} /></Suspense>
     <MissionRoadmap key={`${due}:${scope}`} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLabels={initialLabels} memberNames={memberNames} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>

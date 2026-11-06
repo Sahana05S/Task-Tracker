@@ -1,4 +1,4 @@
-"""Migrations 109 and 122: Objectives and sub-quests. A Quest holds Objectives, Quests (no level limit
+"""Migrations 109, 122, 130 and 131: Objectives and sub-quests. A Quest holds Objectives, Quests (no level limit
 since 122) and Sub-missions; delete with_children removes nested Quest lists; edit refuses a move under
 its own rows. 122: each Quest has an owner (Crew); inside a Quest only its owner, owners of the Quests
 above it, the managing director and Managers change rows; a Quest list cannot sit inside itself.
@@ -245,4 +245,67 @@ for db in DBS:
     cl(db,'delete',{'node_id':oq,'reason':'done','with_children':True})
     sql(db,f"DELETE FROM public.task_reviewers WHERE task_id='{T2}'; DELETE FROM public.task_assignees WHERE task_id='{T2}' AND user_id IN ('{four}','{eight}')")
 
-print('ALL PASS checklist sub-quests (migrations 109 and 122)')
+    if LATEST>=131:
+        # 131: asking someone outside the Crew to own a Quest. New mission: Crew user 4 (owns its Quests), reviewer 6.
+        mission=new_task(db,f'QOR{db[-4:]}')
+        def qor(uid,op,node=None,invitee=None,req=None,error=None):
+            q=lambda v:'NULL' if v is None else literal(v)
+            r=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
+                input=(f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid_of(uid)}',true);\n"
+                       f"SELECT public.quest_owner_request_command({literal(op)},{q(node)}::uuid,{q(invitee)}::uuid,{q(req)}::uuid,'{uuid4()}');\nCOMMIT;"),
+                text=True,capture_output=True,encoding='utf-8')
+            if error:
+                assert r.returncode and error in r.stderr,(op,error,r.stderr[-400:]);return None
+            assert r.returncode==0,(op,r.stderr[-400:])
+            return json.loads(next(x for x in r.stdout.splitlines() if x.startswith('{')))
+        def read(uid,statement):
+            return json.loads(next(x for x in actor(db,uid_of(uid),statement) if x.startswith(('[','{'))))
+        outreach=checklist(db,mission,'submission',{'title':'Outreach','section':'activity'},uid='4')['nodeId']
+        design=checklist(db,mission,'submission',{'title':'Design','section':'activity'},uid='4')['nodeId']
+        survey=checklist(db,mission,'submission',{'title':'Survey','section':'activity'},uid='4')['nodeId']
+        assert value(db,f"assignee_id FROM public.checklist_nodes WHERE id='{outreach}'")==uid_of('4')
+        qor('5','request',outreach,uid_of('8'),error='Only this Quest')                    # not the owner
+        qor('4','request',outreach,uid_of('6'),error='reviews the mission')
+        qor('4','request',outreach,uid_of('4'),error='Choose someone else')
+        qor('4','request',outreach,uid_of('7'),error='Choose an active member')             # inactive
+        first=qor('4','request',outreach,uid_of('5'))
+        assert first['status']=='pending'
+        qor('1','request',outreach,uid_of('8'),error='already waiting for an answer')       # one at a time per Quest
+        mine=read('5',"SELECT public.quest_owner_requests_mine()")
+        assert [(m['questTitle'],m['taskId']) for m in mine]==[('Outreach',mission)],mine
+        assert value(db,f"count(*) FROM taskpulse_private.notifications WHERE recipient_id='{uid_of('5')}' AND kind='quest_owner_request'")=='1'
+        qor('8','accept',req=first['id'],error='Only the person asked')
+        qor('5','decline',req=first['id'])
+        qor('5','accept',req=first['id'],error='already answered')
+        qor('4','request',outreach,uid_of('5'),error='declined this Quest in the last 7 days')
+        print('PASS',db,'131: only the Quest\'s owner side asks, an active non-reviewer; one waiting request per Quest; a decline blocks re-asking for 7 days')
+        second=qor('4','request',design,uid_of('5'))
+        qor('5','accept',req=second['id'])
+        assert value(db,f"count(*) FROM public.task_assignees WHERE task_id='{mission}' AND user_id='{uid_of('5')}'")=='1'
+        assert value(db,f"count(DISTINCT share_units) FROM public.task_assignees WHERE task_id='{mission}'")=='1','shares stay equal'
+        assert value(db,f"assignee_id FROM public.checklist_nodes WHERE id='{design}'")==uid_of('5')
+        assert value(db,f"count(*) FROM taskpulse_private.audit_events WHERE command='task_people_add_crew' AND protected_changes->>'user_id'='{uid_of('5')}'")=='1'
+        assert value(db,f"count(*) FROM taskpulse_private.notifications WHERE recipient_id='{uid_of('4')}' AND kind='quest_owner_answer'")=='2'
+        assert read('5',"SELECT public.quest_owner_requests_mine()")==[]
+        add(db,'Row by the new owner',checklist=value(db,f"id FROM public.task_checklists WHERE owner_node_id='{design}'"),uid='5')
+        qor('4','request',survey,uid_of('5'),error='already on the Crew')
+        print('PASS',db,'131: accepting adds the member to the Crew with equal shares and makes them the Quest\'s owner, audited and notified')
+        third=qor('4','request',survey,uid_of('8'))
+        seen=read('4',f"SELECT public.quest_owner_requests_for('{mission}')")
+        assert [x['nodeId'] for x in seen['pending']]==[survey]
+        assert uid_of('8') in [c['id'] for c in seen['candidates']] and not {uid_of('4'),uid_of('5'),uid_of('6')}&{c['id'] for c in seen['candidates']}
+        expect=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-At'],
+            input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid_of('3')}',true);\nSELECT public.quest_owner_requests_for('{mission}');\nCOMMIT;",
+            text=True,capture_output=True,encoding='utf-8')
+        assert expect.returncode and 'private to its people' in expect.stderr,expect.stderr[-300:]
+        qor('8','cancel',req=third['id'],error='Only the person who asked')
+        qor('4','cancel',req=third['id'])
+        assert value(db,f"status FROM public.quest_owner_requests WHERE id='{third['id']}'")=='cancelled'
+        assert value(db,"has_function_privilege('anon','public.quest_owner_request_command(text,uuid,uuid,uuid,uuid)','EXECUTE')")=='f'
+        expect=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-At'],
+            input="BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','"+uid_of('4')+"',true);\nSELECT count(*) FROM public.quest_owner_requests;\nCOMMIT;",
+            text=True,capture_output=True,encoding='utf-8')
+        assert expect.returncode and 'permission denied' in expect.stderr,expect.stderr[-300:]
+        print('PASS',db,'131: the mission\'s people see waiting requests and who may be asked; the sender cancels; no direct table access')
+
+print('ALL PASS checklist sub-quests (migrations 109, 122, 130 and 131)')

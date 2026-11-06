@@ -60,3 +60,4 @@ export {
   type ObjectiveReviewState,
   type ReviewChip,
 } from './internal/review';
+export type { MyQuestRequest, PendingQuestRequest, QuestRequests } from './internal/quest-request-rules';
