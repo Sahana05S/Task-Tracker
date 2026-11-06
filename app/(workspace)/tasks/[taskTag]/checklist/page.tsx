@@ -15,6 +15,7 @@ import { createSubMission } from '@/modules/tasks/actions';
 import { getMemberNames } from '@/modules/team';
 import { canStartTimerForTask } from '@/modules/time-tracking/client';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
+import { getQuestNoteCounts } from '@/modules/learning';
 
 type Params = Promise<{ taskTag: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -80,7 +81,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
   const manager = canManageTasks(user.role);
   const checklistId = branch.checklist?.id;
   // Quests carry the timers (migration 123); other rows have none.
-  const [names, linkChoices, unmapped, reviews, questRequests] = await Promise.all([
+  const [names, linkChoices, unmapped, reviews, questRequests, noteCounts] = await Promise.all([
     getMemberNames().catch((): Record<string, string> => ({})),
     manager ? getMissionChoices().then(choices => choices.filter(t => t.id !== task.id)) : [],
     manager && checklistId && sections ? getUnmappedRootRows(checklistId) : [],
@@ -88,7 +89,11 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
     getObjectiveReviews(task.id).catch(() => NO_REVIEWS),
     // Waiting Quest owner requests and who may be asked (131); a failed read hides asking.
     getQuestRequestsFor(task.id).catch(() => null),
+    // Notes per Quest row (132): a failed read offers no Notes.
+    getQuestNoteCounts(task.id).catch(() => null),
   ]);
+  const notesParam = (await searchParams).notes;
+  const openNotes = typeof notesParam === 'string' && /^[0-9a-f-]{36}$/i.test(notesParam) ? notesParam : null;
 
   return (
     <ChecklistWorkspace
@@ -106,6 +111,8 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       crew={task.assigneeIds.map(id => ({ id, name: names[id] ?? 'Unknown member' }))}
       viewerId={user.id}
       questRequests={questRequests}
+      noteCounts={noteCounts}
+      openNotes={openNotes}
       selectedItem={location.item}
       managerTools={manager ? { linkChoices, unmapped } : undefined}
       actions={{ checklist: checklistCommand, submission: createSubMission }}

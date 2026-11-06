@@ -149,8 +149,10 @@ export function ChecklistTable(props: ChecklistTableProps) {
                       <div className="flex items-center justify-end gap-1">
                         {/* Quests carry the timers (migration 123): the mission's Crew and managers, while it is open. */}
                         {props.questOwnerEdits && row.ownedChecklistId && props.questTimer ? props.questTimer({ nodeId: row.id, title: row.title }, 'row') : null}
-                        {canEdit || (props.questOwnerEdits && row.ownedChecklistId && row.canEditQuest) ? (
+                        {/* A viewer who may not change the row still gets a Quest's Notes (migration 132). */}
+                        {canEdit || row.ownedChecklistId ? (
                           <ChecklistRowActions
+                            readOnly={!(canEdit || (props.questOwnerEdits && row.ownedChecklistId && row.canEditQuest))}
                             canEditRow={canEdit}
                             row={row}
                             taskId={task.id}

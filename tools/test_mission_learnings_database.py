@@ -245,7 +245,7 @@ for db in DBS:
     if later:
         # 129 (user decision, 6 November 2026): no notes at all; notes and the starter hashtags are deleted.
         custom=value(db,"count(*) FROM public.labels WHERE NOT slug=ANY(ARRAY["+','.join(literal(x) for x in STARTERS)+"])")
-        migrate(db,later)
+        migrate(db,[n for n in later if n<132])
         assert value(db,'count(*) FROM public.mission_learnings')=='0'
         assert value(db,"count(*) FROM public.label_links WHERE subject_kind='mission_learning'")=='0'
         assert value(db,"count(*) FROM public.labels WHERE slug=ANY(ARRAY["+','.join(literal(x) for x in STARTERS)+"])")=='0'
@@ -254,3 +254,45 @@ for db in DBS:
         expect_code(db,MD,old_sql('add'),'42501')
         assert notes(db,M4)['items']==[]
         print('PASS',db,'129: every note and starter hashtag is gone, the company\'s own labels stay, and no one can write a note')
+
+    if [n for n in later if n>=132]:
+        # 132 (user request, 6 November 2026): Quest notes with ordinary labels.
+        migrate(db,[n for n in later if n>=132])
+        made=lambda name:json.loads(ok(db,MD,f"SELECT public.label_command('create',NULL,{literal(name)},NULL,NULL,'{uuid4()}')"))['id']
+        made('mistake'); made('client')
+        quest_notes=lambda uid:json.loads(ok(db,uid,f"SELECT public.quest_notes('{QUEST}')"))
+        first=add(db,M4,node=QUEST,names=['mistake'],body='Ordered the wrong steel grade')
+        second=add(db,M4,node=QUEST,names=['mistake','client'],body='Client changed the slab size late')
+        third=add(db,MD,node=QUEST,names=['client'],body='No type label needed')
+        seen=quest_notes(M4)
+        assert [i['id'] for i in seen['items']]==[third,second,first] and seen['canAdd'] is True and seen['questTitle']=='Foundation'
+        assert [l['slug'] for l in seen['items'][1]['labels']]==['client','mistake']
+        assert json.loads(ok(db,M4,f"SELECT public.quest_note_counts('{T1}')"))=={QUEST:3}
+        print('PASS',db,'132: several notes per Quest, newest first, with one or more ordinary labels and no type label')
+        expect_code(db,M4,note_sql('add',node=QUEST,names=None),'23514')                     # no label
+        expect_code(db,M4,note_sql('add',node=QUEST,names=['brandnew']),'42501')              # a member cannot create a label
+        expect_code(db,M4,note_sql('add',node=OBJECTIVE,names=['mistake']),'23514')           # notes go on a Quest
+        expect_code(db,M4,note_sql('add',node=None,names=['mistake']),'23514')
+        expect_code(db,M5,note_sql('add',node=QUEST,names=['mistake']),'42501')               # not on the mission
+        expect_code(db,M6,note_sql('add',node=QUEST,names=['mistake']),'42501')               # reviewer reads, does not write
+        expect_code(db,M5,f"SELECT public.quest_notes('{QUEST}')",'42501')
+        expect_code(db,M5,f"SELECT public.quest_note_counts('{T1}')",'42501')
+        assert [i['id'] for i in quest_notes(M6)['items']]==[third,second,first] and quest_notes(M6)['canAdd'] is False
+        print('PASS',db,'132: at least one label; only Quests; Crew, Managers and the MD write; the mission\'s people read; others are refused')
+        expect_code(db,MD,note_sql('edit',note=first,names=['mistake'],body='Not mine'),'P0002')   # only the author edits
+        ok(db,M4,note_sql('edit',note=first,names=['mistake','client'],body='Ordered the wrong steel grade; check the drawing'))
+        expect_code(db,M6,note_sql('delete',note=second,names=None),'P0002')                    # a reviewer does not delete
+        ok(db,MD,note_sql('delete',note=third,names=None))                                    # a manager deletes
+        ok(db,M4,note_sql('delete',note=second,names=None))                                   # the author deletes
+        assert [i['id'] for i in quest_notes(M4)['items']]==[first]
+        print('PASS',db,'132: only the author edits; the author, Managers and the MD delete')
+        texts=('Ordered the wrong steel','Client changed the slab','No type label needed','check the drawing')
+        assert all(value(db,f"count(*) FROM taskpulse_private.audit_events WHERE protected_changes::text LIKE {literal('%'+t+'%')}")=='0' for t in texts)
+        line=value(db,f"protected_changes->>'reason'||'|'||(protected_changes->>'node_title') FROM taskpulse_private.audit_events WHERE command='mission_note_edit' AND row_id='{first}'")
+        assert line=='#client #mistake|Foundation',line
+        print('PASS',db,'132: activity lines keep the labels and the Quest\'s name; the note\'s text never reaches the audit')
+        page=json.loads(ok(db,M4,"SELECT public.labelled('mistake')"))['items']
+        noted=[i for i in page if i['kind']=='mission_learning']
+        assert [(i['id'],i['nodeId'],i['nodeTitle'],i['taskTag'],i['rootList']) for i in noted]==[(first,QUEST,'Foundation','T1',True)],noted
+        assert not [i for i in json.loads(ok(db,M5,"SELECT public.labelled('mistake')"))['items'] if i['kind']=='mission_learning']
+        print('PASS',db,'132: the label page lists the note with its mission and Quest, only for those who may read it')

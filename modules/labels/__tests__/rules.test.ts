@@ -41,12 +41,12 @@ describe('label payloads', () => {
     });
     const records = mapLabelled({ label: { id: 'a', name: 'Crane', slug: 'crane' }, items: [
       { kind: 'task', id: 't', title: 'Lift', taskTag: 'Nov26_T1', status: 'Done', date: '2026-11-01' },
-      { kind: 'mission_learning', id: 'n', title: 'Rain on pour day', taskTag: 'Nov26_T1', taskId: 't', nodeId: 'q', nodeTitle: 'Foundation', date: '2026-11-02' },
+      { kind: 'mission_learning', id: 'n', title: 'Rain on pour day', taskTag: 'Nov26_T1', taskId: 't', nodeId: 'q', nodeTitle: 'Foundation', date: '2026-11-02', listId: 'l', rootList: false },
       { kind: 'sale', id: 's' },
     ] });
     expect(records?.items).toEqual([
-      { kind: 'task', id: 't', title: 'Lift', taskTag: 'Nov26_T1', date: '2026-11-01', status: 'Done', taskId: null, nodeId: null, nodeTitle: null },
-      { kind: 'mission_learning', id: 'n', title: 'Rain on pour day', taskTag: 'Nov26_T1', date: '2026-11-02', status: null, taskId: 't', nodeId: 'q', nodeTitle: 'Foundation' },
+      { kind: 'task', id: 't', title: 'Lift', taskTag: 'Nov26_T1', date: '2026-11-01', status: 'Done', taskId: null, nodeId: null, nodeTitle: null, listId: null, rootList: true },
+      { kind: 'mission_learning', id: 'n', title: 'Rain on pour day', taskTag: 'Nov26_T1', date: '2026-11-02', status: null, taskId: 't', nodeId: 'q', nodeTitle: 'Foundation', listId: 'l', rootList: false },
     ]);
     expect(mapCatalogue(null)).toBeNull();
     expect(mapLabelled({ items: [] })).toBeNull();

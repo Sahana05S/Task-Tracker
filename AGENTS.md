@@ -30,6 +30,12 @@ change). The refactor is complete and merged into `main`. Follow
 
 User decisions of 6 November 2026, after Notes:
 
+- **Quest notes (132):** notes live only on Quests, from the Quest row's ⋯ menu "Notes" side panel
+  (count badge on the row when there are notes; nothing else on the page). Each note has one or more
+  ordinary labels (no type label; #mistake is a label the company creates). Crew, Managers and the MD
+  write (if they may read the mission's work); only the author edits; author, Managers and the MD
+  delete. `/labels/<slug>` groups notes by mission › Quest. The text never reaches the audit. Not on
+  objectives or the mission page; no Today-map highlight or History filter.
 - **No notes; labels only (129, replaces 127 and the Notes section below):** every note, note link
   and the 26 starter hashtags were deleted; the note commands are revoked; `labels_for` is the 112
   body again. A mission's labels are set in its Labels panel (Details) and the New mission form; on

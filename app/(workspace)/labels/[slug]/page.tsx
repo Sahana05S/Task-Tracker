@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ListChecksIcon, MessageSquareIcon, NotebookPenIcon } from 'lucide-react';
 
-import { getLabelled, LABEL_COLOUR_CLASS, type LabelledItem } from '@/modules/labels';
+import { getLabelled, LABEL_COLOUR_CLASS, labelledNoteGroups, type LabelledItem } from '@/modules/labels';
 import { requireProfile } from '@/shared/session/profile';
 import { formatDate } from '@/shared/tracker/format';
 import { Breadcrumb } from '@/shared/ui/page-nav';
@@ -14,12 +14,45 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: `#${decodeURIComponent((await params).slug)}` };
 }
 
+/** The list holding the Quest's row, with that Quest's notes open (migration 132). */
+function noteHref(taskTag: string, quest: { nodeId: string | null; listId: string | null; rootList: boolean }): string {
+  const base = `/tasks/${encodeURIComponent(taskTag)}/checklist`;
+  const notes = quest.nodeId ? `notes=${encodeURIComponent(quest.nodeId)}` : '';
+  if (quest.rootList || !quest.listId) return notes ? `${base}?${notes}` : base;
+  return `${base}?checklist=${encodeURIComponent(quest.listId)}&section=activity${notes ? `&${notes}` : ''}`;
+}
+
+/** Quest notes grouped by mission › Quest (migration 132); each note opens its Quest's notes. */
+function NoteGroups({ items }: { items: readonly LabelledItem[] }) {
+  return (
+    <div className="grid gap-4">
+      {labelledNoteGroups(items).map((mission) => (
+        <section key={mission.taskTag} aria-label={mission.taskTag} className="grid gap-2">
+          <Link href={`/tasks/${encodeURIComponent(mission.taskTag)}`} className="text-foreground font-mono text-xs font-semibold hover:underline">{mission.taskTag}</Link>
+          {mission.quests.map((quest) => (
+            <div key={quest.nodeId ?? 'mission'} className="border-border grid gap-1 border-l-2 pl-3">
+              <Link href={noteHref(mission.taskTag, quest)} className="text-muted-foreground text-xs font-semibold hover:underline">
+                {quest.nodeTitle ?? 'The mission'} · {quest.notes.length} {quest.notes.length === 1 ? 'note' : 'notes'}
+              </Link>
+              <ul className="grid gap-1.5">
+                {quest.notes.map((note) => (
+                  <li key={note.id}>
+                    <Link href={noteHref(mission.taskTag, quest)} className="text-foreground line-clamp-3 text-sm hover:underline">{note.title || 'Untitled'}</Link>
+                    {note.date ? <span className="text-muted-foreground block text-xs">{formatDate(note.date)}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ))}
+    </div>
+  );
+}
+
 function href(item: LabelledItem): string {
   if (item.kind === 'task' && item.taskTag) return `/tasks/${encodeURIComponent(item.taskTag)}`;
-  if (item.kind === 'mission_learning' && item.taskTag) {
-    const scope = item.nodeId ? `&notes=${item.nodeId}${item.nodeTitle ? `&noteTitle=${encodeURIComponent(item.nodeTitle)}` : ''}` : '';
-    return `/tasks/${encodeURIComponent(item.taskTag)}?tab=details${scope}#notes`;
-  }
+  if (item.kind === 'mission_learning' && item.taskTag) return noteHref(item.taskTag, item);
   // The point itself: Meeting Points opens the period holding its date and scrolls to its card.
   if (item.kind === 'meeting_point') return `/meeting-points${item.date ? `?date=${encodeURIComponent(item.date)}` : ''}#record-${item.id}`;
   return `/meeting-points`;
@@ -71,7 +104,8 @@ export default async function LabelPage({ params }: { params: Promise<{ slug: st
             return group.length ? (
               <MissionPanel key={kind} icon={icon} title={title} subtitle={`${group.length}`}
                 action={kind === 'task' ? <Link href={`/tasks?label=${encodeURIComponent(label.slug)}`} className="link text-xs font-semibold">Open in Missions</Link> : null}>
-                <ul className="divide-border grid divide-y">{group.map((item) => <Item key={item.id} item={item} />)}</ul>
+                {kind === 'mission_learning' ? <NoteGroups items={group} />
+                  : <ul className="divide-border grid divide-y">{group.map((item) => <Item key={item.id} item={item} />)}</ul>}
               </MissionPanel>
             ) : null;
           })}

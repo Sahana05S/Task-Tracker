@@ -11,6 +11,7 @@ import { NOT_DONE, percentText, rowKind, rowStatus, stateChoices, type ProgressS
 import { ChecklistStateBadge, ChecklistStateControl } from './checklist-state-control';
 import { ObjectiveReviewChip, ObjectiveReviewNote, useMemberName, useRowChangesNeeded } from './objective-review';
 import type { ActionResponse, Task } from '@/types/tracker';
+import { QuestNoteBadge } from './quest-notes';
 
 type Command = (form: FormData) => Promise<ActionResponse<unknown>>;
 
@@ -162,6 +163,7 @@ export function ObjectiveDetails({ row, progress = true, links = true, className
             </span>
           ) : null}
           {owner ? <QuestOwnerChip assigneeId={owner} /> : null}
+          {kind === 'quest' ? <QuestNoteBadge nodeId={row.id} /> : null}
           {showProgress ? (
             <span className="flex min-w-36 flex-1 items-center gap-2">
               <ObjectiveRowStatus row={row} label />

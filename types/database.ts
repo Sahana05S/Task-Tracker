@@ -978,6 +978,9 @@ export interface Database {
       quest_owner_request_command: { Args: { p_op: 'request' | 'cancel' | 'accept' | 'decline'; p_node: string | null; p_invitee: string | null; p_request: string | null; p_operation: string }; Returns: Json };
       quest_owner_requests_mine: { Args: Record<never, never>; Returns: Json };
       quest_owner_requests_for: { Args: { p_task: string }; Returns: Json };
+      /** Migration 132: Quest notes (learning module). */
+      quest_notes: { Args: { p_node: string }; Returns: Json };
+      quest_note_counts: { Args: { p_task: string }; Returns: Json };
       /** Migration 112: workspace labels (labels module). */
       label_catalogue: { Args: Record<never, never>; Returns: Json };
       labels_for: { Args: { p_kind: 'task' | 'mission_learning' | 'meeting_point'; p_ids: string[] }; Returns: Json };
