@@ -287,7 +287,7 @@ for db in DBS:
         assert value(db,f"count(*) FROM taskpulse_private.audit_events WHERE command='task_people_add_crew' AND protected_changes->>'user_id'='{uid_of('5')}'")=='1'
         assert value(db,f"count(*) FROM taskpulse_private.notifications WHERE recipient_id='{uid_of('4')}' AND kind='quest_owner_answer'")=='2'
         assert read('5',"SELECT public.quest_owner_requests_mine()")==[]
-        add(db,'Row by the new owner',checklist=value(db,f"id FROM public.task_checklists WHERE owner_node_id='{design}'"),uid='5')
+        checklist(db,mission,'add',{'title':'Row by the new owner','section':'activity','checklist_id':value(db,f"id FROM public.task_checklists WHERE owner_node_id='{design}'")},uid='5')
         qor('4','request',survey,uid_of('5'),error='already on the Crew')
         print('PASS',db,'131: accepting adds the member to the Crew with equal shares and makes them the Quest\'s owner, audited and notified')
         third=qor('4','request',survey,uid_of('8'))
