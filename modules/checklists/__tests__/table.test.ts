@@ -140,7 +140,9 @@ describe('checklist home', () => {
     // Closure has no rows, so it says so instead of drawing an empty table.
     expect(html.match(/<table/g)).toHaveLength(2);
     expect(html).toContain('No closure rows yet. An empty section counts as N/A.');
-    for (const heading of ['Done', 'Progress', 'Objective', 'Links']) expect(html).toContain(`>${heading}</th>`);
+    for (const heading of ['Done', 'Progress', 'Objective']) expect(html).toContain(`>${heading}</th>`);
+    // No links in the Table (6 November 2026): they stay in the row menu and the other views.
+    expect(html).not.toContain('>Links</th>');
     // One mission timer (3 November 2026): no per-row timer, Est. or Elapsed column.
     for (const heading of ['Est.', 'Elapsed']) expect(html).not.toContain(`>${heading}</th>`);
     expect(html).not.toContain('Start timer');
@@ -165,7 +167,7 @@ describe('checklist home', () => {
     expect(html).toContain(`href="/tasks/Sep26_T5/checklist?checklist=${CHECKLIST}&amp;parent=page-1&amp;section=activity"`);
     expect(html).toContain('3 rows inside');
     expect(html).toContain('Sub-mission');
-    expect(html).toContain('aria-label="Link 1 for Draw section A"');
+    expect(html).not.toContain('aria-label="Link 1 for Draw section A"');
     expect(html).toContain('Next rows');
   });
 
@@ -196,6 +198,16 @@ describe('checklist home', () => {
     expect(viewer).not.toContain('aria-label="Completion of');
     expect(viewer).not.toContain('Add a row');
     expect(viewer).toContain('>Yes</span>');
+  });
+
+  it('offers the same row menu in Board, Blocks and Outline as in the Table (6 November 2026)', () => {
+    for (const view of ['table', 'board', 'blocks', 'outline'] as const) {
+      const shown = renderToStaticMarkup(createElement(ChecklistWorkspace, props({ view })));
+      expect(shown).toContain('aria-label="More for Draw section A"');
+      if (view !== 'table') expect(shown).not.toContain('<table');
+      const viewer = renderToStaticMarkup(createElement(ChecklistWorkspace, props({ view, executor: false })));
+      expect(viewer).not.toContain('aria-label="More for');
+    }
   });
 });
 

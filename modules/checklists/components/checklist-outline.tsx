@@ -15,6 +15,7 @@ import { rowHref } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistSection } from '../internal/progress';
 import { percentText, rowKind, SECTION_TITLES } from '../internal/table';
 import { ChecklistVersionField } from './checklist-state-control';
+import { ChecklistRowMenu } from './checklist-row-actions';
 import { QuestOwnerSelect } from './quest-owner';
 import { ObjectiveDetails, ObjectiveRowStatus, ObjectiveTick } from './objective-details';
 
@@ -27,6 +28,10 @@ interface Ctx {
   action: Command;
   /** The mission is open and the viewer is Crew or a manager; inside a Quest its owner decides (migration 122). */
   crewEdits?: boolean;
+  /** For the row menu (the same one as the Table's). */
+  manager?: boolean;
+  linkChoices?: readonly { id: string; taskTag: string; title: string }[];
+  selectedItem?: string;
 }
 type Children = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; groups: { section: ChecklistSection | null; rows: ChecklistBranchRow[] }[] };
 
@@ -53,7 +58,7 @@ export function ChecklistOutline({ groups, ctx, addRows }: {
           <h2 id={`outline-${group.section}`} className="text-foreground mb-2 px-1 text-base font-bold tracking-tight">{SECTION_TITLES[group.section].title}</h2>
           {group.rows.length ? (
             <ul className="grid gap-0.5">
-              {group.rows.map((row) => <OutlineRow key={row.id} row={row} depth={0} ctx={ctx} />)}
+              {group.rows.map((row) => <OutlineRow key={row.id} row={row} siblings={group.rows} depth={0} ctx={ctx} />)}
             </ul>
           ) : <p className="text-muted-foreground px-1 text-sm">No rows yet. An empty section counts as N/A.</p>}
           {addRows?.[group.section] ? <div className="mt-3">{addRows[group.section]}</div> : null}
@@ -63,7 +68,7 @@ export function ChecklistOutline({ groups, ctx, addRows }: {
   );
 }
 
-function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: number; ctx: Ctx }) {
+function OutlineRow({ row, siblings, depth, ctx }: { row: ChecklistBranchRow; siblings: readonly ChecklistBranchRow[]; depth: number; ctx: Ctx }) {
   const kind = rowKind(row);
   const expandable = kind === 'parent' || kind === 'quest';
   const [open, setOpen] = React.useState(false);
@@ -109,6 +114,7 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
         )}
         {kind !== 'item' ? <span className="text-muted-foreground w-10 shrink-0 text-right text-xs tabular-nums">{progress ?? '—'}</span> : null}
         {expandable ? <ObjectiveRowStatus row={row} /> : <ObjectiveTick row={row} ctx={ctx} className="ml-auto shrink-0 justify-end" />}
+        <ChecklistRowMenu row={row} siblings={siblings} ctx={ctx} />
       </div>
       {/* The same details as the other views, under the title; the percentage is on the line above. */}
       <ObjectiveDetails row={row} progress={false} className="pr-1 pb-1" style={{ paddingLeft: `${2.75 + depth * 1.25}rem` }} />
@@ -118,7 +124,7 @@ function OutlineRow({ row, depth, ctx }: { row: ChecklistBranchRow; depth: numbe
             <div key={group.section ?? 'rows'}>
               {group.section ? <p className="text-muted-foreground py-1 text-xs font-semibold tracking-wide uppercase" style={{ paddingLeft: `${2.5 + (depth + 1) * 1.25}rem` }}>{SECTION_TITLES[group.section].title}</p> : null}
               {group.rows.length ? (
-                <ul className="grid gap-0.5">{group.rows.map((child) => <OutlineRow key={child.id} row={child} depth={depth + 1} ctx={inner} />)}</ul>
+                <ul className="grid gap-0.5">{group.rows.map((child) => <OutlineRow key={child.id} row={child} siblings={group.rows} depth={depth + 1} ctx={inner} />)}</ul>
               ) : <p className="text-muted-foreground py-1 text-xs" style={{ paddingLeft: `${2.5 + (depth + 1) * 1.25}rem` }}>Nothing here yet.</p>}
             </div>
           )).concat(inner.canEdit ? [

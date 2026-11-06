@@ -18,6 +18,7 @@ import { ChecklistIssues, ChecklistTable, type QuestTimerSlot } from './checklis
 import { ChecklistGateBadge } from './checklist-gate-badge';
 import { ChecklistAddRow } from './checklist-add-row';
 import { ChecklistRowCard, PhaseHeading, type CardContext } from './checklist-cards';
+import { rowMoveTargets } from './checklist-row-actions';
 import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
 import { ObjectiveReviewProvider } from './objective-review';
@@ -92,7 +93,7 @@ function ancestorHref(taskTag: string, ancestor: ChecklistAncestor, section: Che
 
 /** Move choices for rows of one table: the level above, then the other rows here. */
 function moveTargets(rows: readonly ChecklistBranchRow[], up: { id: string | null; title: string } | null) {
-  return [...(up ? [up] : []), ...rows.filter(row => !row.linkedTaskId && row.nodeType !== 'Task').map(row => ({ id: row.id, title: row.title }))];
+  return [...(up ? [up] : []), ...rowMoveTargets(rows)];
 }
 
 /**
@@ -134,7 +135,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   const sentBack = sentBackIndex(props.reviews ?? NO_REVIEWS);
   const changesIn = (key: ChecklistSection) => !!checklist && sentBack.hasSection(checklist.id, key);
   const view: ChecklistView = props.view ?? 'table';
-  const cardCtx = { task, canEdit, version, action: props.actions.checklist, crewEdits: executor && open };
+  const cardCtx = { task, canEdit, version, action: props.actions.checklist, crewEdits: executor && open, manager, linkChoices: shared.linkChoices, selectedItem: props.selectedItem };
   // A Quest is one list of objectives (decision 25 Oct 2026): its home shows that list, plus any
   // Setup or Closure rows a closed mission's Quest still holds from before.
   const inQuest = !!checklist?.ownerNodeId;
@@ -495,7 +496,7 @@ function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, ti
         {sections.map((home) => (
           <section key={home.section} id={home.section} aria-labelledby={`${checklistId}-${home.section}`} className="bg-muted/50 grid content-start gap-3 rounded-2xl p-3 sm:p-4">
             {heading(home)}
-            {home.rows.length ? home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} />)
+            {home.rows.length ? home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} siblings={home.rows} />)
               : <p className="text-muted-foreground text-sm">No rows yet. An empty phase counts as N/A.</p>}
             {paging(home)}
             {addRow(home.section)}
@@ -511,7 +512,7 @@ function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, ti
           {heading(home)}
           {home.rows.length ? (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} large={!!row.ownedChecklistId || !!row.linkedTaskId} />)}
+              {home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} siblings={home.rows} large={!!row.ownedChecklistId || !!row.linkedTaskId} />)}
             </div>
           ) : <p className="text-muted-foreground text-sm">No rows yet. An empty phase counts as N/A.</p>}
           {paging(home)}

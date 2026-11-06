@@ -24,6 +24,49 @@ export type ChecklistActionRow = Pick<ChecklistBranchRow,
   | 'estimatedMinutes' | 'elapsedSeconds' | 'childCount' | 'linkedTaskId'>
   & Partial<Pick<ChecklistBranchRow, 'ownedChecklistId' | 'assigneeId' | 'canEditQuest'>>;
 
+type MoveTarget = { id: string | null; title: string };
+type LinkChoice = { id: string; taskTag: string; title: string };
+
+/** Move choices for one list of rows: the other rows there that can hold rows (the same in every view). */
+export function rowMoveTargets(rows: readonly Pick<ChecklistBranchRow, 'id' | 'title' | 'linkedTaskId' | 'nodeType'>[]): MoveTarget[] {
+  return rows.filter(row => !row.linkedTaskId && row.nodeType !== 'Task').map(row => ({ id: row.id, title: row.title }));
+}
+
+/**
+ * The row menu wherever a view shows a row (Table, Board, Blocks, Outline; user request,
+ * 6 November 2026): shown when the viewer may change rows here, or to a Quest's owner on its Quest.
+ */
+export function ChecklistRowMenu({ row, siblings, ctx }: {
+  row: ChecklistActionRow & Pick<ChecklistBranchRow, 'nodeType'>;
+  /** The rows of the same list, for the Move choices. */
+  siblings: readonly Pick<ChecklistBranchRow, 'id' | 'title' | 'linkedTaskId' | 'nodeType'>[];
+  ctx: {
+    task: { id: string };
+    canEdit: boolean;
+    crewEdits?: boolean;
+    version: number;
+    action: Command;
+    manager?: boolean;
+    linkChoices?: readonly LinkChoice[];
+    selectedItem?: string;
+  };
+}) {
+  if (!(ctx.canEdit || (ctx.crewEdits && row.ownedChecklistId && row.canEditQuest))) return null;
+  return (
+    <ChecklistRowActions
+      canEditRow={ctx.canEdit}
+      row={row}
+      taskId={ctx.task.id}
+      version={ctx.version}
+      action={ctx.action}
+      defaultOpen={ctx.selectedItem === row.id}
+      manager={!!ctx.manager}
+      moveTargets={rowMoveTargets(siblings).filter(target => target.id !== row.id)}
+      linkChoices={ctx.linkChoices ?? []}
+    />
+  );
+}
+
 const SELECT = 'border-input bg-card text-foreground focus-visible:ring-ring h-10 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-2';
 
 /**
@@ -171,9 +214,6 @@ export function ChecklistRowActions({
                 <Field id={id('links')} label="Links" hint="One web address per line, up to ten.">
                   <Textarea id={id('links')} name="links" defaultValue={row.links.join('\n')} rows={2} placeholder="https://" />
                 </Field>
-                <Field id={id('reason')} label="Why are you changing it?" hint="Kept with the checklist history." required>
-                  <Input id={id('reason')} name="reason" required maxLength={1000} />
-                </Field>
                 <Button type="submit" className="justify-self-start">Save changes</Button>
               </div>
             </ExecutionForm>
@@ -237,9 +277,8 @@ export function ChecklistRowActions({
                     Sub-missions stay as missions of their own, and time logged is kept.
                   </p>
                 ) : null}
-                <Field id={id('remove-reason')} label="Why remove it?" required>
-                  <Input id={id('remove-reason')} name="reason" required maxLength={1000} />
-                </Field>
+                {/* No reason box (user decision, 6 November 2026): the command still needs one, so the row's title is kept as it. */}
+                <input type="hidden" name="reason" value={row.title.slice(0, 1000)} />
                 <Button type="submit" variant="destructive" className="justify-self-start">
                   {kind === 'parent' ? `Remove row and its ${row.childCount} row${row.childCount === 1 ? '' : 's'}` : kind === 'quest' ? 'Remove Quest' : 'Remove row'}
                 </Button>
@@ -271,9 +310,6 @@ function MoveForm({ row, targets, action, place, id }: {
             {targets.map(option => <option key={option.id ?? 'top'} value={option.id ?? ''}>{option.title}</option>)}
           </select>
         </Field>
-        <Field id={id('move-reason')} label="Why move it?" hint="Kept with the checklist history." required>
-          <Input id={id('move-reason')} name="reason" required maxLength={1000} />
-        </Field>
         <Button type="submit" variant="outline" className="justify-self-start"><CornerDownRightIcon aria-hidden="true" />Move row</Button>
       </div>
     </ExecutionForm>
@@ -301,9 +337,6 @@ function LinkForm({ row, kind, choices, action, place, id }: {
             </select>
           </Field>
         ) : null}
-        <Field id={id('link-reason')} label="Why?" hint="Kept with the checklist history." required>
-          <Input id={id('link-reason')} name="reason" required maxLength={1000} />
-        </Field>
         <Button type="submit" variant="outline" className="justify-self-start">{kind === 'linked' ? 'Unlink mission' : 'Link mission'}</Button>
       </div>
     </ExecutionForm>
