@@ -41,7 +41,7 @@ export interface ActivityRow {
   fields: string[] | null;
   reason: string | null;
   period: string | null;
-  /** What the line is about (migration 128): the objective's title, a note's text. Only for the mission's people. */
+  /** What the line is about (migration 128): the objective's or Quest's title, where a note was written. Only for the mission's people. */
   detail?: string | null;
   /** Before -> after values (migration 128): the mission's changed fields, an objective's new title or tick. */
   changes?: Record<string, ActivityValueChange> | null;

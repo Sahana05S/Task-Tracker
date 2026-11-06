@@ -9,12 +9,12 @@
 --    objective or Quest is named even after it is renamed or removed. An
 --    edit (rename, move, link) no longer requires a reason: the row menu
 --    stopped asking for one (user decision, 6 November 2026).
--- 2. mission_note_command keeps the note's text (first 500 characters) in its
---    audit row ('body').
+-- 2. A note's text is never copied into the audit (126: a deleted note leaves
+--    no copy behind); its lines keep their hashtags and where it was written.
 -- 3. activity_feed (Team > Activity) returns two more columns:
 --    detail  - what the line is about: the objective or Quest's title (stored
---              from now on; the live title for older lines), a note's text and
---              where it was written;
+--              from now on; the live title for older lines), or the Quest or
+--              objective a note was written on;
 --    changes - before -> after values: the mission's changed fields on an edit
 --              (title, dates, category, scale ...), status / progress / scale /
 --              priority on a lifecycle command, and an objective's new title or
@@ -26,7 +26,7 @@
 --    re-created from its live definition (111+116+120+124) with these
 --    additions, and its grants are restored.
 -- 4. mission_activity (the mission's History tab) prefers the stored title,
---    shows a note's text, and lists an objective's title and tick change.
+--    and lists an objective's title and tick change.
 --
 -- Every function is patched from its live definition; each fragment must
 -- occur exactly once. No scoring, award or data change; the only rule change
@@ -62,11 +62,6 @@ SELECT pg_temp.m128_apply('public.checklist_command(uuid,text,jsonb,bigint,uuid)
  $f$IF change_reason IS NULL THEN RAISE EXCEPTION 'Structure correction needs a reason' USING ERRCODE='23514'; END IF;$f$,
  $f$NULL; /* 128: no reason is needed to edit, move or link a row */$f$);
 
--- 2. Note commands keep the note's text ----------------------------------------
-SELECT pg_temp.m128_apply('public.mission_note_command(text,uuid,uuid,uuid,text,uuid[],text[],uuid)',
- $f$'node_title',node_title,'reason',line),p_operation);$f$,
- $f$'node_title',node_title,'body',left(saved.body,500),'reason',line),p_operation);$f$);
-
 -- 3. Team > Activity returns the detail and the before -> after values ----------
 DO $do$
 DECLARE
@@ -81,8 +76,7 @@ BEGIN
   $f$a.protected_changes ->> 'reason' AS reason, NULL::date AS period,
       CASE WHEN a.table_name = 'task_checklists' THEN coalesce(a.protected_changes -> 'node_after' ->> 'title',
           a.protected_changes -> 'node_before' ->> 'title', cn.title::text)
-        WHEN a.table_name = 'mission_learnings' THEN nullif(concat_ws(' · on ', a.protected_changes ->> 'body',
-          a.protected_changes ->> 'node_title'), '')
+        WHEN a.table_name = 'mission_learnings' THEN a.protected_changes ->> 'node_title'
       END AS detail,
       CASE WHEN a.command IN ('INSERT', 'DELETE') THEN NULL
         WHEN a.command = 'UPDATE' THEN
@@ -129,11 +123,10 @@ END $do$;
 REVOKE ALL ON FUNCTION public.activity_feed(date, date, text, uuid, jsonb, integer) FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.activity_feed(date, date, text, uuid, jsonb, integer) TO authenticated;
 
--- 4. A mission's History names the row and the note, and shows title and tick changes
+-- 4. A mission's History names the row as it was, and shows title and tick changes
 SELECT pg_temp.m128_apply('public.mission_activity(uuid,jsonb,integer)',
  $f$coalesce(n.title::text, l.pc ->> 'file_name', l.pc ->> 'node_title',$f$,
- $f$coalesce(l.pc -> 'node_after' ->> 'title', l.pc -> 'node_before' ->> 'title', n.title::text, l.pc ->> 'file_name',
-      CASE WHEN l.tbl = 'mission_learnings' THEN nullif(concat_ws(' · on ', l.pc ->> 'body', l.pc ->> 'node_title'), '') END,$f$);
+ $f$coalesce(l.pc -> 'node_after' ->> 'title', l.pc -> 'node_before' ->> 'title', n.title::text, l.pc ->> 'file_name', l.pc ->> 'node_title',$f$);
 SELECT pg_temp.m128_apply('public.mission_activity(uuid,jsonb,integer)',
  $f$        WHERE l.pc -> 'after' ? k AND (l.pc -> 'before' -> k) IS DISTINCT FROM (l.pc -> 'after' -> k))
     END,$f$,
