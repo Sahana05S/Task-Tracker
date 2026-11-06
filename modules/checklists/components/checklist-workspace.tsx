@@ -11,7 +11,7 @@ import { cn } from '@/shared/utils';
 import { checklistWorkHref, type ChecklistView } from '../internal/location';
 import { CHECKLIST_SECTIONS, type ChecklistRollup, type ChecklistSection } from '../internal/progress';
 import type { ChecklistAncestor, ChecklistBranchRow } from '../internal/branch-types';
-import { SECTION_TITLES, checklistIssues, pageResult, percentText, rowMoveTargets } from '../internal/table';
+import { SECTION_TITLES, checklistIssues, pageResult, percentText } from '../internal/table';
 import { SectionStateIcon } from './section-state-icon';
 import { ChecklistVersionField, ChecklistVersionProvider } from './checklist-state-control';
 import { ChecklistIssues, ChecklistTable, type QuestTimerSlot } from './checklist-table';
@@ -22,6 +22,7 @@ import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
 import { ObjectiveReviewProvider } from './objective-review';
 import { QuestCrewProvider } from './quest-owner';
+import type { QuestRequests } from '../internal/quest-request-rules';
 import { NO_REVIEWS, sentBackIndex, type ObjectiveReviews } from '../internal/review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
@@ -61,6 +62,8 @@ export interface ChecklistWorkspaceProps {
   /** The mission's Crew, for Quest owner pickers (migration 122), and the viewer. */
   crew?: readonly { id: string; name: string }[];
   viewerId?: string;
+  /** Waiting Quest owner requests and who may be asked (migration 131). */
+  questRequests?: QuestRequests | null;
   selectedItem?: string;
   /** Managers: where progress comes from, missions to link, and rows that still need a section. */
   managerTools?: {
@@ -88,11 +91,6 @@ function ancestorHref(taskTag: string, ancestor: ChecklistAncestor, section: Che
   // A Quest opens as its own checklist home.
   if (ancestor.ownedChecklistId) return checklistWorkHref(taskTag, { checklistId: ancestor.ownedChecklistId, section: 'activity' });
   return checklistWorkHref(taskTag, { checklistId: ancestor.checklistId, parentNodeId: ancestor.nodeId, section });
-}
-
-/** Move choices for rows of one table: the level above, then the other rows here. */
-function moveTargets(rows: readonly ChecklistBranchRow[], up: { id: string | null; title: string } | null) {
-  return [...(up ? [up] : []), ...rowMoveTargets(rows)];
 }
 
 /**
@@ -189,7 +187,6 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
                 actions={tableActions}
                 selectedItem={props.selectedItem}
                 {...shared}
-                moveTargets={moveTargets(home.rows, null)}
                 questOwnerEdits={executor && open}
                 autoFocus={home.section === 'activity'}
                 emptyText={quest && home.section === 'activity' ? (canEdit ? 'No objectives yet. Add the first one below.' : 'No objectives yet.') : `No ${meta.title.toLowerCase()} rows yet. An empty section counts as N/A.`}
@@ -226,9 +223,6 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
             actions={tableActions}
             selectedItem={props.selectedItem}
             {...shared}
-            moveTargets={moveTargets(props.page.rows, trail.length
-              ? { id: trail[trail.length - 1].nodeId, title: `Up one level (under ${trail[trail.length - 1].title})` }
-              : { id: null, title: `Up one level (top of ${SECTION_TITLES[props.page.section].title})` })}
             emptyText="No rows under this one yet. Once you add one, its progress comes from the rows under it."
             footer={<Paging taskTag={task.taskTag} address={{ checklistId: checklist.id, parentNodeId: props.page.nodeId, section: props.page.section }} cursor={props.page.cursor} nextCursor={props.page.nextCursor} />}
           />
@@ -237,7 +231,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
   return (
     <ChecklistVersionProvider version={version}>
       <ObjectiveReviewProvider taskId={task.id} version={version} action={props.actions.checklist} reviews={props.reviews} names={props.memberNames}>
-      <QuestCrewProvider crew={props.crew ?? []} viewerId={props.viewerId ?? null}>
+      <QuestCrewProvider crew={props.crew ?? []} viewerId={props.viewerId ?? null} requests={props.questRequests ?? null}>
       <MissionPage>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
@@ -489,7 +483,7 @@ function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, ti
         {sections.map((home) => (
           <section key={home.section} id={home.section} aria-labelledby={`${checklistId}-${home.section}`} className="bg-muted/50 grid content-start gap-3 rounded-2xl p-3 sm:p-4">
             {heading(home)}
-            {home.rows.length ? home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} siblings={home.rows} />)
+            {home.rows.length ? home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} />)
               : <p className="text-muted-foreground text-sm">No rows yet. An empty phase counts as N/A.</p>}
             {paging(home)}
             {addRow(home.section)}
@@ -505,7 +499,7 @@ function ChecklistAltView({ view, sections, rollup, checklistId, ctx, addRow, ti
           {heading(home)}
           {home.rows.length ? (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} siblings={home.rows} large={!!row.ownedChecklistId || !!row.linkedTaskId} />)}
+              {home.rows.map((row) => <ChecklistRowCard key={row.id} row={row} ctx={ctx} large={!!row.ownedChecklistId || !!row.linkedTaskId} />)}
             </div>
           ) : <p className="text-muted-foreground text-sm">No rows yet. An empty phase counts as N/A.</p>}
           {paging(home)}

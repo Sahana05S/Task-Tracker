@@ -40,6 +40,12 @@ describe('activity wording and links', () => {
     expect(mapActivity(row({ action: 'checklist_add', record_kind: 'task_checklists' }), people)).toMatchObject({ detail: null, changes: [] });
   });
 
+  it('words Quest owner requests (migration 131)', () => {
+    const asked = mapActivity(row({ action: 'quest_owner_request', record_kind: 'quest_owner_requests', task_tag: 'T1', subject_user_id: ASHA, reason: 'Prospecting' }), people);
+    expect([asked.summary, asked.about, asked.reason, asked.href]).toEqual(['Asked someone to own a Quest', 'Asha', 'Prospecting', '/tasks/T1']);
+    expect(mapActivity(row({ action: 'quest_owner_accept', record_kind: 'quest_owner_requests' }), people).summary).toBe('Accepted a Quest and joined the Crew');
+  });
+
   it('names changed mission fields in plain words and links the mission', () => {
     const entry = mapActivity(row({ record_kind: 'tasks', task_tag: 'Oct26_T3', fields: ['due_date', 'priority'] }), people);
     expect(entry).toMatchObject({ summary: "Changed the mission's due date, priority", href: '/tasks/Oct26_T3', linkLabel: 'Oct26_T3', about: null });

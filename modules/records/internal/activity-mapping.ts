@@ -91,6 +91,11 @@ const TIME_WORDS: Record<string, string> = {
   stop_timer: 'Logged time from a timer',
 };
 const MISSION_WORDS: Record<string, string> = {
+  // Quest owner requests (migration 131); the Quest's title arrives as the reason, the person asked as "about".
+  quest_owner_request: 'Asked someone to own a Quest',
+  quest_owner_cancel: 'Cancelled a Quest owner request',
+  quest_owner_accept: 'Accepted a Quest and joined the Crew',
+  quest_owner_decline: 'Declined to own a Quest',
   save_task_with_participants: 'Saved the mission and its assignees',
   transition: "Changed the mission's status",
   progress: "Updated the mission's progress",

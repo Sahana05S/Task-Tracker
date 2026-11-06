@@ -34,6 +34,13 @@ User decisions of 6 November 2026, after Notes:
   and the 26 starter hashtags were deleted; the note commands are revoked; `labels_for` is the 112
   body again. A mission's labels are set in its Labels panel (Details) and the New mission form; on
   the Today map picking a label draws lines between its missions by default.
+- **No rows under objectives (130):** every row that had rows under it became a Quest (deepest first,
+  node ids and progress unchanged); `checklist_command` refuses add, Quest or move under a row; the
+  row menu has no "Add a row under this" and no Move section. Rows go into a list (mission or Quest).
+- **Quest owner requests (131):** whoever may assign a Quest may ask an active member outside the
+  Crew (not a reviewer) to own it; the person accepts on Today and joins the Crew (equal shares) as
+  the Quest's owner, or declines. One waiting request per Quest, no re-asking within 7 days of a
+  decline, at most 10 waiting and 20 a day per sender.
 - **Checklist row menu:** the same ⋯ menu on every row of Table, Board, Blocks and Outline
   (`ChecklistRowMenu`); the Table shows no links; no reason box on edit, move, link or remove (128
   drops the edit reason rule; a removal sends the row's title as its reason).

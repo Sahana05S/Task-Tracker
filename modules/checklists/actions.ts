@@ -8,6 +8,8 @@ import { runChecklistCommand } from '@/modules/checklists/internal/commands';
 import { parseChecklistCommand } from '@/modules/checklists/internal/input';
 import { NO_REVIEWS, type ObjectiveReviews } from '@/modules/checklists/internal/review';
 import { getObjectiveReviews } from '@/modules/checklists/internal/review-read';
+import { runQuestRequestCommand, type QuestRequestOp } from '@/modules/checklists/internal/quest-requests';
+import { revalidatePath } from 'next/cache';
 import { getCurrentProfile } from '@/shared/session/profile';
 import type { Json } from '@/types/database';
 import type { ActionResponse } from '@/types/tracker';
@@ -53,4 +55,29 @@ export async function loadObjectiveReviews(taskId: string): Promise<ActionRespon
   } catch {
     return { success: true, data: NO_REVIEWS };
   }
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Asking someone outside the Crew to own a Quest (migration 131): request, cancel, accept or
+ * decline. `quest_owner_request_command` checks who may, the limits and the mission; accepting adds
+ * the person to the Crew.
+ */
+export async function questOwnerRequest(form: FormData): Promise<ActionResponse<unknown>> {
+  const profile = await getCurrentProfile();
+  if (!profile?.isActive) return { success: false, error: 'Active authentication required.' };
+  const read = (key: string) => String(form.get(key) ?? '').trim();
+  const op = read('op') as QuestRequestOp;
+  if (!['request', 'cancel', 'accept', 'decline'].includes(op)) return { success: false, error: 'Unknown request action.' };
+  const id = (key: string) => (UUID.test(read(key)) ? read(key) : null);
+  const operationId = id('operationId');
+  if (!operationId) return { success: false, error: 'Reload the page and try again.' };
+  if (op === 'request' && !id('invitee_id')) return { success: false, error: 'Choose a member to ask.' };
+  const result = await runQuestRequestCommand({ op, nodeId: id('node_id'), inviteeId: id('invitee_id'), requestId: id('request_id'), operationId });
+  if (result.success) {
+    revalidateAfterChecklistChange();
+    revalidatePath('/today');
+  }
+  return result;
 }

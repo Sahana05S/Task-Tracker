@@ -39,8 +39,6 @@ export interface ChecklistTableProps {
   actions: { checklist: Command; submission?: Command };
   /** A row id whose menu opens on arrival (old `?item=` links). */
   selectedItem?: string;
-  /** Where a row of this table may move: other rows here, and the level above (id null = top level). */
-  moveTargets?: readonly { id: string | null; title: string }[];
   /** Missions a manager may link a row to. */
   linkChoices?: readonly { id: string; taskTag: string; title: string }[];
   manager: boolean;
@@ -160,7 +158,6 @@ export function ChecklistTable(props: ChecklistTableProps) {
                             action={actions.checklist}
                             defaultOpen={props.selectedItem === row.id}
                             manager={props.manager}
-                            moveTargets={props.moveTargets?.filter(target => target.id !== row.id) ?? []}
                             linkChoices={props.linkChoices ?? []}
                           />
                         ) : null}

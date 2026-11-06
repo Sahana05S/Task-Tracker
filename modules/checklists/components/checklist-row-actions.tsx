@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { CopyIcon, CornerDownRightIcon, ExternalLinkIcon, Link2Icon, MoreHorizontalIcon, MoveIcon, PencilIcon, PlusIcon, Trash2Icon, ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
+import { CopyIcon, ExternalLinkIcon, Link2Icon, MoreHorizontalIcon, PencilIcon, Trash2Icon, ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 
 import { Button } from '@/shared/ui/button';
 import { ExecutionForm } from '@/shared/ui/execution-form';
@@ -10,7 +10,7 @@ import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/ui/sheet';
 import { formatMinutes } from '../internal/pages';
-import { rowKind, rowMoveTargets } from '../internal/table';
+import { rowKind } from '../internal/table';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { ChecklistVersionField } from './checklist-state-control';
 import { AssignQuestForm } from './quest-owner';
@@ -30,10 +30,8 @@ type LinkChoice = { id: string; taskTag: string; title: string };
  * The row menu wherever a view shows a row (Table, Board, Blocks, Outline; user request,
  * 6 November 2026): shown when the viewer may change rows here, or to a Quest's owner on its Quest.
  */
-export function ChecklistRowMenu({ row, siblings, ctx }: {
+export function ChecklistRowMenu({ row, ctx }: {
   row: ChecklistActionRow & Pick<ChecklistBranchRow, 'nodeType'>;
-  /** The rows of the same list, for the Move choices. */
-  siblings: readonly Pick<ChecklistBranchRow, 'id' | 'title' | 'linkedTaskId' | 'nodeType'>[];
   ctx: {
     task: { id: string };
     canEdit: boolean;
@@ -55,7 +53,6 @@ export function ChecklistRowMenu({ row, siblings, ctx }: {
       action={ctx.action}
       defaultOpen={ctx.selectedItem === row.id}
       manager={!!ctx.manager}
-      moveTargets={rowMoveTargets(siblings).filter(target => target.id !== row.id)}
       linkChoices={ctx.linkChoices ?? []}
     />
   );
@@ -75,7 +72,6 @@ export function ChecklistRowActions({
   action,
   defaultOpen = false,
   manager,
-  moveTargets,
   linkChoices,
   canEditRow = true,
 }: {
@@ -85,8 +81,6 @@ export function ChecklistRowActions({
   action: Command;
   defaultOpen?: boolean;
   manager: boolean;
-  /** Rows in the same section this row may move under, plus the top level (id null). */
-  moveTargets: readonly { id: string | null; title: string }[];
   /** Missions a manager may link this row to. */
   linkChoices: readonly { id: string; taskTag: string; title: string }[];
   /**
@@ -118,7 +112,6 @@ export function ChecklistRowActions({
       <input type="hidden" name="node_type" value={linkedTaskId || row.nodeType === 'Task' ? 'Item' : row.nodeType} />
     </>
   );
-  const targets = canEditRow ? moveTargets.filter(target => target.id !== row.parentNodeId) : [];
   // A Quest's owner and the owners above it assign it (migration 122).
   const canAssign = kind === 'quest' && row.canEditQuest !== false;
   const summary = kind === 'parent' ? `${row.childCount} row${row.childCount === 1 ? '' : 's'} inside` : kind === 'linked' ? 'Follows a linked mission' : 'Row';
@@ -171,29 +164,7 @@ export function ChecklistRowActions({
 
           {canAssign ? <AssignQuestForm row={row} taskId={taskId} version={version} action={action} /> : null}
 
-          {canEditRow && kind !== 'linked' && kind !== 'quest' && row.section ? (
-            <section aria-labelledby={id('add-heading')} className="grid gap-2">
-              <h3 id={id('add-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
-                <PlusIcon className="text-primary size-4" aria-hidden="true" />Add a row under this
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                {kind === 'parent' ? 'Its progress is the average of the rows under it.' : 'Once it has rows under it, its progress becomes their average instead of its own tick.'}
-              </p>
-              <ExecutionForm action={action} scope={`add-under:${row.id}`}>
-                <input type="hidden" name="command" value="add" />
-                <input type="hidden" name="checklist_id" value={row.checklistId} />
-                <input type="hidden" name="taskId" value={taskId} />
-                <ChecklistVersionField fallback={version} />
-                <input type="hidden" name="section" value={row.section} />
-                <input type="hidden" name="parent_id" value={row.id} />
-                <div className="flex flex-wrap items-center gap-2">
-                  <label htmlFor={id('add-title')} className="sr-only">Title of the new row</label>
-                  <Input id={id('add-title')} name="title" required maxLength={500} placeholder="Row title" className="h-9 min-w-40 flex-1" />
-                  <Button type="submit" size="sm" className="h-9"><PlusIcon aria-hidden="true" />Add</Button>
-                </div>
-              </ExecutionForm>
-            </section>
-          ) : null}
+          {/* No 'Add a row under this' (130, user decision 6 November 2026): rows go into a Quest instead. */}
 
           <section aria-labelledby={id('edit-heading')} className="soft-divider grid gap-3 pt-5">
             <h3 id={id('edit-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
@@ -213,14 +184,6 @@ export function ChecklistRowActions({
             </ExecutionForm>
           </section>
 
-          {targets.length && row.section ? (
-            <section aria-labelledby={id('move-heading')} className="soft-divider grid gap-3 pt-5">
-              <h3 id={id('move-heading')} className="text-foreground flex items-center gap-2 text-sm font-bold">
-                <MoveIcon className="text-primary size-4" aria-hidden="true" />Move
-              </h3>
-              <MoveForm row={row} targets={targets} action={action} place={place} id={id} />
-            </section>
-          ) : null}
 
           {manager && (kind === 'item' || kind === 'linked') ? (
             <section aria-labelledby={id('link-heading')} className="soft-divider grid gap-3 pt-5">
@@ -286,29 +249,6 @@ export function ChecklistRowActions({
 }
 
 type Place = (parentId: string | null, linkedTaskId: string | null) => React.ReactNode;
-
-function MoveForm({ row, targets, action, place, id }: {
-  row: ChecklistActionRow;
-  targets: readonly { id: string | null; title: string }[];
-  action: Command;
-  place: Place;
-  id: (name: string) => string;
-}) {
-  const [target, setTarget] = React.useState(targets[0]?.id ?? '');
-  return (
-    <ExecutionForm action={action} scope={`move:${row.id}`}>
-      {place(target || null, row.linkedTaskId)}
-      <div className="grid gap-3">
-        <Field id={id('move-target')} label="Move under">
-          <select id={id('move-target')} value={target} onChange={event => setTarget(event.target.value)} className={SELECT}>
-            {targets.map(option => <option key={option.id ?? 'top'} value={option.id ?? ''}>{option.title}</option>)}
-          </select>
-        </Field>
-        <Button type="submit" variant="outline" className="justify-self-start"><CornerDownRightIcon aria-hidden="true" />Move row</Button>
-      </div>
-    </ExecutionForm>
-  );
-}
 
 function LinkForm({ row, kind, choices, action, place, id }: {
   row: ChecklistActionRow;
