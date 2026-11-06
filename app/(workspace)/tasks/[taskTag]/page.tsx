@@ -5,6 +5,7 @@ import {
   ArchiveIcon,
   ClipboardCheckIcon,
   GitBranchIcon,
+  HashIcon,
   HistoryIcon,
   PencilIcon,
   RocketIcon,
@@ -58,13 +59,11 @@ import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-p
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
+import { LabelInput } from '@/modules/labels/components/label-input';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { isFileStorageReady } from '@/modules/files';
-import { getMissionNotes } from '@/modules/learning';
 import { getMissionActivity, parseCursor } from '@/modules/records';
 import { MissionActivity } from '@/modules/records/components/mission-activity';
-import { NotesCountChip } from '@/modules/learning/components/notes-count-chip';
-import { NotesPanel } from '@/modules/learning/components/notes-panel';
 import { getMissionWaypoints } from '@/modules/recognition';
 import { WaypointCelebration } from '@/modules/recognition/components/waypoint-celebration';
 import { WaypointTrack } from '@/modules/recognition/components/waypoint-track';
@@ -138,7 +137,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   // Every read below runs at once (6 November 2026, speed): labels, History and the parent row
   // used to wait for this batch.
   const [
-    [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, notes, sessionActivity, objectiveReviews, driveReady, quests],
+    [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, sessionActivity, objectiveReviews, driveReady, quests],
     [labelCatalogue, missionLabels],
     missionActivity,
     originRow,
@@ -154,8 +153,6 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     // Input / Process / Output files and Proofs for the Files panel (Work tab). Null for
     // anyone who may not read the mission's work: no Files panel.
     canReadWork && tab === 'work' ? getTaskProofs(task.id) : Promise.resolve(null),
-    // Notes (migration 126): the panel on Details, its count on Work. Null hides both.
-    canReadWork && tab !== 'history' ? getMissionNotes(task.id) : Promise.resolve(null),
     // What each timer session covered (migration 110); a failed read only hides the lines.
     tab === 'history' && canReadWork ? getTimerSessionActivity(task.id).catch(() => ({ available: false as const })) : Promise.resolve(null),
     // Objectives waiting for this reviewer (114), and the phases holding a sent-back objective
@@ -167,7 +164,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
     tab !== 'details' && canReadWork ? getQuestTimes(task.id) : Promise.resolve(null),
   ]),
   // Labels (migration 112): the mission's own on every tab (header chips); the catalogue on the
-  // Details tab (the mission's labels and the Notes hashtag picker). Null hides them.
+  // Details tab (the mission's Labels panel). Null hides them.
   Promise.all([
     details ? getLabelCatalogue() : Promise.resolve(null),
     getLabelsFor('task', [task.id]),
@@ -179,13 +176,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   // checklist (migration 117); otherwise only the parent mission ("Part of TAG").
   family.parent ? getSubMissionOriginRow(task.id, family.parent.id) : Promise.resolve(null),
   ]);
-  // Notes opened for one Quest or objective from the checklist (?notes=<row id>&noteTitle=<its title>).
-  const noteNode = typeof query.notes === 'string' && /^[0-9a-f-]{36}$/i.test(query.notes) ? query.notes : null;
-  const noteScope = noteNode ? {
-    nodeId: noteNode,
-    title: notes?.items.find((note) => note.nodeId === noteNode)?.nodeTitle
-      ?? (typeof query.noteTitle === 'string' && query.noteTitle.trim() ? query.noteTitle.trim().slice(0, 180) : 'this row'),
-  } : null;
+  const canLabelMission = !archived && (canManage || task.assigneeIds.includes(currentUser.id));
   const awaitingReview = reviewsAwaiting(objectiveReviews);
   const sentBack = sentBackIndex(objectiveReviews);
   const changesNeeded = CHECKLIST_SECTIONS.filter((key) => sentBack.hasSection(data.checklist?.id, key));
@@ -337,7 +328,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
           <section className="grid min-w-0 content-start gap-6">
             {canReadWork ? (
               <>
-                <WorkTabBrief sections={data.sections} extra={notes ? <NotesCountChip notes={notes} /> : null} />
+                <WorkTabBrief sections={data.sections} />
                 <ChecklistHero
                   href={checklistHref}
                   title={data.checklist?.title ?? null}
@@ -427,23 +418,23 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
               canEditDetails={canEditDetails}
               tasks={workspace}
             />
-            {notes ? (
-              <NotesPanel
-                taskId={task.id}
-                taskTag={task.taskTag}
-                notes={notes}
-                catalogue={labelCatalogue?.labels ?? null}
-                canCreate={labelCatalogue?.canManage ?? false}
-                scope={noteScope}
-                allHref={`/tasks/${encodeURIComponent(task.taskTag)}?tab=details#notes`}
-              />
-            ) : null}
             <MissionPanel icon={GitBranchIcon} title="Dependency missions">
               <DependencyList dependencies={data.dependencies} taskId={task.id} />
             </MissionPanel>
           </section>
           <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
-            {/* No Labels panel (127): the mission carries its notes' hashtags, shown in the header. */}
+            {labelCatalogue && missionLabels ? (
+              <MissionPanel icon={HashIcon} title="Labels" subtitle="Group this mission with related work">
+                <LabelInput
+                  kind="task"
+                  subjectId={task.id}
+                  labels={missionLabels[task.id] ?? []}
+                  catalogue={labelCatalogue.labels}
+                  canEdit={canLabelMission}
+                  canCreate={labelCatalogue.canManage}
+                />
+              </MissionPanel>
+            ) : null}
             <EffortPanel data={data} todayHours={effortBreakdown ? effortBreakdown.todayHours : null} memberNames={memberNames} />
           </aside>
         </div>

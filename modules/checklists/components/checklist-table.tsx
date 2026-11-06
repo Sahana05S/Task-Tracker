@@ -1,10 +1,10 @@
 import type * as React from 'react';
 import Link from 'next/link';
-import { ChevronRightIcon, NotebookPenIcon, TriangleAlertIcon } from 'lucide-react';
+import { ChevronRightIcon, TriangleAlertIcon } from 'lucide-react';
 
 import { MissionProgress } from '@/shared/ui/mission-ui';
 import { cn } from '@/shared/utils';
-import { notesHref, rowHref } from '../internal/location';
+import { rowHref } from '../internal/location';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import type { ChecklistSection, SectionProgress } from '../internal/progress';
 import { percentText, sectionStatus } from '../internal/table';
@@ -151,12 +151,6 @@ export function ChecklistTable(props: ChecklistTableProps) {
                       <div className="flex items-center justify-end gap-1">
                         {/* Quests carry the timers (migration 123): the mission's Crew and managers, while it is open. */}
                         {props.questOwnerEdits && row.ownedChecklistId && props.questTimer ? props.questTimer({ nodeId: row.id, title: row.title }, 'row') : null}
-                        {/* Notes on this Quest or objective (migration 126), on the mission's Notes panel. */}
-                        {!row.linkedTaskId ? (
-                          <Link href={notesHref(task.taskTag, row.id, row.title)} className="text-muted-foreground hover:text-primary hover:bg-muted inline-flex size-8 items-center justify-center rounded-lg" aria-label={`Notes on ${row.title}`} title="Notes">
-                            <NotebookPenIcon className="size-4" aria-hidden="true" />
-                          </Link>
-                        ) : null}
                         {canEdit || (props.questOwnerEdits && row.ownedChecklistId && row.canEditQuest) ? (
                           <ChecklistRowActions
                             canEditRow={canEdit}

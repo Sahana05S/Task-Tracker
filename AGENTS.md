@@ -30,9 +30,10 @@ change). The refactor is complete and merged into `main`. Follow
 
 User decisions of 6 November 2026, after Notes:
 
-- **Labels (127):** the mission page has no Labels panel and the New mission form no Labels field; a
-  mission carries its notes' hashtags (`labels_for('task')` returns its own links, kept, plus the
-  hashtags of notes the caller may read). Notes are the one place to type a hashtag on a mission.
+- **No notes; labels only (129, replaces 127 and the Notes section below):** every note, note link
+  and the 26 starter hashtags were deleted; the note commands are revoked; `labels_for` is the 112
+  body again. A mission's labels are set in its Labels panel (Details) and the New mission form; on
+  the Today map picking a label draws lines between its missions by default.
 - **Checklist row menu:** the same ⋯ menu on every row of Table, Board, Blocks and Outline
   (`ChecklistRowMenu`); the Table shows no links; no reason box on edit, move, link or remove (128
   drops the edit reason rule; a removal sends the row's title as its reason).

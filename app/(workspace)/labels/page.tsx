@@ -22,7 +22,7 @@ export default async function LabelsPage() {
   const open = catalogue?.labels.filter((label) => !label.archived) ?? [];
   return (
     <MissionPage>
-      <MissionPageHeader title="Labels" description="Missions, notes and meeting points grouped by label" />
+      <MissionPageHeader title="Labels" description="Missions and meeting points grouped by label" />
       {catalogue === null ? (
         <MissionNotice icon={InfoIcon}>Labels need the latest database update (migration 112).</MissionNotice>
       ) : (
@@ -38,7 +38,7 @@ export default async function LabelsPage() {
                   </li>
                 ))}
               </ul>
-            ) : <EmptyState>No labels yet. Type # on a mission, a note or a meeting point to add one.</EmptyState>}
+            ) : <EmptyState>No labels yet. Type # on a mission or a meeting point to add one.</EmptyState>}
           </MissionPanel>
           {catalogue.canManage ? (
             <MissionPanel icon={HashIcon} title="Manage labels" subtitle="Renaming keeps a label on everything it is on">

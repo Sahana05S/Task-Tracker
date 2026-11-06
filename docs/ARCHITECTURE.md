@@ -115,8 +115,8 @@ Start from `modules/_template/` when creating a module.
 | hr | HR documents (letterhead, Code of Conduct and its acceptance) and performance reviews (migrations 80-81) | — | New (26 October 2026) |
 | personnel | Personal records: marksheets and Aadhaar card on the profile's Personal info tab (migration 78) | — | New (26 October 2026) |
 | files | Company files in the Google Shared Drive: moves stored files there, trashes released ones, permission-checked viewing (migration 100) | — | New (2 November 2026) |
-| labels | Workspace labels on missions, learning notes and meeting points; `/labels` (migration 112) | — | New (3 November 2026) |
-| learning | Mistakes and learning on the mission page (migration 111) | — | New (3 November 2026) |
+| labels | Workspace labels on missions and meeting points; `/labels` (migration 112) | — | New (3 November 2026) |
+| learning | Removed 6 November 2026 (migration 129: no notes; labels only) | — | Removed |
 | mobile | The Android app bridge (M20): push registration, notification taps, back button, status bar, native print | — | New (29 October 2026) |
 | workspace-views | App shell, Dashboard, Today, Timelines, nav counts, missions list | components/layout, components/dashboard, lib/today, lib/timelines, lib/layout | Moved |
 | marketing | Public landing page | lib/marketing, components/marketing | Moved |
