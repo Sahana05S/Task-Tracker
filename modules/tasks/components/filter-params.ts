@@ -37,6 +37,7 @@ export function filtersFromParams(params: ParamReader): TaskFilterState {
     status: oneOf(TASK_STATUSES, params.get('status')),
     freshness: oneOf(TASK_FRESHNESS_STATES, params.get('fresh')),
     labels: labelsFromParams(params),
+    ...(params.get('business') ? { business: params.get('business')! } : {}),
     ...(params.get('notes') === '1' ? { includeNotes: true } : {}),
   };
 }
@@ -53,6 +54,7 @@ export function missionsHref(view: MissionView, filters: TaskFilterState = EMPTY
   if (filters.freshness !== ALL) params.set('fresh', filters.freshness);
   for (const slug of filters.labels) params.append('label', slug);
   if (filters.includeNotes && filters.labels.length) params.set('notes', '1');
+  if (filters.business) params.set('business', filters.business);
   const query = params.toString();
   return query ? `/tasks?${query}` : '/tasks';
 }

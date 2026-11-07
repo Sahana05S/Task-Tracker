@@ -31,3 +31,11 @@ describe('roadmap URL', () => {
     expect(roadmapSearch(null, 'all', 'roadmap')).toBe('/today');
   });
 });
+
+describe('business chips in the Today URL (migration 134)', () => {
+  it('keeps ?business= while moving around the map', () => {
+    expect(roadmapSearch(null, 'all', 'roadmap', 'mine', 'all')).toBe('?business=all');
+    expect(roadmapSearch(null, 'today', 'list', 'mine', 'fish-sales,none')).toBe('?business=fish-sales%2Cnone&due=today&view=list');
+    expect(roadmapSearch(null, 'today', 'list', 'mine', null)).toBe('?due=today&view=list');
+  });
+});
