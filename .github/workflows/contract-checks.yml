@@ -113,6 +113,8 @@ jobs:
         run: python tools/test_workspace_labels_database.py --psql "$(command -v psql)" --port 15432
       - name: Businesses (migration 134)
         run: python tools/test_businesses_database.py --psql "$(command -v psql)" --port 15432
+      - name: Meetings, members, minutes and private meeting points (migration 136)
+        run: python tools/test_meetings_database.py --psql "$(command -v psql)" --port 15432
       - name: Objective review and Work needed (migration 114)
         run: python tools/test_objective_review_database.py --psql "$(command -v psql)" --port 15432
       - name: Demo recognition seed (script only, loopback)

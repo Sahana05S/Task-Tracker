@@ -1,26 +1,40 @@
-import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
-import { getMeetingPointsData } from '@/modules/support';
-import { canManageSupportRecords } from '@/modules/support/client';
-import { DatedRecordModule } from '@/modules/support/components/dated-record-module';
-import { canManageCompanySettings, getCompanySettings } from '@/modules/settings';
-import { MeetingAgenda } from '@/modules/settings/components/meeting-agenda';
-import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
-import { LabelInput } from '@/modules/labels/components/label-input';
-import { requireProfile } from '@/shared/session/profile';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'Meeting points' };
+import { getBusinesses } from '@/modules/businesses';
+import { getLabelCatalogue } from '@/modules/labels';
+import { listActivePeople, listMeetings } from '@/modules/support';
+import { MeetingSheet } from '@/modules/support/components/meeting-sheet';
+import { MeetingsList } from '@/modules/support/components/meetings-list';
+import { getMissionPickerOptions } from '@/modules/tasks';
+import { requireProfile } from '@/shared/session/profile';
+import { kolkataDate } from '@/shared/time/kolkata';
+import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 
-export default async function MeetingPointsPage({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
-  // ?date=YYYY-MM-DD opens the period holding that day (links from a label page to an older point).
-  const date=(await searchParams).date;
-  const [user,{period,members,tasks,entries},settings,catalogue]=await Promise.all([requireProfile(),getMeetingPointsData(typeof date==='string'?date:null),getCompanySettings(),getLabelCatalogue()]);
-  // Labels (migration 112): managers and a point's author may change them; label_link_command enforces it.
-  const labels=catalogue?await getLabelsFor('meeting_point',entries.map(e=>e.id)):null;
-  const extras=catalogue&&labels?Object.fromEntries(entries.filter(e=>e.validationState!=='withdrawn').map(e=>[e.id,<LabelInput key={e.id} kind="meeting_point" subjectId={e.id} labels={labels[e.id]??[]} catalogue={catalogue.labels} canEdit={user.isActive&&(canManageSupportRecords(user.role)||e.authorId===user.id)} canCreate={catalogue.canManage} hideEmpty className="border-border border-t pt-3"/>])):undefined;
-  return <MissionPage>
-    <MissionPageHeader eyebrow="Records" title="Meeting Points" description={`${period.label} - issues, resolutions and linked work`}/>
-    <MeetingAgenda agenda={settings.meetingAgenda} canEdit={settings.available&&canManageCompanySettings(user.role)}/>
-    <DatedRecordModule kind="meeting" user={user} members={members} tasks={tasks} entries={entries} extras={extras}/>
-  </MissionPage>;
+export const metadata: Metadata = { title: 'Meetings' };
+
+/**
+ * Meetings (migration 136): the meetings the viewer is a member of (the managing director sees
+ * every meeting), grouped by month with a search and filters, and New meeting.
+ */
+export default async function MeetingsPage() {
+  const user = await requireProfile();
+  const [meetings, catalogue, people, missions, businessCatalogue] = await Promise.all([
+    listMeetings(),
+    getLabelCatalogue().catch(() => null),
+    listActivePeople(),
+    getMissionPickerOptions(),
+    getBusinesses().catch(() => null),
+  ]);
+  const businesses = businessCatalogue?.businesses ?? [];
+  return (
+    <MissionPage>
+      <MissionPageHeader
+        eyebrow="Records"
+        title="Meetings"
+        description="Minutes, decisions and action points. A meeting is seen only by its members and the managing director."
+        actions={user.isActive ? <MeetingSheet today={kolkataDate()} members={people} missions={missions} viewerId={user.id} businesses={businesses} /> : null}
+      />
+      <MeetingsList meetings={meetings} businesses={businesses} labels={(catalogue?.labels ?? []).map((label) => ({ id: label.id, name: label.name }))} />
+    </MissionPage>
+  );
 }

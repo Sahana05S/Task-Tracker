@@ -8,7 +8,7 @@ export {
   type SupportModuleData,
   type SupportSummary,
 } from './internal/queries';
-export { getMeetingPointsData, type MeetingPointsData } from './internal/meeting-queries';
+export { listActivePeople, listMeetings, readMeeting, type MeetingResult } from './internal/meetings';
 export {
   loadAttendanceContext,
   loadContributionContext,

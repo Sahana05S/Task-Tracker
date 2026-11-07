@@ -36,7 +36,7 @@ describe('Quest notes (migration 132)', () => {
 
   it('groups a label page\'s notes by mission and Quest', () => {
     const note = (id: string, taskTag: string, nodeId: string, nodeTitle: string): LabelledItem => ({
-      kind: 'mission_learning', id, title: id, taskTag, date: null, status: null, taskId: null, nodeId, nodeTitle, listId: 'list', rootList: true,
+      kind: 'mission_learning', id, title: id, taskTag, date: null, status: null, taskId: null, nodeId, nodeTitle, listId: 'list', rootList: true, meetingId: null,
     });
     const groups = labelledNoteGroups([note('a', 'T1', 'q1', 'Outreach'), note('b', 'T2', 'q3', 'Design'), note('c', 'T1', 'q1', 'Outreach'), note('d', 'T1', 'q2', 'Survey'),
       { ...note('e', 'T1', 'q1', 'Outreach'), kind: 'task' }]);

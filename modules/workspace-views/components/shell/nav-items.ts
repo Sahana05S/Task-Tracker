@@ -100,7 +100,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { label: 'Ideas', href: '/ideas', match: ['/ideas', '/records/idea'], icon: LightbulbIcon },
       { label: 'Suggestions', href: '/suggestions', match: ['/suggestions', '/records/suggestion'], icon: MessageSquareIcon },
       { label: 'Sales', href: '/sales', match: ['/sales', '/records/sale'], icon: DollarSignIcon },
-      { label: 'Meeting points', href: '/meeting-points', match: ['/meeting-points', '/records/meeting'], icon: MessageSquareIcon },
+      { label: 'Meetings', href: '/meeting-points', match: ['/meeting-points', '/records/meeting'], icon: MessageSquareIcon },
     ],
   },
   {

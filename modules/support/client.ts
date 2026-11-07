@@ -31,3 +31,23 @@ export {
   type SupportKnowledgeModule,
 } from './internal/permissions';
 export type { DatedEntry, TaskChoice } from './components/dated-record-module';
+export {
+  filterMeetings,
+  groupMeetingsByMonth,
+  mapMeetingDetail,
+  mapMeetingSummary,
+  MINUTES_CONFLICT,
+  MINUTES_MAX_LENGTH,
+  nextPointStatus,
+  POINT_MAX_LENGTH,
+  POINT_STATUS_LABEL,
+  POINT_STATUSES,
+  POINT_TYPES,
+  type MeetingDetail,
+  type MeetingFilter,
+  type MeetingMission,
+  type MeetingPerson,
+  type MeetingPoint,
+  type MeetingSummary,
+  type PointStatus,
+} from './internal/meeting-rules';

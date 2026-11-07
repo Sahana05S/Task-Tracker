@@ -3,6 +3,7 @@
 
 export * from '@/modules/tasks/client';
 
+export { getMissionPickerOptions } from '@/modules/tasks/internal/mission-picker-read';
 export { getMissionChoices, getTaskWorkspaceData, type MissionChoice, type TaskWorkspaceData } from '@/modules/tasks/internal/queries';
 export {
   getTaskDetailData,

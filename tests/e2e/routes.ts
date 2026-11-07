@@ -42,6 +42,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRoute[] = [
   { file: 'leaderboard', path: '/leaderboard', audience: 'all' },
   { file: 'logs', path: '/logs', audience: 'all' },
   { file: 'meeting-points', path: '/meeting-points', audience: 'all' },
+  { file: 'meeting-points/[id]', path: '/meeting-points/00000000-0000-0000-0000-000000000000', audience: 'all' },
   { file: 'milestones', path: '/milestones', audience: 'all' },
   { file: 'my-salary', path: '/my-salary', audience: 'all' },
   { file: 'payroll/employees/[userId]', path: `/payroll/employees/${MISSING_UUID}`, audience: 'md' },

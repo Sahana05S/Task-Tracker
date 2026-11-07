@@ -55,12 +55,11 @@ describe('quick Post drawer form', () => {
     expect(form('fact')).not.toContain('is_new_project');
   });
 
-  it('shows the meeting-point extras only for a meeting point', () => {
+  it('adds a meeting point to one of the member\'s meetings (migration 136), loaded first', () => {
     const html = form('meeting');
-    expect(html).toContain('name="meeting_type"');
-    expect(html).toContain('name="point_type"');
-    expect(html).toContain('name="owner_id"');
-    expect(html).toContain('Post meeting point');
+    expect(html).toContain('Loading your meetings');
+    expect(html).not.toContain('name="meeting_type"');
+    expect(html).not.toContain('Post meeting point');
     expect(form('suggestion')).not.toContain('meeting_type');
   });
 
@@ -111,7 +110,7 @@ describe('after a successful post', () => {
     expect(close).toHaveBeenCalledOnce();
     expect(setItem).toHaveBeenCalledWith('taskpulse:quick-post-kind', 'meeting');
     const [title, options] = toastSuccess.mock.calls[0];
-    expect(title).toBe('Meeting point posted');
+    expect(title).toBe('Meeting point added');
     expect(options.action.label).toBe('View');
     options.action.onClick();
     expect(navigate).toHaveBeenCalledWith('/meeting-points');
