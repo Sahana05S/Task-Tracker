@@ -37,6 +37,8 @@ import type { Task, User } from '@/types/tracker';
 import type { Label } from '@/modules/labels/client';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { PermanentBadge } from '@/modules/tasks/components/permanent-badge';
+import type { Business } from '@/modules/businesses/client';
+import { BusinessDot } from '@/modules/businesses/components/business-dot';
 
 export interface TaskCardListProps {
   tasks: readonly Task[];
@@ -58,6 +60,8 @@ export interface TaskCardListProps {
   nesting?: ReadonlyMap<string, MissionNesting>;
   /** A mission's labels (migration 112), shown as chips linking to `/labels/<slug>`. */
   labelsOf?: (taskId: string) => readonly Label[];
+  /** A mission's business (migration 134), shown as a coloured dot beside its tag. */
+  businessOf?: (task: Task) => Business | null;
 }
 
 /** A recognition waypoint track for one task; `stopped` is a discarded or archived mission. */
@@ -96,6 +100,7 @@ export const TaskCardList = React.memo(function TaskCardList({
   WaypointSlot,
   nesting,
   labelsOf,
+  businessOf,
 }: TaskCardListProps) {
   return (
     <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -115,6 +120,7 @@ export const TaskCardList = React.memo(function TaskCardList({
             WaypointSlot={WaypointSlot}
             nest={nesting?.get(task.id)}
             labels={labelsOf?.(task.id)}
+            business={businessOf?.(task) ?? null}
           />
         </li>
       ))}
@@ -143,6 +149,7 @@ interface MissionCardProps {
   WaypointSlot?: WaypointSlotComponent;
   nest?: MissionNesting;
   labels?: readonly Label[];
+  business?: Business | null;
 }
 
 function MissionCard({
@@ -159,6 +166,7 @@ function MissionCard({
   WaypointSlot,
   nest,
   labels,
+  business = null,
 }: MissionCardProps) {
   const href = `/tasks/${encodeURIComponent(task.taskTag)}`;
   const archived = Boolean(task.archivedEffectiveDate);
@@ -208,9 +216,12 @@ function MissionCard({
       {/* Heading */}
       <div className="flex flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Link href={href} className="task-tag text-primary hover:underline">
-            {task.taskTag}
-          </Link>
+          <span className="inline-flex items-center gap-1.5">
+            <BusinessDot business={business} />
+            <Link href={href} className="task-tag text-primary hover:underline">
+              {task.taskTag}
+            </Link>
+          </span>
           {task.isPermanent ? <PermanentBadge /> : null}
           {task.dueDate ? (
             <span

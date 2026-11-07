@@ -177,10 +177,10 @@ function OutlineAddItem({ ctx, checklistId, parentId, section, indent, onAdded }
         <input type="hidden" name="section" value={section} />
         <input type="hidden" name="parent_id" value={parentId ?? ''} />
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" aria-pressed={quest} onClick={() => setQuest(!quest)} title={quest ? 'Adding a Quest' : 'Add a Quest instead'}
+          {ctx.task.isPermanent ? null : <button type="button" aria-pressed={quest} onClick={() => setQuest(!quest)} title={quest ? 'Adding a Quest' : 'Add a Quest instead'}
             className="border-border text-muted-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground focus-visible:ring-ring inline-flex h-8 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold outline-none focus-visible:ring-2">
             <FlagIcon className="size-3.5" aria-hidden="true" />Quest
-          </button>
+          </button>}
           <label htmlFor={id} className="sr-only">{quest ? 'New Quest' : 'New objective'}</label>
           <Input id={id} name="title" required maxLength={500} placeholder={quest ? 'Name the Quest' : 'Add an objective'} className="bg-card h-8 min-w-40 flex-1 text-sm" />
           {quest ? <QuestOwnerSelect id={`${id}-owner`} className="border-input bg-card text-foreground focus-visible:ring-ring h-8 min-w-32 rounded-lg border px-2 text-sm outline-none focus-visible:ring-2" /> : null}

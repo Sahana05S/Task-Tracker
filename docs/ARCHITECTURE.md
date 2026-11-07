@@ -117,6 +117,7 @@ Start from `modules/_template/` when creating a module.
 | files | Company files in the Google Shared Drive: moves stored files there, trashes released ones, permission-checked viewing (migration 100) | — | New (2 November 2026) |
 | labels | Workspace labels on missions and meeting points; `/labels` (migration 112) | — | New (3 November 2026) |
 | learning | Quest notes with labels: the ⋯ menu's Notes panel on Quest rows (migration 132; the earlier mission notes were removed by 129) | — | Rebuilt (6 November 2026) |
+| businesses | Lines of business: chips on Missions and Today (`?business=`), mission business, people's businesses (migration 134) | — | New (7 November 2026) |
 | mobile | The Android app bridge (M20): push registration, notification taps, back button, status bar, native print | — | New (29 October 2026) |
 | workspace-views | App shell, Dashboard, Today, Timelines, nav counts, missions list | components/layout, components/dashboard, lib/today, lib/timelines, lib/layout | Moved |
 | marketing | Public landing page | lib/marketing, components/marketing | Moved |

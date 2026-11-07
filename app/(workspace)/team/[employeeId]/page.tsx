@@ -6,7 +6,9 @@ import { PerformanceBreakdown } from '@/modules/scoring/components/performance-b
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { ClipboardListIcon, ListChecksIcon } from 'lucide-react';
+import { Building2Icon, ClipboardListIcon, ListChecksIcon } from 'lucide-react';
+import { getBusinesses } from '@/modules/businesses';
+import { PersonBusinesses } from '@/modules/businesses/components/person-businesses';
 
 import { MissionNotice, MissionPage, MissionPanel, StatTile } from '@/shared/ui/mission-ui';
 import { EmployeeChartsPanel, ScoreVsMedianChart } from '@/modules/team/components/employee-analytics-charts';
@@ -51,11 +53,13 @@ export default async function EmployeePage({ params, searchParams }: EmployeePag
   const data = routeState.data;
   if (!canViewEmployeeProfile(viewer, data.employee)) notFound();
   // Recognition only; the database refuses another member's count unless the viewer manages.
-  const [waypoints, placement] = await Promise.all([
+  const [waypoints, placement, businesses] = await Promise.all([
     tab === 'overview'
       ? getWaypointCount(data.employee.id, data.period.startDate, data.period.endDate).catch(() => null)
       : null,
     readPlacement(data.employee.id),
+    // Businesses (migration 134): shown to everyone, chosen by the managing director; null hides the panel.
+    tab === 'overview' ? getBusinesses().catch(() => null) : null,
   ]);
 
   return (
@@ -77,7 +81,14 @@ export default async function EmployeePage({ params, searchParams }: EmployeePag
       ) : tab === 'missions' ? (
         <Missions data={data} />
       ) : (
-        <Overview data={data} waypoints={waypoints} />
+        <>
+          {businesses && (businesses.canManage || businesses.businesses.some((b) => b.memberIds.includes(data.employee.id))) ? (
+            <MissionPanel icon={Building2Icon} title="Businesses" subtitle="Missions and Today open on these businesses for this person.">
+              <PersonBusinesses userId={data.employee.id} businesses={businesses.businesses} canManage={businesses.canManage} />
+            </MissionPanel>
+          ) : null}
+          <Overview data={data} waypoints={waypoints} />
+        </>
       )}
     </MissionPage>
   );

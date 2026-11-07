@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
   ArchiveIcon,
+  Building2Icon,
   ClipboardCheckIcon,
   GitBranchIcon,
   HashIcon,
@@ -60,6 +61,8 @@ import { MissionStatusBanner } from '@/modules/tasks/components/mission-status-p
 import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-menu';
 import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
+import { getBusinesses } from '@/modules/businesses';
+import { MissionBusinessSelect } from '@/modules/businesses/components/mission-business-select';
 import { LabelInput } from '@/modules/labels/components/label-input';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { isFileStorageReady } from '@/modules/files';
@@ -139,7 +142,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   // used to wait for this batch.
   const [
     [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, sessionActivity, objectiveReviews, driveReady, quests],
-    [labelCatalogue, missionLabels],
+    [labelCatalogue, missionLabels, businessCatalogue],
     missionActivity,
     originRow,
   ] = await Promise.all([Promise.all([
@@ -169,6 +172,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   Promise.all([
     details ? getLabelCatalogue() : Promise.resolve(null),
     getLabelsFor('task', [task.id]),
+    // Businesses (migration 134): the Business field on the Details tab; null hides it.
+    details ? getBusinesses().catch(() => null) : Promise.resolve(null),
   ]),
   tab === 'history' && canReadWork
     ? getMissionActivity(task.id, activityBefore, memberNames).catch(() => null)
@@ -425,6 +430,11 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
             </MissionPanel>
           </section>
           <aside className="grid h-fit min-w-0 gap-6 lg:sticky lg:top-[calc(var(--header-offset)+1.5rem)] lg:self-start">
+            {businessCatalogue && (businessCatalogue.businesses.some((b) => !b.archived) || task.businessId) ? (
+              <MissionPanel icon={Building2Icon} title="Business" subtitle="Which business this work is for; it never changes who sees the mission">
+                <MissionBusinessSelect taskId={task.id} businessId={task.businessId ?? null} businesses={businessCatalogue.businesses} canEdit={canLabelMission} />
+              </MissionPanel>
+            ) : null}
             {labelCatalogue && missionLabels ? (
               <MissionPanel icon={HashIcon} title="Labels" subtitle="Group this mission with related work">
                 <LabelInput

@@ -6,8 +6,10 @@ export interface RoadmapLocation extends ChecklistBranchOptions {
 }
 /** Whose missions the map shows: the viewer's own, or (managing director and project engineers) the whole team's. */
 export type RoadmapScope = 'mine' | 'team';
-export function roadmapSearch(location: RoadmapLocation | null, due: string, view: string, scope: RoadmapScope = 'mine'): string {
+export function roadmapSearch(location: RoadmapLocation | null, due: string, view: string, scope: RoadmapScope = 'mine', business: string | null = null): string {
   const query = new URLSearchParams();
+  // The business chips (migration 134) as the page read them; absent means the member's own businesses.
+  if (business) query.set('business', business);
   if (due !== 'all') query.set('due', due);
   if (view === 'list') query.set('view', 'list');
   if (scope === 'team') query.set('scope', 'team');

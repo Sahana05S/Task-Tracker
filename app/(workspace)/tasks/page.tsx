@@ -8,6 +8,7 @@ import { MissionsWorkspace } from '@/modules/workspace-views/components/missions
 import { requireProfile } from '@/shared/session/profile';
 import { MissionPage, MissionPageHeader } from '@/shared/ui/mission-ui';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
+import { getBusinessView } from '@/modules/businesses';
 import { getTaskEffortTotals } from '@/modules/time-tracking';
 import { addMonths, countMissionsInMonth, defaultSetupMonth, getTaskWorkspaceData, monthOf, setupBannerMonth } from '@/modules/tasks';
 import { kolkataDate } from '@/shared/time/kolkata';
@@ -36,7 +37,7 @@ export default async function TasksPage() {
   );
 
   const workspace = getTaskWorkspaceData();
-  const [{ tasks, members }, effortTotals, templates, waypoints, setup, labels, permanent] = await Promise.all([
+  const [{ tasks, members }, effortTotals, templates, waypoints, setup, labels, businessView, permanent] = await Promise.all([
     workspace,
     getTaskEffortTotals(),
     getNativeTemplates(),
@@ -47,6 +48,8 @@ export default async function TasksPage() {
     // Labels (migration 112): the catalogue and one labels_for read for every listed mission.
     // `?label=a&label=b` filters on the client with the other filters; null hides chips and the filter.
     workspace.then(({ tasks }) => missionLabels(tasks.map((task) => task.id))).catch(() => null),
+    // Businesses (migration 134): chips (`?business=`, opening on the viewer's own), dots and the form field; null hides them.
+    getBusinessView().catch(() => null),
     // The "Always on" strip (migration 135); a failed read only hides it.
     getMyPermanentMissions(profile.id).catch(() => null),
   ]);
@@ -69,7 +72,7 @@ export default async function TasksPage() {
         ) : null}
       />
 
-      <AlwaysOnStrip missions={permanent} />
+      <AlwaysOnStrip missions={permanent} businesses={businessView ? { catalogue: businessView.catalogue.businesses, mine: businessView.mine } : null} />
 
       {setup?.bannerMonth ? <MonthSetupBanner month={setup.bannerMonth} /> : null}
 
@@ -83,6 +86,7 @@ export default async function TasksPage() {
         currentUser={profile}
         waypoints={waypoints}
         labels={labels}
+        businesses={businessView ? { catalogue: businessView.catalogue.businesses, mine: businessView.mine, summary: businessView.summary } : null}
       />
     </MissionPage>
   );

@@ -49,7 +49,8 @@ template versions.
 | `taskpulse_private.task_proofs`, bucket `mission-proofs` (private, 25 MB, PDF/images/Office) and its policies, `task_proofs(task)`, `task_proof_command(...)`, `task_proof_folder_allowed`, `task_proof_in_use`: the mission's assignees and reviewers plus the managing director and project engineers see and add proofs; the uploader or a manager removes one. Since 117 the files follow `can_read_mission_work` (project engineers only when on the mission) and observers only view: `taskpulse_private.task_proof_writer`, `task_proof_folder_writable` (bucket upload and discard policies). `task_proofs.kind` (proof / input / process / output) and `task_proof_command(..., p_kind)` add Input / Process / Output documents on the same rules. Since 124 each add or removal writes one audit row (`task_proof_add` / `task_proof_withdraw`, table `task_proofs`, with the file's name and kind), shown in the mission's Activity and in Team > Activity | `101_mission_proofs.sql`, `113_mission_ipo_documents.sql`, `124_mission_activity.sql` |
 | `task_assignees`, `task_reviewers`, `task_links`, `task_dependencies` | `07_tracker_replacement_foundation.sql` |
 | `task_detail_templates`, `task_detail_template_versions`, `task_detail_instances`, `task_detail_sections`, `task_detail_review_flags` | `17_native_task_details_and_templates.sql` |
-| `save_task_with_participants` | 10, revised in 12, 16, 17, 108 (compares credited assignees and non-observer reviewers only) |
+| `save_task_with_participants` | 10, revised in 12, 16, 17, 108 (compares credited assignees and non-observer reviewers only); since 134 `p_fields` may carry `business_id` (null clears; an active business of the company), passed through by `create_task_with_scale` |
+| `tasks.business_id` | `134_businesses.sql`, owned by modules/businesses (chips, dots, the form's Business field; sub-missions inherit their parent's) |
 | `task_people_command`, `is_task_worker` (public and `taskpulse_private`), `taskpulse_private.task_people_snapshot` | `108_mission_people.sql`; observers chosen by the managing director, Owner and assignees since 117; since `121_mission_crew.sql` Crew commands (`add_crew` / `remove_crew`) for the managing director and Managers, observers also by the Crew, and `is_task_worker` is any `task_assignees` row |
 | `taskpulse_private.crew_equal_split` | `121_mission_crew.sql`: equal split of a mission's Crew, a new `participant_version` when a share moves |
 | `taskpulse_private.can_read_mission_work`, `public.can_read_mission_work(task)`, `public.can_read_checklist(checklist)`; read policies `m01_read` on `task_checklists`, `checklist_nodes`, `task_detail_sections`, `m05_section_read` on `checklist_sections`, `m04_links_read` on `task_links`; the write-only `m01_admin_insert` / `_update` / `_delete` policies that replace `m01_admin` on those four tables; the Done rule in `taskpulse_private.task_command` | `117_checklist_visibility.sql`; since `120_mission_work_engineer_scope.sql` a project engineer's writes (`checklist_command`, `task_details_command`, the `m01_admin_*` policies) also need `can_read_mission_work`, and their Team > Activity mission lines are only those of their missions. The interface follows the same rule (`canReadMissionWork`): the Missions cards, table and Quick summary show the checklist link only to those who may read it (others see "Private"), the mission page drops the Details tab for them, and employee reports show their checklist items as plain "Private objective" text |
@@ -116,7 +117,7 @@ reviewer and observer missions only with `{ watching: true }`.
 Tests: `tools/test_task_people_database.py`.
 
 ## Depends on
-`shared/*`, the public API of `labels` (chips on cards and table rows, the
+`shared/*`, the public API of `businesses` (the Missions chips with `?business=` applied before the other filters and kept by Clear filters, the dot on cards and rows, the form's Business field; `getAssignedMissionBatch` takes `business: { ids, none }` for Today), the public API of `labels` (chips on cards and table rows, the
 Missions Labels filter `?label=a&label=b` and the New mission form's labels, attached after the mission
 is created; the page passes `labels` to `TaskWorkspace`; Notes and "Include notes" are gone since 129), the public API of `checklists` (rollups and checklist types),
 `settings` (the company's mission-type names and hidden codes: the create/edit
@@ -192,3 +193,7 @@ list (`sortTasks`, whatever the column) and on Today (`compareRoadmapMissions`
 and the batch keyset `is_permanent DESC, due_date, id`; the cursor carries
 `perm`). The "Always on" strip (workspace-views `AlwaysOnStrip`) lists the ones
 the member is Crew on; a member on none sees no strip.
+Since 134 the strip follows the business chips (`?business=`, opening on the
+member's own businesses; `PermanentMission.businessId`). On the checklist the
+add rows offer no Quest, "Move to Quest…" is hidden, and 133's `move` with
+`new_quest` is refused by the same `a_m135_no_quests` trigger.

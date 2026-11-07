@@ -33,6 +33,7 @@ export function ChecklistAddRow({
   subMissionAction,
   label,
   autoFocus = false,
+  allowQuest = true,
 }: {
   taskId: string;
   checklistId: string;
@@ -45,6 +46,8 @@ export function ChecklistAddRow({
   label: string;
   /** The page's main add row: the cursor starts in its title box. */
   autoFocus?: boolean;
+  /** False on a permanent mission, which holds no Quests (migration 135). */
+  allowQuest?: boolean;
 }) {
   const titleId = React.useId();
   const titleRef = React.useRef<HTMLInputElement>(null);
@@ -55,7 +58,7 @@ export function ChecklistAddRow({
   }, [autoFocus]);
   const [kind, setKind] = React.useState<(typeof KINDS)[number]['key']>('add');
   // Quests nest without a level limit (migration 122).
-  const kinds = KINDS.filter((entry) => entry.key !== 'sub-mission' || subMissionAction);
+  const kinds = KINDS.filter((entry) => (entry.key !== 'sub-mission' || subMissionAction) && (entry.key !== 'submission' || allowQuest));
   const chosen = kinds.find((entry) => entry.key === kind) ?? kinds[0];
   const subMission = chosen.key === 'sub-mission';
 

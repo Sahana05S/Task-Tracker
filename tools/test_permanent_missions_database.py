@@ -82,6 +82,12 @@ def fresh_flow(db):
     err=refused(db,OWNER,checklist(db,tid,'submission',{'checklist_id':cid,'title':'A Quest','section':'activity'}),'23514')
     assert 'permanent mission has no Quests' in err,err
     err=refused(db,MD,checklist(db,tid,'submission',{'checklist_id':cid,'title':'A Quest','section':'activity'}),'23514')
+    # 133: "Move to Quest…" with a new Quest is refused too (the Quest list is never created).
+    if value(db,"to_regprocedure('public.checklist_move_targets(uuid)') IS NOT NULL")=='t':
+        round_id=value(db,f"id FROM public.checklist_nodes WHERE checklist_id='{cid}' AND title='Daily round'")
+        err=refused(db,OWNER,checklist(db,tid,'move',{'checklist_id':cid,'node_id':round_id,'new_quest':{'title':'Moved in'}}),'23514')
+        assert 'permanent mission has no Quests' in err,err
+        assert value(db,f"count(*) FROM public.task_checklists WHERE task_id='{tid}' AND owner_node_id IS NOT NULL")=='0'
     if value(db,f"count(*) FROM public.task_checklists WHERE task_id='{normal}' AND owner_node_id IS NULL")=='0':
         ok(db,OWNER,checklist(db,normal,'create',{'title':'Work'}))
     ncid=value(db,f"id FROM public.task_checklists WHERE task_id='{normal}' AND owner_node_id IS NULL")

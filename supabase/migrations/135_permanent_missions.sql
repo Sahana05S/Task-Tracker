@@ -32,7 +32,7 @@
 --    starts the timer, and starting it moves the mission to In Progress.
 --
 -- Functions are patched from their live definitions (save_task_with_participants
--- 17 + 53 + 108 + 121; execution_command 14 + 18 + 98 + 108 + 123); each
+-- 17 + 53 + 108 + 121 + 134; execution_command 14 + 18 + 98 + 108 + 123); each
 -- fragment must occur exactly once.
 -- ===========================================================================
 BEGIN;
@@ -90,8 +90,8 @@ CREATE TRIGGER a_m135_no_quests BEFORE INSERT OR UPDATE OF task_id,owner_node_id
 
 -- 4. The mission form sends is_permanent ---------------------------------------------
 SELECT pg_temp.m135_patch('public.save_task_with_participants(uuid,jsonb,uuid[],uuid[],integer[],bigint,boolean,uuid)',
- $f$'description','comments','template_version_id','initialize_details']<>'{}'::jsonb THEN$f$,
- $f$'description','comments','template_version_id','initialize_details','is_permanent']<>'{}'::jsonb THEN$f$);
+ $f$'template_version_id','initialize_details','business_id']<>'{}'::jsonb THEN$f$,
+ $f$'template_version_id','initialize_details','business_id','is_permanent']<>'{}'::jsonb THEN$f$);
 SELECT pg_temp.m135_patch('public.save_task_with_participants(uuid,jsonb,uuid[],uuid[],integer[],bigint,boolean,uuid)',
  $f$ IF p_fields?'initialize_details' AND$f$,
  $f$ IF p_fields?'is_permanent' AND jsonb_typeof(p_fields->'is_permanent') IS DISTINCT FROM 'boolean' THEN RAISE EXCEPTION 'Mission type must be Normal or Permanent' USING ERRCODE='23514'; END IF;

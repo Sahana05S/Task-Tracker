@@ -13,3 +13,5 @@ export { getFocusedChecklistItemTime, getRunningChecklistTimers } from './intern
 export { getObjectiveReviews } from './internal/review-read';
 
 export { getMyQuestRequests, getQuestRequestsFor } from './internal/quest-requests';
+
+export { getMoveTargets } from './internal/move-targets';

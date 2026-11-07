@@ -1,4 +1,4 @@
-"""Migrations 109, 122, 130 and 131: Objectives and sub-quests. A Quest holds Objectives, Quests (no level limit
+"""Migrations 109, 122, 130, 131 and 133: Objectives and sub-quests. A Quest holds Objectives, Quests (no level limit
 since 122) and Sub-missions; delete with_children removes nested Quest lists; edit refuses a move under
 its own rows. 122: each Quest has an owner (Crew); inside a Quest only its owner, owners of the Quests
 above it, the managing director and Managers change rows; a Quest list cannot sit inside itself.
@@ -308,4 +308,79 @@ for db in DBS:
         assert expect.returncode and 'permission denied' in expect.stderr,expect.stderr[-300:]
         print('PASS',db,'131: the mission\'s people see waiting requests and who may be asked; the sender cancels; no direct table access')
 
-print('ALL PASS checklist sub-quests (migrations 109, 122, 130 and 131)')
+    if LATEST>=133:
+        # 133: move a row to the main list, a Quest or a new Quest; node ids and what hangs on them stay.
+        def mv(payload,uid='5',success=True):return cl(db,'move',payload,uid=uid,success=success)
+        def where(nid):return value(db,f"checklist_id::text||':'||coalesce(parent_node_id::text,'-')||':'||detail_section FROM public.checklist_nodes WHERE id='{nid}'")
+        root=value(db,f"id FROM public.task_checklists WHERE task_id='{T2}' AND owner_node_id IS NULL")
+        qa,la=quest(db,'Quest A'); a1=add(db,'A1',checklist=la)
+        o1=add(db,'Root objective'); s1=add(db,'Setup objective',section='setup')
+        tick(db,o1)
+        sql(db,f"INSERT INTO public.task_reviewers(task_id,user_id,reviewer_role) VALUES('{T2}','{uid_of('6')}','Primary')")
+        tick(db,a1,la)
+        assert value(db,f"review_state FROM public.checklist_nodes WHERE id='{a1}'")=='pending'
+        timer=json.loads(next(x for x in actor(db,uid_of('5'),f"SELECT public.start_checklist_item_timer('{qa}','{{}}'::jsonb,'{uuid4()}')") if x.startswith('{')))
+        moved=mv({'node_id':o1,'target_list_id':la})
+        assert moved['nodeId']==o1 and moved['ownedChecklistId']==la
+        assert where(o1)==f'{la}:-:activity',where(o1)
+        assert int(value(db,f"sort_order FROM public.checklist_nodes WHERE id='{o1}'"))>int(value(db,f"sort_order FROM public.checklist_nodes WHERE id='{a1}'")),'goes to the end'
+        r=rollup(db); assert progress(r,qa)['progressPercentage']==100 and r['errors']==[],progress(r,qa)
+        audit=json.loads(value(db,"protected_changes FROM taskpulse_private.audit_events WHERE command='checklist_move' ORDER BY id DESC LIMIT 1"))
+        assert (audit['from_list'],audit['to_list'],audit['node_id'])==('Main list','Quest A',o1),audit
+        print('PASS',db,'133: an objective moves from the main list to the end of a Quest; audited with both list names')
+        # Setup row into a new Quest made in its own list (Setup); back to the main list it stays in Activity.
+        made=mv({'node_id':s1,'new_quest':{'title':'Fresh quest'}})
+        fq=value(db,f"owner_node_id FROM public.task_checklists WHERE id='{made['ownedChecklistId']}'")
+        assert where(fq)==f'{root}:-:setup' and where(s1)==f"{made['ownedChecklistId']}:-:activity",(where(fq),where(s1))
+        assert value(db,f"assignee_id FROM public.checklist_nodes WHERE id='{fq}'")==uid_of('5')
+        denied(db,'move',{'node_id':o1,'checklist_id':la,'new_quest':{'title':'Bad owner','assignee_id':uid_of('6')}},'must be one of the mission')
+        denied(db,'move',{'node_id':o1,'checklist_id':la},'Choose one list or a new Quest')
+        mv({'node_id':s1,'checklist_id':made['ownedChecklistId'],'target_list_id':root})
+        assert where(s1)==f'{root}:-:activity'
+        print('PASS',db,'133: a row moves into a new Quest created in its list, and back to the main list in Activity')
+        # A Quest with its rows (and its running timer and pending review) moves into another Quest.
+        qb,lb=quest(db,'Quest B')
+        mv({'node_id':qa,'target_list_id':lb})
+        assert where(qa).startswith(lb) and value(db,f"owner_node_id FROM public.task_checklists WHERE id='{la}'")==qa
+        assert value(db,f"count(*) FROM public.checklist_nodes WHERE checklist_id='{la}'")=='2'
+        assert value(db,f"checklist_node_id FROM public.task_timers WHERE id='{timer['timerId']}'")==qa
+        assert value(db,f"review_state FROM public.checklist_nodes WHERE id='{a1}'")=='pending'
+        r=rollup(db); assert progress(r,qb)['progressPercentage']==100 and progress(r,qa)['progressPercentage']==100 and r['errors']==[],r
+        print('PASS',db,'133: a Quest moves with its whole list; its timer and pending review stay on the same node ids; both rollups follow')
+        # Refusals: into itself or its own Quest, the same list, another mission, no right on the target.
+        denied(db,'move',{'node_id':qb,'target_list_id':lb},'A Quest cannot move into itself')
+        denied(db,'move',{'node_id':qb,'target_list_id':la},'A Quest cannot move into itself')
+        denied(db,'move',{'node_id':qa,'checklist_id':lb,'target_list_id':lb},'already in that list')
+        elsewhere=new_task(db,f'MOV{db[-4:]}')
+        checklist(db,elsewhere,'add',{'title':'Elsewhere','section':'activity'})
+        other_root=value(db,f"id FROM public.task_checklists WHERE task_id='{elsewhere}' AND owner_node_id IS NULL")
+        denied(db,'move',{'node_id':qb,'target_list_id':other_root},'another mission')
+        four=uid_of('4')
+        sql(db,f"INSERT INTO public.task_assignees(task_id,user_id,assignment_role,is_primary,share_units) VALUES('{T2}','{four}','Collaborator',false,0)")
+        o2=add(db,'Crew row',uid='4')
+        denied(db,'move',{'node_id':o2,'target_list_id':lb},'Only that Quest',uid='4')
+        denied(db,'move',{'node_id':a1,'checklist_id':la,'target_list_id':root},'move rows out of it',uid='4')
+        mv({'node_id':o2,'target_list_id':lb},uid='1')  # the managing director may
+        # The guard stays on for any other write.
+        bad=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
+            input=f"SET ROLE taskpulse_definer; UPDATE public.checklist_nodes SET checklist_id='{root}' WHERE id='{o2}';",text=True,capture_output=True,encoding='utf-8')
+        assert bad.returncode and 'checklist identity is immutable' in bad.stderr,bad.stderr[-300:]
+        print('PASS',db,'133: refused into itself or its own Quest, the same list, another mission, and without the right on either list; the guard stays on')
+        # A linked sub-mission row moves; its link stays and it feeds its new Quest.
+        v=int(value(db,f"lifecycle_version FROM public.tasks WHERE id='{T2}'"))
+        sub=json.loads(next(x for x in actor(db,uid_of('1'),f"SELECT public.submission_create('{T2}','{root}','activity',NULL,{literal(json.dumps({'title':'Moving sub-mission'}))}::jsonb,{v},'{uuid4()}')") if x.startswith('{')))
+        mv({'node_id':sub['nodeId'],'target_list_id':lb})
+        assert where(sub['nodeId']).startswith(lb) and value(db,f"linked_task_id FROM public.checklist_nodes WHERE id='{sub['nodeId']}'")==sub['subMissionId']
+        r=rollup(db); assert progress(r,qb)['progressPercentage']<100 and r['errors']==[],progress(r,qb)
+        # Move targets: the main list first, then each Quest with its owner and whether the caller may change it.
+        targets=json.loads(next(x for x in actor(db,uid_of('4'),f"SELECT public.checklist_move_targets('{T2}')") if x.startswith('[')))
+        assert targets[0]['checklistId']==root and targets[0]['nodeId'] is None and targets[0]['title']=='Main list' and targets[0]['canEdit'] is True
+        byid={t['checklistId']:t for t in targets}
+        assert byid[la]['parentChecklistId']==lb and byid[lb]['canEdit'] is False and byid[lb]['assigneeId']==uid_of('5'),byid[lb]
+        denied_read=subprocess.run([args.psql,'-X','-h','127.0.0.1','-p',str(args.port),'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-At'],
+            input=f"BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claim.sub','{uid_of('3')}',true);\nSELECT public.checklist_move_targets('{T2}');\nCOMMIT;",text=True,capture_output=True,encoding='utf-8')
+        assert denied_read.returncode and 'private to the mission' in denied_read.stderr,denied_read.stderr[-300:]
+        print('PASS',db,'133: a linked sub-mission row moves with its link; checklist_move_targets lists the lists and who may change them')
+        sql(db,f"DELETE FROM public.task_reviewers WHERE task_id='{T2}'; DELETE FROM public.task_assignees WHERE task_id='{T2}' AND user_id='{four}'")
+
+print('ALL PASS checklist sub-quests (migrations 109, 122, 130, 131 and 133)')

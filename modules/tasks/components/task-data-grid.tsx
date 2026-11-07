@@ -26,6 +26,8 @@ import { StatusSelect } from '@/modules/tasks/components/status-select';
 import { PartOfChip, SubMissionCount } from '@/modules/tasks/components/sub-mission-chips';
 import type { WaypointSlotComponent } from '@/modules/tasks/components/task-card-list';
 import type { Label } from '@/modules/labels/client';
+import type { Business } from '@/modules/businesses/client';
+import { BusinessDot } from '@/modules/businesses/components/business-dot';
 import { LabelChips } from '@/modules/labels/components/label-chips';
 import { TaskRowMenuItems, type TaskRowActions } from '@/modules/tasks/components/task-row-menu';
 import { FreshnessIndicator, PriorityBadge } from '@/shared/ui/tracker-badges';
@@ -69,6 +71,8 @@ export interface TaskDataGridProps {
   WaypointSlot?: WaypointSlotComponent;
   /** A mission's labels (migration 112), shown as chips under its title. */
   labelsOf?: (taskId: string) => readonly Label[];
+  /** A mission's business (migration 134), shown as a coloured dot beside its tag. */
+  businessOf?: (task: Task) => Business | null;
 }
 
 interface ColumnDef {
@@ -125,6 +129,7 @@ export function TaskDataGrid({
   WaypointSlot,
   nesting,
   labelsOf,
+  businessOf,
 }: TaskDataGridProps) {
   const columns = WaypointSlot ? COLUMNS : COLUMNS.filter((column) => !column.waypointSlot);
   // Parents start expanded; a collapsed parent hides every row under it.
@@ -213,6 +218,7 @@ export function TaskDataGrid({
                           <ChevronRightIcon className={cn('size-4 transition-transform', open && 'rotate-90')} aria-hidden="true" />
                         </button>
                       ) : null}
+                      <BusinessDot business={businessOf?.(task) ?? null} />
                       <Link href={href} className="task-tag whitespace-nowrap hover:underline">
                         {task.taskTag}
                       </Link>

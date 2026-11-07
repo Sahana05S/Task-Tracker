@@ -28,7 +28,7 @@ export interface ChecklistTableProps {
   /** An objective in this section was sent back for changes (header says Changes needed). */
   changesNeeded?: boolean;
   rows: readonly ChecklistBranchRow[];
-  task: Pick<Task, 'id' | 'taskTag' | 'lifecycleVersion'>;
+  task: Pick<Task, 'id' | 'taskTag' | 'lifecycleVersion' | 'isPermanent'>;
   version: number;
   checklistId: string;
   section: ChecklistSection;
@@ -187,6 +187,7 @@ export function ChecklistTable(props: ChecklistTableProps) {
             version={version}
             action={actions.checklist}
             subMissionAction={actions.submission}
+            allowQuest={!task.isPermanent}
             label={title}
             autoFocus={props.autoFocus}
           />

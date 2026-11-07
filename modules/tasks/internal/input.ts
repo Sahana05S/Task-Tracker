@@ -67,6 +67,11 @@ export interface TaskFields {
   dueDate: string | null;
   taskScale: number | null;
   shares: number[] | null;
+  /**
+   * The mission's business (migration 134): undefined when the form had no Business field (the
+   * database keeps the current one), null for "No business".
+   */
+  businessId?: string | null;
 }
 
 /**
@@ -91,6 +96,8 @@ export function parseTaskFields(formData: FormData): Parsed<TaskFields> {
   const dueDate = readNullableString(formData, 'dueDate');
   const taskScale = readNullableNumber(formData, 'taskScale');
   const assigneeId = assigneeIds?.[0] ?? null;
+  const businessField = readString(formData, 'businessField') === '1';
+  const businessId = businessField ? readString(formData, 'businessId') : '';
 
   // A new mission may leave the tag blank: the database allocates the next
   // sheet tag (<Mon><YY>_<TYPE><n>, migration 53). An edit keeps its tag.
@@ -105,13 +112,17 @@ export function parseTaskFields(formData: FormData): Parsed<TaskFields> {
   if (reviewerIds === null) return { ok: false, error: 'One or more selected reviewers are invalid.' };
   if (taskScale === undefined) return { ok: false, error: 'Task scale must be a number.' };
   if (taskScale !== null && taskScale < 0) return { ok: false, error: 'Task scale cannot be negative.' };
+  if (businessId !== '' && !UUID_PATTERN.test(businessId)) return { ok: false, error: 'Choose a business from the list.' };
 
   // Crew share equally (migration 121): the database ignores passed shares, so none are sent.
   const shares = null;
 
   return {
     ok: true,
-    value: { taskTag, title, category, priority, assigneeIds, reviewerIds, dueDate, taskScale, shares },
+    value: {
+      taskTag, title, category, priority, assigneeIds, reviewerIds, dueDate, taskScale, shares,
+      ...(businessField ? { businessId: businessId || null } : {}),
+    },
   };
 }
 

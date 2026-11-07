@@ -6,8 +6,8 @@ import type { TaskStatus } from '@/types/tracker';
 
 /** At most this many permanent missions show in the "Always on" strip. */
 const PERMANENT_LIMIT = 12;
-const COLUMNS = 'id,task_tag,title,status' as const;
-interface PermanentRow { id: string; task_tag: string; title: string; status: string }
+const COLUMNS = 'id,task_tag,title,status,business_id' as const;
+interface PermanentRow { id: string; task_tag: string; title: string; status: string; business_id: string | null }
 
 /**
  * The open permanent missions (migration 135) on which `userId` is Crew: the
@@ -29,7 +29,7 @@ export async function getMyPermanentMissions(userId: string): Promise<PermanentM
   if (primary.error || crew.error) throw new Error('Your permanent missions could not be loaded.');
   const byId = new Map<string, PermanentMission>();
   for (const row of [...(primary.data ?? []), ...(crew.data ?? [])] as unknown as PermanentRow[]) {
-    byId.set(row.id, { id: row.id, taskTag: row.task_tag, title: row.title, status: row.status as TaskStatus });
+    byId.set(row.id, { id: row.id, taskTag: row.task_tag, title: row.title, status: row.status as TaskStatus, businessId: row.business_id ?? null });
   }
   return [...byId.values()].sort((a, b) => a.taskTag.localeCompare(b.taskTag)).slice(0, PERMANENT_LIMIT);
 }

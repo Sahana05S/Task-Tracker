@@ -14,6 +14,7 @@ import { rowKind } from '../internal/table';
 import type { ChecklistBranchRow } from '../internal/branch-types';
 import { ChecklistVersionField } from './checklist-state-control';
 import { AssignQuestForm } from './quest-owner';
+import { MoveToQuestSection } from './quest-move';
 import { useQuestNotes } from './quest-notes';
 import { QuestNotesSheet } from '@/modules/learning/components/quest-notes-sheet';
 import type { ActionResponse } from '@/types/tracker';
@@ -192,6 +193,8 @@ export function ChecklistRowActions({
                 </Button>
               </ExecutionForm>
             ))}
+            {/* Migration 133: move the row to the main list, another Quest or a new Quest. */}
+            {canEditRow ? <MoveToQuestSection row={row} taskId={taskId} version={version} action={action} /> : null}
           </div>
 
           {canAssign ? <AssignQuestForm row={row} taskId={taskId} version={version} action={action} /> : null}

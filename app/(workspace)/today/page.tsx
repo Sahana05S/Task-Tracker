@@ -7,6 +7,8 @@ import { MissionRoadmap } from '@/modules/workspace-views/components/today/missi
 import { getAssignedMissionBatch, getMyPermanentMissions } from '@/modules/tasks';
 import { AlwaysOnStrip } from '@/modules/workspace-views/components/always-on-strip';
 import { getLabelsFor } from '@/modules/labels';
+import { businessParamValue, businessQueryFilter, chipBusinesses, getBusinessView, parseBusinessParam } from '@/modules/businesses';
+import { BusinessSwitcher } from '@/modules/businesses/components/business-switcher';
 import { getMemberNames } from '@/modules/team';
 import { missionDueFilter } from '@/modules/tasks/client';
 import { kolkataDate } from '@/shared/time/kolkata';
@@ -52,7 +54,12 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   // The whole team's graph opens other people's checklists: the managing director only (migration 117).
   const canSeeTeam = profile.role === 'managing_director';
   const scope = canSeeTeam ? roadmapScope(query.scope) : 'mine';
-  const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true }).catch(() => null);
+  // Business chips (migration 134): `?business=`, opening on the member's own businesses (All when none).
+  const businessView = await getBusinessView().catch(() => null);
+  const businessSelection = businessView ? parseBusinessParam(query.business, businessView.catalogue.businesses, businessView.mine) : null;
+  const business = businessSelection ? businessQueryFilter(businessSelection) : null;
+  const businessParam = businessView && businessSelection && query.business ? businessParamValue(businessSelection, businessView.catalogue.businesses) : null;
+  const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true, business }).catch(() => null);
   // Labels (migration 112) and member names (Quest owners on the map, migration 122); a failure only hides them.
   // The "Always on" strip (migration 135); a failed read only hides it.
   const [initialLabels, memberNames, permanent] = await Promise.all([
@@ -64,12 +71,15 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const firstRun = Date.now() - Date.parse(profile.createdAt) < NEW_MEMBER_MS && (await cookies()).get(FIRST_RUN_COOKIE)?.value !== 'dismissed';
   return <MissionPage>
     <MissionPageHeader title="Today" description="A clear path through your work." actions={<Suspense fallback={null}><CheckInPrompt user={profile} loadShare={(day, breaks) => dayShare(profile, today, day, breaks)} /></Suspense>} />
-    <AlwaysOnStrip missions={permanent} />
+    <AlwaysOnStrip missions={permanent} businesses={businessView ? { catalogue: businessView.catalogue.businesses, mine: businessView.mine } : null} />
     {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
     <Suspense fallback={null}><HrPrompt userId={profile.id} /></Suspense>
     <Suspense fallback={null}><QuestRequestsPrompt /></Suspense>
     <Suspense fallback={null}><RecordsPrompt userId={profile.id} employeeId={profile.employeeId} /></Suspense>
-    <MissionRoadmap key={`${due}:${scope}`} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLabels={initialLabels} memberNames={memberNames} />
+    {businessView && businessSelection && chipBusinesses(businessView.catalogue.businesses).length ? (
+      <BusinessSwitcher businesses={businessView.catalogue.businesses} selection={businessSelection} summary={businessView.summary} className="mb-4" />
+    ) : null}
+    <MissionRoadmap key={`${due}:${scope}:${businessParam ?? ''}`} business={business} businessParam={businessParam} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLabels={initialLabels} memberNames={memberNames} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>
       <TodayOverview profile={profile} />
     </Suspense>

@@ -33,6 +33,11 @@ function decodeCursor(value?: string | null): Cursor | null {
     return c;
   } catch { throw new Error('Invalid mission cursor. Reload your roadmap.'); }
 }
+function businessFilter(value: MissionBatchOptions['business']): { ids: string[]; none: boolean } | null {
+  if (!value) return null;
+  const ids = [...new Set(value.ids ?? [])].filter(id => UUID_PATTERN.test(id)).slice(0, 50);
+  return ids.length || value.none ? { ids, none: !!value.none } : null;
+}
 function encodeCursor(mission: RoadmapMission): string {
   return Buffer.from(JSON.stringify({ due: mission.dueDate, id: mission.id, perm: mission.isPermanent === true })).toString('base64url');
 }
@@ -62,6 +67,8 @@ export async function getAssignedMissionBatch(userId: string, options: MissionBa
   const due = missionDueFilter(options.due);
   const today = kolkataDate(now);
   const cursor = decodeCursor(options.cursor);
+  // Validated before entering PostgREST syntax; an empty choice means every business.
+  const business = businessFilter(options.business);
   const primary = db.from('tasks').select(COLUMNS).eq('assignee_id', userId);
   const participant = db.from('tasks').select(`${COLUMNS},task_assignees!inner(user_id,is_primary,share_units)`).eq('task_assignees.user_id', userId);
   // Reviewers and observers (migration 108) only when the caller asks for them.
@@ -76,6 +83,8 @@ export async function getAssignedMissionBatch(userId: string, options: MissionBa
     if (due === 'today') q = q.eq('due_date', today);
     if (due === 'overdue') q = q.lt('due_date', today);
     if (cursor && !cursor.perm) q = q.eq('is_permanent', false);
+    if (business) q = business.ids.length && business.none ? q.or(`business_id.in.(${business.ids.join(',')}),business_id.is.null`)
+      : business.ids.length ? q.in('business_id', business.ids) : q.is('business_id', null);
     if (cursor) q = q.or(afterCursor(cursor));
     return q;
   });
