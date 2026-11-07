@@ -34,12 +34,12 @@ const SELECT = 'border-input bg-card text-foreground focus-visible:ring-ring h-9
  * viewer is chosen first when they are Crew; otherwise the database picks the
  * mission's primary. Nothing renders while the Crew is unknown.
  */
-export function QuestOwnerSelect({ id, defaultValue, className }: { id: string; defaultValue?: string | null; className?: string }) {
+export function QuestOwnerSelect({ id, defaultValue, className, name = 'assignee_id' }: { id: string; defaultValue?: string | null; className?: string; name?: string }) {
   const { crew, viewerId } = React.useContext(CrewContext);
   if (!crew.length) return null;
   const initial = defaultValue ?? (crew.some((member) => member.id === viewerId) ? viewerId! : '');
   return (
-    <select id={id} name="assignee_id" defaultValue={initial} className={className ?? SELECT}>
+    <select id={id} name={name} defaultValue={initial} className={className ?? SELECT}>
       {initial ? null : <option value="">Mission’s primary</option>}
       {crew.map((member) => <option key={member.id} value={member.id}>{member.name}{member.id === viewerId ? ' (you)' : ''}</option>)}
     </select>

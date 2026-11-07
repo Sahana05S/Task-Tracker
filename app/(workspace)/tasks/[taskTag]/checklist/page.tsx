@@ -7,7 +7,7 @@ import { MissionActionsMenu } from '@/modules/tasks/components/mission-actions-m
 import { getMissionChoices, getTaskForChecklist, normalizeTaskTagParam } from '@/modules/tasks';
 import { canManageTasks, canReadMissionWork, canUpdateTaskOwnFields } from '@/modules/tasks/client';
 import { MissionWorkPrivate } from '@/modules/tasks/components/detail/mission-work-private';
-import { getChecklistBranch, getObjectiveReviews, getQuestRequestsFor, getUnmappedRootRows } from '@/modules/checklists';
+import { getChecklistBranch, getMoveTargets, getObjectiveReviews, getQuestRequestsFor, getUnmappedRootRows } from '@/modules/checklists';
 import { CHECKLIST_SECTIONS, NO_REVIEWS, checklistWorkHref, parseChecklistLocation, parseChecklistView, type ChecklistBranch, type ChecklistBranchOptions } from '@/modules/checklists/client';
 import { ChecklistWorkspace, type ChecklistHomeSection } from '@/modules/checklists/components/checklist-workspace';
 import { checklistCommand } from '@/modules/checklists/actions';
@@ -81,7 +81,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
   const manager = canManageTasks(user.role);
   const checklistId = branch.checklist?.id;
   // Quests carry the timers (migration 123); other rows have none.
-  const [names, linkChoices, unmapped, reviews, questRequests, noteCounts] = await Promise.all([
+  const [names, linkChoices, unmapped, reviews, questRequests, noteCounts, moveTargets] = await Promise.all([
     getMemberNames().catch((): Record<string, string> => ({})),
     manager ? getMissionChoices().then(choices => choices.filter(t => t.id !== task.id)) : [],
     manager && checklistId && sections ? getUnmappedRootRows(checklistId) : [],
@@ -91,6 +91,8 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
     getQuestRequestsFor(task.id).catch(() => null),
     // Notes per Quest row (132): a failed read offers no Notes.
     getQuestNoteCounts(task.id).catch(() => null),
+    // Where a row may move (133): a failed read offers no move.
+    getMoveTargets(task.id).catch(() => null),
   ]);
   const notesParam = (await searchParams).notes;
   const openNotes = typeof notesParam === 'string' && /^[0-9a-f-]{36}$/i.test(notesParam) ? notesParam : null;
@@ -112,6 +114,7 @@ export default async function ChecklistPage({ params, searchParams }: { params: 
       viewerId={user.id}
       questRequests={questRequests}
       noteCounts={noteCounts}
+      moveTargets={moveTargets}
       openNotes={openNotes}
       selectedItem={location.item}
       managerTools={manager ? { linkChoices, unmapped } : undefined}
