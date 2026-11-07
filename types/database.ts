@@ -980,6 +980,8 @@ export interface Database {
       quest_owner_request_command: { Args: { p_op: 'request' | 'cancel' | 'accept' | 'decline'; p_node: string | null; p_invitee: string | null; p_request: string | null; p_operation: string }; Returns: Json };
       quest_owner_requests_mine: { Args: Record<never, never>; Returns: Json };
       quest_owner_requests_for: { Args: { p_task: string }; Returns: Json };
+      /** Migration 133: the lists a checklist row may move into. */
+      checklist_move_targets: { Args: { p_task: string }; Returns: Json };
       /** Migration 132: Quest notes (learning module). */
       quest_notes: { Args: { p_node: string }; Returns: Json };
       quest_note_counts: { Args: { p_task: string }; Returns: Json };
