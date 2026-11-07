@@ -480,7 +480,7 @@ export function MissionGraph({ missions, links = [], labels, names, today, initi
             const overdue = !!m?.dueDate && m.dueDate < today;
             const relationship = m?.relationship ? MISSION_RELATIONSHIP_LABELS[m.relationship] : null;
             const sub = node.kind === 'more' ? `Load ${BATCH} more`
-              : m ? [relationship, pct(m.progress), missionDueLabel(m.dueDate, today)].filter(Boolean).join(' · ')
+              : m ? [relationship, pct(m.progress), m.isPermanent ? 'Permanent' : missionDueLabel(m.dueDate, today)].filter(Boolean).join(' · ')
               : node.kind === 'objective' ? (row?.applicable === false ? 'Not applicable' : node.complete ? 'Complete' : 'Open to work')
               : [pct(node.progress), `${row?.childCount ?? 0} rows`, row?.ownedChecklistId && row.assigneeId ? names?.[row.assigneeId] ?? null : null, opened ? 'open' : null].filter(Boolean).join(' · ');
             const kindLabel = node.tone === 'submission' ? (node.depth === 0 ? 'Sub-mission' : 'Sub-mission row') : { mission: 'Mission', quest: 'Quest', objective: 'Objective', more: 'More objectives' }[node.kind];

@@ -10,9 +10,9 @@ export interface MissionPickerOption {
   readonly status: string | null;
   /** The mission this one is a sub-mission of (a Subtask link), when there is one. */
   readonly parentId: string | null;
-  /** A permanent mission (tasks.is_permanent, migration 135); false on databases before it. */
+  /** A permanent mission (tasks.is_permanent, migration 135). */
   readonly isPermanent: boolean;
-  /** The mission's business (tasks.business_id, migration 134); null on databases before it. */
+  /** The mission's business (tasks.business_id, migration 134). */
   readonly businessId: string | null;
 }
 export interface OrderedMissionOption extends MissionPickerOption { readonly depth: number }

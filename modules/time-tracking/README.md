@@ -138,3 +138,10 @@ in the mission page's Time panel (`QuestTimerList`); the mission-level
 mission timer is still running. The running-timer pill reads "TAG › Quest".
 The History tab and Reports > Mission activity group sessions by Quest.
 Tests: `tools/test_timer_session_activity_database.py` (migration 123 part).
+
+## Permanent missions (7 November 2026, migration 135)
+A permanent mission has no Quests, so it always keeps its mission timer. Only
+its Crew starts it (managers who are not Crew are refused, and
+`canStartTimerForTask` hides the button from them); the first timer moves the
+mission to In Progress. One running timer per person per mission, as for any
+mission. The "Always on" strip on Today and Missions uses `TimerButton`.

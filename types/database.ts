@@ -141,6 +141,8 @@ export interface Database {
           archived_effective_date?:string|null;
           archive_reason?:string|null;
           handoff_successor_id?:string|null;
+          /** Migration 135: a permanent mission (no due date, never Done, no Quests, Crew-only timer). */
+          is_permanent?: boolean;
           /** Migration 134: the mission's business (businesses module). */
           business_id?: string | null;
           valid_for_metrics: boolean;
@@ -167,6 +169,7 @@ export interface Database {
           status?: TaskStatus;
           freshness?: TaskFreshness;
           valid_for_metrics?: boolean;
+          is_permanent?: boolean;
           assigned_date?: string;
           due_date?: string | null;
           completed_date?: string | null;

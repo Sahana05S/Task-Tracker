@@ -9,20 +9,13 @@ interface PickerRow {
   is_permanent?: boolean | null; business_id?: string | null;
 }
 
-/**
- * Adapter for columns other lanes add (tasks.is_permanent, migration 135; tasks.business_id,
- * migration 134): read them when the database has them, otherwise fall back to the base columns.
- */
 async function readPickerRows(): Promise<PickerRow[]> {
   const db = await createClient();
-  const base = 'id, task_tag, title, status, archived_effective_date';
-  // Newest columns first; a database without one of them answers 42703 and the next, narrower read runs.
-  for (const extra of [', is_permanent, business_id', ', business_id', '']) {
-    const result = await db.from('tasks').select(`${base}${extra}` as typeof base).is('archived_effective_date', null);
-    if (!result.error) return result.data as unknown as PickerRow[];
-    if (extra === '' || (result.error.code !== '42703' && result.error.code !== 'PGRST204')) throw new Error(`Missions unavailable: ${result.error.message}`);
-  }
-  return [];
+  const { data, error } = await db.from('tasks')
+    .select('id, task_tag, title, status, archived_effective_date, is_permanent, business_id')
+    .is('archived_effective_date', null);
+  if (error) throw new Error(`Missions unavailable: ${error.message}`);
+  return data as unknown as PickerRow[];
 }
 
 /**

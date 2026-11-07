@@ -31,6 +31,7 @@ export {
   type MemberOpenTask,
 } from '@/modules/tasks/internal/member-tasks';
 
+export { getMyPermanentMissions } from '@/modules/tasks/internal/permanent';
 export { getAssignedMissionBatch, getAssignedRoadmapMission, getMissionLinks, countAssignedMissionsCompletedBetween } from '@/modules/tasks/internal/roadmap';
 export { countMissionsInMonth, getMonthSetupContext, type MonthSetupContext } from '@/modules/tasks/internal/tools/month-setup-commands';
 export { getSubMissionAnchors, getSubMissionOriginRow } from '@/modules/tasks/internal/origin-read';

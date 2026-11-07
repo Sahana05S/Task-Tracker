@@ -4,7 +4,8 @@ import { cookies } from 'next/headers';
 import { FirstRunCard } from '@/modules/workspace-views/components/today/first-run-card';
 import { FIRST_RUN_COOKIE } from '@/modules/workspace-views/components/today/first-run';
 import { MissionRoadmap } from '@/modules/workspace-views/components/today/mission-roadmap';
-import { getAssignedMissionBatch } from '@/modules/tasks';
+import { getAssignedMissionBatch, getMyPermanentMissions } from '@/modules/tasks';
+import { AlwaysOnStrip } from '@/modules/workspace-views/components/always-on-strip';
 import { getLabelsFor } from '@/modules/labels';
 import { businessParamValue, businessQueryFilter, chipBusinesses, getBusinessView, parseBusinessParam } from '@/modules/businesses';
 import { BusinessSwitcher } from '@/modules/businesses/components/business-switcher';
@@ -61,14 +62,17 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const businessParam = businessView && businessSelection && query.business ? businessParamValue(businessSelection, businessView.catalogue.businesses) : null;
   const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true, business }).catch(() => null);
   // Labels (migration 112) and member names (Quest owners on the map, migration 122); a failure only hides them.
-  const [initialLabels, memberNames] = await Promise.all([
+  // The "Always on" strip (migration 135); a failed read only hides it.
+  const [initialLabels, memberNames, permanent] = await Promise.all([
     initial ? getLabelsFor('task', initial.missions.map((mission) => mission.id)).catch(() => null) : null,
     getMemberNames().catch(() => null),
+    getMyPermanentMissions(profile.id).catch(() => null),
   ]);
   // New in the last 30 days, until dismissed.
   const firstRun = Date.now() - Date.parse(profile.createdAt) < NEW_MEMBER_MS && (await cookies()).get(FIRST_RUN_COOKIE)?.value !== 'dismissed';
   return <MissionPage>
     <MissionPageHeader title="Today" description="A clear path through your work." actions={<Suspense fallback={null}><CheckInPrompt user={profile} loadShare={(day, breaks) => dayShare(profile, today, day, breaks)} /></Suspense>} />
+    <AlwaysOnStrip missions={permanent} businesses={businessView ? { catalogue: businessView.catalogue.businesses, mine: businessView.mine } : null} />
     {firstRun ? <FirstRunCard name={profile.fullName} /> : null}
     <Suspense fallback={null}><HrPrompt userId={profile.id} /></Suspense>
     <Suspense fallback={null}><QuestRequestsPrompt /></Suspense>

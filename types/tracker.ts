@@ -203,6 +203,8 @@ export interface Task {
   priority: TaskPriority;
   /** `status` — defaults to `'Not Started'`. */
   status: TaskStatus;
+  /** `is_permanent` (migration 135): no due date, never Done, no Quests, timed by its Crew only. */
+  isPermanent?: boolean;
   /** `freshness` — defaults to `'Fresh'`. */
   freshness: TaskFreshness | null;
   freshnessReason?: string | null;

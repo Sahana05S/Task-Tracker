@@ -18,6 +18,7 @@ import { listMeetings } from '@/modules/support';
 import { MissionMeetingsPanel } from '@/modules/support/components/mission-meetings';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import { MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
+import { PermanentBadge } from '@/modules/tasks/components/permanent-badge';
 import { Breadcrumb, PageTabs } from '@/shared/ui/page-nav';
 import {
   CategoryBadge,
@@ -248,6 +249,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
         meta={
           <>
             <CategoryBadge category={task.category} />
+            {task.isPermanent ? <PermanentBadge /> : null}
             <StatusSelect
               taskId={task.id}
               taskTag={task.taskTag}

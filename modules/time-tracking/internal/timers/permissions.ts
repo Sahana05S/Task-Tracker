@@ -3,14 +3,15 @@ import type { Task, User } from '@/types/tracker';
 
 export function canStartTimerForTask(
   user: Pick<User, 'id' | 'role' | 'isActive'>,
-  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'status' | 'archivedEffectiveDate'>,
+  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'status' | 'archivedEffectiveDate' | 'isPermanent'>,
 ): boolean {
-  // Every Crew member logs time; observers do not (migration 121).
+  // Every Crew member logs time; observers do not (migration 121). Only the Crew
+  // times a permanent mission (migration 135).
   return (
     user.isActive && !task.archivedEffectiveDate &&
     task.status !== 'Done' &&
     task.status !== 'Discarded' &&
-    (canManageTasks(user.role) || isTaskWorker(task, user.id))
+    ((canManageTasks(user.role) && !task.isPermanent) || isTaskWorker(task, user.id))
   );
 }
 

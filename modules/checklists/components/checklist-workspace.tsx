@@ -162,6 +162,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       version={version}
       action={props.actions.checklist}
       subMissionAction={tableActions.submission}
+      allowQuest={!task.isPermanent}
       label={sectionTitle(section)}
       autoFocus={parentId !== null || section === 'activity'}
     />
@@ -242,7 +243,8 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       <ObjectiveReviewProvider taskId={task.id} version={version} action={props.actions.checklist} reviews={props.reviews} names={props.memberNames}>
       <QuestCrewProvider crew={props.crew ?? []} viewerId={props.viewerId ?? null} requests={props.questRequests ?? null}>
       <QuestNotesProvider counts={props.noteCounts ?? null} openNodeId={props.openNotes ?? null}>
-      <MoveTargetsProvider targets={props.moveTargets ?? null}>
+      {/* A permanent mission has only its main list, so there is nowhere to move a row (migration 135). */}
+      <MoveTargetsProvider targets={task.isPermanent ? null : props.moveTargets ?? null}>
       <MissionPage>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
