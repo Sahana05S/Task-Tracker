@@ -224,6 +224,8 @@ function TaskForm({
   const [priority, setPriority] = React.useState<string>(
     task?.priority ?? 'Medium',
   );
+  // Migration 135: a permanent mission has no due date and is never Done.
+  const [missionType, setMissionType] = React.useState<string>(task?.isPermanent ? 'permanent' : 'normal');
   // New missions start with the company's default (Settings > Company > New missions).
   const defaultScaleMode = useDefaultScaleMode();
   const [scaleMode, setScaleMode] = React.useState<StandingScaleMode>(defaultScaleMode);
@@ -384,14 +386,34 @@ function TaskForm({
           required
         />
 
-        <Field id="task-due-date" label="Due date">
-          <Input
-            id="task-due-date"
-            name="dueDate"
-            type="date"
-            defaultValue={task?.dueDate ?? ''}
-          />
-        </Field>
+        <LabeledSelect
+          id="task-mission-type"
+          label="Mission type"
+          name="missionType"
+          value={missionType}
+          onValueChange={setMissionType}
+          options={[
+            { value: 'normal', label: 'Normal' },
+            { value: 'permanent', label: 'Permanent (always on, never Done)' },
+          ]}
+          required
+        />
+
+        {missionType === 'permanent' ? (
+          <p className="text-muted-foreground self-end text-xs">
+            A permanent mission has no due date and no Quests, and only its Crew times it. Turn it back to
+            Normal to finish it.
+          </p>
+        ) : (
+          <Field id="task-due-date" label="Due date">
+            <Input
+              id="task-due-date"
+              name="dueDate"
+              type="date"
+              defaultValue={task?.dueDate ?? ''}
+            />
+          </Field>
+        )}
 
         {businesses ? <BusinessField task={task} businesses={businesses} defaultBusinessId={defaultBusinessId} /> : null}
 

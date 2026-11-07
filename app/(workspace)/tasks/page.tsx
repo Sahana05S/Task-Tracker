@@ -1,4 +1,5 @@
-import { getNativeTemplates } from '@/modules/tasks';
+import { getMyPermanentMissions, getNativeTemplates } from '@/modules/tasks';
+import { AlwaysOnStrip } from '@/modules/workspace-views/components/always-on-strip';
 import type { Metadata } from 'next';
 
 import { NewTaskButton } from '@/modules/tasks/components/new-task-button';
@@ -36,7 +37,7 @@ export default async function TasksPage() {
   );
 
   const workspace = getTaskWorkspaceData();
-  const [{ tasks, members }, effortTotals, templates, waypoints, setup, labels, businessView] = await Promise.all([
+  const [{ tasks, members }, effortTotals, templates, waypoints, setup, labels, businessView, permanent] = await Promise.all([
     workspace,
     getTaskEffortTotals(),
     getNativeTemplates(),
@@ -49,6 +50,8 @@ export default async function TasksPage() {
     workspace.then(({ tasks }) => missionLabels(tasks.map((task) => task.id))).catch(() => null),
     // Businesses (migration 134): chips (`?business=`, opening on the viewer's own), dots and the form field; null hides them.
     getBusinessView().catch(() => null),
+    // The "Always on" strip (migration 135); a failed read only hides it.
+    getMyPermanentMissions(profile.id).catch(() => null),
   ]);
 
   const openCount = tasks.filter(
@@ -68,6 +71,8 @@ export default async function TasksPage() {
           </>
         ) : null}
       />
+
+      <AlwaysOnStrip missions={permanent} businesses={businessView ? { catalogue: businessView.catalogue.businesses, mine: businessView.mine } : null} />
 
       {setup?.bannerMonth ? <MonthSetupBanner month={setup.bannerMonth} /> : null}
 

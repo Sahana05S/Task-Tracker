@@ -251,6 +251,8 @@ export function sortTasks(
   };
 
   return [...tasks].sort((a, b) => {
+    // Permanent missions first (migration 135), whatever the column and direction.
+    if ((a.isPermanent === true) !== (b.isPermanent === true)) return a.isPermanent ? -1 : 1;
     const primary = compare(a, b);
     // Null placement must not invert when the column is reversed.
     if (primary !== 0) {

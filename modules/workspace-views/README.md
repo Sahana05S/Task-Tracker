@@ -31,7 +31,7 @@ module may import it (the boundary test enforces this).
 |---|---|
 | `index.ts` | Server reads: `getNavCounts`, `getTodayData`, `weekStartOf`. Also re-exports everything in `client.ts`. |
 | `client.ts` | `buildTaskTimeline` and the timeline, nav-count and Today types; roadmap URL helpers (`roadmapSearch`, `parseRoadmapLocation`, `roadmapScope`, `branchForRow`); constellation geometry (`layoutMissionGraph`, `graphCamera`, `graphFootprint`, `graphRadius`, `wheelZoomFactor`, `LABEL_WIDTH`) and its types; map hashtags (`hashtagMatches`, `labelEdges`, `LABEL_EDGE_CAP`, `HashtagRecords`) |
-| `components/` | `shell/*`, `dashboard/*`, `today/*`, `timelines/*`, `missions-workspace.tsx` |
+| `components/` | `shell/*`, `dashboard/*`, `today/*`, `timelines/*`, `missions-workspace.tsx`, `always-on-strip.tsx` (`AlwaysOnStrip`: the member's permanent missions with a large Start / Stop timer, top of Today and Missions, migration 135) |
 
 ## Private (`internal/`)
 | File | Job |

@@ -69,6 +69,7 @@ export async function createTask(_prevState: TaskActionState | null, formData: F
       description: readString(formData, 'description') || null,
       template_version_id: readString(formData, 'templateVersionId') || null,
       initialize_details: readString(formData, 'initializationMode') !== 'manual',
+      ...readMissionType(formData),
     },
     acceptLegacyShares: formData.get('acceptLegacyShares') === 'on',
     operationId: readString(formData, 'operationId'),
@@ -106,7 +107,10 @@ export async function updateTask(_prevState: TaskActionState | null, formData: F
 
   const saved = await saveTaskWithParticipants(fields.value, {
     taskId,
-    extraFields: { expected_lifecycle_version: Number(readString(formData, 'lifecycleVersion')) },
+    extraFields: {
+      expected_lifecycle_version: Number(readString(formData, 'lifecycleVersion')),
+      ...readMissionType(formData),
+    },
     expectedVersion: version,
     acceptLegacyShares: formData.get('acceptLegacyShares') === 'on',
     operationId: readString(formData, 'operationId'),
@@ -115,6 +119,12 @@ export async function updateTask(_prevState: TaskActionState | null, formData: F
 
   revalidateAfterEdit();
   return { success: true, data: { taskId } };
+}
+
+/** "Mission type" in the form (migration 135); absent means unchanged. */
+function readMissionType(formData: FormData): { is_permanent?: boolean } {
+  const type = readString(formData, 'missionType');
+  return type === 'permanent' ? { is_permanent: true } : type === 'normal' ? { is_permanent: false } : {};
 }
 
 /* Lifecycle: status, progress, scale, review ------------------------------ */

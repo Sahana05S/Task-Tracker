@@ -36,6 +36,7 @@ import { cn } from '@/shared/utils';
 import type { Task, User } from '@/types/tracker';
 import type { Label } from '@/modules/labels/client';
 import { LabelChips } from '@/modules/labels/components/label-chips';
+import { PermanentBadge } from '@/modules/tasks/components/permanent-badge';
 import type { Business } from '@/modules/businesses/client';
 import { BusinessDot } from '@/modules/businesses/components/business-dot';
 
@@ -205,7 +206,7 @@ function MissionCard({
               task={task}
               canManage={canManage}
               canEditOwnFields={canEditOwnFields}
-              canMarkDone={canManage || isWorker}
+              canMarkDone={(canManage || isWorker) && !task.isPermanent}
               actions={actions}
             />
           </DropdownMenuContent>
@@ -221,6 +222,7 @@ function MissionCard({
               {task.taskTag}
             </Link>
           </span>
+          {task.isPermanent ? <PermanentBadge /> : null}
           {task.dueDate ? (
             <span
               className={cn(
@@ -286,7 +288,7 @@ function MissionCard({
             taskTag={task.taskTag}
             status={task.status}
             canEdit={canEditOwnFields}
-            canMarkDone={canManage || isWorker}
+            canMarkDone={(canManage || isWorker) && !task.isPermanent}
           />
           <div className="ml-auto flex items-center gap-2">
             {isWorker && !archived && !closed && LogHoursAction ? <LogHoursAction taskId={task.id} taskTag={task.taskTag} /> : null}

@@ -47,4 +47,4 @@ export {
 export { uploadProofToTicket } from '@/modules/tasks/internal/proofs/upload';
 export type { SupportSplitMode } from '@/modules/tasks/internal/tools/support-split';
 
-export { MISSION_BATCH_SIZE, ROADMAP_LINK_LIMIT, ROADMAP_RELATIONS, canTimeMission, type RoadmapLink, type RoadmapRelation, compareRoadmapMissions, missionBatchLimit, missionDueFilter, missionDueLabel, type MissionDueFilter, type MissionBatchOptions, type RoadmapMission, type RoadmapMissionBatch } from '@/modules/tasks/internal/roadmap-contract';
+export { MISSION_BATCH_SIZE, ROADMAP_LINK_LIMIT, ROADMAP_RELATIONS, canTimeMission, type RoadmapLink, type RoadmapRelation, compareRoadmapMissions, missionBatchLimit, missionDueFilter, missionDueLabel, type MissionDueFilter, type MissionBatchOptions, type RoadmapMission, type RoadmapMissionBatch, type PermanentMission } from '@/modules/tasks/internal/roadmap-contract';
