@@ -22,8 +22,10 @@ import { ChecklistOutline } from './checklist-outline';
 import { ChecklistViewPanes } from './checklist-view-switch';
 import { ObjectiveReviewProvider } from './objective-review';
 import { QuestCrewProvider } from './quest-owner';
+import { MoveTargetsProvider } from './quest-move';
 import { QuestNotesProvider } from './quest-notes';
 import type { QuestRequests } from '../internal/quest-request-rules';
+import type { MoveTarget } from '../internal/move-target-rules';
 import { NO_REVIEWS, sentBackIndex, type ObjectiveReviews } from '../internal/review';
 import type { ActionResponse, Task } from '@/types/tracker';
 
@@ -65,6 +67,8 @@ export interface ChecklistWorkspaceProps {
   viewerId?: string;
   /** Waiting Quest owner requests and who may be asked (migration 131). */
   questRequests?: QuestRequests | null;
+  /** Where a row may move (migration 133), built on the server; null or absent offers no move. */
+  moveTargets?: readonly MoveTarget[] | null;
   /** Notes per Quest row (migration 132); null or absent offers no Notes. */
   noteCounts?: Readonly<Record<string, number>> | null;
   /** The Quest whose notes open on arrival (`?notes=<row id>`). */
@@ -238,6 +242,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
       <ObjectiveReviewProvider taskId={task.id} version={version} action={props.actions.checklist} reviews={props.reviews} names={props.memberNames}>
       <QuestCrewProvider crew={props.crew ?? []} viewerId={props.viewerId ?? null} requests={props.questRequests ?? null}>
       <QuestNotesProvider counts={props.noteCounts ?? null} openNodeId={props.openNotes ?? null}>
+      <MoveTargetsProvider targets={props.moveTargets ?? null}>
       <MissionPage>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <Breadcrumb back={{ href: backHref, label: 'Back' }} items={crumbs} />
@@ -270,6 +275,7 @@ export function ChecklistWorkspace(props: ChecklistWorkspaceProps) {
           </>
         )}
       </MissionPage>
+      </MoveTargetsProvider>
       </QuestNotesProvider>
       </QuestCrewProvider>
       </ObjectiveReviewProvider>

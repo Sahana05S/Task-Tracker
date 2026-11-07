@@ -61,3 +61,4 @@ export {
   type ReviewChip,
 } from './internal/review';
 export type { MyQuestRequest, PendingQuestRequest, QuestRequests } from './internal/quest-request-rules';
+export { buildMoveTargets, moveBlockedReason, type MoveTarget } from './internal/move-target-rules';
