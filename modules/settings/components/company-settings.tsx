@@ -61,6 +61,7 @@ const SECTIONS = [
   { id: 'mission-types', label: 'Mission types' },
   { id: 'meeting-types', label: 'Meeting types' },
   { id: 'departments', label: 'Departments' },
+  { id: 'businesses', label: 'Businesses' },
   { id: 'agenda', label: 'Meeting agenda' },
   { id: 'mission-defaults', label: 'New missions' },
   { id: 'attendance', label: 'Check-in' },
@@ -74,16 +75,18 @@ const SECTIONS = [
  * standing monthly rows, per company. Each section saves on its own (one
  * versioned command per section), so editing one never overwrites another.
  */
-export function CompanySettingsEditor({ settings, members, labels }: {
+export function CompanySettingsEditor({ settings, members, labels, businesses }: {
   settings: CompanySettings;
   members: readonly CompanyMember[];
   /** Settings > Company > Labels (the labels module's manager, migration 112); the section is left out without it. */
   labels?: React.ReactNode;
+  /** Settings > Company > Businesses (the businesses module's manager, migration 134); left out without it. */
+  businesses?: React.ReactNode;
 }) {
   return (
     <div className="grid gap-5 lg:gap-6">
       <nav aria-label="Company settings sections" className="flex max-w-full gap-1.5 overflow-x-auto pb-1">
-        {SECTIONS.filter((section) => section.id !== 'labels' || labels).map((section) => (
+        {SECTIONS.filter((section) => (section.id !== 'labels' || labels) && (section.id !== 'businesses' || businesses)).map((section) => (
           <a key={section.id} href={`#${section.id}`} className="filter-pill shrink-0">
             {section.label}
           </a>
@@ -97,6 +100,11 @@ export function CompanySettingsEditor({ settings, members, labels }: {
         <MeetingTypesSection settings={settings} />
         <DepartmentsSection settings={settings} />
       </div>
+      {businesses ? (
+        <MissionPanel id="businesses" icon={Building2Icon} title="Businesses" subtitle="The company's lines of business. Missions and Today open on each person's own businesses.">
+          {businesses}
+        </MissionPanel>
+      ) : null}
       <AgendaSection settings={settings} />
       <div className="grid gap-5 lg:gap-6 xl:grid-cols-2">
         <MissionDefaultsSection settings={settings} />

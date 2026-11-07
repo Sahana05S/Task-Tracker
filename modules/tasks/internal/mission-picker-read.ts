@@ -16,12 +16,13 @@ interface PickerRow {
 async function readPickerRows(): Promise<PickerRow[]> {
   const db = await createClient();
   const base = 'id, task_tag, title, status, archived_effective_date';
-  const extended = await db.from('tasks').select(`${base}, is_permanent, business_id` as typeof base).is('archived_effective_date', null);
-  if (!extended.error) return extended.data as unknown as PickerRow[];
-  if (extended.error.code !== '42703' && extended.error.code !== 'PGRST204') throw new Error(`Missions unavailable: ${extended.error.message}`);
-  const plain = await db.from('tasks').select(base).is('archived_effective_date', null);
-  if (plain.error) throw new Error(`Missions unavailable: ${plain.error.message}`);
-  return plain.data as PickerRow[];
+  // Newest columns first; a database without one of them answers 42703 and the next, narrower read runs.
+  for (const extra of [', is_permanent, business_id', ', business_id', '']) {
+    const result = await db.from('tasks').select(`${base}${extra}` as typeof base).is('archived_effective_date', null);
+    if (!result.error) return result.data as unknown as PickerRow[];
+    if (extra === '' || (result.error.code !== '42703' && result.error.code !== 'PGRST204')) throw new Error(`Missions unavailable: ${result.error.message}`);
+  }
+  return [];
 }
 
 /**

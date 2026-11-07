@@ -38,6 +38,11 @@ export interface TaskFilterState {
   labels: readonly string[];
   /** Also match missions whose notes carry one of `labels` (migration 126; `?notes=1`). */
   includeNotes?: boolean;
+  /**
+   * The business chips as written in `?business=` (migration 134): `all`, or slugs and `none`.
+   * Absent: the member's own businesses. Applied before these filters; "Clear filters" keeps it.
+   */
+  business?: string;
 }
 
 /** A mission's label slugs, for the label facet. */

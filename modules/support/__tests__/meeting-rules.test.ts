@@ -5,7 +5,7 @@ import {
 } from '@/modules/support/client';
 
 const meeting = (over: Partial<MeetingSummary>): MeetingSummary => ({
-  id: 'm', title: 'Site review', date: '2026-11-05', startTime: null, meetingType: null, createdBy: null, state: 'active', createdAt: null,
+  id: 'm', title: 'Site review', date: '2026-11-05', startTime: null, meetingType: null, businessId: null, businessName: null, createdBy: null, state: 'active', createdAt: null,
   members: [], missions: [], openPoints: 0, pointCount: 0, labelIds: [], ...over,
 });
 
@@ -42,6 +42,10 @@ describe('meetings (migration 136)', () => {
     expect(filterMeetings(list, { search: 'lift' }).map((m) => m.id)).toEqual(['1']);
     expect(filterMeetings(list, { missionId: 't1' }).map((m) => m.id)).toEqual(['1']);
     expect(filterMeetings(list, { labelId: 'l1' }).map((m) => m.id)).toEqual(['1']);
+    const withBusiness = [...list, meeting({ id: '4', businessId: 'b1' })];
+    expect(filterMeetings(withBusiness, { businesses: { ids: ['b1'], none: false } }).map((m) => m.id)).toEqual(['4']);
+    expect(filterMeetings(withBusiness, { businesses: { ids: [], none: true } }).map((m) => m.id)).toEqual(['1', '2', '3']);
+    expect(filterMeetings(withBusiness, { businesses: null }).length).toBe(4);
     expect(groupMeetingsByMonth(list).map((g) => [g.label, g.meetings.map((m) => m.id)])).toEqual([
       ['November 2026', ['1', '2']], ['October 2026', ['3']],
     ]);

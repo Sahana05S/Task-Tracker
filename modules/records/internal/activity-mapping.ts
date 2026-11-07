@@ -141,6 +141,8 @@ const CHECKLIST_WORDS: Record<string, string> = {
   review: 'Reviewed a checklist objective',
   // Migration 122: a Quest's owner was set or changed; the member arrives as the entry's "about".
   assign: 'Chose a Quest owner',
+  // Migration 133: moved to another list; the lists arrive as "List: from → to".
+  move: 'Moved a checklist row',
 };
 // Notes (migration 126; the 111 commands read the same). The note's hashtags arrive as the reason
 // ("#mistake #client") and become part of the line: "Added a note #mistake #client".
@@ -206,7 +208,7 @@ export const FIELD_WORDS: Record<string, string> = {
   scale_override: 'scale', archived_effective_date: 'archive date', is_primary: 'primary assignee', share_units: 'share',
   review_approved: 'review',
 };
-const VALUE_LABEL: Record<string, string> = { progress: 'progress', scale: 'scale', share_units: 'share', state: 'tick' };
+const VALUE_LABEL: Record<string, string> = { progress: 'progress', scale: 'scale', share_units: 'share', state: 'tick', list: 'list' };
 // An objective's tick as the interface says it (only Yes and N/A are offered; 'No' shows empty).
 const TICK_WORDS: Record<string, string> = { Yes: 'Done', No: 'Not done', 'N/A': 'N/A' };
 

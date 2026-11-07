@@ -36,7 +36,10 @@ function meetingFields(form: FormData): Record<string, Json> | string {
   if (!title) return 'Give the meeting a title.';
   if (!ISO_DATE_PATTERN.test(date)) return 'Choose the meeting date.';
   if (start && !/^\d{2}:\d{2}$/.test(start)) return 'Start time is HH:MM.';
-  return { title, meeting_date: date, start_time: start || null, meeting_type: read(form, 'meeting_type') || null };
+  const fields: Record<string, Json> = { title, meeting_date: date, start_time: start || null, meeting_type: read(form, 'meeting_type') || null };
+  // The business select (migration 134) is shown only when the company has businesses.
+  if (form.has('business_id')) fields.business_id = uuid(form, 'business_id');
+  return fields;
 }
 
 /** New meeting: the caller becomes a member; minutes start from the company agenda. */

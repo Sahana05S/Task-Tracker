@@ -28,6 +28,11 @@ export interface MissionBatchOptions {
    * checks the role; RLS already lets members read their company's missions). Default `mine`.
    */
   scope?: 'mine' | 'team';
+  /**
+   * The business chips (migration 134): missions of these businesses, plus those with none when `none`.
+   * Null or absent: every business. A view only; RLS decides what may be read.
+   */
+  business?: { ids: string[]; none: boolean } | null;
 }
 /** `task_dependencies.relation_type` values the Today graph draws. */
 export type RoadmapRelation = 'Subtask' | 'Dependency' | 'Blocks' | 'Related';

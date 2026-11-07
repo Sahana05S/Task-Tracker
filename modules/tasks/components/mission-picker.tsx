@@ -11,8 +11,10 @@ import { cn } from '@/shared/utils';
  * with their sub-missions indented under them, with a search. Each chosen mission is submitted as a
  * hidden `name` field, so it works inside any form; the chosen ones show as removable chips.
  */
-export function MissionPicker({ options, defaultValue = [], name = 'mission', label = 'Missions', className }: {
+export function MissionPicker({ options, defaultValue = [], name = 'mission', label = 'Missions', businessId = null, className }: {
   options: readonly MissionPickerOption[];
+  /** Show this business's missions (and those with no business) unless "Show missions of every business" is ticked. */
+  businessId?: string | null;
   defaultValue?: readonly string[];
   name?: string;
   label?: string;
@@ -20,7 +22,12 @@ export function MissionPicker({ options, defaultValue = [], name = 'mission', la
 }) {
   const [chosen, setChosen] = React.useState<string[]>(() => [...defaultValue]);
   const [search, setSearch] = React.useState('');
-  const ordered = React.useMemo(() => orderMissionOptions(options), [options]);
+  const [everyBusiness, setEveryBusiness] = React.useState(false);
+  const scoped = React.useMemo(
+    () => (businessId && !everyBusiness ? options.filter((o) => !o.businessId || o.businessId === businessId) : options),
+    [options, businessId, everyBusiness],
+  );
+  const ordered = React.useMemo(() => orderMissionOptions(scoped), [scoped]);
   const shown = React.useMemo(() => searchMissionOptions(ordered, search), [ordered, search]);
   const byId = React.useMemo(() => new Map(options.map((option) => [option.id, option])), [options]);
   const toggle = (id: string) => setChosen((current) => (current.includes(id) ? current.filter((v) => v !== id) : [...current, id]));
@@ -51,6 +58,12 @@ export function MissionPicker({ options, defaultValue = [], name = 'mission', la
         <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" aria-hidden="true" />
         <input id={searchId} type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by tag or title" className="field pl-9" autoComplete="off" />
       </label>
+      {businessId ? (
+        <label className="text-muted-foreground flex items-center gap-2 text-xs">
+          <input type="checkbox" checked={everyBusiness} onChange={(event) => setEveryBusiness(event.target.checked)} className="size-4" />
+          Show missions of every business
+        </label>
+      ) : null}
       <ul className="border-border max-h-60 overflow-y-auto rounded-xl border" aria-label="Missions">
         {shown.length ? shown.map((option) => {
           const checked = chosen.includes(option.id);

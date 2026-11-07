@@ -24,6 +24,9 @@ export interface MeetingSummary {
   readonly date: string;
   readonly startTime: string | null;
   readonly meetingType: string | null;
+  /** The meeting's business (migration 134's list), and its name for display. */
+  readonly businessId: string | null;
+  readonly businessName: string | null;
   readonly createdBy: string | null;
   readonly state: 'active' | 'withdrawn';
   readonly createdAt: string | null;
@@ -75,6 +78,8 @@ export function mapMeetingSummary(row: unknown): MeetingSummary | null {
     date: m.date,
     startTime: text(m.startTime),
     meetingType: text(m.meetingType),
+    businessId: text(m.businessId),
+    businessName: text(m.businessName),
     createdBy: text(m.createdBy),
     state: m.state === 'withdrawn' ? 'withdrawn' : 'active',
     createdAt: text(m.createdAt),
@@ -120,6 +125,8 @@ export interface MeetingFilter {
   readonly search?: string;
   readonly missionId?: string | null;
   readonly labelId?: string | null;
+  /** Business ids to keep (null keeps every meeting); `none` keeps meetings with no business. */
+  readonly businesses?: { readonly ids: readonly string[]; readonly none: boolean } | null;
 }
 
 /** Meetings matching a search (title, type, members, missions) and the chosen mission and label. */
@@ -128,6 +135,7 @@ export function filterMeetings(meetings: readonly MeetingSummary[], filter: Meet
   return meetings.filter((meeting) => {
     if (filter.missionId && !meeting.missions.some((mission) => mission.id === filter.missionId)) return false;
     if (filter.labelId && !meeting.labelIds.includes(filter.labelId)) return false;
+    if (filter.businesses && !(meeting.businessId ? filter.businesses.ids.includes(meeting.businessId) : filter.businesses.none)) return false;
     if (!words.length) return true;
     const haystack = [meeting.title, meeting.meetingType ?? '', ...meeting.members.map((m) => m.name),
       ...meeting.missions.flatMap((m) => [m.tag, m.title])].join(' ').toLowerCase();

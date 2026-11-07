@@ -6,6 +6,8 @@ import { FIRST_RUN_COOKIE } from '@/modules/workspace-views/components/today/fir
 import { MissionRoadmap } from '@/modules/workspace-views/components/today/mission-roadmap';
 import { getAssignedMissionBatch } from '@/modules/tasks';
 import { getLabelsFor } from '@/modules/labels';
+import { businessParamValue, businessQueryFilter, chipBusinesses, getBusinessView, parseBusinessParam } from '@/modules/businesses';
+import { BusinessSwitcher } from '@/modules/businesses/components/business-switcher';
 import { getMemberNames } from '@/modules/team';
 import { missionDueFilter } from '@/modules/tasks/client';
 import { kolkataDate } from '@/shared/time/kolkata';
@@ -52,7 +54,12 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   // The whole team's graph opens other people's checklists: the managing director only (migration 117).
   const canSeeTeam = profile.role === 'managing_director';
   const scope = canSeeTeam ? roadmapScope(query.scope) : 'mine';
-  const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true }).catch(() => null);
+  // Business chips (migration 134): `?business=`, opening on the member's own businesses (All when none).
+  const businessView = await getBusinessView().catch(() => null);
+  const businessSelection = businessView ? parseBusinessParam(query.business, businessView.catalogue.businesses, businessView.mine) : null;
+  const business = businessSelection ? businessQueryFilter(businessSelection) : null;
+  const businessParam = businessView && businessSelection && query.business ? businessParamValue(businessSelection, businessView.catalogue.businesses) : null;
+  const initial = await getAssignedMissionBatch(profile.id, { due, scope, watching: true, business }).catch(() => null);
   // Labels (migration 112) and member names (Quest owners on the map, migration 122); a failure only hides them.
   const [initialLabels, memberNames] = await Promise.all([
     initial ? getLabelsFor('task', initial.missions.map((mission) => mission.id)).catch(() => null) : null,
@@ -67,7 +74,10 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     <Suspense fallback={null}><QuestRequestsPrompt /></Suspense>
     <Suspense fallback={null}><MeetingsToday userId={profile.id} today={today} /></Suspense>
     <Suspense fallback={null}><RecordsPrompt userId={profile.id} employeeId={profile.employeeId} /></Suspense>
-    <MissionRoadmap key={`${due}:${scope}`} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLabels={initialLabels} memberNames={memberNames} />
+    {businessView && businessSelection && chipBusinesses(businessView.catalogue.businesses).length ? (
+      <BusinessSwitcher businesses={businessView.catalogue.businesses} selection={businessSelection} summary={businessView.summary} className="mb-4" />
+    ) : null}
+    <MissionRoadmap key={`${due}:${scope}:${businessParam ?? ''}`} business={business} businessParam={businessParam} initial={initial} due={due} scope={scope} canSeeTeam={canSeeTeam} today={today} initialView={query.view === 'list' ? 'list' : 'roadmap'} initialLocation={parseRoadmapLocation(query)} initialLabels={initialLabels} memberNames={memberNames} />
     <Suspense fallback={<p role="status" className="text-muted-foreground mt-5 text-sm">Loading your week and team updates…</p>}>
       <TodayOverview profile={profile} />
     </Suspense>

@@ -4,7 +4,10 @@ import * as React from 'react';
 import Link from 'next/link';
 import { CalendarDaysIcon, CircleDotIcon, SearchIcon, UsersIcon } from 'lucide-react';
 
+import { BUSINESS_DOT_CLASS, businessQueryFilter, EVERY_BUSINESS, type Business, type BusinessSelection } from '@/modules/businesses/client';
+import { BusinessChips } from '@/modules/businesses/components/business-chips';
 import { filterMeetings, groupMeetingsByMonth, type MeetingSummary } from '@/modules/support/client';
+import { cn } from '@/shared/utils';
 import { EmptyState, InitialsAvatar } from '@/shared/ui/mission-ui';
 
 export interface MeetingFilterLabel { readonly id: string; readonly name: string }
@@ -14,7 +17,13 @@ export interface MeetingFilterLabel { readonly id: string; readonly name: string
  * sees every meeting), grouped by month, newest first, with a search and mission / label filters.
  * Each row shows the date, title, members and open points and opens the meeting.
  */
-export function MeetingsList({ meetings, labels }: { meetings: readonly MeetingSummary[]; labels: readonly MeetingFilterLabel[] }) {
+export function MeetingsList({ meetings, labels, businesses = [] }: {
+  meetings: readonly MeetingSummary[];
+  labels: readonly MeetingFilterLabel[];
+  /** The company's businesses (migration 134): chips over the list; none hides them. */
+  businesses?: readonly Business[];
+}) {
+  const [selection, setSelection] = React.useState<BusinessSelection>(EVERY_BUSINESS);
   const [search, setSearch] = React.useState('');
   const [missionId, setMissionId] = React.useState('');
   const [labelId, setLabelId] = React.useState('');
@@ -27,11 +36,13 @@ export function MeetingsList({ meetings, labels }: { meetings: readonly MeetingS
     const used = new Set(meetings.flatMap((meeting) => meeting.labelIds));
     return labels.filter((label) => used.has(label.id));
   }, [meetings, labels]);
-  const shown = filterMeetings(meetings, { search, missionId: missionId || null, labelId: labelId || null });
+  const shown = filterMeetings(meetings, { search, missionId: missionId || null, labelId: labelId || null, businesses: businessQueryFilter(selection) });
+  const businessById = new Map(businesses.map((b) => [b.id, b]));
   const groups = groupMeetingsByMonth(shown);
 
   return (
     <section aria-label="My meetings" className="grid min-w-0 content-start gap-4">
+      {businesses.length ? <BusinessChips businesses={businesses} selection={selection} onChange={setSelection} /> : null}
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
         <label className="relative block">
           <span className="sr-only">Search meetings</span>
@@ -64,7 +75,7 @@ export function MeetingsList({ meetings, labels }: { meetings: readonly MeetingS
         <div key={group.month} className="grid gap-2">
           <h2 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{group.label}</h2>
           <ul className="soft-card divide-border divide-y overflow-hidden p-0">
-            {group.meetings.map((meeting) => <MeetingRow key={meeting.id} meeting={meeting} />)}
+            {group.meetings.map((meeting) => <MeetingRow key={meeting.id} meeting={meeting} business={meeting.businessId ? businessById.get(meeting.businessId) : undefined} />)}
           </ul>
         </div>
       ))}
@@ -72,7 +83,7 @@ export function MeetingsList({ meetings, labels }: { meetings: readonly MeetingS
   );
 }
 
-function MeetingRow({ meeting }: { meeting: MeetingSummary }) {
+function MeetingRow({ meeting, business }: { meeting: MeetingSummary; business?: Business }) {
   const day = new Date(`${meeting.date}T00:00:00Z`);
   const weekday = day.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
   return (
@@ -86,6 +97,11 @@ function MeetingRow({ meeting }: { meeting: MeetingSummary }) {
           <span className="text-foreground truncate text-[15px] font-semibold">{meeting.title}</span>
           <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             {meeting.startTime ? <span>{meeting.startTime}</span> : null}
+            {meeting.businessName ? (
+              <span className="inline-flex items-center gap-1">
+                <span aria-hidden="true" className={cn('size-2 rounded-full', business ? BUSINESS_DOT_CLASS[business.colour] : 'bg-muted-foreground')} />{meeting.businessName}
+              </span>
+            ) : null}
             {meeting.meetingType ? <span className="truncate">{meeting.meetingType}</span> : null}
             {meeting.missions.length ? <span className="truncate font-mono">{meeting.missions.slice(0, 2).map((m) => m.tag).join(', ')}{meeting.missions.length > 2 ? ` +${meeting.missions.length - 2}` : ''}</span> : null}
           </span>

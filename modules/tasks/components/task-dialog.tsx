@@ -30,6 +30,7 @@ import { categoryChoices, SCALE_MODE_LABELS, type StandingScaleMode } from '@/mo
 import { useCategoryCatalogue, useDefaultScaleMode } from '@/modules/settings/components/company-settings-context';
 import type { Task, User } from '@/types/tracker';
 import type { Label } from '@/modules/labels/client';
+import { chipBusinesses, type Business } from '@/modules/businesses/client';
 import { attachPickedLabels, LabelPicker, type PickedLabel } from '@/modules/labels/components/label-picker';
 
 /** `null` opens the form in create mode; a task opens it in edit mode. */
@@ -45,6 +46,10 @@ export interface TaskDialogProps {
   labelCatalogue?: readonly Label[] | null;
   /** May create a label while typing it (managing director and project engineers). */
   canCreateLabels?: boolean;
+  /** The company's businesses (migration 134); null or absent hides the Business field. */
+  businesses?: readonly Business[] | null;
+  /** A new mission's business: the one chip selected on the Missions page, if exactly one. */
+  defaultBusinessId?: string | null;
 }
 
 const INITIAL_STATE: TaskActionState | null = null;
@@ -75,6 +80,8 @@ export function TaskDialog({
   templates=[],
   labelCatalogue = null,
   canCreateLabels = false,
+  businesses = null,
+  defaultBusinessId = null,
 }: TaskDialogProps) {
   const isEdit = task !== null;
 
@@ -139,6 +146,8 @@ export function TaskDialog({
           action={isEdit ? editAction : createAction}
           labelCatalogue={labelCatalogue}
           canCreateLabels={canCreateLabels}
+          businesses={businesses}
+          defaultBusinessId={defaultBusinessId}
           pending={pending}
           error={error}
           onCancel={() => onOpenChange(false)}
@@ -177,6 +186,8 @@ interface TaskFormProps {
   action: (formData: FormData) => void;
   labelCatalogue?: readonly Label[] | null;
   canCreateLabels?: boolean;
+  businesses?: readonly Business[] | null;
+  defaultBusinessId?: string | null;
   pending: boolean;
   error?: string;
   onCancel: () => void;
@@ -189,6 +200,8 @@ function TaskForm({
   action,
   labelCatalogue = null,
   canCreateLabels = false,
+  businesses = null,
+  defaultBusinessId = null,
   pending,
   error,
   onCancel,
@@ -380,6 +393,8 @@ function TaskForm({
           />
         </Field>
 
+        {businesses ? <BusinessField task={task} businesses={businesses} defaultBusinessId={defaultBusinessId} /> : null}
+
         {!isEdit ? (
           <>
             <NativeTemplateSelect templates={templates} />
@@ -540,5 +555,29 @@ function MemberCheckboxGroup({
         </label>
       ))}
     </div>
+  );
+}
+
+/**
+ * The mission's business (migration 134): active businesses, plus an archived one the mission still
+ * has. `businessField` tells the action the field was on the form, so an empty choice clears it.
+ */
+function BusinessField({ task, businesses, defaultBusinessId }: {
+  task: Task | null;
+  businesses: readonly Business[];
+  defaultBusinessId: string | null;
+}) {
+  const current = task ? businesses.find((b) => b.id === task.businessId) ?? null : null;
+  const options = [...chipBusinesses(businesses), ...(current?.archived ? [current] : [])];
+  if (!options.length) return null;
+  const initial = task ? task.businessId ?? '' : options.some((b) => b.id === defaultBusinessId) ? defaultBusinessId ?? '' : '';
+  return (
+    <Field id="task-business" label="Business" hint="Which business this work is for. It only groups missions; it never changes who sees them.">
+      <input type="hidden" name="businessField" value="1" />
+      <NativeSelect id="task-business" name="businessId" defaultValue={initial}>
+        <option value="">No business</option>
+        {options.map((b) => <option key={b.id} value={b.id}>{b.name}{b.archived ? ' (archived)' : ''}</option>)}
+      </NativeSelect>
+    </Field>
   );
 }

@@ -43,6 +43,11 @@ function describeDatabaseError(error: PostgrestError): string {
   }
 }
 
+/** The business key for save_task_with_participants, only when the form carried the field (migration 134). */
+function businessField(fields: TaskFields): Record<string, Json> {
+  return fields.businessId === undefined ? {} : { business_id: fields.businessId };
+}
+
 /** Options that differ between creating and editing a task. */
 export interface SaveTaskOptions {
   taskId: string | null;
@@ -61,7 +66,7 @@ export async function saveTaskWithParticipants(
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('save_task_with_participants', {
     p_task_id: options.taskId,
-    p_fields: { task_tag: taskTag, title, category, priority, due_date: dueDate, ...options.extraFields },
+    p_fields: { task_tag: taskTag, title, category, priority, due_date: dueDate, ...businessField(fields), ...options.extraFields },
     p_assignees: assigneeIds,
     p_reviewers: reviewerIds,
     p_share_units: shares,
@@ -85,7 +90,7 @@ export async function createTaskWithScale(
   const { taskTag, title, category, priority, dueDate, assigneeIds, reviewerIds, shares } = fields;
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('create_task_with_scale', {
-    p_fields: { task_tag: taskTag, title, category, priority, due_date: dueDate, ...options.extraFields },
+    p_fields: { task_tag: taskTag, title, category, priority, due_date: dueDate, ...businessField(fields), ...options.extraFields },
     p_assignees: assigneeIds,
     p_reviewers: reviewerIds,
     p_share_units: shares,

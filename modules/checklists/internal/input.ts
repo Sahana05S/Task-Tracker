@@ -24,6 +24,8 @@ const COMMAND_FIELDS: Record<string, string[]> = {
   duplicate: ['node_id'],
   // Migration 114: acknowledge an objective or send it back with a note.
   review: ['node_id', 'decision', 'note'],
+  // Migration 133: move a row to another list (target_list_id), or into a new Quest (new_quest_*, below).
+  move: ['node_id'],
   mode: ['enabled', 'reason', 'preview_progress'],
 };
 
@@ -66,6 +68,20 @@ export function parseChecklistCommand(form: FormData): Parsed<ChecklistCommandIn
     const minutes = read(form, 'estimated_minutes');
     if (minutes && !/^\d+$/.test(minutes)) return { ok: false, error: 'Estimated time must be whole minutes.' };
     payload.estimated_minutes = minutes ? Number(minutes) : null;
+  }
+
+  // Migration 133: either a list to move into, or a new Quest made in the row's list first.
+  if (command === 'move') {
+    const target = read(form, 'target_list_id');
+    if (target === 'new') {
+      const title = read(form, 'new_quest_title');
+      if (!title) return { ok: false, error: 'Give the new Quest a title.' };
+      payload.new_quest = { title, assignee_id: read(form, 'new_quest_assignee_id') || null };
+    } else if (target) {
+      payload.target_list_id = target;
+    } else {
+      return { ok: false, error: 'Choose where to move this row.' };
+    }
   }
 
   const version = read(form, 'expectedVersion');

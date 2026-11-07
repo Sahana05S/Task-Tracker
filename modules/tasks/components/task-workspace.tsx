@@ -34,6 +34,15 @@ import { canManageTasks, canReadMissionWork } from '@/modules/tasks/internal/per
 import type { ToolOperation } from '@/modules/tasks/internal/tools/contract';
 import type { Task, User } from '@/types/tracker';
 import type { Label } from '@/modules/labels/client';
+import {
+  businessParamValue,
+  chipBusinesses,
+  matchesBusiness,
+  parseBusinessParam,
+  type Business,
+  type BusinessSummary,
+} from '@/modules/businesses/client';
+import { BusinessChips } from '@/modules/businesses/components/business-chips';
 
 export interface TaskWorkspaceProps {
   tasks: readonly Task[];
@@ -53,6 +62,16 @@ export interface TaskWorkspaceProps {
   WaypointSlot?: WaypointSlotComponent;
   /** Labels (migration 112): chips on cards and rows, the label filter and the New mission field. Null when the read failed. */
   labels?: MissionLabels | null;
+  /** Businesses (migration 134): the chips, the dots and the form's Business field. Null when the read failed. */
+  businesses?: MissionBusinesses | null;
+}
+
+/** The businesses the Missions page read: the company's list, the viewer's own and this week's summary. */
+export interface MissionBusinesses {
+  catalogue: readonly Business[];
+  /** The viewer's own active businesses: where the chips open without `?business=`. */
+  mine: readonly string[];
+  summary: BusinessSummary | null;
 }
 
 /** The labels the Missions page read in one batch (`labels_for('task', ids)` and `label_catalogue()`). */
@@ -95,6 +114,7 @@ export function TaskWorkspace({
   LogHoursAction,
   WaypointSlot,
   labels = null,
+  businesses = null,
 }: TaskWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -153,10 +173,27 @@ export function TaskWorkspace({
   const labelSlugsOf = React.useCallback((taskId: string) => labelsOf(taskId).map((label) => label.slug), [labelsOf]);
   const noteSlugsOf = React.useCallback((taskId: string) => labels?.noteSlugsByTask?.[taskId] ?? NO_SLUGS, [labels]);
 
+  // Businesses (migration 134): the chips narrow the list first; the other filters work within it.
+  const businessCatalogue = businesses?.catalogue;
+  const businessMine = businesses?.mine;
+  const businessSelection = React.useMemo(
+    () => (businessCatalogue ? parseBusinessParam(filters.business ?? null, businessCatalogue, businessMine ?? []) : null),
+    [businessCatalogue, businessMine, filters.business],
+  );
+  const businessTasks = React.useMemo(
+    () => (businessSelection ? tasks.filter((task) => matchesBusiness(businessSelection, task.businessId)) : tasks),
+    [tasks, businessSelection],
+  );
+  const businessById = React.useMemo(() => new Map((businessCatalogue ?? []).map((b) => [b.id, b])), [businessCatalogue]);
+  const businessOf = React.useCallback((task: Task) => (task.businessId ? businessById.get(task.businessId) ?? null : null), [businessById]);
+  // A new mission starts in the business when exactly one is chosen.
+  const defaultBusinessId = businessSelection && !businessSelection.all && businessSelection.ids.length === 1 && !businessSelection.none
+    ? businessSelection.ids[0] : null;
+
   const visibleTasks = React.useMemo(
     () =>
-      sortTasks(filterTasks(tasks, filters, labelSlugsOf, noteSlugsOf), sort, memberNames, effortByTask),
-    [tasks, filters, labelSlugsOf, noteSlugsOf, sort, memberNames, effortByTask],
+      sortTasks(filterTasks(businessTasks, filters, labelSlugsOf, noteSlugsOf), sort, memberNames, effortByTask),
+    [businessTasks, filters, labelSlugsOf, noteSlugsOf, sort, memberNames, effortByTask],
   );
   // Sub-missions follow their parent (with a "Part of" chip when the parent is filtered out).
   const nested = React.useMemo(() => nestSubMissions(visibleTasks, tasks), [visibleTasks, tasks]);
@@ -164,10 +201,14 @@ export function TaskWorkspace({
   // A row that left the list (a refresh removed it) never stays selected.
   const selection = pruneSelection(selected, visibleIds);
 
-  const applyFilters = (next: TaskFilterState) => {
+  const applyFilters = (requested: TaskFilterState) => {
+    // The business chips are kept when other filters change or are cleared.
+    const next = 'business' in requested ? requested : { ...requested, business: filters.business };
     setFilters(next);
     // A row hidden by the new filters leaves the selection for good.
-    const stillVisible = filterTasks(tasks, next, labelSlugsOf, noteSlugsOf).map((task) => task.id);
+    const nextSelection = businessCatalogue ? parseBusinessParam(next.business ?? null, businessCatalogue, businessMine ?? []) : null;
+    const inBusiness = nextSelection ? tasks.filter((task) => matchesBusiness(nextSelection, task.businessId)) : tasks;
+    const stillVisible = filterTasks(inBusiness, next, labelSlugsOf, noteSlugsOf).map((task) => task.id);
     setSelected((current) => pruneSelection(current, stillVisible));
     window.history.replaceState(null, '', missionsHref(view, next));
   };
@@ -202,14 +243,22 @@ export function TaskWorkspace({
   return (
     <div className="flex flex-col gap-3">
       {/* Title and the New mission control live in the page header, so this
-          component starts straight into the toolbar. */}
+          component starts straight into the business chips and the toolbar. */}
+      {businessCatalogue && businessSelection && chipBusinesses(businessCatalogue).length ? (
+        <BusinessChips
+          businesses={businessCatalogue}
+          selection={businessSelection}
+          summary={businesses?.summary ?? null}
+          onChange={(next) => applyFilters({ ...filters, business: businessParamValue(next, businessCatalogue) })}
+        />
+      ) : null}
       <TaskFilters
         filters={filters}
         onChange={applyFilters}
         members={members}
         tasks={tasks}
         resultCount={visibleTasks.length}
-        totalCount={tasks.length}
+        totalCount={businessTasks.length}
         view={view}
         onViewChange={changeView}
         labelCatalogue={labels?.catalogue ?? null}
@@ -263,6 +312,7 @@ export function TaskWorkspace({
                 actions={rowActions}
                 WaypointSlot={WaypointSlot}
                 labelsOf={labels ? labelsOf : undefined}
+                businessOf={businesses ? businessOf : undefined}
               />
               <BulkActionBar
                 selectedCount={selection.size}
@@ -285,6 +335,7 @@ export function TaskWorkspace({
               LogHoursAction={LogHoursAction}
               WaypointSlot={WaypointSlot}
               labelsOf={labels ? labelsOf : undefined}
+              businessOf={businesses ? businessOf : undefined}
             />
           </div>
         </>
@@ -320,6 +371,8 @@ export function TaskWorkspace({
         defaultAssigneeId={currentUser.id}
         labelCatalogue={labels?.catalogue ?? null}
         canCreateLabels={labels?.canCreate ?? false}
+        businesses={businessCatalogue ?? null}
+        defaultBusinessId={defaultBusinessId}
       />
 
       <DeleteMissionSheet

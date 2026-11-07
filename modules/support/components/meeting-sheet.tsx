@@ -6,6 +6,7 @@ import { PencilIcon, PlusIcon, SearchIcon } from 'lucide-react';
 
 import { createMeetingAction, editMeetingAction } from '@/modules/support/meeting-actions';
 import type { MeetingDetail } from '@/modules/support/client';
+import type { Business } from '@/modules/businesses/client';
 import { MeetingTypeSelect } from '@/modules/settings/components/meeting-type-select';
 import type { MissionPickerOption } from '@/modules/tasks/client';
 import { MissionPicker } from '@/modules/tasks/components/mission-picker';
@@ -20,8 +21,10 @@ export interface MeetingMemberChoice { readonly id: string; readonly name: strin
  * for a new one, its members. A bottom sheet on phones, a side panel on wider screens. A new
  * meeting opens on its own page once saved.
  */
-export function MeetingSheet({ today, members, missions, meeting, viewerId }: {
+export function MeetingSheet({ today, members, missions, meeting, viewerId, businesses = [] }: {
   today: string;
+  /** The company's businesses (migration 134); none hides the field. */
+  businesses?: readonly Business[];
   members: readonly MeetingMemberChoice[];
   missions: readonly MissionPickerOption[];
   meeting?: MeetingDetail;
@@ -38,6 +41,9 @@ export function MeetingSheet({ today, members, missions, meeting, viewerId }: {
     return () => query.removeEventListener('change', update);
   }, []);
   const editing = Boolean(meeting);
+  const [businessId, setBusinessId] = React.useState<string>(meeting?.businessId ?? '');
+  // Active businesses, plus the meeting's own even if it was archived since.
+  const businessChoices = businesses.filter((b) => !b.archived || b.id === meeting?.businessId);
 
   return (
     <>
@@ -76,8 +82,16 @@ export function MeetingSheet({ today, members, missions, meeting, viewerId }: {
                 </label>
               </div>
               <MeetingTypeSelect defaultValue={meeting?.meetingType ?? null} required={false} />
+              {businessChoices.length ? (
+                <label className="field-label">Business
+                  <select name="business_id" value={businessId} onChange={(event) => setBusinessId(event.target.value)} className="field">
+                    <option value="">No business</option>
+                    {businessChoices.map((b) => <option key={b.id} value={b.id}>{b.name}{b.archived ? ' (archived)' : ''}</option>)}
+                  </select>
+                </label>
+              ) : null}
               {editing ? null : <MemberPicker members={members.filter((member) => member.id !== viewerId)} />}
-              <MissionPicker options={missions} defaultValue={meeting?.missions.map((mission) => mission.id) ?? []} label="Linked missions" />
+              <MissionPicker options={missions} defaultValue={meeting?.missions.map((mission) => mission.id) ?? []} label="Linked missions" businessId={businessId || null} />
               <Button type="submit" className="justify-self-start">{editing ? 'Save meeting' : 'Create meeting'}</Button>
             </ExecutionForm>
           </div>

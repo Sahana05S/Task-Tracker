@@ -74,7 +74,10 @@ authors and "to be resolved by" people (a meeting holding only withdrawn points 
 - Labels on points, label pages (`labelled` items carry `meetingId`), Team > Activity and record
   history follow the meeting's readers. Linked missions are only named; opening one follows the
   mission's own rules. The mission picker is `MissionPicker` (tasks module).
-- `meetings.business_id` follows once the businesses table (migration 134) is in main.
+- `meetings.business_id` (migration 134's businesses): chosen in the New / Edit meeting sheet (a new or
+  changed business must be active; an unchanged archived one stays), shown on the row and the meeting
+  page; business chips over My meetings (All by default); the mission picker shows that business's
+  missions (and those with none) unless every business is ticked.
 
 ## Depends on
 `shared/*` (Kolkata dates, calendar periods, the observation clock, the shared

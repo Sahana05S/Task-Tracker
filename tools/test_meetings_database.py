@@ -192,6 +192,23 @@ for db in DBS:
     expect_code(db,PE,meeting_sql('edit',mid,{'title':'Mine'}),'P0002')
     print('PASS',db,'edit: any member changes title, date and missions; the points follow the date; others refused')
 
+    # ---- business (migration 134's list) ---------------------------------------------------------------------------
+    biz=value(db,"string_agg(id::text,',' ORDER BY sort) FROM taskpulse_private.businesses").split(',')
+    assert len(biz)>=2,biz
+    withb=meeting(db,M4,'create',payload={'title':'Fish sales sync','meeting_date':'2026-11-05','business_id':biz[0]})['id']
+    assert detail(db,M4,withb)['businessId']==biz[0] and detail(db,M4,withb)['businessName']
+    assert [m['businessId'] for m in listed(db,M4) if m['id']==withb]==[biz[0]]
+    sql(db,f"UPDATE taskpulse_private.businesses SET active=false WHERE id='{biz[0]}'")
+    meeting(db,M4,'edit',withb,{'title':'Fish sales sync 2','business_id':biz[0]})   # an unchanged archived business stays
+    expect_code(db,M4,meeting_sql('create',payload={'title':'X','meeting_date':'2026-11-05','business_id':biz[0]}),'23514')
+    expect_code(db,M4,meeting_sql('create',payload={'title':'X','meeting_date':'2026-11-05','business_id':'nope'}),'23514')
+    sql(db,f"UPDATE taskpulse_private.businesses SET active=true WHERE id='{biz[0]}'")
+    meeting(db,M4,'edit',withb,{'business_id':biz[1]})
+    assert detail(db,M4,withb)['businessId']==biz[1]
+    meeting(db,M4,'edit',withb,{'business_id':None})
+    assert detail(db,M4,withb)['businessId'] is None
+    print('PASS',db,'business: an active business of the company on create and edit; an unchanged archived one stays; cleared with null')
+
     # ---- members ----------------------------------------------------------------------------------------------------
     meeting(db,M5,'add_member',mid,{'user_id':M6})
     assert mid in [m['id'] for m in listed(db,M6)] and visible_points(db,M6,mid)==2
@@ -228,4 +245,5 @@ for db in DBS:
     expect_code(db,B_DIR,meeting_sql('create',payload={'title':'X','meeting_date':'2026-11-05','members':[M4]}),'23514')
     expect_code(db,B_DIR,meeting_sql('create',payload={'title':'X','meeting_date':'2026-11-05','missions':[T1]}),'P0002')
     assert visible_points(db,B_DIR,solo)==0
+    expect_code(db,B_DIR,meeting_sql('create',payload={'title':'X','meeting_date':'2026-11-05','business_id':biz[1]}),'23514')
     print('PASS',db,"company B's director reads none of company A's meetings and cannot add A's people or missions")

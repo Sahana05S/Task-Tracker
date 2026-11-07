@@ -141,6 +141,8 @@ export interface Database {
           archived_effective_date?:string|null;
           archive_reason?:string|null;
           handoff_successor_id?:string|null;
+          /** Migration 134: the mission's business (businesses module). */
+          business_id?: string | null;
           valid_for_metrics: boolean;
           assigned_date: string;
           due_date: string | null;
@@ -985,9 +987,18 @@ export interface Database {
       meeting_point_command: { Args: { p_op: 'add' | 'edit' | 'set_status' | 'withdraw'; p_meeting: string; p_point: string | null; p_payload: Json; p_expected_version: number | null; p_operation: string }; Returns: Json };
       meetings_list: { Args: { p_from?: string | null; p_to?: string | null; p_task?: string | null }; Returns: Json };
       meeting_detail: { Args: { p_meeting: string }; Returns: Json };
+      /** Migration 133: the lists a checklist row may move into. */
+      checklist_move_targets: { Args: { p_task: string }; Returns: Json };
       /** Migration 132: Quest notes (learning module). */
       quest_notes: { Args: { p_node: string }; Returns: Json };
       quest_note_counts: { Args: { p_task: string }; Returns: Json };
+      /** Migration 134: businesses (businesses module). */
+      businesses: { Args: Record<never, never>; Returns: Json };
+      my_businesses: { Args: Record<never, never>; Returns: Json };
+      business_summary: { Args: Record<never, never>; Returns: Json };
+      business_command: { Args: { p_op: 'create' | 'update' | 'archive' | 'restore'; p_business: string | null; p_name: string | null; p_colour: string | null; p_sort: number | null; p_operation: string }; Returns: Json };
+      user_businesses_command: { Args: { p_user: string; p_businesses: string[]; p_operation: string }; Returns: Json };
+      task_business_command: { Args: { p_task: string; p_business: string | null; p_operation: string }; Returns: Json };
       /** Migration 112: workspace labels (labels module). */
       label_catalogue: { Args: Record<never, never>; Returns: Json };
       labels_for: { Args: { p_kind: 'task' | 'mission_learning' | 'meeting_point'; p_ids: string[] }; Returns: Json };

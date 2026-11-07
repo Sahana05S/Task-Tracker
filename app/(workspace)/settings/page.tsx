@@ -9,6 +9,8 @@ import { getFileStorageHealth } from '@/modules/files';
 import { ConnectSharedDrive } from '@/modules/files/components/connect-shared-drive';
 import { getLabelCatalogue } from '@/modules/labels';
 import { LabelManager } from '@/modules/labels/components/label-manager';
+import { getBusinesses } from '@/modules/businesses';
+import { BusinessManager } from '@/modules/businesses/components/business-manager';
 import { Building2Icon, IdCardIcon, InfoIcon, PaletteIcon, UserRoundIcon } from 'lucide-react';
 
 import { InitialsAvatar, MissionNotice, MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
@@ -130,7 +132,7 @@ function AccountTab({ profile }: { profile: Profile }) {
 }
 
 async function CompanyTab() {
-  const [settings, people, labels, storage] = await Promise.all([getCompanySettings(), getPeopleAdminData(), getLabelCatalogue(), getFileStorageHealth()]);
+  const [settings, people, labels, storage, businesses] = await Promise.all([getCompanySettings(), getPeopleAdminData(), getLabelCatalogue(), getFileStorageHealth(), getBusinesses()]);
   if (!settings.available) {
     return (
       <MissionNotice tone="attention" icon={InfoIcon}>
@@ -151,6 +153,7 @@ async function CompanyTab() {
         settings={settings}
         members={people.members.map((member) => ({ id: member.id, fullName: member.fullName, isActive: member.isActive }))}
         labels={labels ? <LabelManager labels={labels.labels} /> : null}
+        businesses={businesses?.canManage ? <BusinessManager businesses={businesses.businesses} /> : null}
       />
       {/* Connect the company's Shared Drive (migration 100); hidden on a database without file storage. */}
       {storage.available ? <ConnectSharedDrive health={storage} /> : null}

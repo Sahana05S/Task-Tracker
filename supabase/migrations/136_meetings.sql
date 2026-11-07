@@ -36,7 +36,8 @@
 -- 7. Old points: one meeting per company, date and meeting type, titled
 --    "<type> meeting" or "Meeting"; withdrawn points stay withdrawn (a meeting
 --    holding only withdrawn points is withdrawn too).
--- business_id follows in a later migration once the businesses table exists.
+-- 8. meetings.business_id (migration 134's businesses): set on create and edit; a new or changed
+--    business must be active and in the caller's company; an unchanged archived one may stay.
 -- ===========================================================================
 BEGIN;
 
@@ -57,6 +58,7 @@ CREATE TABLE public.meetings (
  meeting_date date NOT NULL,
  start_time time,
  meeting_type varchar(80),
+ business_id uuid REFERENCES taskpulse_private.businesses(id) ON DELETE RESTRICT,
  minutes text NOT NULL DEFAULT '' CHECK (length(minutes)<=50000),
  record_version bigint NOT NULL DEFAULT 1,
  created_by uuid REFERENCES public.users(id) ON DELETE RESTRICT,
@@ -67,6 +69,7 @@ CREATE TABLE public.meetings (
  updated_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
 CREATE INDEX meetings_org_date_idx ON public.meetings(organization_id,meeting_date DESC);
+CREATE INDEX meetings_business_idx ON public.meetings(business_id) WHERE business_id IS NOT NULL;
 
 CREATE TABLE public.meeting_members (
  meeting_id uuid NOT NULL REFERENCES public.meetings(id) ON DELETE CASCADE,
@@ -98,6 +101,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO taskpulse_private.m15_org_refs(table_schema,table_name,column_name,ref_schema,ref_table) VALUES
  ('public','meetings','created_by','public','users'),
  ('public','meetings','minutes_saved_by','public','users'),
+ ('public','meetings','business_id','taskpulse_private','businesses'),
  ('public','meeting_members','meeting_id','public','meetings'),
  ('public','meeting_members','user_id','public','users'),
  ('public','meeting_members','added_by','public','users'),
@@ -198,7 +202,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE actor uuid:=auth.uid(); org uuid:=public.current_organization(); role public.user_role;
  cmd text:='meeting_'||coalesce(p_op,''); receipt taskpulse_private.command_receipts; result jsonb;
  payload jsonb:=coalesce(p_payload,'{}'::jsonb); request jsonb; m public.meetings; target uuid; d date; st time;
- v_title text; v_type text; changed text[]:='{}'; x jsonb; BEGIN
+ v_title text; v_type text; v_business uuid; changed text[]:='{}'; x jsonb; BEGIN
  role:=taskpulse_private.meeting_actor();
  IF p_op IS NULL OR p_op NOT IN ('create','edit','save_minutes','add_member','remove_member','withdraw') OR p_operation IS NULL
   OR jsonb_typeof(payload)<>'object' OR (p_op<>'create' AND p_meeting IS NULL) THEN
@@ -232,8 +236,9 @@ DECLARE actor uuid:=auth.uid(); org uuid:=public.current_organization(); role pu
  END IF;
 
  IF p_op='create' THEN
-  INSERT INTO public.meetings(organization_id,title,meeting_date,start_time,meeting_type,minutes,created_by)
-  VALUES(org,v_title,d,st,v_type,
+  v_business:=taskpulse_private.business_for_mission(payload->>'business_id');
+  INSERT INTO public.meetings(organization_id,title,meeting_date,start_time,meeting_type,business_id,minutes,created_by)
+  VALUES(org,v_title,d,st,v_type,v_business,
    coalesce((SELECT s.meeting_agenda FROM taskpulse_private.organization_settings s WHERE s.organization_id=org),''),actor)
   RETURNING * INTO m;
   INSERT INTO public.meeting_members(meeting_id,user_id,organization_id,added_by) VALUES(m.id,actor,org,actor);
@@ -246,20 +251,24 @@ DECLARE actor uuid:=auth.uid(); org uuid:=public.current_organization(); role pu
    END LOOP;
   END IF;
   PERFORM taskpulse_private.meeting_set_missions(m.id,coalesce(payload->'missions','[]'::jsonb));
-  changed:=ARRAY['title','meeting_date','members','missions'];
+  changed:=ARRAY['title','meeting_date','business_id','members','missions'];
  ELSE
   SELECT * INTO m FROM public.meetings x WHERE x.id=p_meeting AND x.organization_id=org FOR UPDATE;
   IF NOT FOUND OR NOT taskpulse_private.can_read_meeting(m.id) THEN RAISE EXCEPTION 'Meeting not found' USING ERRCODE='P0002'; END IF;
   IF m.record_state<>'active' THEN RAISE EXCEPTION 'This meeting was withdrawn' USING ERRCODE='23514'; END IF;
   IF p_op='edit' THEN
-   IF payload-ARRAY['title','meeting_date','start_time','meeting_type','missions']<>'{}' THEN
+   IF payload-ARRAY['title','meeting_date','start_time','meeting_type','business_id','missions']<>'{}' THEN
     RAISE EXCEPTION 'Unexpected meeting fields' USING ERRCODE='23514'; END IF;
    IF payload ? 'title' AND v_title IS DISTINCT FROM m.title THEN changed:=changed||'title'::text; m.title:=v_title; END IF;
    IF payload ? 'meeting_date' AND d IS DISTINCT FROM m.meeting_date THEN changed:=changed||'meeting_date'::text; m.meeting_date:=d; END IF;
    IF payload ? 'start_time' AND st IS DISTINCT FROM m.start_time THEN changed:=changed||'start_time'::text; m.start_time:=st; END IF;
    IF payload ? 'meeting_type' AND v_type IS DISTINCT FROM m.meeting_type::text THEN changed:=changed||'meeting_type'::text; m.meeting_type:=v_type; END IF;
+   -- An unchanged (even archived) business may stay; a change must be to an active one (134).
+   IF payload ? 'business_id' AND nullif(payload->>'business_id','') IS DISTINCT FROM m.business_id::text THEN
+    m.business_id:=taskpulse_private.business_for_mission(payload->>'business_id'); changed:=changed||'business_id'::text;
+   END IF;
    UPDATE public.meetings SET title=m.title,meeting_date=m.meeting_date,start_time=m.start_time,meeting_type=m.meeting_type,
-    updated_at=clock_timestamp() WHERE id=m.id;
+    business_id=m.business_id,updated_at=clock_timestamp() WHERE id=m.id;
    -- The points carry their meeting's date and type, as the old records did.
    UPDATE public.meeting_points SET meeting_date=m.meeting_date,meeting_type=m.meeting_type
     WHERE meeting_id=m.id AND (meeting_date,meeting_type) IS DISTINCT FROM (m.meeting_date,m.meeting_type);
@@ -429,7 +438,8 @@ SELECT pg_temp.m136_patch('public.dated_record_command(text,uuid,text,jsonb,bigi
 CREATE FUNCTION taskpulse_private.meeting_json(m public.meetings) RETURNS jsonb
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
  SELECT jsonb_build_object('id',m.id,'title',m.title,'date',m.meeting_date,'startTime',to_char(m.start_time,'HH24:MI'),
-  'meetingType',m.meeting_type,'createdBy',m.created_by,'state',m.record_state,'createdAt',m.created_at,
+  'meetingType',m.meeting_type,'businessId',m.business_id,
+  'businessName',(SELECT b.name FROM taskpulse_private.businesses b WHERE b.id=m.business_id),'createdBy',m.created_by,'state',m.record_state,'createdAt',m.created_at,
   'members',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',u.id,'name',u.full_name,'active',u.is_active) ORDER BY u.full_name),'[]'::jsonb)
     FROM public.meeting_members x JOIN public.users u ON u.id=x.user_id WHERE x.meeting_id=m.id),
   -- The link only names the mission; opening it follows the mission's own rules.

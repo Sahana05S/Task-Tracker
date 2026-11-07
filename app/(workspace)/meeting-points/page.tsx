@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { getBusinesses } from '@/modules/businesses';
 import { getLabelCatalogue } from '@/modules/labels';
 import { listActivePeople, listMeetings } from '@/modules/support';
 import { MeetingSheet } from '@/modules/support/components/meeting-sheet';
@@ -17,21 +18,23 @@ export const metadata: Metadata = { title: 'Meetings' };
  */
 export default async function MeetingsPage() {
   const user = await requireProfile();
-  const [meetings, catalogue, people, missions] = await Promise.all([
+  const [meetings, catalogue, people, missions, businessCatalogue] = await Promise.all([
     listMeetings(),
     getLabelCatalogue().catch(() => null),
     listActivePeople(),
     getMissionPickerOptions(),
+    getBusinesses().catch(() => null),
   ]);
+  const businesses = businessCatalogue?.businesses ?? [];
   return (
     <MissionPage>
       <MissionPageHeader
         eyebrow="Records"
         title="Meetings"
         description="Minutes, decisions and action points. A meeting is seen only by its members and the managing director."
-        actions={user.isActive ? <MeetingSheet today={kolkataDate()} members={people} missions={missions} viewerId={user.id} /> : null}
+        actions={user.isActive ? <MeetingSheet today={kolkataDate()} members={people} missions={missions} viewerId={user.id} businesses={businesses} /> : null}
       />
-      <MeetingsList meetings={meetings} labels={(catalogue?.labels ?? []).map((label) => ({ id: label.id, name: label.name }))} />
+      <MeetingsList meetings={meetings} businesses={businesses} labels={(catalogue?.labels ?? []).map((label) => ({ id: label.id, name: label.name }))} />
     </MissionPage>
   );
 }

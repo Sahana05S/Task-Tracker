@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDaysIcon, ClockIcon, FileTextIcon, HistoryIcon, TagIcon } from 'lucide-react';
 
+import { getBusinesses } from '@/modules/businesses';
 import { getLabelCatalogue, getLabelsFor } from '@/modules/labels';
 import { listActivePeople, readMeeting } from '@/modules/support';
 import { MeetingMembers, WithdrawMeeting } from '@/modules/support/components/meeting-members';
@@ -31,11 +32,12 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
   const [user, meeting] = await Promise.all([requireProfile(), readMeeting(id)]);
   if (!meeting) notFound();
   const canEdit = meeting.canEdit && user.isActive;
-  const [people, catalogue, labels, missions] = await Promise.all([
+  const [people, catalogue, labels, missions, businessCatalogue] = await Promise.all([
     listActivePeople(),
     getLabelCatalogue().catch(() => null),
     meeting.points.length ? getLabelsFor('meeting_point', meeting.points.map((point) => point.id)).catch(() => null) : Promise.resolve(null),
     canEdit ? getMissionPickerOptions(meeting.missions.map((mission) => mission.id)) : Promise.resolve([]),
+    canEdit ? getBusinesses().catch(() => null) : Promise.resolve(null),
   ]);
   const names = new Map([...people.map((p) => [p.id, p.name] as const), ...meeting.members.map((m) => [m.id, m.name] as const)]);
   const savedLine = meeting.minutesSavedAt
@@ -51,11 +53,12 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
           <>
             <span className="badge-soft badge-neutral inline-flex items-center gap-1"><CalendarDaysIcon className="size-3" aria-hidden="true" />{formatDate(meeting.date)}</span>
             {meeting.startTime ? <span className="badge-soft badge-neutral inline-flex items-center gap-1"><ClockIcon className="size-3" aria-hidden="true" />{meeting.startTime}</span> : null}
+            {meeting.businessName ? <span className="badge-soft badge-neutral">{meeting.businessName}</span> : null}
             {meeting.meetingType ? <span className="badge-soft badge-neutral inline-flex items-center gap-1"><TagIcon className="size-3" aria-hidden="true" />{meeting.meetingType}</span> : null}
             {meeting.state === 'withdrawn' ? <span className="badge-soft badge-status-discarded">Withdrawn</span> : null}
           </>
         }
-        actions={canEdit ? <MeetingSheet today={kolkataDate()} members={people} missions={missions} meeting={meeting} viewerId={user.id} /> : null}
+        actions={canEdit ? <MeetingSheet today={kolkataDate()} members={people} missions={missions} meeting={meeting} viewerId={user.id} businesses={businessCatalogue?.businesses ?? []} /> : null}
       />
 
       <section className="soft-card grid gap-4 p-5 sm:p-6" aria-label="Members and missions">
