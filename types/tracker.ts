@@ -237,6 +237,8 @@ export interface Task {
   createdAt: string;
   /** `updated_at` — ISO 8601 timestamp. */
   updatedAt: string;
+  /** `business_id` (migration 134): the business the mission belongs to; a view, never a permission. */
+  businessId?: string | null;
 }
 
 /** Row of `public.daily_task_logs` — one effort entry against one task. */

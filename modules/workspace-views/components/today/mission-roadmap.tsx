@@ -48,6 +48,9 @@ interface Props {
   initialLabels?: Record<string, Label[]> | null;
   /** Member names by id, for Quest owners on the map (migration 122). */
   memberNames?: Record<string, string> | null;
+  /** The business chips (migration 134): the database filter for later batches, and `?business=` as given. */
+  business?: { ids: string[]; none: boolean } | null;
+  businessParam?: string | null;
 }
 function Progress({ value }: { value: number | null }) {
   return <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{value === null ? '—' : `${Math.round(value)}%`}</span>;
@@ -57,7 +60,7 @@ function LoadingBranch() {
 }
 
 /** The map view and a keyboard-first list over the same bounded data, actions and URL location. */
-export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = false, today, initialView = 'roadmap', initialLocation = null, initialLabels = null, memberNames = null }: Props) {
+export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = false, today, initialView = 'roadmap', initialLocation = null, initialLabels = null, memberNames = null, business = null, businessParam = null }: Props) {
   const [batch, setBatch] = useState(initial);
   const [labels, setLabels] = useState<Record<string, Label[]>>(initialLabels ?? {});
   const [view, setView] = useState<View>(initialView);
@@ -73,7 +76,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
   const request = useRef(0);
   const panelHeading = useRef<HTMLHeadingElement>(null);
   function remember(location: RoadmapLocation | null, due: string, view: View) {
-    window.history.replaceState(null, '', roadmapSearch(location, due, view, scope));
+    window.history.replaceState(null, '', roadmapSearch(location, due, view, scope, businessParam));
   }
 
   function open(path: RoadmapLocation, append = false) {
@@ -122,7 +125,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
   function loadMoreMissions(retry = false) {
     setBatchError(null);
     startMore(async () => {
-      const result = await loadRoadmapMissions({ due, scope, cursor: retry ? null : batch?.nextCursor });
+      const result = await loadRoadmapMissions({ due, scope, business, cursor: retry ? null : batch?.nextCursor });
       if (!result.success || !result.data) { setBatchError(result.error ?? 'This batch could not be loaded. Retry.'); return; }
       const batchLabels = result.data.labels;
       if (batchLabels) setLabels(previous => retry ? batchLabels : { ...previous, ...batchLabels });
@@ -141,7 +144,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
           label="Whose missions"
           value={scope}
           options={SCOPE_OPTIONS}
-          onValueChange={(next) => { window.location.assign(roadmapSearch(null, due, view, next)); }}
+          onValueChange={(next) => { window.location.assign(roadmapSearch(null, due, view, next, businessParam)); }}
         /> : null}
         <SegmentedControl
           label="Mission view"
@@ -156,7 +159,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
       </div>
     </div>
     <nav aria-label="Mission deadline filters" className="mt-5 flex flex-wrap gap-2">
-      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view, scope)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
+      {([['all', 'All open'], ['today', 'Due today'], ['overdue', 'Overdue']] as const).map(([value, label]) => <Link key={value} href={roadmapSearch(null, value, view, scope, businessParam)} onClick={() => { if (value === due) overview(); }} aria-current={due === value ? 'page' : undefined} className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', FOCUS, due === value ? 'bg-primary-subtle text-primary-subtle-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>{label}</Link>)}
     </nav>
     {view === 'roadmap' ? <>
       {error ? <div role="alert" className="border-danger-border bg-danger-subtle text-danger-foreground mt-5 rounded-xl border p-4 text-sm"><p>{error}</p><Button size="sm" variant="outline" className="mt-3" onClick={() => loadMoreMissions(true)} disabled={loadingMore}><RotateCcwIcon aria-hidden="true" />Retry roadmap</Button></div> : null}
