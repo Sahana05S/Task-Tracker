@@ -362,11 +362,11 @@ function MeetingTypesSection({ settings }: SectionProps) {
       id="meeting-types"
       icon={UsersRoundIcon}
       title="Meeting types"
-      subtitle="The choices for Meeting type on Meeting points. Points already saved keep their type even if you rename or hide it."
+      subtitle="The choices for Meeting type on Meetings. Meetings already saved keep their type even if you rename or hide it."
       className="scroll-mt-20"
     >
       <SectionForm section="meeting_types" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => ({ types: rows })}>
-        {rows.length === 0 ? <p className="text-muted-foreground text-sm">No meeting types yet. Meeting points keep a free-text type until you add some.</p> : null}
+        {rows.length === 0 ? <p className="text-muted-foreground text-sm">No meeting types yet. Meetings keep a free-text type until you add some.</p> : null}
         <ul>
           {rows.map((row, index) => (
             <li key={row.id} className={cn(ROW, 'grid-cols-[5rem_minmax(0,1fr)] sm:grid-cols-[5rem_minmax(0,1fr)_auto_auto_auto]', !row.active && 'opacity-60')}>
@@ -469,7 +469,7 @@ function AgendaSection({ settings }: SectionProps) {
       id="agenda"
       icon={ListOrderedIcon}
       title="Meeting agenda"
-      subtitle="Shown at the top of Meeting points for everyone. Number the steps (1. 2. 3.) to show them as a list."
+      subtitle="Each new meeting's minutes start from this agenda. Number the steps (1. 2. 3.)."
       className="scroll-mt-20"
     >
       <SectionForm section="agenda" version={settings.version} dirty={dirty} onDiscard={reset} payload={() => ({ agenda })}>

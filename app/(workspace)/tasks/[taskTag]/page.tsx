@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 
 import { QuickPostTrigger } from '@/modules/support/components/quick-post-trigger';
+import { listMeetings } from '@/modules/support';
+import { MissionMeetingsPanel } from '@/modules/support/components/mission-meetings';
 import { TimerButton } from '@/modules/time-tracking/components/timer-button';
 import { MissionPage, MissionPageHeader, MissionPanel } from '@/shared/ui/mission-ui';
 import { Breadcrumb, PageTabs } from '@/shared/ui/page-nav';
@@ -138,7 +140,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   // used to wait for this batch.
   const [
     [execution, native, templates, workspace, effortBreakdown, waypoints, proofs, sessionActivity, objectiveReviews, driveReady, quests],
-    [labelCatalogue, missionLabels],
+    [labelCatalogue, missionLabels, missionMeetings],
     missionActivity,
     originRow,
   ] = await Promise.all([Promise.all([
@@ -168,6 +170,8 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
   Promise.all([
     details ? getLabelCatalogue() : Promise.resolve(null),
     getLabelsFor('task', [task.id]),
+    // Meetings linked to this mission that the viewer may read (migration 136); a failure hides them.
+    tab === 'work' ? listMeetings({ taskId: task.id }).catch(() => null) : Promise.resolve(null),
   ]),
   tab === 'history' && canReadWork
     ? getMissionActivity(task.id, activityBefore, memberNames).catch(() => null)
@@ -397,6 +401,7 @@ export default async function TaskDetailPage({ params, searchParams }: TaskDetai
                 ) : null}
               </div>
             </MissionPanel>
+            <MissionMeetingsPanel meetings={missionMeetings} />
             {family.children.length ? (
               <MissionPanel icon={RocketIcon} title="Sub-missions" subtitle={`${family.children.filter((s) => s.status === 'Done').length} of ${family.children.length} done`}>
                 <SubMissionsPanel subMissions={family.children} />

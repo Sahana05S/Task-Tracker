@@ -100,8 +100,9 @@ for db in DBS:
     fact=record(db,'fact',{'business_date':today,'content':'Site visit notes'},uid='4')['id']
     record(db,'fact',{'state':'validated','reason':'Checked against the site log'},cmd='validate',id=fact,uid='1')
     record(db,'fact',{'business_date':today,'content':'Member five fact'},uid='5')
-    # A meeting point the director wrote and Asha owns.
-    record(db,'meeting',{'business_date':today,'content':'Site safety review','meeting_type':'Project meeting','owner_id':M4,'point_type':'Blocking Issue','resolution_status':'In Progress'},uid='1')
+    # A meeting point the director wrote and Asha owns (migration 136: written through its meeting; Asha joins it).
+    meeting=json.loads(next(x for x in actor(db,MD,"SELECT public.meeting_command('create',NULL,"+literal(json.dumps({'title':'Project meeting','meeting_date':today,'meeting_type':'Project meeting'}))+"::jsonb,NULL,gen_random_uuid())") if x.startswith('{')))
+    actor(db,MD,f"SELECT public.meeting_point_command('add','{meeting['id']}',NULL,"+literal(json.dumps({'point':'Site safety review','owner_id':M4,'point_type':'Blocking Issue','resolution_status':'In Progress'}))+"::jsonb,NULL,gen_random_uuid())")
     # A manager's mission edits (row-level audit with the manager as actor); signed-in roles cannot UPDATE tasks directly.
     sql(db,f"""BEGIN; SELECT set_config('request.jwt.claim.sub','{MD}',true);
       UPDATE public.tasks SET priority='High' WHERE id='{T2}'; UPDATE public.tasks SET due_date='2026-11-30' WHERE id='{task}'; COMMIT;""")
@@ -144,7 +145,8 @@ for db in DBS:
     logs=[r for r in rows if r['kind']=='time']
     assert {r['subject_user_id'] for r in logs}=={M4,M5} and all(r['task_tag'] for r in logs),logs
     recs=[r for r in rows if r['kind']=='records']
-    assert len(recs)==4 and {(r['record_kind'],r['action'],r['actor_id'],r['subject_user_id']) for r in recs}=={('fact','save',M4,M4),('fact','validate',MD,M4),('fact','save',M5,M5),('meeting','save',MD,M4)},recs
+    assert len(recs)==6 and {(r['record_kind'],r['action'],r['actor_id'],r['subject_user_id']) for r in recs}=={('fact','save',M4,M4),('fact','validate',MD,M4),('fact','save',M5,M5),('meeting','save',MD,M4),
+        ('meetings','meeting_create',MD,None),('meetings','meeting_add_member',MD,M4)},recs
     assert next(r for r in recs if r['action']=='validate')['reason']=='Checked against the site log'
     missions=[r for r in rows if r['kind']=='missions']
     missions=[r for r in missions if r['record_kind']!='task_links']
@@ -167,7 +169,8 @@ for db in DBS:
     # Migration 120: a project engineer sees the director's rows except the mission lines of
     # missions they are not on (here neither T1 nor T2), unless they acted or are the subject.
     pe_rows=feed(db,PE,'2026-10-20','2026-10-21')
-    assert pe_rows==[r for r in rows if r['kind']!='missions' or PE in (r['actor_id'],r['subject_user_id'])],pe_rows
+    # Migration 136: meeting lines only for the meeting's members and the director.
+    assert pe_rows==[r for r in rows if (r['kind']!='missions' or PE in (r['actor_id'],r['subject_user_id'])) and r['record_kind'] not in ('meeting','meetings')],pe_rows
     assert any(r['kind']=='missions' for r in rows) and not any(r['kind']=='missions' for r in pe_rows)
     print('PASS',db,'project engineer sees the director\'s rows except mission lines of missions they are not on')
 

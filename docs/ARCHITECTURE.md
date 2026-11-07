@@ -99,7 +99,7 @@ Start from `modules/_template/` when creating a module.
 | checklists | Nested checklist pages, item time, progress | lib/checklists, components/checklists | Moved |
 | time-tracking | Work logs and timers | lib/logs, lib/timers, components/logs | Moved |
 | attendance | Attendance and holidays | lib/attendance | Moved |
-| support | Knowledge, sales logs, dated records | lib/support, components/support | Moved |
+| support | Knowledge, sales logs, dated records, meetings (minutes, members, points; migration 136) | lib/support, components/support | Moved |
 | milestones | Milestones, statements, goals | lib/milestones, components/milestones | Moved |
 | team | Team index, employee profiles and reports, own Settings | lib/team, components/team, app/settings | Moved |
 | scoring | Ten-factor performance engine, analytics, stars/awards | lib/performance, lib/analytics, lib/stars | Moved |

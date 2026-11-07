@@ -687,6 +687,8 @@ export interface Database {
           resolution_status?:string|null;
           resolution_due?:string|null;
           resolved_on?:string|null;
+          /** Migration 136: every point belongs to a meeting. */
+          meeting_id?:string;
         } & TimestampColumns,
         OptionalId & {
           meeting_date?: string;
@@ -978,6 +980,11 @@ export interface Database {
       quest_owner_request_command: { Args: { p_op: 'request' | 'cancel' | 'accept' | 'decline'; p_node: string | null; p_invitee: string | null; p_request: string | null; p_operation: string }; Returns: Json };
       quest_owner_requests_mine: { Args: Record<never, never>; Returns: Json };
       quest_owner_requests_for: { Args: { p_task: string }; Returns: Json };
+      /** Migration 136: meetings (support module). */
+      meeting_command: { Args: { p_op: 'create' | 'edit' | 'save_minutes' | 'add_member' | 'remove_member' | 'withdraw'; p_meeting: string | null; p_payload: Json; p_expected_version: number | null; p_operation: string }; Returns: Json };
+      meeting_point_command: { Args: { p_op: 'add' | 'edit' | 'set_status' | 'withdraw'; p_meeting: string; p_point: string | null; p_payload: Json; p_expected_version: number | null; p_operation: string }; Returns: Json };
+      meetings_list: { Args: { p_from?: string | null; p_to?: string | null; p_task?: string | null }; Returns: Json };
+      meeting_detail: { Args: { p_meeting: string }; Returns: Json };
       /** Migration 132: Quest notes (learning module). */
       quest_notes: { Args: { p_node: string }; Returns: Json };
       quest_note_counts: { Args: { p_task: string }; Returns: Json };

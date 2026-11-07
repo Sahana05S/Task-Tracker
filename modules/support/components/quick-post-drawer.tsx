@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { loadPostChoices } from '@/modules/support/actions';
 import { DatedRecordEditor } from '@/modules/support/components/dated-record-module';
+import { QuickMeetingPoint } from '@/modules/support/components/quick-meeting-point';
 import type { RecordKind } from '@/modules/support/internal/contract';
 import type { PostChoices } from '@/modules/support/internal/post-choices';
 import { FormError } from '@/shared/ui/form-field';
@@ -19,6 +20,7 @@ export const POST_KINDS: readonly (SegmentedOption<RecordKind> & { noun: string;
   { value: 'idea', label: 'Idea', noun: 'Idea', href: '/ideas' },
   { value: 'suggestion', label: 'Suggestion', noun: 'Suggestion', href: '/suggestions' },
   { value: 'sale', label: 'Sale', noun: 'Sale', href: '/sales' },
+  // Since migration 136 a meeting point goes into one of the member's meetings.
   { value: 'meeting', label: 'Meeting', noun: 'Meeting point', href: '/meeting-points' },
 ];
 
@@ -63,8 +65,8 @@ export function announcePosted(kind: RecordKind, { close, navigate, onPostAnothe
   rememberPostKind(kind);
   close();
   // The drawer closes on success, so the confirmation lives in a toast.
-  toast.success(`${meta.noun} posted`, {
-    description: 'It waits for review on the Records tab.',
+  toast.success(`${meta.noun} ${kind === 'meeting' ? 'added' : 'posted'}`, {
+    description: kind === 'meeting' ? 'It is on the meeting\'s points.' : 'It waits for review on the Records tab.',
     action: { label: 'View', onClick: () => navigate(meta.href) },
     cancel: onPostAnother ? {
       label: 'Post another',
@@ -114,6 +116,8 @@ export function QuickPostForm({ kind, onKindChange, choices, loadError, presetTa
             <LoaderCircleIcon className="size-4 motion-safe:animate-spin" aria-hidden="true" />
             Loading missions and members…
           </p>
+        ) : kind === 'meeting' ? (
+          <QuickMeetingPoint members={choices.members} userId={choices.user.id} autoFocus={autoFocus} onSaved={onSaved} />
         ) : (
           <DatedRecordEditor
             key={kind}

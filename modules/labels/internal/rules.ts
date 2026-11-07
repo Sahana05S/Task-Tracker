@@ -56,6 +56,8 @@ export interface LabelledItem {
   /** Quest notes (migration 132): the list the Quest's row sits in, and whether it is the mission's own. */
   readonly listId: string | null;
   readonly rootList: boolean;
+  /** Meeting points (migration 136): the meeting the point belongs to. */
+  readonly meetingId: string | null;
 }
 export interface LabelledRecords { readonly label: Label; readonly items: readonly LabelledItem[] }
 
@@ -139,6 +141,7 @@ export function mapLabelled(data: unknown): LabelledRecords | null {
       nodeTitle: typeof item.nodeTitle === 'string' ? item.nodeTitle : null,
       listId: typeof item.listId === 'string' ? item.listId : null,
       rootList: item.rootList !== false,
+      meetingId: typeof item.meetingId === 'string' ? item.meetingId : null,
     }];
   });
   return { label, items };

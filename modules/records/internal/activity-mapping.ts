@@ -83,6 +83,15 @@ const RECORD_NOUN: Record<string, string> = {
   meeting: 'a meeting point',
 };
 const RECORD_VERB: Record<string, string> = { save: 'Saved', correct: 'Corrected', validate: 'Reviewed', withdraw: 'Withdrew' };
+// Meetings (migration 136); the meeting's title arrives as the entry's reason, an added or removed member as "about".
+const MEETING_WORDS: Record<string, string> = {
+  meeting_create: 'Created a meeting',
+  meeting_edit: 'Edited a meeting',
+  meeting_save_minutes: 'Saved meeting minutes',
+  meeting_add_member: 'Added a member to a meeting',
+  meeting_remove_member: 'Removed a member from a meeting',
+  meeting_withdraw: 'Withdrew a meeting',
+};
 // Command names as the log, lifecycle, checklist and Task Tools commands store them.
 const TIME_WORDS: Record<string, string> = {
   create_log: 'Logged time',
@@ -295,6 +304,7 @@ export const cursorParam = (cursor: ActivityCursor): string => `${cursor.at}~${c
 export function activitySummary(row: ActivityRow): string {
   const action = row.action;
   if (row.kind === 'records') {
+    if (row.record_kind === 'meetings') return MEETING_WORDS[action] ?? 'Changed a meeting';
     return `${RECORD_VERB[action] ?? codeLabel(action)} ${RECORD_NOUN[row.record_kind ?? ''] ?? 'a record'}`;
   }
   if (row.kind === 'time') return TIME_WORDS[action] ?? codeLabel(action);
@@ -323,6 +333,7 @@ export function activitySummary(row: ActivityRow): string {
 }
 
 function link(row: ActivityRow, people: ReadonlyMap<string, Person>): { href: string; label: string } | null {
+  if (row.record_kind === 'meetings' && row.record_id) return { href: `/meeting-points/${row.record_id}`, label: 'Meeting' };
   if (row.kind === 'records' && row.record_kind && row.record_id) {
     return { href: `/records/${row.record_kind}/${row.record_id}/history`, label: 'History' };
   }
