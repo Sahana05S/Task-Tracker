@@ -177,7 +177,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
     <div className={cn('mt-4 grid min-w-0 gap-5', selected && 'xl:grid-cols-[minmax(0,1fr)_340px]')}>
       <div className="border-border bg-card min-w-0 rounded-2xl border">
         {location && mission ? <div className="border-border flex flex-wrap items-start justify-between gap-3 border-b px-4 py-4 sm:px-5">
-          <div className="min-w-0"><h3 className="text-foreground break-words text-base font-semibold">{mission.title}</h3><p className="text-muted-foreground mt-1 text-xs">{missionDueLabel(mission.dueDate, today)} · {mission.taskTag}</p><LabelChips labels={labels[mission.id]} className="mt-2" /></div>
+          <div className="min-w-0"><h3 className="text-foreground break-words text-base font-semibold">{mission.title}</h3><p className="text-muted-foreground mt-1 text-xs">{mission.isPermanent ? 'Permanent' : missionDueLabel(mission.dueDate, today)} · {mission.taskTag}</p><LabelChips labels={labels[mission.id]} className="mt-2" /></div>
           <span className="flex flex-wrap items-center gap-3">
             {canTimeMission(mission) ? <TimerButton taskId={mission.id} taskLabel={mission.taskTag} /> : null}
             <Link href={`/tasks/${encodeURIComponent(mission.taskTag)}`} className={cn('text-primary rounded text-xs font-semibold underline-offset-4 hover:underline', FOCUS)}>Mission details</Link>
@@ -199,7 +199,7 @@ export function MissionRoadmap({ initial, due, scope = 'mine', canSeeTeam = fals
               {batch?.missions.length ? <ol className="divide-border divide-y" aria-label="Your open assigned missions">{batch.missions.map(item => <li key={item.id} className="relative flex min-w-0 flex-wrap items-center gap-x-2" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 106px' }}>
                 <button type="button" onClick={() => { setMission(item); open({ missionId: item.id }); }} className={cn('group text-left min-w-0 flex-1 py-3 hover:bg-muted rounded-lg px-2 transition-colors', FOCUS)}>
                   <span className="flex items-start justify-between gap-3"><span className="text-foreground min-w-0 break-words text-sm font-semibold">{item.title}</span><ArrowRightIcon className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" /></span>
-                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><PriorityBadge priority={item.priority} /><span className={cn('text-xs', item.dueDate && item.dueDate < today ? 'text-overdue font-semibold' : 'text-muted-foreground')}>{missionDueLabel(item.dueDate, today)}</span><Progress value={item.progress} /><span className="text-muted-foreground text-xs">{item.taskTag}</span></span>
+                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2"><PriorityBadge priority={item.priority} /><span className={cn('text-xs', item.dueDate && item.dueDate < today ? 'text-overdue font-semibold' : 'text-muted-foreground')}>{item.isPermanent ? 'Permanent' : missionDueLabel(item.dueDate, today)}</span><Progress value={item.progress} /><span className="text-muted-foreground text-xs">{item.taskTag}</span></span>
                 </button>
                 {canTimeMission(item) ? <TimerButton taskId={item.id} taskLabel={item.taskTag} className="shrink-0" /> : null}
                 <LabelChips labels={labels[item.id]} max={4} className="-mt-1.5 basis-full px-2 pb-3" />

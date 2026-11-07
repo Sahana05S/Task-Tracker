@@ -1,4 +1,5 @@
-import { getNativeTemplates } from '@/modules/tasks';
+import { getMyPermanentMissions, getNativeTemplates } from '@/modules/tasks';
+import { AlwaysOnStrip } from '@/modules/workspace-views/components/always-on-strip';
 import type { Metadata } from 'next';
 
 import { NewTaskButton } from '@/modules/tasks/components/new-task-button';
@@ -35,7 +36,7 @@ export default async function TasksPage() {
   );
 
   const workspace = getTaskWorkspaceData();
-  const [{ tasks, members }, effortTotals, templates, waypoints, setup, labels] = await Promise.all([
+  const [{ tasks, members }, effortTotals, templates, waypoints, setup, labels, permanent] = await Promise.all([
     workspace,
     getTaskEffortTotals(),
     getNativeTemplates(),
@@ -46,6 +47,8 @@ export default async function TasksPage() {
     // Labels (migration 112): the catalogue and one labels_for read for every listed mission.
     // `?label=a&label=b` filters on the client with the other filters; null hides chips and the filter.
     workspace.then(({ tasks }) => missionLabels(tasks.map((task) => task.id))).catch(() => null),
+    // The "Always on" strip (migration 135); a failed read only hides it.
+    getMyPermanentMissions(profile.id).catch(() => null),
   ]);
 
   const openCount = tasks.filter(
@@ -65,6 +68,8 @@ export default async function TasksPage() {
           </>
         ) : null}
       />
+
+      <AlwaysOnStrip missions={permanent} />
 
       {setup?.bannerMonth ? <MonthSetupBanner month={setup.bannerMonth} /> : null}
 

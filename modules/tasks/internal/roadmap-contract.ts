@@ -1,6 +1,8 @@
 import type { MissionRelationship } from '@/shared/tracker/enums';
 import type { TaskPriority, TaskStatus } from '@/types/tracker';
 
+/** A permanent mission in the "Always on" strip (migration 135); the viewer is on its Crew. */
+export interface PermanentMission { id: string; taskTag: string; title: string; status: TaskStatus }
 export type MissionDueFilter = 'all' | 'today' | 'overdue';
 export interface RoadmapMission {
   id: string;
@@ -16,6 +18,8 @@ export interface RoadmapMission {
    * older callers and fixtures keep compiling; the batch read always sets it.
    */
   relationship?: MissionRelationship;
+  /** A permanent mission (migration 135): listed first, no due date, never Done. */
+  isPermanent?: boolean;
 }
 export interface MissionBatchOptions {
   due?: MissionDueFilter;
@@ -59,7 +63,12 @@ export function missionDueFilter(value: unknown): MissionDueFilter {
 export function missionBatchLimit(value?: number): number {
   return Number.isFinite(value) ? Math.max(1, Math.min(50, Math.floor(value!))) : MISSION_BATCH_SIZE;
 }
-export function compareRoadmapMissions(a: Pick<RoadmapMission, 'dueDate' | 'taskTag' | 'id'>, b: Pick<RoadmapMission, 'dueDate' | 'taskTag' | 'id'>): number {
+export function compareRoadmapMissions(
+  a: Pick<RoadmapMission, 'dueDate' | 'taskTag' | 'id' | 'isPermanent'>,
+  b: Pick<RoadmapMission, 'dueDate' | 'taskTag' | 'id' | 'isPermanent'>,
+): number {
+  // Permanent missions first (migration 135), then the usual order.
+  if ((a.isPermanent === true) !== (b.isPermanent === true)) return a.isPermanent ? -1 : 1;
   const due = (a.dueDate ?? '9999-12-31').localeCompare(b.dueDate ?? '9999-12-31');
   // UUID order agrees with PostgreSQL independently of tag locale/case.
   return due || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);

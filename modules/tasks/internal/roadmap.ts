@@ -9,10 +9,10 @@ import {
 import type { MissionRelationship } from '@/shared/tracker/enums';
 import type { TaskPriority, TaskStatus } from '@/types/tracker';
 
-const COLUMNS = 'id,task_tag,title,priority,status,due_date,progress_percentage,lifecycle_version' as const;
+const COLUMNS = 'id,task_tag,title,priority,status,due_date,progress_percentage,lifecycle_version,is_permanent' as const;
 interface MissionRow {
   id: string; task_tag: string; title: string; priority: string; status: string;
-  due_date: string | null; progress_percentage: number | null; lifecycle_version?: number | null;
+  due_date: string | null; progress_percentage: number | null; lifecycle_version?: number | null; is_permanent?: boolean | null;
   task_assignees?: { user_id: string; is_primary: boolean; share_units: number | null }[] | null;
   task_reviewers?: { user_id: string; reviewer_role: string }[] | null;
 }
@@ -22,22 +22,25 @@ function rowRelationship(row: MissionRow, source: 'primary' | 'participant' | 'r
   if (source === 'reviewer') return row.task_reviewers?.[0]?.reviewer_role === 'Observer' ? 'observer' : 'reviewer';
   return 'crew';
 }
-interface Cursor { due: string | null; id: string }
+/** `perm` (migration 135): permanent missions come first; a cursor without it is past them. */
+interface Cursor { due: string | null; id: string; perm?: boolean }
 function decodeCursor(value?: string | null): Cursor | null {
   if (!value) return null;
   if (value.length > 512) throw new Error('Invalid mission cursor. Reload your roadmap.');
   try {
     const c = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as Cursor;
-    if (!UUID_PATTERN.test(c.id) || !(c.due === null || /^\d{4}-\d{2}-\d{2}$/.test(c.due))) throw new Error();
+    if (!UUID_PATTERN.test(c.id) || !(c.due === null || /^\d{4}-\d{2}-\d{2}$/.test(c.due)) || !(c.perm === undefined || typeof c.perm === 'boolean')) throw new Error();
     return c;
   } catch { throw new Error('Invalid mission cursor. Reload your roadmap.'); }
 }
 function encodeCursor(mission: RoadmapMission): string {
-  return Buffer.from(JSON.stringify({ due: mission.dueDate, id: mission.id })).toString('base64url');
+  return Buffer.from(JSON.stringify({ due: mission.dueDate, id: mission.id, perm: mission.isPermanent === true })).toString('base64url');
 }
 function afterCursor(cursor: Cursor): string {
   // Every interpolated value was validated above before entering PostgREST syntax.
   const suffix = `id.gt.${cursor.id}`;
+  // Permanent missions first (ordered by id), then the rest by due date (see the order below).
+  if (cursor.perm) return `is_permanent.eq.false,and(is_permanent.eq.true,${suffix})`;
   return cursor.due === null
     ? `and(due_date.is.null,or(${suffix}))`
     : `due_date.gt.${cursor.due},due_date.is.null,and(due_date.eq.${cursor.due},or(${suffix}))`;
@@ -45,7 +48,7 @@ function afterCursor(cursor: Cursor): string {
 function mapMission(t: MissionRow, relationship?: MissionRelationship): RoadmapMission {
   return { id: t.id, taskTag: t.task_tag, title: t.title, priority: t.priority as TaskPriority,
     status: t.status as TaskStatus, dueDate: t.due_date, progress: t.progress_percentage,
-    lifecycleVersion: t.lifecycle_version ?? 0, ...(relationship ? { relationship } : {}) };
+    lifecycleVersion: t.lifecycle_version ?? 0, isPermanent: t.is_permanent === true, ...(relationship ? { relationship } : {}) };
 }
 
 /** Two bounded indexed sources preserve legacy primaries and participant ownership.
@@ -69,9 +72,10 @@ export async function getAssignedMissionBatch(userId: string, options: MissionBa
   const pick = { team, primary, participant, reviewer };
   const queries = sources.map(source => pick[source]).map(query => {
     let q = query.not('status', 'in', '("Done","Discarded")').is('archived_effective_date', null)
-      .order('due_date', { ascending: true, nullsFirst: false }).order('id').limit(limit + 1);
+      .order('is_permanent', { ascending: false }).order('due_date', { ascending: true, nullsFirst: false }).order('id').limit(limit + 1);
     if (due === 'today') q = q.eq('due_date', today);
     if (due === 'overdue') q = q.lt('due_date', today);
+    if (cursor && !cursor.perm) q = q.eq('is_permanent', false);
     if (cursor) q = q.or(afterCursor(cursor));
     return q;
   });

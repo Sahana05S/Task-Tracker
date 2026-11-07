@@ -1,5 +1,6 @@
 'use client';
 
+import { PermanentBadge } from '@/modules/tasks/components/permanent-badge';
 import * as React from 'react';
 import Link from 'next/link';
 
@@ -223,6 +224,7 @@ export function TaskDataGrid({
                   <span className="block truncate" title={task.title}>
                     {task.title}
                   </span>
+                  {task.isPermanent ? <PermanentBadge className="mt-0.5" /> : null}
                   {task.archivedEffectiveDate ? (
                     <span className="text-muted-foreground block text-xs">Archived, read-only</span>
                   ) : null}

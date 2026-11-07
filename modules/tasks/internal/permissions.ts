@@ -79,9 +79,10 @@ export function canReadMissionWork(
 /** Marks the mission Done: managers and every Crew member (migration 121). */
 export function canMarkMissionDone(
   user: Pick<User, 'id' | 'role' | 'isActive'>,
-  task: Pick<Task, 'assigneeId' | 'assigneeIds'>,
+  task: Pick<Task, 'assigneeId' | 'assigneeIds' | 'isPermanent'>,
 ): boolean {
-  return user.isActive && (canManageTasks(user.role) || isTaskWorker(task, user.id));
+  // A permanent mission is never Done (migration 135); a manager turns Permanent off first.
+  return user.isActive && !task.isPermanent && (canManageTasks(user.role) || isTaskWorker(task, user.id));
 }
 
 /**
